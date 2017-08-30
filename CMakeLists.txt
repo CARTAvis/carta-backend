@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(hdf5_mpi_test)
 
+set(CMAKE_CXX_COMPILER mpiCC)
 set(CMAKE_CXX_STANDARD 11)
 
 find_package (HDF5)
