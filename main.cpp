@@ -96,7 +96,6 @@ int main(int argc, char** argv)
 		payloadGather.resize(mpiSize * payloadElements, 0.0f);
 
 	MPI_Gather(payload, sizeof(payload) / sizeof(float), MPI_FLOAT, payloadGather.data(), payloadElements, MPI_FLOAT, 0, MPI_COMM_WORLD);
-	//fmt::print("Rank {}: Min: {}, Max: {}, Average: {}, StdDev: {}\n", mpiRank, nodeMinVal, nodeMaxVal, muX, stdDev);
 
 	if (mpiRank==0)
 	{
