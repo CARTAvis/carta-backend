@@ -9,7 +9,7 @@
 #include <mpi.h>
 
 void
-calculateStats(int mpiRank, int mpiSize, const HighFive::File &file, int width, int height, int xOffset, int yOffset);
+calculateStats(int mpiRank, int mpiSize, const HighFive::File &file, int width, int height, int depth, int xOffset, int yOffset, int zOffset);
 
 using namespace std;
 using namespace HighFive;
@@ -35,31 +35,30 @@ int main(int argc, char **argv) {
     }
     // "/home/angus/Downloads/L13591_sky.h5"
     MPI_Bcast(filename, 255, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
-
-    int dims[]={0,0,0,0};
-    while (dims[0]*dims[1]*dims[2]*dims[3]>=0) {
-        if (mpiRank==0) {
-            fmt::print("Enter width, height, xOffset and yOffset of region (-1 to exit)");
-            cin >> dims[0] >> dims[1] >> dims[2] >> dims[3];
-            fmt::print("Stats foor region {}x{}, offset @{},{}:\n", dims[0], dims[1], dims[2], dims[3]);
-        }
-        MPI_Bcast(dims, 4, MPI_INT, 0, MPI_COMM_WORLD);
-
-        File file(filename, File::ReadOnly);
-        calculateStats(mpiRank, mpiSize, file, dims[0], dims[1], dims[2], dims[3]);
-    }
-
-    MPI_Finalize();
-
-    return 0;
-}
-
-void calculateStats(int mpiRank, int mpiSize, const HighFive::File &file, int width, int height, int xOffset, int yOffset) {
-    std::vector<std::vector<float>> dataVector;
-    vector<float> payloadGather;
+    File file(filename, File::ReadOnly);
     vector<string> fileObjectList = file.listObjectNames();
     regex imageGroupRegex("Image\\d+");
     auto numBands = count_if(fileObjectList.begin(), fileObjectList.end(), [imageGroupRegex](string s) { return regex_search(s, imageGroupRegex) > 0; });
+    if (mpiRank==0)
+        fmt::print("Opened file {} with {} slices\n", filename, numBands);
+    int dims[]={0,0,0,0, 0, 0};
+    while (true) {
+        if (mpiRank==0) {
+            fmt::print("Enter width, height, depth, x-, y-, and z-offsets of region: ");
+            cin >> dims[0] >> dims[1] >> dims[2] >> dims[3] >> dims[4] >> dims[5];
+            fmt::print("Stats for region {}x{}x{}, offset @{},{},{}:\n", dims[0], dims[1], dims[2], dims[3], dims[4], dims[5]);
+        }
+        MPI_Bcast(dims, 4, MPI_INT, 0, MPI_COMM_WORLD);
+
+        calculateStats(mpiRank, mpiSize, file, dims[0], dims[1], dims[2], dims[3], dims[4], dims[5]);
+    }
+
+
+}
+
+void calculateStats(int mpiRank, int mpiSize, const HighFive::File &file, int width, int height, int depth, int xOffset, int yOffset, int zOffset) {
+    std::vector<std::vector<float>> dataVector;
+    vector<float> payloadGather;
 
     float nodeMaxVal = ::std::numeric_limits<float>::lowest();
     float nodeMinVal = ::std::numeric_limits<float>::max();
@@ -68,7 +67,7 @@ void calculateStats(int mpiRank, int mpiSize, const HighFive::File &file, int wi
     long nodeNumElements = 0;
 
 
-    for (auto band = 0; band < numBands; band++) {
+    for (auto band = zOffset; band < zOffset+depth; band++) {
         if (band % mpiSize != mpiRank)
             continue;
 
