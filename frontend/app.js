@@ -22,10 +22,10 @@ function initGL(canvasGL) {
         alert("Could not initialise WebGL");
     }
 
-    extTextureFloat = gl.getExtension('OES_texture_float');
-    if (!extTextureFloat) {
-        alert("Could not initialise WebGL extension");
-    }
+    // extTextureFloat = gl.getExtension('OES_texture_float');
+    // if (!extTextureFloat) {
+    //     alert("Could not initialise WebGL extension");
+    // }
 }
 
 function getShader(gl, id) {
@@ -216,6 +216,33 @@ $(document).ready(function () {
     var maxVal = 6.5;
     var regionImageData = null;
 
+    function updateRegion() {
+        if (connection) {
+            console.time("region_rtt");
+            var payload = {
+                event: "region_read",
+                message: {
+                    band: parseInt($('#band_val').val()),
+                    x: parseInt($('#x_val').val()),
+                    y: parseInt($('#y_val').val()),
+                    w: parseInt($('#w_val').val()),
+                    h: parseInt($('#h_val').val()),
+                    mip: parseInt($('#mip_val').val()),
+                    compression: parseInt($('#compression_val').val())
+                }
+            };
+            connection.send(JSON.stringify(payload));
+        }
+        return false;
+    }
+
+    $('#mip_val').on("input", updateRegion);
+    $('#compression_val').on("input", updateRegion);
+    $('#band_val').on("input", updateRegion);
+    $('#x_val').on("input", updateRegion);
+    $('#y_val').on("input", updateRegion);
+    $('#w_val').on("input", updateRegion);
+    $('#h_val').on("input", updateRegion);
 
     $("#min_val").on("input", $.debounce(1, function () {
         minVal = this.value;
@@ -268,7 +295,7 @@ $(document).ready(function () {
 
         if (event.data instanceof ArrayBuffer) {
             var binaryLength = new DataView(event.data.slice(0, 4)).getUint32(0, true);
-            binaryPayload = new Float32Array(event.data.slice(4, 4 + binaryLength));
+            binaryPayload = new Uint8Array(event.data.slice(4, 4 + binaryLength));
             jsonPayload = String.fromCharCode.apply(null, new Uint8Array(event.data, 4 + binaryLength,));
         }
         else
@@ -277,7 +304,7 @@ $(document).ready(function () {
         var eventData = JSON.parse(jsonPayload);
         var eventName = eventData.event;
         var message = eventData.message;
-
+        var binaryPayloadLength = binaryPayload?binaryPayload.length:0;
 
         if (eventName === 'region_read' && message.success) {
             regionImageData = message;
@@ -285,25 +312,36 @@ $(document).ready(function () {
             //console.log(regionImageData);
             if (regionImageData.compressed >= 4) {
                 //console.time("decompress");
-                var compressedPayload = new Uint8Array(binaryPayload.buffer);
-                regionImageData.fp32payload = zfpDecompressUint8WASM(compressedPayload, regionImageData.w, regionImageData.h, regionImageData.compressed);
+                //var compressedPayload = new Uint8Array(binaryPayload.buffer);
+                regionImageData.fp32payload = zfpDecompressUint8WASM(binaryPayload, regionImageData.w, regionImageData.h, regionImageData.compressed);
+                binaryPayload.length=0;
                 //console.timeEnd("decompress");
             }
             else
-                regionImageData.fp32payload = binaryPayload;
+                regionImageData.fp32payload =  new Float32Array(binaryPayload.buffer);
 
             if (extTextureFloat) {
                 loadFP32Texture(regionImageData.fp32payload, regionImageData.w, regionImageData.h);
             }
             else {
-                regionImageData.u8payload = encodeToUint8WASM(binaryPayload);
+                regionImageData.u8payload = encodeToUint8WASM(regionImageData.fp32payload);
                 loadRGBATexture(regionImageData.u8payload, regionImageData.w, regionImageData.h);
             }
 
             refreshColorScheme();
+            console.timeEnd("region_rtt");
+            if (regionImageData.compressed>= 4)
+                console.log(`Region read: Compressed ${(binaryPayloadLength*1e-6).toFixed(3)} MB -> ${(regionImageData.fp32payload.length*4e-6).toFixed(3)} MB`);
+            else
+                console.log(`Region read: ${(binaryPayloadLength*1e-6).toFixed(3)} MB`);
         }
-        console.timeEnd("region_rtt");
-        console.log('Server event: ' + eventName);
+        else if (eventName === 'fileload' && message.success){
+            $("#band_val").attr({
+                "max" : message.numBands-1
+            });
+        }
+
+
     };
 
     function refreshColorScheme() {
@@ -318,8 +356,6 @@ $(document).ready(function () {
     }
 
     function encodeToUint8WASM(f) {
-        //var uint8Data = new Uint8Array(f.length * 4);
-
         encodeFloats = Module.cwrap(
             'encodeFloats', 'number', ['number', 'number', 'number']
         );
@@ -327,45 +363,43 @@ $(document).ready(function () {
         var dataPtr = Module._malloc(nDataBytes);
         var dataPtrUint = Module._malloc(nDataBytes);
         var dataHeap = new Uint8Array(Module.HEAPU8.buffer, dataPtr, nDataBytes);
-        dataHeap.set(new Uint8Array(f.buffer));
+        dataHeap.set(new Uint8Array(f.slice(0, f.length).buffer));
         var dataHeapUint = new Uint8Array(Module.HEAPU8.buffer, dataPtrUint, nDataBytes);
         dataHeapUint.set(new Uint8Array(dataPtrUint.buffer));
 
         // Call function and get result
         encodeFloats(dataHeap.byteOffset, dataHeapUint.byteOffset, f.length);
         var resultUint = new Uint8Array(dataHeapUint.buffer, dataHeapUint.byteOffset, f.length * 4);
+        var outUint = resultUint.slice();
         // Free memory
         Module._free(dataHeap.byteOffset);
         Module._free(dataHeapUint.byteOffset);
 
-        return resultUint;
+        return outUint;
         // END WASM
 
     }
 
     function zfpDecompressUint8WASM(u8, nx, ny, precision) {
-        var f = new Float32Array(nx * ny);
-
         zfpDecompress = Module.cwrap(
             'zfpDecompress', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
         );
-        var nDataBytes = f.length * f.BYTES_PER_ELEMENT;
+        var nDataBytes = nx * ny * 4;
         var dataPtr = Module._malloc(nDataBytes);
         var nDataBytesCompressed = u8.length;
         var dataPtrUint = Module._malloc(nDataBytesCompressed);
         var dataHeap = new Uint8Array(Module.HEAPU8.buffer, dataPtr, nDataBytes);
-        dataHeap.set(new Uint8Array(f.buffer));
         var dataHeapUint = new Uint8Array(Module.HEAPU8.buffer, dataPtrUint, nDataBytesCompressed);
         dataHeapUint.set(new Uint8Array(u8.buffer));
 
         // Call function and get result
         zfpDecompress(parseInt(precision), dataHeap.byteOffset, nx, ny, dataHeapUint.byteOffset, u8.length);
-        var resultFloat = new Float32Array(dataHeap.buffer, dataHeap.byteOffset, f.length);
+        var resultFloat = new Float32Array(dataHeap.buffer, dataHeap.byteOffset, nx * ny);
+        var outFloat = resultFloat.slice();
         // Free memory
         Module._free(dataHeap.byteOffset);
         Module._free(dataHeapUint.byteOffset);
-
-        return resultFloat;
+        return outFloat;
         // END WASM
 
     }
@@ -432,7 +466,6 @@ $(document).ready(function () {
                 }
             };
 
-            console.log(payload);
             connection.send(JSON.stringify(payload));
         }
         return false;

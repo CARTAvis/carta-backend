@@ -17,6 +17,9 @@ using namespace std;
 using namespace HighFive;
 using namespace rapidjson;
 
+
+mutex eventMutex;
+
 vector<vector<float>> dataCache;
 
 File* file = nullptr;
@@ -36,7 +39,7 @@ struct ReadRegionRequest
 	int x, y, w, h, band, mip, compression;
 };
 
-int compress(float* array, char*& compressionBuffer, size_t& zfpsize, uint nx, uint ny, uint precision)
+int compress(float* array, unsigned char*& compressionBuffer, size_t& zfpsize, uint nx, uint ny, uint precision)
 {
 	int status = 0;    /* return value: 0 = success */
 	zfp_type type;     /* array scalar type */
@@ -56,7 +59,7 @@ int compress(float* array, char*& compressionBuffer, size_t& zfpsize, uint nx, u
 
 	/* allocate buffer for compressed data */
 	bufsize = zfp_stream_maximum_size(zfp, field);
-	compressionBuffer = new char[bufsize];
+	compressionBuffer = new unsigned char[bufsize];
 	/* associate bit stream with allocated buffer */
 	stream = stream_open(compressionBuffer, bufsize);
 	zfp_stream_set_bit_stream(zfp, stream);
@@ -74,6 +77,39 @@ int compress(float* array, char*& compressionBuffer, size_t& zfpsize, uint nx, u
 	stream_close(stream);
 
 	return bufsize;
+}
+
+int decompress(float* array, unsigned char* compressionBuffer, size_t& zfpsize, uint nx, uint ny, uint precision)
+{
+	int status = 0;    /* return value: 0 = success */
+	zfp_type type;     /* array scalar type */
+	zfp_field* field;  /* array meta data */
+	zfp_stream* zfp;   /* compressed stream */
+	bitstream* stream; /* bit stream to write to or read from */
+
+	/* allocate meta data for the 3D array a[nz][ny][nx] */
+	type = zfp_type_float;
+	field = zfp_field_2d(array, type, nx, ny);
+
+	/* allocate meta data for a compressed stream */
+	zfp = zfp_stream_open(NULL);
+	zfp_stream_set_precision(zfp, precision);
+
+	stream = stream_open(compressionBuffer, zfpsize);
+	zfp_stream_set_bit_stream(zfp, stream);
+	zfp_stream_rewind(zfp);
+
+	if (!zfp_decompress(zfp, field))
+	{
+		fprintf(stderr, "decompression failed\n");
+		status = 1;
+	}
+	/* clean up */
+	zfp_field_free(field);
+	zfp_stream_close(zfp);
+	stream_close(stream);
+
+	return status;
 }
 
 void sendEvent(uWS::WebSocket<uWS::SERVER>* ws, Document& document)
@@ -188,7 +224,7 @@ bool readRegion(const ReadRegionRequest& req)
 
 	DataSpace dataSpace = dataSet->getSpace();
 	auto dims = dataSpace.getDimensions();
-	if (dims.size() != 2 || dims[0] <= req.y + req.h || dims[1] <= req.x + req.w)
+	if (dims.size() != 2 || dims[0] < req.y + req.h || dims[1] < req.x + req.w)
 	{
 		fmt::print("Selected region ({}, {}) -> ({}, {} in band {} is invalid!\n", req.x, req.y, req.x + req.w, req.x + req.h, req.band);
 		return false;
@@ -200,6 +236,7 @@ bool readRegion(const ReadRegionRequest& req)
 
 void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 {
+	eventMutex.lock();
 	ReadRegionRequest request;
 
 	if (parseRegionQuery(message, request))
@@ -240,23 +277,22 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 			if (compressed)
 			{
 				size_t compressedSize;
-				char* compressionBuffer;
+				unsigned char* compressionBuffer;
 				compress(dataPayload, compressionBuffer, compressedSize, rowLength, numRows, request.compression);
+				//decompress(dataPayload, compressionBuffer, compressedSize, rowLength, numRows, request.compression);
+
 				tEnd = std::chrono::high_resolution_clock::now();
+				eventMutex.unlock();
 				sendEventBinaryPayload(ws, d, compressionBuffer, compressedSize);
 				delete[] compressionBuffer;
+				delete[] dataPayload;
 				auto dtCompress = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
-				if (compressedSize < 256)
-				{
-					for (auto i = 0; i < compressedSize; i++)
-					{
-						fmt::print("{}: {}\n", i, (uint8)compressionBuffer[i]);
-					}
-				}
+
 				fmt::print("Compressed binary ({:.3f} MB) sent in in {} ms\n", compressedSize/1e6, dtCompress);
 			}
 			else
 			{
+				eventMutex.unlock();
 				sendEventBinaryPayload(ws, d, dataPayload, numRows * rowLength * sizeof(float));
 				delete[] dataPayload;
 				tEnd = std::chrono::high_resolution_clock::now();
@@ -276,11 +312,13 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 	Document d;
 	Pointer("/event").Set(d, "region_read");
 	Pointer("/message/success").Set(d, false);
+	eventMutex.unlock();
 	sendEvent(ws, d);
 }
 
 void onFileLoad(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 {
+	eventMutex.lock();
 	if (message.HasMember("filename") && message["filename"].IsString())
 	{
 		string filename = message["filename"].GetString();
@@ -288,9 +326,10 @@ void onFileLoad(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 		{
 			fmt::print("File {} loaded successfully\n", filename);
 			Document d;
-			Pointer("/event").Set(d, "fileload");
-			Pointer("/message/success").Set(d, true);
 			Pointer("/message/numBands").Set(d, numBands);
+			Pointer("/message/success").Set(d, true);
+			Pointer("/event").Set(d, "fileload");
+			eventMutex.unlock();
 			sendEvent(ws, d);
 			return;
 		}
@@ -303,6 +342,7 @@ void onFileLoad(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 	Document d;
 	Pointer("/event").Set(d, "fileload");
 	Pointer("/message/success").Set(d, false);
+	eventMutex.unlock();
 	sendEvent(ws, d);
 }
 
