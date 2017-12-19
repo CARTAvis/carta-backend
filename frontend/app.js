@@ -22,10 +22,10 @@ function initGL(canvasGL) {
         alert("Could not initialise WebGL");
     }
 
-    // extTextureFloat = gl.getExtension('OES_texture_float');
-    // if (!extTextureFloat) {
-    //     alert("Could not initialise WebGL extension");
-    // }
+    extTextureFloat = gl.getExtension('OES_texture_float');
+    if (!extTextureFloat) {
+        alert("Could not initialise WebGL extension");
+    }
 }
 
 function getShader(gl, id) {
@@ -201,7 +201,7 @@ function loadRGBATexture(data, width, height) {
 
 
 $(document).ready(function () {
-    connection = new WebSocket('ws://10.0.0.3:3002');
+    connection = new WebSocket(`ws://${window.location.hostname}:3002`);
     connection.binaryType = 'arraybuffer';
 
     var canvasGL = document.getElementById("webgl");
@@ -270,10 +270,9 @@ $(document).ready(function () {
         if (!regionImageData)
             return;
         var mousePos = getMousePos(canvasGL, evt);
-        var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: Math.floor(mousePos.y / regionImageData.mip)};
+        var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
         var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
-        //var cursorInfo = `(${dataPos.x * regionImageData.mip + regionImageData.x}, ${dataPos.y * regionImageData.mip + regionImageData.y}): ${zVal.toFixed(3)}`;
-        var cursorInfo = '(' + dataPos.x * regionImageData.mip + regionImageData.x + ', ' + dataPos.y * regionImageData.mip + regionImageData.y + '): ' + zVal.toFixed(3);
+        var cursorInfo = `(${dataPos.x * regionImageData.mip + regionImageData.x}, ${dataPos.y * regionImageData.mip + regionImageData.y}): ${zVal!==undefined?zVal.toFixed(3):'NaN'}`;
         $("#cursor").html(cursorInfo);
     }))
     ;
@@ -329,11 +328,11 @@ $(document).ready(function () {
             }
 
             refreshColorScheme();
-            console.timeEnd("region_rtt");
-            if (regionImageData.compressed>= 4)
-                console.log(`Region read: Compressed ${(binaryPayloadLength*1e-6).toFixed(3)} MB -> ${(regionImageData.fp32payload.length*4e-6).toFixed(3)} MB`);
-            else
-                console.log(`Region read: ${(binaryPayloadLength*1e-6).toFixed(3)} MB`);
+            //console.timeEnd("region_rtt");
+            // if (regionImageData.compressed>= 4)
+            //     console.log(`Region read: Compressed ${(binaryPayloadLength*1e-6).toFixed(3)} MB -> ${(regionImageData.fp32payload.length*4e-6).toFixed(3)} MB`);
+            // else
+            //     console.log(`Region read: ${(binaryPayloadLength*1e-6).toFixed(3)} MB`);
         }
         else if (eventName === 'fileload' && message.success){
             $("#band_val").attr({
@@ -439,7 +438,7 @@ $(document).ready(function () {
 
     $('form#region').submit(function (event) {
         if (connection) {
-            console.time("region_rtt");
+            //console.time("region_rtt");
             var payload = {
                 event: "region_read",
                 message: {

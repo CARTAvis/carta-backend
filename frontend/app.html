@@ -24,6 +24,7 @@
 
 
 
+
     </script>
     <script id="cmap-rgba" type="x-shader/x-fragment">
         precision highp float;
@@ -40,8 +41,8 @@
         {
           rgba *= 255.0;
           float v = (rgba.b / 2.0) + (rgba.g * 128.0) + (rgba.r * 32768.0);
-          //float s = (mod(float(u.b), 2.0)>0.5 ? -1.0 : 1.0);
-          return (1.0 + v * pow(2.0, -23.0)) * pow(2.0, rgba.a - 127.0);
+          //float s = (mod(float(rgba.b), 2.0)>0.5 ? -1.0 : 1.0);
+          return 1.0*(1.0 + v * pow(2.0, -23.0)) * pow(2.0, rgba.a - 127.0);
         }
 
         void main(void) {
@@ -55,10 +56,7 @@
             gl_FragColor = uMinCol + alpha * deltaCol;
         }
 
-
-
     </script>
-
     <script id="cmap-float" type="x-shader/x-fragment">
         precision highp float;
         uniform vec2 uViewportSize;
@@ -69,14 +67,6 @@
         uniform float uMaxVal;
         uniform vec4 uMinCol;
         uniform vec4 uMaxCol;
-
-        float unpackRGBA(vec4 rgba)
-        {
-          rgba *= 255.0;
-          float v = (rgba.b / 2.0) + (rgba.g * 128.0) + (rgba.r * 32768.0);
-          //float s = (mod(float(u.b), 2.0)>0.5 ? -1.0 : 1.0);
-          return (1.0 + v * pow(2.0, -23.0)) * pow(2.0, rgba.a - 127.0);
-        }
 
         void main(void) {
 
@@ -90,14 +80,11 @@
             gl_FragColor = uMinCol + alpha * deltaCol;
         }
 
-
-
     </script>
-    <script async type="text/javascript" src="encodeFloats.js"></script>
+    <script type="text/javascript" src="encodeFloats.js"></script>
     <script type="text/javascript" src="./app.js"></script>
 </head>
 <body>
-<!--<canvas id="heatmap" width="1000" height="500"></canvas>-->
 <canvas id="webgl" width="1000" height="500"></canvas>
 <p id="cursor"></p>
 <table>
@@ -112,7 +99,7 @@
                 <input type="color" value="#FFFFFF" id="max_col">
             </div>
         </td>
-        <td style="width:100px"/>
+        <td style="width:100px"></td>
         <td>
             <form id="region" method="POST" action='#'>
                 <label for="mip_val">Mipmap level (1-1024):</label>
