@@ -390,6 +390,8 @@ $(document).ready(function () {
                         compression: requestedRegion.compression
                     }
                 };
+                // For latency emulation:
+                //setTimeout(function(){connection.send(JSON.stringify(payload));}, 80);
                 connection.send(JSON.stringify(payload));
             }
             else {
@@ -399,7 +401,7 @@ $(document).ready(function () {
     }
 
     $('#compression_val').on("input", checkAndUpdateRegion);
-    $('#band_val').on("input", checkAndUpdateRegion);
+    $('#band_val').on("input", $.debounce(16, checkAndUpdateRegion));
 
     $("#min_val").on("input", $.debounce(1, function () {
         minVal = this.value;
@@ -414,14 +416,14 @@ $(document).ready(function () {
     }));
 
     var max_col = hexToRGB(document.getElementById("max_col").value);
-    $("#max_col").on("input", $.debounce(1, function () {
-        max_col = hexToRGB(this.value);
+    $("#max_col").on("change", $.debounce(1, function () {
+        max_col = hexToRGB("#"+this.value);
         refreshColorScheme();
     }));
 
     var min_col = hexToRGB(document.getElementById("min_col").value);
-    $("#min_col").on("input", $.debounce(1, function () {
-        min_col = hexToRGB(this.value);
+    $("#min_col").on("change", $.debounce(1, function () {
+        min_col = hexToRGB("#"+this.value);
         refreshColorScheme();
     }));
 
