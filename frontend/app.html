@@ -25,6 +25,10 @@
 
 
 
+
+
+
+
     </script>
     <script id="cmap-rgba" type="x-shader/x-fragment">
         precision highp float;
@@ -56,6 +60,10 @@
             gl_FragColor = uMinCol + alpha * deltaCol;
         }
 
+
+
+
+
     </script>
     <script id="cmap-float" type="x-shader/x-fragment">
         precision highp float;
@@ -80,56 +88,118 @@
             gl_FragColor = uMinCol + alpha * deltaCol;
         }
 
+
+
+
+
     </script>
     <script type="text/javascript" src="encodeFloats.js"></script>
     <script type="text/javascript" src="./app.js"></script>
 </head>
 <body>
-<canvas id="webgl" width="1000" height="500"></canvas>
-<p id="cursor"></p>
 <table>
     <tr>
         <td>
-            <div id="slidecontainer">
-                <p>Min value:</p>
-                <input type="range" min="0" max="20.0" value="2.5" step="0.1" id="min_val">
-                <input type="color" value="#000000" id="min_col">
-                <p>Max value:</p>
-                <input type="range" min="0.0" max="20.0" value="6.5" step="0.1" id="max_val">
-                <input type="color" value="#FFFFFF" id="max_col">
-            </div>
+            <canvas id="webgl" width="768" height="768"></canvas>
+            <p id="cursor"></p>
         </td>
         <td style="width:100px"></td>
         <td>
-            <form id="region" method="POST" action='#'>
-                <label for="mip_val">Mipmap level (1-1024):</label>
-                <input type="number" min=1 step=1 name="mip_val" id="mip_val" value=1><br>
-                <label for="compression_val">Compression level (4-32):</label>
-                <input type="number" step=1 name="compression_val" id="compression_val" value=12><br>
-                <label for="band_val">Band:</label>
-                <input type="number" min=0 step=1 name="band_val" id="band_val" value=0><br>
-                <label for="x_val">X:</label>
-                <input type="number" min=0 step=1 name="x_val" id="x_val" value=4000><br>
-                <label for="y_val">Y:</label>
-                <input type="number" min=0 step=1 name="y_val" id="y_val" value=500><br>
-                <label for="w_val">Width:</label>
-                <input type="number" min=1 step=1 name="w_val" id="w_val" value=1000><br>
-                <label for="h_val">Height:</label>
-                <input type="number" min=1 step=1 name="h_val" id="h_val" value=500><br><br>
-                <input type="submit" value="Request Region">
+            <br><br>
+            <form id="fileload" method="POST" action='#'>
+                <input type="text" name="fileload_data" id="fileload_data" value="GALFACTS_N4_0263_4023_10chanavg_I.hdf5">
+                <input type="submit" value="Load File">
             </form>
+            <form id="disconnect" method="POST" action="#">
+                <input type="submit" value="Disconnect">
+            </form>
+            <label for="compression_val">Compression level (4-32):</label>
+            <input type="number" step=1 name="compression_val" id="compression_val" value=12><br>
+            <label for="band_val">Band:</label>
+            <input type="range" min="0" max="100" value="0" step="0" id="band_val"><br>
+            <!--<input type="number" min=0 step=1 name="band_val" id="band_val" value=0><br>-->
+            <button id="region">Request Region</button>
+            <br><br>
+            <table>
+                <tr>
+                    <td>
+                    </td>
+                    <td>Current View</td>
+                    <td>Required View</td>
+                </tr>
+                <tr>
+                    <td>X</td>
+                    <td id="current_view_x">0</td>
+                    <td id="req_view_x">0</td>
+                </tr>
+                <tr>
+                    <td>Y</td>
+                    <td id="current_view_y">0</td>
+                    <td id="req_view_y">0</td>
+                </tr>
+                <tr>
+                    <td>Width</td>
+                    <td id="current_view_w">0</td>
+                    <td id="req_view_w">0</td>
+                </tr>
+                <tr>
+                    <td>Height</td>
+                    <td id="current_view_h">0</td>
+                    <td id="req_view_h">0</td>
+                </tr>
+                <tr>
+                    <td>MIP</td>
+                    <td id="current_view_mip">0</td>
+                    <td id="req_view_mip">0</td>
+                </tr>
+            </table>
+
+
+            <form id="view" method="POST" action='#'>
+                <label for="centerX">CenterX:</label>
+                <input type="number" disabled step=1 name="centerX" id="centerX" value=2925><br>
+                <label for="centerY">CenterY:</label>
+                <input type="number" disabled step=1 name="centerY" id="centerY" value=537><br>
+                <label for="zoomLevel">Zoom:</label>
+                <input type="number" disabled step=0.0025 name="zoomLevel" id="zoomLevel" value=0.170940171><br>
+            </form>
+            <table>
+                <tr>
+                    <td>
+                        <button id="button_zoom_fit">Fit</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_200">200%</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_100">100%</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_50">50%</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_33">33%</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_25">25%</button>
+                    </td>
+
+                </tr>
+            </table>
+            <br>
+            <div id="slidecontainer">
+                <p>Min value: <span id="min_val_label">3.3</span></p>
+                <input type="range" min="0" max="20.0" value="3.3" step="0.1" id="min_val">
+                <input type="color" value="#000000" id="min_col">
+                <p>Max value: <span id="max_val_label">5.2</span></p>
+                <input type="range" min="0.0" max="20.0" value="5.2" step="0.1" id="max_val">
+                <input type="color" value="#FFFFFF" id="max_col">
+            </div>
         </td>
     </tr>
 </table>
-<br><br>
-<form id="fileload" method="POST" action='#'>
-    <input type="text" name="fileload_data" id="fileload_data" value="GALFACTS_N4_0263_4023_10chanavg_I.hdf5">
-    <input type="submit" value="Load File">
-</form>
-<form id="disconnect" method="POST" action="#">
-    <input type="submit" value="Disconnect">
-</form>
-<h2>Receive:</h2>
-<div><p id="log"></p></div>
+
+
+
 </body>
 </html>

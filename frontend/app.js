@@ -6,6 +6,8 @@ var regionReturnTime = 0;
 
 var gl;
 var extTextureFloat;
+var extTextureFloatLinear;
+var texture;
 
 function initGL(canvasGL) {
     try {
@@ -23,8 +25,10 @@ function initGL(canvasGL) {
     }
 
     extTextureFloat = gl.getExtension('OES_texture_float');
+    //extTextureFloatLinear = gl.getExtension('OES_texture_float_linear');
+
     if (!extTextureFloat) {
-        alert("Could not initialise WebGL extension");
+        alert("Could not initialise WebGL extensions");
     }
 }
 
@@ -62,7 +66,6 @@ function getShader(gl, id) {
 
     return shader;
 }
-
 
 var shaderProgram;
 
@@ -116,11 +119,12 @@ function initBuffers() {
     squareVertexPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
     var vertices = [
-        1.0, 1.0, 0.0,
-        -1.0, 1.0, 0.0,
+        -1.0, -1.0, 0.0,
         1.0, -1.0, 0.0,
-        -1.0, -1.0, 0.0
+        -1.0, 1.0, 0.0,
+        1.0, 1.0, 0.0
     ];
+
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     squareVertexPositionBuffer.itemSize = 3;
     squareVertexPositionBuffer.numItems = 4;
@@ -129,10 +133,10 @@ function initBuffers() {
     squareVertexUVBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexUVBuffer);
     var uvs = [
-        1.0, 1.0,
-        0.0, 1.0,
+        0.0, 0.0,
         1.0, 0.0,
-        0.0, 0.0
+        0.0, 1.0,
+        1.0, 1.0
     ];
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvs), gl.STATIC_DRAW);
@@ -154,7 +158,7 @@ function drawScene() {
 
 function loadFP32Texture(data, width, height) {
     // Create a texture.
-    var texture = gl.createTexture();
+    texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     // fill texture with 3x2 pixels
@@ -199,6 +203,75 @@ function loadRGBATexture(data, width, height) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 }
 
+function getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel) {
+    var topLeft = {
+        x: imageCenter.x - canvasSize.x / (2.0 * zoomLevel),
+        y: imageCenter.y - canvasSize.y / (2.0 * zoomLevel)
+    };
+
+    var bottomRight = {
+        x: imageCenter.x + canvasSize.x / (2.0 * zoomLevel),
+        y: imageCenter.y + canvasSize.y / (2.0 * zoomLevel)
+    };
+
+    var topLeftGL = {
+        x: -1 + (currentRegion.x - topLeft.x) / (imageCenter.x - topLeft.x),
+        y: -1 + (currentRegion.y - topLeft.y) / (imageCenter.y - topLeft.y)
+    };
+
+    var bottomRightGL = {
+        x: (currentRegion.x + currentRegion.w - imageCenter.x) / (bottomRight.x - imageCenter.x),
+        y: (currentRegion.y + currentRegion.h - imageCenter.y) / (bottomRight.y - imageCenter.y)
+    };
+
+    return [
+        topLeftGL.x, topLeftGL.y, 0.0,
+        bottomRightGL.x, topLeftGL.y, 0.0,
+        topLeftGL.x, bottomRightGL.y, 0.0,
+        bottomRightGL.x, bottomRightGL.y, 0.0
+    ];
+
+}
+
+
+function updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel) {
+    var topLeft = {
+        x: imageCenter.x - canvasSize.x / (2.0 * zoomLevel),
+        y: imageCenter.y - canvasSize.y / (2.0 * zoomLevel)
+    };
+
+    var bottomRight = {
+        x: imageCenter.x + canvasSize.x / (2.0 * zoomLevel),
+        y: imageCenter.y + canvasSize.y / (2.0 * zoomLevel)
+    };
+
+    var bounds = {
+        x: Math.max(topLeft.x, 0),
+        y: Math.max(topLeft.y, 0),
+        w: Math.min(bottomRight.x, imageSize.x) - Math.max(topLeft.x, 0),
+        h: Math.min(bottomRight.y, imageSize.y) - Math.max(topLeft.y, 0)
+    };
+
+    $("#req_view_x").html(bounds.x);
+    $("#req_view_y").html(bounds.y);
+    $("#req_view_w").html(bounds.w);
+    $("#req_view_h").html(bounds.h);
+}
+
+function updateVertices(vertices) {
+    //Create Square Position Buffer
+    //squareVertexPositionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+}
+
+
+function calculateMip(zoomLevel) {
+    var mipExact = 1.0 / zoomLevel;
+    mipExact = Math.max(1.0, mipExact);
+    var newMip = parseInt(mipExact % 1.0 < 0.25 ? Math.floor(mipExact) : Math.ceil(mipExact));
+    return newMip;
+}
 
 $(document).ready(function () {
     connection = new WebSocket(`ws://${window.location.hostname}:3002`);
@@ -212,45 +285,131 @@ $(document).ready(function () {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
-    var minVal = 2.5;
-    var maxVal = 6.5;
+    var minVal = 3.3;
+    var maxVal = 5.2;
     var regionImageData = null;
 
-    function updateRegion() {
+    var imageCenter = {
+        x: 5850 / 2.0,
+        y: 1074 / 2.0
+    };
+
+    var imageSize = {
+        x: 5850,
+        y: 1074
+    };
+
+    var canvasSize = {
+        x: canvasGL.width,
+        y: canvasGL.height
+    };
+
+    var currentRegion = {
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0,
+        mip: 0,
+        band: 0,
+        compression: 0
+    };
+
+
+    //zooming
+    var zoomLevel = Math.min(canvasSize.x / imageSize.x, canvasSize.y / imageSize.y);
+
+
+    var requiredRegion = {
+        x: 0,
+        y: 0,
+        w: imageSize.x,
+        h: imageSize.y,
+        mip: calculateMip(zoomLevel),
+        band: 0,
+        compression: 12
+    };
+
+    $("#zoomLevel").val(zoomLevel);
+    $("#current_view_mip").val(0);
+    $("#req_view_x").html(requiredRegion.x);
+    $("#req_view_y").html(requiredRegion.y);
+    $("#req_view_w").html(requiredRegion.w);
+    $("#req_view_h").html(requiredRegion.h);
+    $("#req_view_mip").html(requiredRegion.mip);
+
+    //dragging
+    var dragStarted = false;
+    var isDragging = false;
+    var previousDragLocation = null;
+    var scrollTimeout = null;
+    var isTouchZooming = false;
+    var previousZoomSeparation = 0;
+
+    function checkAndUpdateRegion() {
         if (connection) {
-            console.time("region_rtt");
-            var payload = {
-                event: "region_read",
-                message: {
-                    band: parseInt($('#band_val').val()),
-                    x: parseInt($('#x_val').val()),
-                    y: parseInt($('#y_val').val()),
-                    w: parseInt($('#w_val').val()),
-                    h: parseInt($('#h_val').val()),
-                    mip: parseInt($('#mip_val').val()),
-                    compression: parseInt($('#compression_val').val())
-                }
+
+            var requiresUpdate = false;
+            var requestedRegion = {
+                band: parseInt($('#band_val').val()),
+                x: parseInt($('#req_view_x').html()),
+                y: parseInt($('#req_view_y').html()),
+                w: parseInt($('#req_view_w').html()),
+                h: parseInt($('#req_view_h').html()),
+                mip: parseInt($('#req_view_mip').html()),
+                compression: parseInt($('#compression_val').val())
             };
-            connection.send(JSON.stringify(payload));
+
+            requestedRegion.x = Math.floor(requestedRegion.x);
+            requestedRegion.y = Math.floor(requestedRegion.y);
+            requestedRegion.w = Math.floor(requestedRegion.w / requestedRegion.mip) * requestedRegion.mip;
+            requestedRegion.h = Math.floor(requestedRegion.h / requestedRegion.mip) * requestedRegion.mip;
+
+
+            // All requests with different compression settings, a band change or a higher-res MIP need to be sent through
+            if (currentRegion.mip === 0 || requestedRegion.compression !== currentRegion.compression || requestedRegion.band !== currentRegion.band || requestedRegion.mip < currentRegion.mip) {
+                requiresUpdate = true;
+            }
+            else {
+                // Check XY bounnds. If requested region is a sub-region of the existing region, no need to do anything.
+                if (requestedRegion.x < currentRegion.x || requestedRegion.x + requestedRegion.w > currentRegion.x + currentRegion.w)
+                    requiresUpdate = true;
+                else if (requestedRegion.y < currentRegion.y || requestedRegion.y + requestedRegion.h > currentRegion.y + currentRegion.h)
+                    requiresUpdate = true;
+            }
+
+            if (requiresUpdate) {
+                var payload = {
+                    event: "region_read",
+                    message: {
+                        band: requestedRegion.band,
+                        x: requestedRegion.x,
+                        y: requestedRegion.y,
+                        w: requestedRegion.w,
+                        h: requestedRegion.h,
+                        mip: requestedRegion.mip,
+                        compression: requestedRegion.compression
+                    }
+                };
+                connection.send(JSON.stringify(payload));
+            }
+            else {
+
+            }
         }
-        return false;
     }
 
-    $('#mip_val').on("input", updateRegion);
-    $('#compression_val').on("input", updateRegion);
-    $('#band_val').on("input", updateRegion);
-    $('#x_val').on("input", updateRegion);
-    $('#y_val').on("input", updateRegion);
-    $('#w_val').on("input", updateRegion);
-    $('#h_val').on("input", updateRegion);
+    $('#compression_val').on("input", checkAndUpdateRegion);
+    $('#band_val').on("input", checkAndUpdateRegion);
 
     $("#min_val").on("input", $.debounce(1, function () {
         minVal = this.value;
+        $('#min_val_label').text(minVal);
         refreshColorScheme();
     }));
 
     $("#max_val").on("input", $.debounce(1, function () {
         maxVal = this.value;
+        $('#max_val_label').text(maxVal);
         refreshColorScheme();
     }));
 
@@ -266,16 +425,203 @@ $(document).ready(function () {
         refreshColorScheme();
     }));
 
-    $("#webgl").on("mousemove", $.debounce(16.6, function (evt) {
+    $("#webgl").on("mousemove", function (evt) {
         if (!regionImageData)
             return;
         var mousePos = getMousePos(canvasGL, evt);
-        var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
-        var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
-        var cursorInfo = `(${dataPos.x * regionImageData.mip + regionImageData.x}, ${dataPos.y * regionImageData.mip + regionImageData.y}): ${zVal!==undefined?zVal.toFixed(3):'NaN'}`;
-        $("#cursor").html(cursorInfo);
-    }))
-    ;
+
+        if (isDragging) {
+
+            if (dragStarted) {
+                dragStarted = false;
+                previousDragLocation = mousePos;
+            }
+            else {
+                imageCenter.x -= (mousePos.x - previousDragLocation.x) / zoomLevel;
+                imageCenter.y += (mousePos.y - previousDragLocation.y) / zoomLevel;
+                updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
+                var vertices = getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
+                updateVertices(vertices);
+                refreshColorScheme();
+                previousDragLocation = mousePos;
+                $("#centerX").val(imageCenter.x);
+                $("#centerY").val(imageCenter.y);
+            }
+        }
+        else {
+            var imageCoords = getImageCoords(mousePos);
+            var zVal = getCursorValue(imageCoords);
+            //var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
+            //var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
+            var cursorInfo = `(${imageCoords.x}, ${imageCoords.y}): ${zVal !== undefined ? zVal.toFixed(3) : 'NaN'}`;
+            $("#cursor").html(cursorInfo);
+        }
+    });
+
+    $("#webgl").on("touchstart", function (evt) {
+        isDragging = true;
+        dragStarted = true;
+    });
+
+    $("#webgl").on("touchend", function (evt) {
+        isDragging = false;
+        dragStarted = false;
+        isTouchZooming = false;
+        checkAndUpdateRegion();
+    });
+
+    $("#webgl").on("touchmove", function (evt) {
+        if (!regionImageData)
+            return;
+
+        if (evt.originalEvent.touches.length == 2) {
+            var previousZoomLevel = zoomLevel;
+            //var mousePos = getMousePos(canvasGL, evt);
+            var touchA = getMousePos(canvasGL, evt.originalEvent.touches[0]);
+            var touchB = getMousePos(canvasGL, evt.originalEvent.touches[1]);
+            var zoomSeparation = Math.sqrt(Math.pow(touchA.x - touchB.x, 2) + Math.pow(touchA.y - touchB.y, 2));
+            var touchCenter = {x: (touchA.x + touchB.x) / 2.0, y: (touchA.y + touchB.y) / 2.0};
+            var imageCoords = getImageCoords(touchCenter);
+            if (!isTouchZooming){
+                isTouchZooming = true;
+                previousZoomSeparation = zoomSeparation;
+            }
+            else{
+                zoomLevel = zoomLevel * zoomSeparation/previousZoomSeparation;
+                previousZoomSeparation = zoomSeparation;
+
+                imageCenter = {
+                    x: imageCoords.x + previousZoomLevel / zoomLevel * (imageCenter.x - imageCoords.x),
+                    y: imageCoords.y + previousZoomLevel / zoomLevel * (imageCenter.y - imageCoords.y)
+                };
+                updateZoom(zoomLevel);
+            }
+
+
+        }
+        else {
+
+            var mousePos = {x: evt.originalEvent.pageX, y: evt.originalEvent.pageY};
+
+            if (isDragging) {
+
+                if (dragStarted) {
+                    dragStarted = false;
+                    previousDragLocation = mousePos;
+                }
+                else {
+                    imageCenter.x -= (mousePos.x - previousDragLocation.x) / zoomLevel;
+                    imageCenter.y += (mousePos.y - previousDragLocation.y) / zoomLevel;
+                    updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
+                    var vertices = getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
+                    updateVertices(vertices);
+                    refreshColorScheme();
+                    previousDragLocation = mousePos;
+                    $("#centerX").val(imageCenter.x);
+                    $("#centerY").val(imageCenter.y);
+                }
+            }
+            else {
+                var imageCoords = getImageCoords(mousePos);
+                var zVal = getCursorValue(imageCoords);
+                //var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
+                //var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
+                var cursorInfo = `(${imageCoords.x}, ${imageCoords.y}): ${zVal !== undefined ? zVal.toFixed(3) : 'NaN'}`;
+                $("#cursor").html(cursorInfo);
+            }
+        }
+        evt.preventDefault();
+
+    });
+
+    function getImageCoords(M) {
+        return {
+            x: imageCenter.x + (M.x - canvasSize.x / 2.0) / zoomLevel,
+            y: imageCenter.y - (M.y - canvasSize.y / 2.0) / zoomLevel
+        }
+    }
+
+    function getRegionCoords(P) {
+        return {
+            x: Math.floor((P.x - currentRegion.x) / currentRegion.mip),
+            y: Math.floor((P.y - currentRegion.y) / currentRegion.mip)
+        }
+    }
+
+    function getCursorValue(P) {
+        if (P.x < 0 || P.x >= imageSize.x || P.y < 0 || P.y >= imageSize.y)
+            return undefined;
+        else {
+            var regionCoords = getRegionCoords(P);
+            return regionImageData.fp32payload[regionCoords.y * regionImageData.w + regionCoords.x];
+        }
+    }
+
+    function updateZoom(newZoomLevel, doTimeout=true) {
+        zoomLevel = Math.max(newZoomLevel, 1e-6);
+        $("#zoomLevel").val(zoomLevel);
+        $("#centerX").val(imageCenter.x);
+        $("#centerY").val(imageCenter.y);
+
+        var newMip = calculateMip(zoomLevel);
+        var currentMip = currentRegion.mip;
+        $("#req_view_mip").html(newMip);
+
+        updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
+
+        // if ((previousZoomLevel - 1) * (zoomLevel - 1) < 0) {
+        //     gl.bindTexture(gl.TEXTURE_2D, texture);
+        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, zoomLevel > 1.0 ? gl.NEAREST : gl.NEAREST);
+        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, zoomLevel > 1.0 ? gl.NEAREST : gl.NEAREST);
+        // }
+
+        var vertices = getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
+        updateVertices(vertices);
+        refreshColorScheme();
+
+        if (doTimeout) {
+            if (scrollTimeout)
+                clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(checkAndUpdateRegion, 200);
+        }
+        else
+            checkAndUpdateRegion();
+    }
+
+    $("#webgl").on("mousewheel", function (evt) {
+        evt.preventDefault();
+        var delta = evt.originalEvent.wheelDelta;
+        var previousZoomLevel = zoomLevel;
+        zoomLevel = zoomLevel * (delta > 0 ? 1.05 : 0.95);
+        var mousePos = getMousePos(canvasGL, evt);
+        var imageCoords = getImageCoords(mousePos);
+        imageCenter = {
+            x: imageCoords.x + previousZoomLevel / zoomLevel * (imageCenter.x - imageCoords.x),
+            y: imageCoords.y + previousZoomLevel / zoomLevel * (imageCenter.y - imageCoords.y)
+        };
+        updateZoom(zoomLevel);
+    });
+
+    $("#webgl").on("mousedown", function (evt) {
+        isDragging = true;
+        dragStarted = true;
+    });
+
+    $("#webgl").on("mouseup", function (evt) {
+        isDragging = false;
+        dragStarted = false;
+        checkAndUpdateRegion();
+    });
+
+    $("#webgl").on("mouseenter", function (evt) {
+        isDragging = isDragging && (evt.originalEvent.buttons & 1);
+    });
+
+    $("#webgl").on("mouseleave", function (evt) {
+        if (isDragging)
+            checkAndUpdateRegion();
+    });
+
 
     connection.onopen = function () {
         console.log("Connected");
@@ -303,21 +649,20 @@ $(document).ready(function () {
         var eventData = JSON.parse(jsonPayload);
         var eventName = eventData.event;
         var message = eventData.message;
-        var binaryPayloadLength = binaryPayload?binaryPayload.length:0;
+        var binaryPayloadLength = binaryPayload ? binaryPayload.length : 0;
 
         if (eventName === 'region_read' && message.success) {
             regionImageData = message;
 
-            //console.log(regionImageData);
-            if (regionImageData.compressed >= 4) {
+            if (regionImageData.compression >= 4 && regionImageData.compression < 32) {
                 //console.time("decompress");
                 //var compressedPayload = new Uint8Array(binaryPayload.buffer);
-                regionImageData.fp32payload = zfpDecompressUint8WASM(binaryPayload, regionImageData.w, regionImageData.h, regionImageData.compressed);
-                binaryPayload.length=0;
+                regionImageData.fp32payload = zfpDecompressUint8WASM(binaryPayload, regionImageData.w, regionImageData.h, regionImageData.compression);
+                binaryPayload.length = 0;
                 //console.timeEnd("decompress");
             }
             else
-                regionImageData.fp32payload =  new Float32Array(binaryPayload.buffer);
+                regionImageData.fp32payload = new Float32Array(binaryPayload.buffer);
 
             if (extTextureFloat) {
                 loadFP32Texture(regionImageData.fp32payload, regionImageData.w, regionImageData.h);
@@ -327,16 +672,36 @@ $(document).ready(function () {
                 loadRGBATexture(regionImageData.u8payload, regionImageData.w, regionImageData.h);
             }
 
+            currentRegion = {
+                x: regionImageData.x,
+                y: regionImageData.y,
+                w: regionImageData.w * regionImageData.mip,
+                h: regionImageData.h * regionImageData.mip,
+                mip: regionImageData.mip,
+                band: regionImageData.band,
+                compression: regionImageData.compression
+            };
+
+            $("#current_view_x").html(currentRegion.x);
+            $("#current_view_y").html(currentRegion.y);
+            $("#current_view_w").html(currentRegion.w);
+            $("#current_view_h").html(currentRegion.h);
+            $("#current_view_mip").html(currentRegion.mip);
+
+            var vertices = getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
+            updateVertices(vertices);
             refreshColorScheme();
+
+
             //console.timeEnd("region_rtt");
-            // if (regionImageData.compressed>= 4)
+            // if (regionImageData.compression>= 4)
             //     console.log(`Region read: Compressed ${(binaryPayloadLength*1e-6).toFixed(3)} MB -> ${(regionImageData.fp32payload.length*4e-6).toFixed(3)} MB`);
             // else
             //     console.log(`Region read: ${(binaryPayloadLength*1e-6).toFixed(3)} MB`);
         }
-        else if (eventName === 'fileload' && message.success){
+        else if (eventName === 'fileload' && message.success) {
             $("#band_val").attr({
-                "max" : message.numBands-1
+                "max": message.numBands - 1
             });
         }
 
@@ -436,24 +801,32 @@ $(document).ready(function () {
         };
     }
 
-    $('form#region').submit(function (event) {
-        if (connection) {
-            //console.time("region_rtt");
-            var payload = {
-                event: "region_read",
-                message: {
-                    band: parseInt($('#band_val').val()),
-                    x: parseInt($('#x_val').val()),
-                    y: parseInt($('#y_val').val()),
-                    w: parseInt($('#w_val').val()),
-                    h: parseInt($('#h_val').val()),
-                    mip: parseInt($('#mip_val').val()),
-                    compression: parseInt($('#compression_val').val())
-                }
-            };
-            connection.send(JSON.stringify(payload));
-        }
-        return false;
+    $('#region').click(checkAndUpdateRegion);
+
+    $('#button_zoom_fit').click(function () {
+        imageCenter.x = imageSize.x / 2;
+        imageCenter.y = imageSize.y / 2;
+        updateZoom(Math.min(canvasSize.x / imageSize.x, canvasSize.y / imageSize.y), false);
+    });
+
+    $('#button_zoom_100').click(function () {
+        updateZoom(1.0, false);
+    });
+
+    $('#button_zoom_50').click(function () {
+        updateZoom(0.5, false);
+    });
+
+    $('#button_zoom_33').click(function () {
+        updateZoom(0.3333333, false);
+    });
+
+    $('#button_zoom_25').click(function () {
+        updateZoom(0.25, false);
+    });
+
+    $('#button_zoom_200').click(function () {
+        updateZoom(2.0, false);
     });
 
     $('form#fileload').submit(function (event) {

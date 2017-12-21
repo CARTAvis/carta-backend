@@ -252,12 +252,13 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 			Document d;
 			Pointer("/event").Set(d, "region_read");
 			Pointer("/message/success").Set(d, true);
-			Pointer("/message/compressed").Set(d, request.compression);
+			Pointer("/message/compression").Set(d, request.compression);
 			Pointer("/message/x").Set(d, request.x);
 			Pointer("/message/y").Set(d, request.y);
 			Pointer("/message/w").Set(d, dataCache[0].size());
 			Pointer("/message/h").Set(d, dataCache.size());
 			Pointer("/message/mip").Set(d, request.mip);
+			Pointer("/message/band").Set(d, request.band);
 			Pointer("/message/numValues").Set(d, numValues);
 
 			tStart = std::chrono::high_resolution_clock::now();
