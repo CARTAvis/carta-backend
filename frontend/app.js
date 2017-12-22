@@ -234,30 +234,6 @@ function getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLeve
 }
 
 
-function updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel) {
-    var topLeft = {
-        x: imageCenter.x - canvasSize.x / (2.0 * zoomLevel),
-        y: imageCenter.y - canvasSize.y / (2.0 * zoomLevel)
-    };
-
-    var bottomRight = {
-        x: imageCenter.x + canvasSize.x / (2.0 * zoomLevel),
-        y: imageCenter.y + canvasSize.y / (2.0 * zoomLevel)
-    };
-
-    var bounds = {
-        x: Math.max(topLeft.x, 0),
-        y: Math.max(topLeft.y, 0),
-        w: Math.min(bottomRight.x, imageSize.x) - Math.max(topLeft.x, 0),
-        h: Math.min(bottomRight.y, imageSize.y) - Math.max(topLeft.y, 0)
-    };
-
-    $("#req_view_x").html(bounds.x);
-    $("#req_view_y").html(bounds.y);
-    $("#req_view_w").html(bounds.w);
-    $("#req_view_h").html(bounds.h);
-}
-
 function updateVertices(vertices) {
     //Create Square Position Buffer
     //squareVertexPositionBuffer = gl.createBuffer();
@@ -277,6 +253,8 @@ $(document).ready(function () {
     connection = new WebSocket(`ws://${window.location.hostname}:3002`);
     connection.binaryType = 'arraybuffer';
 
+    var overlayCanvas = document.getElementById("overlay");
+    var overlay = overlayCanvas.getContext("2d");
     var canvasGL = document.getElementById("webgl");
     initGL(canvasGL);
     initShaders();
@@ -297,6 +275,13 @@ $(document).ready(function () {
     var imageSize = {
         x: 5850,
         y: 1074
+    };
+
+    var bounds = {
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0
     };
 
     var canvasSize = {
@@ -344,6 +329,78 @@ $(document).ready(function () {
     var scrollTimeout = null;
     var isTouchZooming = false;
     var previousZoomSeparation = 0;
+    var controlPressed = false;
+    var isZoomingToRegion = false;
+    var initialZoomToRegionPos = null;
+    var frozenCursor = false;
+
+    profileX = document.getElementById('profileX');
+    profileY = document.getElementById('profileY');
+
+    Plotly.plot(profileX,
+        [{
+            y: [0, 0, 0, 0, 0],
+            line: {
+                shape: 'vh',
+                color: 'black',
+                width: 1
+            },
+            mode: 'lines'
+        }],
+        {
+            margin: {t: 0, l: 30},
+            xaxis: {
+                title: 'Pixel X coordinate'
+            },
+            yaxis: {
+                title: 'Value'
+            }
+        });
+
+    Plotly.plot(profileY,
+        [{
+            y: [0, 0, 0, 0, 0],
+            line: {
+                shape: 'vh',
+                color: 'black',
+                width: 1
+            },
+            mode: 'lines'
+        }],
+        {
+            margin: {t: 0, l: 30},
+            xaxis: {
+                title: 'Pixel Y coordinate'
+            },
+            yaxis: {
+                title: 'Value'
+            }
+        });
+
+
+    function updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel) {
+        var topLeft = {
+            x: imageCenter.x - canvasSize.x / (2.0 * zoomLevel),
+            y: imageCenter.y - canvasSize.y / (2.0 * zoomLevel)
+        };
+
+        var bottomRight = {
+            x: imageCenter.x + canvasSize.x / (2.0 * zoomLevel),
+            y: imageCenter.y + canvasSize.y / (2.0 * zoomLevel)
+        };
+
+        bounds = {
+            x: Math.max(topLeft.x, 0),
+            y: Math.max(topLeft.y, 0),
+            w: Math.min(bottomRight.x, imageSize.x) - Math.max(topLeft.x, 0),
+            h: Math.min(bottomRight.y, imageSize.y) - Math.max(topLeft.y, 0)
+        };
+
+        $("#req_view_x").html(bounds.x);
+        $("#req_view_y").html(bounds.y);
+        $("#req_view_w").html(bounds.w);
+        $("#req_view_h").html(bounds.h);
+    }
 
     function checkAndUpdateRegion() {
         if (connection) {
@@ -391,7 +448,9 @@ $(document).ready(function () {
                     }
                 };
                 // For latency emulation:
-                //setTimeout(function(){connection.send(JSON.stringify(payload));}, 80);
+                // setTimeout(function () {
+                //     connection.send(JSON.stringify(payload));
+                // }, 80);
                 connection.send(JSON.stringify(payload));
             }
             else {
@@ -417,22 +476,108 @@ $(document).ready(function () {
 
     var max_col = hexToRGB(document.getElementById("max_col").value);
     $("#max_col").on("change", $.debounce(1, function () {
-        max_col = hexToRGB("#"+this.value);
+        max_col = hexToRGB("#" + this.value);
         refreshColorScheme();
     }));
 
     var min_col = hexToRGB(document.getElementById("min_col").value);
     $("#min_col").on("change", $.debounce(1, function () {
-        min_col = hexToRGB("#"+this.value);
+        min_col = hexToRGB("#" + this.value);
         refreshColorScheme();
     }));
 
-    $("#webgl").on("mousemove", function (evt) {
+    function drawCursor(pos, crossWidth) {
+        overlay.strokeStyle = "#0000BB";
+        overlay.beginPath();
+        overlay.moveTo(pos.x, pos.y - crossWidth);
+        overlay.lineTo(pos.x, pos.y + crossWidth);
+        overlay.moveTo(pos.x + crossWidth, pos.y);
+        overlay.lineTo(pos.x - crossWidth, pos.y);
+        overlay.stroke();
+    }
+
+    function updateProfilesAndCursor(pos, updateCursor=true) {
+
+        if (updateCursor) {
+            var crossWidth = 15;
+            overlay.clearRect(0, 0, canvasSize.x, canvasSize.y);
+            drawCursor(pos, crossWidth);
+        }
+
+        var imageCoords = getImageCoords(pos);
+        var zVal = getCursorValue(imageCoords);
+        var xProfileInfo = getXProfile(imageCoords);
+        if (xProfileInfo && xProfileInfo.data) {
+            var shapes = [
+                {
+                    x0: imageCoords.x,
+                    y0: xProfileInfo.minVal,
+                    x1: imageCoords.x,
+                    y1: xProfileInfo.maxVal,
+                    line: {
+                        color: 'blue',
+                        width: 1,
+                    }
+                },
+                {
+                    x0: xProfileInfo.coords[0],
+                    y0: xProfileInfo.mean,
+                    x1: xProfileInfo.coords[xProfileInfo.coords.length - 1],
+                    y1: xProfileInfo.mean,
+                    line: {
+                        color: 'red',
+                        width: 1,
+                    }
+                }
+            ];
+            Plotly.update(profileX, {x: [xProfileInfo.coords], y: [xProfileInfo.data]}, {shapes});
+        }
+        var yProfileInfo = getYProfile(imageCoords);
+        if (yProfileInfo && yProfileInfo.data) {
+            var shapes = [
+                {
+                    x0: imageCoords.y,
+                    y0: yProfileInfo.minVal,
+                    x1: imageCoords.y,
+                    y1: yProfileInfo.maxVal,
+                    line: {
+                        color: 'blue',
+                        width: 1,
+                    }
+                },
+                {
+                    x0: yProfileInfo.coords[0],
+                    y0: yProfileInfo.mean,
+                    x1: yProfileInfo.coords[yProfileInfo.coords.length - 1],
+                    y1: yProfileInfo.mean,
+                    line: {
+                        color: 'red',
+                        width: 1,
+                    }
+                }
+            ];
+            Plotly.update(profileY, {x: [yProfileInfo.coords], y: [yProfileInfo.data]}, {shapes});
+        }
+
+        //var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
+        //var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
+        var cursorInfo = `(${imageCoords.x}, ${imageCoords.y}): ${zVal !== undefined ? zVal.toFixed(3) : 'NaN'}`;
+        $("#cursor").html(cursorInfo);
+    }
+
+    $("#overlay").on("mousemove", $.debounce(0, function (evt) {
         if (!regionImageData)
             return;
         var mousePos = getMousePos(canvasGL, evt);
 
-        if (isDragging) {
+        if (isZoomingToRegion && initialZoomToRegionPos) {
+            var width = mousePos.x - initialZoomToRegionPos.x;
+            var height = mousePos.y - initialZoomToRegionPos.y;
+            overlay.clearRect(0, 0, canvasSize.x, canvasSize.y);
+            overlay.strokeStyle = "#FF0000";
+            overlay.strokeRect(initialZoomToRegionPos.x, initialZoomToRegionPos.y, width, height);
+        }
+        else if (isDragging) {
 
             if (dragStarted) {
                 dragStarted = false;
@@ -449,33 +594,46 @@ $(document).ready(function () {
                 $("#centerX").val(imageCenter.x);
                 $("#centerY").val(imageCenter.y);
             }
+            updateProfilesAndCursor(mousePos);
         }
-        else {
-            var imageCoords = getImageCoords(mousePos);
-            var zVal = getCursorValue(imageCoords);
-            //var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
-            //var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
-            var cursorInfo = `(${imageCoords.x}, ${imageCoords.y}): ${zVal !== undefined ? zVal.toFixed(3) : 'NaN'}`;
-            $("#cursor").html(cursorInfo);
+        else if (!frozenCursor)
+            updateProfilesAndCursor(mousePos);
+    }));
+
+    $(document).keydown(function (event) {
+        if (event.which == 17) {
+            controlPressed = true;
+        }
+        else if (event.which == 32) {
+            frozenCursor = !frozenCursor;
+        }
+
+    });
+
+    $(document).keyup(function (event) {
+        if (event.which == 17) {
+            controlPressed = false;
         }
     });
 
-    $("#webgl").on("touchstart", function (evt) {
+    $("#overlay").on("touchstart", function (evt) {
         isDragging = true;
         dragStarted = true;
     });
 
-    $("#webgl").on("touchend", function (evt) {
+    $("#overlay").on("touchend", function (evt) {
         isDragging = false;
         dragStarted = false;
         isTouchZooming = false;
         checkAndUpdateRegion();
     });
 
-    $("#webgl").on("touchmove", function (evt) {
+    $("#overlay").on("touchmove", function (evt) {
         if (!regionImageData)
             return;
+        evt.preventDefault();
 
+        // Pinch-zoom
         if (evt.originalEvent.touches.length == 2) {
             var previousZoomLevel = zoomLevel;
             //var mousePos = getMousePos(canvasGL, evt);
@@ -483,27 +641,29 @@ $(document).ready(function () {
             var touchB = getMousePos(canvasGL, evt.originalEvent.touches[1]);
             var zoomSeparation = Math.sqrt(Math.pow(touchA.x - touchB.x, 2) + Math.pow(touchA.y - touchB.y, 2));
             var touchCenter = {x: (touchA.x + touchB.x) / 2.0, y: (touchA.y + touchB.y) / 2.0};
+            updateProfilesAndCursor(touchCenter);
             var imageCoords = getImageCoords(touchCenter);
-            if (!isTouchZooming){
+            if (!isTouchZooming) {
                 isTouchZooming = true;
                 previousZoomSeparation = zoomSeparation;
             }
-            else{
-                zoomLevel = zoomLevel * zoomSeparation/previousZoomSeparation;
+            else {
+                zoomLevel = zoomLevel * zoomSeparation / previousZoomSeparation;
                 previousZoomSeparation = zoomSeparation;
 
                 imageCenter = {
                     x: imageCoords.x + previousZoomLevel / zoomLevel * (imageCenter.x - imageCoords.x),
                     y: imageCoords.y + previousZoomLevel / zoomLevel * (imageCenter.y - imageCoords.y)
                 };
-                updateZoom(zoomLevel);
+                updateZoom(zoomLevel, true);
             }
 
 
         }
-        else {
-
-            var mousePos = {x: evt.originalEvent.pageX, y: evt.originalEvent.pageY};
+        else if (evt.originalEvent.touches.length == 1) {
+            //Dragging
+            var mousePos = getMousePos(canvasGL, evt.originalEvent.touches[0]);
+            updateProfilesAndCursor(mousePos);
 
             if (isDragging) {
 
@@ -523,17 +683,8 @@ $(document).ready(function () {
                     $("#centerY").val(imageCenter.y);
                 }
             }
-            else {
-                var imageCoords = getImageCoords(mousePos);
-                var zVal = getCursorValue(imageCoords);
-                //var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
-                //var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
-                var cursorInfo = `(${imageCoords.x}, ${imageCoords.y}): ${zVal !== undefined ? zVal.toFixed(3) : 'NaN'}`;
-                $("#cursor").html(cursorInfo);
-            }
-        }
-        evt.preventDefault();
 
+        }
     });
 
     function getImageCoords(M) {
@@ -559,7 +710,92 @@ $(document).ready(function () {
         }
     }
 
-    function updateZoom(newZoomLevel, doTimeout=true) {
+    function getXProfile(P) {
+        if (P.x < 0 || P.x >= imageSize.x || P.y < 0 || P.y >= imageSize.y)
+            return undefined;
+        else {
+            var regionCoords = getRegionCoords(P);
+            var startX = getRegionCoords({x: bounds.x, y: 0}).x;
+            var endX = getRegionCoords({x: bounds.x + bounds.w - 1, y: 0}).x;
+
+
+            if (endX - startX <= 0)
+                return undefined;
+
+            var coords = new Array(endX - startX);
+            var data = new Array(endX - startX);
+
+            var mean = 0;
+            var minVal = Number.MAX_VALUE;
+            var maxVal = -Number.MAX_VALUE;
+            var countValid = 0;
+            for (var i = 0; i < coords.length; i++) {
+                var x = i + startX;
+                var val = regionImageData.fp32payload[regionCoords.y * regionImageData.w + x]
+                data[i] = val;
+                coords[i] = (currentRegion.x + currentRegion.mip * x);
+
+                if (!isNaN(val)) {
+                    minVal = Math.min(minVal, val);
+                    maxVal = Math.max(maxVal, val);
+                    mean += val;
+                    countValid++;
+                }
+            }
+
+            mean /= Math.max(countValid, 1);
+
+            return {
+                currentVal: regionImageData.fp32payload[regionCoords.y * regionImageData.w + regionCoords.x],
+                data,
+                coords,
+                mean,
+                minVal,
+                maxVal
+            };
+        }
+    }
+
+    function getYProfile(P) {
+        if (P.x < 0 || P.x >= imageSize.x || P.y < 0 || P.y >= imageSize.y)
+            return undefined;
+        else {
+            var regionCoords = getRegionCoords(P);
+            var startY = getRegionCoords({y: bounds.y, x: 0}).y;
+            var endY = getRegionCoords({y: bounds.y + bounds.h - 1, x: 0}).y;
+            var data = new Array(endY - startY);
+            var coords = new Array(endY - startY);
+            var mean = 0;
+            var minVal = Number.MAX_VALUE;
+            var maxVal = -Number.MAX_VALUE;
+            var countValid = 0;
+            for (var i = 0; i < data.length; i++) {
+                var y = i + startY;
+                var val = regionImageData.fp32payload[y * regionImageData.w + regionCoords.x]
+                data[i] = val;
+                coords[i] = (currentRegion.y + currentRegion.mip * y);
+                if (!isNaN(val)) {
+                    minVal = Math.min(minVal, val);
+                    maxVal = Math.max(maxVal, val);
+                    mean += val;
+                    countValid++;
+                }
+            }
+
+            mean /= Math.max(countValid, 1);
+
+            return {
+                currentVal: regionImageData.fp32payload[regionCoords.y * regionImageData.w + regionCoords.x],
+                data,
+                coords,
+                mean,
+                minVal,
+                maxVal
+            };
+        }
+    }
+
+    function updateZoom(newZoomLevel, doTimeout) {
         zoomLevel = Math.max(newZoomLevel, 1e-6);
         $("#zoomLevel").val(zoomLevel);
         $("#centerX").val(imageCenter.x);
@@ -590,36 +826,61 @@ $(document).ready(function () {
             checkAndUpdateRegion();
     }
 
-    $("#webgl").on("mousewheel", function (evt) {
+    $("#overlay").on("mousewheel", function (evt) {
         evt.preventDefault();
         var delta = evt.originalEvent.wheelDelta;
         var previousZoomLevel = zoomLevel;
-        zoomLevel = zoomLevel * (delta > 0 ? 1.05 : 0.95);
+        var zoomSpeed = 1.1;
+        zoomLevel = zoomLevel * (delta > 0 ? zoomSpeed : 1.0 / zoomSpeed);
         var mousePos = getMousePos(canvasGL, evt);
         var imageCoords = getImageCoords(mousePos);
         imageCenter = {
             x: imageCoords.x + previousZoomLevel / zoomLevel * (imageCenter.x - imageCoords.x),
             y: imageCoords.y + previousZoomLevel / zoomLevel * (imageCenter.y - imageCoords.y)
         };
-        updateZoom(zoomLevel);
+        updateZoom(zoomLevel, true);
     });
 
-    $("#webgl").on("mousedown", function (evt) {
-        isDragging = true;
-        dragStarted = true;
+    $("#overlay").on("mousedown", function (evt) {
+        if (controlPressed) {
+            isZoomingToRegion = true;
+            initialZoomToRegionPos = getMousePos(canvasGL, evt);
+        }
+        else {
+            isDragging = true;
+            dragStarted = true;
+        }
     });
 
-    $("#webgl").on("mouseup", function (evt) {
-        isDragging = false;
-        dragStarted = false;
-        checkAndUpdateRegion();
+    $("#overlay").on("mouseup", function (evt) {
+        if (isZoomingToRegion) {
+            isZoomingToRegion = false;
+            overlay.clearRect(0, 0, canvasSize.x, canvasSize.y);
+            var mousePos = getMousePos(canvasGL, evt);
+            // ignore regions with zero height or width
+            if (initialZoomToRegionPos.x === mousePos.x || initialZoomToRegionPos.y === mousePos.y)
+                return;
+            // do zoom to region update here
+            var imageCoordsStart = getImageCoords(initialZoomToRegionPos);
+            var imageCoordsEnd = getImageCoords(mousePos);
+
+            var zoomLevelX = canvasSize.x / Math.abs(mousePos.x - initialZoomToRegionPos.x) * zoomLevel;
+            var zoomLevelY = canvasSize.y / Math.abs(mousePos.y - initialZoomToRegionPos.y) * zoomLevel;
+            imageCenter = {x: (imageCoordsStart.x + imageCoordsEnd.x) / 2.0, y: (imageCoordsStart.y + imageCoordsEnd.y) / 2.0};
+            updateZoom(Math.min(zoomLevelX, zoomLevelY), false);
+        }
+        else {
+            isDragging = false;
+            dragStarted = false;
+            checkAndUpdateRegion();
+        }
     });
 
-    $("#webgl").on("mouseenter", function (evt) {
+    $("#overlay").on("mouseenter", function (evt) {
         isDragging = isDragging && (evt.originalEvent.buttons & 1);
     });
 
-    $("#webgl").on("mouseleave", function (evt) {
+    $("#overlay").on("mouseleave", function (evt) {
         if (isDragging)
             checkAndUpdateRegion();
     });
