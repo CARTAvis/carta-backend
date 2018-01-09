@@ -338,7 +338,7 @@ $(document).ready(function () {
 
     profileX = document.getElementById('profileX');
     profileY = document.getElementById('profileY');
-
+    histogram = document.getElementById('histogram');
 
     Plotly.plot(profileX,
         [{
@@ -380,6 +380,25 @@ $(document).ready(function () {
             }
         });
 
+    Plotly.plot(histogram,
+        [{
+            y: [0, 0, 0, 0, 0],
+            type: 'bar',
+            marker: {
+                color: 'black',
+                width: 1
+            }
+        }],
+        {
+            margin: {t: 0, l: 30},
+            xaxis: {
+                title: 'Value'
+            },
+            yaxis: {
+                title: 'Counts',
+                type: 'log'
+            }
+        });
 
     function updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel) {
         var topLeft = {
@@ -513,56 +532,78 @@ $(document).ready(function () {
         requestAnimationFrame(function () {
             var xProfileInfo = getXProfile(imageCoords);
             if (xProfileInfo && xProfileInfo.data) {
-                var shapes = [
+                var shapesX = [
                     {
+                        yref: 'paper',
                         x0: imageCoords.x,
-                        y0: xProfileInfo.minVal,
+                        y0: 0,
                         x1: imageCoords.x,
-                        y1: xProfileInfo.maxVal,
-                        line: {
-                            color: 'blue',
-                            width: 1
-                        }
-                    },
-                    {
-                        x0: xProfileInfo.coords[0],
-                        y0: xProfileInfo.mean,
-                        x1: xProfileInfo.coords[xProfileInfo.coords.length - 1],
-                        y1: xProfileInfo.mean,
+                        y1: 1,
                         line: {
                             color: 'red',
                             width: 1
                         }
+                    },
+                    {
+                        xref: 'paper',
+                        x0: 0,
+                        y0: xProfileInfo.mean,
+                        x1: 1,
+                        y1: xProfileInfo.mean,
+                        line: {
+                            color: 'blue',
+                            width: 1
+                        }
                     }
                 ];
-                Plotly.update(profileX, {x: [xProfileInfo.coords], y: [xProfileInfo.data]}, {shapes});
+                Plotly.update(profileX, {x: [xProfileInfo.coords], y: [xProfileInfo.data]}, {shapes: shapesX});
             }
 
             var yProfileInfo = getYProfile(imageCoords);
             if (yProfileInfo && yProfileInfo.data) {
-                var shapes = [
+                var shapesY = [
                     {
+                        yref: 'paper',
                         x0: imageCoords.y,
-                        y0: yProfileInfo.minVal,
+                        y0: 0,
                         x1: imageCoords.y,
-                        y1: yProfileInfo.maxVal,
+                        y1: 1,
                         line: {
-                            color: 'blue',
+                            color: 'red',
                             width: 1
                         }
                     },
                     {
-                        x0: yProfileInfo.coords[0],
+                        xref: 'paper',
+                        x0: 0,
                         y0: yProfileInfo.mean,
-                        x1: yProfileInfo.coords[yProfileInfo.coords.length - 1],
+                        x1: 1,
                         y1: yProfileInfo.mean,
+                        line: {
+                            color: 'blue',
+                            width: 1
+                        }
+                    }
+                ];
+                Plotly.update(profileY, {x: [yProfileInfo.coords], y: [yProfileInfo.data]}, {shapes: shapesY});
+            }
+
+            if (!isNaN(zVal)){
+                var shapesHist = [
+                    {
+                        yref: 'paper',
+                        x0: zVal,
+                        y0: 0,
+                        x1: zVal,
+                        y1: 1,
                         line: {
                             color: 'red',
                             width: 1
                         }
                     }
                 ];
-                Plotly.update(profileY, {x: [yProfileInfo.coords], y: [yProfileInfo.data]}, {shapes});
+
+                Plotly.update(histogram, {}, {shapes: shapesHist});
             }
         });
 
@@ -943,6 +984,18 @@ $(document).ready(function () {
                     fillVal = !fillVal;
                     decodedIndex += L;
                 }
+
+                requestAnimationFrame(function () {
+                    var hist = message.hist;
+                    if (!hist || !hist.bins || !hist.bins.length || !hist.N || !hist.firstBinCenter || !hist.binWidth)
+                        return;
+
+                    var xVals = new Array(hist.N);
+                    for (var i = 0; i < hist.N; i++) {
+                        xVals[i] = hist.firstBinCenter + i * hist.binWidth;
+                    }
+                    Plotly.update(histogram, {x: [xVals], y: [hist.bins]});
+                });
             }
             else
                 regionImageData.fp32payload = new Float32Array(binaryPayload.buffer);

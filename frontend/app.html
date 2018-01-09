@@ -31,6 +31,7 @@
 
 
 
+
     </script>
     <script id="cmap-rgba" type="x-shader/x-fragment">
         precision highp float;
@@ -66,6 +67,7 @@
 
 
 
+
     </script>
     <script id="cmap-float" type="x-shader/x-fragment">
         precision highp float;
@@ -94,6 +96,7 @@
 
 
 
+
     </script>
     <script type="text/javascript" src="encodeFloats.js"></script>
     <script type="text/javascript" src="./app.js"></script>
@@ -102,9 +105,9 @@
 <table>
     <tr>
         <td>
-            <div id="container" style="position:relative; width: 768px; height: 768px">
-                <canvas id="webgl" width="768" height="768" style="position: absolute; pointer: none"></canvas>
-                <canvas id="overlay" width="768" height="768" style="pointer: none; position: absolute; z-index: 1; border: 1px black solid"></canvas>
+            <div id="container" style="position:relative; width: 512px; height: 512px">
+                <canvas id="webgl" width="512" height="512" style="position: absolute; pointer: none"></canvas>
+                <canvas id="overlay" width="512" height="512" style="pointer: none; position: absolute; z-index: 1; border: 1px black solid"></canvas>
             </div>
             <p id="cursor"></p>
         </td>
@@ -201,13 +204,27 @@
                 <input class="jscolor" value="#ffffff" id="max_col">
             </div>
 
-            <div id="profileX" style="width:100%;height:250px;"></div>
-            <div id="profileY" style="width:100%;height:250px;"></div>
         </td>
     </tr>
 </table>
 
-
+<table>
+    <tbody>
+        <tr>
+            <td>
+                <div id="profileX" style="width:100%;height:200px;"></div>
+            </td>
+            <td rowspan="2">
+                <div id="histogram" style="width:100%;height:400px;"></div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div id="profileY" style="width:100%;height:250px;"></div>
+            </td>
+        </tr>
+    </tbody>
+</table>
 
 </body>
 </html>
