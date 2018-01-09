@@ -6,6 +6,7 @@
 #include <fmt/ostream.h>
 #include <highfive/H5File.hpp>
 #include <chrono>
+#include <limits>
 #include <uWS/uWS.h>
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -18,9 +19,36 @@ using namespace HighFive;
 using namespace rapidjson;
 
 
+struct RegionReadResponse
+{
+	bool success;
+	int compression;
+	int x;
+	int y;
+	int w;
+	int h;
+	int mip;
+	int band;
+	int numValues;
+};
+
+
+struct ReadRegionRequest
+{
+	int x, y, w, h, band, mip, compression;
+};
+
+struct Histogram
+{
+	int N;
+	float firstBinCenter, binWidth;
+	vector<int> bins;
+};
+
 mutex eventMutex;
 
 vector<vector<float>> currentBandCache;
+Histogram currentBandHistogram;
 
 File* file = nullptr;
 
@@ -32,10 +60,45 @@ int currentBand = -1;
 
 int numBands = -1;
 
-struct ReadRegionRequest
+Histogram getHistogram(vector<vector<float>>& values)
 {
-	int x, y, w, h, band, mip, compression;
-};
+	Histogram histogram;
+
+	auto numRows = values.size();
+	if (!numRows)
+		return histogram;
+	auto rowSize = values[0].size();
+	if (!rowSize)
+		return histogram;
+	float minVal = values[0][0];
+	float maxVal = values[0][0];
+
+	for (auto& row:values)
+	{
+		for (auto& v:row)
+		{
+			minVal = fmin(minVal, v);
+			maxVal = fmax(maxVal, v);
+		}
+	}
+
+	histogram.N = max(sqrt(values.size()), 2.0);
+	histogram.N = 1000;
+	histogram.binWidth = (maxVal-minVal)/histogram.N;
+	histogram.firstBinCenter = minVal + histogram.binWidth/2.0f;
+	histogram.bins.resize(histogram.N, 0);
+	for (auto& row:values)
+	{
+		for (auto& v:row)
+		{
+			if (isnan(v))
+				continue;
+			int bin = min((int)((v-minVal)/histogram.binWidth), histogram.N);
+			histogram.bins[bin]++;
+		}
+	}
+	return histogram;
+}
 
 int compress(float* array, unsigned char*& compressionBuffer, size_t& zfpsize, uint nx, uint ny, uint precision)
 {
@@ -127,7 +190,6 @@ vector<int32_t> getNanEncodings(float* array, size_t length)
 		}
 	}
 
-
 	for (auto i = 0; i < length; i++)
 	{
 		bool current = isnan(array[i]);
@@ -206,6 +268,7 @@ bool loadBand(int band)
 		if (dims.size() != 2)
 			return false;
 		dataSet.read(currentBandCache);
+		currentBandHistogram = getHistogram(currentBandCache);
 	}
 	catch (HighFive::Exception& err)
 	{
@@ -310,17 +373,48 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 			auto rowLength = request.w / request.mip;
 			auto numRows = request.h / request.mip;
 
-			Document d;
-			Pointer("/event").Set(d, "region_read");
-			Pointer("/message/success").Set(d, true);
-			Pointer("/message/compression").Set(d, request.compression);
-			Pointer("/message/x").Set(d, request.x);
-			Pointer("/message/y").Set(d, request.y);
-			Pointer("/message/w").Set(d, rowLength);
-			Pointer("/message/h").Set(d, numRows);
-			Pointer("/message/mip").Set(d, request.mip);
-			Pointer("/message/band").Set(d, request.band);
-			Pointer("/message/numValues").Set(d, numValues);
+			Document d(kObjectType);
+			auto& a = d.GetAllocator();
+			d.AddMember("event", "region_read", d.GetAllocator());
+
+			Value responseMessage(kObjectType);
+			responseMessage.AddMember("success", true, d.GetAllocator());
+			responseMessage.AddMember("compression", request.compression, a);
+			responseMessage.AddMember("x", request.x, a);
+			responseMessage.AddMember("y", request.y, a);
+			responseMessage.AddMember("w", rowLength, a);
+			responseMessage.AddMember("h", numRows, a);
+			responseMessage.AddMember("mip", request.mip, a);
+			responseMessage.AddMember("band", request.band, a);
+			responseMessage.AddMember("numValues", numValues, a);
+
+			Value hist(kObjectType);
+			hist.AddMember("firstBinCenter", currentBandHistogram.firstBinCenter, a);
+			hist.AddMember("binWidth", currentBandHistogram.binWidth, a);
+			hist.AddMember("N", currentBandHistogram.N, a);
+
+			Value binsValue(kArrayType);
+			binsValue.Reserve(currentBandHistogram.N, a);
+			for (auto& v: currentBandHistogram.bins)
+				binsValue.PushBack(v, a);
+
+			hist.AddMember("bins", binsValue, a);
+			responseMessage.AddMember("hist", hist, a);
+			d.AddMember("message", responseMessage, a);
+
+			//d["message/success"].SetBool(true);
+			//d["message/compression"].SetInt(request.compression);
+			//Pointer("/event").Set(d, "region_read");
+			//Pointer("/message/success").Set(d, true);
+			//Pointer("/message/compression").Set(d, request.compression);
+//			Pointer("/message/x").Set(d, request.x);
+//			Pointer("/message/y").Set(d, request.y);
+//			Pointer("/message/w").Set(d, rowLength);
+//			Pointer("/message/h").Set(d, numRows);
+//			Pointer("/message/mip").Set(d, request.mip);
+//			Pointer("/message/band").Set(d, request.band);
+//			Pointer("/message/numValues").Set(d, numValues);
+			//Pointer("/message/hist").Set(d, histVals);
 
 			tStart = std::chrono::high_resolution_clock::now();
 
