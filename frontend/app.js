@@ -326,7 +326,6 @@ $(document).ready(function () {
     var dragStarted = false;
     var isDragging = false;
     var previousDragLocation = null;
-    var scrollTimeout = null;
     var isTouchZooming = false;
     var previousZoomSeparation = 0;
     var controlPressed = false;
@@ -334,8 +333,12 @@ $(document).ready(function () {
     var initialZoomToRegionPos = null;
     var frozenCursor = false;
 
+    var scrollTimeout = null;
+    var profileUpdateTimeout = null;
+
     profileX = document.getElementById('profileX');
     profileY = document.getElementById('profileY');
+
 
     Plotly.plot(profileX,
         [{
@@ -506,58 +509,62 @@ $(document).ready(function () {
 
         var imageCoords = getImageCoords(pos);
         var zVal = getCursorValue(imageCoords);
-        var xProfileInfo = getXProfile(imageCoords);
-        if (xProfileInfo && xProfileInfo.data) {
-            var shapes = [
-                {
-                    x0: imageCoords.x,
-                    y0: xProfileInfo.minVal,
-                    x1: imageCoords.x,
-                    y1: xProfileInfo.maxVal,
-                    line: {
-                        color: 'blue',
-                        width: 1,
+
+        requestAnimationFrame(function () {
+            var xProfileInfo = getXProfile(imageCoords);
+            if (xProfileInfo && xProfileInfo.data) {
+                var shapes = [
+                    {
+                        x0: imageCoords.x,
+                        y0: xProfileInfo.minVal,
+                        x1: imageCoords.x,
+                        y1: xProfileInfo.maxVal,
+                        line: {
+                            color: 'blue',
+                            width: 1
+                        }
+                    },
+                    {
+                        x0: xProfileInfo.coords[0],
+                        y0: xProfileInfo.mean,
+                        x1: xProfileInfo.coords[xProfileInfo.coords.length - 1],
+                        y1: xProfileInfo.mean,
+                        line: {
+                            color: 'red',
+                            width: 1
+                        }
                     }
-                },
-                {
-                    x0: xProfileInfo.coords[0],
-                    y0: xProfileInfo.mean,
-                    x1: xProfileInfo.coords[xProfileInfo.coords.length - 1],
-                    y1: xProfileInfo.mean,
-                    line: {
-                        color: 'red',
-                        width: 1,
+                ];
+                Plotly.update(profileX, {x: [xProfileInfo.coords], y: [xProfileInfo.data]}, {shapes});
+            }
+
+            var yProfileInfo = getYProfile(imageCoords);
+            if (yProfileInfo && yProfileInfo.data) {
+                var shapes = [
+                    {
+                        x0: imageCoords.y,
+                        y0: yProfileInfo.minVal,
+                        x1: imageCoords.y,
+                        y1: yProfileInfo.maxVal,
+                        line: {
+                            color: 'blue',
+                            width: 1
+                        }
+                    },
+                    {
+                        x0: yProfileInfo.coords[0],
+                        y0: yProfileInfo.mean,
+                        x1: yProfileInfo.coords[yProfileInfo.coords.length - 1],
+                        y1: yProfileInfo.mean,
+                        line: {
+                            color: 'red',
+                            width: 1
+                        }
                     }
-                }
-            ];
-            Plotly.update(profileX, {x: [xProfileInfo.coords], y: [xProfileInfo.data]}, {shapes});
-        }
-        var yProfileInfo = getYProfile(imageCoords);
-        if (yProfileInfo && yProfileInfo.data) {
-            var shapes = [
-                {
-                    x0: imageCoords.y,
-                    y0: yProfileInfo.minVal,
-                    x1: imageCoords.y,
-                    y1: yProfileInfo.maxVal,
-                    line: {
-                        color: 'blue',
-                        width: 1,
-                    }
-                },
-                {
-                    x0: yProfileInfo.coords[0],
-                    y0: yProfileInfo.mean,
-                    x1: yProfileInfo.coords[yProfileInfo.coords.length - 1],
-                    y1: yProfileInfo.mean,
-                    line: {
-                        color: 'red',
-                        width: 1,
-                    }
-                }
-            ];
-            Plotly.update(profileY, {x: [yProfileInfo.coords], y: [yProfileInfo.data]}, {shapes});
-        }
+                ];
+                Plotly.update(profileY, {x: [yProfileInfo.coords], y: [yProfileInfo.data]}, {shapes});
+            }
+        });
 
         //var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
         //var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
@@ -565,7 +572,7 @@ $(document).ready(function () {
         $("#cursor").html(cursorInfo);
     }
 
-    $("#overlay").on("mousemove", $.debounce(0, function (evt) {
+    $("#overlay").on("mousemove", function (evt) {
         if (!regionImageData)
             return;
         var mousePos = getMousePos(canvasGL, evt);
@@ -598,7 +605,7 @@ $(document).ready(function () {
         }
         else if (!frozenCursor)
             updateProfilesAndCursor(mousePos);
-    }));
+    });
 
     $(document).keydown(function (event) {
         if (event.which == 17) {
@@ -904,7 +911,7 @@ $(document).ready(function () {
         if (event.data instanceof ArrayBuffer) {
             var binaryLength = new DataView(event.data.slice(0, 4)).getUint32(0, true);
             binaryPayload = new Uint8Array(event.data.slice(4, 4 + binaryLength));
-            jsonPayload = String.fromCharCode.apply(null, new Uint8Array(event.data, 4 + binaryLength,));
+            jsonPayload = String.fromCharCode.apply(null, new Uint8Array(event.data, 4 + binaryLength));
         }
         else
             jsonPayload = event.data;
@@ -912,17 +919,30 @@ $(document).ready(function () {
         var eventData = JSON.parse(jsonPayload);
         var eventName = eventData.event;
         var message = eventData.message;
-        var binaryPayloadLength = binaryPayload ? binaryPayload.length : 0;
 
         if (eventName === 'region_read' && message.success) {
             regionImageData = message;
 
             if (regionImageData.compression >= 4 && regionImageData.compression < 32) {
                 //console.time("decompress");
-                //var compressedPayload = new Uint8Array(binaryPayload.buffer);
-                regionImageData.fp32payload = zfpDecompressUint8WASM(binaryPayload, regionImageData.w, regionImageData.h, regionImageData.compression);
+                var nanEncodingLength = new DataView(event.data.slice(4, 8)).getUint32(0, true);
+                var nanEncodings = new Int32Array(event.data.slice(8, 8 + 4 * nanEncodingLength));
+                var compressedDataLength = binaryLength - 4 - nanEncodingLength;
+                var compressedData = new Uint8Array(event.data.slice(8 + 4 * nanEncodingLength, 8 + 4 * nanEncodingLength + compressedDataLength));
+                regionImageData.fp32payload = zfpDecompressUint8WASM(compressedData, regionImageData.w, regionImageData.h, regionImageData.compression);
                 binaryPayload.length = 0;
-                //console.timeEnd("decompress");
+
+                // put NaNs back into data
+                var decodedIndex = 0;
+                var fillVal = false;
+                for (var i = 0; i < nanEncodingLength; i++) {
+                    var L = nanEncodings[i];
+                    for (var j = 0; j < L; j++) {
+                        regionImageData.fp32payload[j + decodedIndex] = fillVal ? NaN : regionImageData.fp32payload[j + decodedIndex];
+                    }
+                    fillVal = !fillVal;
+                    decodedIndex += L;
+                }
             }
             else
                 regionImageData.fp32payload = new Float32Array(binaryPayload.buffer);
@@ -979,7 +999,8 @@ $(document).ready(function () {
         gl.uniform4f(shaderProgram.MinColorUniform, min_col.r / 255.0, min_col.g / 255.0, min_col.b / 255.0, 1.0);
         gl.uniform4f(shaderProgram.MaxColorUniform, max_col.r / 255.0, max_col.g / 255.0, max_col.b / 255.0, 1.0);
         gl.uniform2f(shaderProgram.ViewportSizeUniform, gl.viewportWidth, gl.viewportHeight);
-        drawScene();
+        requestAnimationFrame(drawScene);
+        //drawScene();
     }
 
     function encodeToUint8WASM(f) {

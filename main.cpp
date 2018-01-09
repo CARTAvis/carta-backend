@@ -112,6 +112,46 @@ int decompress(float* array, unsigned char* compressionBuffer, size_t& zfpsize, 
 	return status;
 }
 
+vector<int32_t> getNanEncodings(float* array, size_t length)
+{
+	int32_t prevIndex = 0;
+	bool prev = false;
+	vector<int32_t> encodedArray;
+
+	// Find first non-NaN number in the array
+	float prevValidNum = 0;
+	for (auto i = 0; i < length; i++)
+	{
+		if (!isnan(array[i]))
+		{
+			prevValidNum = array[i];
+			break;
+		}
+	}
+
+
+	for (auto i = 0; i < length; i++)
+	{
+		bool current = isnan(array[i]);
+		if (current != prev)
+		{
+			encodedArray.push_back(i - prevIndex);
+			prevIndex = i;
+			prev = current;
+		}
+		if (current)
+		{
+			array[i] = prevValidNum;
+		}
+		else
+		{
+			prevValidNum = array[i];
+		}
+	}
+	encodedArray.push_back(length - prevIndex);
+	return encodedArray;
+}
+
 void sendEvent(uWS::WebSocket<uWS::SERVER>* ws, Document& document)
 {
 	StringBuffer buffer;
@@ -230,7 +270,7 @@ bool readRegion(const ReadRegionRequest& req)
 		return false;
 	}
 
-	dataSet->select({req.y, req.x}, {req.h/req.mip, req.w/req.mip}, {req.mip, req.mip}).read(dataCache);
+	dataSet->select({req.y, req.x}, {req.h / req.mip, req.w / req.mip}, {req.mip, req.mip}).read(dataCache);
 	return true;
 }
 
@@ -242,7 +282,7 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 	if (parseRegionQuery(message, request))
 	{
 		auto tStart = std::chrono::high_resolution_clock::now();
-		bool compressed = request.compression>=4 && request.compression<32;
+		bool compressed = request.compression >= 4 && request.compression < 32;
 		if (readRegion(request))
 		{
 			auto tEnd = std::chrono::high_resolution_clock::now();
@@ -262,34 +302,44 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 			Pointer("/message/numValues").Set(d, numValues);
 
 			tStart = std::chrono::high_resolution_clock::now();
-			auto dataPayload = new float[dataCache[0].size() * dataCache.size()];
+
 			size_t numRows = dataCache.size();
 			size_t rowLength = dataCache[0].size();
+			auto dataPayload = new float[rowLength * numRows];
 			float* currentPos = dataPayload;
 			for (auto& row: dataCache)
 			{
 				memcpy(currentPos, row.data(), rowLength * sizeof(float));
 				currentPos += rowLength;
 			}
+
 			tEnd = std::chrono::high_resolution_clock::now();
 			auto dtPayload = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
 
 			tStart = std::chrono::high_resolution_clock::now();
 			if (compressed)
 			{
+				auto nanEncoding = getNanEncodings(dataPayload, rowLength * numRows);
 				size_t compressedSize;
 				unsigned char* compressionBuffer;
 				compress(dataPayload, compressionBuffer, compressedSize, rowLength, numRows, request.compression);
 				//decompress(dataPayload, compressionBuffer, compressedSize, rowLength, numRows, request.compression);
 
+				char* binaryPayload = new char[rowLength * numRows];
+				int32_t numNanEncodings = nanEncoding.size();
+				memcpy(binaryPayload, &numNanEncodings, sizeof(int32_t));
+				memcpy(binaryPayload + sizeof(int32_t), nanEncoding.data(), sizeof(int32_t) * numNanEncodings);
+				memcpy(binaryPayload + sizeof(int32_t) + sizeof(int32_t) * numNanEncodings, compressionBuffer, compressedSize);
+				uint32_t payloadSize = sizeof(int32_t) + sizeof(int32_t) * numNanEncodings + compressedSize;
 				tEnd = std::chrono::high_resolution_clock::now();
 				eventMutex.unlock();
-				sendEventBinaryPayload(ws, d, compressionBuffer, compressedSize);
+				sendEventBinaryPayload(ws, d, binaryPayload, payloadSize);
 				delete[] compressionBuffer;
 				delete[] dataPayload;
+				delete[] binaryPayload;
 				auto dtCompress = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
 
-				fmt::print("Compressed binary ({:.3f} MB) sent in in {} ms\n", compressedSize/1e6, dtCompress);
+				fmt::print("Compressed binary ({:.3f} MB) sent in in {} ms\n", compressedSize / 1e6, dtCompress);
 			}
 			else
 			{
@@ -298,7 +348,7 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 				delete[] dataPayload;
 				tEnd = std::chrono::high_resolution_clock::now();
 				auto dtSent = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
-				fmt::print("Uncompressed binary ({:.3f} MB) sent in in {} ms\n", numRows * rowLength * sizeof(float)/1e6, dtSent);
+				fmt::print("Uncompressed binary ({:.3f} MB) sent in in {} ms\n", numRows * rowLength * sizeof(float) / 1e6, dtSent);
 
 			}
 			return;
