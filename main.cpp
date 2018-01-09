@@ -20,11 +20,9 @@ using namespace rapidjson;
 
 mutex eventMutex;
 
-vector<vector<float>> dataCache;
+vector<vector<float>> currentBandCache;
 
 File* file = nullptr;
-
-DataSet* dataSet = nullptr;
 
 string baseFolder = "/home/angus";
 
@@ -199,21 +197,15 @@ bool loadBand(int band)
 		return false;
 	}
 
-	if (dataSet)
-	{
-		delete dataSet;
-		dataSet = nullptr;
-	}
-
 	try
 	{
 		string groupName = fmt::format("Image{0:03d}", band);
 		Group group = file->getGroup(groupName);
-		DataSet newDataset = group.getDataSet("Data");
-		dataSet = new DataSet(newDataset);
-		auto dims = dataSet->getSpace().getDimensions();
+		DataSet dataSet = group.getDataSet("Data");
+		auto dims = dataSet.getSpace().getDimensions();
 		if (dims.size() != 2)
 			return false;
+		dataSet.read(currentBandCache);
 	}
 	catch (HighFive::Exception& err)
 	{
@@ -251,27 +243,53 @@ bool loadFile(const string& filename, int defaultBand = 0)
 	}
 }
 
-bool readRegion(const ReadRegionRequest& req)
+vector<float> readRegion(const ReadRegionRequest& req)
 {
 	if (currentBand != req.band)
 	{
 		if (!loadBand(req.band))
 		{
 			fmt::print("Select band {} is invalid!\n", req.band);
-			return false;
+			return vector<float>();
 		}
 	}
 
-	DataSpace dataSpace = dataSet->getSpace();
-	auto dims = dataSpace.getDimensions();
-	if (dims.size() != 2 || dims[0] < req.y + req.h || dims[1] < req.x + req.w)
+	size_t numRowsBand = currentBandCache.size();
+	size_t rowLengthBand = currentBandCache[0].size();
+
+	if (numRowsBand < req.y + req.h || rowLengthBand < req.x + req.w)
 	{
 		fmt::print("Selected region ({}, {}) -> ({}, {} in band {} is invalid!\n", req.x, req.y, req.x + req.w, req.x + req.h, req.band);
-		return false;
+		return vector<float>();
 	}
 
-	dataSet->select({req.y, req.x}, {req.h / req.mip, req.w / req.mip}, {req.mip, req.mip}).read(dataCache);
-	return true;
+	size_t numRowsRegion = req.h / req.mip;
+	size_t rowLengthRegion = req.w / req.mip;
+	vector<float> regionData;
+	regionData.resize(numRowsRegion * rowLengthRegion);
+
+	for (auto j = 0; j < numRowsRegion; j++)
+	{
+		for (auto i = 0; i < rowLengthRegion; i++)
+		{
+			float sumPixel = 0;
+			int count = 0;
+			for (auto x = 0; x < req.mip; x++)
+			{
+				for (auto y = 0; y < req.mip; y++)
+				{
+					float pixVal = currentBandCache[req.y + j * req.mip + y][req.x + i * req.mip + x];
+					if (!isnan(pixVal))
+					{
+						count++;
+						sumPixel += pixVal;
+					}
+				}
+			}
+			regionData[j * rowLengthRegion + i] = count ? sumPixel / count : NAN;
+		}
+	}
+	return regionData;
 }
 
 void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
@@ -283,11 +301,14 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 	{
 		auto tStart = std::chrono::high_resolution_clock::now();
 		bool compressed = request.compression >= 4 && request.compression < 32;
-		if (readRegion(request))
+		vector<float> regionData = readRegion(request);
+		if (regionData.size())
 		{
 			auto tEnd = std::chrono::high_resolution_clock::now();
 			auto dtRegion = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
-			auto numValues = dataCache.size() * dataCache[0].size();
+			auto numValues = regionData.size();
+			auto rowLength = request.w / request.mip;
+			auto numRows = request.h / request.mip;
 
 			Document d;
 			Pointer("/event").Set(d, "region_read");
@@ -295,23 +316,13 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 			Pointer("/message/compression").Set(d, request.compression);
 			Pointer("/message/x").Set(d, request.x);
 			Pointer("/message/y").Set(d, request.y);
-			Pointer("/message/w").Set(d, dataCache[0].size());
-			Pointer("/message/h").Set(d, dataCache.size());
+			Pointer("/message/w").Set(d, rowLength);
+			Pointer("/message/h").Set(d, numRows);
 			Pointer("/message/mip").Set(d, request.mip);
 			Pointer("/message/band").Set(d, request.band);
 			Pointer("/message/numValues").Set(d, numValues);
 
 			tStart = std::chrono::high_resolution_clock::now();
-
-			size_t numRows = dataCache.size();
-			size_t rowLength = dataCache[0].size();
-			auto dataPayload = new float[rowLength * numRows];
-			float* currentPos = dataPayload;
-			for (auto& row: dataCache)
-			{
-				memcpy(currentPos, row.data(), rowLength * sizeof(float));
-				currentPos += rowLength;
-			}
 
 			tEnd = std::chrono::high_resolution_clock::now();
 			auto dtPayload = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
@@ -319,10 +330,10 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 			tStart = std::chrono::high_resolution_clock::now();
 			if (compressed)
 			{
-				auto nanEncoding = getNanEncodings(dataPayload, rowLength * numRows);
+				auto nanEncoding = getNanEncodings(regionData.data(), regionData.size());
 				size_t compressedSize;
 				unsigned char* compressionBuffer;
-				compress(dataPayload, compressionBuffer, compressedSize, rowLength, numRows, request.compression);
+				compress(regionData.data(), compressionBuffer, compressedSize, rowLength, numRows, request.compression);
 				//decompress(dataPayload, compressionBuffer, compressedSize, rowLength, numRows, request.compression);
 
 				char* binaryPayload = new char[rowLength * numRows];
@@ -335,7 +346,6 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 				eventMutex.unlock();
 				sendEventBinaryPayload(ws, d, binaryPayload, payloadSize);
 				delete[] compressionBuffer;
-				delete[] dataPayload;
 				delete[] binaryPayload;
 				auto dtCompress = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
 
@@ -344,8 +354,7 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 			else
 			{
 				eventMutex.unlock();
-				sendEventBinaryPayload(ws, d, dataPayload, numRows * rowLength * sizeof(float));
-				delete[] dataPayload;
+				sendEventBinaryPayload(ws, d, regionData.data(), numRows * rowLength * sizeof(float));
 				tEnd = std::chrono::high_resolution_clock::now();
 				auto dtSent = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
 				fmt::print("Uncompressed binary ({:.3f} MB) sent in in {} ms\n", numRows * rowLength * sizeof(float) / 1e6, dtSent);
