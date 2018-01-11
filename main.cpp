@@ -7,6 +7,8 @@
 #include <highfive/H5File.hpp>
 #include <chrono>
 #include <limits>
+#include <future>
+#include <random>
 #include <uWS/uWS.h>
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -18,6 +20,17 @@ using namespace std;
 using namespace HighFive;
 using namespace rapidjson;
 
+
+struct ImageFile
+{
+	string filename;
+	int numBands;
+	int width;
+	int height;
+	File* file = nullptr;
+	vector<Group> groups;
+	vector<DataSet> dataSets;
+};
 
 struct RegionReadResponse
 {
@@ -31,7 +44,6 @@ struct RegionReadResponse
 	int band;
 	int numValues;
 };
-
 
 struct ReadRegionRequest
 {
@@ -48,17 +60,14 @@ struct Histogram
 mutex eventMutex;
 
 vector<vector<float>> currentBandCache;
+
 Histogram currentBandHistogram;
 
-File* file = nullptr;
+ImageFile imageFile;
 
 string baseFolder = "/home/angus";
 
-string currentFileName = "";
-
 int currentBand = -1;
-
-int numBands = -1;
 
 Histogram getHistogram(vector<vector<float>>& values)
 {
@@ -84,8 +93,8 @@ Histogram getHistogram(vector<vector<float>>& values)
 
 	histogram.N = max(sqrt(values.size()), 2.0);
 	histogram.N = 1000;
-	histogram.binWidth = (maxVal-minVal)/histogram.N;
-	histogram.firstBinCenter = minVal + histogram.binWidth/2.0f;
+	histogram.binWidth = (maxVal - minVal) / histogram.N;
+	histogram.firstBinCenter = minVal + histogram.binWidth / 2.0f;
 	histogram.bins.resize(histogram.N, 0);
 	for (auto& row:values)
 	{
@@ -93,7 +102,7 @@ Histogram getHistogram(vector<vector<float>>& values)
 		{
 			if (isnan(v))
 				continue;
-			int bin = min((int)((v-minVal)/histogram.binWidth), histogram.N);
+			int bin = min((int) ((v - minVal) / histogram.binWidth), histogram.N);
 			histogram.bins[bin]++;
 		}
 	}
@@ -246,64 +255,122 @@ bool parseRegionQuery(const Value& message, ReadRegionRequest& regionQuery)
 	}
 
 	regionQuery = {message["x"].GetInt(), message["y"].GetInt(), message["w"].GetInt(), message["h"].GetInt(), message["band"].GetInt(), message["mip"].GetInt(), message["compression"].GetInt()};
-	if (regionQuery.x < 0 || regionQuery.y < 0 || regionQuery.band < 0 || regionQuery.band >= numBands || regionQuery.mip < 1 || regionQuery.w < 1 || regionQuery.h < 1)
+	if (regionQuery.x < 0 || regionQuery.y < 0 || regionQuery.band < 0 || regionQuery.band >= imageFile.numBands || regionQuery.mip < 1 || regionQuery.w < 1 || regionQuery.h < 1)
 		return false;
 	return true;
 }
 
 bool loadBand(int band)
 {
-	if (!file)
+	if (!imageFile.file)
 	{
 		fmt::print("No file loaded\n");
 		return false;
 	}
-
-	try
+	else if (band >= imageFile.dataSets.size())
 	{
-		string groupName = fmt::format("Image{0:03d}", band);
-		Group group = file->getGroup(groupName);
-		DataSet dataSet = group.getDataSet("Data");
-		auto dims = dataSet.getSpace().getDimensions();
-		if (dims.size() != 2)
-			return false;
-		dataSet.read(currentBandCache);
-		currentBandHistogram = getHistogram(currentBandCache);
-	}
-	catch (HighFive::Exception& err)
-	{
-		fmt::print("Invalid band or bad band group structure for band {} in file {}\n", band, currentFileName);
+		fmt::print("Invalid band for band {} in file {}\n", band, imageFile.filename);
 		return false;
 	}
+
+	imageFile.dataSets[band].read(currentBandCache);
+	currentBandHistogram = getHistogram(currentBandCache);
 	currentBand = band;
 	return true;
 }
 
 bool loadFile(const string& filename, int defaultBand = 0)
 {
-	if (filename == currentFileName)
+	if (filename == imageFile.filename)
 		return true;
-	if (file)
-	{
-		delete (file);
-		file = nullptr;
-	}
+	if (imageFile.file)
+		delete imageFile.file;
 	try
 	{
-		file = new File(filename, File::ReadOnly);
-		vector<string> fileObjectList = file->listObjectNames();
+		imageFile.file = new File(filename, File::ReadOnly);
+		vector<string> fileObjectList = imageFile.file->listObjectNames();
 		regex imageGroupRegex("Image\\d+");
-		numBands = int(std::count_if(fileObjectList.begin(), fileObjectList.end(), [imageGroupRegex](string s)
+		imageFile.numBands = int(std::count_if(fileObjectList.begin(), fileObjectList.end(), [imageGroupRegex](string s)
 		{ return regex_search(s, imageGroupRegex) > 0; }));
-		currentFileName = filename;
+		imageFile.filename = filename;
 
+
+		for (auto i = 0; i < imageFile.numBands; i++)
+		{
+			string groupName = fmt::format("Image{0:03d}", i);
+			Group group = imageFile.file->getGroup(groupName);
+			DataSet dataSet = group.getDataSet("Data");
+			auto dims = dataSet.getSpace().getDimensions();
+			if (dims.size() != 2)
+			{
+				fmt::print("Problem loading file {}: Data set for group {} is not a valid 2D array.\n", filename, groupName);
+				return false;
+			}
+
+			if (i == 0)
+			{
+				imageFile.width = dims[1];
+				imageFile.height = dims[0];
+			}
+			else if (dims[1] != imageFile.width || dims[0] != imageFile.height)
+			{
+				fmt::print("Problem loading file {}: Data set for group {} has mismatched dimensions.\n", filename, groupName);
+				return false;
+			}
+
+			imageFile.dataSets.push_back(dataSet);
+			imageFile.groups.push_back(group);
+		}
 		return loadBand(defaultBand);
 	}
 	catch (HighFive::Exception& err)
 	{
-		fmt::print("Problem loading file {}\n", currentFileName);
+		fmt::print("Problem loading file {}\n", filename);
 		return false;
 	}
+}
+
+vector<float> getZProfile(int x, int y)
+{
+	if (!imageFile.file)
+	{
+		fmt::print("No file loaded\n");
+		return vector<float>();
+	}
+	else if (x >= imageFile.width || y >= imageFile.height)
+	{
+		fmt::print("Z profile out of range\n");
+		return vector<float>();
+	}
+
+	//try
+	{
+		vector<float> profile;
+		profile.resize(imageFile.numBands);
+		vector<future<float>> futures;
+
+		for (auto i = 0; i < imageFile.numBands; i++)
+		{
+			futures.emplace_back(async(launch::async, [imageFile, i, x, y]()
+			{
+				vector<float> val;
+				string groupName = fmt::format("Image{0:03d}", i);
+				Group group = imageFile.file->getGroup(groupName);
+				DataSet dataSet = group.getDataSet("Data");
+				dataSet.select({y, x}, {1, 1}).read(val);
+				return val[0];
+			}));
+		}
+
+		for (auto i = 0; i < imageFile.numBands; i++)
+			profile[i] = futures[i].get();
+		return profile;
+	}
+//	catch (HighFive::Exception& err)
+//	{
+//		fmt::print("Invalid profile request in file {}\n", imageFile.filename);
+//		return vector<float>();
+//	}
 }
 
 vector<float> readRegion(const ReadRegionRequest& req)
@@ -480,11 +547,45 @@ void onFileLoad(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 		{
 			fmt::print("File {} loaded successfully\n", filename);
 			Document d;
-			Pointer("/message/numBands").Set(d, numBands);
+			Pointer("/message/numBands").Set(d, imageFile.numBands);
 			Pointer("/message/success").Set(d, true);
 			Pointer("/event").Set(d, "fileload");
 			eventMutex.unlock();
 			sendEvent(ws, d);
+			vector<float> zProfile;
+
+			vector<float> readTimes;
+
+			srand (time(NULL));
+			for (auto i =0; i< 100;i++)
+			{
+				auto tStart = std::chrono::high_resolution_clock::now();
+				int randX = ((float) rand()) / RAND_MAX * imageFile.width;
+				int randY = ((float) rand()) / RAND_MAX * imageFile.height;
+				zProfile = getZProfile(randX, randY);
+				auto tEnd = std::chrono::high_resolution_clock::now();
+				auto dtZProfile = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
+				readTimes.push_back(dtZProfile);
+			}
+
+			float sumX = 0;
+			float sumX2 = 0;
+			float minVal = readTimes[0];
+			float maxVal = readTimes[0];
+
+			for (auto& dt: readTimes)
+			{
+				sumX+=dt;
+				sumX2+=dt*dt;
+				minVal = min(minVal, dt);
+				maxVal = max(maxVal, dt);
+			}
+
+			float mean = sumX/readTimes.size();
+			float sigma = sqrt(sumX2/readTimes.size() - mean*mean);
+			fmt::print("Z Profile reads: N={}; mean={} ms; sigma={} ms; Range: {} -> {} ms\n", readTimes.size(), mean, sigma, minVal, maxVal);
+
+
 			return;
 		}
 		else
@@ -554,49 +655,3 @@ int main()
 		h.run();
 	}
 }
-
-//void OnConnected()
-//{
-//	fmt::print("Connected\n");
-//}
-//
-//void OnReadRequest(sio::event& ev)
-//{
-//	auto data = ev.get_message();
-//	int64_t band = data->get_map()["band"]->get_int();
-//	int64_t x = data->get_map()["x"]->get_int();
-//	int64_t y = data->get_map()["y"]->get_int();
-//	int64_t w = data->get_map()["w"]->get_int();
-//	int64_t h = data->get_map()["h"]->get_int();
-//	auto tStart = std::chrono::high_resolution_clock::now();
-//	readRegion(band, x, y, w, h);
-//	auto tEnd = std::chrono::high_resolution_clock::now();
-//	auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd-tStart).count();
-//	fmt::print("Responded to read request [band{}, ({}, {}) -> ({}, {})] in {} ms\n", band, x, y, x + w, x + h, dt);
-//}
-//
-//int main(int argc, char** argv)
-//{
-//	file = new File("/home/angus/GALFACTS_N4_0263_4023_10chanavg_I.hdf5", File::ReadOnly);
-//	vector<string> fileObjectList = file->listObjectNames();
-//	regex imageGroupRegex("Image\\d+");
-//	auto numBands = std::count_if(fileObjectList.begin(), fileObjectList.end(), [imageGroupRegex](string s)
-//	{ return regex_search(s, imageGroupRegex) > 0; });
-//
-//	vector<vector<float>> result;
-//	uWS::Hub h;
-//
-//	h.onMessage([](uWS::WebSocket<uWS::SERVER> *ws, char *message, size_t length, uWS::OpCode opCode) {
-//		ws->send(message, length, opCode);
-//	});
-//
-//	h.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t length, size_t remainingBytes) {
-//		res->end(const char *, size_t);
-//	});
-//
-//	if (h.listen(3000)) {
-//		h.run();
-//	}
-//	return 0;
-//}
-

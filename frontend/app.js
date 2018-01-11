@@ -484,26 +484,26 @@ $(document).ready(function () {
     $('#compression_val').on("input", checkAndUpdateRegion);
     $('#band_val').on("input", $.debounce(16, checkAndUpdateRegion));
 
-    $("#min_val").on("input", $.debounce(1, function () {
+    $("#min_val").on("input", $.debounce(16, function () {
         minVal = this.value;
         $('#min_val_label').text(minVal);
         refreshColorScheme();
     }));
 
-    $("#max_val").on("input", $.debounce(1, function () {
+    $("#max_val").on("input", $.debounce(16, function () {
         maxVal = this.value;
         $('#max_val_label').text(maxVal);
         refreshColorScheme();
     }));
 
     var max_col = hexToRGB(document.getElementById("max_col").value);
-    $("#max_col").on("change", $.debounce(1, function () {
+    $("#max_col").on("change", $.debounce(16, function () {
         max_col = hexToRGB("#" + this.value);
         refreshColorScheme();
     }));
 
     var min_col = hexToRGB(document.getElementById("min_col").value);
-    $("#min_col").on("change", $.debounce(1, function () {
+    $("#min_col").on("change", $.debounce(16, function () {
         min_col = hexToRGB("#" + this.value);
         refreshColorScheme();
     }));
@@ -522,8 +522,8 @@ $(document).ready(function () {
 
         if (updateCursor) {
             var crossWidth = 15;
-            overlay.clearRect(0, 0, canvasSize.x, canvasSize.y);
-            drawCursor(pos, crossWidth);
+            //overlay.clearRect(0, 0, canvasSize.x, canvasSize.y);
+            //drawCursor(pos, crossWidth);
         }
 
         var imageCoords = getImageCoords(pos);
@@ -613,7 +613,7 @@ $(document).ready(function () {
         $("#cursor").html(cursorInfo);
     }
 
-    $("#overlay").on("mousemove", function (evt) {
+    $("#overlay").on("mousemove", $.debounce(16, function (evt) {
         if (!regionImageData)
             return;
         var mousePos = getMousePos(canvasGL, evt);
@@ -646,7 +646,7 @@ $(document).ready(function () {
         }
         else if (!frozenCursor)
             updateProfilesAndCursor(mousePos);
-    });
+    }));
 
     $(document).keydown(function (event) {
         if (event.which == 17) {
@@ -779,7 +779,7 @@ $(document).ready(function () {
             var countValid = 0;
             for (var i = 0; i < coords.length; i++) {
                 var x = i + startX;
-                var val = regionImageData.fp32payload[regionCoords.y * regionImageData.w + x]
+                var val = regionImageData.fp32payload[regionCoords.y * regionImageData.w + x];
                 data[i] = val;
                 coords[i] = (currentRegion.x + currentRegion.mip * x);
 
@@ -819,7 +819,7 @@ $(document).ready(function () {
             var countValid = 0;
             for (var i = 0; i < data.length; i++) {
                 var y = i + startY;
-                var val = regionImageData.fp32payload[y * regionImageData.w + regionCoords.x]
+                var val = regionImageData.fp32payload[y * regionImageData.w + regionCoords.x];
                 data[i] = val;
                 coords[i] = (currentRegion.y + currentRegion.mip * y);
                 if (!isNaN(val)) {
