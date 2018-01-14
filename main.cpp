@@ -84,7 +84,6 @@ public:
 	}
 };
 
-
 map<uWS::WebSocket<uWS::SERVER>*, SessionInfo*> sessions;
 
 string baseFolder = "/home/angus";
@@ -562,6 +561,73 @@ void onRegionRead(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 	sendEvent(ws, d);
 }
 
+void profileReads(SessionInfo* session)
+{
+	// Profile Z-Profile reads
+	vector<float> zProfile;
+
+	vector<float> readTimes;
+	srand(time(NULL));
+	for (auto i = 0; i < 10; i++)
+	{
+		auto tStart = chrono::high_resolution_clock::now();
+		int randX = ((float) rand()) / RAND_MAX * session->imageFile.width;
+		int randY = ((float) rand()) / RAND_MAX * session->imageFile.height;
+		zProfile = getZProfile(session, randX, randY);
+		auto tEnd = chrono::high_resolution_clock::now();
+		auto dtZProfile = std::chrono::duration_cast<chrono::milliseconds>(tEnd - tStart).count();
+		readTimes.push_back(dtZProfile);
+	}
+
+	float sumX = 0;
+	float sumX2 = 0;
+	float minVal = readTimes[0];
+	float maxVal = readTimes[0];
+
+	for (auto& dt: readTimes)
+	{
+		sumX += dt;
+		sumX2 += dt * dt;
+		minVal = min(minVal, dt);
+		maxVal = max(maxVal, dt);
+	}
+
+	float mean = sumX / readTimes.size();
+	float sigma = sqrt(sumX2 / readTimes.size() - mean * mean);
+	fmt::print("Session {} Z Profile reads: N={}; mean={} ms; sigma={} ms; Range: {} -> {} ms\n", session->uuid, readTimes.size(), mean, sigma, minVal, maxVal);
+
+
+	// Profile Band reads
+	vector<float> readTimesBand;
+	for (auto i = 0; i < 10; i++)
+	{
+		auto tStart = std::chrono::high_resolution_clock::now();
+		int randZ = ((float) rand()) / RAND_MAX * session->imageFile.numBands;
+		loadBand(session, randZ);
+		auto tEnd = std::chrono::high_resolution_clock::now();
+		auto dtBand = std::chrono::duration_cast<chrono::milliseconds>(tEnd - tStart).count();
+		readTimesBand.push_back(dtBand);
+	}
+
+	sumX = 0;
+	sumX2 = 0;
+	minVal = readTimesBand[0];
+	maxVal = readTimesBand[0];
+
+	for (auto& dt: readTimesBand)
+	{
+		sumX += dt;
+		sumX2 += dt * dt;
+		minVal = min(minVal, dt);
+		maxVal = max(maxVal, dt);
+	}
+
+	mean = sumX / readTimesBand.size();
+	sigma = sqrt(sumX2 / readTimesBand.size() - mean * mean);
+	fmt::print("Session {} Band reads: N={}; mean={} ms; sigma={} ms; Range: {} -> {} ms\n",session->uuid, readTimesBand.size(), mean, sigma, minVal, maxVal);
+}
+
+
 void onFileLoad(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 {
 	auto session = sessions[ws];
@@ -582,70 +648,9 @@ void onFileLoad(uWS::WebSocket<uWS::SERVER>* ws, const Value& message)
 			Pointer("/event").Set(d, "fileload");
 			session->eventMutex.unlock();
 			sendEvent(ws, d);
+			profileReads(session);
 
 
-			// Profile Z-Profile reads
-			vector<float> zProfile;
-
-			vector<float> readTimes;
-			srand(time(NULL));
-			for (auto i = 0; i < 10; i++)
-			{
-				auto tStart = std::chrono::high_resolution_clock::now();
-				int randX = ((float) rand()) / RAND_MAX * session->imageFile.width;
-				int randY = ((float) rand()) / RAND_MAX * session->imageFile.height;
-				zProfile = getZProfile(session, randX, randY);
-				auto tEnd = std::chrono::high_resolution_clock::now();
-				auto dtZProfile = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
-				readTimes.push_back(dtZProfile);
-			}
-
-			float sumX = 0;
-			float sumX2 = 0;
-			float minVal = readTimes[0];
-			float maxVal = readTimes[0];
-
-			for (auto& dt: readTimes)
-			{
-				sumX += dt;
-				sumX2 += dt * dt;
-				minVal = min(minVal, dt);
-				maxVal = max(maxVal, dt);
-			}
-
-			float mean = sumX / readTimes.size();
-			float sigma = sqrt(sumX2 / readTimes.size() - mean * mean);
-			fmt::print("Session {} Z Profile reads: N={}; mean={} ms; sigma={} ms; Range: {} -> {} ms\n", sessions[ws]->uuid, readTimes.size(), mean, sigma, minVal, maxVal);
-
-
-			// Profile Band reads
-			vector<float> readTimesBand;
-			for (auto i = 0; i < 10; i++)
-			{
-				auto tStart = std::chrono::high_resolution_clock::now();
-				int randZ = ((float) rand()) / RAND_MAX * session->imageFile.numBands;
-				loadBand(session, randZ);
-				auto tEnd = std::chrono::high_resolution_clock::now();
-				auto dtBand = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
-				readTimesBand.push_back(dtBand);
-			}
-
-			sumX = 0;
-			sumX2 = 0;
-			minVal = readTimesBand[0];
-			maxVal = readTimesBand[0];
-
-			for (auto& dt: readTimesBand)
-			{
-				sumX += dt;
-				sumX2 += dt * dt;
-				minVal = min(minVal, dt);
-				maxVal = max(maxVal, dt);
-			}
-
-			mean = sumX / readTimesBand.size();
-			sigma = sqrt(sumX2 / readTimesBand.size() - mean * mean);
-			fmt::print("Session {} Band reads: N={}; mean={} ms; sigma={} ms; Range: {} -> {} ms\n", sessions[ws]->uuid, readTimesBand.size(), mean, sigma, minVal, maxVal);
 			return;
 		}
 		else
