@@ -44,6 +44,11 @@
         uniform vec4 uMinCol;
         uniform vec4 uMaxCol;
 
+        bool isinf(float val)
+        {
+            return (val != 0.0 && val * 2.0 == val) ? true : false;
+        }
+
         float unpackRGBA(vec4 rgba)
         {
           rgba *= 255.0;
@@ -60,7 +65,7 @@
             float alpha = clamp((zVal - uMinVal) / range, 0.0, 1.0);
             //alpha = sqrt(alpha);
             //alpha = floor(alpha*5.0)/5.0;
-            gl_FragColor = uMinCol + alpha * deltaCol;
+            gl_FragColor = isinf(zVal)?vec4(1,0,0,1):uMinCol + alpha * deltaCol;
         }
 
 
@@ -80,6 +85,11 @@
         uniform vec4 uMinCol;
         uniform vec4 uMaxCol;
 
+        bool isnan( float val )
+        {
+            return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
+        }
+
         void main(void) {
 
             vec4 deltaCol = uMaxCol - uMinCol;
@@ -89,7 +99,7 @@
             float alpha = clamp((zVal - uMinVal) / range, 0.0, 1.0);
             //alpha = sqrt(alpha);
             //alpha = floor(alpha*5.0)/5.0;
-            gl_FragColor = uMinCol + alpha * deltaCol;
+            gl_FragColor = isnan(zVal)?vec4(1,0,0,1):uMinCol + alpha * deltaCol;
         }
 
 
