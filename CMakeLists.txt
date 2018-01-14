@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.8)
 project(hdf5_mpi_test)
 
-set(CMAKE_CXX_COMPILER mpiCC)
+#set(CMAKE_CXX_COMPILER cc)
 set(CMAKE_CXX_STANDARD 11)
-
+add_definitions( -DH5_USE_BOOST )
 find_package (HDF5)
 find_package(HighFive)
-
 INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIR})
 INCLUDE_DIRECTORIES (rapidjson)
 INCLUDE_DIRECTORIES (${HighFive_INCLUDE_DIR})
