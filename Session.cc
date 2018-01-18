@@ -364,7 +364,7 @@ void Session::onFileLoad(const Value& message)
 			Pointer("/event").Set(d, "fileload");
 			eventMutex.unlock();
 			sendEvent(socket, d);
-			profileReads();
+			//profileReads();
 
 
 			return;

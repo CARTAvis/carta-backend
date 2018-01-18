@@ -263,18 +263,18 @@ $(document).ready(function () {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
-    var minVal = 3.3;
-    var maxVal = 5.2;
+    var minVal = -0.01;
+    var maxVal = 0.01;
     var regionImageData = null;
 
     var imageCenter = {
-        x: 5850 / 2.0,
-        y: 1074 / 2.0
+        x: 4096 / 2.0,
+        y: 4096 / 2.0
     };
 
     var imageSize = {
-        x: 5850,
-        y: 1074
+        x: 4096,
+        y: 4096
     };
 
     var bounds = {
