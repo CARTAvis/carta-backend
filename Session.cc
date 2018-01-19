@@ -7,21 +7,37 @@ using namespace uWS;
 using namespace rapidjson;
 
 Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder)
-	:uuid(uuid),
-	 currentBand(-1),
-	 file(nullptr),
-	 baseFolder(folder),
-	 socket(ws)
+	: uuid(uuid),
+	  currentBand(-1),
+	  file(nullptr),
+	  baseFolder(folder),
+	  socket(ws),
+	  binaryPayloadCache(nullptr),
+	  payloadSizeCached(0)
 {
 }
 
 Session::~Session()
 {
 	delete file;
+	delete[] binaryPayloadCache;
 }
 
 void Session::updateHistogram()
 {
+	int band = (currentBand == -1) ? imageInfo.numBands : currentBand;
+	if (imageInfo.bandStats.count(band) && imageInfo.bandStats[band].histogram.bins.size())
+	{
+		currentBandHistogram = imageInfo.bandStats[band].histogram;
+		if (currentBand == -1)
+			log("Using cached histogram for average band");
+		else
+			log(fmt::format("Using cached histogram for band {}", currentBand));
+
+		return;
+	}
+
+
 	auto numRows = imageInfo.height;
 	if (!numRows)
 		return;
@@ -45,7 +61,7 @@ void Session::updateHistogram()
 	currentBandHistogram.binWidth = (maxVal - minVal) / currentBandHistogram.N;
 	currentBandHistogram.firstBinCenter = minVal + currentBandHistogram.binWidth / 2.0f;
 	currentBandHistogram.bins.resize(currentBandHistogram.N);
-	memset(currentBandHistogram.bins.data(), 0, sizeof(int)*currentBandHistogram.bins.size());
+	memset(currentBandHistogram.bins.data(), 0, sizeof(int) * currentBandHistogram.bins.size());
 	for (auto i = 0; i < imageInfo.height; i++)
 	{
 		for (auto j = 0; j < imageInfo.width; j++)
@@ -57,8 +73,10 @@ void Session::updateHistogram()
 			currentBandHistogram.bins[bin]++;
 		}
 	}
-}
 
+	log("Updated histogram");
+
+}
 
 bool Session::parseRegionQuery(const Value& message, ReadRegionRequest& regionQuery)
 {
@@ -71,8 +89,221 @@ bool Session::parseRegionQuery(const Value& message, ReadRegionRequest& regionQu
 	}
 
 	regionQuery = {message["x"].GetInt(), message["y"].GetInt(), message["w"].GetInt(), message["h"].GetInt(), message["band"].GetInt(), message["mip"].GetInt(), message["compression"].GetInt()};
-	if (regionQuery.x < 0 || regionQuery.y < 0 || regionQuery.band < 0 || regionQuery.band >= imageInfo.numBands || regionQuery.mip < 1 || regionQuery.w < 1 || regionQuery.h < 1)
+	if (regionQuery.x < 0 || regionQuery.y < 0 || regionQuery.band < -1 || regionQuery.band >= imageInfo.numBands || regionQuery.mip < 1 || regionQuery.w < 1 || regionQuery.h < 1)
 		return false;
+	return true;
+}
+
+bool Session::loadStats()
+{
+	if (!file || !file->isValid())
+	{
+
+		log("No file loaded");
+		return false;
+	}
+	if (file->exist("Statistics"))
+	{
+		auto statsGroup = file->getGroup("Statistics");
+		if (statsGroup.isValid() && statsGroup.exist("MaxVals"))
+		{
+			auto dataSet = statsGroup.getDataSet("MaxVals");
+			auto dims = dataSet.getSpace().getDimensions();
+			if (dims.size() == 1 && dims[0] == imageInfo.numBands + 1)
+			{
+				vector<float> data;
+				dataSet.read(data);
+				for (auto i = 0; i < imageInfo.numBands + 1; i++)
+				{
+					imageInfo.bandStats[i].maxVal = data[i];
+				}
+			}
+			else
+			{
+				log("Invalid MaxVals statistics");
+				return false;
+			}
+		}
+		else
+		{
+			log("Missing MaxVals statistics");
+			return false;
+		}
+
+		if (statsGroup.isValid() && statsGroup.exist("MinVals"))
+		{
+			auto dataSet = statsGroup.getDataSet("MinVals");
+			auto dims = dataSet.getSpace().getDimensions();
+			if (dims.size() == 1 && dims[0] == imageInfo.numBands + 1)
+			{
+				vector<float> data;
+				dataSet.read(data);
+				for (auto i = 0; i < imageInfo.numBands + 1; i++)
+				{
+					imageInfo.bandStats[i].minVal = data[i];
+				}
+			}
+			else
+			{
+				log("Invalid MinVals statistics");
+				return false;
+			}
+		}
+		else
+		{
+			log("Missing MinVals statistics");
+			return false;
+		}
+
+		if (statsGroup.isValid() && statsGroup.exist("Means"))
+		{
+			auto dataSet = statsGroup.getDataSet("Means");
+			auto dims = dataSet.getSpace().getDimensions();
+			if (dims.size() == 1 && dims[0] == imageInfo.numBands + 1)
+			{
+				vector<float> data;
+				dataSet.read(data);
+				for (auto i = 0; i < imageInfo.numBands + 1; i++)
+				{
+					imageInfo.bandStats[i].mean = data[i];
+				}
+			}
+			else
+			{
+				log("Invalid Means statistics");
+				return false;
+			}
+		}
+		else
+		{
+			log("Missing Means statistics");
+			return false;
+		}
+
+		if (statsGroup.isValid() && statsGroup.exist("NaNCounts"))
+		{
+			auto dataSet = statsGroup.getDataSet("NaNCounts");
+			auto dims = dataSet.getSpace().getDimensions();
+			if (dims.size() == 1 && dims[0] == imageInfo.numBands + 1)
+			{
+				vector<int> data;
+				dataSet.read(data);
+				for (auto i = 0; i < imageInfo.numBands + 1; i++)
+				{
+					imageInfo.bandStats[i].nanCount = data[i];
+				}
+			}
+			else
+			{
+				log("Invalid NaNCounts statistics");
+				return false;
+			}
+		}
+		else
+		{
+			log("Missing NaNCounts statistics");
+			return false;
+		}
+
+		if (statsGroup.exist("Histograms"))
+		{
+			auto histogramsGroup = statsGroup.getGroup("Histograms");
+			if (histogramsGroup.isValid() && histogramsGroup.exist("BinWidths") && histogramsGroup.exist("FirstCenters") && histogramsGroup.exist("Bins"))
+			{
+				auto dataSetBinWidths = histogramsGroup.getDataSet("BinWidths");
+				auto dataSetFirstCenters = histogramsGroup.getDataSet("FirstCenters");
+				auto dataSetBins = histogramsGroup.getDataSet("Bins");
+				auto dimsBinWidths = dataSetBinWidths.getSpace().getDimensions();
+				auto dimsFirstCenters = dataSetFirstCenters.getSpace().getDimensions();
+				auto dimsBins = dataSetBins.getSpace().getDimensions();
+
+				if (dimsBinWidths.size() == 1 && dimsFirstCenters.size() == 1 && dimsBins.size() == 2 && dimsBinWidths[0] == imageInfo.numBands + 1 && dimsFirstCenters[0] == imageInfo.numBands + 1 && dimsBins[0] == imageInfo.numBands + 1)
+				{
+					vector<float> binWidths;
+					dataSetBinWidths.read(binWidths);
+					vector<float> firstCenters;
+					dataSetFirstCenters.read(firstCenters);
+					vector<vector<int>> bins;
+					dataSetBins.read(bins);
+					int N = bins[0].size();
+
+					for (auto i = 0; i < imageInfo.numBands + 1; i++)
+					{
+						imageInfo.bandStats[i].histogram.N = N;
+						imageInfo.bandStats[i].histogram.binWidth = binWidths[i];
+						imageInfo.bandStats[i].histogram.firstBinCenter = firstCenters[i];
+						imageInfo.bandStats[i].histogram.bins = bins[i];
+					}
+				}
+				else
+				{
+					log("Invalid Percentiles statistics");
+					return false;
+				}
+
+			}
+			else
+			{
+				log("Missing Histograms datasets");
+				return false;
+			}
+
+		}
+		else
+		{
+			log("Missing Histograms group");
+			return false;
+		}
+
+		if (statsGroup.exist("Percentiles"))
+		{
+			auto percentilesGroup = statsGroup.getGroup("Percentiles");
+			if (percentilesGroup.isValid() && percentilesGroup.exist("Percentiles") && percentilesGroup.exist("Values"))
+			{
+				auto dataSetPercentiles = percentilesGroup.getDataSet("Percentiles");
+				auto dataSetValues = percentilesGroup.getDataSet("Values");
+				auto dims = dataSetPercentiles.getSpace().getDimensions();
+				auto dimsValues = dataSetValues.getSpace().getDimensions();
+
+				if (dims.size() == 1 && dimsValues.size() == 2 && dimsValues[0] == imageInfo.numBands + 1 && dimsValues[1] == dims[0])
+				{
+					vector<float> percentiles;
+					dataSetPercentiles.read(percentiles);
+					vector<vector<float>> vals;
+					dataSetValues.read(vals);
+
+					for (auto i = 0; i < imageInfo.numBands + 1; i++)
+					{
+						imageInfo.bandStats[i].percentiles = percentiles;
+						imageInfo.bandStats[i].percentileVals = vals[i];
+					}
+				}
+				else
+				{
+					log("Invalid Percentiles statistics");
+					return false;
+				}
+
+			}
+			else
+			{
+				log("Missing Percentiles datasets");
+				return false;
+			}
+		}
+		else
+		{
+			log("Missing Percentiles group");
+			return false;
+		}
+
+	}
+	else
+	{
+		log("Missing Statistics group");
+		return false;
+	}
+
 	return true;
 }
 
@@ -91,9 +322,17 @@ bool Session::loadBand(int band)
 		return false;
 	}
 
-	dataSets[0].select({band, 0, 0}, {1, imageInfo.height, imageInfo.width}).read(currentBandCache);
-	updateHistogram();
+	if (band >= 0)
+		dataSets[0].select({band, 0, 0}, {1, imageInfo.height, imageInfo.width}).read(currentBandCache);
+	else
+	{
+		Matrix2F tmp;
+		dataSets[1].select({0, 0}, {imageInfo.height, imageInfo.width}).read(tmp);
+		currentBandCache.resize(boost::extents[1][imageInfo.height][imageInfo.width]);
+		currentBandCache[0] = tmp;
+	}
 	currentBand = band;
+	updateHistogram();
 	return true;
 }
 
@@ -123,7 +362,11 @@ bool Session::loadFile(const string& filename, int defaultBand)
 		imageInfo.height = dims[1];
 		imageInfo.width = dims[2];
 		dataSets.clear();
-		dataSets.emplace_back(dataSet);
+		dataSets.push_back(dataSet);
+
+		dataSets.push_back(group.getDataSet("AverageData"));
+
+		loadStats();
 
 		if (group.exist("DataSwizzled"))
 		{
@@ -169,10 +412,10 @@ vector<float> Session::getZProfile(int x, int y)
 	{
 		vector<float> profile;
 
-		if (dataSets.size() == 2)
+		if (dataSets.size() == 3)
 		{
 			Matrix3F zP;
-			dataSets[1].select({x, y, 0}, {1, 1, imageInfo.numBands}).read(zP);
+			dataSets[2].select({x, y, 0}, {1, 1, imageInfo.numBands}).read(zP);
 			profile.resize(imageInfo.numBands);
 			memcpy(profile.data(), zP.data(), imageInfo.numBands * sizeof(float));
 		}
@@ -242,7 +485,6 @@ vector<float> Session::readRegion(const ReadRegionRequest& req)
 	return regionData;
 }
 
-
 void Session::onRegionRead(const Value& message)
 {
 	eventMutex.lock();
@@ -308,17 +550,22 @@ void Session::onRegionRead(const Value& message)
 				compress(regionData.data(), compressionBuffer, compressedSize, rowLength, numRows, request.compression);
 				//decompress(dataPayload, compressionBuffer, compressedSize, rowLength, numRows, request.compression);
 
-				char* binaryPayload = new char[rowLength * numRows];
 				int32_t numNanEncodings = nanEncoding.size();
-				memcpy(binaryPayload, &numNanEncodings, sizeof(int32_t));
-				memcpy(binaryPayload + sizeof(int32_t), nanEncoding.data(), sizeof(int32_t) * numNanEncodings);
-				memcpy(binaryPayload + sizeof(int32_t) + sizeof(int32_t) * numNanEncodings, compressionBuffer, compressedSize);
 				uint32_t payloadSize = sizeof(int32_t) + sizeof(int32_t) * numNanEncodings + compressedSize;
+				if (payloadSizeCached < payloadSize || !binaryPayloadCache)
+				{
+					delete[] binaryPayloadCache;
+					binaryPayloadCache = new char[payloadSize];
+					payloadSizeCached = payloadSize;
+				}
+
+				memcpy(binaryPayloadCache, &numNanEncodings, sizeof(int32_t));
+				memcpy(binaryPayloadCache + sizeof(int32_t), nanEncoding.data(), sizeof(int32_t) * numNanEncodings);
+				memcpy(binaryPayloadCache + sizeof(int32_t) + sizeof(int32_t) * numNanEncodings, compressionBuffer, compressedSize);
 				tEnd = std::chrono::high_resolution_clock::now();
 				eventMutex.unlock();
-				sendEventBinaryPayload(socket, d, binaryPayload, payloadSize);
+				sendEventBinaryPayload(socket, d, binaryPayloadCache, payloadSize);
 				delete[] compressionBuffer;
-				delete[] binaryPayload;
 				auto dtCompress = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
 
 				log(fmt::format("Compressed binary ({:.3f} MB) sent in in {} ms", compressedSize / 1e6, dtCompress));
@@ -347,7 +594,6 @@ void Session::onRegionRead(const Value& message)
 	eventMutex.unlock();
 	sendEvent(socket, d);
 }
-
 
 void Session::onFileLoad(const Value& message)
 {
