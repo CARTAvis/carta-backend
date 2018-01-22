@@ -1215,7 +1215,6 @@ $(document).ready(function () {
 
     // Log messages from the server
     connection.onmessage = function (event) {
-
         var binaryPayload = null;
         var jsonPayload = null;
 
@@ -1233,7 +1232,6 @@ $(document).ready(function () {
 
         if (eventName === 'region_read' && message.success) {
             regionImageData = message;
-
             if (regionImageData.compression >= 4 && regionImageData.compression < 32) {
                 //console.time("decompress");
                 var nanEncodingLength = new DataView(event.data.slice(4, 8)).getUint32(0, true);

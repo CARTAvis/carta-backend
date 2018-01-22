@@ -25,8 +25,6 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest)
 
 void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length)
 {
-	string s = message;
-	s.resize(length);
 	auto uuid = sessions[ws]->uuid;
 	auto session = sessions[ws];
 	if (session)

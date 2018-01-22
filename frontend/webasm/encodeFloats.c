@@ -11,7 +11,7 @@
 
 int main(int argc, char** argv)
 {
-	printf("Loaded encodeFloats.wasm\n");
+	printf("Loaded encodeFloats\n");
 }
 
 #ifdef __cplusplus
