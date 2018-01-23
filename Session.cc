@@ -518,6 +518,30 @@ void Session::onRegionRead(const Value& message)
 			responseMessage.AddMember("band", request.band, a);
 			responseMessage.AddMember("numValues", numValues, a);
 
+			int band = (currentBand == -1) ? imageInfo.numBands : currentBand;
+			if (imageInfo.bandStats.count(band) && imageInfo.bandStats[band].nanCount != imageInfo.width*imageInfo.height)
+			{
+				auto& bandStats = imageInfo.bandStats[band];
+				Value stats(kObjectType);
+				stats.AddMember("mean", bandStats.mean, a);
+				stats.AddMember("minVal", bandStats.minVal, a);
+				stats.AddMember("maxVal", bandStats.maxVal, a);
+				stats.AddMember("nanCount", bandStats.nanCount, a);
+
+				Value percentiles(kArrayType);
+				percentiles.Reserve(bandStats.percentiles.size(), a);
+				for (auto& v: bandStats.percentiles)
+					percentiles.PushBack(v, a);
+				stats.AddMember("percentiles", percentiles, a);
+
+				Value percentileVals(kArrayType);
+				percentileVals.Reserve(bandStats.percentileVals.size(), a);
+				for (auto& v: bandStats.percentileVals)
+					percentileVals.PushBack(v, a);
+				stats.AddMember("percentileVals", percentileVals, a);
+				responseMessage.AddMember("stats", stats, a);
+			}
+
 			if (currentBandHistogram.bins.size() && !isnan(currentBandHistogram.firstBinCenter) && !isnan(currentBandHistogram.binWidth))
 			{
 				Value hist(kObjectType);
@@ -606,6 +630,9 @@ void Session::onFileLoad(const Value& message)
 			log(fmt::format("File {} loaded successfully", filename));
 			Document d;
 			Pointer("/message/numBands").Set(d, imageInfo.numBands);
+			Pointer("/message/width").Set(d, imageInfo.width);
+			Pointer("/message/height").Set(d, imageInfo.height);
+			Pointer("/message/filename").Set(d, imageInfo.filename.c_str());
 			Pointer("/message/success").Set(d, true);
 			Pointer("/event").Set(d, "fileload");
 			eventMutex.unlock();

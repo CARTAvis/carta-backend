@@ -190,7 +190,7 @@ function loadImageTexture(gl, url) {
         pixel);
 
     const image = new Image();
-    image.onload = function() {
+    image.onload = function () {
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, imageTexture);
         gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
@@ -323,20 +323,20 @@ $(document).ready(function () {
     var dataPtr = null;
     var dataHeap = null;
     var nDataBytes = 0;
-    var nDataBytesCompressed  = 0;
+    var nDataBytesCompressed = 0;
     var dataPtrUint = null;
     var dataHeapUint = null;
     var resultFloat = null;
 
 
     var imageCenter = {
-        x: 4096 / 2.0,
-        y: 4096 / 2.0
+        x: 5850 / 2.0,
+        y: 1074 / 2.0
     };
 
     var imageSize = {
-        x: 4096,
-        y: 4096
+        x: 5850,
+        y: 1074
     };
 
     var bounds = {
@@ -388,10 +388,10 @@ $(document).ready(function () {
 
     // Selects
     var select = $("#cmap_select");
-    for (var i=0; i<COLOR_MAPS_ALL.length;i++){
+    for (var i = 0; i < COLOR_MAPS_ALL.length; i++) {
         select.append(new Option(COLOR_MAPS_ALL[i], i))
     }
-    $("#cmap_select").val(COLOR_MAPS_ALL.indexOf("cubehelix"));
+    $("#cmap_select").val(COLOR_MAPS_ALL.indexOf("magma"));
 
 
     //dragging
@@ -409,6 +409,7 @@ $(document).ready(function () {
     var profileUpdateTimeout = null;
 
     // updating min/max from histogram
+    var bandStats = null;
 
     //profileX = document.getElementById('profileX');
     //profileY = document.getElementById('profileY');
@@ -435,13 +436,16 @@ $(document).ready(function () {
                 xAxes: [{
                     type: 'linear',
                     position: 'bottom',
+                    offset: 'false',
                     scaleLabel: {
                         display: true,
                         labelString: 'Value'
-                    }
+                    },
+
                 }],
                 yAxes: [{
                     type: 'logarithmic',
+                    offset: 'false',
                     scaleLabel: {
                         display: true,
                         labelString: 'Count'
@@ -485,10 +489,14 @@ $(document).ready(function () {
                     scaleLabel: {
                         display: true,
                         labelString: 'Pixel X Coordinate'
+                    },
+                    ticks: {
+                        maxTicksLimit: 9
                     }
 
                 }],
                 yAxes: [{
+                    type: 'linear',
                     scaleLabel: {
                         display: true,
                         labelString: 'Value'
@@ -532,9 +540,13 @@ $(document).ready(function () {
                     scaleLabel: {
                         display: true,
                         labelString: 'Pixel Y Coordinate'
+                    },
+                    ticks: {
+                        maxTicksLimit: 9
                     }
                 }],
                 yAxes: [{
+                    type: 'linear',
                     scaleLabel: {
                         display: true,
                         labelString: 'Value'
@@ -717,22 +729,29 @@ $(document).ready(function () {
     $('#band_val').on("input", $.debounce(16, checkAndUpdateRegion));
 
     $("#min_val").on("input", $.debounce(16, function () {
+        $("#percentile_select").val("custom");
         minVal = this.value;
         $('#min_val_label').text(minVal);
         refreshColorScheme();
     }));
 
-    $("#max_val").on("input", $.debounce(16, function () {
+    $("#max_val").on("input", $.debounce(16, function() {
+        $("#percentile_select").val("custom");
         maxVal = this.value;
         $('#max_val_label').text(maxVal);
         refreshColorScheme();
     }));
 
-    $("#cmap_select").on("change", $.debounce(16, function () {
+    $("#cmap_select").on("change", $.debounce(16, () => {
         refreshColorScheme();
 
     }));
-    
+
+    $("#percentile_select").on("change", $.debounce(16, () => {
+        updateSliders(bandStats);
+
+    }));
+
     // var max_col = hexToRGB(document.getElementById("max_col").value);
     // $("#max_col").on("change", $.debounce(16, function () {
     //     max_col = hexToRGB("#" + this.value);
@@ -767,7 +786,7 @@ $(document).ready(function () {
         var imageCoords = getImageCoords(cursorPos);
         var zVal = getCursorValue(imageCoords);
 
-        requestAnimationFrame(function () {
+        requestAnimationFrame(() => {
             var xProfileInfo = getXProfile(imageCoords);
             if (xProfileInfo && xProfileInfo.data) {
                 var shapesX = [
@@ -879,10 +898,10 @@ $(document).ready(function () {
         $("#cursor").html(cursorInfo);
     }
 
-    $("#overlay").on("mousemove", $.debounce(5, function (evt) {
+    $("#overlay").on("mousemove", $.debounce(5, (event) => {
         if (!regionImageData)
             return;
-        var mousePos = getMousePos(canvasGL, evt);
+        var mousePos = getMousePos(canvasGL, event);
 
         if (isZoomingToRegion && initialZoomToRegionPos) {
             var width = mousePos.x - initialZoomToRegionPos.x;
@@ -914,7 +933,7 @@ $(document).ready(function () {
             updateProfilesAndCursor(mousePos);
     }));
 
-    $(document).keydown(function (event) {
+    $(document).keydown((event) => {
         if (event.which == 17) {
             controlPressed = true;
         }
@@ -924,35 +943,35 @@ $(document).ready(function () {
 
     });
 
-    $(document).keyup(function (event) {
+    $(document).keyup((event) => {
         if (event.which == 17) {
             controlPressed = false;
         }
     });
 
-    $("#overlay").on("touchstart", function (evt) {
+    $("#overlay").on("touchstart", () => {
         isDragging = true;
         dragStarted = true;
     });
 
-    $("#overlay").on("touchend", function (evt) {
+    $("#overlay").on("touchend", () => {
         isDragging = false;
         dragStarted = false;
         isTouchZooming = false;
         checkAndUpdateRegion();
     });
 
-    $("#overlay").on("touchmove", function (evt) {
+    $("#overlay").on("touchmove", (event) => {
         if (!regionImageData)
             return;
-        evt.preventDefault();
+        event.preventDefault();
 
         // Pinch-zoom
-        if (evt.originalEvent.touches.length == 2) {
+        if (event.originalEvent.touches.length == 2) {
             var previousZoomLevel = zoomLevel;
             //var mousePos = getMousePos(canvasGL, evt);
-            var touchA = getMousePos(canvasGL, evt.originalEvent.touches[0]);
-            var touchB = getMousePos(canvasGL, evt.originalEvent.touches[1]);
+            var touchA = getMousePos(canvasGL, event.originalEvent.touches[0]);
+            var touchB = getMousePos(canvasGL, event.originalEvent.touches[1]);
             var zoomSeparation = Math.sqrt(Math.pow(touchA.x - touchB.x, 2) + Math.pow(touchA.y - touchB.y, 2));
             var touchCenter = {x: (touchA.x + touchB.x) / 2.0, y: (touchA.y + touchB.y) / 2.0};
             updateProfilesAndCursor(touchCenter);
@@ -974,9 +993,9 @@ $(document).ready(function () {
 
 
         }
-        else if (evt.originalEvent.touches.length == 1) {
+        else if (event.originalEvent.touches.length == 1) {
             //Dragging
-            var mousePos = getMousePos(canvasGL, evt.originalEvent.touches[0]);
+            var mousePos = getMousePos(canvasGL, event.originalEvent.touches[0]);
             updateProfilesAndCursor(mousePos);
 
             if (isDragging) {
@@ -1219,13 +1238,13 @@ $(document).ready(function () {
             checkAndUpdateRegion();
     }
 
-    $("#overlay").on("mousewheel", function (evt) {
-        evt.preventDefault();
-        var delta = evt.originalEvent.wheelDelta;
+    $("#overlay").on("mousewheel", (event) => {
+        event.preventDefault();
+        var delta = event.originalEvent.wheelDelta;
         var previousZoomLevel = zoomLevel;
         var zoomSpeed = 1.1;
         zoomLevel = zoomLevel * (delta > 0 ? zoomSpeed : 1.0 / zoomSpeed);
-        var mousePos = getMousePos(canvasGL, evt);
+        var mousePos = getMousePos(canvasGL, event);
         var imageCoords = getImageCoords(mousePos);
         imageCenter = {
             x: imageCoords.x + previousZoomLevel / zoomLevel * (imageCenter.x - imageCoords.x),
@@ -1234,10 +1253,12 @@ $(document).ready(function () {
         updateZoom(zoomLevel, true);
     });
 
-    $("#overlay").on("mousedown", function (evt) {
+    $("#overlay").on("mousedown", (event) => {
+        if (event.button != 0)
+            return;
         if (controlPressed) {
             isZoomingToRegion = true;
-            initialZoomToRegionPos = getMousePos(canvasGL, evt);
+            initialZoomToRegionPos = getMousePos(canvasGL, event);
         }
         else {
             isDragging = true;
@@ -1245,11 +1266,32 @@ $(document).ready(function () {
         }
     });
 
-    $("#overlay").on("mouseup", function (evt) {
+    $('#overlay').on('contextmenu', () => {
+        return false;
+    });
+
+    $("#overlay").on("mouseup", (event) => {
+        // Recenter on middle click
+        if (event.button == 1) {
+            var mousePos = getMousePos(canvasGL, event);
+            var imageCoords = getImageCoords(mousePos);
+            imageCenter = imageCoords;
+            updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
+            var vertices = getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
+            updateVertices(vertices);
+            refreshColorScheme();
+            previousDragLocation = mousePos;
+            $("#centerX").val(imageCenter.x);
+            $("#centerY").val(imageCenter.y);
+            updateProfilesAndCursor(mousePos);
+        }
+        else if (event.button != 0)
+            return;
+
         if (isZoomingToRegion) {
             isZoomingToRegion = false;
             overlay.clearRect(0, 0, canvasSize.x, canvasSize.y);
-            var mousePos = getMousePos(canvasGL, evt);
+            var mousePos = getMousePos(canvasGL, event);
             // ignore regions with zero height or width
             if (initialZoomToRegionPos.x === mousePos.x || initialZoomToRegionPos.y === mousePos.y)
                 return;
@@ -1269,27 +1311,27 @@ $(document).ready(function () {
         }
     });
 
-    $("#overlay").on("mouseenter", function (evt) {
-        isDragging = isDragging && (evt.originalEvent.buttons & 1);
+    $("#overlay").on("mouseenter", (event) => {
+        isDragging = isDragging && (event.originalEvent.buttons & 1);
     });
 
-    $("#overlay").on("mouseleave", function (evt) {
+    $("#overlay").on("mouseleave", (event) => {
         if (isDragging)
             checkAndUpdateRegion();
     });
 
 
-    connection.onopen = function () {
+    connection.onopen = () => {
         console.log("Connected");
     };
 
     // Log errors
-    connection.onerror = function (error) {
+    connection.onerror = error => {
         console.log('WebSocket Error ' + error);
     };
 
     // Log messages from the server
-    connection.onmessage = function (event) {
+    connection.onmessage = (event) => {
         var binaryPayload = null;
         var jsonPayload = null;
         if (event.data instanceof ArrayBuffer) {
@@ -1330,7 +1372,7 @@ $(document).ready(function () {
                 updateProfilesAndCursor(cursorPos, false);
                 requestAnimationFrame(function () {
                     var hist = message.hist;
-                    if (!hist || !hist.bins || !hist.bins.length || !hist.N || !hist.firstBinCenter || !hist.binWidth){
+                    if (!hist || !hist.bins || !hist.bins.length || !hist.N || !hist.firstBinCenter || !hist.binWidth) {
                         histogram.data.datasets[0].data.length = 0;
                         histogram.update({duration: 0});
                         return;
@@ -1377,7 +1419,12 @@ $(document).ready(function () {
 
             var vertices = getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
             updateVertices(vertices);
-            refreshColorScheme();
+            if (message.stats) {
+                bandStats = message.stats;
+                updateSliders(bandStats);
+            }
+            else
+                refreshColorScheme();
 
 
             //console.timeEnd("region_rtt");
@@ -1391,7 +1438,7 @@ $(document).ready(function () {
             $("#band_val").attr({
                 "max": message.numBands - 1
             });
-
+            imageSize = {x: message.width, y: message.height};
             imageCenter.x = imageSize.x / 2;
             imageCenter.y = imageSize.y / 2;
 
@@ -1400,6 +1447,41 @@ $(document).ready(function () {
 
 
     };
+
+    function updateSliders(stats) {
+        if (!stats || stats.minVal === undefined || stats.maxVal === undefined)
+            return;
+
+        $("#min_val").attr({
+            "min": stats.minVal,
+            "max": stats.maxVal,
+            "step": (stats.maxVal - stats.minVal) / 1000
+        });
+        $("#max_val").attr({
+            "min": stats.minVal,
+            "max": stats.maxVal,
+            "step": (stats.maxVal - stats.minVal) / 1000
+        });
+
+        if ($("#percentile_select").val() !== "custom" && stats.percentiles && stats.percentileVals && stats.percentiles.length === stats.percentileVals.length) {
+            var percentilesFixed = stats.percentiles.map(v => v.toFixed(3));
+            var selectedPercentile = $("#percentile_select").val();
+            var inversePercentile = (100 - parseFloat(selectedPercentile)).toFixed(3);
+            var indexPercentileLow = percentilesFixed.indexOf(inversePercentile);
+            var indexPercentileHigh = percentilesFixed.indexOf(selectedPercentile);
+
+            if (indexPercentileHigh >= 0 && indexPercentileHigh >= 0) {
+                minVal = stats.percentileVals[indexPercentileLow];
+                maxVal = stats.percentileVals[indexPercentileHigh];
+                $("#min_val").val(minVal);
+                $('#min_val_label').text(minVal);
+                $("#max_val").val(maxVal);
+                $('#max_val_label').text(maxVal);
+
+            }
+        }
+        refreshColorScheme();
+    }
 
     function refreshColorScheme() {
         if (!regionImageData)
@@ -1445,25 +1527,25 @@ $(document).ready(function () {
         );
 
         var newNumDataBytes = nx * ny * 4;
-        if (!dataPtr || newNumDataBytes> nDataBytes){
+        if (!dataPtr || newNumDataBytes > nDataBytes) {
             if (dataHeap)
                 Module._free(dataHeap.byteOffset);
             nDataBytes = newNumDataBytes;
             dataPtr = Module._malloc(nDataBytes);
             dataHeap = new Uint8Array(Module.HEAPU8.buffer, dataPtr, nDataBytes);
-            console.log(`Allocating new uncompressed buffer (${nDataBytes/1000} KB)`);
+            console.log(`Allocating new uncompressed buffer (${nDataBytes / 1000} KB)`);
             resultFloat = new Float32Array(dataHeap.buffer, dataHeap.byteOffset, nx * ny);
 
         }
 
         var newNumDataBytesCompressed = u8.length;
-        if (!dataPtrUint || newNumDataBytesCompressed > nDataBytesCompressed){
+        if (!dataPtrUint || newNumDataBytesCompressed > nDataBytesCompressed) {
             if (dataHeapUint)
                 Module._free(dataHeapUint.byteOffset);
             nDataBytesCompressed = newNumDataBytesCompressed;
             dataPtrUint = Module._malloc(nDataBytesCompressed);
             dataHeapUint = new Uint8Array(Module.HEAPU8.buffer, dataPtrUint, nDataBytesCompressed);
-            console.log(`Allocating new compressed buffer (${nDataBytesCompressed/1000} KB)`);
+            console.log(`Allocating new compressed buffer (${nDataBytesCompressed / 1000} KB)`);
         }
 
         dataHeapUint.set(new Uint8Array(u8.buffer));
@@ -1518,6 +1600,16 @@ $(document).ready(function () {
         updateZoom(Math.min(canvasSize.x / imageSize.x, canvasSize.y / imageSize.y), false);
     });
 
+    $('#button_zoom_fit_v').click(function () {
+        imageCenter.y = imageSize.y / 2;
+        updateZoom(canvasSize.y / imageSize.y, false);
+    });
+
+    $('#button_zoom_fit_h').click(function () {
+        imageCenter.x = imageSize.x / 2;
+        updateZoom(canvasSize.x / imageSize.x, false);
+    });
+
     $('#button_zoom_100').click(function () {
         updateZoom(1.0, false);
     });
@@ -1538,7 +1630,7 @@ $(document).ready(function () {
         updateZoom(2.0, false);
     });
 
-    $('form#fileload').submit(function (event) {
+    $('#button_load').click(function () {
         if (connection) {
             var payload = {
                 event: "fileload",
@@ -1546,7 +1638,6 @@ $(document).ready(function () {
                     filename: $('#fileload_data').val()
                 }
             };
-
             connection.send(JSON.stringify(payload));
         }
         return false;

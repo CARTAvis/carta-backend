@@ -1,8 +1,9 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>c++ WS test</title>
+    <title>IDIA HDF5 Testbed</title>
     <!--<script src="http://192.168.0.100:1337/vorlon.js"></script>-->
+    <link rel="favicon" href="http://idia.ac.za/sites/default/files/favicon_0.ico" type="image/vnd.microsoft.icon" />
     <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
     <script type="text/javascript" src="http://benalman.com/code/projects/jquery-throttle-debounce/jquery.ba-throttle-debounce.js"></script>
     <script type="text/javascript" src="./jscolor.min.js"></script>
@@ -126,16 +127,67 @@
             <p id="cursor"></p>
             <br><br>
             <form id="fileload">
-                <input type="text" name="fileload_data" id="fileload_data" value="DEEP_2_off_IQU_cube.hdf5">
-                <input type="submit" value="Load File">
+                <input type="text" name="fileload_data" id="fileload_data" value="N4.hdf5">
+                <button id="button_load">Load File</button>
             </form>
             <label for="compression_val">Compression level (4-32):</label>
-            <input type="number" step=1 name="compression_val" id="compression_val" value=11><br>
+            <input type="number" step=1 name="compression_val" id="compression_val" value=13><br>
             <label for="band_val">Band:</label>
             <input type="range" min="-1" max="100" value="-1" step="0" id="band_val"><br>
             <!--<input type="number" min=0 step=1 name="band_val" id="band_val" value=0><br>-->
-            <button id="region">Request Region</button>
             <br><br>
+
+            <table>
+                <tr>
+                    <td>
+                        <button id="button_zoom_fit">Fit</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_fit_v">Fit V</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_fit_h">Fit H</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_200">200%</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_100">100%</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_50">50%</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_33">33%</button>
+                    </td>
+                    <td>
+                        <button id="button_zoom_25">25%</button>
+                    </td>
+
+                </tr>
+            </table>
+            <br>
+            <label for="cmap_select">Colormap:</label>
+            <select name="cmap_select" id="cmap_select"></select>
+            <label for="percentile_select">Range:</label>
+            <select name="percentile_select" id="percentile_select">
+                <option value="99.999">99.999%</option>
+                <option value="99.990">99.99%</option>
+                <option value="99.950">99.95%</option>
+                <option value="99.900">99.9%</option>
+                <option value="99.500" selected>99.5%</option>
+                <option value="99.000">99%</option>
+                <option value="95.000">95%</option>
+                <option value="90.000">90%</option>
+                <option value="custom">Custom</option>
+            </select>
+            <div id="slidecontainer">
+                <p>Min value: <span id="min_val_label">-0.01</span></p>
+                <input type="range" min="-0.025" max="0.025" value="-0.01" step="0.0005" id="min_val">
+                <p>Max value: <span id="max_val_label">0.01</span></p>
+                <input type="range" min="-0.025" max="5.025" value="0.01" step="0.0005" id="max_val">
+
+            </div>
             <table>
                 <tr>
                     <td>
@@ -171,7 +223,7 @@
             </table>
 
 
-            <form id="view" method="POST" action='#'>
+            <form id="view">
                 <label for="centerX">CenterX:</label>
                 <input type="number" disabled step=1 name="centerX" id="centerX" value=2925><br>
                 <label for="centerY">CenterY:</label>
@@ -179,37 +231,6 @@
                 <label for="zoomLevel">Zoom:</label>
                 <input type="number" disabled step=0.0025 name="zoomLevel" id="zoomLevel" value=0.170940171><br>
             </form>
-            <table>
-                <tr>
-                    <td>
-                        <button id="button_zoom_fit">Fit</button>
-                    </td>
-                    <td>
-                        <button id="button_zoom_200">200%</button>
-                    </td>
-                    <td>
-                        <button id="button_zoom_100">100%</button>
-                    </td>
-                    <td>
-                        <button id="button_zoom_50">50%</button>
-                    </td>
-                    <td>
-                        <button id="button_zoom_33">33%</button>
-                    </td>
-                    <td>
-                        <button id="button_zoom_25">25%</button>
-                    </td>
-
-                </tr>
-            </table>
-            <br>
-            <div id="slidecontainer">
-                <p>Min value: <span id="min_val_label">-0.01</span></p>
-                <input type="range" min="-0.025" max="0.025" value="-0.01" step="0.0005" id="min_val">
-                <p>Max value: <span id="max_val_label">0.01</span></p>
-                <input type="range" min="-0.025" max="0.025" value="0.01" step="0.0005" id="max_val">
-                <select name="cmap_select" id="cmap_select"></select>
-            </div>
         </td>
     </tr>
     <tr>
