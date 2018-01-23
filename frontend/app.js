@@ -400,7 +400,6 @@ $(document).ready(function () {
     var previousDragLocation = null;
     var isTouchZooming = false;
     var previousZoomSeparation = 0;
-    var controlPressed = false;
     var isZoomingToRegion = false;
     var initialZoomToRegionPos = null;
     var frozenCursor = false;
@@ -934,19 +933,10 @@ $(document).ready(function () {
     }));
 
     $(document).keydown((event) => {
-        if (event.which == 17) {
-            controlPressed = true;
-        }
-        else if (event.which == 32) {
+        if (event.which == 32) {
             frozenCursor = !frozenCursor;
         }
 
-    });
-
-    $(document).keyup((event) => {
-        if (event.which == 17) {
-            controlPressed = false;
-        }
     });
 
     $("#overlay").on("touchstart", () => {
@@ -1256,7 +1246,7 @@ $(document).ready(function () {
     $("#overlay").on("mousedown", (event) => {
         if (event.button != 0)
             return;
-        if (controlPressed) {
+        if (event.ctrlKey) {
             isZoomingToRegion = true;
             initialZoomToRegionPos = getMousePos(canvasGL, event);
         }
@@ -1275,7 +1265,17 @@ $(document).ready(function () {
         if (event.button == 1) {
             var mousePos = getMousePos(canvasGL, event);
             var imageCoords = getImageCoords(mousePos);
-            imageCenter = imageCoords;
+            // Shift key restricts panning to a single dimension (whichever is a larger delta)
+            if (event.shiftKey){
+                var deltaX = Math.abs(imageCenter.x - imageCoords.x);
+                var deltaY = Math.abs(imageCenter.y - imageCoords.y);
+                if (deltaX > deltaY)
+                    imageCenter.x = imageCoords.x;
+                else
+                    imageCenter.y = imageCoords.y;
+            }
+            else
+                imageCenter = imageCoords;
             updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
             var vertices = getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
             updateVertices(vertices);
