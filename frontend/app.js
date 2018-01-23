@@ -1,12 +1,15 @@
 namespace = '/test';
-var fileLoaded = false;
-var regionRequestTime = 0;
-var regionReturnTime = 0;
+
+const COLOR_MAPS_ALL = ["Accent", "afmhot", "autumn", "binary", "Blues", "bone", "BrBG", "brg", "BuGn", "BuPu", "bwr", "CMRmap", "cool", "coolwarm",
+    "copper", "cubehelix", "Dark2", "flag", "gist_earth", "gist_gray", "gist_heat", "gist_ncar", "gist_rainbow", "gist_stern", "gist_yarg",
+    "GnBu", "gnuplot", "gnuplot2", "gray", "Greens", "Greys", "hot", "hsv", "inferno", "jet", "magma", "nipy_spectral", "ocean", "Oranges",
+    "OrRd", "Paired", "Pastel1", "Pastel2", "pink", "PiYG", "plasma", "PRGn", "prism", "PuBu", "PuBuGn", "PuOr", "PuRd", "Purples", "rainbow",
+    "RdBu", "RdGy", "RdPu", "RdYlBu", "RdYlGn", "Reds", "seismic", "Set1", "Set2", "Set3", "Spectral", "spring", "summer", "tab10", "tab20",
+    "tab20b", "tab20c", "terrain", "viridis", "winter", "Wistia", "YlGn", "YlGnBu", "YlOrBr", "YlOrRd"];
 
 
 var gl;
 var extTextureFloat;
-var extTextureFloatLinear;
 var texture;
 
 function initGL(canvasGL) {
@@ -25,7 +28,6 @@ function initGL(canvasGL) {
     }
 
     extTextureFloat = gl.getExtension('OES_texture_float');
-    //extTextureFloatLinear = gl.getExtension('OES_texture_float_linear');
 
     if (!extTextureFloat) {
         alert("Could not initialise WebGL extensions");
@@ -99,6 +101,15 @@ function initShaders() {
     shaderProgram.MaxColorUniform = gl.getUniformLocation(shaderProgram, "uMaxCol");
 
     shaderProgram.ViewportSizeUniform = gl.getUniformLocation(shaderProgram, "uViewportSize");
+
+    shaderProgram.DataTexture = gl.getUniformLocation(shaderProgram, "uDataTexture");
+    shaderProgram.CmapTexture = gl.getUniformLocation(shaderProgram, "uCmapTexture");
+    shaderProgram.NumCmaps = gl.getUniformLocation(shaderProgram, "uNumCmaps");
+    shaderProgram.CmapIndex = gl.getUniformLocation(shaderProgram, "uCmapIndex");
+    gl.uniform1i(shaderProgram.DataTexture, 0);
+    gl.uniform1i(shaderProgram.CmapTexture, 1);
+    gl.uniform1i(shaderProgram.NumCmaps, 79);
+    gl.uniform1i(shaderProgram.CmapIndex, 41);
 }
 
 
@@ -156,9 +167,49 @@ function drawScene() {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, squareVertexPositionBuffer.numItems);
 }
 
+function loadImageTexture(gl, url) {
+    const imageTexture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, imageTexture);
+
+    // Because images have to be download over the internet
+    // they might take a moment until they are ready.
+    // Until then put a single pixel in the texture so we can
+    // use it immediately. When the image has finished downloading
+    // we'll update the texture with the contents of the image.
+    const level = 0;
+    const internalFormat = gl.RGB;
+    const width = 1;
+    const height = 1;
+    const border = 0;
+    const srcFormat = gl.RGB;
+    const srcType = gl.UNSIGNED_BYTE;
+    const pixel = new Uint8Array([0, 0, 255]);  // opaque blue
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+        width, height, border, srcFormat, srcType,
+        pixel);
+
+    const image = new Image();
+    image.onload = function() {
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, imageTexture);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+            srcFormat, srcType, image);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    };
+    image.src = url;
+    return imageTexture;
+}
+
+
 function loadFP32Texture(data, width, height) {
     // Create a texture.
     texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     // fill texture with 3x2 pixels
@@ -183,6 +234,7 @@ function loadFP32Texture(data, width, height) {
 function loadRGBATexture(data, width, height) {
     // Create a texture.
     var texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     const level = 0;
@@ -259,13 +311,23 @@ $(document).ready(function () {
     initGL(canvasGL);
     initShaders();
     initBuffers();
-
+    var colorMapTexture = loadImageTexture(gl, "allmaps.png");
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
     var minVal = -0.01;
     var maxVal = 0.01;
     var regionImageData = null;
+
+    // decompression buffers
+    var dataPtr = null;
+    var dataHeap = null;
+    var nDataBytes = 0;
+    var nDataBytesCompressed  = 0;
+    var dataPtrUint = null;
+    var dataHeapUint = null;
+    var resultFloat = null;
+
 
     var imageCenter = {
         x: 4096 / 2.0,
@@ -323,6 +385,14 @@ $(document).ready(function () {
     $("#req_view_w").html(requiredRegion.w);
     $("#req_view_h").html(requiredRegion.h);
     $("#req_view_mip").html(requiredRegion.mip);
+
+    // Selects
+    var select = $("#cmap_select");
+    for (var i=0; i<COLOR_MAPS_ALL.length;i++){
+        select.append(new Option(COLOR_MAPS_ALL[i], i))
+    }
+    $("#cmap_select").val(COLOR_MAPS_ALL.indexOf("cubehelix"));
+
 
     //dragging
     var dragStarted = false;
@@ -658,17 +728,22 @@ $(document).ready(function () {
         refreshColorScheme();
     }));
 
-    var max_col = hexToRGB(document.getElementById("max_col").value);
-    $("#max_col").on("change", $.debounce(16, function () {
-        max_col = hexToRGB("#" + this.value);
+    $("#cmap_select").on("change", $.debounce(16, function () {
         refreshColorScheme();
-    }));
 
-    var min_col = hexToRGB(document.getElementById("min_col").value);
-    $("#min_col").on("change", $.debounce(16, function () {
-        min_col = hexToRGB("#" + this.value);
-        refreshColorScheme();
     }));
+    
+    // var max_col = hexToRGB(document.getElementById("max_col").value);
+    // $("#max_col").on("change", $.debounce(16, function () {
+    //     max_col = hexToRGB("#" + this.value);
+    //     refreshColorScheme();
+    // }));
+    //
+    // var min_col = hexToRGB(document.getElementById("min_col").value);
+    // $("#min_col").on("change", $.debounce(16, function () {
+    //     min_col = hexToRGB("#" + this.value);
+    //     refreshColorScheme();
+    // }));
 
     function drawCursor(pos, crossWidth) {
         overlay.strokeStyle = "#0000BB";
@@ -800,7 +875,7 @@ $(document).ready(function () {
 
         //var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
         //var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
-        var cursorInfo = `(${imageCoords.x}, ${imageCoords.y}): ${zVal !== undefined ? zVal.toFixed(3) : 'NaN'}`;
+        var cursorInfo = `(${imageCoords.x.toFixed(2)}, ${imageCoords.y.toFixed(2)}): ${zVal !== undefined ? zVal.toFixed(5) : 'NaN'}`;
         $("#cursor").html(cursorInfo);
     }
 
@@ -1217,9 +1292,9 @@ $(document).ready(function () {
     connection.onmessage = function (event) {
         var binaryPayload = null;
         var jsonPayload = null;
-
         if (event.data instanceof ArrayBuffer) {
             var binaryLength = new DataView(event.data.slice(0, 4)).getUint32(0, true);
+
             binaryPayload = new Uint8Array(event.data.slice(4, 4 + binaryLength));
             jsonPayload = String.fromCharCode.apply(null, new Uint8Array(event.data, 4 + binaryLength));
         }
@@ -1233,7 +1308,6 @@ $(document).ready(function () {
         if (eventName === 'region_read' && message.success) {
             regionImageData = message;
             if (regionImageData.compression >= 4 && regionImageData.compression < 32) {
-                //console.time("decompress");
                 var nanEncodingLength = new DataView(event.data.slice(4, 8)).getUint32(0, true);
                 var nanEncodings = new Int32Array(event.data.slice(8, 8 + 4 * nanEncodingLength));
                 var compressedDataLength = binaryLength - 4 - nanEncodingLength;
@@ -1256,8 +1330,11 @@ $(document).ready(function () {
                 updateProfilesAndCursor(cursorPos, false);
                 requestAnimationFrame(function () {
                     var hist = message.hist;
-                    if (!hist || !hist.bins || !hist.bins.length || !hist.N || !hist.firstBinCenter || !hist.binWidth)
+                    if (!hist || !hist.bins || !hist.bins.length || !hist.N || !hist.firstBinCenter || !hist.binWidth){
+                        histogram.data.datasets[0].data.length = 0;
+                        histogram.update({duration: 0});
                         return;
+                    }
 
                     histogram.data.datasets[0].data.length = hist.N;
                     for (var i = 0; i < hist.N; i++) {
@@ -1329,8 +1406,9 @@ $(document).ready(function () {
             return;
         gl.uniform1f(shaderProgram.MinValUniform, minVal);
         gl.uniform1f(shaderProgram.MaxValUniform, maxVal);
-        gl.uniform4f(shaderProgram.MinColorUniform, min_col.r / 255.0, min_col.g / 255.0, min_col.b / 255.0, 1.0);
-        gl.uniform4f(shaderProgram.MaxColorUniform, max_col.r / 255.0, max_col.g / 255.0, max_col.b / 255.0, 1.0);
+        //gl.uniform4f(shaderProgram.MinColorUniform, min_col.r / 255.0, min_col.g / 255.0, min_col.b / 255.0, 1.0);
+        //gl.uniform4f(shaderProgram.MaxColorUniform, max_col.r / 255.0, max_col.g / 255.0, max_col.b / 255.0, 1.0);
+        gl.uniform1i(shaderProgram.CmapIndex, $("#cmap_select").val());
         gl.uniform2f(shaderProgram.ViewportSizeUniform, gl.viewportWidth, gl.viewportHeight);
         requestAnimationFrame(drawScene);
         //drawScene();
@@ -1365,22 +1443,36 @@ $(document).ready(function () {
         zfpDecompress = Module.cwrap(
             'zfpDecompress', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
         );
-        var nDataBytes = nx * ny * 4;
-        var dataPtr = Module._malloc(nDataBytes);
-        var nDataBytesCompressed = u8.length;
-        var dataPtrUint = Module._malloc(nDataBytesCompressed);
-        var dataHeap = new Uint8Array(Module.HEAPU8.buffer, dataPtr, nDataBytes);
-        var dataHeapUint = new Uint8Array(Module.HEAPU8.buffer, dataPtrUint, nDataBytesCompressed);
-        dataHeapUint.set(new Uint8Array(u8.buffer));
 
+        var newNumDataBytes = nx * ny * 4;
+        if (!dataPtr || newNumDataBytes> nDataBytes){
+            if (dataHeap)
+                Module._free(dataHeap.byteOffset);
+            nDataBytes = newNumDataBytes;
+            dataPtr = Module._malloc(nDataBytes);
+            dataHeap = new Uint8Array(Module.HEAPU8.buffer, dataPtr, nDataBytes);
+            console.log(`Allocating new uncompressed buffer (${nDataBytes/1000} KB)`);
+            resultFloat = new Float32Array(dataHeap.buffer, dataHeap.byteOffset, nx * ny);
+
+        }
+
+        var newNumDataBytesCompressed = u8.length;
+        if (!dataPtrUint || newNumDataBytesCompressed > nDataBytesCompressed){
+            if (dataHeapUint)
+                Module._free(dataHeapUint.byteOffset);
+            nDataBytesCompressed = newNumDataBytesCompressed;
+            dataPtrUint = Module._malloc(nDataBytesCompressed);
+            dataHeapUint = new Uint8Array(Module.HEAPU8.buffer, dataPtrUint, nDataBytesCompressed);
+            console.log(`Allocating new compressed buffer (${nDataBytesCompressed/1000} KB)`);
+        }
+
+        dataHeapUint.set(new Uint8Array(u8.buffer));
         // Call function and get result
         zfpDecompress(parseInt(precision), dataHeap.byteOffset, nx, ny, dataHeapUint.byteOffset, u8.length);
-        var resultFloat = new Float32Array(dataHeap.buffer, dataHeap.byteOffset, nx * ny);
-        var outFloat = resultFloat.slice();
+
         // Free memory
-        Module._free(dataHeap.byteOffset);
-        Module._free(dataHeapUint.byteOffset);
-        return outFloat;
+        //Module._free(dataHeap.byteOffset);
+        return resultFloat.slice();
         // END WASM
 
     }

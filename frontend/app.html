@@ -39,12 +39,15 @@
         precision highp float;
         uniform vec2 uViewportSize;
         varying vec2 vUV;
-        uniform sampler2D u_texture;
+        uniform sampler2D uDataTexture;
+        uniform sampler2D uCmapTexture;
 
         uniform float uMinVal;
         uniform float uMaxVal;
-        uniform vec4 uMinCol;
-        uniform vec4 uMaxCol;
+        //uniform vec4 uMinCol;
+        //uniform vec4 uMaxCol;
+        uniform int uNumCmaps;
+        uniform int uCmapIndex;
 
         bool isinf(float val)
         {
@@ -60,12 +63,14 @@
         }
 
         void main(void) {
-
-            vec4 deltaCol = uMaxCol - uMinCol;
+            //vec4 deltaCol = uMaxCol - uMinCol;
             float range = uMaxVal-uMinVal;
-            float zVal = unpackRGBA(texture2D(u_texture, vUV));
+            float zVal = unpackRGBA(texture2D(uDataTexture, vUV));
             float alpha = clamp((zVal - uMinVal) / range, 0.0, 1.0);
-            gl_FragColor = isinf(zVal)?vec4(1,0,0,1):uMinCol + alpha * deltaCol;
+            float cmapYVal = (float(uCmapIndex)+0.5)/float(uNumCmaps);
+            vec2 cmapCoords = vec2(alpha, cmapYVal);
+            gl_FragColor = isinf(zVal)?vec4(1,0,0,1):texture2D(uCmapTexture, cmapCoords);
+            //gl_FragColor = isinf(zVal)?vec4(1,0,0,1):uMinCol + alpha * deltaCol;
         }
 
 
@@ -78,32 +83,30 @@
         precision highp float;
         uniform vec2 uViewportSize;
         varying vec2 vUV;
-        uniform sampler2D u_texture;
+        uniform sampler2D uDataTexture;
+        uniform sampler2D uCmapTexture;
 
         uniform float uMinVal;
         uniform float uMaxVal;
-        uniform vec4 uMinCol;
-        uniform vec4 uMaxCol;
-
+        //uniform vec4 uMinCol;
+        //uniform vec4 uMaxCol;
+        uniform int uNumCmaps;
+        uniform int uCmapIndex;
         bool isnan( float val )
         {
             return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
         }
 
         void main(void) {
-
-            vec4 deltaCol = uMaxCol - uMinCol;
+            //vec4 deltaCol = uMaxCol - uMinCol;
             float range = uMaxVal-uMinVal;
-            float zVal = texture2D(u_texture, vUV).r;
-
+            float zVal = texture2D(uDataTexture, vUV).r;
             float alpha = clamp((zVal - uMinVal) / range, 0.0, 1.0);
-            gl_FragColor = isnan(zVal)?vec4(1,0,0,1):uMinCol + alpha * deltaCol;
+            float cmapYVal = (float(uCmapIndex)+0.5)/float(uNumCmaps);
+            vec2 cmapCoords = vec2(alpha, cmapYVal);
+            gl_FragColor = isnan(zVal)?vec4(1,0,0,1):texture2D(uCmapTexture, cmapCoords);
+            //gl_FragColor = isnan(zVal)?vec4(1,0,0,1):uMinCol + alpha * deltaCol;
         }
-
-
-
-
-
 
     </script>
     <script type="text/javascript" src="encodeFloats.js"></script>
@@ -113,24 +116,21 @@
 <table>
     <tr>
         <td>
-            <div id="container" style="position:relative; width: 512px; height: 512px">
-                <canvas id="webgl" width="512" height="512" style="position: absolute; pointer: none"></canvas>
-                <canvas id="overlay" width="512" height="512" style="pointer: none; position: absolute; z-index: 1; border: 1px black solid"></canvas>
+            <div id="container" style="position:relative; width: 640px; height: 640px">
+                <canvas id="webgl" width="640" height="640" style="position: absolute; pointer: none"></canvas>
+                <canvas id="overlay" width="640" height="640" style="pointer: none; position: absolute; z-index: 1; border: 1px black solid"></canvas>
             </div>
-            <p id="cursor"></p>
         </td>
         <td style="width:100px"></td>
         <td>
+            <p id="cursor"></p>
             <br><br>
-            <form id="fileload" method="POST">
-                <input type="text" name="fileload_data" id="fileload_data" value="DEEP_2_I_cube.hdf5">
+            <form id="fileload">
+                <input type="text" name="fileload_data" id="fileload_data" value="DEEP_2_off_IQU_cube.hdf5">
                 <input type="submit" value="Load File">
             </form>
-            <form id="disconnect" method="POST" action="#">
-                <input type="submit" value="Disconnect">
-            </form>
             <label for="compression_val">Compression level (4-32):</label>
-            <input type="number" step=1 name="compression_val" id="compression_val" value=12><br>
+            <input type="number" step=1 name="compression_val" id="compression_val" value=11><br>
             <label for="band_val">Band:</label>
             <input type="range" min="-1" max="100" value="-1" step="0" id="band_val"><br>
             <!--<input type="number" min=0 step=1 name="band_val" id="band_val" value=0><br>-->
@@ -206,26 +206,25 @@
             <div id="slidecontainer">
                 <p>Min value: <span id="min_val_label">-0.01</span></p>
                 <input type="range" min="-0.025" max="0.025" value="-0.01" step="0.0005" id="min_val">
-                <input class="jscolor" value="#040e21" id="min_col">
                 <p>Max value: <span id="max_val_label">0.01</span></p>
                 <input type="range" min="-0.025" max="0.025" value="0.01" step="0.0005" id="max_val">
-                <input class="jscolor" value="#ffffff" id="max_col">
+                <select name="cmap_select" id="cmap_select"></select>
             </div>
         </td>
     </tr>
     <tr>
         <td>
-            <div style="width:100%;height:200px;">
-                <canvas id="profileX"></canvas>
+            <div style="width:100%;height:150px;">
+                <canvas width="640" height="150" id="profileX"></canvas>
             </div>
-            <div style="width:100%;height:200px;">
-                <canvas id="profileY"></canvas>
+            <div style="width:100%;height:150px;">
+                <canvas width="640" height="150" id="profileY"></canvas>
             </div>
         </td>
         <td style="width:100px"></td>
         <td>
             <div style="width:100%;height:400px;">
-                <canvas id="histogram" height="300"></canvas>
+                <canvas width="640" height="400" id="histogram"></canvas>
             </div>
         </td>
     </tr>

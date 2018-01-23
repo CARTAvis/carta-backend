@@ -518,7 +518,7 @@ void Session::onRegionRead(const Value& message)
 			responseMessage.AddMember("band", request.band, a);
 			responseMessage.AddMember("numValues", numValues, a);
 
-			if (currentBandHistogram.bins.size())
+			if (currentBandHistogram.bins.size() && !isnan(currentBandHistogram.firstBinCenter) && !isnan(currentBandHistogram.binWidth))
 			{
 				Value hist(kObjectType);
 				hist.AddMember("firstBinCenter", currentBandHistogram.firstBinCenter, a);
