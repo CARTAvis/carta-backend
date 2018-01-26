@@ -12,69 +12,63 @@
 typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;
 
-
-struct Histogram
-{
-	int N;
-	float firstBinCenter, binWidth;
-	std::vector<int> bins;
+struct Histogram {
+  int N;
+  float firstBinCenter, binWidth;
+  std::vector<int> bins;
 };
 
-struct BandStats
-{
-	Histogram histogram;
-	float minVal;
-	float maxVal;
-	float mean;
-	std::vector<float> percentiles;
-	std::vector<float> percentileVals;
-	int nanCount;
+struct BandStats {
+  Histogram histogram;
+  float minVal;
+  float maxVal;
+  float mean;
+  std::vector<float> percentiles;
+  std::vector<float> percentileVals;
+  int nanCount;
 };
 
-struct ImageInfo
-{
-	std::string filename;
-	int numBands;
-	int width;
-	int height;
-	std::map<int, BandStats> bandStats;
+struct ImageInfo {
+  std::string filename;
+  int numBands;
+  int width;
+  int height;
+  std::map<int, BandStats> bandStats;
 };
 
-struct ReadRegionRequest
-{
-	int x, y, w, h, band, mip, compression;
+struct ReadRegionRequest {
+  int x, y, w, h, band, mip, compression;
 };
 
-class Session
-{
-public:
-	boost::uuids::uuid uuid;
-protected:
-	Matrix3F currentBandCache;
-	Histogram currentBandHistogram;
-	int currentBand;
-	HighFive::File* file;
-	std::vector<HighFive::DataSet> dataSets;
-	ImageInfo imageInfo;
-	std::mutex eventMutex;
-	uWS::WebSocket<uWS::SERVER>* socket;
-	std::string baseFolder;
-	char* binaryPayloadCache;
-	uint32_t payloadSizeCached = 0;
+class Session {
+ public:
+  boost::uuids::uuid uuid;
+ protected:
+  Matrix3F currentBandCache;
+  Histogram currentBandHistogram;
+  int currentBand;
+  HighFive::File *file;
+  std::vector<HighFive::DataSet> dataSets;
+  ImageInfo imageInfo;
+  std::mutex eventMutex;
+  uWS::WebSocket<uWS::SERVER> *socket;
+  std::string baseFolder;
+  char *binaryPayloadCache;
+  uint32_t payloadSizeCached = 0;
 
-public:
-	Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, std::string folder);
-	void onRegionRead(const rapidjson::Value& message);
-	void onFileLoad(const rapidjson::Value& message);
-	~Session();
+ public:
+  Session(uWS::WebSocket<uWS::SERVER> *ws, boost::uuids::uuid uuid, std::string folder);
+  void onRegionRead(const rapidjson::Value &message);
+  void onFileLoad(const rapidjson::Value &message);
+  ~Session();
 
-protected:
-	void updateHistogram();
-	bool parseRegionQuery(const rapidjson::Value& message, ReadRegionRequest& regionQuery);
-	bool loadFile(const std::string& filename, int defaultBand = -1);
-	bool loadBand(int band);
-	bool loadStats();
-	std::vector<float> getZProfile(int x, int y);
-	std::vector<float> readRegion(const ReadRegionRequest& req);
-	void log(const std::string& logMessage);
+ protected:
+  void updateHistogram();
+  bool parseRegionQuery(const rapidjson::Value &message, ReadRegionRequest &regionQuery);
+  bool loadFile(const std::string &filename, int defaultBand = -1);
+  bool loadBand(int band);
+  bool loadStats();
+  std::vector<float> getZProfile(int x, int y);
+  std::vector<float> readRegion(const ReadRegionRequest &req);
+  void log(const std::string &logMessage);
 };
