@@ -15,7 +15,7 @@ using namespace rapidjson;
 map<uWS::WebSocket<uWS::SERVER>*, Session*> sessions;
 boost::uuids::random_generator uuid_gen;
 
-string baseFolder = "/home/angus";
+string baseFolder = getenv("HOME");
 
 void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest)
 {
@@ -36,6 +36,7 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
 	fmt::print("Client {} Disconnected. Remaining clients: {}\n", boost::uuids::to_string(uuid), sessions.size());
 }
 
+// Forward message requests to session callbacks
 void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length, uWS::OpCode opCode)
 {
 	auto session = sessions[ws];
@@ -48,6 +49,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length,
 
 	if (opCode == uWS::OpCode::TEXT)
 	{
+        // Null-terminate string to prevent parsing errors
 		char* paddedMessage = new char[length + 1];
 		memcpy(paddedMessage, rawMessage, length);
 		paddedMessage[length] = 0;

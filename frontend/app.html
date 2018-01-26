@@ -1,40 +1,27 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>IDIA HDF5 Testbed</title>
-    <!--<script src="http://192.168.0.100:1337/vorlon.js"></script>-->
+    <title>IDIA HDF5 Image Viewer</title>
     <link rel="favicon" href="http://idia.ac.za/sites/default/files/favicon_0.ico" type="image/vnd.microsoft.icon" />
     <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
     <script type="text/javascript" src="http://benalman.com/code/projects/jquery-throttle-debounce/jquery.ba-throttle-debounce.js"></script>
-    <script type="text/javascript" src="./jscolor.min.js"></script>
-    <!--<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
     <script id="vs" type="x-shader/x-vertex">
         //Data from bufferData
-            attribute vec3 aVertexPosition;
-            attribute vec2 aVertexUV;
+        attribute vec3 aVertexPosition;
+        attribute vec2 aVertexUV;
 
-            //uniform vec2 uViewportSize;
+        //uniform vec2 uViewportSize;
 
-            //These will be passed to the fragment shader and will be interpreted per
-            //pixel
-            varying vec2 vUV;
+        //These will be passed to the fragment shader and will be interpreted per
+        //pixel
+        varying vec2 vUV;
 
-            void main(void) {
-                //The line below will ignore any translation of perspective matrix
-                gl_Position =  vec4(aVertexPosition, 1.0);
-                vUV = aVertexUV;
-            }
-
-
-
-
-
-
-
-
-
-
+        void main(void) {
+            //The line below will ignore any translation of perspective matrix
+            gl_Position =  vec4(aVertexPosition, 1.0);
+            vUV = aVertexUV;
+        }
     </script>
     <script id="cmap-rgba" type="x-shader/x-fragment">
         precision highp float;
@@ -73,12 +60,6 @@
             gl_FragColor = isinf(zVal)?vec4(1,0,0,1):texture2D(uCmapTexture, cmapCoords);
             //gl_FragColor = isinf(zVal)?vec4(1,0,0,1):uMinCol + alpha * deltaCol;
         }
-
-
-
-
-
-
     </script>
     <script id="cmap-float" type="x-shader/x-fragment">
         precision highp float;
@@ -108,7 +89,6 @@
             gl_FragColor = isnan(zVal)?vec4(1,0,0,1):texture2D(uCmapTexture, cmapCoords);
             //gl_FragColor = isnan(zVal)?vec4(1,0,0,1):uMinCol + alpha * deltaCol;
         }
-
     </script>
     <script type="text/javascript" src="encodeFloats.js"></script>
     <script type="text/javascript" src="./app.js"></script>
@@ -130,11 +110,10 @@
                 <input type="text" name="fileload_data" id="fileload_data" value="N4.hdf5">
                 <button id="button_load">Load File</button>
             </form>
-            <label for="compression_val">Compression level (4-32):</label>
-            <input type="number" step=1 name="compression_val" id="compression_val" value=13><br>
+            <label for="compression_val">Compression level (4-31):</label>
+            <input type="number" step=1 name="compression_val" id="compression_val" value=12><br>
             <label for="band_val">Band:</label>
-            <input type="range" min="-1" max="100" value="-1" step="0" id="band_val"><br>
-            <!--<input type="number" min=0 step=1 name="band_val" id="band_val" value=0><br>-->
+            <input type="range" min=-1 max=100 value=-1 step=0 id="band_val"><br>
             <br><br>
 
             <table>
@@ -182,10 +161,10 @@
                 <option value="custom">Custom</option>
             </select>
             <div id="slidecontainer">
-                <p>Min value: <span id="min_val_label">-0.01</span></p>
-                <input type="range" min="-0.025" max="0.025" value="-0.01" step="0.0005" id="min_val">
-                <p>Max value: <span id="max_val_label">0.01</span></p>
-                <input type="range" min="-0.025" max="5.025" value="0.01" step="0.0005" id="max_val">
+                <p>Min value: <span id="min_val_label"></span></p>
+                <input type="range" id="min_val">
+                <p>Max value: <span id="max_val_label"></span></p>
+                <input type="range" id="max_val">
 
             </div>
             <table>
@@ -225,11 +204,11 @@
 
             <form id="view">
                 <label for="centerX">CenterX:</label>
-                <input type="number" disabled step=1 name="centerX" id="centerX" value=2925><br>
+                <input type="number" disabled name="centerX" id="centerX"><br>
                 <label for="centerY">CenterY:</label>
-                <input type="number" disabled step=1 name="centerY" id="centerY" value=537><br>
+                <input type="number" disabled name="centerY" id="centerY"><br>
                 <label for="zoomLevel">Zoom:</label>
-                <input type="number" disabled step=0.0025 name="zoomLevel" id="zoomLevel" value=0.170940171><br>
+                <input type="number" disabled name="zoomLevel" id="zoomLevel"><br>
             </form>
         </td>
     </tr>

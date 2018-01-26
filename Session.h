@@ -40,25 +40,10 @@ struct ImageInfo
 	std::map<int, BandStats> bandStats;
 };
 
-struct RegionReadResponse
-{
-	bool success;
-	int compression;
-	int x;
-	int y;
-	int w;
-	int h;
-	int mip;
-	int band;
-	int numValues;
-};
-
 struct ReadRegionRequest
 {
 	int x, y, w, h, band, mip, compression;
 };
-
-
 
 class Session
 {
@@ -92,6 +77,4 @@ protected:
 	std::vector<float> getZProfile(int x, int y);
 	std::vector<float> readRegion(const ReadRegionRequest& req);
 	void log(const std::string& logMessage);
-	void profileReads();
-
 };

@@ -1,11 +1,11 @@
 #include "Session.h"
 #include "events.h"
-#include "rapidjson/pointer.h"
 using namespace HighFive;
 using namespace std;
 using namespace uWS;
 using namespace rapidjson;
 
+// Default constructor. Associates a websocket with a UUID and sets the base folder for all files
 Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder)
 	: uuid(uuid),
 	  currentBand(-1),
@@ -17,6 +17,7 @@ Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder)
 {
 }
 
+// Any cached memory freed when session is closed
 Session::~Session()
 {
 	delete file;
@@ -336,6 +337,7 @@ bool Session::loadBand(int band)
 	return true;
 }
 
+// Loads a file and the default band.
 bool Session::loadFile(const string& filename, int defaultBand)
 {
 	if (filename == imageInfo.filename)
@@ -395,6 +397,7 @@ bool Session::loadFile(const string& filename, int defaultBand)
 	}
 }
 
+// Calculates a Z Profile for a given X and Y pixel coordinate
 vector<float> Session::getZProfile(int x, int y)
 {
 	if (!file || !file->isValid())
@@ -412,8 +415,11 @@ vector<float> Session::getZProfile(int x, int y)
 	{
 		vector<float> profile;
 
+        // The third data set is the swizzled dataset (if it exists)
 		if (dataSets.size() == 3)
 		{
+            // Even when reading a single slice, since we're selecting a 3D space, we need to read into a 3D data structure
+            // and then copy to a 1D vector. This is a bug in HighFive that only occurs if the last dimension is zero
 			Matrix3F zP;
 			dataSets[2].select({x, y, 0}, {1, 1, imageInfo.numBands}).read(zP);
 			profile.resize(imageInfo.numBands);
@@ -432,6 +438,8 @@ vector<float> Session::getZProfile(int x, int y)
 	}
 }
 
+// Reads a region corresponding to the given region request. If the current band is not the same as
+// the band specified in the request, the new band is loaded
 vector<float> Session::readRegion(const ReadRegionRequest& req)
 {
 	if (!file || !file->isValid())
@@ -461,6 +469,7 @@ vector<float> Session::readRegion(const ReadRegionRequest& req)
 	vector<float> regionData;
 	regionData.resize(numRowsRegion * rowLengthRegion);
 
+    // Perform down-sampling by calculating the mean for each MIPxMIP block
 	for (auto j = 0; j < numRowsRegion; j++)
 	{
 		for (auto i = 0; i < rowLengthRegion; i++)
@@ -485,97 +494,96 @@ vector<float> Session::readRegion(const ReadRegionRequest& req)
 	return regionData;
 }
 
+// Event response to region read request
 void Session::onRegionRead(const Value& message)
 {
+    // Mutex used to prevent overlapping requests for a single client
 	eventMutex.lock();
 	ReadRegionRequest request;
 
 	if (parseRegionQuery(message, request))
 	{
-		auto tStart = std::chrono::high_resolution_clock::now();
+        // Valid compression precision range: (4-31)
 		bool compressed = request.compression >= 4 && request.compression < 32;
 		vector<float> regionData = readRegion(request);
+
 		if (regionData.size())
 		{
-			auto tEnd = std::chrono::high_resolution_clock::now();
-			auto dtRegion = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
 			auto numValues = regionData.size();
 			auto rowLength = request.w / request.mip;
 			auto numRows = request.h / request.mip;
 
-			Document d(kObjectType);
-			auto& a = d.GetAllocator();
-			d.AddMember("event", "region_read", d.GetAllocator());
+			Document responseDoc(kObjectType);
+			auto& allocator = responseDoc.GetAllocator();
+			responseDoc.AddMember("event", "region_read", allocator);
 
 			Value responseMessage(kObjectType);
-			responseMessage.AddMember("success", true, d.GetAllocator());
-			responseMessage.AddMember("compression", request.compression, a);
-			responseMessage.AddMember("x", request.x, a);
-			responseMessage.AddMember("y", request.y, a);
-			responseMessage.AddMember("w", rowLength, a);
-			responseMessage.AddMember("h", numRows, a);
-			responseMessage.AddMember("mip", request.mip, a);
-			responseMessage.AddMember("band", request.band, a);
-			responseMessage.AddMember("numValues", numValues, a);
+			responseMessage.AddMember("success", true, allocator);
+			responseMessage.AddMember("compression", request.compression, allocator);
+			responseMessage.AddMember("x", request.x, allocator);
+			responseMessage.AddMember("y", request.y, allocator);
+			responseMessage.AddMember("w", rowLength, allocator);
+			responseMessage.AddMember("h", numRows, allocator);
+			responseMessage.AddMember("mip", request.mip, allocator);
+			responseMessage.AddMember("band", request.band, allocator);
+			responseMessage.AddMember("numValues", numValues, allocator);
 
+            // Stats for band average stored in last bandStats entry. This will change when we change the schema
 			int band = (currentBand == -1) ? imageInfo.numBands : currentBand;
 			if (imageInfo.bandStats.count(band) && imageInfo.bandStats[band].nanCount != imageInfo.width*imageInfo.height)
 			{
 				auto& bandStats = imageInfo.bandStats[band];
 				Value stats(kObjectType);
-				stats.AddMember("mean", bandStats.mean, a);
-				stats.AddMember("minVal", bandStats.minVal, a);
-				stats.AddMember("maxVal", bandStats.maxVal, a);
-				stats.AddMember("nanCount", bandStats.nanCount, a);
+				stats.AddMember("mean", bandStats.mean, allocator);
+				stats.AddMember("minVal", bandStats.minVal, allocator);
+				stats.AddMember("maxVal", bandStats.maxVal, allocator);
+				stats.AddMember("nanCount", bandStats.nanCount, allocator);
 
 				Value percentiles(kArrayType);
-				percentiles.Reserve(bandStats.percentiles.size(), a);
+				percentiles.Reserve(bandStats.percentiles.size(), allocator);
 				for (auto& v: bandStats.percentiles)
-					percentiles.PushBack(v, a);
-				stats.AddMember("percentiles", percentiles, a);
+					percentiles.PushBack(v, allocator);
+				stats.AddMember("percentiles", percentiles, allocator);
 
 				Value percentileVals(kArrayType);
-				percentileVals.Reserve(bandStats.percentileVals.size(), a);
+				percentileVals.Reserve(bandStats.percentileVals.size(), allocator);
 				for (auto& v: bandStats.percentileVals)
-					percentileVals.PushBack(v, a);
-				stats.AddMember("percentileVals", percentileVals, a);
-				responseMessage.AddMember("stats", stats, a);
+					percentileVals.PushBack(v, allocator);
+				stats.AddMember("percentileVals", percentileVals, allocator);
+				responseMessage.AddMember("stats", stats, allocator);
 			}
 
+            // Adds histogram to the response if it exists and is valid
 			if (currentBandHistogram.bins.size() && !isnan(currentBandHistogram.firstBinCenter) && !isnan(currentBandHistogram.binWidth))
 			{
 				Value hist(kObjectType);
-				hist.AddMember("firstBinCenter", currentBandHistogram.firstBinCenter, a);
-				hist.AddMember("binWidth", currentBandHistogram.binWidth, a);
-				hist.AddMember("N", currentBandHistogram.N, a);
+				hist.AddMember("firstBinCenter", currentBandHistogram.firstBinCenter, allocator);
+				hist.AddMember("binWidth", currentBandHistogram.binWidth, allocator);
+				hist.AddMember("N", currentBandHistogram.N, allocator);
 
 				Value binsValue(kArrayType);
-				binsValue.Reserve(currentBandHistogram.N, a);
+				binsValue.Reserve(currentBandHistogram.N, allocator);
 				for (auto& v: currentBandHistogram.bins)
-					binsValue.PushBack(v, a);
+					binsValue.PushBack(v, allocator);
 
-				hist.AddMember("bins", binsValue, a);
-				responseMessage.AddMember("hist", hist, a);
+				hist.AddMember("bins", binsValue, allocator);
+				responseMessage.AddMember("hist", hist, allocator);
 			}
-			d.AddMember("message", responseMessage, a);
+			responseDoc.AddMember("message", responseMessage, allocator);
 
 
-			tStart = std::chrono::high_resolution_clock::now();
-
-			tEnd = std::chrono::high_resolution_clock::now();
-			auto dtPayload = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
-
-			tStart = std::chrono::high_resolution_clock::now();
 			if (compressed)
 			{
+                // Compression is affected by NaN values, so first remove NaNs and get run-length-encoded NaN list
 				auto nanEncoding = getNanEncodings(regionData.data(), regionData.size());
 				size_t compressedSize;
 				unsigned char* compressionBuffer;
 				compress(regionData.data(), compressionBuffer, compressedSize, rowLength, numRows, request.compression);
-				//decompress(dataPayload, compressionBuffer, compressedSize, rowLength, numRows, request.compression);
 
 				int32_t numNanEncodings = nanEncoding.size();
 				uint32_t payloadSize = sizeof(int32_t) + sizeof(int32_t) * numNanEncodings + compressedSize;
+
+                // Resize payload cache if necessary
 				if (payloadSizeCached < payloadSize || !binaryPayloadCache)
 				{
 					delete[] binaryPayloadCache;
@@ -586,22 +594,17 @@ void Session::onRegionRead(const Value& message)
 				memcpy(binaryPayloadCache, &numNanEncodings, sizeof(int32_t));
 				memcpy(binaryPayloadCache + sizeof(int32_t), nanEncoding.data(), sizeof(int32_t) * numNanEncodings);
 				memcpy(binaryPayloadCache + sizeof(int32_t) + sizeof(int32_t) * numNanEncodings, compressionBuffer, compressedSize);
-				tEnd = std::chrono::high_resolution_clock::now();
-				eventMutex.unlock();
-				sendEventBinaryPayload(socket, d, binaryPayloadCache, payloadSize);
-				delete[] compressionBuffer;
-				auto dtCompress = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
-
-				log(fmt::format("Compressed binary ({:.3f} MB) sent in in {} ms", compressedSize / 1e6, dtCompress));
+                delete[] compressionBuffer;
+                eventMutex.unlock();
+				sendEventBinaryPayload(socket, responseDoc, binaryPayloadCache, payloadSize);
+				log(fmt::format("Compressed binary ({:.3f} MB) sent", compressedSize / 1e6));
 			}
 			else
 			{
+                // sending uncompressed data is much simpler
 				eventMutex.unlock();
-				sendEventBinaryPayload(socket, d, regionData.data(), numRows * rowLength * sizeof(float));
-				tEnd = std::chrono::high_resolution_clock::now();
-				auto dtSent = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
-				log(fmt::format("Uncompressed binary ({:.3f} MB) sent in in {} ms", numRows * rowLength * sizeof(float) / 1e6, dtSent));
-
+				sendEventBinaryPayload(socket, responseDoc, regionData.data(), numRows * rowLength * sizeof(float));
+				log(fmt::format("Uncompressed binary ({:.3f} MB) sent", numRows * rowLength * sizeof(float) / 1e6));
 			}
 			return;
 		}
@@ -612,13 +615,18 @@ void Session::onRegionRead(const Value& message)
 	}
 	log("Event is not a valid ReadRegion request!");
 
-	Document d;
-	Pointer("/event").Set(d, "region_read");
-	Pointer("/message/success").Set(d, false);
+    Document responseDoc(kObjectType);
+    auto& allocator = responseDoc.GetAllocator();
+    responseDoc.AddMember("event", "region_read", allocator);
+    Value responseMessage(kObjectType);
+    responseMessage.AddMember("success", false, allocator);
+    responseDoc.AddMember("message", responseMessage, allocator);
+
 	eventMutex.unlock();
-	sendEvent(socket, d);
+	sendEvent(socket, responseDoc);
 }
 
+// Event response to file load request
 void Session::onFileLoad(const Value& message)
 {
 	eventMutex.lock();
@@ -628,102 +636,40 @@ void Session::onFileLoad(const Value& message)
 		if (loadFile(fmt::format("{}/{}", baseFolder, filename)))
 		{
 			log(fmt::format("File {} loaded successfully", filename));
-			Document d;
-			Pointer("/message/numBands").Set(d, imageInfo.numBands);
-			Pointer("/message/width").Set(d, imageInfo.width);
-			Pointer("/message/height").Set(d, imageInfo.height);
-			Pointer("/message/filename").Set(d, imageInfo.filename.c_str());
-			Pointer("/message/success").Set(d, true);
-			Pointer("/event").Set(d, "fileload");
-			eventMutex.unlock();
-			sendEvent(socket, d);
-			//profileReads();
+            Document responseDoc(kObjectType);
+            auto& allocator = responseDoc.GetAllocator();
+            responseDoc.AddMember("event", "fileload", allocator);
 
+            Value responseMessage(kObjectType);
+            responseMessage.AddMember("success", true, allocator);
+            responseMessage.AddMember("numBands", imageInfo.numBands, allocator);
+            responseMessage.AddMember("width", imageInfo.width, allocator);
+            responseMessage.AddMember("height", imageInfo.height, allocator);
+            Value filenameValue(kStringType);
+            filenameValue.SetString(imageInfo.filename.c_str(), allocator);
+            responseMessage.AddMember("filename", filenameValue, allocator);
 
-			return;
+            responseDoc.AddMember("message", responseMessage, allocator);
+            eventMutex.unlock();
+			sendEvent(socket, responseDoc);
 		}
 		else
 		{
 			log(fmt::format("Error loading file {}", filename));
+            Document responseDoc(kObjectType);
+            auto& allocator = responseDoc.GetAllocator();
+            responseDoc.AddMember("event", "fileload", allocator);
+            Value responseMessage(kObjectType);
+            responseMessage.AddMember("success", false, allocator);
+            responseDoc.AddMember("message", responseMessage, allocator);
+
+            eventMutex.unlock();
+            sendEvent(socket, responseDoc);
 		}
 	}
-
-	Document d;
-	Pointer("/event").Set(d, "fileload");
-	Pointer("/message/success").Set(d, false);
-	eventMutex.unlock();
-	sendEvent(socket, d);
 }
 
 void Session::log(const string& logMessage)
 {
 	fmt::print("Session {}: {}\n", boost::uuids::to_string(uuid), logMessage);
 }
-
-void Session::profileReads()
-{
-	// Profile Z-Profile reads
-	vector<float> zProfile;
-
-	vector<float> readTimes;
-	srand(time(NULL));
-	for (auto i = 0; i < 10; i++)
-	{
-		auto tStart = chrono::high_resolution_clock::now();
-		int randX = ((float) rand()) / RAND_MAX * imageInfo.width;
-		int randY = ((float) rand()) / RAND_MAX * imageInfo.height;
-		zProfile = getZProfile(randX, randY);
-		auto tEnd = chrono::high_resolution_clock::now();
-		auto dtZProfile = std::chrono::duration_cast<chrono::milliseconds>(tEnd - tStart).count();
-		readTimes.push_back(dtZProfile);
-	}
-
-	float sumX = 0;
-	float sumX2 = 0;
-	float minVal = readTimes[0];
-	float maxVal = readTimes[0];
-
-	for (auto& dt: readTimes)
-	{
-		sumX += dt;
-		sumX2 += dt * dt;
-		minVal = min(minVal, dt);
-		maxVal = max(maxVal, dt);
-	}
-
-	float mean = sumX / readTimes.size();
-	float sigma = sqrt(sumX2 / readTimes.size() - mean * mean);
-	log(fmt::format("Z Profile reads: N={}; mean={} ms; sigma={} ms; Range: {} -> {} ms\n", readTimes.size(), mean, sigma, minVal, maxVal));
-
-
-	// Profile Band reads
-	vector<float> readTimesBand;
-	for (auto i = 0; i < 10; i++)
-	{
-		auto tStart = std::chrono::high_resolution_clock::now();
-		int randZ = ((float) rand()) / RAND_MAX * imageInfo.numBands;
-		loadBand(randZ);
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto dtBand = std::chrono::duration_cast<chrono::milliseconds>(tEnd - tStart).count();
-		readTimesBand.push_back(dtBand);
-	}
-
-	sumX = 0;
-	sumX2 = 0;
-	minVal = readTimesBand[0];
-	maxVal = readTimesBand[0];
-
-	for (auto& dt: readTimesBand)
-	{
-		sumX += dt;
-		sumX2 += dt * dt;
-		minVal = min(minVal, dt);
-		maxVal = max(maxVal, dt);
-	}
-
-	mean = sumX / readTimesBand.size();
-	sigma = sqrt(sumX2 / readTimesBand.size() - mean * mean);
-	log(fmt::format("Band reads: N={}; mean={} ms; sigma={} ms; Range: {} -> {} ms\n", readTimesBand.size(), mean, sigma, minVal, maxVal));
-}
-
-

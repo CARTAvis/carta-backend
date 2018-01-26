@@ -41,7 +41,7 @@ int compress(float* array, unsigned char*& compressionBuffer, size_t& zfpsize, u
 	zfp_stream_close(zfp);
 	stream_close(stream);
 
-	return bufsize;
+	return status;
 }
 
 int decompress(float* array, unsigned char* compressionBuffer, size_t& zfpsize, uint nx, uint ny, uint precision)
@@ -57,7 +57,7 @@ int decompress(float* array, unsigned char* compressionBuffer, size_t& zfpsize, 
 	field = zfp_field_2d(array, type, nx, ny);
 
 	/* allocate meta data for a compressed stream */
-	zfp = zfp_stream_open(NULL);
+	zfp = zfp_stream_open(nullptr);
 	zfp_stream_set_precision(zfp, precision);
 
 	stream = stream_open(compressionBuffer, zfpsize);
@@ -77,6 +77,7 @@ int decompress(float* array, unsigned char* compressionBuffer, size_t& zfpsize, 
 	return status;
 }
 
+// Removes NaNs from an array and returns run-length encoded list of NaNs
 vector<int32_t> getNanEncodings(float* array, size_t length)
 {
 	int32_t prevIndex = 0;
@@ -94,6 +95,9 @@ vector<int32_t> getNanEncodings(float* array, size_t length)
 		}
 	}
 
+    // Generate RLE list and replace NaNs with neighbouring valid values. Ideally, this should take into account
+    // the width and height of the image, and look for neighbouring values in vertical and horizontal directions,
+    // but this is only an issue with NaNs right at the edge of images.
 	for (auto i = 0; i < length; i++)
 	{
 		bool current = isnan(array[i]);

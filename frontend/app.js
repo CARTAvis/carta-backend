@@ -287,8 +287,6 @@ function getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLeve
 
 
 function updateVertices(vertices) {
-    //Create Square Position Buffer
-    //squareVertexPositionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, squareVertexPositionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 }
@@ -300,6 +298,7 @@ function calculateMip(zoomLevel) {
     var newMip = parseInt(mipExact % 1.0 < 0.25 ? Math.floor(mipExact) : Math.ceil(mipExact));
     return newMip;
 }
+
 
 $(document).ready(function () {
     connection = new WebSocket(`ws://${window.location.hostname}:3002`);
@@ -315,8 +314,8 @@ $(document).ready(function () {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
-    var minVal = -0.01;
-    var maxVal = 0.01;
+    var minVal = -1;
+    var maxVal = 1;
     var regionImageData = null;
 
     // decompression buffers
@@ -330,13 +329,13 @@ $(document).ready(function () {
 
 
     var imageCenter = {
-        x: 5850 / 2.0,
-        y: 1074 / 2.0
+        x: 0,
+        y: 0
     };
 
     var imageSize = {
-        x: 5850,
-        y: 1074
+        x: 0,
+        y: 0
     };
 
     var bounds = {

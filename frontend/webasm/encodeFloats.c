@@ -7,7 +7,7 @@
 #include "zfp.h"
 
 // Compile with:
-// emcc -o encodeFloats.html webasm/encodeFloats.c webasm/zfp/src/*.c -lm -I webasm/zfp/include -O3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1
+// emcc -o encodeFloats.html webasm/encodeFloats.c webasm/zfp/src/*.c -lm -I webasm/zfp/include -O3 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s NO_EXIT_RUNTIME=1 -s EXPORTED_FUNCTIONS='["_encodeFloats", "_zfpDecompress", "_malloc", "_free"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]'
 
 int main(int argc, char** argv)
 {
@@ -59,8 +59,6 @@ int EMSCRIPTEN_KEEPALIVE zfpDecompress(int precision, float* array, int nx, int 
 
 	return status;
 }
-
-
 
 #ifdef __cplusplus
 }
