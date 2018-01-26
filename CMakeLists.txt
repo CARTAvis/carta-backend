@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.8)
-project(hdf5_mpi_test)
+project(hdf5_image_viewer)
 
-set(CMAKE_CXX_COMPILER mpiCC)
+#set(CMAKE_CXX_COMPILER cc)
 set(CMAKE_CXX_STANDARD 11)
-
+add_definitions( -DH5_USE_BOOST )
 find_package (HDF5)
 find_package(HighFive)
 INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIR})
+INCLUDE_DIRECTORIES (rapidjson)
 INCLUDE_DIRECTORIES (${HighFive_INCLUDE_DIR})
-set (LINK_LIBS ${LINK_LIBS} fmt hdf5_openmpi)
-
-set(SOURCE_FILES main.cpp)
-add_executable(hdf5_mpi_test ${SOURCE_FILES})
-target_link_libraries (hdf5_mpi_test ${LINK_LIBS})
+set (LINK_LIBS ${LINK_LIBS} fmt hdf5_serial uWS ssl crypto z zfp)
+set(SOURCE_FILES main.cc Session.cc compression.cc events.cc)
+add_executable(hdf5_image_viewer ${SOURCE_FILES})
+target_link_libraries (hdf5_image_viewer ${LINK_LIBS})
