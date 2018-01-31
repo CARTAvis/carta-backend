@@ -1,4 +1,4 @@
-namespace = '/test';
+namespace = "/test";
 
 const COLOR_MAPS_ALL = ["Accent", "afmhot", "autumn", "binary", "Blues", "bone", "BrBG", "brg", "BuGn", "BuPu", "bwr", "CMRmap", "cool", "coolwarm",
     "copper", "cubehelix", "Dark2", "flag", "gist_earth", "gist_gray", "gist_heat", "gist_ncar", "gist_rainbow", "gist_stern", "gist_yarg",
@@ -27,7 +27,7 @@ function initGL(canvasGL) {
         alert("Could not initialise WebGL");
     }
 
-    extTextureFloat = gl.getExtension('OES_texture_float');
+    extTextureFloat = gl.getExtension("OES_texture_float");
 
     if (!extTextureFloat) {
         alert("Could not initialise WebGL extensions");
@@ -176,7 +176,7 @@ function loadImageTexture(gl, url) {
     // they might take a moment until they are ready.
     // Until then put a single pixel in the texture so we can
     // use it immediately. When the image has finished downloading
-    // we'll update the texture with the contents of the image.
+    // we"ll update the texture with the contents of the image.
     const level = 0;
     const internalFormat = gl.RGB;
     const width = 1;
@@ -224,7 +224,7 @@ function loadFP32Texture(data, width, height) {
     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border,
         format, type, data);
 
-    // set the filtering so we don't need mips and it's not filtered
+    // set the filtering so we don"t need mips and it"s not filtered
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -248,7 +248,7 @@ function loadRGBATexture(data, width, height) {
     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border,
         format, type, data);
 
-    // set the filtering so we don't need mips and it's not filtered
+    // set the filtering so we don"t need mips and it"s not filtered
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -302,7 +302,7 @@ function calculateMip(zoomLevel) {
 
 $(document).ready(function () {
     connection = new WebSocket(`ws://${window.location.hostname}:3002`);
-    connection.binaryType = 'arraybuffer';
+    connection.binaryType = "arraybuffer";
 
     var overlayCanvas = document.getElementById("overlay");
     var overlay = overlayCanvas.getContext("2d");
@@ -404,20 +404,19 @@ $(document).ready(function () {
     var frozenCursor = false;
 
     var scrollTimeout = null;
-    var profileUpdateTimeout = null;
 
     // updating min/max from histogram
     var bandStats = null;
 
-    var histogram = new Chart(document.getElementById("histogram").getContext('2d'), {
-        type: 'line',
+    var histogram = new Chart(document.getElementById("histogram").getContext("2d"), {
+        type: "line",
         data: {
             datasets: [{
                 data: [],
                 label: null,
                 pointRadius: 0,
                 fill: false,
-                borderColor: 'blue',
+                borderColor: "blue",
                 borderWidth: 1,
                 steppedLine: true
             }]
@@ -432,6 +431,24 @@ $(document).ready(function () {
                         scaleID: "x-axis-0",
                         borderColor: "red",
                         borderWidth: 1,
+                    },
+                    {
+                        id: "clampmin",
+                        type: "line",
+                        mode: "vertical",
+                        scaleID: "x-axis-0",
+                        borderColor: "grey",
+                        borderWidth: 1,
+                        borderDash: [10]
+                    },
+                    {
+                        id: "clampmax",
+                        type: "line",
+                        mode: "vertical",
+                        scaleID: "x-axis-0",
+                        borderColor: "grey",
+                        borderWidth: 1,
+                        borderDash: [10]
                     }
                 ]
             },
@@ -439,21 +456,21 @@ $(document).ready(function () {
             legend: {display: false},
             scales: {
                 xAxes: [{
-                    type: 'linear',
-                    position: 'bottom',
-                    offset: 'false',
+                    type: "linear",
+                    position: "bottom",
+                    offset: "false",
                     scaleLabel: {
                         display: true,
-                        labelString: 'Value'
+                        labelString: "Value"
                     },
 
                 }],
                 yAxes: [{
-                    type: 'logarithmic',
-                    offset: 'false',
+                    type: "logarithmic",
+                    offset: "false",
                     scaleLabel: {
                         display: true,
-                        labelString: 'Count'
+                        labelString: "Count"
                     }
                 }]
             },
@@ -472,15 +489,15 @@ $(document).ready(function () {
         }
     });
 
-    var profileX = new Chart(document.getElementById("profileX").getContext('2d'), {
-        type: 'line',
+    var profileX = new Chart(document.getElementById("profileX").getContext("2d"), {
+        type: "line",
         data: {
             datasets: [{
                 data: [],
                 pointRadius: 0,
                 pointHoverRadius: 10,
                 fill: false,
-                borderColor: 'blue',
+                borderColor: "blue",
                 borderWidth: 1,
                 steppedLine: true
             }]
@@ -510,11 +527,11 @@ $(document).ready(function () {
             legend: {display: false},
             scales: {
                 xAxes: [{
-                    type: 'linear',
-                    position: 'bottom',
+                    type: "linear",
+                    position: "bottom",
                     scaleLabel: {
                         display: true,
-                        labelString: 'Pixel X Coordinate'
+                        labelString: "Pixel X Coordinate"
                     },
                     ticks: {
                         maxTicksLimit: 9
@@ -522,10 +539,10 @@ $(document).ready(function () {
 
                 }],
                 yAxes: [{
-                    type: 'linear',
+                    type: "linear",
                     scaleLabel: {
                         display: true,
-                        labelString: 'Value'
+                        labelString: "Value"
                     }
                 }]
             },
@@ -544,15 +561,15 @@ $(document).ready(function () {
         }
     });
 
-    var profileY = new Chart(document.getElementById("profileY").getContext('2d'), {
-        type: 'line',
+    var profileY = new Chart(document.getElementById("profileY").getContext("2d"), {
+        type: "line",
         data: {
             datasets: [{
                 data: [],
                 label: null,
                 pointRadius: 0,
                 fill: false,
-                borderColor: 'blue',
+                borderColor: "blue",
                 borderWidth: 1,
                 steppedLine: true
             }]
@@ -582,21 +599,21 @@ $(document).ready(function () {
             legend: {display: false},
             scales: {
                 xAxes: [{
-                    type: 'linear',
-                    position: 'bottom',
+                    type: "linear",
+                    position: "bottom",
                     scaleLabel: {
                         display: true,
-                        labelString: 'Pixel Y Coordinate'
+                        labelString: "Pixel Y Coordinate"
                     },
                     ticks: {
                         maxTicksLimit: 9
                     }
                 }],
                 yAxes: [{
-                    type: 'linear',
+                    type: "linear",
                     scaleLabel: {
                         display: true,
-                        labelString: 'Value'
+                        labelString: "Value"
                     }
                 }]
             },
@@ -644,13 +661,13 @@ $(document).ready(function () {
 
             var requiresUpdate = false;
             var requestedRegion = {
-                band: parseInt($('#band_val').val()),
-                x: parseInt($('#req_view_x').html()),
-                y: parseInt($('#req_view_y').html()),
-                w: parseInt($('#req_view_w').html()),
-                h: parseInt($('#req_view_h').html()),
-                mip: parseInt($('#req_view_mip').html()),
-                compression: parseInt($('#compression_val').val())
+                band: parseInt($("#band_val").val()),
+                x: parseInt($("#req_view_x").html()),
+                y: parseInt($("#req_view_y").html()),
+                w: parseInt($("#req_view_w").html()),
+                h: parseInt($("#req_view_h").html()),
+                mip: parseInt($("#req_view_mip").html()),
+                compression: parseInt($("#compression_val").val())
             };
 
             requestedRegion.x = Math.floor(requestedRegion.x);
@@ -696,20 +713,24 @@ $(document).ready(function () {
         }
     }
 
-    $('#compression_val').on("input", checkAndUpdateRegion);
-    $('#band_val').on("input", $.debounce(16, checkAndUpdateRegion));
+    $("#compression_val").on("input", checkAndUpdateRegion);
+    $("#band_val").on("input", $.debounce(16, checkAndUpdateRegion));
 
     $("#min_val").on("input", $.debounce(16, function () {
         $("#percentile_select").val("custom");
         minVal = this.value;
-        $('#min_val_label').text(minVal);
+        histogram.annotation.options.annotations[1].value = minVal;
+        histogram.update({duration: 0});
+        $("#min_val_label").text(minVal);
         refreshColorScheme();
     }));
 
     $("#max_val").on("input", $.debounce(16, function () {
         $("#percentile_select").val("custom");
         maxVal = this.value;
-        $('#max_val_label').text(maxVal);
+        $("#max_val_label").text(maxVal);
+        histogram.annotation.options.annotations[2].value = maxVal;
+        histogram.update({duration: 0});
         refreshColorScheme();
     }));
 
@@ -755,7 +776,7 @@ $(document).ready(function () {
                     profileX.data.datasets[0].data[i] = {x: xProfileInfo.coords[i], y: xProfileInfo.data[i]}
                 }
                 profileX.options.scales.xAxes[0].ticks.min = xProfileInfo.coords[0];
-                profileX.options.scales.xAxes[0].ticks.max = xProfileInfo.coords[xProfileInfo.data.length-1];
+                profileX.options.scales.xAxes[0].ticks.max = xProfileInfo.coords[xProfileInfo.data.length - 1];
                 profileX.update({duration: 0});
             }
 
@@ -768,7 +789,7 @@ $(document).ready(function () {
                     profileY.data.datasets[0].data[i] = {x: yProfileInfo.coords[i], y: yProfileInfo.data[i]}
                 }
                 profileY.options.scales.xAxes[0].ticks.min = yProfileInfo.coords[0];
-                profileY.options.scales.xAxes[0].ticks.max = yProfileInfo.coords[yProfileInfo.data.length-1];
+                profileY.options.scales.xAxes[0].ticks.max = yProfileInfo.coords[yProfileInfo.data.length - 1];
                 profileY.update({duration: 0});
             }
 
@@ -780,7 +801,7 @@ $(document).ready(function () {
 
         //var dataPos = {x: Math.floor(mousePos.x / regionImageData.mip), y: regionImageData.h - Math.floor(mousePos.y / regionImageData.mip)};
         //var zVal = regionImageData.fp32payload[dataPos.y * regionImageData.w + dataPos.x];
-        var cursorInfo = `(${imageCoords.x.toFixed(2)}, ${imageCoords.y.toFixed(2)}): ${zVal !== undefined ? zVal.toFixed(5) : 'NaN'}`;
+        var cursorInfo = `(${imageCoords.x.toFixed(2)}, ${imageCoords.y.toFixed(2)}): ${zVal !== undefined ? zVal.toFixed(5) : "NaN"}`;
         $("#cursor").html(cursorInfo);
     }
 
@@ -1096,12 +1117,6 @@ $(document).ready(function () {
 
         updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
 
-        // if ((previousZoomLevel - 1) * (zoomLevel - 1) < 0) {
-        //     gl.bindTexture(gl.TEXTURE_2D, texture);
-        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, zoomLevel > 1.0 ? gl.NEAREST : gl.NEAREST);
-        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, zoomLevel > 1.0 ? gl.NEAREST : gl.NEAREST);
-        // }
-
         var vertices = getGLCoords(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel);
         updateVertices(vertices);
         refreshColorScheme();
@@ -1143,7 +1158,7 @@ $(document).ready(function () {
         }
     });
 
-    $('#overlay').on('contextmenu', () => {
+    $("#overlay").on("contextmenu", () => {
         return false;
     });
 
@@ -1214,7 +1229,7 @@ $(document).ready(function () {
 
     // Log errors
     connection.onerror = error => {
-        console.log('WebSocket Error ' + error);
+        console.log("WebSocket Error " + error);
     };
 
     // Log messages from the server
@@ -1234,7 +1249,7 @@ $(document).ready(function () {
         var eventName = eventData.event;
         var message = eventData.message;
 
-        if (eventName === 'region_read' && message.success) {
+        if (eventName === "region_read" && message.success) {
             regionImageData = message;
             if (regionImageData.compression >= 4 && regionImageData.compression < 32) {
                 var nanEncodingLength = new DataView(event.data.slice(4, 8)).getUint32(0, true);
@@ -1270,11 +1285,6 @@ $(document).ready(function () {
                         histogram.data.datasets[0].data[i] = {x: hist.firstBinCenter + i * hist.binWidth, y: Math.max(0.1, hist.bins[i])};
                     }
                     histogram.update({duration: 0});
-                    //histogram.data[0].x = xVals;
-                    //histogram.data[0].y = hist.bins;
-                    //Plotly.redraw(histogram);
-                    //Plotly.update(histogram, {x: [xVals], y: [hist.bins]});
-                    //histogram.render();
                 });
             }
             else
@@ -1312,16 +1322,9 @@ $(document).ready(function () {
             }
             else
                 refreshColorScheme();
-
-
-            //console.timeEnd("region_rtt");
-            // if (regionImageData.compression>= 4)
-            //     console.log(`Region read: Compressed ${(binaryPayloadLength*1e-6).toFixed(3)} MB -> ${(regionImageData.fp32payload.length*4e-6).toFixed(3)} MB`);
-            // else
-            //     console.log(`Region read: ${(binaryPayloadLength*1e-6).toFixed(3)} MB`);
         }
-        else if (eventName === 'fileload' && message.success) {
-            $('#band_val').val(-1);
+        else if (eventName === "fileload" && message.success) {
+            $("#band_val").val(-1);
             $("#band_val").attr({
                 "max": message.numBands - 1
             });
@@ -1361,10 +1364,12 @@ $(document).ready(function () {
                 minVal = stats.percentileVals[indexPercentileLow];
                 maxVal = stats.percentileVals[indexPercentileHigh];
                 $("#min_val").val(minVal);
-                $('#min_val_label').text(minVal);
+                $("#min_val_label").text(minVal);
                 $("#max_val").val(maxVal);
-                $('#max_val_label').text(maxVal);
-
+                $("#max_val_label").text(maxVal);
+                histogram.annotation.options.annotations[1].value = minVal;
+                histogram.annotation.options.annotations[2].value = maxVal;
+                histogram.update({duration: 0});
             }
         }
         refreshColorScheme();
@@ -1375,8 +1380,6 @@ $(document).ready(function () {
             return;
         gl.uniform1f(shaderProgram.MinValUniform, minVal);
         gl.uniform1f(shaderProgram.MaxValUniform, maxVal);
-        //gl.uniform4f(shaderProgram.MinColorUniform, min_col.r / 255.0, min_col.g / 255.0, min_col.b / 255.0, 1.0);
-        //gl.uniform4f(shaderProgram.MaxColorUniform, max_col.r / 255.0, max_col.g / 255.0, max_col.b / 255.0, 1.0);
         gl.uniform1i(shaderProgram.CmapIndex, $("#cmap_select").val());
         gl.uniform2f(shaderProgram.ViewportSizeUniform, gl.viewportWidth, gl.viewportHeight);
         requestAnimationFrame(drawScene);
@@ -1385,7 +1388,7 @@ $(document).ready(function () {
 
     function encodeToUint8WASM(f) {
         encodeFloats = Module.cwrap(
-            'encodeFloats', 'number', ['number', 'number', 'number']
+            "encodeFloats", "number", ["number", "number", "number"]
         );
         var nDataBytes = f.length * f.BYTES_PER_ELEMENT;
         var dataPtr = Module._malloc(nDataBytes);
@@ -1409,8 +1412,8 @@ $(document).ready(function () {
     }
 
     function zfpDecompressUint8WASM(u8, nx, ny, precision) {
-        zfpDecompress = Module.cwrap(
-            'zfpDecompress', 'number', ['number', 'number', 'number', 'number', 'number', 'number']
+        var zfpDecompress = Module.cwrap(
+            "zfpDecompress", "number", ["number", "number", "number", "number", "number", "number"]
         );
 
         var newNumDataBytes = nx * ny * 4;
@@ -1422,7 +1425,6 @@ $(document).ready(function () {
             dataHeap = new Uint8Array(Module.HEAPU8.buffer, dataPtr, nDataBytes);
             console.log(`Allocating new uncompressed buffer (${nDataBytes / 1000} KB)`);
             resultFloat = new Float32Array(dataHeap.buffer, dataHeap.byteOffset, nx * ny);
-
         }
 
         var newNumDataBytesCompressed = u8.length;
@@ -1440,7 +1442,6 @@ $(document).ready(function () {
         zfpDecompress(parseInt(precision), dataHeap.byteOffset, nx, ny, dataHeapUint.byteOffset, u8.length);
 
         // Free memory
-        //Module._free(dataHeap.byteOffset);
         return resultFloat.slice();
         // END WASM
 
@@ -1479,50 +1480,50 @@ $(document).ready(function () {
         };
     }
 
-    $('#region').click(checkAndUpdateRegion);
+    $("#region").click(checkAndUpdateRegion);
 
-    $('#button_zoom_fit').click(function () {
+    $("#button_zoom_fit").click(function () {
         imageCenter.x = imageSize.x / 2;
         imageCenter.y = imageSize.y / 2;
         updateZoom(Math.min(canvasSize.x / imageSize.x, canvasSize.y / imageSize.y), false);
     });
 
-    $('#button_zoom_fit_v').click(function () {
+    $("#button_zoom_fit_v").click(function () {
         imageCenter.y = imageSize.y / 2;
         updateZoom(canvasSize.y / imageSize.y, false);
     });
 
-    $('#button_zoom_fit_h').click(function () {
+    $("#button_zoom_fit_h").click(function () {
         imageCenter.x = imageSize.x / 2;
         updateZoom(canvasSize.x / imageSize.x, false);
     });
 
-    $('#button_zoom_100').click(function () {
+    $("#button_zoom_100").click(function () {
         updateZoom(1.0, false);
     });
 
-    $('#button_zoom_50').click(function () {
+    $("#button_zoom_50").click(function () {
         updateZoom(0.5, false);
     });
 
-    $('#button_zoom_33').click(function () {
+    $("#button_zoom_33").click(function () {
         updateZoom(0.3333333, false);
     });
 
-    $('#button_zoom_25').click(function () {
+    $("#button_zoom_25").click(function () {
         updateZoom(0.25, false);
     });
 
-    $('#button_zoom_200').click(function () {
+    $("#button_zoom_200").click(function () {
         updateZoom(2.0, false);
     });
 
-    $('#button_load').click(function () {
+    $("#button_load").click(function () {
         if (connection) {
             var payload = {
                 event: "fileload",
                 message: {
-                    filename: $('#fileload_data').val()
+                    filename: $("#fileload_data").val()
                 }
             };
             connection.send(JSON.stringify(payload));
