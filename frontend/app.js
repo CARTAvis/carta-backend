@@ -409,11 +409,6 @@ $(document).ready(function () {
     // updating min/max from histogram
     var bandStats = null;
 
-    //profileX = document.getElementById('profileX');
-    //profileY = document.getElementById('profileY');
-    //histogram = document.getElementById('histogram');
-
-
     var histogram = new Chart(document.getElementById("histogram").getContext('2d'), {
         type: 'line',
         data: {
@@ -428,6 +423,18 @@ $(document).ready(function () {
             }]
         },
         options: {
+            annotation: {
+                annotations: [
+                    {
+                        id: "histline",
+                        type: "line",
+                        mode: "vertical",
+                        scaleID: "x-axis-0",
+                        borderColor: "red",
+                        borderWidth: 1,
+                    }
+                ]
+            },
             responsive: true,
             legend: {display: false},
             scales: {
@@ -479,6 +486,27 @@ $(document).ready(function () {
             }]
         },
         options: {
+            annotation: {
+                annotations: [
+                    {
+                        id: "xline",
+                        type: "line",
+                        mode: "vertical",
+                        scaleID: "x-axis-0",
+                        borderColor: "red",
+                        borderWidth: 1,
+                    },
+                    {
+                        id: "mean",
+                        type: "line",
+                        mode: "horizontal",
+                        scaleID: "y-axis-0",
+                        borderColor: "grey",
+                        borderWidth: 1,
+                        borderDash: [5]
+                    }
+                ]
+            },
             legend: {display: false},
             scales: {
                 xAxes: [{
@@ -530,6 +558,27 @@ $(document).ready(function () {
             }]
         },
         options: {
+            annotation: {
+                annotations: [
+                    {
+                        id: "yline",
+                        type: "line",
+                        mode: "vertical",
+                        scaleID: "x-axis-0",
+                        borderColor: "red",
+                        borderWidth: 1
+                    },
+                    {
+                        id: "mean",
+                        type: "line",
+                        mode: "horizontal",
+                        scaleID: "y-axis-0",
+                        borderColor: "grey",
+                        borderWidth: 1,
+                        borderDash: [5]
+                    }
+                ]
+            },
             legend: {display: false},
             scales: {
                 xAxes: [{
@@ -565,82 +614,6 @@ $(document).ready(function () {
             }
         }
     });
-
-    // Plotly.plot(profileX,
-    //     [{
-    //         y: [0, 0, 0, 0, 0],
-    //         line: {
-    //             shape: 'vh',
-    //             color: 'black',
-    //             width: 1
-    //         },
-    //         mode: 'lines'
-    //     }],
-    //     {
-    //         margin: {t: 0, l: 30},
-    //         xaxis: {
-    //             title: 'Pixel X coordinate'
-    //         },
-    //         yaxis: {
-    //             title: 'Value'
-    //         }
-    //     });
-
-    // Plotly.plot(profileY,
-    //     [{
-    //         y: [0, 0, 0, 0, 0],
-    //         line: {
-    //             shape: 'vh',
-    //             color: 'black',
-    //             width: 1
-    //         },
-    //         mode: 'lines'
-    //     }],
-    //     {
-    //         margin: {t: 0, l: 30},
-    //         xaxis: {
-    //             title: 'Pixel Y coordinate'
-    //         },
-    //         yaxis: {
-    //             title: 'Value'
-    //         }
-    //     });
-
-    // Plotly.plot(histogram,
-    //     [{
-    //         y: [0, 0, 0, 0, 0],
-    //         type: 'bar',
-    //         marker: {
-    //             color: 'black',
-    //             width: 1
-    //         }
-    //     }],
-    //     {
-    //         margin: {t: 0, l: 30},
-    //         xaxis: {
-    //             title: 'Value'
-    //         },
-    //         yaxis: {
-    //             title: 'Counts',
-    //             type: 'log'
-    //         }
-    //     },
-    //     {
-    //         modeBarButtonsToRemove: [
-    //             'sendDataToCloud',
-    //             'lasso2d',
-    //             'hoverCompareCartesian'
-    //
-    //         ]
-    //     });
-
-    // histogram.on('plotly_selected', function (data) {
-    //     minVal = data.range.x[0];
-    //     maxVal = data.range.x[1];
-    //     $('#min_val_label').text(minVal);
-    //     $('#max_val_label').text(minVal);
-    //     refreshColorScheme();
-    // });
 
     function updateBounds(imageCenter, imageSize, currentRegion, canvasSize, zoomLevel) {
         var topLeft = {
@@ -714,7 +687,7 @@ $(document).ready(function () {
                 // For latency emulation:
                 // setTimeout(function () {
                 //     connection.send(JSON.stringify(payload));
-                // }, 80);
+                // }, 500);
                 connection.send(JSON.stringify(payload));
             }
             else {
@@ -733,7 +706,7 @@ $(document).ready(function () {
         refreshColorScheme();
     }));
 
-    $("#max_val").on("input", $.debounce(16, function() {
+    $("#max_val").on("input", $.debounce(16, function () {
         $("#percentile_select").val("custom");
         maxVal = this.value;
         $('#max_val_label').text(maxVal);
@@ -749,18 +722,6 @@ $(document).ready(function () {
         updateSliders(bandStats);
 
     }));
-
-    // var max_col = hexToRGB(document.getElementById("max_col").value);
-    // $("#max_col").on("change", $.debounce(16, function () {
-    //     max_col = hexToRGB("#" + this.value);
-    //     refreshColorScheme();
-    // }));
-    //
-    // var min_col = hexToRGB(document.getElementById("min_col").value);
-    // $("#min_col").on("change", $.debounce(16, function () {
-    //     min_col = hexToRGB("#" + this.value);
-    //     refreshColorScheme();
-    // }));
 
     function drawCursor(pos, crossWidth) {
         overlay.strokeStyle = "#0000BB";
@@ -787,106 +748,33 @@ $(document).ready(function () {
         requestAnimationFrame(() => {
             var xProfileInfo = getXProfile(imageCoords);
             if (xProfileInfo && xProfileInfo.data) {
-                var shapesX = [
-                    {
-                        yref: 'paper',
-                        x0: imageCoords.x,
-                        y0: 0,
-                        x1: imageCoords.x,
-                        y1: 1,
-                        line: {
-                            color: 'red',
-                            width: 1
-                        }
-                    },
-                    {
-                        xref: 'paper',
-                        x0: 0,
-                        y0: xProfileInfo.mean,
-                        x1: 1,
-                        y1: xProfileInfo.mean,
-                        line: {
-                            color: 'blue',
-                            width: 1
-                        }
-                    }
-                ];
-
+                profileX.annotation.options.annotations[0].value = imageCoords.x;
+                profileX.annotation.options.annotations[1].value = xProfileInfo.mean;
                 profileX.data.datasets[0].data.length = xProfileInfo.data.length;
                 for (var i = 0; i < xProfileInfo.data.length; i++) {
                     profileX.data.datasets[0].data[i] = {x: xProfileInfo.coords[i], y: xProfileInfo.data[i]}
                 }
+                profileX.options.scales.xAxes[0].ticks.min = xProfileInfo.coords[0];
+                profileX.options.scales.xAxes[0].ticks.max = xProfileInfo.coords[xProfileInfo.data.length-1];
                 profileX.update({duration: 0});
-
-                //profileX.data[0].x = xProfileInfo.coords;
-                //profileX.data[0].y = xProfileInfo.data;
-                //Plotly.redraw(profileX);
-
-
-                //Plotly.update(profileX, {x: [xProfileInfo.coords], y: [xProfileInfo.data]}, {shapes: shapesX});
             }
 
             var yProfileInfo = getYProfile(imageCoords);
             if (yProfileInfo && yProfileInfo.data) {
-                var shapesY = [
-                    {
-                        yref: 'paper',
-                        x0: imageCoords.y,
-                        y0: 0,
-                        x1: imageCoords.y,
-                        y1: 1,
-                        line: {
-                            color: 'red',
-                            width: 1
-                        }
-                    },
-                    {
-                        xref: 'paper',
-                        x0: 0,
-                        y0: yProfileInfo.mean,
-                        x1: 1,
-                        y1: yProfileInfo.mean,
-                        line: {
-                            color: 'blue',
-                            width: 1
-                        }
-                    }
-                ];
-
-                // profileYPoints.length = yProfileInfo.data.length;
-                // for (var i = 0; i < profileYPoints.length; i++) {
-                //     profileYPoints[i] = {x: yProfileInfo.coords[i], y: yProfileInfo.data[i]}
-                // }
-                // profileY.render();
+                profileY.annotation.options.annotations[0].value = imageCoords.y;
+                profileY.annotation.options.annotations[1].value = yProfileInfo.mean;
                 profileY.data.datasets[0].data.length = yProfileInfo.data.length;
                 for (var i = 0; i < yProfileInfo.data.length; i++) {
                     profileY.data.datasets[0].data[i] = {x: yProfileInfo.coords[i], y: yProfileInfo.data[i]}
                 }
+                profileY.options.scales.xAxes[0].ticks.min = yProfileInfo.coords[0];
+                profileY.options.scales.xAxes[0].ticks.max = yProfileInfo.coords[yProfileInfo.data.length-1];
                 profileY.update({duration: 0});
-
-                //profileY.data[0].x = yProfileInfo.coords;
-                //profileY.data[0].y = yProfileInfo.data;
-                //Plotly.redraw(profileY);
-
-                //Plotly.update(profileY, {x: [yProfileInfo.coords], y: [yProfileInfo.data]}, {shapes: shapesY});
             }
 
             if (!isNaN(zVal)) {
-                var shapesHist = [
-                    {
-                        yref: 'paper',
-                        x0: zVal,
-                        y0: 0,
-                        x1: zVal,
-                        y1: 1,
-                        line: {
-                            color: 'red',
-                            width: 1
-                        }
-                    }
-                ];
-
-                //Plotly.update(histogram, {}, {shapes: shapesHist});
+                histogram.annotation.options.annotations[0].value = zVal;
+                histogram.update({duration: 0});
             }
         });
 
@@ -1265,7 +1153,7 @@ $(document).ready(function () {
             var mousePos = getMousePos(canvasGL, event);
             var imageCoords = getImageCoords(mousePos);
             // Shift key restricts panning to a single dimension (whichever is a larger delta)
-            if (event.shiftKey){
+            if (event.shiftKey) {
                 var deltaX = Math.abs(imageCenter.x - imageCoords.x);
                 var deltaY = Math.abs(imageCenter.y - imageCoords.y);
                 if (deltaX > deltaY)
