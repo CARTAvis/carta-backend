@@ -427,8 +427,8 @@ $(document).ready(function () {
         },
         options: {
             events: ['mousemove', 'mousedown', 'mouseup'],
-            onHover: function () {
-                console.log('1')
+            zoomBox:{
+                mode: 'x'
             },
             annotation: {
                 annotations: [
@@ -790,6 +790,7 @@ $(document).ready(function () {
                 }
                 profileX.options.scales.xAxes[0].ticks.min = xProfileInfo.coords[0];
                 profileX.options.scales.xAxes[0].ticks.max = xProfileInfo.coords[xProfileInfo.data.length - 1];
+                profileX.zoomBox.originalZoom=null;
                 profileX.update({duration: 0});
             }
 
