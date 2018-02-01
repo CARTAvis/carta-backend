@@ -1,5 +1,8 @@
 namespace = "/test";
 
+
+
+
 const COLOR_MAPS_ALL = ["Accent", "afmhot", "autumn", "binary", "Blues", "bone", "BrBG", "brg", "BuGn", "BuPu", "bwr", "CMRmap", "cool", "coolwarm",
     "copper", "cubehelix", "Dark2", "flag", "gist_earth", "gist_gray", "gist_heat", "gist_ncar", "gist_rainbow", "gist_stern", "gist_yarg",
     "GnBu", "gnuplot", "gnuplot2", "gray", "Greens", "Greys", "hot", "hsv", "inferno", "jet", "magma", "nipy_spectral", "ocean", "Oranges",
@@ -408,6 +411,7 @@ $(document).ready(function () {
     // updating min/max from histogram
     var bandStats = null;
 
+
     var histogram = new Chart(document.getElementById("histogram").getContext("2d"), {
         type: "line",
         data: {
@@ -422,6 +426,10 @@ $(document).ready(function () {
             }]
         },
         options: {
+            events: ['mousemove', 'mousedown', 'mouseup'],
+            onHover: function () {
+                console.log('1')
+            },
             annotation: {
                 annotations: [
                     {
@@ -474,6 +482,9 @@ $(document).ready(function () {
                     }
                 }]
             },
+            customLine: {
+                color: 'black'
+            },
             animation: {
                 duration: 0
             },
@@ -503,6 +514,7 @@ $(document).ready(function () {
             }]
         },
         options: {
+            events: ['mousemove', 'mousedown', 'mouseup'],
             annotation: {
                 annotations: [
                     {
@@ -575,6 +587,7 @@ $(document).ready(function () {
             }]
         },
         options: {
+            events: ['mousemove', 'mousedown', 'mouseup'],
             annotation: {
                 annotations: [
                     {
