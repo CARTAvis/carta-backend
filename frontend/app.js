@@ -1,15 +1,11 @@
 namespace = "/test";
 
-
-
-
 const COLOR_MAPS_ALL = ["Accent", "afmhot", "autumn", "binary", "Blues", "bone", "BrBG", "brg", "BuGn", "BuPu", "bwr", "CMRmap", "cool", "coolwarm",
     "copper", "cubehelix", "Dark2", "flag", "gist_earth", "gist_gray", "gist_heat", "gist_ncar", "gist_rainbow", "gist_stern", "gist_yarg",
     "GnBu", "gnuplot", "gnuplot2", "gray", "Greens", "Greys", "hot", "hsv", "inferno", "jet", "magma", "nipy_spectral", "ocean", "Oranges",
     "OrRd", "Paired", "Pastel1", "Pastel2", "pink", "PiYG", "plasma", "PRGn", "prism", "PuBu", "PuBuGn", "PuOr", "PuRd", "Purples", "rainbow",
     "RdBu", "RdGy", "RdPu", "RdYlBu", "RdYlGn", "Reds", "seismic", "Set1", "Set2", "Set3", "Spectral", "spring", "summer", "tab10", "tab20",
     "tab20b", "tab20c", "terrain", "viridis", "winter", "Wistia", "YlGn", "YlGnBu", "YlOrBr", "YlOrRd"];
-
 
 var gl;
 var extTextureFloat;
@@ -175,11 +171,6 @@ function loadImageTexture(gl, url) {
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, imageTexture);
 
-    // Because images have to be download over the internet
-    // they might take a moment until they are ready.
-    // Until then put a single pixel in the texture so we can
-    // use it immediately. When the image has finished downloading
-    // we"ll update the texture with the contents of the image.
     const level = 0;
     const internalFormat = gl.RGB;
     const width = 1;
