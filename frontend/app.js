@@ -422,12 +422,14 @@ $(document).ready(function () {
                 fill: false,
                 borderColor: "blue",
                 borderWidth: 1,
+                borderJoinStyle: "miter",
                 steppedLine: true
             }]
         },
         options: {
             events: ['mousemove', 'mousedown', 'mouseup'],
             zoomBox:{
+                rescale: false,
                 mode: 'x'
             },
             annotation: {
@@ -510,6 +512,7 @@ $(document).ready(function () {
                 fill: false,
                 borderColor: "blue",
                 borderWidth: 1,
+                borderJoinStyle: "miter",
                 steppedLine: true
             }]
         },
@@ -583,6 +586,7 @@ $(document).ready(function () {
                 fill: false,
                 borderColor: "blue",
                 borderWidth: 1,
+                borderJoinStyle: "miter",
                 steppedLine: true
             }]
         },
@@ -790,7 +794,11 @@ $(document).ready(function () {
                 }
                 profileX.options.scales.xAxes[0].ticks.min = xProfileInfo.coords[0];
                 profileX.options.scales.xAxes[0].ticks.max = xProfileInfo.coords[xProfileInfo.data.length - 1];
+                // Automatically scale y axis again and remove saved zoom setting
+                profileX.options.scales.yAxes[0].ticks.min = undefined;
+                profileX.options.scales.yAxes[0].ticks.max = undefined;
                 profileX.zoomBox.originalZoom=null;
+
                 profileX.update({duration: 0});
             }
 
@@ -804,6 +812,11 @@ $(document).ready(function () {
                 }
                 profileY.options.scales.xAxes[0].ticks.min = yProfileInfo.coords[0];
                 profileY.options.scales.xAxes[0].ticks.max = yProfileInfo.coords[yProfileInfo.data.length - 1];
+                // Automatically scale y axis again and remove saved zoom setting
+                profileY.options.scales.yAxes[0].ticks.min = undefined;
+                profileY.options.scales.yAxes[0].ticks.max = undefined;
+                profileY.zoomBox.originalZoom=null;
+
                 profileY.update({duration: 0});
             }
 
@@ -856,6 +869,7 @@ $(document).ready(function () {
 
     $(document).keydown((event) => {
         if (event.which == 32) {
+            event.preventDefault();
             frozenCursor = !frozenCursor;
         }
 
