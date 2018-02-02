@@ -4,7 +4,7 @@ Chart.plugins.register({
         var defaultOptions = {
             doubleClickDelay: 300,
             deltaLimit: 20,
-            mode: 'xy',
+            mode: "xy",
             rectangleSelect: true,
             rescale: true,
             rescaleMarginPercent: 5,
@@ -20,7 +20,7 @@ Chart.plugins.register({
         };
 
         // Sanity checks for zoom modes. Can only do rectangle select if both zoom directions are enabled
-        if (chart.zoomBox.options.mode !== 'xy')
+        if (chart.zoomBox.options.mode !== "xy")
             chart.zoomBox.options.rectangleSelect = false;
 
     },
@@ -78,14 +78,14 @@ Chart.plugins.register({
                         };
                     }
 
-                    if (chart.zoomBox.currentZoomMode == 'xy') {
+                    if (chart.zoomBox.currentZoomMode == "xy") {
                         chart.options.scales.xAxes[0].ticks.min = Math.min(chart.zoomBox.scaleInitial.x, chart.zoomBox.scaleFinal.x);
                         chart.options.scales.xAxes[0].ticks.max = Math.max(chart.zoomBox.scaleInitial.x, chart.zoomBox.scaleFinal.x);
                         chart.options.scales.yAxes[0].ticks.min = Math.min(chart.zoomBox.scaleInitial.y, chart.zoomBox.scaleFinal.y);
                         chart.options.scales.yAxes[0].ticks.max = Math.max(chart.zoomBox.scaleInitial.y, chart.zoomBox.scaleFinal.y);
                         chart.update({duration: 0});
                     }
-                    else if (chart.zoomBox.currentZoomMode == 'x') {
+                    else if (chart.zoomBox.currentZoomMode == "x") {
                         chart.options.scales.xAxes[0].ticks.min = Math.min(chart.zoomBox.scaleInitial.x, chart.zoomBox.scaleFinal.x);
                         chart.options.scales.xAxes[0].ticks.max = Math.max(chart.zoomBox.scaleInitial.x, chart.zoomBox.scaleFinal.x);
                         // Rescale Y axis to fit new data range
@@ -111,7 +111,7 @@ Chart.plugins.register({
 
                         chart.update({duration: 0});
                     }
-                    else if (chart.zoomBox.currentZoomMode == 'y') {
+                    else if (chart.zoomBox.currentZoomMode == "y") {
                         chart.options.scales.yAxes[0].ticks.min = Math.min(chart.zoomBox.scaleInitial.y, chart.zoomBox.scaleFinal.y);
                         chart.options.scales.yAxes[0].ticks.max = Math.max(chart.zoomBox.scaleInitial.y, chart.zoomBox.scaleFinal.y);
                         chart.update({duration: 0});
@@ -147,7 +147,7 @@ Chart.plugins.register({
 
             // Rectangle mode
             if (options.rectangleSelect && Math.abs(dX) > options.deltaLimit && Math.abs(dY) > options.deltaLimit) {
-                chart.zoomBox.currentZoomMode = 'xy';
+                chart.zoomBox.currentZoomMode = "xy";
                 ctx.save();
                 ctx.fillStyle = options.fillStyle;
                 ctx.fillRect(chart.zoomBox.pixelInitial.x, chart.zoomBox.pixelInitial.y, dX, dY);
@@ -183,8 +183,8 @@ Chart.plugins.register({
                 ctx.restore();
             }
             // H-Zoom only (vertical lines)
-            else if ((options.mode === 'xy' && Math.abs(dX) > Math.abs(dY)) || options.mode === 'x') {
-                chart.zoomBox.currentZoomMode = 'x';
+            else if ((options.mode === "xy" && Math.abs(dX) > Math.abs(dY)) || options.mode === "x") {
+                chart.zoomBox.currentZoomMode = "x";
                 ctx.save();
                 ctx.fillStyle = options.fillStyle;
                 ctx.fillRect(chart.zoomBox.pixelInitial.x, chart.chartArea.top, dX, chart.chartArea.bottom - chart.chartArea.top);
@@ -209,8 +209,8 @@ Chart.plugins.register({
                 ctx.restore();
             }
             // V-Zoom only (horizontal lines)
-            else if (options.mode === 'xy' || options.mode === 'y') {
-                chart.zoomBox.currentZoomMode = 'y';
+            else if (options.mode === "xy" || options.mode === "y") {
+                chart.zoomBox.currentZoomMode = "y";
                 ctx.save();
                 ctx.fillStyle = options.fillStyle;
                 ctx.fillRect(chart.chartArea.left, chart.zoomBox.pixelInitial.y, chart.chartArea.right - chart.chartArea.left, dY);

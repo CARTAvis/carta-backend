@@ -218,7 +218,7 @@ function loadFP32Texture(data, width, height) {
     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border,
         format, type, data);
 
-    // set the filtering so we don"t need mips and it"s not filtered
+    // set the filtering so we don't need mips and it's not filtered
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -242,7 +242,7 @@ function loadRGBATexture(data, width, height) {
     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border,
         format, type, data);
 
-    // set the filtering so we don"t need mips and it"s not filtered
+    // set the filtering so we don't need mips and it's not filtered
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -418,10 +418,10 @@ $(document).ready(function () {
             }]
         },
         options: {
-            events: ['mousemove', 'mousedown', 'mouseup'],
-            zoomBox:{
+            events: ["mousemove", "mousedown", "mouseup"],
+            zoomBox: {
                 rescale: false,
-                mode: 'x'
+                mode: "x"
             },
             annotation: {
                 annotations: [
@@ -476,7 +476,7 @@ $(document).ready(function () {
                 }]
             },
             customLine: {
-                color: 'black'
+                color: "black"
             },
             animation: {
                 duration: 0
@@ -508,7 +508,7 @@ $(document).ready(function () {
             }]
         },
         options: {
-            events: ['mousemove', 'mousedown', 'mouseup'],
+            events: ["mousemove", "mousedown", "mouseup"],
             annotation: {
                 annotations: [
                     {
@@ -582,7 +582,7 @@ $(document).ready(function () {
             }]
         },
         options: {
-            events: ['mousemove', 'mousedown', 'mouseup'],
+            events: ["mousemove", "mousedown", "mouseup"],
             annotation: {
                 annotations: [
                     {
@@ -788,7 +788,7 @@ $(document).ready(function () {
                 // Automatically scale y axis again and remove saved zoom setting
                 profileX.options.scales.yAxes[0].ticks.min = undefined;
                 profileX.options.scales.yAxes[0].ticks.max = undefined;
-                profileX.zoomBox.originalZoom=null;
+                profileX.zoomBox.originalZoom = null;
 
                 profileX.update({duration: 0});
             }
@@ -806,7 +806,7 @@ $(document).ready(function () {
                 // Automatically scale y axis again and remove saved zoom setting
                 profileY.options.scales.yAxes[0].ticks.min = undefined;
                 profileY.options.scales.yAxes[0].ticks.max = undefined;
-                profileY.zoomBox.originalZoom=null;
+                profileY.zoomBox.originalZoom = null;
 
                 profileY.update({duration: 0});
             }
