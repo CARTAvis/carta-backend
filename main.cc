@@ -4,12 +4,14 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/program_options.hpp>
 #include "rapidjson/document.h"
 #include "rapidjson/pointer.h"
 #include "Session.h"
 
 using namespace std;
 using namespace rapidjson;
+namespace po = boost::program_options;
 
 map<uWS::WebSocket<uWS::SERVER> *, Session *> sessions;
 boost::uuids::random_generator uuid_gen;
@@ -41,7 +43,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER> *ws, char *rawMessage, size_t length,
     return;
   }
 
-  if (opCode==uWS::OpCode::TEXT) {
+  if (opCode == uWS::OpCode::TEXT) {
     // Null-terminate string to prevent parsing errors
     char *paddedMessage = new char[length + 1];
     memcpy(paddedMessage, rawMessage, length);
@@ -55,9 +57,9 @@ void onMessage(uWS::WebSocket<uWS::SERVER> *ws, char *rawMessage, size_t length,
       string eventName(d["event"].GetString());
       Value &message = GetValueByPointerWithDefault(d, "/message", "{}");
 
-      if (eventName=="region_read") {
+      if (eventName == "region_read") {
         session->onRegionRead(message);
-      } else if (eventName=="fileload") {
+      } else if (eventName == "fileload") {
         session->onFileLoad(message);
       } else {
         fmt::print("Unknown query type!\n");
@@ -65,18 +67,55 @@ void onMessage(uWS::WebSocket<uWS::SERVER> *ws, char *rawMessage, size_t length,
 
     } else
       fmt::print("Missing event or message parameters\n");
-  } else if (opCode==uWS::OpCode::BINARY)
+  } else if (opCode == uWS::OpCode::BINARY)
     fmt::print("Binary recieved ({} bytes)\n", length);
 };
 
-int main() {
-  uWS::Hub h;
+int main(int argc, const char *argv[]) {
+  try {
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("help", "produce help message")
+        ("port", po::value<int>(), "set server port")
+        ("folder", po::value<string>(), "set folder for data files");
 
-  h.onMessage(&onMessage);
-  h.onConnection(&onConnect);
-  h.onDisconnection(&onDisconnect);
-  if (h.listen(3002)) {
-    h.run();
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+      cout << desc << "\n";
+      return 0;
+    }
+
+    int port = 3002;
+    if (vm.count("port")) {
+      port = vm["port"].as<int>();
+    }
+    if (vm.count("folder")) {
+      baseFolder = vm["folder"].as<string>();
+    }
+
+    uWS::Hub h;
+
+    h.onMessage(&onMessage);
+    h.onConnection(&onConnect);
+    h.onDisconnection(&onDisconnect);
+    if (h.listen(port)) {
+      fmt::print("Listening on port {} with data folder {}\n", port, baseFolder);
+      h.run();
+    } else {
+      fmt::print("Error listening on port {}\n", port);
+      return 1;
+    }
   }
-
+  catch (exception &e) {
+    fmt::print("Error: {}\n", e.what());
+    return 1;
+  }
+  catch (...) {
+    fmt::print("Unknown error\n");
+    return 1;
+  }
+  return 0;
 }
