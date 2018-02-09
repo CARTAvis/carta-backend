@@ -9,6 +9,6 @@ The server build depends on the following libraries:
 * [HighFive](https://github.com/BlueBrain/HighFive) as a high level interface to HDF5. Build and install from git repo.
 * [HDF5](https://support.hdfgroup.org/HDF5/) for low level HDF5 support (required by HighFive). Debian package `libhdf5-dev`.
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.
-* boost [uuid](http://www.boost.org/doc/libs/release/libs/uuid) and [multi-array](http://www.boost.org/doc/libs/release/libs/multi_array/) modules (Both easily installed through `apt`)
+* boost [uuid](http://www.boost.org/doc/libs/release/libs/uuid), [program_options](http://www.boost.org/doc/libs/release/libs/program_options) and [multi-array](http://www.boost.org/doc/libs/release/libs/multi_array/) modules (All easily installed through `apt`)
 
 Use cmake to build. Currently, the server looks for HDF5 files in the `$HOME` directory. 
