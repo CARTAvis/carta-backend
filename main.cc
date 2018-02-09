@@ -16,7 +16,7 @@ namespace po = boost::program_options;
 map<uWS::WebSocket<uWS::SERVER> *, Session *> sessions;
 boost::uuids::random_generator uuid_gen;
 
-string baseFolder = getenv("HOME");
+string baseFolder = "./";
 
 void onConnect(uWS::WebSocket<uWS::SERVER> *ws, uWS::HttpRequest httpRequest) {
   sessions[ws] = new Session(ws, uuid_gen(), baseFolder);
