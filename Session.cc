@@ -1,5 +1,6 @@
 #include "Session.h"
 #include "events.h"
+#include <fstream>
 #include <boost/filesystem.hpp>
 #include <algorithm>
 using namespace HighFive;
