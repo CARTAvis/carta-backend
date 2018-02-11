@@ -19,6 +19,7 @@ Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder)
       binaryPayloadCache(nullptr),
       payloadSizeCached(0) {
 
+  eventMutex.lock();
   auto tStart = std::chrono::high_resolution_clock::now();
   fs::path folderPath(baseFolder);
   try {
@@ -47,6 +48,23 @@ Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder)
   auto tEnd = std::chrono::high_resolution_clock::now();
   auto dtFileSearch = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
   fmt::print("Found {} HDF5 files in {} ms\n", availableFileList.size(), dtFileSearch);
+
+  Document responseDoc(kObjectType);
+  auto &allocator = responseDoc.GetAllocator();
+  responseDoc.AddMember("event", "connect", allocator);
+  Value responseMessage(kObjectType);
+  responseMessage.AddMember("success", true, allocator);
+  Value availableFilesVals(kArrayType);
+  availableFilesVals.Reserve(availableFileList.size(), allocator);
+  for (auto &v: availableFileList) {
+    Value filenameValue(kStringType);
+    filenameValue.SetString(v.c_str(), allocator);
+    availableFilesVals.PushBack(filenameValue, allocator);
+  }
+  responseMessage.AddMember("availableFiles", availableFilesVals, allocator);
+  responseDoc.AddMember("message", responseMessage, allocator);
+  eventMutex.unlock();
+  sendEvent(socket, responseDoc);
 }
 
 // Any cached memory freed when session is closed
