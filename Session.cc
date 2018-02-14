@@ -1,9 +1,13 @@
 #include "Session.h"
 #include "events.h"
+#include <fstream>
+#include <boost/filesystem.hpp>
+#include <algorithm>
 using namespace HighFive;
 using namespace std;
 using namespace uWS;
 using namespace rapidjson;
+namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
 Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder)
@@ -14,6 +18,53 @@ Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder)
       socket(ws),
       binaryPayloadCache(nullptr),
       payloadSizeCached(0) {
+
+  eventMutex.lock();
+  auto tStart = std::chrono::high_resolution_clock::now();
+  fs::path folderPath(baseFolder);
+  try {
+    if (fs::exists(folderPath) && fs::is_directory(folderPath)) {
+      for (auto &directoryEntry : fs::directory_iterator(folderPath)) {
+        fs::path filePath(directoryEntry);
+        if (fs::is_regular_file(filePath) && fs::file_size(directoryEntry) > 8) {
+          uint64_t sig;
+          string filename = directoryEntry.path().string();
+          ifstream file(filename, ios::in | ios::binary);
+          if (file.is_open()) {
+            file.read((char *) &sig, 8);
+            if (sig == 0xa1a0a0d46444889) {
+              availableFileList.push_back(directoryEntry.path().filename().string());
+            }
+          }
+          file.close();
+        }
+      }
+
+    }
+  }
+  catch (const fs::filesystem_error &ex) {
+    fmt::print("Error: {}\n", ex.what());
+  }
+  auto tEnd = std::chrono::high_resolution_clock::now();
+  auto dtFileSearch = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
+  fmt::print("Found {} HDF5 files in {} ms\n", availableFileList.size(), dtFileSearch);
+
+  Document responseDoc(kObjectType);
+  auto &allocator = responseDoc.GetAllocator();
+  responseDoc.AddMember("event", "connect", allocator);
+  Value responseMessage(kObjectType);
+  responseMessage.AddMember("success", true, allocator);
+  Value availableFilesVals(kArrayType);
+  availableFilesVals.Reserve(availableFileList.size(), allocator);
+  for (auto &v: availableFileList) {
+    Value filenameValue(kStringType);
+    filenameValue.SetString(v.c_str(), allocator);
+    availableFilesVals.PushBack(filenameValue, allocator);
+  }
+  responseMessage.AddMember("availableFiles", availableFilesVals, allocator);
+  responseDoc.AddMember("message", responseMessage, allocator);
+  eventMutex.unlock();
+  sendEvent(socket, responseDoc);
 }
 
 // Any cached memory freed when session is closed
@@ -279,9 +330,15 @@ bool Session::loadFile(const string &filename, int defaultBand) {
     return true;
 
   delete file;
+  file = nullptr;
+
+  if (find(availableFileList.begin(), availableFileList.end(), filename) == availableFileList.end()){
+    log(fmt::format("Problem loading file {}: File is not in available file list.", filename));
+    return false;
+  }
 
   try {
-    file = new File(filename, File::ReadOnly);
+    file = new File(fmt::format("{}/{}", baseFolder, filename), File::ReadOnly);
     vector<string> fileObjectList = file->listObjectNames();
     imageInfo.filename = filename;
     auto group = file->getGroup("Image");
@@ -533,7 +590,7 @@ void Session::onFileLoad(const Value &message) {
   eventMutex.lock();
   if (message.HasMember("filename") && message["filename"].IsString()) {
     string filename = message["filename"].GetString();
-    if (loadFile(fmt::format("{}/{}", baseFolder, filename))) {
+    if (loadFile(filename)) {
       log(fmt::format("File {} loaded successfully", filename));
       Document responseDoc(kObjectType);
       auto &allocator = responseDoc.GetAllocator();

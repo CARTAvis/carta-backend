@@ -55,6 +55,7 @@ class Session {
   std::string baseFolder;
   char *binaryPayloadCache;
   uint32_t payloadSizeCached = 0;
+  std::vector<std::string> availableFileList;
 
  public:
   Session(uWS::WebSocket<uWS::SERVER> *ws, boost::uuids::uuid uuid, std::string folder);
