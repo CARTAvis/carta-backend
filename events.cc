@@ -1,3 +1,4 @@
+#include <fmt/format.h>
 #include "events.h"
 #include "rapidjson/writer.h"
 
@@ -25,5 +26,16 @@ void sendEventBinaryPayload(WebSocket<SERVER> *ws, Document &document, void *pay
   memcpy(rawData + sizeof(length), payload, length);
   memcpy(rawData + length + sizeof(length), jsonPayload.c_str(), jsonPayload.size());
   ws->send(rawData, jsonPayload.size() + length + sizeof(length), uWS::BINARY);
+  delete[] rawData;
+}
+
+// Sends an event to the client with a given event name (padded/concatentated to 32 characters) and a given protobuf message
+void sendEvent(uWS::WebSocket<uWS::SERVER> *ws, string eventName, void *protocolPayload, int length) {
+  size_t eventNameLength = 32;
+  auto rawData = new char[eventNameLength + length];
+  memset(rawData, 0, eventNameLength);
+  memcpy(rawData, eventName.c_str(), min(eventName.length(), eventNameLength));
+  memcpy(rawData+eventNameLength, protocolPayload, length);
+  ws->send(rawData, eventNameLength + length, uWS::BINARY);
   delete[] rawData;
 }
