@@ -8,6 +8,7 @@
 #include <uWS/uWS.h>
 #include "rapidjson/document.h"
 #include "compression.h"
+#include "proto/connectionResponse.pb.h"
 
 typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;

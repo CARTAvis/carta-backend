@@ -1,0 +1,37 @@
+syntax = "proto3";
+package Responses;
+
+// Response after client requests a region
+message RegionReadResponse {
+    bool success = 1;
+    int32 x = 2;
+    int32 y = 3;
+    int32 width = 4;
+    int32 height = 5;
+    int32 mip = 6;
+    int32 compression = 7;
+    bytes image_data = 8;
+    repeated int32 nan_encodings = 9;
+    Statistics stats = 10;
+}
+
+message Statistics {
+    float min_val = 1;
+    float max_val = 2;
+    float mean = 3;
+    float nan_counts = 4;
+    Histogram hist = 5;
+    Percentiles percentiles = 6;
+}
+
+message Histogram {
+    int32 N = 1;
+    float bin_width = 2;
+    float first_bin_center = 3;
+    repeated float bins = 4;
+}
+
+message Percentiles {
+    repeated float percentiles = 1;
+    repeated float values = 2;
+}
