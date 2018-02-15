@@ -577,5 +577,6 @@ void Session::log(const string &logMessage) {
   time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
   string timeString = ctime(&time);
   timeString = timeString.substr(0, timeString.length() - 1);
-  fmt::print("Session {} ({}): {}\n", uuidString, timeString, logMessage);
+
+  fmt::print("Session {} [{}] ({}): {}\n", uuidString, socket->getAddress().address, timeString, logMessage);
 }
