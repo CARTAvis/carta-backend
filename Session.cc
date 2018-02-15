@@ -568,5 +568,14 @@ void Session::onFileLoad(const Value &message) {
 }
 
 void Session::log(const string &logMessage) {
-  fmt::print("Session {}: {}\n", boost::uuids::to_string(uuid), logMessage);
+  // Shorten uuids a bit for brevity
+  auto uuidString = boost::uuids::to_string(uuid);
+  auto lastHash = uuidString.find_last_of('-');
+  if (lastHash != string::npos) {
+    uuidString = uuidString.substr(lastHash + 1);
+  }
+  time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
+  string timeString = ctime(&time);
+  timeString = timeString.substr(0, timeString.length() - 1);
+  fmt::print("Session {} ({}): {}\n", uuidString, timeString, logMessage);
 }
