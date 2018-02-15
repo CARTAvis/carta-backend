@@ -3,16 +3,20 @@ package Responses;
 
 // Response after client requests a region
 message RegionReadResponse {
-    bool success = 1;
-    int32 x = 2;
-    int32 y = 3;
-    int32 width = 4;
-    int32 height = 5;
-    int32 mip = 6;
-    int32 compression = 7;
-    bytes image_data = 8;
-    repeated int32 nan_encodings = 9;
-    Statistics stats = 10;
+    // for 4-byte alignment purposes, put bytes and repeated ints first
+    bytes compressed_image_data = 1;
+    repeated float image_data = 2;
+    repeated int32 nan_encodings = 3;
+    bool success = 4;
+    int32 x = 5;
+    int32 y = 6;
+    int32 channel = 7;
+    int32 width = 8;
+    int32 height = 9;
+    int32 mip = 10;
+    int32 compression = 11;
+    int32 num_values = 12;
+    Statistics stats = 13;
 }
 
 message Statistics {
@@ -25,10 +29,10 @@ message Statistics {
 }
 
 message Histogram {
-    int32 N = 1;
-    float bin_width = 2;
-    float first_bin_center = 3;
-    repeated float bins = 4;
+    repeated int32 bins = 1;
+    int32 N = 2;
+    float bin_width = 3;
+    float first_bin_center = 4;
 }
 
 message Percentiles {

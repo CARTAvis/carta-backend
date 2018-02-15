@@ -31,7 +31,7 @@ struct BandStats {
 
 struct ImageInfo {
   std::string filename;
-  int numBands;
+  int depth;
   int width;
   int height;
   std::map<int, BandStats> bandStats;
