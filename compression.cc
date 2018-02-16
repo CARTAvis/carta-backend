@@ -92,7 +92,7 @@ vector<int32_t> getNanEncodings(float *array, size_t length) {
   // but this is only an issue with NaNs right at the edge of images.
   for (auto i = 0; i < length; i++) {
     bool current = isnan(array[i]);
-    if (current!=prev) {
+    if (current != prev) {
       encodedArray.push_back(i - prevIndex);
       prevIndex = i;
       prev = current;

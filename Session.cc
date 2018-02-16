@@ -1,10 +1,10 @@
 #include "Session.h"
-#include "events.h"
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <algorithm>
 #include <proto/fileLoadResponse.pb.h>
-#include <proto/regionReadResponse.pb.h>
+#include <proto/connectionResponse.pb.h>
+
 using namespace HighFive;
 using namespace std;
 using namespace uWS;
@@ -12,11 +12,12 @@ using namespace rapidjson;
 namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder)
+Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder, bool verbose)
     : uuid(uuid),
       currentBand(-1),
       file(nullptr),
       baseFolder(folder),
+      verboseLogging(verbose),
       socket(ws),
       binaryPayloadCache(nullptr),
       payloadSizeCached(0) {
@@ -58,7 +59,7 @@ Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder)
     connectionResponse.add_available_files(v);
   }
   eventMutex.unlock();
-  sendEvent(ws, "connect", connectionResponse);
+  sendEvent("connect", connectionResponse);
 }
 
 // Any cached memory freed when session is closed
@@ -461,7 +462,7 @@ void Session::onRegionRead(const Value &message) {
   // Mutex used to prevent overlapping requests for a single client
   eventMutex.lock();
   ReadRegionRequest request;
-  Responses::RegionReadResponse regionReadResponse;
+  //Responses::RegionReadResponse regionReadResponse;
   unsigned char *compressionBuffer = nullptr;
 
   if (parseRegionQuery(message, request)) {
@@ -494,6 +495,7 @@ void Session::onRegionRead(const Value &message) {
         stats->set_min_val(bandStats.minVal);
         stats->set_max_val(bandStats.maxVal);
         stats->set_nan_counts(bandStats.nanCount);
+        stats->clear_percentiles();
         auto percentiles = stats->mutable_percentiles();
         for (auto &v: bandStats.percentiles)
           percentiles->add_percentiles(v);
@@ -505,27 +507,44 @@ void Session::onRegionRead(const Value &message) {
           hist->set_first_bin_center(currentBandHistogram.firstBinCenter);
           hist->set_n(currentBandHistogram.N);
           hist->set_bin_width(currentBandHistogram.binWidth);
-          google::protobuf::RepeatedField<int> bins(currentBandHistogram.bins.begin(), currentBandHistogram.bins.end());
-          hist->mutable_bins()->Swap(&bins);
+          hist->set_bins(currentBandHistogram.bins.data(), currentBandHistogram.N*sizeof(int));
         }
+        else{
+          stats->clear_hist();
+        }
+      }
+      else{
+        regionReadResponse.clear_stats();
       }
 
       if (compressed) {
         // Compression is affected by NaN values, so first remove NaNs and get run-length-encoded NaN list
         auto nanEncoding = getNanEncodings(regionData.data(), regionData.size());
         size_t compressedSize;
+        auto tStart = chrono::high_resolution_clock::now();
         compress(regionData.data(), compressionBuffer, compressedSize, rowLength, numRows, request.compression);
-
-        google::protobuf::RepeatedField<int> nanEncodingsField(nanEncoding.begin(), nanEncoding.end());
+        auto tEnd = chrono::high_resolution_clock::now();
+        auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
+        if (verboseLogging) {
+          fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs\n",
+                     numRows * rowLength * sizeof(float) / 1e3,
+                     compressedSize / 1e3,
+                     dtCompress);
+        }
+        google::protobuf::RepeatedField<int32_t > nanEncodingsField(nanEncoding.begin(), nanEncoding.end());
         regionReadResponse.mutable_nan_encodings()->Swap(&nanEncodingsField);
-        regionReadResponse.set_compressed_image_data(compressionBuffer, compressedSize);
-
-        //log(fmt::format("Compressed binary ({:.3f} MB) sent", compressedSize/1e6));
+        regionReadResponse.set_image_data(compressionBuffer, compressedSize);
       } else {
-        // sending uncompressed data is much simpler
-        google::protobuf::RepeatedField<float> imageDataField(regionData.begin(), regionData.end());
-        regionReadResponse.mutable_image_data()->Swap(&imageDataField);
-        //log(fmt::format("Uncompressed binary ({:.3f} MB) sent", numRows*rowLength*sizeof(float)/1e6));
+        regionReadResponse.clear_nan_encodings();
+        auto tStart = chrono::high_resolution_clock::now();
+        regionReadResponse.set_image_data(regionData.data(), numRows*rowLength*sizeof(float));
+        auto tEnd = chrono::high_resolution_clock::now();
+        auto dtSetImageData = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
+        if (verboseLogging) {
+          fmt::print("Image data of size {:.1f} kB copied to protobuf in {} μs\n",
+                     numRows * rowLength * sizeof(float) / 1e3,
+                     dtSetImageData);
+        }
       }
 
 
@@ -539,7 +558,7 @@ void Session::onRegionRead(const Value &message) {
     regionReadResponse.set_success(false);
   }
   eventMutex.unlock();
-  sendEvent(socket, "region_read", regionReadResponse);
+  sendEvent("region_read", regionReadResponse);
   delete [] compressionBuffer;
 }
 
@@ -564,7 +583,39 @@ void Session::onFileLoad(const Value &message) {
     }
   }
   eventMutex.unlock();
-  sendEvent(socket, "fileload", fileLoadResponse);
+  sendEvent("fileload", fileLoadResponse);
+}
+
+// Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given protobuf message
+void Session::sendEvent(string eventName, google::protobuf::MessageLite& message) {
+  size_t eventNameLength = 32;
+  int messageLength = message.ByteSize();
+  size_t requiredSize = eventNameLength + messageLength;
+  if (!binaryPayloadCache || payloadSizeCached < requiredSize){
+    delete [] binaryPayloadCache;
+    binaryPayloadCache = new char[requiredSize];
+    payloadSizeCached = requiredSize;
+  }
+  memset(binaryPayloadCache, 0, eventNameLength);
+  memcpy(binaryPayloadCache, eventName.c_str(), min(eventName.length(), eventNameLength));
+  auto tStart = chrono::high_resolution_clock::now();
+  message.SerializeToArray(binaryPayloadCache+eventNameLength, messageLength);
+  auto tEnd = chrono::high_resolution_clock::now();
+  auto dtSerialize = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
+  tStart = chrono::high_resolution_clock::now();
+  socket->send(binaryPayloadCache, requiredSize, uWS::BINARY);
+  tEnd = chrono::high_resolution_clock::now();
+  auto dtSend = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
+  if (verboseLogging){
+  if (messageLength>1e4) {
+    log(fmt::format("Message of size {:.1f} kB serialised in {} μs\n", messageLength/1e3, dtSerialize));
+    log(fmt::format("Event of size {:.1f} kB sent in {} μs\n", requiredSize/1e3, dtSend));
+  }
+  else{
+    log(fmt::format("Message of size {} B serialised in {} μs\n", messageLength, dtSerialize));
+    log(fmt::format("Event of size {} B sent in {} μs\n", requiredSize, dtSend));
+  }
+  }
 }
 
 void Session::log(const string &logMessage) {

@@ -8,7 +8,7 @@
 #include <uWS/uWS.h>
 #include "rapidjson/document.h"
 #include "compression.h"
-#include "proto/connectionResponse.pb.h"
+#include "proto/regionReadResponse.pb.h"
 
 typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;
@@ -55,11 +55,13 @@ class Session {
   uWS::WebSocket<uWS::SERVER> *socket;
   std::string baseFolder;
   char *binaryPayloadCache;
-  uint32_t payloadSizeCached = 0;
+  size_t payloadSizeCached = 0;
   std::vector<std::string> availableFileList;
+  bool verboseLogging;
+  Responses::RegionReadResponse regionReadResponse;
 
  public:
-  Session(uWS::WebSocket<uWS::SERVER> *ws, boost::uuids::uuid uuid, std::string folder);
+  Session(uWS::WebSocket<uWS::SERVER> *ws, boost::uuids::uuid uuid, std::string folder, bool verbose=false);
   void onRegionRead(const rapidjson::Value &message);
   void onFileLoad(const rapidjson::Value &message);
   ~Session();
@@ -72,5 +74,6 @@ class Session {
   bool loadStats();
   std::vector<float> getZProfile(int x, int y);
   std::vector<float> readRegion(const ReadRegionRequest &req);
+  void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
   void log(const std::string &logMessage);
 };
