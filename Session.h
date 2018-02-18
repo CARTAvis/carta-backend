@@ -73,7 +73,7 @@ class Session {
   bool loadBand(int band);
   bool loadStats();
   std::vector<float> getZProfile(int x, int y);
-  std::vector<float> readRegion(const ReadRegionRequest &req);
+  std::vector<float> readRegion(const ReadRegionRequest &req, bool meanFilter = true);
   void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
   void log(const std::string &logMessage);
 };

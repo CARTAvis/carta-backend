@@ -409,7 +409,7 @@ vector<float> Session::getZProfile(int x, int y) {
 
 // Reads a region corresponding to the given region request. If the current band is not the same as
 // the band specified in the request, the new band is loaded
-vector<float> Session::readRegion(const ReadRegionRequest &req) {
+vector<float> Session::readRegion(const ReadRegionRequest &req, bool meanFilter) {
   if (!file || !file->isValid()) {
     log("No file loaded");
     return vector<float>();
@@ -437,21 +437,31 @@ vector<float> Session::readRegion(const ReadRegionRequest &req) {
   vector<float> regionData;
   regionData.resize(numRowsRegion*rowLengthRegion);
 
-  // Perform down-sampling by calculating the mean for each MIPxMIP block
-  for (auto j = 0; j < numRowsRegion; j++) {
-    for (auto i = 0; i < rowLengthRegion; i++) {
-      float sumPixel = 0;
-      int count = 0;
-      for (auto x = 0; x < req.mip; x++) {
-        for (auto y = 0; y < req.mip; y++) {
-          float pixVal = currentBandCache[0][req.y + j*req.mip + y][req.x + i*req.mip + x];
-          if (!isnan(pixVal)) {
-            count++;
-            sumPixel += pixVal;
+  if (meanFilter) {
+    // Perform down-sampling by calculating the mean for each MIPxMIP block
+    for (auto j = 0; j < numRowsRegion; j++) {
+      for (auto i = 0; i < rowLengthRegion; i++) {
+        float sumPixel = 0;
+        int count = 0;
+        for (auto x = 0; x < req.mip; x++) {
+          for (auto y = 0; y < req.mip; y++) {
+            float pixVal = currentBandCache[0][req.y + j * req.mip + y][req.x + i * req.mip + x];
+            if (!isnan(pixVal)) {
+              count++;
+              sumPixel += pixVal;
+            }
           }
         }
+        regionData[j * rowLengthRegion + i] = count ? sumPixel / count : NAN;
       }
-      regionData[j*rowLengthRegion + i] = count ? sumPixel/count : NAN;
+    }
+  }
+  else {
+    // Nearest neighbour filtering
+    for (auto j = 0; j < numRowsRegion; j++) {
+      for (auto i = 0; i < rowLengthRegion; i++) {
+        regionData[j * rowLengthRegion + i] = currentBandCache[0][req.y + j * req.mip][req.x + i * req.mip];
+      }
     }
   }
   return regionData;
@@ -468,7 +478,7 @@ void Session::onRegionRead(const Value &message) {
   if (parseRegionQuery(message, request)) {
     // Valid compression precision range: (4-31)
     bool compressed = request.compression >= 4 && request.compression < 32;
-    vector<float> regionData = readRegion(request);
+    vector<float> regionData = readRegion(request, false);
 
     if (regionData.size()) {
       auto numValues = regionData.size();
