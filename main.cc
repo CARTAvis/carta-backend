@@ -87,7 +87,7 @@ int main(int argc, const char *argv[]) {
     po::notify(vm);
 
     if (vm.count("help")) {
-      cout << desc << "\n";
+      std::cout << desc << "\n";
       return 0;
     }
 

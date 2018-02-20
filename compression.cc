@@ -3,7 +3,7 @@
 
 using namespace std;
 
-int compress(float *array, unsigned char *&compressionBuffer, size_t &zfpsize, uint nx, uint ny, uint precision) {
+int compress(std::vector<float> array, vector<char>& compressionBuffer, size_t &zfpsize, uint nx, uint ny, uint precision) {
   int status = 0;    /* return value: 0 = success */
   zfp_type type;     /* array scalar type */
   zfp_field *field;  /* array meta data */
@@ -12,7 +12,7 @@ int compress(float *array, unsigned char *&compressionBuffer, size_t &zfpsize, u
   bitstream *stream; /* bit stream to write to or read from */
 
   type = zfp_type_float;
-  field = zfp_field_2d(array, type, nx, ny);
+  field = zfp_field_2d(array.data(), type, nx, ny);
 
   /* allocate meta data for a compressed stream */
   zfp = zfp_stream_open(nullptr);
@@ -22,9 +22,10 @@ int compress(float *array, unsigned char *&compressionBuffer, size_t &zfpsize, u
 
   /* allocate buffer for compressed data */
   bufsize = zfp_stream_maximum_size(zfp, field);
-  compressionBuffer = new unsigned char[bufsize];
-  /* associate bit stream with allocated buffer */
-  stream = stream_open(compressionBuffer, bufsize);
+  if (compressionBuffer.size()<bufsize){
+    compressionBuffer.resize(bufsize);
+  }
+  stream = stream_open(compressionBuffer.data(), bufsize);
   zfp_stream_set_bit_stream(zfp, stream);
   zfp_stream_rewind(zfp);
 
@@ -41,7 +42,7 @@ int compress(float *array, unsigned char *&compressionBuffer, size_t &zfpsize, u
   return status;
 }
 
-int decompress(float *array, unsigned char *compressionBuffer, size_t &zfpsize, uint nx, uint ny, uint precision) {
+int decompress(std::vector<float> array, vector<char>& compressionBuffer, size_t &zfpsize, uint nx, uint ny, uint precision) {
   int status = 0;    /* return value: 0 = success */
   zfp_type type;     /* array scalar type */
   zfp_field *field;  /* array meta data */
@@ -50,13 +51,13 @@ int decompress(float *array, unsigned char *compressionBuffer, size_t &zfpsize, 
 
   /* allocate meta data for the 3D array a[nz][ny][nx] */
   type = zfp_type_float;
-  field = zfp_field_2d(array, type, nx, ny);
+  field = zfp_field_2d(array.data(), type, nx, ny);
 
   /* allocate meta data for a compressed stream */
   zfp = zfp_stream_open(nullptr);
   zfp_stream_set_precision(zfp, precision);
 
-  stream = stream_open(compressionBuffer, zfpsize);
+  stream = stream_open(compressionBuffer.data(), zfpsize);
   zfp_stream_set_bit_stream(zfp, stream);
   zfp_stream_rewind(zfp);
 
@@ -73,11 +74,11 @@ int decompress(float *array, unsigned char *compressionBuffer, size_t &zfpsize, 
 }
 
 // Removes NaNs from an array and returns run-length encoded list of NaNs
-vector<int32_t> getNanEncodings(float *array, size_t length) {
+vector<int32_t> getNanEncodings(vector<float> array) {
+  size_t length = array.size();
   int32_t prevIndex = 0;
   bool prev = false;
   vector<int32_t> encodedArray;
-
   // Find first non-NaN number in the array
   float prevValidNum = 0;
   for (auto i = 0; i < length; i++) {

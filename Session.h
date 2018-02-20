@@ -48,14 +48,14 @@ class Session {
   Matrix3F currentBandCache;
   Histogram currentBandHistogram;
   int currentBand;
-  HighFive::File *file;
+  std::unique_ptr<HighFive::File> file;
   std::vector<HighFive::DataSet> dataSets;
   ImageInfo imageInfo;
   std::mutex eventMutex;
   uWS::WebSocket<uWS::SERVER> *socket;
   std::string baseFolder;
-  char *binaryPayloadCache;
-  size_t payloadSizeCached = 0;
+  std::vector<char> binaryPayloadCache;
+  std::vector<char> compressionBuffer;
   std::vector<std::string> availableFileList;
   bool verboseLogging;
   Responses::RegionReadResponse regionReadResponse;
