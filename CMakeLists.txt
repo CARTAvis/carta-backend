@@ -3,6 +3,9 @@ project(hdf5_image_viewer)
 
 #set(CMAKE_CXX_COMPILER cc)
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+
 add_definitions(-DH5_USE_BOOST)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(HighFive)
