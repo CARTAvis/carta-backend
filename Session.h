@@ -6,7 +6,8 @@
 #include <highfive/H5File.hpp>
 #include <mutex>
 #include <uWS/uWS.h>
-#include "rapidjson/document.h"
+#include <proto/fileLoadRequest.pb.h>
+#include <proto/regionReadRequest.pb.h>
 #include "compression.h"
 #include "proto/regionReadResponse.pb.h"
 
@@ -37,17 +38,13 @@ struct ImageInfo {
   std::map<int, BandStats> bandStats;
 };
 
-struct ReadRegionRequest {
-  int x, y, w, h, band, mip, compression;
-};
-
 class Session {
  public:
   boost::uuids::uuid uuid;
  protected:
-  Matrix3F currentBandCache;
+  Matrix3F currentChannelCache;
   Histogram currentBandHistogram;
-  int currentBand;
+  int currentChannel;
   std::unique_ptr<HighFive::File> file;
   std::vector<HighFive::DataSet> dataSets;
   ImageInfo imageInfo;
@@ -62,18 +59,17 @@ class Session {
 
  public:
   Session(uWS::WebSocket<uWS::SERVER> *ws, boost::uuids::uuid uuid, std::string folder, bool verbose=false);
-  void onRegionRead(const rapidjson::Value &message);
-  void onFileLoad(const rapidjson::Value &message);
+  void onRegionRead(const Requests::RegionReadRequest& regionReadRequest);
+  void onFileLoad(const Requests::FileLoadRequest& fileLoadRequest);
   ~Session();
 
  protected:
   void updateHistogram();
-  bool parseRegionQuery(const rapidjson::Value &message, ReadRegionRequest &regionQuery);
   bool loadFile(const std::string &filename, int defaultBand = -1);
-  bool loadBand(int band);
+  bool loadChannel(int channel);
   bool loadStats();
   std::vector<float> getZProfile(int x, int y);
-  std::vector<float> readRegion(const ReadRegionRequest &req, bool meanFilter = true);
+  std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
   void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
   void log(const std::string &logMessage);
 };

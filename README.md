@@ -5,7 +5,7 @@ Server for simple web-based interface for viewing HDF5 images (using the IDIA cu
 The server build depends on the following libraries: 
 * [zfp](https://github.com/LLNL/zfp) for data compression. The same library is used on the client, after being compiled to WebAssembly. Build and install from git repo.
 * [fmt](https://github.com/fmtlib/fmt) for python-style (and safe printf-style) string formating and printing. Debian package `libfmt3-dev`. 
-* [RapidJSON](https://github.com/Tencent/rapidjson) for JSON support. Included in this repo under `rapidjson`, as the Debian package is out of date.
+* [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required) 
 * [HighFive](https://github.com/BlueBrain/HighFive) as a high level interface to HDF5. Build and install from git repo.
 * [HDF5](https://support.hdfgroup.org/HDF5/) for low level HDF5 support (required by HighFive). Debian package `libhdf5-dev`.
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.

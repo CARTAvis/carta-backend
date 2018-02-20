@@ -1,0 +1,13 @@
+syntax = "proto3";
+package Requests;
+
+// Request for a new file
+message RegionReadRequest {
+    sfixed32 x = 1;
+    sfixed32 y = 2;
+    sfixed32 channel = 3;
+    sfixed32 width = 4;
+    sfixed32 height = 5;
+    sfixed32 mip = 6;
+    sfixed32 compression = 7;
+}
