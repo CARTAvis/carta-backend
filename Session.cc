@@ -67,11 +67,6 @@ void Session::updateHistogram() {
   int band = (currentChannel==-1) ? imageInfo.depth : currentChannel;
   if (imageInfo.bandStats.count(band) && imageInfo.bandStats[band].histogram.bins.size()) {
     currentBandHistogram = imageInfo.bandStats[band].histogram;
-    if (currentChannel==-1)
-      log("Using cached histogram for average band");
-    else
-      log(fmt::format("Using cached histogram for band {}", currentChannel));
-
     return;
   }
 
@@ -107,7 +102,7 @@ void Session::updateHistogram() {
     }
   }
 
-  log("Updated histogram");
+  log("Cached histogram not found. Manually updated");
 
 }
 
