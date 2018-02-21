@@ -5,25 +5,38 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/program_options.hpp>
-#include "rapidjson/document.h"
-#include "rapidjson/pointer.h"
+#include <proto/fileLoadRequest.pb.h>
+#include <proto/regionReadRequest.pb.h>
 #include "Session.h"
 
 using namespace std;
-using namespace rapidjson;
+using namespace uWS;
 namespace po = boost::program_options;
 
-map<uWS::WebSocket<uWS::SERVER> *, Session *> sessions;
+map<WebSocket<SERVER> *, Session *> sessions;
 boost::uuids::random_generator uuid_gen;
 
 string baseFolder = "./";
+bool verbose = false;
 
-void onConnect(uWS::WebSocket<uWS::SERVER> *ws, uWS::HttpRequest httpRequest) {
-  sessions[ws] = new Session(ws, uuid_gen(), baseFolder);
+
+string getEventName(char* rawMessage) {
+  int nullIndex = 0;
+  for (auto i = 0; i < 32; i++) {
+    if (!rawMessage[i]){
+      nullIndex = i;
+      break;
+    }
+  }
+  return string(rawMessage, nullIndex);
+}
+
+void onConnect(WebSocket<SERVER> *ws, HttpRequest httpRequest) {
+  sessions[ws] = new Session(ws, uuid_gen(), baseFolder, verbose);
   fmt::print("Client {} Connected. Clients: {}\n", boost::uuids::to_string(sessions[ws]->uuid), sessions.size());
 }
 
-void onDisconnect(uWS::WebSocket<uWS::SERVER> *ws, int code, char *message, size_t length) {
+void onDisconnect(WebSocket<SERVER> *ws, int code, char *message, size_t length) {
   auto uuid = sessions[ws]->uuid;
   auto session = sessions[ws];
   if (session) {
@@ -34,8 +47,8 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER> *ws, int code, char *message, size
   fmt::print("Client {} Disconnected. Remaining clients: {}\n", boost::uuids::to_string(uuid), sessions.size());
 }
 
-// Forward message requests to session callbacks
-void onMessage(uWS::WebSocket<uWS::SERVER> *ws, char *rawMessage, size_t length, uWS::OpCode opCode) {
+// Forward message requests to session callbacks after parsing message
+void onMessage(WebSocket<SERVER> *ws, char *rawMessage, size_t length, OpCode opCode) {
   auto session = sessions[ws];
 
   if (!session) {
@@ -43,32 +56,26 @@ void onMessage(uWS::WebSocket<uWS::SERVER> *ws, char *rawMessage, size_t length,
     return;
   }
 
-  if (opCode == uWS::OpCode::TEXT) {
-    // Null-terminate string to prevent parsing errors
-    char *paddedMessage = new char[length + 1];
-    memcpy(paddedMessage, rawMessage, length);
-    paddedMessage[length] = 0;
-
-    Document d;
-    d.Parse(paddedMessage);
-    delete[] paddedMessage;
-
-    if (d.HasMember("event") && d.HasMember("message") && d["message"].IsObject()) {
-      string eventName(d["event"].GetString());
-      Value &message = GetValueByPointerWithDefault(d, "/message", "{}");
-
-      if (eventName == "region_read") {
-        session->onRegionRead(message);
-      } else if (eventName == "fileload") {
-        session->onFileLoad(message);
+  if (opCode == OpCode::BINARY) {
+    if (length > 32) {
+      string eventName = getEventName(rawMessage);
+      if (eventName == "fileload") {
+        Requests::FileLoadRequest fileLoadRequest;
+        if (fileLoadRequest.ParseFromArray(rawMessage + 32, length - 32)) {
+          session->onFileLoad(fileLoadRequest);
+        }
+      } else if (eventName == "region_read") {
+        Requests::RegionReadRequest regionReadRequest;
+        if (regionReadRequest.ParseFromArray(rawMessage + 32, length - 32)) {
+          session->onRegionRead(regionReadRequest);
+        }
       } else {
-        fmt::print("Unknown query type!\n");
+        fmt::print("Unknown event type {}\n", eventName);
       }
-
-    } else
-      fmt::print("Missing event or message parameters\n");
-  } else if (opCode == uWS::OpCode::BINARY)
-    fmt::print("Binary recieved ({} bytes)\n", length);
+    }
+  } else {
+    fmt::print("Invalid event type\n");
+  }
 };
 
 int main(int argc, const char *argv[]) {
@@ -76,6 +83,7 @@ int main(int argc, const char *argv[]) {
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "produce help message")
+        ("verbose", "display verbose logging")
         ("port", po::value<int>(), "set server port")
         ("folder", po::value<string>(), "set folder for data files");
 
@@ -84,9 +92,11 @@ int main(int argc, const char *argv[]) {
     po::notify(vm);
 
     if (vm.count("help")) {
-      cout << desc << "\n";
+      std::cout << desc << "\n";
       return 0;
     }
+
+    verbose = vm.count("verbose");
 
     int port = 3002;
     if (vm.count("port")) {
@@ -96,7 +106,7 @@ int main(int argc, const char *argv[]) {
       baseFolder = vm["folder"].as<string>();
     }
 
-    uWS::Hub h;
+    Hub h;
 
     h.onMessage(&onMessage);
     h.onConnection(&onConnect);

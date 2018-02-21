@@ -1,0 +1,40 @@
+syntax = "proto3";
+package Responses;
+
+// Response after client requests a region
+message RegionReadResponse {
+    // for 4-byte alignment purposes, put bytes and repeated ints first
+    bytes image_data = 1;
+    repeated sfixed32 nan_encodings = 3;
+    bool success = 4;
+    sfixed32 x = 5;
+    sfixed32 y = 6;
+    sfixed32 channel = 7;
+    sfixed32 width = 8;
+    sfixed32 height = 9;
+    sfixed32 mip = 10;
+    sfixed32 compression = 11;
+    sfixed32 num_values = 12;
+    Statistics stats = 13;
+}
+
+message Statistics {
+    float min_val = 1;
+    float max_val = 2;
+    float mean = 3;
+    float nan_counts = 4;
+    Histogram hist = 5;
+    Percentiles percentiles = 6;
+}
+
+message Histogram {
+    bytes bins = 1;
+    sfixed32 N = 2;
+    float bin_width = 3;
+    float first_bin_center = 4;
+}
+
+message Percentiles {
+    repeated float percentiles = 1;
+    repeated float values = 2;
+}

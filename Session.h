@@ -6,8 +6,10 @@
 #include <highfive/H5File.hpp>
 #include <mutex>
 #include <uWS/uWS.h>
-#include "rapidjson/document.h"
+#include <proto/fileLoadRequest.pb.h>
+#include <proto/regionReadRequest.pb.h>
 #include "compression.h"
+#include "proto/regionReadResponse.pb.h"
 
 typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;
@@ -30,46 +32,44 @@ struct BandStats {
 
 struct ImageInfo {
   std::string filename;
-  int numBands;
+  int depth;
   int width;
   int height;
   std::map<int, BandStats> bandStats;
-};
-
-struct ReadRegionRequest {
-  int x, y, w, h, band, mip, compression;
 };
 
 class Session {
  public:
   boost::uuids::uuid uuid;
  protected:
-  Matrix3F currentBandCache;
+  Matrix3F currentChannelCache;
   Histogram currentBandHistogram;
-  int currentBand;
-  HighFive::File *file;
+  int currentChannel;
+  std::unique_ptr<HighFive::File> file;
   std::vector<HighFive::DataSet> dataSets;
   ImageInfo imageInfo;
   std::mutex eventMutex;
   uWS::WebSocket<uWS::SERVER> *socket;
   std::string baseFolder;
-  char *binaryPayloadCache;
-  uint32_t payloadSizeCached = 0;
+  std::vector<char> binaryPayloadCache;
+  std::vector<char> compressionBuffer;
   std::vector<std::string> availableFileList;
+  bool verboseLogging;
+  Responses::RegionReadResponse regionReadResponse;
 
  public:
-  Session(uWS::WebSocket<uWS::SERVER> *ws, boost::uuids::uuid uuid, std::string folder);
-  void onRegionRead(const rapidjson::Value &message);
-  void onFileLoad(const rapidjson::Value &message);
+  Session(uWS::WebSocket<uWS::SERVER> *ws, boost::uuids::uuid uuid, std::string folder, bool verbose=false);
+  void onRegionRead(const Requests::RegionReadRequest& regionReadRequest);
+  void onFileLoad(const Requests::FileLoadRequest& fileLoadRequest);
   ~Session();
 
  protected:
   void updateHistogram();
-  bool parseRegionQuery(const rapidjson::Value &message, ReadRegionRequest &regionQuery);
   bool loadFile(const std::string &filename, int defaultBand = -1);
-  bool loadBand(int band);
+  bool loadChannel(int channel);
   bool loadStats();
   std::vector<float> getZProfile(int x, int y);
-  std::vector<float> readRegion(const ReadRegionRequest &req);
+  std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
+  void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
   void log(const std::string &logMessage);
 };

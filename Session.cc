@@ -1,23 +1,23 @@
 #include "Session.h"
-#include "events.h"
 #include <fstream>
 #include <boost/filesystem.hpp>
-#include <algorithm>
+#include <proto/fileLoadResponse.pb.h>
+#include <proto/connectionResponse.pb.h>
+#include <proto/fileLoadRequest.pb.h>
+
 using namespace HighFive;
 using namespace std;
 using namespace uWS;
-using namespace rapidjson;
 namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder)
+Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder, bool verbose)
     : uuid(uuid),
-      currentBand(-1),
+      currentChannel(-1),
       file(nullptr),
       baseFolder(folder),
-      socket(ws),
-      binaryPayloadCache(nullptr),
-      payloadSizeCached(0) {
+      verboseLogging(verbose),
+      socket(ws) {
 
   eventMutex.lock();
   auto tStart = std::chrono::high_resolution_clock::now();
@@ -49,39 +49,24 @@ Session::Session(WebSocket<SERVER> *ws, boost::uuids::uuid uuid, string folder)
   auto dtFileSearch = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
   fmt::print("Found {} HDF5 files in {} ms\n", availableFileList.size(), dtFileSearch);
 
-  Document responseDoc(kObjectType);
-  auto &allocator = responseDoc.GetAllocator();
-  responseDoc.AddMember("event", "connect", allocator);
-  Value responseMessage(kObjectType);
-  responseMessage.AddMember("success", true, allocator);
-  Value availableFilesVals(kArrayType);
-  availableFilesVals.Reserve(availableFileList.size(), allocator);
+
+  Responses::ConnectionResponse connectionResponse;
+  connectionResponse.set_success("true");
   for (auto &v: availableFileList) {
-    Value filenameValue(kStringType);
-    filenameValue.SetString(v.c_str(), allocator);
-    availableFilesVals.PushBack(filenameValue, allocator);
+    connectionResponse.add_available_files(v);
   }
-  responseMessage.AddMember("availableFiles", availableFilesVals, allocator);
-  responseDoc.AddMember("message", responseMessage, allocator);
   eventMutex.unlock();
-  sendEvent(socket, responseDoc);
+  sendEvent("connect", connectionResponse);
 }
 
-// Any cached memory freed when session is closed
 Session::~Session() {
-  delete file;
-  delete[] binaryPayloadCache;
+
 }
 
 void Session::updateHistogram() {
-  int band = (currentBand==-1) ? imageInfo.numBands : currentBand;
+  int band = (currentChannel==-1) ? imageInfo.depth : currentChannel;
   if (imageInfo.bandStats.count(band) && imageInfo.bandStats[band].histogram.bins.size()) {
     currentBandHistogram = imageInfo.bandStats[band].histogram;
-    if (currentBand==-1)
-      log("Using cached histogram for average band");
-    else
-      log(fmt::format("Using cached histogram for band {}", currentBand));
-
     return;
   }
 
@@ -92,13 +77,13 @@ void Session::updateHistogram() {
   if (!rowSize)
     return;
 
-  float minVal = currentBandCache[0][0][0];
-  float maxVal = currentBandCache[0][0][0];
+  float minVal = currentChannelCache[0][0][0];
+  float maxVal = currentChannelCache[0][0][0];
 
   for (auto i = 0; i < imageInfo.height; i++) {
     for (auto j = 0; j < imageInfo.width; j++) {
-      minVal = fmin(minVal, currentBandCache[0][i][j]);
-      maxVal = fmax(maxVal, currentBandCache[0][i][j]);
+      minVal = fmin(minVal, currentChannelCache[0][i][j]);
+      maxVal = fmax(maxVal, currentChannelCache[0][i][j]);
     }
   }
 
@@ -109,7 +94,7 @@ void Session::updateHistogram() {
   memset(currentBandHistogram.bins.data(), 0, sizeof(int)*currentBandHistogram.bins.size());
   for (auto i = 0; i < imageInfo.height; i++) {
     for (auto j = 0; j < imageInfo.width; j++) {
-      auto v = currentBandCache[0][i][j];
+      auto v = currentChannelCache[0][i][j];
       if (isnan(v))
         continue;
       int bin = min((int) ((v - minVal)/currentBandHistogram.binWidth), currentBandHistogram.N - 1);
@@ -117,24 +102,8 @@ void Session::updateHistogram() {
     }
   }
 
-  log("Updated histogram");
+  log("Cached histogram not found. Manually updated");
 
-}
-
-bool Session::parseRegionQuery(const Value &message, ReadRegionRequest &regionQuery) {
-  const char *intVarNames[] = {"x", "y", "w", "h", "band", "mip", "compression"};
-
-  for (auto varName:intVarNames) {
-    if (!message.HasMember(varName) || !message[varName].IsInt())
-      return false;
-  }
-
-  regionQuery = {message["x"].GetInt(), message["y"].GetInt(), message["w"].GetInt(), message["h"].GetInt(),
-                 message["band"].GetInt(), message["mip"].GetInt(), message["compression"].GetInt()};
-  if (regionQuery.x < 0 || regionQuery.y < 0 || regionQuery.band < -1 || regionQuery.band >= imageInfo.numBands
-      || regionQuery.mip < 1 || regionQuery.w < 1 || regionQuery.h < 1)
-    return false;
-  return true;
 }
 
 bool Session::loadStats() {
@@ -148,10 +117,10 @@ bool Session::loadStats() {
     if (statsGroup.isValid() && statsGroup.exist("MaxVals")) {
       auto dataSet = statsGroup.getDataSet("MaxVals");
       auto dims = dataSet.getSpace().getDimensions();
-      if (dims.size()==1 && dims[0]==imageInfo.numBands + 1) {
+      if (dims.size()==1 && dims[0]==imageInfo.depth + 1) {
         vector<float> data;
         dataSet.read(data);
-        for (auto i = 0; i < imageInfo.numBands + 1; i++) {
+        for (auto i = 0; i < imageInfo.depth + 1; i++) {
           imageInfo.bandStats[i].maxVal = data[i];
         }
       } else {
@@ -166,10 +135,10 @@ bool Session::loadStats() {
     if (statsGroup.isValid() && statsGroup.exist("MinVals")) {
       auto dataSet = statsGroup.getDataSet("MinVals");
       auto dims = dataSet.getSpace().getDimensions();
-      if (dims.size()==1 && dims[0]==imageInfo.numBands + 1) {
+      if (dims.size()==1 && dims[0]==imageInfo.depth + 1) {
         vector<float> data;
         dataSet.read(data);
-        for (auto i = 0; i < imageInfo.numBands + 1; i++) {
+        for (auto i = 0; i < imageInfo.depth + 1; i++) {
           imageInfo.bandStats[i].minVal = data[i];
         }
       } else {
@@ -184,10 +153,10 @@ bool Session::loadStats() {
     if (statsGroup.isValid() && statsGroup.exist("Means")) {
       auto dataSet = statsGroup.getDataSet("Means");
       auto dims = dataSet.getSpace().getDimensions();
-      if (dims.size()==1 && dims[0]==imageInfo.numBands + 1) {
+      if (dims.size()==1 && dims[0]==imageInfo.depth + 1) {
         vector<float> data;
         dataSet.read(data);
-        for (auto i = 0; i < imageInfo.numBands + 1; i++) {
+        for (auto i = 0; i < imageInfo.depth + 1; i++) {
           imageInfo.bandStats[i].mean = data[i];
         }
       } else {
@@ -202,10 +171,10 @@ bool Session::loadStats() {
     if (statsGroup.isValid() && statsGroup.exist("NaNCounts")) {
       auto dataSet = statsGroup.getDataSet("NaNCounts");
       auto dims = dataSet.getSpace().getDimensions();
-      if (dims.size()==1 && dims[0]==imageInfo.numBands + 1) {
+      if (dims.size()==1 && dims[0]==imageInfo.depth + 1) {
         vector<int> data;
         dataSet.read(data);
-        for (auto i = 0; i < imageInfo.numBands + 1; i++) {
+        for (auto i = 0; i < imageInfo.depth + 1; i++) {
           imageInfo.bandStats[i].nanCount = data[i];
         }
       } else {
@@ -229,8 +198,8 @@ bool Session::loadStats() {
         auto dimsBins = dataSetBins.getSpace().getDimensions();
 
         if (dimsBinWidths.size()==1 && dimsFirstCenters.size()==1 && dimsBins.size()==2
-            && dimsBinWidths[0]==imageInfo.numBands + 1 && dimsFirstCenters[0]==imageInfo.numBands + 1
-            && dimsBins[0]==imageInfo.numBands + 1) {
+            && dimsBinWidths[0]==imageInfo.depth + 1 && dimsFirstCenters[0]==imageInfo.depth + 1
+            && dimsBins[0]==imageInfo.depth + 1) {
           vector<float> binWidths;
           dataSetBinWidths.read(binWidths);
           vector<float> firstCenters;
@@ -239,7 +208,7 @@ bool Session::loadStats() {
           dataSetBins.read(bins);
           int N = bins[0].size();
 
-          for (auto i = 0; i < imageInfo.numBands + 1; i++) {
+          for (auto i = 0; i < imageInfo.depth + 1; i++) {
             imageInfo.bandStats[i].histogram.N = N;
             imageInfo.bandStats[i].histogram.binWidth = binWidths[i];
             imageInfo.bandStats[i].histogram.firstBinCenter = firstCenters[i];
@@ -268,13 +237,13 @@ bool Session::loadStats() {
         auto dims = dataSetPercentiles.getSpace().getDimensions();
         auto dimsValues = dataSetValues.getSpace().getDimensions();
 
-        if (dims.size()==1 && dimsValues.size()==2 && dimsValues[0]==imageInfo.numBands + 1 && dimsValues[1]==dims[0]) {
+        if (dims.size()==1 && dimsValues.size()==2 && dimsValues[0]==imageInfo.depth + 1 && dimsValues[1]==dims[0]) {
           vector<float> percentiles;
           dataSetPercentiles.read(percentiles);
           vector<vector<float>> vals;
           dataSetValues.read(vals);
 
-          for (auto i = 0; i < imageInfo.numBands + 1; i++) {
+          for (auto i = 0; i < imageInfo.depth + 1; i++) {
             imageInfo.bandStats[i].percentiles = percentiles;
             imageInfo.bandStats[i].percentileVals = vals[i];
           }
@@ -300,26 +269,26 @@ bool Session::loadStats() {
   return true;
 }
 
-bool Session::loadBand(int band) {
+bool Session::loadChannel(int channel) {
 
   if (!file || !file->isValid()) {
 
     log("No file loaded");
     return false;
-  } else if (band >= imageInfo.numBands) {
-    log(fmt::format("Invalid band for band {} in file {}", band, imageInfo.filename));
+  } else if (channel >= imageInfo.depth) {
+    log(fmt::format("Invalid channel for channel {} in file {}", channel, imageInfo.filename));
     return false;
   }
 
-  if (band >= 0)
-    dataSets[0].select({band, 0, 0}, {1, imageInfo.height, imageInfo.width}).read(currentBandCache);
+  if (channel >= 0)
+    dataSets[0].select({channel, 0, 0}, {1, imageInfo.height, imageInfo.width}).read(currentChannelCache);
   else {
     Matrix2F tmp;
     dataSets[1].select({0, 0}, {imageInfo.height, imageInfo.width}).read(tmp);
-    currentBandCache.resize(boost::extents[1][imageInfo.height][imageInfo.width]);
-    currentBandCache[0] = tmp;
+    currentChannelCache.resize(boost::extents[1][imageInfo.height][imageInfo.width]);
+    currentChannelCache[0] = tmp;
   }
-  currentBand = band;
+  currentChannel = channel;
   updateHistogram();
   return true;
 }
@@ -329,16 +298,13 @@ bool Session::loadFile(const string &filename, int defaultBand) {
   if (filename==imageInfo.filename)
     return true;
 
-  delete file;
-  file = nullptr;
-
   if (find(availableFileList.begin(), availableFileList.end(), filename) == availableFileList.end()){
     log(fmt::format("Problem loading file {}: File is not in available file list.", filename));
     return false;
   }
 
   try {
-    file = new File(fmt::format("{}/{}", baseFolder, filename), File::ReadOnly);
+    file.reset(new File(fmt::format("{}/{}", baseFolder, filename), File::ReadOnly));
     vector<string> fileObjectList = file->listObjectNames();
     imageInfo.filename = filename;
     auto group = file->getGroup("Image");
@@ -350,7 +316,7 @@ bool Session::loadFile(const string &filename, int defaultBand) {
       return false;
     }
 
-    imageInfo.numBands = dims[0];
+    imageInfo.depth = dims[0];
     imageInfo.height = dims[1];
     imageInfo.width = dims[2];
     dataSets.clear();
@@ -372,7 +338,7 @@ bool Session::loadFile(const string &filename, int defaultBand) {
     } else {
       log(fmt::format("File {} missing optional swizzled data set, using fallback calculation.\n", filename));
     }
-    return loadBand(defaultBand);
+    return loadChannel(defaultBand);
   }
   catch (HighFive::Exception &err) {
     log(fmt::format("Problem loading file {}", filename));
@@ -398,11 +364,11 @@ vector<float> Session::getZProfile(int x, int y) {
       // Even when reading a single slice, since we're selecting a 3D space, we need to read into a 3D data structure
       // and then copy to a 1D vector. This is a bug in HighFive that only occurs if the last dimension is zero
       Matrix3F zP;
-      dataSets[2].select({x, y, 0}, {1, 1, imageInfo.numBands}).read(zP);
-      profile.resize(imageInfo.numBands);
-      memcpy(profile.data(), zP.data(), imageInfo.numBands*sizeof(float));
+      dataSets[2].select({x, y, 0}, {1, 1, imageInfo.depth}).read(zP);
+      profile.resize(imageInfo.depth);
+      memcpy(profile.data(), zP.data(), imageInfo.depth*sizeof(float));
     } else {
-      dataSets[0].select({0, y, x}, {imageInfo.numBands, 1, 1}).read(profile);
+      dataSets[0].select({0, y, x}, {imageInfo.depth, 1, 1}).read(profile);
     }
     return profile;
   }
@@ -414,215 +380,230 @@ vector<float> Session::getZProfile(int x, int y) {
 
 // Reads a region corresponding to the given region request. If the current band is not the same as
 // the band specified in the request, the new band is loaded
-vector<float> Session::readRegion(const ReadRegionRequest &req) {
+vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter) {
   if (!file || !file->isValid()) {
     log("No file loaded");
     return vector<float>();
   }
 
-  if (currentBand!=req.band) {
-    if (!loadBand(req.band)) {
-      log(fmt::format("Select band {} is invalid!", req.band));
+  if (currentChannel!=regionReadRequest.channel()) {
+    if (!loadChannel(regionReadRequest.channel())) {
+      log(fmt::format("Select channel {} is invalid!", regionReadRequest.channel()));
       return vector<float>();
     }
   }
 
-  if (imageInfo.height < req.y + req.h || imageInfo.width < req.x + req.w) {
-    log(fmt::format("Selected region ({}, {}) -> ({}, {} in band {} is invalid!",
-                    req.x,
-                    req.y,
-                    req.x + req.w,
-                    req.x + req.h,
-                    req.band));
+  const int mip = regionReadRequest.mip();
+  const int x = regionReadRequest.x();
+  const int y = regionReadRequest.y();
+  const int height = regionReadRequest.height();
+  const int width = regionReadRequest.width();
+
+  if (imageInfo.height < y + height || imageInfo.width < x + width) {
+    log(fmt::format("Selected region ({}, {}) -> ({}, {} in channel {} is invalid!",
+                    x, y, x + width, y + height, regionReadRequest.channel()));
     return vector<float>();
   }
 
-  size_t numRowsRegion = req.h/req.mip;
-  size_t rowLengthRegion = req.w/req.mip;
+  size_t numRowsRegion = height/mip;
+  size_t rowLengthRegion = width/mip;
   vector<float> regionData;
   regionData.resize(numRowsRegion*rowLengthRegion);
 
-  // Perform down-sampling by calculating the mean for each MIPxMIP block
-  for (auto j = 0; j < numRowsRegion; j++) {
-    for (auto i = 0; i < rowLengthRegion; i++) {
-      float sumPixel = 0;
-      int count = 0;
-      for (auto x = 0; x < req.mip; x++) {
-        for (auto y = 0; y < req.mip; y++) {
-          float pixVal = currentBandCache[0][req.y + j*req.mip + y][req.x + i*req.mip + x];
-          if (!isnan(pixVal)) {
-            count++;
-            sumPixel += pixVal;
+  if (meanFilter) {
+    // Perform down-sampling by calculating the mean for each MIPxMIP block
+    for (auto j = 0; j < numRowsRegion; j++) {
+      for (auto i = 0; i < rowLengthRegion; i++) {
+        float pixelSum = 0;
+        int pixelCount = 0;
+        for (auto pixelX = 0; pixelX < mip; pixelX++) {
+          for (auto pixelY = 0; pixelY < mip; pixelY++) {
+            float pixVal = currentChannelCache[0][y + j * mip + pixelY][x + i * mip + pixelX];
+            if (!isnan(pixVal)) {
+              pixelCount++;
+              pixelSum += pixVal;
+            }
           }
         }
+        regionData[j * rowLengthRegion + i] = pixelCount ? pixelSum / pixelCount : NAN;
       }
-      regionData[j*rowLengthRegion + i] = count ? sumPixel/count : NAN;
+    }
+  }
+  else {
+    // Nearest neighbour filtering
+    for (auto j = 0; j < numRowsRegion; j++) {
+      for (auto i = 0; i < rowLengthRegion; i++) {
+        regionData[j * rowLengthRegion + i] = currentChannelCache[0][y + j * mip][x + i * mip];
+      }
     }
   }
   return regionData;
 }
 
 // Event response to region read request
-void Session::onRegionRead(const Value &message) {
+void Session::onRegionRead(const Requests::RegionReadRequest &regionReadRequest) {
   // Mutex used to prevent overlapping requests for a single client
   eventMutex.lock();
-  ReadRegionRequest request;
 
-  if (parseRegionQuery(message, request)) {
-    // Valid compression precision range: (4-31)
-    bool compressed = request.compression >= 4 && request.compression < 32;
-    vector<float> regionData = readRegion(request);
+  // Valid compression precision range: (4-31)
+  bool compressed = regionReadRequest.compression() >= 4 && regionReadRequest.compression() < 32;
+  auto tStartRead = chrono::high_resolution_clock::now();
+  vector<float> regionData = readRegion(regionReadRequest, false);
+  auto tEndRead = chrono::high_resolution_clock::now();
+  auto dtRead = chrono::duration_cast<std::chrono::microseconds>(tEndRead - tStartRead).count();
 
-    if (regionData.size()) {
-      auto numValues = regionData.size();
-      auto rowLength = request.w/request.mip;
-      auto numRows = request.h/request.mip;
+  if (regionData.size()) {
+    auto numValues = regionData.size();
+    auto rowLength = regionReadRequest.width() / regionReadRequest.mip();
+    auto numRows = regionReadRequest.height() / regionReadRequest.mip();
 
-      Document responseDoc(kObjectType);
-      auto &allocator = responseDoc.GetAllocator();
-      responseDoc.AddMember("event", "region_read", allocator);
+    if (verboseLogging) {
+      fmt::print("Image data of size {:.1f} kB read in {} μs\n",
+                 numRows * rowLength * sizeof(float) / 1e3, dtRead);
+    }
 
-      Value responseMessage(kObjectType);
-      responseMessage.AddMember("success", true, allocator);
-      responseMessage.AddMember("compression", request.compression, allocator);
-      responseMessage.AddMember("x", request.x, allocator);
-      responseMessage.AddMember("y", request.y, allocator);
-      responseMessage.AddMember("w", rowLength, allocator);
-      responseMessage.AddMember("h", numRows, allocator);
-      responseMessage.AddMember("mip", request.mip, allocator);
-      responseMessage.AddMember("band", request.band, allocator);
-      responseMessage.AddMember("numValues", numValues, allocator);
+    regionReadResponse.set_success(true);
+    regionReadResponse.set_compression(regionReadRequest.compression());
+    regionReadResponse.set_x(regionReadRequest.x());
+    regionReadResponse.set_y(regionReadRequest.y());
+    regionReadResponse.set_width(rowLength);
+    regionReadResponse.set_height(numRows);
+    regionReadResponse.set_mip(regionReadRequest.mip());
+    regionReadResponse.set_channel(regionReadRequest.channel());
+    regionReadResponse.set_num_values(numValues);
 
-      // Stats for band average stored in last bandStats entry. This will change when we change the schema
-      int band = (currentBand==-1) ? imageInfo.numBands : currentBand;
-      if (imageInfo.bandStats.count(band) && imageInfo.bandStats[band].nanCount!=imageInfo.width*imageInfo.height) {
-        auto &bandStats = imageInfo.bandStats[band];
-        Value stats(kObjectType);
-        stats.AddMember("mean", bandStats.mean, allocator);
-        stats.AddMember("minVal", bandStats.minVal, allocator);
-        stats.AddMember("maxVal", bandStats.maxVal, allocator);
-        stats.AddMember("nanCount", bandStats.nanCount, allocator);
 
-        Value percentiles(kArrayType);
-        percentiles.Reserve(bandStats.percentiles.size(), allocator);
-        for (auto &v: bandStats.percentiles)
-          percentiles.PushBack(v, allocator);
-        stats.AddMember("percentiles", percentiles, allocator);
+    // Stats for band average stored in last bandStats entry. This will change when we change the schema
+    int band = (currentChannel == -1) ? imageInfo.depth : currentChannel;
+    if (imageInfo.bandStats.count(band) && imageInfo.bandStats[band].nanCount != imageInfo.width * imageInfo.height) {
+      auto &bandStats = imageInfo.bandStats[band];
+      auto stats = regionReadResponse.mutable_stats();
+      stats->set_mean(bandStats.mean);
+      stats->set_min_val(bandStats.minVal);
+      stats->set_max_val(bandStats.maxVal);
+      stats->set_nan_counts(bandStats.nanCount);
+      stats->clear_percentiles();
+      auto percentiles = stats->mutable_percentiles();
+      for (auto &v: bandStats.percentiles)
+        percentiles->add_percentiles(v);
+      for (auto &v: bandStats.percentileVals)
+        percentiles->add_values(v);
 
-        Value percentileVals(kArrayType);
-        percentileVals.Reserve(bandStats.percentileVals.size(), allocator);
-        for (auto &v: bandStats.percentileVals)
-          percentileVals.PushBack(v, allocator);
-        stats.AddMember("percentileVals", percentileVals, allocator);
-        responseMessage.AddMember("stats", stats, allocator);
-      }
-
-      // Adds histogram to the response if it exists and is valid
       if (currentBandHistogram.bins.size() && !isnan(currentBandHistogram.firstBinCenter)
           && !isnan(currentBandHistogram.binWidth)) {
-        Value hist(kObjectType);
-        hist.AddMember("firstBinCenter", currentBandHistogram.firstBinCenter, allocator);
-        hist.AddMember("binWidth", currentBandHistogram.binWidth, allocator);
-        hist.AddMember("N", currentBandHistogram.N, allocator);
-
-        Value binsValue(kArrayType);
-        binsValue.Reserve(currentBandHistogram.N, allocator);
-        for (auto &v: currentBandHistogram.bins)
-          binsValue.PushBack(v, allocator);
-
-        hist.AddMember("bins", binsValue, allocator);
-        responseMessage.AddMember("hist", hist, allocator);
-      }
-      responseDoc.AddMember("message", responseMessage, allocator);
-
-      if (compressed) {
-        // Compression is affected by NaN values, so first remove NaNs and get run-length-encoded NaN list
-        auto nanEncoding = getNanEncodings(regionData.data(), regionData.size());
-        size_t compressedSize;
-        unsigned char *compressionBuffer;
-        compress(regionData.data(), compressionBuffer, compressedSize, rowLength, numRows, request.compression);
-
-        int32_t numNanEncodings = nanEncoding.size();
-        uint32_t payloadSize = sizeof(int32_t) + sizeof(int32_t)*numNanEncodings + compressedSize;
-
-        // Resize payload cache if necessary
-        if (payloadSizeCached < payloadSize || !binaryPayloadCache) {
-          delete[] binaryPayloadCache;
-          binaryPayloadCache = new char[payloadSize];
-          payloadSizeCached = payloadSize;
-        }
-
-        memcpy(binaryPayloadCache, &numNanEncodings, sizeof(int32_t));
-        memcpy(binaryPayloadCache + sizeof(int32_t), nanEncoding.data(), sizeof(int32_t)*numNanEncodings);
-        memcpy(binaryPayloadCache + sizeof(int32_t) + sizeof(int32_t)*numNanEncodings,
-               compressionBuffer,
-               compressedSize);
-        delete[] compressionBuffer;
-        eventMutex.unlock();
-        sendEventBinaryPayload(socket, responseDoc, binaryPayloadCache, payloadSize);
-        log(fmt::format("Compressed binary ({:.3f} MB) sent", compressedSize/1e6));
+        auto hist = stats->mutable_hist();
+        hist->set_first_bin_center(currentBandHistogram.firstBinCenter);
+        hist->set_n(currentBandHistogram.N);
+        hist->set_bin_width(currentBandHistogram.binWidth);
+        hist->set_bins(currentBandHistogram.bins.data(), currentBandHistogram.N * sizeof(int));
       } else {
-        // sending uncompressed data is much simpler
-        eventMutex.unlock();
-        sendEventBinaryPayload(socket, responseDoc, regionData.data(), numRows*rowLength*sizeof(float));
-        log(fmt::format("Uncompressed binary ({:.3f} MB) sent", numRows*rowLength*sizeof(float)/1e6));
+        stats->clear_hist();
       }
-      return;
     } else {
-      log("ReadRegion request is out of bounds");
+      regionReadResponse.clear_stats();
     }
+
+    if (compressed) {
+      // Compression is affected by NaN values, so first remove NaNs and get run-length-encoded NaN list
+      auto nanEncoding = getNanEncodings(regionData);
+      size_t compressedSize;
+      auto tStartCompress = chrono::high_resolution_clock::now();
+      compress(regionData, compressionBuffer, compressedSize, rowLength, numRows, regionReadRequest.compression());
+      auto tEndCompress = chrono::high_resolution_clock::now();
+      auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
+
+      if (verboseLogging) {
+        fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs\n",
+                   numRows * rowLength * sizeof(float) / 1e3,
+                   compressedSize / 1e3,
+                   dtCompress);
+      }
+
+      google::protobuf::RepeatedField<int32_t> nanEncodingsField(nanEncoding.begin(), nanEncoding.end());
+      regionReadResponse.mutable_nan_encodings()->Swap(&nanEncodingsField);
+      regionReadResponse.set_image_data(compressionBuffer.data(), compressedSize);
+    } else {
+      regionReadResponse.clear_nan_encodings();
+      auto tStart = chrono::high_resolution_clock::now();
+      regionReadResponse.set_image_data(regionData.data(), numRows * rowLength * sizeof(float));
+      auto tEnd = chrono::high_resolution_clock::now();
+      auto dtSetImageData = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
+      if (verboseLogging) {
+        fmt::print("Image data of size {:.1f} kB copied to protobuf in {} μs\n",
+                   numRows * rowLength * sizeof(float) / 1e3,
+                   dtSetImageData);
+      }
+    }
+
+  } else {
+    log("ReadRegion request is out of bounds");
+    regionReadResponse.set_success(false);
   }
-  log("Event is not a valid ReadRegion request!");
-
-  Document responseDoc(kObjectType);
-  auto &allocator = responseDoc.GetAllocator();
-  responseDoc.AddMember("event", "region_read", allocator);
-  Value responseMessage(kObjectType);
-  responseMessage.AddMember("success", false, allocator);
-  responseDoc.AddMember("message", responseMessage, allocator);
-
   eventMutex.unlock();
-  sendEvent(socket, responseDoc);
+  sendEvent("region_read", regionReadResponse);
 }
 
 // Event response to file load request
-void Session::onFileLoad(const Value &message) {
+void Session::onFileLoad(const Requests::FileLoadRequest& fileLoadRequest) {
   eventMutex.lock();
-  if (message.HasMember("filename") && message["filename"].IsString()) {
-    string filename = message["filename"].GetString();
-    if (loadFile(filename)) {
-      log(fmt::format("File {} loaded successfully", filename));
-      Document responseDoc(kObjectType);
-      auto &allocator = responseDoc.GetAllocator();
-      responseDoc.AddMember("event", "fileload", allocator);
+  Responses::FileLoadResponse fileLoadResponse;
+  if (loadFile(fileLoadRequest.filename())) {
+    log(fmt::format("File {} loaded successfully", fileLoadRequest.filename()));
 
-      Value responseMessage(kObjectType);
-      responseMessage.AddMember("success", true, allocator);
-      responseMessage.AddMember("numBands", imageInfo.numBands, allocator);
-      responseMessage.AddMember("width", imageInfo.width, allocator);
-      responseMessage.AddMember("height", imageInfo.height, allocator);
-      Value filenameValue(kStringType);
-      filenameValue.SetString(imageInfo.filename.c_str(), allocator);
-      responseMessage.AddMember("filename", filenameValue, allocator);
+    fileLoadResponse.set_success(true);
+    fileLoadResponse.set_filename(fileLoadRequest.filename());
+    fileLoadResponse.set_image_width(imageInfo.width);
+    fileLoadResponse.set_image_height(imageInfo.height);
+    fileLoadResponse.set_image_depth(imageInfo.depth);
 
-      responseDoc.AddMember("message", responseMessage, allocator);
-      eventMutex.unlock();
-      sendEvent(socket, responseDoc);
-    } else {
-      log(fmt::format("Error loading file {}", filename));
-      Document responseDoc(kObjectType);
-      auto &allocator = responseDoc.GetAllocator();
-      responseDoc.AddMember("event", "fileload", allocator);
-      Value responseMessage(kObjectType);
-      responseMessage.AddMember("success", false, allocator);
-      responseDoc.AddMember("message", responseMessage, allocator);
+  } else {
+    log(fmt::format("Error loading file {}", fileLoadRequest.filename()));
+    fileLoadResponse.set_success(false);
+  }
+  eventMutex.unlock();
+  sendEvent("fileload", fileLoadResponse);
+}
 
-      eventMutex.unlock();
-      sendEvent(socket, responseDoc);
-    }
+// Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given protobuf message
+void Session::sendEvent(string eventName, google::protobuf::MessageLite& message) {
+  size_t eventNameLength = 32;
+  int messageLength = message.ByteSize();
+  size_t requiredSize = eventNameLength + messageLength;
+  if (binaryPayloadCache.size() < requiredSize){
+    binaryPayloadCache.resize(requiredSize);
+  }
+  memset(binaryPayloadCache.data(), 0, eventNameLength);
+  memcpy(binaryPayloadCache.data(), eventName.c_str(), min(eventName.length(), eventNameLength));
+  auto tStart = chrono::high_resolution_clock::now();
+  message.SerializeToArray(binaryPayloadCache.data()+eventNameLength, messageLength);
+  auto tEnd = chrono::high_resolution_clock::now();
+  auto dtSerialize = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
+  tStart = chrono::high_resolution_clock::now();
+  socket->send(binaryPayloadCache.data(), requiredSize, uWS::BINARY);
+  tEnd = chrono::high_resolution_clock::now();
+  auto dtSend = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
+  if (verboseLogging){
+  if (messageLength>1e4) {
+    log(fmt::format("Message of size {:.1f} kB serialised in {} μs\n", messageLength/1e3, dtSerialize));
+    log(fmt::format("Event of size {:.1f} kB sent in {} μs\n", requiredSize/1e3, dtSend));
+  }
+  else{
+    log(fmt::format("Message of size {} B serialised in {} μs\n", messageLength, dtSerialize));
+    log(fmt::format("Event of size {} B sent in {} μs\n", requiredSize, dtSend));
+  }
   }
 }
 
 void Session::log(const string &logMessage) {
-  fmt::print("Session {}: {}\n", boost::uuids::to_string(uuid), logMessage);
+  // Shorten uuids a bit for brevity
+  auto uuidString = boost::uuids::to_string(uuid);
+  auto lastHash = uuidString.find_last_of('-');
+  if (lastHash != string::npos) {
+    uuidString = uuidString.substr(lastHash + 1);
+  }
+  time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
+  string timeString = ctime(&time);
+  timeString = timeString.substr(0, timeString.length() - 1);
+
+  fmt::print("Session {} [{}] ({}): {}\n", uuidString, socket->getAddress().address, timeString, logMessage);
 }

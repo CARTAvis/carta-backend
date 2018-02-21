@@ -1,0 +1,7 @@
+syntax = "proto3";
+package Requests;
+
+// Request for a new file
+message FileLoadRequest {
+    string filename = 1;
+}
