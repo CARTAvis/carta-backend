@@ -4,7 +4,7 @@
 
 using namespace std;
 
-int compress(std::vector<float>& array, vector<char>& compressionBuffer, size_t& zfpsize, uint32_t nx, uint32_t ny, uint32_t precision) {
+int compress(vector<float>& array, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny, uint32_t precision) {
     int status = 0;    /* return value: 0 = success */
     zfp_type type;     /* array scalar type */
     zfp_field* field;  /* array meta data */
@@ -30,8 +30,8 @@ int compress(std::vector<float>& array, vector<char>& compressionBuffer, size_t&
     zfp_stream_set_bit_stream(zfp, stream);
     zfp_stream_rewind(zfp);
 
-    zfpsize = zfp_compress(zfp, field);
-    if (!zfpsize) {
+    compressedSize = zfp_compress(zfp, field);
+    if (!compressedSize) {
         status = 1;
     }
 
@@ -43,7 +43,7 @@ int compress(std::vector<float>& array, vector<char>& compressionBuffer, size_t&
     return status;
 }
 
-int decompress(std::vector<float>& array, vector<char>& compressionBuffer, size_t& zfpsize, uint32_t nx, uint32_t ny, uint32_t precision) {
+int decompress(vector<float>& array, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny, uint32_t precision) {
     int status = 0;    /* return value: 0 = success */
     zfp_type type;     /* array scalar type */
     zfp_field* field;  /* array meta data */
@@ -58,7 +58,7 @@ int decompress(std::vector<float>& array, vector<char>& compressionBuffer, size_
     zfp = zfp_stream_open(nullptr);
     zfp_stream_set_precision(zfp, precision);
 
-    stream = stream_open(compressionBuffer.data(), zfpsize);
+    stream = stream_open(compressionBuffer.data(), compressedSize);
     zfp_stream_set_bit_stream(zfp, stream);
     zfp_stream_rewind(zfp);
 
