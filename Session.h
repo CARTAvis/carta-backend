@@ -53,7 +53,7 @@ protected:
     uWS::WebSocket<uWS::SERVER>* socket;
     std::string baseFolder;
     std::vector<char> binaryPayloadCache;
-    std::vector<char> compressionBuffer;
+    std::vector<char> compressionBuffers[4];
     std::vector<std::string> availableFileList;
     bool verboseLogging;
     Responses::RegionReadResponse regionReadResponse;

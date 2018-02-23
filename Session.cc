@@ -507,28 +507,57 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
         }
 
         if (compressed) {
-            // Compression is affected by NaN values, so first remove NaNs and get run-length-encoded NaN list
-            auto nanEncoding = getNanEncodings(regionData);
-            size_t compressedSize;
-            auto tStartCompress = chrono::high_resolution_clock::now();
-            compress(regionData, compressionBuffer, compressedSize, rowLength, numRows, regionReadRequest.compression());
-            auto tEndCompress = chrono::high_resolution_clock::now();
-            auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
+            int numSubsets = 4;
+            regionReadResponse.set_num_subsets(numSubsets);
+            regionReadResponse.clear_image_data();
+            regionReadResponse.clear_nan_encodings();
+            for (auto i = 0; i < numSubsets; i++) {
+                int subsetRowStart = i * (numRows / numSubsets);
+                int subsetRowEnd = (i + 1) * (numRows / numSubsets);
+                if (i == numSubsets - 1) {
+                    subsetRowEnd = numRows;
+                }
+                int subsetElementStart = subsetRowStart * rowLength;
+                int subsetElementEnd = subsetRowEnd * rowLength;
 
-            if (verboseLogging) {
-                fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs\n",
-                           numRows * rowLength * sizeof(float) / 1e3,
-                           compressedSize / 1e3,
-                           dtCompress);
+                vector<float> subsetData(regionData.begin() + subsetElementStart, regionData.begin() + subsetElementEnd);
+                // Compression is affected by NaN values, so first remove NaNs and get run-length-encoded NaN list
+                auto nanEncoding = getNanEncodings(subsetData);
+                size_t compressedSize;
+                auto tStartCompress = chrono::high_resolution_clock::now();
+                compress(subsetData, compressionBuffers[i], compressedSize, rowLength, subsetRowEnd - subsetRowStart, regionReadRequest.compression());
+                auto tEndCompress = chrono::high_resolution_clock::now();
+                auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
+
+                if (verboseLogging) {
+                    fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs\n",
+                               numRows * rowLength * sizeof(float) / 1e3,
+                               compressedSize / 1e3,
+                               dtCompress);
+                }
+
+                if (regionReadResponse.image_data_size() < i + 1) {
+                    regionReadResponse.add_image_data(compressionBuffers[i].data(), compressedSize);
+                } else {
+                    regionReadResponse.set_image_data(i, compressionBuffers[i].data(), compressedSize);
+                }
+
+                if (regionReadResponse.nan_encodings_size() < i + 1) {
+                    regionReadResponse.add_nan_encodings((char*) nanEncoding.data(), nanEncoding.size() * sizeof(int));
+                } else {
+                    regionReadResponse.set_nan_encodings(i, (char*) nanEncoding.data(), nanEncoding.size() * sizeof(int));
+                }
+
             }
-
-            google::protobuf::RepeatedField<int32_t> nanEncodingsField(nanEncoding.begin(), nanEncoding.end());
-            regionReadResponse.mutable_nan_encodings()->Swap(&nanEncodingsField);
-            regionReadResponse.set_image_data(compressionBuffer.data(), compressedSize);
         } else {
+            regionReadResponse.set_num_subsets(1);
             regionReadResponse.clear_nan_encodings();
             auto tStart = chrono::high_resolution_clock::now();
-            regionReadResponse.set_image_data(regionData.data(), numRows * rowLength * sizeof(float));
+            if (regionReadResponse.image_data_size() < 1) {
+                regionReadResponse.add_image_data(regionData.data(), numRows * rowLength * sizeof(float));
+            } else {
+                regionReadResponse.set_image_data(0, regionData.data(), numRows * rowLength * sizeof(float));
+            }
             auto tEnd = chrono::high_resolution_clock::now();
             auto dtSetImageData = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
             if (verboseLogging) {

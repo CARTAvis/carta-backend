@@ -3,9 +3,9 @@ package Responses;
 
 // Response after client requests a region
 message RegionReadResponse {
-    // for 4-byte alignment purposes, put bytes and repeated ints first
-    bytes image_data = 1;
-    repeated sfixed32 nan_encodings = 3;
+    repeated bytes image_data = 1;
+    repeated bytes nan_encodings = 2;
+    sfixed32 num_subsets = 3;
     bool success = 4;
     sfixed32 x = 5;
     sfixed32 y = 6;
