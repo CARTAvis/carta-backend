@@ -507,7 +507,7 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
         }
 
         if (compressed) {
-            int numSubsets = 4;
+            int numSubsets = std::min(regionReadRequest.num_subsets(), MAX_SUBSETS);
             regionReadResponse.set_num_subsets(numSubsets);
             regionReadResponse.clear_image_data();
             regionReadResponse.clear_nan_encodings();

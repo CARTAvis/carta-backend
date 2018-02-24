@@ -12,6 +12,7 @@
 #include "proto/regionReadResponse.pb.h"
 #include "compression.h"
 
+#define MAX_SUBSETS 4
 typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;
 
@@ -53,7 +54,7 @@ protected:
     uWS::WebSocket<uWS::SERVER>* socket;
     std::string baseFolder;
     std::vector<char> binaryPayloadCache;
-    std::vector<char> compressionBuffers[4];
+    std::vector<char> compressionBuffers[MAX_SUBSETS];
     std::vector<std::string> availableFileList;
     bool verboseLogging;
     Responses::RegionReadResponse regionReadResponse;
@@ -74,3 +75,4 @@ protected:
     void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
     void log(const std::string& logMessage);
 };
+

@@ -10,4 +10,5 @@ message RegionReadRequest {
     sfixed32 height = 5;
     sfixed32 mip = 6;
     sfixed32 compression = 7;
+    sfixed32 num_subsets = 8;
 }
