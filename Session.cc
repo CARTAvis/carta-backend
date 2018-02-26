@@ -552,6 +552,7 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
         } else {
             regionReadResponse.set_num_subsets(1);
             regionReadResponse.clear_nan_encodings();
+            regionReadResponse.clear_image_data();
             auto tStart = chrono::high_resolution_clock::now();
             if (regionReadResponse.image_data_size() < 1) {
                 regionReadResponse.add_image_data(regionData.data(), numRows * rowLength * sizeof(float));
