@@ -12,7 +12,7 @@
 #include "proto/regionReadResponse.pb.h"
 #include "compression.h"
 
-#define MAX_SUBSETS 4
+#define MAX_SUBSETS 8
 typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;
 
