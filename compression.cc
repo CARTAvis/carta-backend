@@ -4,7 +4,7 @@
 
 using namespace std;
 
-int compress(vector<float>& array, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny, uint32_t precision) {
+int compress(vector<float>& array, size_t offset, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny, uint32_t precision) {
     int status = 0;    /* return value: 0 = success */
     zfp_type type;     /* array scalar type */
     zfp_field* field;  /* array meta data */
@@ -13,7 +13,7 @@ int compress(vector<float>& array, vector<char>& compressionBuffer, size_t& comp
     bitstream* stream; /* bit stream to write to or read from */
 
     type = zfp_type_float;
-    field = zfp_field_2d(array.data(), type, nx, ny);
+    field = zfp_field_2d(array.data()+offset, type, nx, ny);
 
     /* allocate meta data for a compressed stream */
     zfp = zfp_stream_open(nullptr);
@@ -75,14 +75,13 @@ int decompress(vector<float>& array, vector<char>& compressionBuffer, size_t& co
 }
 
 // Removes NaNs from an array and returns run-length encoded list of NaNs
-vector<int32_t> getNanEncodings(vector<float>& array) {
-    size_t length = array.size();
-    int32_t prevIndex = 0;
+vector<int32_t> getNanEncodings(vector<float>& array, int offset, int length) {
+    int32_t prevIndex = offset;
     bool prev = false;
     vector<int32_t> encodedArray;
     // Find first non-NaN number in the array
-    float prevValidNum = 0;
-    for (auto i = 0; i < length; i++) {
+    float prevValidNum = offset;
+    for (auto i = offset; i < offset + length; i++) {
         if (!isnan(array[i])) {
             prevValidNum = array[i];
             break;
@@ -92,7 +91,7 @@ vector<int32_t> getNanEncodings(vector<float>& array) {
     // Generate RLE list and replace NaNs with neighbouring valid values. Ideally, this should take into account
     // the width and height of the image, and look for neighbouring values in vertical and horizontal directions,
     // but this is only an issue with NaNs right at the edge of images.
-    for (auto i = 0; i < length; i++) {
+    for (auto i = offset; i < offset+length; i++) {
         bool current = isnan(array[i]);
         if (current != prev) {
             encodedArray.push_back(i - prevIndex);

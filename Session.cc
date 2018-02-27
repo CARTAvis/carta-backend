@@ -3,6 +3,7 @@
 #include <boost/filesystem.hpp>
 #include <proto/fileLoadResponse.pb.h>
 #include <proto/connectionResponse.pb.h>
+#include <future>
 
 using namespace HighFive;
 using namespace std;
@@ -458,11 +459,6 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
         auto rowLength = regionReadRequest.width() / regionReadRequest.mip();
         auto numRows = regionReadRequest.height() / regionReadRequest.mip();
 
-        if (verboseLogging) {
-            fmt::print("Image data of size {:.1f} kB read in {} μs\n",
-                       numRows * rowLength * sizeof(float) / 1e3, dtRead);
-        }
-
         regionReadResponse.set_success(true);
         regionReadResponse.set_compression(regionReadRequest.compression());
         regionReadResponse.set_x(regionReadRequest.x());
@@ -511,43 +507,59 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             regionReadResponse.set_num_subsets(numSubsets);
             regionReadResponse.clear_image_data();
             regionReadResponse.clear_nan_encodings();
+
+            vector<size_t> compressedSizes(numSubsets);
+            vector<vector<int32_t>> nanEncodings(numSubsets);
+            vector<future<size_t>> futureSizes;
+
+            // Only launch in async (threaded) mode when
+            auto launchPolicy = (numSubsets>1 && numRows*rowLength > 1e5)?launch::async:launch::deferred;
+            auto tStartCompress = chrono::high_resolution_clock::now();
             for (auto i = 0; i < numSubsets; i++) {
-                int subsetRowStart = i * (numRows / numSubsets);
-                int subsetRowEnd = (i + 1) * (numRows / numSubsets);
-                if (i == numSubsets - 1) {
-                    subsetRowEnd = numRows;
-                }
-                int subsetElementStart = subsetRowStart * rowLength;
-                int subsetElementEnd = subsetRowEnd * rowLength;
+                auto& compressionBuffer = compressionBuffers[i];
+                futureSizes.push_back( async(launchPolicy, [&nanEncodings, &regionData, &compressionBuffer, numRows, numSubsets, rowLength](int i, int compression){
+                    int subsetRowStart = i * (numRows / numSubsets);
+                    int subsetRowEnd = (i + 1) * (numRows / numSubsets);
+                    if (i == numSubsets - 1) {
+                        subsetRowEnd = numRows;
+                    }
+                    int subsetElementStart = subsetRowStart * rowLength;
+                    int subsetElementEnd = subsetRowEnd * rowLength;
 
-                vector<float> subsetData(regionData.begin() + subsetElementStart, regionData.begin() + subsetElementEnd);
-                // Compression is affected by NaN values, so first remove NaNs and get run-length-encoded NaN list
-                auto nanEncoding = getNanEncodings(subsetData);
-                size_t compressedSize;
-                auto tStartCompress = chrono::high_resolution_clock::now();
-                compress(subsetData, compressionBuffers[i], compressedSize, rowLength, subsetRowEnd - subsetRowStart, regionReadRequest.compression());
-                auto tEndCompress = chrono::high_resolution_clock::now();
-                auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
+                    size_t compressedSize;
+                    nanEncodings[i] = getNanEncodings(regionData, subsetElementStart, subsetElementEnd-subsetElementStart);
+                    compress(regionData, subsetElementStart, compressionBuffer, compressedSize, rowLength, subsetRowEnd - subsetRowStart, compression);
+                    return compressedSize;
+                }, i, regionReadRequest.compression()));
+            }
 
-                if (verboseLogging) {
-                    fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs\n",
-                               numRows * rowLength * sizeof(float) / 1e3,
-                               compressedSize / 1e3,
-                               dtCompress);
-                }
+            for (auto i = 0; i < numSubsets; i++) {
+                compressedSizes[i] = futureSizes[i].get();
+            }
 
+            auto tEndCompress = chrono::high_resolution_clock::now();
+            auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
+
+
+            if (verboseLogging) {
+                fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs at {:.2f} Mpix/s using {} workers in {} mode\n",
+                           numRows * rowLength * sizeof(float) / 1e3,
+                           accumulate(compressedSizes.begin(), compressedSizes.end(), 0) / 1e3,
+                           dtCompress, (float)(numRows*rowLength)/dtCompress, numSubsets, launchPolicy==launch::async?"parallel ":"serial");
+            }
+
+            for (auto i = 0; i < numSubsets; i++) {
                 if (regionReadResponse.image_data_size() < i + 1) {
-                    regionReadResponse.add_image_data(compressionBuffers[i].data(), compressedSize);
+                    regionReadResponse.add_image_data(compressionBuffers[i].data(), compressedSizes[i]);
                 } else {
-                    regionReadResponse.set_image_data(i, compressionBuffers[i].data(), compressedSize);
+                    regionReadResponse.set_image_data(i, compressionBuffers[i].data(), compressedSizes[i]);
                 }
 
                 if (regionReadResponse.nan_encodings_size() < i + 1) {
-                    regionReadResponse.add_nan_encodings((char*) nanEncoding.data(), nanEncoding.size() * sizeof(int));
+                    regionReadResponse.add_nan_encodings((char*) nanEncodings[i].data(), nanEncodings[i].size() * sizeof(int));
                 } else {
-                    regionReadResponse.set_nan_encodings(i, (char*) nanEncoding.data(), nanEncoding.size() * sizeof(int));
+                    regionReadResponse.set_nan_encodings(i, (char*) nanEncodings[i].data(), nanEncodings[i].size() * sizeof(int));
                 }
-
             }
         } else {
             regionReadResponse.set_num_subsets(1);
@@ -615,15 +627,6 @@ void Session::sendEvent(string eventName, google::protobuf::MessageLite& message
     socket->send(binaryPayloadCache.data(), requiredSize, uWS::BINARY);
     tEnd = chrono::high_resolution_clock::now();
     auto dtSend = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
-    if (verboseLogging) {
-        if (messageLength > 1e4) {
-            log(fmt::format("Message of size {:.1f} kB serialised in {} μs\n", messageLength / 1e3, dtSerialize));
-            log(fmt::format("Event of size {:.1f} kB sent in {} μs\n", requiredSize / 1e3, dtSend));
-        } else {
-            log(fmt::format("Message of size {} B serialised in {} μs\n", messageLength, dtSerialize));
-            log(fmt::format("Event of size {} B sent in {} μs\n", requiredSize, dtSend));
-        }
-    }
 }
 
 void Session::log(const string& logMessage) {
