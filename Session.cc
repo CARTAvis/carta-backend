@@ -3,7 +3,6 @@
 #include <boost/filesystem.hpp>
 #include <proto/fileLoadResponse.pb.h>
 #include <proto/connectionResponse.pb.h>
-#include <future>
 
 using namespace HighFive;
 using namespace std;
@@ -17,6 +16,7 @@ Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, 
       file(nullptr),
       baseFolder(folder),
       verboseLogging(verbose),
+      threadPool(MAX_THREADS),
       socket(ws) {
 
     eventMutex.lock();
@@ -512,12 +512,13 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             vector<vector<int32_t>> nanEncodings(numSubsets);
             vector<future<size_t>> futureSizes;
 
-            // Only launch in async (threaded) mode when
-            auto launchPolicy = (numSubsets>1 && numRows*rowLength > 1e5)?launch::async:launch::deferred;
+            // Only launch in async (threaded) mode when image size is > 0.1 Mpix and multiple subsets are requested
+            auto launchPolicy = (numSubsets > 1 && numRows * rowLength > 1e5) ? launch::async : launch::deferred;
             auto tStartCompress = chrono::high_resolution_clock::now();
             for (auto i = 0; i < numSubsets; i++) {
                 auto& compressionBuffer = compressionBuffers[i];
-                futureSizes.push_back( async(launchPolicy, [&nanEncodings, &regionData, &compressionBuffer, numRows, numSubsets, rowLength](int i, int compression){
+                int compression = regionReadRequest.compression();
+                futureSizes.push_back(threadPool.push([&nanEncodings, &regionData, &compressionBuffer, numRows, numSubsets, rowLength, i, compression](int) {
                     int subsetRowStart = i * (numRows / numSubsets);
                     int subsetRowEnd = (i + 1) * (numRows / numSubsets);
                     if (i == numSubsets - 1) {
@@ -527,10 +528,10 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
                     int subsetElementEnd = subsetRowEnd * rowLength;
 
                     size_t compressedSize;
-                    nanEncodings[i] = getNanEncodings(regionData, subsetElementStart, subsetElementEnd-subsetElementStart);
+                    nanEncodings[i] = getNanEncodings(regionData, subsetElementStart, subsetElementEnd - subsetElementStart);
                     compress(regionData, subsetElementStart, compressionBuffer, compressedSize, rowLength, subsetRowEnd - subsetRowStart, compression);
                     return compressedSize;
-                }, i, regionReadRequest.compression()));
+                }));
             }
 
             for (auto i = 0; i < numSubsets; i++) {
@@ -540,12 +541,11 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             auto tEndCompress = chrono::high_resolution_clock::now();
             auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
 
-
             if (verboseLogging) {
                 fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs at {:.2f} Mpix/s using {} workers in {} mode\n",
                            numRows * rowLength * sizeof(float) / 1e3,
                            accumulate(compressedSizes.begin(), compressedSizes.end(), 0) / 1e3,
-                           dtCompress, (float)(numRows*rowLength)/dtCompress, numSubsets, launchPolicy==launch::async?"parallel ":"serial");
+                           dtCompress, (float) (numRows * rowLength) / dtCompress, numSubsets, launchPolicy == launch::async ? "parallel " : "serial");
             }
 
             for (auto i = 0; i < numSubsets; i++) {

@@ -13,7 +13,7 @@ int compress(vector<float>& array, size_t offset, vector<char>& compressionBuffe
     bitstream* stream; /* bit stream to write to or read from */
 
     type = zfp_type_float;
-    field = zfp_field_2d(array.data()+offset, type, nx, ny);
+    field = zfp_field_2d(array.data() + offset, type, nx, ny);
 
     /* allocate meta data for a compressed stream */
     zfp = zfp_stream_open(nullptr);
@@ -80,7 +80,7 @@ vector<int32_t> getNanEncodings(vector<float>& array, int offset, int length) {
     bool prev = false;
     vector<int32_t> encodedArray;
     // Find first non-NaN number in the array
-    float prevValidNum = offset;
+    float prevValidNum = 0;
     for (auto i = offset; i < offset + length; i++) {
         if (!isnan(array[i])) {
             prevValidNum = array[i];
@@ -91,7 +91,7 @@ vector<int32_t> getNanEncodings(vector<float>& array, int offset, int length) {
     // Generate RLE list and replace NaNs with neighbouring valid values. Ideally, this should take into account
     // the width and height of the image, and look for neighbouring values in vertical and horizontal directions,
     // but this is only an issue with NaNs right at the edge of images.
-    for (auto i = offset; i < offset+length; i++) {
+    for (auto i = offset; i < offset + length; i++) {
         bool current = isnan(array[i]);
         if (current != prev) {
             encodedArray.push_back(i - prevIndex);
@@ -104,6 +104,6 @@ vector<int32_t> getNanEncodings(vector<float>& array, int offset, int length) {
             prevValidNum = array[i];
         }
     }
-    encodedArray.push_back(length - prevIndex);
+    encodedArray.push_back(offset + length - prevIndex);
     return encodedArray;
 }
