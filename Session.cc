@@ -21,30 +21,7 @@ Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, 
 
     eventMutex.lock();
     auto tStart = std::chrono::high_resolution_clock::now();
-    fs::path folderPath(baseFolder);
-    try {
-        if (fs::exists(folderPath) && fs::is_directory(folderPath)) {
-            for (auto& directoryEntry : fs::directory_iterator(folderPath)) {
-                fs::path filePath(directoryEntry);
-                if (fs::is_regular_file(filePath) && fs::file_size(directoryEntry) > 8) {
-                    uint64_t sig;
-                    string filename = directoryEntry.path().string();
-                    ifstream file(filename, ios::in | ios::binary);
-                    if (file.is_open()) {
-                        file.read((char*) &sig, 8);
-                        if (sig == 0xa1a0a0d46444889) {
-                            availableFileList.push_back(directoryEntry.path().filename().string());
-                        }
-                    }
-                    file.close();
-                }
-            }
-
-        }
-    }
-    catch (const fs::filesystem_error& ex) {
-        fmt::print("Error: {}\n", ex.what());
-    }
+    availableFileList = getAvailableFiles(baseFolder);
     auto tEnd = std::chrono::high_resolution_clock::now();
     auto dtFileSearch = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
     fmt::print("Found {} HDF5 files in {} ms\n", availableFileList.size(), dtFileSearch);
@@ -60,6 +37,43 @@ Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, 
 
 Session::~Session() {
 
+}
+
+vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
+    fs::path folderPath(folder);
+    vector<string> files;
+    try {
+        if (fs::exists(folderPath) && fs::is_directory(folderPath)) {
+            for (auto& directoryEntry : fs::directory_iterator(folderPath)) {
+                fs::path filePath(directoryEntry);
+                if (fs::is_regular_file(filePath) && fs::file_size(directoryEntry) > 8) {
+                    uint64_t sig;
+                    string filename = directoryEntry.path().string();
+                    ifstream file(filename, ios::in | ios::binary);
+                    if (file.is_open()) {
+                        file.read((char*) &sig, 8);
+                        if (sig == 0xa1a0a0d46444889) {
+                            files.push_back(prefix + directoryEntry.path().filename().string());
+                        }
+                    }
+                    file.close();
+                } else if (fs::is_directory(filePath)){
+                    string prefix = filePath.string() + "/";
+                    // Strip out the leading "./" in subdirectories
+                    if (prefix.length() >2 && prefix.substr(0, 2) == "./"){
+                        prefix = prefix.substr(2);
+                    }
+                    auto dir_files = getAvailableFiles(filePath.string(), prefix);
+                    files.insert(files.end(),dir_files.begin(),dir_files.end());
+                }
+            }
+
+        }
+    }
+    catch (const fs::filesystem_error& ex) {
+        fmt::print("Error: {}\n", ex.what());
+    }
+    return files;
 }
 
 void Session::updateHistogram() {

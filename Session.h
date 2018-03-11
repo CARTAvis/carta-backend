@@ -75,6 +75,7 @@ protected:
     bool loadStats();
     std::vector<float> getZProfile(int x, int y);
     std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
+    std::vector<std::string> getAvailableFiles(const std::string& folder, std::string prefix = "");
     void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
     void log(const std::string& logMessage);
 };
