@@ -24,7 +24,7 @@ struct Histogram {
     std::vector<int> bins;
 };
 
-struct BandStats {
+struct ChannelStats {
     Histogram histogram;
     float minVal;
     float maxVal;
@@ -39,7 +39,7 @@ struct ImageInfo {
     int depth;
     int width;
     int height;
-    std::map<int, BandStats> bandStats;
+    std::map<int, ChannelStats> channelStats;
 };
 
 class Session {
@@ -47,7 +47,7 @@ public:
     boost::uuids::uuid uuid;
 protected:
     Matrix3F currentChannelCache;
-    Histogram currentBandHistogram;
+    Histogram currentChannelHistogram;
     int currentChannel;
     std::unique_ptr<HighFive::File> file;
     std::vector<HighFive::DataSet> dataSets;
@@ -61,6 +61,8 @@ protected:
     bool verboseLogging;
     Responses::RegionReadResponse regionReadResponse;
     ctpl::thread_pool threadPool;
+    float rateSum;
+    int rateCount;
 
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, std::string folder, bool verbose = false);
@@ -70,7 +72,7 @@ public:
 
 protected:
     void updateHistogram();
-    bool loadFile(const std::string& filename, int defaultBand = -1);
+    bool loadFile(const std::string& filename, int defaultChannel = -1);
     bool loadChannel(int channel);
     bool loadStats();
     std::vector<float> getZProfile(int x, int y);

@@ -17,6 +17,8 @@ Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, 
       baseFolder(folder),
       verboseLogging(verbose),
       threadPool(MAX_THREADS),
+      rateSum(0),
+      rateCount(0),
       socket(ws) {
 
     eventMutex.lock();
@@ -57,14 +59,14 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
                         }
                     }
                     file.close();
-                } else if (fs::is_directory(filePath)){
+                } else if (fs::is_directory(filePath)) {
                     string prefix = filePath.string() + "/";
                     // Strip out the leading "./" in subdirectories
-                    if (prefix.length() >2 && prefix.substr(0, 2) == "./"){
+                    if (prefix.length() > 2 && prefix.substr(0, 2) == "./") {
                         prefix = prefix.substr(2);
                     }
                     auto dir_files = getAvailableFiles(filePath.string(), prefix);
-                    files.insert(files.end(),dir_files.begin(),dir_files.end());
+                    files.insert(files.end(), dir_files.begin(), dir_files.end());
                 }
             }
 
@@ -77,9 +79,9 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
 }
 
 void Session::updateHistogram() {
-    int band = (currentChannel == -1) ? imageInfo.depth : currentChannel;
-    if (imageInfo.bandStats.count(band) && imageInfo.bandStats[band].histogram.bins.size()) {
-        currentBandHistogram = imageInfo.bandStats[band].histogram;
+    int channel = (currentChannel == -1) ? imageInfo.depth : currentChannel;
+    if (imageInfo.channelStats.count(channel) && imageInfo.channelStats[channel].histogram.bins.size()) {
+        currentChannelHistogram = imageInfo.channelStats[channel].histogram;
         return;
     }
 
@@ -102,19 +104,19 @@ void Session::updateHistogram() {
         }
     }
 
-    currentBandHistogram.N = max(sqrt(imageInfo.width * imageInfo.height), 2.0);
-    currentBandHistogram.binWidth = (maxVal - minVal) / currentBandHistogram.N;
-    currentBandHistogram.firstBinCenter = minVal + currentBandHistogram.binWidth / 2.0f;
-    currentBandHistogram.bins.resize(currentBandHistogram.N);
-    memset(currentBandHistogram.bins.data(), 0, sizeof(int) * currentBandHistogram.bins.size());
+    currentChannelHistogram.N = max(sqrt(imageInfo.width * imageInfo.height), 2.0);
+    currentChannelHistogram.binWidth = (maxVal - minVal) / currentChannelHistogram.N;
+    currentChannelHistogram.firstBinCenter = minVal + currentChannelHistogram.binWidth / 2.0f;
+    currentChannelHistogram.bins.resize(currentChannelHistogram.N);
+    memset(currentChannelHistogram.bins.data(), 0, sizeof(int) * currentChannelHistogram.bins.size());
     for (auto i = 0; i < imageInfo.height; i++) {
         for (auto j = 0; j < imageInfo.width; j++) {
             auto v = currentChannelCache[0][i][j];
             if (isnan(v)) {
                 continue;
             }
-            int bin = min((int) ((v - minVal) / currentBandHistogram.binWidth), currentBandHistogram.N - 1);
-            currentBandHistogram.bins[bin]++;
+            int bin = min((int) ((v - minVal) / currentChannelHistogram.binWidth), currentChannelHistogram.N - 1);
+            currentChannelHistogram.bins[bin]++;
         }
     }
 
@@ -137,7 +139,7 @@ bool Session::loadStats() {
                 vector<float> data;
                 dataSet.read(data);
                 for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                    imageInfo.bandStats[i].maxVal = data[i];
+                    imageInfo.channelStats[i].maxVal = data[i];
                 }
             } else {
                 log("Invalid MaxVals statistics");
@@ -155,7 +157,7 @@ bool Session::loadStats() {
                 vector<float> data;
                 dataSet.read(data);
                 for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                    imageInfo.bandStats[i].minVal = data[i];
+                    imageInfo.channelStats[i].minVal = data[i];
                 }
             } else {
                 log("Invalid MinVals statistics");
@@ -173,7 +175,7 @@ bool Session::loadStats() {
                 vector<float> data;
                 dataSet.read(data);
                 for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                    imageInfo.bandStats[i].mean = data[i];
+                    imageInfo.channelStats[i].mean = data[i];
                 }
             } else {
                 log("Invalid Means statistics");
@@ -191,7 +193,7 @@ bool Session::loadStats() {
                 vector<int> data;
                 dataSet.read(data);
                 for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                    imageInfo.bandStats[i].nanCount = data[i];
+                    imageInfo.channelStats[i].nanCount = data[i];
                 }
             } else {
                 log("Invalid NaNCounts statistics");
@@ -225,10 +227,10 @@ bool Session::loadStats() {
                     int N = bins[0].size();
 
                     for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                        imageInfo.bandStats[i].histogram.N = N;
-                        imageInfo.bandStats[i].histogram.binWidth = binWidths[i];
-                        imageInfo.bandStats[i].histogram.firstBinCenter = firstCenters[i];
-                        imageInfo.bandStats[i].histogram.bins = bins[i];
+                        imageInfo.channelStats[i].histogram.N = N;
+                        imageInfo.channelStats[i].histogram.binWidth = binWidths[i];
+                        imageInfo.channelStats[i].histogram.firstBinCenter = firstCenters[i];
+                        imageInfo.channelStats[i].histogram.bins = bins[i];
                     }
                 } else {
                     log("Invalid Percentiles statistics");
@@ -260,8 +262,8 @@ bool Session::loadStats() {
                     dataSetValues.read(vals);
 
                     for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                        imageInfo.bandStats[i].percentiles = percentiles;
-                        imageInfo.bandStats[i].percentileVals = vals[i];
+                        imageInfo.channelStats[i].percentiles = percentiles;
+                        imageInfo.channelStats[i].percentileVals = vals[i];
                     }
                 } else {
                     log("Invalid Percentiles statistics");
@@ -309,8 +311,8 @@ bool Session::loadChannel(int channel) {
     return true;
 }
 
-// Loads a file and the default band.
-bool Session::loadFile(const string& filename, int defaultBand) {
+// Loads a file and the default channel.
+bool Session::loadFile(const string& filename, int defaultChannel) {
     if (filename == imageInfo.filename) {
         return true;
     }
@@ -355,7 +357,7 @@ bool Session::loadFile(const string& filename, int defaultBand) {
         } else {
             log(fmt::format("File {} missing optional swizzled data set, using fallback calculation.\n", filename));
         }
-        return loadChannel(defaultBand);
+        return loadChannel(defaultChannel);
     }
     catch (HighFive::Exception& err) {
         log(fmt::format("Problem loading file {}", filename));
@@ -395,8 +397,8 @@ vector<float> Session::getZProfile(int x, int y) {
     }
 }
 
-// Reads a region corresponding to the given region request. If the current band is not the same as
-// the band specified in the request, the new band is loaded
+// Reads a region corresponding to the given region request. If the current channel is not the same as
+// the channel specified in the request, the new channel is loaded
 vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter) {
     if (!file || !file->isValid()) {
         log("No file loaded");
@@ -484,31 +486,31 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
         regionReadResponse.set_num_values(numValues);
 
 
-        // Stats for band average stored in last bandStats entry. This will change when we change the schema
-        int band = (currentChannel == -1) ? imageInfo.depth : currentChannel;
-        if (imageInfo.bandStats.count(band) && imageInfo.bandStats[band].nanCount != imageInfo.width * imageInfo.height) {
-            auto& bandStats = imageInfo.bandStats[band];
+        // Stats for channel average stored in last channelStats entry. This will change when we change the schema
+        int channel = (currentChannel == -1) ? imageInfo.depth : currentChannel;
+        if (imageInfo.channelStats.count(channel) && imageInfo.channelStats[channel].nanCount != imageInfo.width * imageInfo.height) {
+            auto& channelStats = imageInfo.channelStats[channel];
             auto stats = regionReadResponse.mutable_stats();
-            stats->set_mean(bandStats.mean);
-            stats->set_min_val(bandStats.minVal);
-            stats->set_max_val(bandStats.maxVal);
-            stats->set_nan_counts(bandStats.nanCount);
+            stats->set_mean(channelStats.mean);
+            stats->set_min_val(channelStats.minVal);
+            stats->set_max_val(channelStats.maxVal);
+            stats->set_nan_counts(channelStats.nanCount);
             stats->clear_percentiles();
             auto percentiles = stats->mutable_percentiles();
-            for (auto& v: bandStats.percentiles) {
+            for (auto& v: channelStats.percentiles) {
                 percentiles->add_percentiles(v);
             }
-            for (auto& v: bandStats.percentileVals) {
+            for (auto& v: channelStats.percentileVals) {
                 percentiles->add_values(v);
             }
 
-            if (currentBandHistogram.bins.size() && !isnan(currentBandHistogram.firstBinCenter)
-                && !isnan(currentBandHistogram.binWidth)) {
+            if (currentChannelHistogram.bins.size() && !isnan(currentChannelHistogram.firstBinCenter)
+                && !isnan(currentChannelHistogram.binWidth)) {
                 auto hist = stats->mutable_hist();
-                hist->set_first_bin_center(currentBandHistogram.firstBinCenter);
-                hist->set_n(currentBandHistogram.N);
-                hist->set_bin_width(currentBandHistogram.binWidth);
-                hist->set_bins(currentBandHistogram.bins.data(), currentBandHistogram.N * sizeof(int));
+                hist->set_first_bin_center(currentChannelHistogram.firstBinCenter);
+                hist->set_n(currentChannelHistogram.N);
+                hist->set_bin_width(currentChannelHistogram.binWidth);
+                hist->set_bins(currentChannelHistogram.bins.data(), currentChannelHistogram.N * sizeof(int));
             } else {
                 stats->clear_hist();
             }
@@ -555,11 +557,17 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             auto tEndCompress = chrono::high_resolution_clock::now();
             auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
 
+            // Don't include all-NaN calculations in the average speed calculation
+            if (regionReadResponse.stats().nan_counts() != regionReadResponse.num_values()) {
+                rateSum += (float) (numRows * rowLength) / dtCompress;
+                rateCount++;
+            }
+
             if (verboseLogging) {
-                fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs at {:.2f} Mpix/s using {} workers in {} mode\n",
+                log(fmt::format("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs at {:.2f} Mpix/s using {} threads (Average {:.2f} Mpix/s) \n",
                            numRows * rowLength * sizeof(float) / 1e3,
                            accumulate(compressedSizes.begin(), compressedSizes.end(), 0) / 1e3,
-                           dtCompress, (float) (numRows * rowLength) / dtCompress, numSubsets, launchPolicy == launch::async ? "parallel " : "serial");
+                           dtCompress, (float) (numRows * rowLength) / dtCompress, numSubsets, rateSum / max(rateCount, 1)));
             }
 
             for (auto i = 0; i < numSubsets; i++) {
