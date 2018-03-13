@@ -65,6 +65,12 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
                     if (prefix.length() > 2 && prefix.substr(0, 2) == "./") {
                         prefix = prefix.substr(2);
                     }
+
+                    // Strip out base folder path as well (boost < 1.60 doesn't have relative path functionality)
+                    if (prefix.length() > folderPath.string().length() && prefix.substr(0, folderPath.string().length()) == folderPath.string()) {
+                        prefix = prefix.substr(folderPath.string().length()+1);
+                    }
+
                     auto dir_files = getAvailableFiles(filePath.string(), prefix);
                     files.insert(files.end(), dir_files.begin(), dir_files.end());
                 }
