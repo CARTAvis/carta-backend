@@ -14,7 +14,6 @@
 #include "ctpl.h"
 
 #define MAX_SUBSETS 8
-#define MAX_THREADS 4
 typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;
 
@@ -60,12 +59,12 @@ protected:
     std::vector<std::string> availableFileList;
     bool verboseLogging;
     Responses::RegionReadResponse regionReadResponse;
-    ctpl::thread_pool threadPool;
+    ctpl::thread_pool& threadPool;
     float rateSum;
     int rateCount;
 
 public:
-    Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, std::string folder, bool verbose = false);
+    Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, std::string folder, ctpl::thread_pool& serverThreadPool, bool verbose = false);
     void onRegionRead(const Requests::RegionReadRequest& regionReadRequest);
     void onFileLoad(const Requests::FileLoadRequest& fileLoadRequest);
     ~Session();

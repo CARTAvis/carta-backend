@@ -7,7 +7,10 @@
 #include <boost/program_options.hpp>
 #include <proto/fileLoadRequest.pb.h>
 #include <proto/regionReadRequest.pb.h>
+#include "ctpl.h"
 #include "Session.h"
+
+#define MAX_THREADS 4
 
 using namespace std;
 using namespace uWS;
@@ -18,6 +21,7 @@ boost::uuids::random_generator uuid_gen;
 
 string baseFolder = "./";
 bool verbose = false;
+ctpl::thread_pool threadPool;
 
 string getEventName(char* rawMessage) {
     int nullIndex = 0;
@@ -31,7 +35,7 @@ string getEventName(char* rawMessage) {
 }
 
 void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
-    sessions[ws] = new Session(ws, uuid_gen(), baseFolder, verbose);
+    sessions[ws] = new Session(ws, uuid_gen(), baseFolder, threadPool, verbose);
     fmt::print("Client {} Connected. Clients: {}\n", boost::uuids::to_string(sessions[ws]->uuid), sessions.size());
 }
 
@@ -84,6 +88,7 @@ int main(int argc, const char* argv[]) {
             ("help", "produce help message")
             ("verbose", "display verbose logging")
             ("port", po::value<int>(), "set server port")
+            ("threads", po::value<int>(), "set thread pool count")
             ("folder", po::value<string>(), "set folder for data files");
 
         po::variables_map vm;
@@ -101,6 +106,13 @@ int main(int argc, const char* argv[]) {
         if (vm.count("port")) {
             port = vm["port"].as<int>();
         }
+
+        int threadCount = MAX_THREADS;
+        if (vm.count("threads")) {
+            threadCount = vm["threads"].as<int>();
+        }
+        threadPool.resize(threadCount);
+
         if (vm.count("folder")) {
             baseFolder = vm["folder"].as<string>();
         }
@@ -111,7 +123,7 @@ int main(int argc, const char* argv[]) {
         h.onConnection(&onConnect);
         h.onDisconnection(&onDisconnect);
         if (h.listen(port)) {
-            fmt::print("Listening on port {} with data folder {}\n", port, baseFolder);
+            fmt::print("Listening on port {} with data folder {} and {} threads in thread pool\n", port, baseFolder, threadCount);
             h.run();
         } else {
             fmt::print("Error listening on port {}\n", port);

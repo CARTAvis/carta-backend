@@ -10,13 +10,13 @@ using namespace uWS;
 namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, bool verbose)
+Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
     : uuid(uuid),
       currentChannel(-1),
       file(nullptr),
       baseFolder(folder),
       verboseLogging(verbose),
-      threadPool(MAX_THREADS),
+      threadPool(serverThreadPool),
       rateSum(0),
       rateCount(0),
       socket(ws) {
@@ -565,9 +565,9 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
 
             if (verboseLogging) {
                 log(fmt::format("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs at {:.2f} Mpix/s using {} threads (Average {:.2f} Mpix/s) \n",
-                           numRows * rowLength * sizeof(float) / 1e3,
-                           accumulate(compressedSizes.begin(), compressedSizes.end(), 0) / 1e3,
-                           dtCompress, (float) (numRows * rowLength) / dtCompress, numSubsets, rateSum / max(rateCount, 1)));
+                                numRows * rowLength * sizeof(float) / 1e3,
+                                accumulate(compressedSizes.begin(), compressedSizes.end(), 0) / 1e3,
+                                dtCompress, (float) (numRows * rowLength) / dtCompress, numSubsets, rateSum / max(rateCount, 1)));
             }
 
             for (auto i = 0; i < numSubsets; i++) {
