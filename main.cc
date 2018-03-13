@@ -90,6 +90,7 @@ int main(int argc, const char* argv[]) {
             ("secure", "use WSS using cert.pem and key.pem in working dir")
             ("passphrase", po::value<string>(), "passphrase for TLS cert")
             ("port", po::value<int>(), "set server port")
+            ("hostname", po::value<string>(), "listen only on specified hostname")
             ("threads", po::value<int>(), "set thread pool count")
             ("folder", po::value<string>(), "set folder for data files");
 
@@ -136,7 +137,10 @@ int main(int argc, const char* argv[]) {
         h.onMessage(&onMessage);
         h.onConnection(&onConnect);
         h.onDisconnection(&onDisconnect);
-        if (h.listen(port, tlsContext)) {
+        if (vm.count("hostname") && h.listen(vm["hostname"].as<string>().c_str(), port, tlsContext)) {
+            fmt::print("Listening on {}:{} with data folder {} and {} threads in thread pool\n", vm["hostname"].as<string>(), port, baseFolder, threadCount);
+            h.run();
+        } else if (h.listen(port, tlsContext)) {
             fmt::print("Listening on port {} with data folder {} and {} threads in thread pool\n", port, baseFolder, threadCount);
             h.run();
         } else {
