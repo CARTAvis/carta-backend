@@ -3,6 +3,7 @@
 #include <boost/filesystem.hpp>
 #include <proto/fileLoadResponse.pb.h>
 #include <proto/connectionResponse.pb.h>
+#include <proto/profileResponse.pb.h>
 
 using namespace HighFive;
 using namespace std;
@@ -69,8 +70,9 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
                     // Strip out base folder path as well (boost < 1.60 doesn't have relative path functionality)
                     if (prefix.length() > folderPath.string().length() && prefix.substr(0, folderPath.string().length()) == folderPath.string()) {
                         prefix = prefix.substr(folderPath.string().length());
-                        if (prefix.length()>0 && prefix[0] == '/')
+                        if (prefix.length() > 0 && prefix[0] == '/') {
                             prefix = prefix.substr(1);
+                        }
                     }
 
                     auto dir_files = getAvailableFiles(filePath.string(), prefix);
@@ -373,6 +375,68 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
     }
 }
 
+// Calculates an X Profile for a given Y pixel coordinate and channel
+vector<float> Session::getXProfile(int y, int channel) {
+    if (!file || !file->isValid()) {
+        log("No file loaded or invalid session");
+        return vector<float>();
+    } else if (y < 0 || y >= imageInfo.height || channel < -1 || channel >= imageInfo.depth) {
+        log("X profile out of range");
+        return vector<float>();
+    }
+
+    vector<float> profile;
+    profile.resize(imageInfo.width);
+    if (channel == currentChannel) {
+
+        for (auto i = 0; i < imageInfo.width; i++) {
+            profile[i] = currentChannelCache[0][y][i];
+        }
+    } else {
+        try {
+            Matrix3F xP;
+            dataSets[2].select({channel, y, 0}, {1, 1, imageInfo.width}).read(xP);
+            memcpy(profile.data(), xP.data(), imageInfo.width * sizeof(float));
+            return profile;
+        }
+        catch (HighFive::Exception& err) {
+            log(fmt::format("Invalid profile request in file {}", imageInfo.filename));
+            return vector<float>();
+        }
+    }
+}
+
+// Calculates a Y Profile for a given X pixel coordinate and channel
+vector<float> Session::getYProfile(int x, int channel) {
+    if (!file || !file->isValid()) {
+        log("No file loaded or invalid session");
+        return vector<float>();
+    } else if (x < 0 || x >= imageInfo.width || channel < -1 || channel >= imageInfo.depth) {
+        log("Y profile out of range");
+        return vector<float>();
+    }
+
+    vector<float> profile;
+    profile.resize(imageInfo.height);
+    if (channel == currentChannel) {
+
+        for (auto i = 0; i < imageInfo.height; i++) {
+            profile[i] = currentChannelCache[0][i][x];
+        }
+    } else {
+        try {
+            Matrix3F yP;
+            dataSets[2].select({channel, 0, x}, {1, imageInfo.height, 1}).read(yP);
+            memcpy(profile.data(), yP.data(), imageInfo.height * sizeof(float));
+            return profile;
+        }
+        catch (HighFive::Exception& err) {
+            log(fmt::format("Invalid profile request in file {}", imageInfo.filename));
+            return vector<float>();
+        }
+    }
+}
+
 // Calculates a Z Profile for a given X and Y pixel coordinate
 vector<float> Session::getZProfile(int x, int y) {
     if (!file || !file->isValid()) {
@@ -637,6 +701,52 @@ void Session::onFileLoad(const Requests::FileLoadRequest& fileLoadRequest) {
     }
     eventMutex.unlock();
     sendEvent("fileload", fileLoadResponse);
+}
+
+// Event response to profile request
+void Session::onProfileRequest(const Requests::ProfileRequest& request) {
+    eventMutex.lock();
+    Responses::ProfileResponse response;
+    response.set_x(request.x());
+    response.set_y(request.y());
+    response.set_channel(request.channel());
+
+    if (0 <= request.x() < imageInfo.width && 0 <= request.y() < imageInfo.height && -1 <= request.channel() < imageInfo.depth) {
+        bool requestSuccess = true;
+        if (request.request_x()) {
+            vector<float> profileX = getXProfile(request.y(), request.channel());
+            if (profileX.size()) {
+                google::protobuf::RepeatedField<float> data(profileX.begin(), profileX.end());
+                response.mutable_x_profile()->Swap(&data);
+            } else{
+                requestSuccess = false;
+            }
+        }
+        // skip further profile calculations if the request has already failed
+        if (requestSuccess && request.request_y()) {
+            vector<float> profileY = getYProfile(request.x(), request.channel());
+            if (profileY.size()) {
+                google::protobuf::RepeatedField<float> data(profileY.begin(), profileY.end());
+                response.mutable_y_profile()->Swap(&data);
+            } else{
+                requestSuccess = false;
+            }
+        }
+        if (requestSuccess && request.request_z()) {
+            vector<float> profileZ = getZProfile(request.x(), request.y());
+            if (profileZ.size()) {
+                google::protobuf::RepeatedField<float> data(profileZ.begin(), profileZ.end());
+                response.mutable_z_profile()->Swap(&data);
+            } else{
+                requestSuccess = false;
+            }
+        }
+        response.set_success(requestSuccess);
+    } else {
+        response.set_success(false);
+    }
+    eventMutex.unlock();
+    sendEvent("profile", response);
 }
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given protobuf message

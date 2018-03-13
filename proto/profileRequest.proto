@@ -1,0 +1,12 @@
+syntax = "proto3";
+package Requests;
+
+// Request for a new profile set
+message ProfileRequest {
+    sfixed32 x = 1;
+    sfixed32 y = 2;
+    sfixed32 channel = 3;
+    bool request_x = 4;
+    bool request_y = 5;
+    bool request_z = 6;
+}

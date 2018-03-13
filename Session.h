@@ -9,6 +9,7 @@
 #include <uWS/uWS.h>
 #include <proto/fileLoadRequest.pb.h>
 #include <proto/regionReadRequest.pb.h>
+#include <proto/profileRequest.pb.h>
 #include "proto/regionReadResponse.pb.h"
 #include "compression.h"
 #include "ctpl.h"
@@ -67,6 +68,7 @@ public:
     Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, std::string folder, ctpl::thread_pool& serverThreadPool, bool verbose = false);
     void onRegionRead(const Requests::RegionReadRequest& regionReadRequest);
     void onFileLoad(const Requests::FileLoadRequest& fileLoadRequest);
+    void onProfileRequest(const Requests::ProfileRequest& request);
     ~Session();
 
 protected:
@@ -74,6 +76,8 @@ protected:
     bool loadFile(const std::string& filename, int defaultChannel = -1);
     bool loadChannel(int channel);
     bool loadStats();
+    std::vector<float> getXProfile(int y, int channel);
+    std::vector<float> getYProfile(int x, int channel);
     std::vector<float> getZProfile(int x, int y);
     std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
     std::vector<std::string> getAvailableFiles(const std::string& folder, std::string prefix = "");

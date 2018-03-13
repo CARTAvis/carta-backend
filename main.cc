@@ -7,6 +7,7 @@
 #include <boost/program_options.hpp>
 #include <proto/fileLoadRequest.pb.h>
 #include <proto/regionReadRequest.pb.h>
+#include <proto/profileRequest.pb.h>
 #include "ctpl.h"
 #include "Session.h"
 
@@ -72,7 +73,13 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
                 if (regionReadRequest.ParseFromArray(rawMessage + 32, length - 32)) {
                     session->onRegionRead(regionReadRequest);
                 }
-            } else {
+            } else if (eventName == "profile") {
+                Requests::ProfileRequest profileRequest;
+                if (profileRequest.ParseFromArray(rawMessage + 32, length - 32)) {
+                    session->onProfileRequest(profileRequest);
+                }
+            }
+            else {
                 fmt::print("Unknown event type {}\n", eventName);
             }
         }
