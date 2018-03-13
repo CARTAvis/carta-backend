@@ -68,7 +68,9 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
 
                     // Strip out base folder path as well (boost < 1.60 doesn't have relative path functionality)
                     if (prefix.length() > folderPath.string().length() && prefix.substr(0, folderPath.string().length()) == folderPath.string()) {
-                        prefix = prefix.substr(folderPath.string().length()+1);
+                        prefix = prefix.substr(folderPath.string().length());
+                        if (prefix.length()>0 && prefix[0] == '/')
+                            prefix = prefix.substr(1);
                     }
 
                     auto dir_files = getAvailableFiles(filePath.string(), prefix);
