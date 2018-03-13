@@ -87,6 +87,7 @@ int main(int argc, const char* argv[]) {
         desc.add_options()
             ("help", "produce help message")
             ("verbose", "display verbose logging")
+            ("secure", "use WSS using cert.pem and key.pem in working dir")
             ("port", po::value<int>(), "set server port")
             ("threads", po::value<int>(), "set thread pool count")
             ("folder", po::value<string>(), "set folder for data files");
@@ -117,12 +118,18 @@ int main(int argc, const char* argv[]) {
             baseFolder = vm["folder"].as<string>();
         }
 
+        uS::TLS::Context tlsContext = nullptr;
+        if (vm.count("secure")) {
+            tlsContext = uS::TLS::createContext("./cert.pem", "./privkey.pem");
+            fmt::print("Using secure websockets\n");
+        }
+
         Hub h;
 
         h.onMessage(&onMessage);
         h.onConnection(&onConnect);
         h.onDisconnection(&onDisconnect);
-        if (h.listen(port)) {
+        if (h.listen(port, tlsContext)) {
             fmt::print("Listening on port {} with data folder {} and {} threads in thread pool\n", port, baseFolder, threadCount);
             h.run();
         } else {
