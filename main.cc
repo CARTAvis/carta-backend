@@ -88,6 +88,7 @@ int main(int argc, const char* argv[]) {
             ("help", "produce help message")
             ("verbose", "display verbose logging")
             ("secure", "use WSS using cert.pem and key.pem in working dir")
+            ("passphrase", po::value<string>(), "passphrase for TLS cert")
             ("port", po::value<int>(), "set server port")
             ("threads", po::value<int>(), "set thread pool count")
             ("folder", po::value<string>(), "set folder for data files");
@@ -120,8 +121,14 @@ int main(int argc, const char* argv[]) {
 
         uS::TLS::Context tlsContext = nullptr;
         if (vm.count("secure")) {
-            tlsContext = uS::TLS::createContext("./cert.pem", "./privkey.pem");
-            fmt::print("Using secure websockets\n");
+            string passhrase = vm.count("passphrase") ? vm["passphrase"].as<string>() : string();
+            tlsContext = uS::TLS::createContext("./cert.pem", "./privkey.pem", passhrase);
+            if (tlsContext) {
+                fmt::print("Using secure websockets\n");
+            } else {
+                fmt::print("Can't use secure websockets\n");
+                return 1;
+            }
         }
 
         Hub h;
