@@ -15,23 +15,20 @@
 #include "ctpl.h"
 
 #define MAX_SUBSETS 8
+typedef boost::multi_array<float, 4> Matrix4F;
 typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;
-
-struct Histogram {
-    int N;
-    float firstBinCenter, binWidth;
-    std::vector<int> bins;
-};
+typedef boost::multi_array<int, 3> Matrix3I;
+typedef boost::multi_array<int, 2> Matrix2I;
 
 struct ChannelStats {
-    Histogram histogram;
     float minVal;
     float maxVal;
     float mean;
     std::vector<float> percentiles;
-    std::vector<float> percentileVals;
-    int nanCount;
+    std::vector<float> percentileRanks;
+    std::vector<int> histogramBins;
+    int64_t nanCount;
 };
 
 struct ImageInfo {
@@ -39,18 +36,21 @@ struct ImageInfo {
     int depth;
     int width;
     int height;
-    std::map<int, ChannelStats> channelStats;
+    int stokes;
+    int dimensions;
+    std::vector<std::vector<ChannelStats>> channelStats;
 };
 
 class Session {
 public:
     boost::uuids::uuid uuid;
 protected:
-    Matrix3F currentChannelCache;
-    Histogram currentChannelHistogram;
+    Matrix2F currentChannelCache;
     int currentChannel;
+    int currentStokes;
     std::unique_ptr<HighFive::File> file;
-    std::vector<HighFive::DataSet> dataSets;
+    std::map<std::string, HighFive::DataSet> dataSets;
+
     ImageInfo imageInfo;
     std::mutex eventMutex;
     uWS::WebSocket<uWS::SERVER>* socket;
@@ -73,12 +73,12 @@ public:
 
 protected:
     void updateHistogram();
-    bool loadFile(const std::string& filename, int defaultChannel = -1);
-    bool loadChannel(int channel);
+    bool loadFile(const std::string& filename, int defaultChannel = 0);
+    bool loadChannel(int channel, int stokes);
     bool loadStats();
-    std::vector<float> getXProfile(int y, int channel);
-    std::vector<float> getYProfile(int x, int channel);
-    std::vector<float> getZProfile(int x, int y);
+    std::vector<float> getXProfile(int y, int channel, int stokes);
+    std::vector<float> getYProfile(int x, int channel, int stokes);
+    std::vector<float> getZProfile(int x, int y, int stokes);
     std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
     std::vector<std::string> getAvailableFiles(const std::string& folder, std::string prefix = "");
     void sendEvent(std::string eventName, google::protobuf::MessageLite& message);

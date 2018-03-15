@@ -5,7 +5,8 @@ package Responses;
 message FileLoadResponse {
     bool success = 1;
     string filename = 2;
-    int32 image_width = 3;
-    int32 image_height = 4;
-    int32 image_depth = 5;
+    sfixed32 image_width = 3;
+    sfixed32 image_height = 4;
+    sfixed32 image_depth = 5;
+    sfixed32 image_stokes = 6;
 }
