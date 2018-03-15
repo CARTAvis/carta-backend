@@ -395,15 +395,13 @@ bool Session::loadChannel(int channel, int stokes) {
     if (imageInfo.dimensions == 2) {
         dataSets.at("main").read(currentChannelCache);
     } else if (imageInfo.dimensions == 3) {
-        Matrix3F tmp;
-        dataSets.at("main").select({channel, 0, 0}, {1, imageInfo.height, imageInfo.width}).read(tmp);
-        currentChannelCache.resize(boost::extents[tmp.shape()[1]][tmp.shape()[2]]);
-        currentChannelCache = tmp[0];
+        dataSets.at("main").select({channel, 0, 0}, {1, imageInfo.height, imageInfo.width}).read(currentChannelCache3D);
+        currentChannelCache.resize(boost::extents[currentChannelCache3D.shape()[1]][currentChannelCache3D.shape()[2]]);
+        currentChannelCache = currentChannelCache3D[0];
     } else {
-        Matrix4F tmp;
-        dataSets.at("main").select({stokes, channel, 0, 0}, {1, 1, imageInfo.height, imageInfo.width}).read(tmp);
-        currentChannelCache.resize(boost::extents[tmp.shape()[2]][tmp.shape()[3]]);
-        currentChannelCache = tmp[0][0];
+        dataSets.at("main").select({stokes, channel, 0, 0}, {1, 1, imageInfo.height, imageInfo.width}).read(currentChannelCache4D);
+        currentChannelCache.resize(boost::extents[currentChannelCache4D.shape()[2]][currentChannelCache4D.shape()[3]]);
+        currentChannelCache = currentChannelCache4D[0][0];
     }
 
     currentStokes = stokes;
