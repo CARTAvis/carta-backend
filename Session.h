@@ -48,6 +48,8 @@ protected:
     Matrix2F currentChannelCache;
     Matrix3F currentChannelCache3D;
     Matrix4F currentChannelCache4D;
+    std::vector<float> cachedZProfile;
+    std::vector<int> cachedZProfileCoords;
     int currentChannel;
     int currentStokes;
     std::unique_ptr<HighFive::File> file;

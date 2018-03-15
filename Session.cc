@@ -574,12 +574,17 @@ vector<float> Session::getZProfile(int x, int y, int stokes) {
         return vector<float>();
     }
 
+    // If the requested coordinates are the same as the previous one, just use the cached value instead of reading from disk
+    if (cachedZProfile.size() == imageInfo.depth && cachedZProfileCoords.size() == 3 && cachedZProfileCoords[0] == x
+        && cachedZProfileCoords[1] == y && cachedZProfileCoords[2] == stokes) {
+        return cachedZProfile;
+    }
+
     if (imageInfo.dimensions == 2) {
         return {currentChannelCache[y][x]};
     }
 
     try {
-        vector<float> profile;
         // Check if swizzled dataset exists
         if (dataSets.count("swizzled")) {
             // Even when reading a single slice, since we're selecting a 3D space, we need to read into a 3D data structure
@@ -587,26 +592,27 @@ vector<float> Session::getZProfile(int x, int y, int stokes) {
             if (imageInfo.dimensions == 3) {
                 Matrix3F zP;
                 dataSets.at("swizzled").select({x, y, 0}, {1, 1, imageInfo.depth}).read(zP);
-                profile.resize(imageInfo.depth);
-                memcpy(profile.data(), zP.data(), imageInfo.depth * sizeof(float));
+                cachedZProfile.resize(imageInfo.depth);
+                memcpy(cachedZProfile.data(), zP.data(), imageInfo.depth * sizeof(float));
             } else {
                 Matrix4F zP;
                 dataSets.at("swizzled").select({stokes, x, y, 0}, {1, 1, 1, imageInfo.depth}).read(zP);
-                profile.resize(imageInfo.depth);
-                memcpy(profile.data(), zP.data(), imageInfo.depth * sizeof(float));
+                cachedZProfile.resize(imageInfo.depth);
+                memcpy(cachedZProfile.data(), zP.data(), imageInfo.depth * sizeof(float));
             }
         } else {
             if (imageInfo.dimensions == 3) {
-                dataSets.at("main").select({0, y, x}, {imageInfo.depth, 1, 1}).read(profile);
+                dataSets.at("main").select({0, y, x}, {imageInfo.depth, 1, 1}).read(cachedZProfile);
             } else {
                 Matrix4F zP;
                 dataSets.at("main").select({stokes, 0, y, x}, {1, imageInfo.depth, 1, 1}).read(zP);
-                profile.resize(imageInfo.depth);
-                memcpy(profile.data(), zP.data(), imageInfo.depth * sizeof(float));
+                cachedZProfile.resize(imageInfo.depth);
+                memcpy(cachedZProfile.data(), zP.data(), imageInfo.depth * sizeof(float));
 
             }
         }
-        return profile;
+        cachedZProfileCoords = {x, y, stokes};
+        return cachedZProfile;
     }
     catch (HighFive::Exception& err) {
         log(fmt::format("Invalid profile request in file {}", imageInfo.filename));
