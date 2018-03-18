@@ -6,6 +6,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <highfive/H5File.hpp>
 #include <mutex>
+#include <stdio.h>
 #include <uWS/uWS.h>
 #include <proto/fileLoadRequest.pb.h>
 #include <proto/regionReadRequest.pb.h>
@@ -31,8 +32,19 @@ struct ChannelStats {
     int64_t nanCount;
 };
 
+struct RegionStats {
+    float minVal = std::numeric_limits<float>::max();
+    float maxVal = -std::numeric_limits<float>::max();
+    float mean = 0;
+    float stdDev = 0;
+    int nanCount =0;
+};
+
+
+
 struct ImageInfo {
     std::string filename;
+    std::string unit;
     int depth;
     int width;
     int height;
@@ -45,7 +57,8 @@ class Session {
 public:
     boost::uuids::uuid uuid;
 protected:
-    Matrix2F currentChannelCache;
+    float* currentChannelCache;
+    Matrix2F currentChannelCache2D;
     Matrix3F currentChannelCache3D;
     Matrix4F currentChannelCache4D;
     std::vector<float> cachedZProfile;
@@ -80,6 +93,9 @@ protected:
     bool loadFile(const std::string& filename, int defaultChannel = 0);
     bool loadChannel(int channel, int stokes);
     bool loadStats();
+    std::vector<RegionStats> getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes);
+    std::vector<RegionStats> getRegionStatsSwizzled(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes);
+    RegionStats getRegionStats2D(int xMin, int xMax, int yMin, int yMax);
     std::vector<float> getXProfile(int y, int channel, int stokes);
     std::vector<float> getYProfile(int x, int channel, int stokes);
     std::vector<float> getZProfile(int x, int y, int stokes);
@@ -87,5 +103,7 @@ protected:
     std::vector<std::string> getAvailableFiles(const std::string& folder, std::string prefix = "");
     void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
     void log(const std::string& logMessage);
+    template<typename... Args> void log(const char* templateString, Args... args);
+    template<typename... Args> void log(const std::string& templateString, Args... args);
 };
 

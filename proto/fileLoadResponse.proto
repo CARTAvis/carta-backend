@@ -9,4 +9,5 @@ message FileLoadResponse {
     sfixed32 image_height = 4;
     sfixed32 image_depth = 5;
     sfixed32 image_stokes = 6;
+    string unit = 7;
 }

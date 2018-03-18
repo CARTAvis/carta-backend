@@ -24,10 +24,10 @@ Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, 
       socket(ws) {
 
     eventMutex.lock();
-    auto tStart = std::chrono::high_resolution_clock::now();
+    auto tStart = chrono::high_resolution_clock::now();
     availableFileList = getAvailableFiles(baseFolder);
-    auto tEnd = std::chrono::high_resolution_clock::now();
-    auto dtFileSearch = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
+    auto tEnd = chrono::high_resolution_clock::now();
+    auto dtFileSearch = chrono::duration_cast<chrono::milliseconds>(tEnd - tStart).count();
     fmt::print("Found {} HDF5 files in {} ms\n", availableFileList.size(), dtFileSearch);
 
     Responses::ConnectionResponse connectionResponse;
@@ -103,13 +103,13 @@ void Session::updateHistogram() {
         return;
     }
 
-    float minVal = currentChannelCache[0][0];
-    float maxVal = currentChannelCache[0][0];
+    float minVal = currentChannelCache[0];
+    float maxVal = currentChannelCache[0];
     float sum = 0.0f;
     int count = 0;
     for (auto i = 0; i < imageInfo.height; i++) {
         for (auto j = 0; j < imageInfo.width; j++) {
-            auto v = currentChannelCache[i][j];
+            auto v = currentChannelCache[i * imageInfo.width + j];
             minVal = fmin(minVal, v);
             maxVal = fmax(maxVal, v);
             sum += isnan(v) ? 0.0 : v;
@@ -129,7 +129,7 @@ void Session::updateHistogram() {
 
     for (auto i = 0; i < imageInfo.height; i++) {
         for (auto j = 0; j < imageInfo.width; j++) {
-            auto v = currentChannelCache[i][j];
+            auto v = currentChannelCache[i * imageInfo.width + j];
             if (isnan(v)) {
                 continue;
             }
@@ -388,24 +388,19 @@ bool Session::loadChannel(int channel, int stokes) {
         log("No file loaded");
         return false;
     } else if (channel < 0 || channel >= imageInfo.depth || stokes < 0 || stokes >= imageInfo.stokes) {
-        log(fmt::format("Channel {} (stokes {}) is invalid in file {}", channel, stokes, imageInfo.filename));
+        log("Channel {} (stokes {}) is invalid in file {}", channel, stokes, imageInfo.filename);
         return false;
     }
 
     if (imageInfo.dimensions == 2) {
-        dataSets.at("main").read(currentChannelCache);
+        dataSets.at("main").read(currentChannelCache2D);
+        currentChannelCache = currentChannelCache2D.data();
     } else if (imageInfo.dimensions == 3) {
         dataSets.at("main").select({channel, 0, 0}, {1, imageInfo.height, imageInfo.width}).read(currentChannelCache3D);
-        if (currentChannelCache.shape()[0] != imageInfo.height || currentChannelCache.shape()[1] != imageInfo.width) {
-            currentChannelCache.resize(boost::extents[imageInfo.height][imageInfo.width]);
-        }
-        memcpy(currentChannelCache.data(), currentChannelCache3D.data(), imageInfo.height*imageInfo.width* sizeof(float));
+        currentChannelCache = currentChannelCache3D.data();
     } else {
         dataSets.at("main").select({stokes, channel, 0, 0}, {1, 1, imageInfo.height, imageInfo.width}).read(currentChannelCache4D);
-        if (currentChannelCache.shape()[0] != imageInfo.height || currentChannelCache.shape()[1] != imageInfo.width) {
-            currentChannelCache.resize(boost::extents[imageInfo.height][imageInfo.width]);
-        }
-        memcpy(currentChannelCache.data(), currentChannelCache4D.data(), imageInfo.height*imageInfo.width* sizeof(float));
+        currentChannelCache = currentChannelCache4D.data();
     }
 
     currentStokes = stokes;
@@ -421,7 +416,7 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
     }
 
     if (find(availableFileList.begin(), availableFileList.end(), filename) == availableFileList.end()) {
-        log(fmt::format("Problem loading file {}: File is not in available file list.", filename));
+        log("Problem loading file {}: File is not in available file list.", filename);
         return false;
     }
 
@@ -430,13 +425,14 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
         vector<string> fileObjectList = file->listObjectNames();
         imageInfo.filename = filename;
         auto group = file->getGroup("0");
+
         DataSet dataSet = group.getDataSet("DATA");
 
         auto dims = dataSet.getSpace().getDimensions();
         imageInfo.dimensions = dims.size();
 
         if (imageInfo.dimensions < 2 || imageInfo.dimensions > 4) {
-            log(fmt::format("Problem loading file {}: Image must be 2D, 3D or 4D.", filename));
+            log("Problem loading file {}: Image must be 2D, 3D or 4D.", filename);
             return false;
         }
 
@@ -459,31 +455,30 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
                 DataSet dataSetSwizzled = group.getDataSet("SwizzledData/ZYX");
                 auto swizzledDims = dataSetSwizzled.getSpace().getDimensions();
                 if (swizzledDims.size() != 3 || swizzledDims[0] != dims[2]) {
-                    log(fmt::format("Invalid swizzled data set in file {}, ignoring.", filename));
+                    log("Invalid swizzled data set in file {}, ignoring.", filename);
                 } else {
-                    log(fmt::format("Found valid swizzled data set in file {}.", filename));
+                    log("Found valid swizzled data set in file {}.", filename);
                     dataSets.emplace("swizzled", dataSetSwizzled);
                 }
             } else if (imageInfo.dimensions == 4 && group.exist("SwizzledData/ZYXW")) {
                 DataSet dataSetSwizzled = group.getDataSet("SwizzledData/ZYXW");
                 auto swizzledDims = dataSetSwizzled.getSpace().getDimensions();
                 if (swizzledDims.size() != 4 || swizzledDims[1] != dims[3]) {
-                    log(fmt::format("Invalid swizzled data set in file {}, ignoring.", filename));
+                    log("Invalid swizzled data set in file {}, ignoring.", filename);
                 } else {
-                    log(fmt::format("Found valid swizzled data set in file {}.", filename));
+                    log("Found valid swizzled data set in file {}.", filename);
                     dataSets.emplace("swizzled", dataSetSwizzled);
                 }
             } else {
-                log(fmt::format("File {} missing optional swizzled data set, using fallback calculation.\n", filename));
+                log("File {} missing optional swizzled data set, using fallback calculation.", filename);
             }
         } else {
-            log(fmt::format("File {} missing optional swizzled data set, using fallback calculation.\n", filename));
+            log("File {} missing optional swizzled data set, using fallback calculation.", filename);
         }
-
         return loadChannel(defaultChannel, 0);
     }
     catch (HighFive::Exception& err) {
-        log(fmt::format("Problem loading file {}", filename));
+        log("Problem loading file {}", filename);
         return false;
     }
 }
@@ -503,7 +498,7 @@ vector<float> Session::getXProfile(int y, int channel, int stokes) {
     if ((channel == currentChannel && stokes == currentStokes) || imageInfo.dimensions == 2) {
 
         for (auto i = 0; i < imageInfo.width; i++) {
-            profile[i] = currentChannelCache[y][i];
+            profile[i] = currentChannelCache[y * imageInfo.width + i];
         }
         return profile;
     } else {
@@ -520,7 +515,7 @@ vector<float> Session::getXProfile(int y, int channel, int stokes) {
             return profile;
         }
         catch (HighFive::Exception& err) {
-            log(fmt::format("Invalid profile request in file {}", imageInfo.filename));
+            log("Invalid profile request in file {}", imageInfo.filename);
             return vector<float>();
         }
     }
@@ -541,7 +536,7 @@ vector<float> Session::getYProfile(int x, int channel, int stokes) {
     if ((channel == currentChannel && stokes == currentStokes) || imageInfo.dimensions == 2) {
 
         for (auto i = 0; i < imageInfo.height; i++) {
-            profile[i] = currentChannelCache[i][x];
+            profile[i] = currentChannelCache[i * imageInfo.width + x];
         }
         return profile;
     } else {
@@ -558,7 +553,7 @@ vector<float> Session::getYProfile(int x, int channel, int stokes) {
             return profile;
         }
         catch (HighFive::Exception& err) {
-            log(fmt::format("Invalid profile request in file {}", imageInfo.filename));
+            log("Invalid profile request in file {}", imageInfo.filename);
             return vector<float>();
         }
     }
@@ -581,7 +576,7 @@ vector<float> Session::getZProfile(int x, int y, int stokes) {
     }
 
     if (imageInfo.dimensions == 2) {
-        return {currentChannelCache[y][x]};
+        return {currentChannelCache[y * imageInfo.width + x]};
     }
 
     try {
@@ -615,7 +610,7 @@ vector<float> Session::getZProfile(int x, int y, int stokes) {
         return cachedZProfile;
     }
     catch (HighFive::Exception& err) {
-        log(fmt::format("Invalid profile request in file {}", imageInfo.filename));
+        log("Invalid profile request in file {}", imageInfo.filename);
         return vector<float>();
     }
 }
@@ -630,7 +625,7 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
 
     if (currentChannel != regionReadRequest.channel() || currentStokes != regionReadRequest.stokes()) {
         if (!loadChannel(regionReadRequest.channel(), regionReadRequest.stokes())) {
-            log(fmt::format("Selected channel {} is invalid!", regionReadRequest.channel()));
+            log("Selected channel {} is invalid!", regionReadRequest.channel());
             return vector<float>();
         }
     }
@@ -642,8 +637,8 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
     const int width = regionReadRequest.width();
 
     if (imageInfo.height < y + height || imageInfo.width < x + width) {
-        log(fmt::format("Selected region ({}, {}) -> ({}, {} in channel {} is invalid!",
-                        x, y, x + width, y + height, regionReadRequest.channel()));
+        log("Selected region ({}, {}) -> ({}, {} in channel {} is invalid!",
+            x, y, x + width, y + height, regionReadRequest.channel());
         return vector<float>();
     }
 
@@ -660,7 +655,7 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
                 int pixelCount = 0;
                 for (auto pixelX = 0; pixelX < mip; pixelX++) {
                     for (auto pixelY = 0; pixelY < mip; pixelY++) {
-                        float pixVal = currentChannelCache[y + j * mip + pixelY][x + i * mip + pixelX];
+                        float pixVal = currentChannelCache[(y + j * mip + pixelY) * imageInfo.width + (x + i * mip + pixelX)];
                         if (!isnan(pixVal)) {
                             pixelCount++;
                             pixelSum += pixVal;
@@ -674,11 +669,135 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
         // Nearest neighbour filtering
         for (auto j = 0; j < numRowsRegion; j++) {
             for (auto i = 0; i < rowLengthRegion; i++) {
-                regionData[j * rowLengthRegion + i] = currentChannelCache[y + j * mip][x + i * mip];
+                regionData[j * rowLengthRegion + i] = currentChannelCache[(y + j * mip) * imageInfo.width + (x + i * mip)];
             }
         }
     }
     return regionData;
+}
+
+RegionStats Session::getRegionStats2D(int xMin, int xMax, int yMin, int yMax) {
+    float sum = 0;
+    float sumSquared = 0;
+    float minVal = numeric_limits<float>::max();
+    float maxVal = -numeric_limits<float>::max();
+    int nanCount = 0;
+    int N = ((yMax - yMin) * (xMax - xMin));
+    auto& dataSet = dataSets.at("main");
+    Matrix2F processSlice;
+    dataSet.select({yMin, xMin}, {yMax - yMin, xMax - xMin}).read(processSlice);
+    auto data = processSlice.data();
+    for (auto j = 0; j < N; j++) {
+        auto& v = data[j];
+        sum += isnan(v) ? 0 : v;
+        sumSquared += isnan(v) ? 0 : v * v;
+        minVal = fmin(minVal, v);
+        maxVal = fmax(maxVal, v);
+        nanCount += isnan(v);
+    }
+    RegionStats stats;
+    stats.minVal = minVal;
+    stats.maxVal = maxVal;
+    stats.mean = sum / max(N - nanCount, 1);
+    stats.stdDev = sqrtf(sumSquared / (max(N - nanCount, 1)) - stats.mean * stats.mean);
+    stats.nanCount = nanCount;
+    return stats;
+}
+
+vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes) {
+    vector<RegionStats> allStats(channelMax - channelMin);
+    Matrix3F processSlice3D;
+    Matrix4F processSlice4D;
+    auto tStart = chrono::high_resolution_clock::now();
+    for (auto i = channelMin; i < channelMax; i++) {
+        float sum = 0;
+        float sumSquared = 0;
+        float minVal = numeric_limits<float>::max();
+        float maxVal = -numeric_limits<float>::max();
+        int nanCount = 0;
+        int N = ((yMax - yMin) * (xMax - xMin));
+        auto& dataSet = dataSets.at("main");
+        float* data = nullptr;
+        if (imageInfo.dimensions == 4) {
+            dataSet.select({stokes, i, yMin, xMin}, {1, 1, yMax - yMin, xMax - xMin}).read(processSlice4D);
+            data = processSlice4D.data();
+        } else {
+            dataSet.select({i, yMin, xMin}, {1, yMax - yMin, xMax - xMin}).read(processSlice3D);
+            data = processSlice3D.data();
+        }
+        for (auto j = 0; j < N; j++) {
+            auto& v = data[j];
+            sum += isnan(v) ? 0 : v;
+            sumSquared += isnan(v) ? 0 : v * v;
+            minVal = fmin(minVal, v);
+            maxVal = fmax(maxVal, v);
+            nanCount += isnan(v);
+        }
+        RegionStats stats;
+        stats.minVal = minVal;
+        stats.maxVal = maxVal;
+        stats.mean = sum / max(N - nanCount, 1);
+        stats.stdDev = sqrtf(sumSquared / (max(N - nanCount, 1)) - stats.mean * stats.mean);
+        stats.nanCount = nanCount;
+        allStats[i] = stats;
+    }
+    auto tEnd = chrono::high_resolution_clock::now();
+    auto dtRegion = chrono::duration_cast<chrono::microseconds>(tEnd - tStart).count();
+    log("{}x{} region stats for {} channels calculated in {:.1f} ms at {:.2f} ms/channel",
+        xMax - xMin,
+        yMax - yMin,
+        allStats.size(),
+        dtRegion * 1e-3,
+        dtRegion * 1e-3 / allStats.size());
+    return allStats;
+
+}
+
+vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes) {
+    vector<RegionStats> allStats(channelMax - channelMin);
+    Matrix3F processSlice3D;
+    Matrix4F processSlice4D;
+    auto tStart = chrono::high_resolution_clock::now();
+    auto numZ = channelMax - channelMin;
+    auto numY = yMax - yMin;
+    for (auto x = xMin; x < xMax; x++) {
+        auto& dataSetSwizzled = dataSets.at("swizzled");
+        float* data = nullptr;
+        if (imageInfo.dimensions == 4) {
+            dataSetSwizzled.select({stokes, x, yMin, channelMin}, {1, 1, yMax - yMin, channelMax}).read(processSlice4D);
+            data = processSlice4D.data();
+        } else {
+            dataSetSwizzled.select({x, yMin, channelMin}, {1, yMax - yMin, channelMax}).read(processSlice3D);
+            data = processSlice3D.data();
+        }
+
+        for (auto y = 0; y < numY; y++) {
+            for (auto z = 0; z < numZ; z++) {
+                auto& stats = allStats[z];
+                auto& v = data[y * numZ + z];
+                stats.mean += isnan(v) ? 0 : v;;
+                stats.stdDev += isnan(v) ? 0 : v * v;
+                stats.minVal = fmin(stats.minVal, v);
+                stats.maxVal = fmax(stats.maxVal, v);
+                stats.nanCount += isnan(v);
+            }
+        }
+    }
+    int N = ((yMax - yMin) * (xMax - xMin));
+    for (auto z = 0; z < numZ; z++) {
+        auto& stats = allStats[z];
+        stats.mean /= max(N - stats.nanCount, 1);
+        stats.stdDev = sqrtf(stats.stdDev / max(N - stats.nanCount, 1) - stats.mean * stats.mean);
+    }
+    auto tEnd = chrono::high_resolution_clock::now();
+    auto dtRegion = chrono::duration_cast<chrono::microseconds>(tEnd - tStart).count();
+    log("{}x{} region stats for {} channels calculated in {:.1f} ms at {:.2f} ms/channel using swizzled dataset",
+        xMax - xMin,
+        yMax - yMin,
+        allStats.size(),
+        dtRegion * 1e-3,
+        dtRegion * 1e-3 / allStats.size());
+    return allStats;
 }
 
 // Event response to region read request
@@ -691,7 +810,7 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
     auto tStartRead = chrono::high_resolution_clock::now();
     vector<float> regionData = readRegion(regionReadRequest, false);
     auto tEndRead = chrono::high_resolution_clock::now();
-    auto dtRead = chrono::duration_cast<std::chrono::microseconds>(tEndRead - tStartRead).count();
+    auto dtRead = chrono::duration_cast<chrono::microseconds>(tEndRead - tStartRead).count();
 
     if (regionData.size()) {
         auto numValues = regionData.size();
@@ -750,8 +869,6 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             vector<vector<int32_t>> nanEncodings(numSubsets);
             vector<future<size_t>> futureSizes;
 
-            // Only launch in async (threaded) mode when image size is > 0.1 Mpix and multiple subsets are requested
-            auto launchPolicy = (numSubsets > 1 && numRows * rowLength > 1e5) ? launch::async : launch::deferred;
             auto tStartCompress = chrono::high_resolution_clock::now();
             for (auto i = 0; i < numSubsets; i++) {
                 auto& compressionBuffer = compressionBuffers[i];
@@ -777,7 +894,7 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             }
 
             auto tEndCompress = chrono::high_resolution_clock::now();
-            auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
+            auto dtCompress = chrono::duration_cast<chrono::microseconds>(tEndCompress - tStartCompress).count();
 
             // Don't include all-NaN calculations in the average speed calculation
             if (regionReadResponse.stats().nan_counts() != regionReadResponse.num_values()) {
@@ -786,10 +903,10 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             }
 
             if (verboseLogging) {
-                log(fmt::format("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs at {:.2f} Mpix/s using {} threads (Average {:.2f} Mpix/s) \n",
-                                numRows * rowLength * sizeof(float) / 1e3,
-                                accumulate(compressedSizes.begin(), compressedSizes.end(), 0) / 1e3,
-                                dtCompress, (float) (numRows * rowLength) / dtCompress, numSubsets, rateSum / max(rateCount, 1)));
+                log("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs at {:.2f} Mpix/s using {} threads (Average {:.2f} Mpix/s)",
+                    numRows * rowLength * sizeof(float) / 1e3,
+                    accumulate(compressedSizes.begin(), compressedSizes.end(), 0) / 1e3,
+                    dtCompress, (float) (numRows * rowLength) / dtCompress, numSubsets, rateSum / max(rateCount, 1));
             }
 
             for (auto i = 0; i < numSubsets; i++) {
@@ -816,7 +933,7 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
                 regionReadResponse.set_image_data(0, regionData.data(), numRows * rowLength * sizeof(float));
             }
             auto tEnd = chrono::high_resolution_clock::now();
-            auto dtSetImageData = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
+            auto dtSetImageData = chrono::duration_cast<chrono::microseconds>(tEnd - tStart).count();
             if (verboseLogging) {
                 fmt::print("Image data of size {:.1f} kB copied to protobuf in {} μs\n",
                            numRows * rowLength * sizeof(float) / 1e3,
@@ -837,7 +954,7 @@ void Session::onFileLoad(const Requests::FileLoadRequest& fileLoadRequest) {
     eventMutex.lock();
     Responses::FileLoadResponse fileLoadResponse;
     if (loadFile(fileLoadRequest.filename())) {
-        log(fmt::format("File {} loaded successfully", fileLoadRequest.filename()));
+        log("File {} loaded successfully", fileLoadRequest.filename());
 
         fileLoadResponse.set_success(true);
         fileLoadResponse.set_filename(fileLoadRequest.filename());
@@ -847,11 +964,15 @@ void Session::onFileLoad(const Requests::FileLoadRequest& fileLoadRequest) {
         fileLoadResponse.set_image_stokes(imageInfo.stokes);
 
     } else {
-        log(fmt::format("Error loading file {}", fileLoadRequest.filename()));
+        log("Error loading file {}", fileLoadRequest.filename());
         fileLoadResponse.set_success(false);
     }
     eventMutex.unlock();
     sendEvent("fileload", fileLoadResponse);
+//    getRegionStats(0, 64, 0, 64, 0, imageInfo.depth, 0);
+//    if (dataSets.count("swizzled")) {
+//        getRegionStatsSwizzled(0, 64, 0, 64, 0, imageInfo.depth, 0);
+//    }
 }
 
 // Event response to profile request
@@ -916,14 +1037,8 @@ void Session::sendEvent(string eventName, google::protobuf::MessageLite& message
     }
     memset(binaryPayloadCache.data(), 0, eventNameLength);
     memcpy(binaryPayloadCache.data(), eventName.c_str(), min(eventName.length(), eventNameLength));
-    auto tStart = chrono::high_resolution_clock::now();
     message.SerializeToArray(binaryPayloadCache.data() + eventNameLength, messageLength);
-    auto tEnd = chrono::high_resolution_clock::now();
-    auto dtSerialize = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
-    tStart = chrono::high_resolution_clock::now();
     socket->send(binaryPayloadCache.data(), requiredSize, uWS::BINARY);
-    tEnd = chrono::high_resolution_clock::now();
-    auto dtSend = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
 }
 
 void Session::log(const string& logMessage) {
@@ -938,4 +1053,16 @@ void Session::log(const string& logMessage) {
     timeString = timeString.substr(0, timeString.length() - 1);
 
     fmt::print("Session {} [{}] ({}): {}\n", uuidString, socket->getAddress().address, timeString, logMessage);
+}
+
+template<typename... Args>
+void Session::log(const char* templateString, Args... args) {
+    fmt::print(templateString, args...);
+    fmt::print("\n");
+}
+
+template<typename... Args>
+void Session::log(const std::string& templateString, Args... args) {
+    fmt::print(templateString, args...);
+    fmt::print("\n");
 }
