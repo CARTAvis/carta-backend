@@ -1,0 +1,17 @@
+syntax = "proto3";
+package Responses;
+
+// Response after client requests region stats
+message RegionStatsResponse {
+    repeated float min_vals = 1;
+    repeated float max_vals = 2;
+    repeated float means = 3;
+    repeated float std_devs = 4;
+    repeated float nan_counts = 5;
+    bool success = 6;
+    sfixed32 x = 7;
+    sfixed32 y = 8;
+    sfixed32 stokes = 9;
+    sfixed32 width = 10;
+    sfixed32 height = 11;
+}

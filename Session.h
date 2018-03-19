@@ -11,7 +11,9 @@
 #include <proto/fileLoadRequest.pb.h>
 #include <proto/regionReadRequest.pb.h>
 #include <proto/profileRequest.pb.h>
+#include "proto/regionStatsRequest.pb.h"
 #include "proto/regionReadResponse.pb.h"
+
 #include "compression.h"
 #include "ctpl.h"
 
@@ -37,7 +39,7 @@ struct RegionStats {
     float maxVal = -std::numeric_limits<float>::max();
     float mean = 0;
     float stdDev = 0;
-    int nanCount =0;
+    int nanCount = 0;
 };
 
 
@@ -83,9 +85,10 @@ protected:
 
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, std::string folder, ctpl::thread_pool& serverThreadPool, bool verbose = false);
-    void onRegionRead(const Requests::RegionReadRequest& regionReadRequest);
+    void onRegionReadRequest(const Requests::RegionReadRequest& regionReadRequest);
     void onFileLoad(const Requests::FileLoadRequest& fileLoadRequest);
     void onProfileRequest(const Requests::ProfileRequest& request);
+    void onRegionStatsRequest(const Requests::RegionStatsRequest& request);
     ~Session();
 
 protected:

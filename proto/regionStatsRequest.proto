@@ -1,0 +1,11 @@
+syntax = "proto3";
+package Requests;
+
+// Request for stats for a region
+message RegionStatsRequest {
+    sfixed32 x = 1;
+    sfixed32 y = 2;
+    sfixed32 stokes = 4;
+    sfixed32 width = 5;
+    sfixed32 height = 6;
+}

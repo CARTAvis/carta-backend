@@ -4,6 +4,7 @@
 #include <proto/fileLoadResponse.pb.h>
 #include <proto/connectionResponse.pb.h>
 #include <proto/profileResponse.pb.h>
+#include <proto/regionStatsResponse.pb.h>
 
 using namespace HighFive;
 using namespace std;
@@ -801,7 +802,7 @@ vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin
 }
 
 // Event response to region read request
-void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest) {
+void Session::onRegionReadRequest(const Requests::RegionReadRequest& regionReadRequest) {
     // Mutex used to prevent overlapping requests for a single client
     eventMutex.lock();
 
@@ -980,9 +981,9 @@ void Session::onProfileRequest(const Requests::ProfileRequest& request) {
     response.set_channel(request.channel());
     response.set_stokes(request.stokes());
 
-    bool validX = 0 <= request.x() < imageInfo.width;
-    bool validY = 0 <= request.y() < imageInfo.height;
-    bool validZ = 0 <= request.channel() < imageInfo.depth;
+    bool validX = request.x() >= 0 && request.x() < imageInfo.width;
+    bool validY = request.y() >= 0 && request.y() < imageInfo.height;
+    bool validZ = request.channel() >= 0 && request.channel() < imageInfo.depth;
     bool validW = request.stokes() >= 0 && request.stokes() < imageInfo.stokes;
 
     if (validX && validY && validZ && validW) {
@@ -1021,6 +1022,47 @@ void Session::onProfileRequest(const Requests::ProfileRequest& request) {
     }
     eventMutex.unlock();
     sendEvent("profile", response);
+}
+
+// Event response to region stats request
+void Session::onRegionStatsRequest(const Requests::RegionStatsRequest& request) {
+
+    async(launch::async, [&]{
+        Responses::RegionStatsResponse response;
+        response.set_x(request.x());
+        response.set_y(request.y());
+        response.set_stokes(request.stokes());
+        response.set_width(request.width());
+        response.set_height(request.height());
+
+        bool validX = request.x() >= 0 && request.x() < imageInfo.width;
+        bool validY = request.y() >= 0 && request.y() < imageInfo.height;
+        bool validW = request.stokes() >= 0 && request.stokes() < imageInfo.stokes;
+
+        if (validX && validY && validW) {
+            vector<RegionStats> allStats;
+            if (imageInfo.dimensions == 2) {
+                allStats = {getRegionStats2D(request.x(), request.x() + request.width(), request.y(), request.y() + request.height())};
+            } else if (dataSets.count("swizzled")) {
+                allStats = getRegionStatsSwizzled(request.x(), request.x() + request.width(), request.y(), request.y() + request.height(), 0, imageInfo.depth, request.stokes());
+            } else {
+                allStats = getRegionStats(request.x(), request.x() + request.width(), request.y(), request.y() + request.height(), 0, imageInfo.depth, request.stokes());
+            }
+
+            for (auto& stats: allStats) {
+                response.add_min_vals(stats.minVal);
+                response.add_max_vals(stats.maxVal);
+                response.add_means(stats.mean);
+                response.add_std_devs(stats.stdDev);
+                response.add_nan_counts(stats.nanCount);
+            }
+            response.set_success(true);
+        } else {
+            response.set_success(false);
+        }
+
+        sendEvent("region_stats", response);
+    });
 }
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given protobuf message

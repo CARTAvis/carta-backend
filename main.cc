@@ -71,15 +71,19 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
             } else if (eventName == "region_read") {
                 Requests::RegionReadRequest regionReadRequest;
                 if (regionReadRequest.ParseFromArray(rawMessage + 32, length - 32)) {
-                    session->onRegionRead(regionReadRequest);
+                    session->onRegionReadRequest(regionReadRequest);
                 }
             } else if (eventName == "profile") {
                 Requests::ProfileRequest profileRequest;
                 if (profileRequest.ParseFromArray(rawMessage + 32, length - 32)) {
                     session->onProfileRequest(profileRequest);
                 }
-            }
-            else {
+            } else if (eventName == "region_stats") {
+                Requests::RegionStatsRequest statsRequest;
+                if (statsRequest.ParseFromArray(rawMessage + 32, length - 32)) {
+                    session->onRegionStatsRequest(statsRequest);
+                }
+            } else {
                 fmt::print("Unknown event type {}\n", eventName);
             }
         }
