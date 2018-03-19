@@ -261,14 +261,14 @@ bool Session::loadStats() {
                 dataSet.read(&imageInfo.channelStats[0][0].nanCount);
             } // 3D cubes
             else if (imageInfo.dimensions == 3 && dims.size() == 1 && dims[0] == imageInfo.depth) {
-                vector<float> data;
+                vector<int64_t> data;
                 dataSet.read(data);
                 for (auto i = 0; i < imageInfo.depth; i++) {
                     imageInfo.channelStats[0][i].nanCount = data[i];
                 }
             } // 4D cubes
             else if (imageInfo.dimensions == 4 && dims.size() == 2 && dims[0] == imageInfo.stokes && dims[1] == imageInfo.depth) {
-                vector<vector<float>> data;
+                vector<vector<int64_t>> data;
                 dataSet.read(data);
                 for (auto i = 0; i < imageInfo.stokes; i++) {
                     for (auto j = 0; j < imageInfo.depth; j++) {
@@ -969,10 +969,6 @@ void Session::onFileLoad(const Requests::FileLoadRequest& fileLoadRequest) {
     }
     eventMutex.unlock();
     sendEvent("fileload", fileLoadResponse);
-//    getRegionStats(0, 64, 0, 64, 0, imageInfo.depth, 0);
-//    if (dataSets.count("swizzled")) {
-//        getRegionStatsSwizzled(0, 64, 0, 64, 0, imageInfo.depth, 0);
-//    }
 }
 
 // Event response to profile request
