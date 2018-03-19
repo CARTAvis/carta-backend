@@ -62,21 +62,21 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
                     }
                     file.close();
                 } else if (fs::is_directory(filePath)) {
-                    string prefix = filePath.string() + "/";
+                    string newPrefix = filePath.string() + "/";
                     // Strip out the leading "./" in subdirectories
-                    if (prefix.length() > 2 && prefix.substr(0, 2) == "./") {
-                        prefix = prefix.substr(2);
+                    if (newPrefix.length() > 2 && newPrefix.substr(0, 2) == "./") {
+                        newPrefix = prefix.substr(2);
                     }
 
                     // Strip out base folder path as well (boost < 1.60 doesn't have relative path functionality)
-                    if (prefix.length() > folderPath.string().length() && prefix.substr(0, folderPath.string().length()) == folderPath.string()) {
-                        prefix = prefix.substr(folderPath.string().length());
-                        if (prefix.length() > 0 && prefix[0] == '/') {
-                            prefix = prefix.substr(1);
+                    if (newPrefix.length() > folderPath.string().length() && newPrefix.substr(0, folderPath.string().length()) == folderPath.string()) {
+                        newPrefix = newPrefix.substr(folderPath.string().length());
+                        if (newPrefix.length() > 0 && newPrefix[0] == '/') {
+                            newPrefix = newPrefix.substr(1);
                         }
                     }
 
-                    auto dir_files = getAvailableFiles(filePath.string(), prefix);
+                    auto dir_files = getAvailableFiles(filePath.string(), prefix + newPrefix);
                     files.insert(files.end(), dir_files.begin(), dir_files.end());
                 }
             }
