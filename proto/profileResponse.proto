@@ -7,7 +7,8 @@ message ProfileResponse {
     sfixed32 x = 2;
     sfixed32 y = 3;
     sfixed32 channel = 4;
-    repeated float x_profile = 5;
-    repeated float y_profile = 6;
-    repeated float z_profile = 7;
+    sfixed32 stokes = 5;
+    repeated float x_profile = 6;
+    repeated float y_profile = 7;
+    repeated float z_profile = 8;
 }

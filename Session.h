@@ -6,6 +6,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <highfive/H5File.hpp>
 #include <mutex>
+#include <stdio.h>
 #include <uWS/uWS.h>
 #include <proto/fileLoadRequest.pb.h>
 #include <proto/regionReadRequest.pb.h>
@@ -15,42 +16,58 @@
 #include "ctpl.h"
 
 #define MAX_SUBSETS 8
+typedef boost::multi_array<float, 4> Matrix4F;
 typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;
-
-struct Histogram {
-    int N;
-    float firstBinCenter, binWidth;
-    std::vector<int> bins;
-};
+typedef boost::multi_array<int, 3> Matrix3I;
+typedef boost::multi_array<int, 2> Matrix2I;
 
 struct ChannelStats {
-    Histogram histogram;
     float minVal;
     float maxVal;
     float mean;
     std::vector<float> percentiles;
-    std::vector<float> percentileVals;
-    int nanCount;
+    std::vector<float> percentileRanks;
+    std::vector<int> histogramBins;
+    int64_t nanCount;
 };
+
+struct RegionStats {
+    float minVal = std::numeric_limits<float>::max();
+    float maxVal = -std::numeric_limits<float>::max();
+    float mean = 0;
+    float stdDev = 0;
+    int nanCount =0;
+};
+
+
 
 struct ImageInfo {
     std::string filename;
+    std::string unit;
     int depth;
     int width;
     int height;
-    std::map<int, ChannelStats> channelStats;
+    int stokes;
+    int dimensions;
+    std::vector<std::vector<ChannelStats>> channelStats;
 };
 
 class Session {
 public:
     boost::uuids::uuid uuid;
 protected:
-    Matrix3F currentChannelCache;
-    Histogram currentChannelHistogram;
+    float* currentChannelCache;
+    Matrix2F currentChannelCache2D;
+    Matrix3F currentChannelCache3D;
+    Matrix4F currentChannelCache4D;
+    std::vector<float> cachedZProfile;
+    std::vector<int> cachedZProfileCoords;
     int currentChannel;
+    int currentStokes;
     std::unique_ptr<HighFive::File> file;
-    std::vector<HighFive::DataSet> dataSets;
+    std::map<std::string, HighFive::DataSet> dataSets;
+
     ImageInfo imageInfo;
     std::mutex eventMutex;
     uWS::WebSocket<uWS::SERVER>* socket;
@@ -73,15 +90,20 @@ public:
 
 protected:
     void updateHistogram();
-    bool loadFile(const std::string& filename, int defaultChannel = -1);
-    bool loadChannel(int channel);
+    bool loadFile(const std::string& filename, int defaultChannel = 0);
+    bool loadChannel(int channel, int stokes);
     bool loadStats();
-    std::vector<float> getXProfile(int y, int channel);
-    std::vector<float> getYProfile(int x, int channel);
-    std::vector<float> getZProfile(int x, int y);
+    std::vector<RegionStats> getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes);
+    std::vector<RegionStats> getRegionStatsSwizzled(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes);
+    RegionStats getRegionStats2D(int xMin, int xMax, int yMin, int yMax);
+    std::vector<float> getXProfile(int y, int channel, int stokes);
+    std::vector<float> getYProfile(int x, int channel, int stokes);
+    std::vector<float> getZProfile(int x, int y, int stokes);
     std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
     std::vector<std::string> getAvailableFiles(const std::string& folder, std::string prefix = "");
     void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
     void log(const std::string& logMessage);
+    template<typename... Args> void log(const char* templateString, Args... args);
+    template<typename... Args> void log(const std::string& templateString, Args... args);
 };
 

@@ -14,6 +14,7 @@ namespace fs = boost::filesystem;
 Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
     : uuid(uuid),
       currentChannel(-1),
+      currentStokes(-1),
       file(nullptr),
       baseFolder(folder),
       verboseLogging(verbose),
@@ -23,10 +24,10 @@ Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, 
       socket(ws) {
 
     eventMutex.lock();
-    auto tStart = std::chrono::high_resolution_clock::now();
+    auto tStart = chrono::high_resolution_clock::now();
     availableFileList = getAvailableFiles(baseFolder);
-    auto tEnd = std::chrono::high_resolution_clock::now();
-    auto dtFileSearch = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
+    auto tEnd = chrono::high_resolution_clock::now();
+    auto dtFileSearch = chrono::duration_cast<chrono::milliseconds>(tEnd - tStart).count();
     fmt::print("Found {} HDF5 files in {} ms\n", availableFileList.size(), dtFileSearch);
 
     Responses::ConnectionResponse connectionResponse;
@@ -89,9 +90,7 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
 }
 
 void Session::updateHistogram() {
-    int channel = (currentChannel == -1) ? imageInfo.depth : currentChannel;
-    if (imageInfo.channelStats.count(channel) && imageInfo.channelStats[channel].histogram.bins.size()) {
-        currentChannelHistogram = imageInfo.channelStats[channel].histogram;
+    if (imageInfo.channelStats[currentStokes][currentChannel].histogramBins.size()) {
         return;
     }
 
@@ -104,88 +103,145 @@ void Session::updateHistogram() {
         return;
     }
 
-    float minVal = currentChannelCache[0][0][0];
-    float maxVal = currentChannelCache[0][0][0];
-
+    float minVal = currentChannelCache[0];
+    float maxVal = currentChannelCache[0];
+    float sum = 0.0f;
+    int count = 0;
     for (auto i = 0; i < imageInfo.height; i++) {
         for (auto j = 0; j < imageInfo.width; j++) {
-            minVal = fmin(minVal, currentChannelCache[0][i][j]);
-            maxVal = fmax(maxVal, currentChannelCache[0][i][j]);
+            auto v = currentChannelCache[i * imageInfo.width + j];
+            minVal = fmin(minVal, v);
+            maxVal = fmax(maxVal, v);
+            sum += isnan(v) ? 0.0 : v;
+            count += isnan(v) ? 0 : 1;
         }
     }
 
-    currentChannelHistogram.N = max(sqrt(imageInfo.width * imageInfo.height), 2.0);
-    currentChannelHistogram.binWidth = (maxVal - minVal) / currentChannelHistogram.N;
-    currentChannelHistogram.firstBinCenter = minVal + currentChannelHistogram.binWidth / 2.0f;
-    currentChannelHistogram.bins.resize(currentChannelHistogram.N);
-    memset(currentChannelHistogram.bins.data(), 0, sizeof(int) * currentChannelHistogram.bins.size());
+    ChannelStats& stats = imageInfo.channelStats[currentStokes][currentChannel];
+
+    stats.minVal = minVal;
+    stats.maxVal = maxVal;
+    stats.nanCount = count;
+    stats.mean = sum / max(count, 1);
+    int N = int(max(sqrt(imageInfo.width * imageInfo.height), 2.0));
+    stats.histogramBins.resize(N, 0);
+    float binWidth = (stats.maxVal / stats.minVal) / N;
+
     for (auto i = 0; i < imageInfo.height; i++) {
         for (auto j = 0; j < imageInfo.width; j++) {
-            auto v = currentChannelCache[0][i][j];
+            auto v = currentChannelCache[i * imageInfo.width + j];
             if (isnan(v)) {
                 continue;
             }
-            int bin = min((int) ((v - minVal) / currentChannelHistogram.binWidth), currentChannelHistogram.N - 1);
-            currentChannelHistogram.bins[bin]++;
+            int bin = min((int) ((v - minVal) / binWidth), N - 1);
+            stats.histogramBins[bin]++;
         }
     }
-
     log("Cached histogram not found. Manually updated");
-
 }
 
 bool Session::loadStats() {
     if (!file || !file->isValid()) {
-
         log("No file loaded");
         return false;
     }
-    if (file->exist("Statistics")) {
-        auto statsGroup = file->getGroup("Statistics");
-        if (statsGroup.isValid() && statsGroup.exist("MaxVals")) {
-            auto dataSet = statsGroup.getDataSet("MaxVals");
+
+    imageInfo.channelStats.resize(imageInfo.stokes);
+    for (auto i = 0; i < imageInfo.stokes; i++) {
+        imageInfo.channelStats[i].resize(imageInfo.depth);
+    }
+
+    if (file->exist("0/Statistics/XY")) {
+        auto group = file->getGroup("0");
+        auto statsGroup = file->getGroup("0/Statistics/XY");
+        if (statsGroup.isValid() && statsGroup.exist("MAX")) {
+            auto dataSet = statsGroup.getDataSet("MAX");
             auto dims = dataSet.getSpace().getDimensions();
-            if (dims.size() == 1 && dims[0] == imageInfo.depth + 1) {
+
+            // 2D cubes
+            if (imageInfo.dimensions == 2 && dims.size() == 0) {
+                dataSet.read(&imageInfo.channelStats[0][0].maxVal);
+            } // 3D cubes
+            else if (imageInfo.dimensions == 3 && dims.size() == 1 && dims[0] == imageInfo.depth) {
                 vector<float> data;
                 dataSet.read(data);
-                for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                    imageInfo.channelStats[i].maxVal = data[i];
+                for (auto i = 0; i < imageInfo.depth; i++) {
+                    imageInfo.channelStats[0][i].maxVal = data[i];
+                }
+            } // 4D cubes
+            else if (imageInfo.dimensions == 4 && dims.size() == 2 && dims[0] == imageInfo.stokes && dims[1] == imageInfo.depth) {
+                vector<vector<float>> data;
+                dataSet.read(data);
+                for (auto i = 0; i < imageInfo.stokes; i++) {
+                    for (auto j = 0; j < imageInfo.depth; j++) {
+                        imageInfo.channelStats[i][j].maxVal = data[i][j];
+                    }
                 }
             } else {
                 log("Invalid MaxVals statistics");
                 return false;
             }
+
         } else {
             log("Missing MaxVals statistics");
             return false;
         }
 
-        if (statsGroup.isValid() && statsGroup.exist("MinVals")) {
-            auto dataSet = statsGroup.getDataSet("MinVals");
+        if (statsGroup.isValid() && statsGroup.exist("MIN")) {
+            auto dataSet = statsGroup.getDataSet("MIN");
             auto dims = dataSet.getSpace().getDimensions();
-            if (dims.size() == 1 && dims[0] == imageInfo.depth + 1) {
+
+            // 2D cubes
+            if (imageInfo.dimensions == 2 && dims.size() == 0) {
+                dataSet.read(&imageInfo.channelStats[0][0].minVal);
+            } // 3D cubes
+            else if (imageInfo.dimensions == 3 && dims.size() == 1 && dims[0] == imageInfo.depth) {
                 vector<float> data;
                 dataSet.read(data);
-                for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                    imageInfo.channelStats[i].minVal = data[i];
+                for (auto i = 0; i < imageInfo.depth; i++) {
+                    imageInfo.channelStats[0][i].minVal = data[i];
+                }
+            } // 4D cubes
+            else if (imageInfo.dimensions == 4 && dims.size() == 2 && dims[0] == imageInfo.stokes && dims[1] == imageInfo.depth) {
+                vector<vector<float>> data;
+                dataSet.read(data);
+                for (auto i = 0; i < imageInfo.stokes; i++) {
+                    for (auto j = 0; j < imageInfo.depth; j++) {
+                        imageInfo.channelStats[i][j].minVal = data[i][j];
+                    }
                 }
             } else {
                 log("Invalid MinVals statistics");
                 return false;
             }
+
         } else {
             log("Missing MinVals statistics");
             return false;
         }
 
-        if (statsGroup.isValid() && statsGroup.exist("Means")) {
-            auto dataSet = statsGroup.getDataSet("Means");
+        if (statsGroup.isValid() && statsGroup.exist("MEAN")) {
+            auto dataSet = statsGroup.getDataSet("MEAN");
             auto dims = dataSet.getSpace().getDimensions();
-            if (dims.size() == 1 && dims[0] == imageInfo.depth + 1) {
+
+            // 2D cubes
+            if (imageInfo.dimensions == 2 && dims.size() == 0) {
+                dataSet.read(&imageInfo.channelStats[0][0].mean);
+            } // 3D cubes
+            else if (imageInfo.dimensions == 3 && dims.size() == 1 && dims[0] == imageInfo.depth) {
                 vector<float> data;
                 dataSet.read(data);
-                for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                    imageInfo.channelStats[i].mean = data[i];
+                for (auto i = 0; i < imageInfo.depth; i++) {
+                    imageInfo.channelStats[0][i].mean = data[i];
+                }
+            } // 4D cubes
+            else if (imageInfo.dimensions == 4 && dims.size() == 2 && dims[0] == imageInfo.stokes && dims[1] == imageInfo.depth) {
+                vector<vector<float>> data;
+                dataSet.read(data);
+                for (auto i = 0; i < imageInfo.stokes; i++) {
+                    for (auto j = 0; j < imageInfo.depth; j++) {
+                        imageInfo.channelStats[i][j].mean = data[i][j];
+                    }
                 }
             } else {
                 log("Invalid Means statistics");
@@ -196,14 +252,28 @@ bool Session::loadStats() {
             return false;
         }
 
-        if (statsGroup.isValid() && statsGroup.exist("NaNCounts")) {
-            auto dataSet = statsGroup.getDataSet("NaNCounts");
+        if (statsGroup.isValid() && statsGroup.exist("NAN_COUNT")) {
+            auto dataSet = statsGroup.getDataSet("NAN_COUNT");
             auto dims = dataSet.getSpace().getDimensions();
-            if (dims.size() == 1 && dims[0] == imageInfo.depth + 1) {
-                vector<int> data;
+
+            // 2D cubes
+            if (imageInfo.dimensions == 2 && dims.size() == 0) {
+                dataSet.read(&imageInfo.channelStats[0][0].nanCount);
+            } // 3D cubes
+            else if (imageInfo.dimensions == 3 && dims.size() == 1 && dims[0] == imageInfo.depth) {
+                vector<int64_t> data;
                 dataSet.read(data);
-                for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                    imageInfo.channelStats[i].nanCount = data[i];
+                for (auto i = 0; i < imageInfo.depth; i++) {
+                    imageInfo.channelStats[0][i].nanCount = data[i];
+                }
+            } // 4D cubes
+            else if (imageInfo.dimensions == 4 && dims.size() == 2 && dims[0] == imageInfo.stokes && dims[1] == imageInfo.depth) {
+                vector<vector<int64_t>> data;
+                dataSet.read(data);
+                for (auto i = 0; i < imageInfo.stokes; i++) {
+                    for (auto j = 0; j < imageInfo.depth; j++) {
+                        imageInfo.channelStats[i][j].nanCount = data[i][j];
+                    }
                 }
             } else {
                 log("Invalid NaNCounts statistics");
@@ -214,41 +284,38 @@ bool Session::loadStats() {
             return false;
         }
 
-        if (statsGroup.exist("Histograms")) {
-            auto histogramsGroup = statsGroup.getGroup("Histograms");
-            if (histogramsGroup.isValid() && histogramsGroup.exist("BinWidths") && histogramsGroup.exist("FirstCenters")
-                && histogramsGroup.exist("Bins")) {
-                auto dataSetBinWidths = histogramsGroup.getDataSet("BinWidths");
-                auto dataSetFirstCenters = histogramsGroup.getDataSet("FirstCenters");
-                auto dataSetBins = histogramsGroup.getDataSet("Bins");
-                auto dimsBinWidths = dataSetBinWidths.getSpace().getDimensions();
-                auto dimsFirstCenters = dataSetFirstCenters.getSpace().getDimensions();
-                auto dimsBins = dataSetBins.getSpace().getDimensions();
+        if (statsGroup.exist("HISTOGRAM")) {
+            auto dataSet = statsGroup.getDataSet("HISTOGRAM");
+            auto dims = dataSet.getSpace().getDimensions();
 
-                if (dimsBinWidths.size() == 1 && dimsFirstCenters.size() == 1 && dimsBins.size() == 2
-                    && dimsBinWidths[0] == imageInfo.depth + 1 && dimsFirstCenters[0] == imageInfo.depth + 1
-                    && dimsBins[0] == imageInfo.depth + 1) {
-                    vector<float> binWidths;
-                    dataSetBinWidths.read(binWidths);
-                    vector<float> firstCenters;
-                    dataSetFirstCenters.read(firstCenters);
-                    vector<vector<int>> bins;
-                    dataSetBins.read(bins);
-                    int N = bins[0].size();
-
-                    for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                        imageInfo.channelStats[i].histogram.N = N;
-                        imageInfo.channelStats[i].histogram.binWidth = binWidths[i];
-                        imageInfo.channelStats[i].histogram.firstBinCenter = firstCenters[i];
-                        imageInfo.channelStats[i].histogram.bins = bins[i];
-                    }
-                } else {
-                    log("Invalid Percentiles statistics");
-                    return false;
+            // 2D cubes
+            if (imageInfo.dimensions == 2) {
+                vector<int> data;
+                dataSet.read(data);
+                imageInfo.channelStats[0][0].histogramBins = data;
+            } // 3D cubes
+            else if (imageInfo.dimensions == 3 && dims.size() == 2 && dims[0] == imageInfo.depth) {
+                vector<vector<int>> data;
+                dataSet.read(data);
+                for (auto i = 0; i < imageInfo.depth; i++) {
+                    imageInfo.channelStats[0][i].histogramBins = data[i];
                 }
-
+            } // 4D cubes
+            else if (imageInfo.dimensions == 4 && dims.size() == 3 && dims[0] == imageInfo.stokes && dims[1] == imageInfo.depth) {
+                Matrix3I data;
+                dataSet.read(data);
+                for (auto i = 0; i < imageInfo.stokes; i++) {
+                    for (auto j = 0; j < imageInfo.depth; j++) {
+                        auto& stats = imageInfo.channelStats[i][j];
+                        auto L = data.shape()[2];
+                        stats.histogramBins.resize(L);
+                        for (auto k = 0; k < L; k++) {
+                            stats.histogramBins[k] = data[i][j][k];
+                        }
+                    }
+                }
             } else {
-                log("Missing Histograms datasets");
+                log("Invalid histogram statistics");
                 return false;
             }
 
@@ -256,30 +323,47 @@ bool Session::loadStats() {
             log("Missing Histograms group");
             return false;
         }
+        if (statsGroup.exist("PERCENTILES") && group.exist("PERCENTILE_RANKS")) {
+            auto dataSetPercentiles = statsGroup.getDataSet("PERCENTILES");
+            auto dataSetPercentilesRank = group.getDataSet("PERCENTILE_RANKS");
 
-        if (statsGroup.exist("Percentiles")) {
-            auto percentilesGroup = statsGroup.getGroup("Percentiles");
-            if (percentilesGroup.isValid() && percentilesGroup.exist("Percentiles") && percentilesGroup.exist("Values")) {
-                auto dataSetPercentiles = percentilesGroup.getDataSet("Percentiles");
-                auto dataSetValues = percentilesGroup.getDataSet("Values");
-                auto dims = dataSetPercentiles.getSpace().getDimensions();
-                auto dimsValues = dataSetValues.getSpace().getDimensions();
+            auto dims = dataSetPercentiles.getSpace().getDimensions();
+            auto dimsRanks = dataSetPercentilesRank.getSpace().getDimensions();
+            vector<float> ranks;
+            dataSetPercentilesRank.read(ranks);
 
-                if (dims.size() == 1 && dimsValues.size() == 2 && dimsValues[0] == imageInfo.depth + 1 && dimsValues[1] == dims[0]) {
-                    vector<float> percentiles;
-                    dataSetPercentiles.read(percentiles);
-                    vector<vector<float>> vals;
-                    dataSetValues.read(vals);
+            if (imageInfo.dimensions == 2 && dims.size() == 1 && dims[0] == dimsRanks[0]) {
+                vector<float> vals;
+                dataSetPercentiles.read(vals);
+                imageInfo.channelStats[0][0].percentiles = vals;
+                imageInfo.channelStats[0][0].percentileRanks = ranks;
+            }
+                // 3D cubes
+            else if (imageInfo.dimensions == 3 && dims.size() == 2 && dims[0] == imageInfo.depth && dims[1] == dimsRanks[0]) {
+                vector<vector<float>> vals;
+                dataSetPercentiles.read(vals);
 
-                    for (auto i = 0; i < imageInfo.depth + 1; i++) {
-                        imageInfo.channelStats[i].percentiles = percentiles;
-                        imageInfo.channelStats[i].percentileVals = vals[i];
-                    }
-                } else {
-                    log("Invalid Percentiles statistics");
-                    return false;
+                for (auto i = 0; i < imageInfo.depth; i++) {
+                    imageInfo.channelStats[0][i].percentiles = vals[i];
+                    imageInfo.channelStats[0][i].percentileRanks = ranks;
                 }
+            }
+                // 4D cubes
+            else if (imageInfo.dimensions == 4 && dims.size() == 3 && dims[0] == imageInfo.stokes && dims[1] == imageInfo.depth && dims[2] == dimsRanks[0]) {
+                Matrix3F vals;
+                dataSetPercentiles.read(vals);
 
+                for (auto i = 0; i < imageInfo.stokes; i++) {
+                    for (auto j = 0; j < imageInfo.depth; j++) {
+                        auto L = vals.shape()[2];
+                        auto& stats = imageInfo.channelStats[i][j];
+                        stats.percentiles.resize(L);
+                        for (auto k = 0; k < L; k++) {
+                            stats.percentiles[k] = vals[i][j][k];
+                        }
+                        stats.percentileRanks = ranks;
+                    }
+                }
             } else {
                 log("Missing Percentiles datasets");
                 return false;
@@ -297,25 +381,29 @@ bool Session::loadStats() {
     return true;
 }
 
-bool Session::loadChannel(int channel) {
+bool Session::loadChannel(int channel, int stokes) {
 
     if (!file || !file->isValid()) {
 
         log("No file loaded");
         return false;
-    } else if (channel >= imageInfo.depth) {
-        log(fmt::format("Invalid channel for channel {} in file {}", channel, imageInfo.filename));
+    } else if (channel < 0 || channel >= imageInfo.depth || stokes < 0 || stokes >= imageInfo.stokes) {
+        log("Channel {} (stokes {}) is invalid in file {}", channel, stokes, imageInfo.filename);
         return false;
     }
 
-    if (channel >= 0) {
-        dataSets[0].select({channel, 0, 0}, {1, imageInfo.height, imageInfo.width}).read(currentChannelCache);
+    if (imageInfo.dimensions == 2) {
+        dataSets.at("main").read(currentChannelCache2D);
+        currentChannelCache = currentChannelCache2D.data();
+    } else if (imageInfo.dimensions == 3) {
+        dataSets.at("main").select({channel, 0, 0}, {1, imageInfo.height, imageInfo.width}).read(currentChannelCache3D);
+        currentChannelCache = currentChannelCache3D.data();
     } else {
-        Matrix2F tmp;
-        dataSets[1].select({0, 0}, {imageInfo.height, imageInfo.width}).read(tmp);
-        currentChannelCache.resize(boost::extents[1][imageInfo.height][imageInfo.width]);
-        currentChannelCache[0] = tmp;
+        dataSets.at("main").select({stokes, channel, 0, 0}, {1, 1, imageInfo.height, imageInfo.width}).read(currentChannelCache4D);
+        currentChannelCache = currentChannelCache4D.data();
     }
+
+    currentStokes = stokes;
     currentChannel = channel;
     updateHistogram();
     return true;
@@ -328,7 +416,7 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
     }
 
     if (find(availableFileList.begin(), availableFileList.end(), filename) == availableFileList.end()) {
-        log(fmt::format("Problem loading file {}: File is not in available file list.", filename));
+        log("Problem loading file {}: File is not in available file list.", filename);
         return false;
     }
 
@@ -336,135 +424,193 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
         file.reset(new File(fmt::format("{}/{}", baseFolder, filename), File::ReadOnly));
         vector<string> fileObjectList = file->listObjectNames();
         imageInfo.filename = filename;
-        auto group = file->getGroup("Image");
-        DataSet dataSet = group.getDataSet("Data");
+        auto group = file->getGroup("0");
+
+        DataSet dataSet = group.getDataSet("DATA");
 
         auto dims = dataSet.getSpace().getDimensions();
-        if (dims.size() != 3) {
-            log(fmt::format("Problem loading file {}: Data is not a valid 3D array.", filename));
+        imageInfo.dimensions = dims.size();
+
+        if (imageInfo.dimensions < 2 || imageInfo.dimensions > 4) {
+            log("Problem loading file {}: Image must be 2D, 3D or 4D.", filename);
             return false;
         }
 
-        imageInfo.depth = dims[0];
-        imageInfo.height = dims[1];
-        imageInfo.width = dims[2];
-        dataSets.clear();
-        dataSets.push_back(dataSet);
+        imageInfo.width = dims[imageInfo.dimensions - 1];
+        imageInfo.height = dims[imageInfo.dimensions - 2];
+        imageInfo.depth = (imageInfo.dimensions > 2) ? dims[imageInfo.dimensions - 3] : 1;
+        imageInfo.stokes = (imageInfo.dimensions > 3) ? dims[imageInfo.dimensions - 4] : 1;
 
-        dataSets.push_back(group.getDataSet("AverageData"));
+        dataSets.clear();
+        dataSets.emplace("main", dataSet);
+
+        if (group.exist("Statistics") && group.exist("Statistics/Z") && group.exist("Statistics/Z/MEAN")) {
+            dataSets.emplace("average", group.getDataSet("Statistics/Z/MEAN"));
+        }
 
         loadStats();
 
-        if (group.exist("DataSwizzled")) {
-            DataSet dataSetSwizzled = group.getDataSet("DataSwizzled");
-            auto swizzledDims = dataSetSwizzled.getSpace().getDimensions();
-            if (swizzledDims.size() != 3 || swizzledDims[0] != dims[2]) {
-                log(fmt::format("Invalid swizzled data set in file {}, ignoring.", filename));
+        if (group.exist("SwizzledData")) {
+            if (imageInfo.dimensions == 3 && group.exist("SwizzledData/ZYX")) {
+                DataSet dataSetSwizzled = group.getDataSet("SwizzledData/ZYX");
+                auto swizzledDims = dataSetSwizzled.getSpace().getDimensions();
+                if (swizzledDims.size() != 3 || swizzledDims[0] != dims[2]) {
+                    log("Invalid swizzled data set in file {}, ignoring.", filename);
+                } else {
+                    log("Found valid swizzled data set in file {}.", filename);
+                    dataSets.emplace("swizzled", dataSetSwizzled);
+                }
+            } else if (imageInfo.dimensions == 4 && group.exist("SwizzledData/ZYXW")) {
+                DataSet dataSetSwizzled = group.getDataSet("SwizzledData/ZYXW");
+                auto swizzledDims = dataSetSwizzled.getSpace().getDimensions();
+                if (swizzledDims.size() != 4 || swizzledDims[1] != dims[3]) {
+                    log("Invalid swizzled data set in file {}, ignoring.", filename);
+                } else {
+                    log("Found valid swizzled data set in file {}.", filename);
+                    dataSets.emplace("swizzled", dataSetSwizzled);
+                }
             } else {
-                log(fmt::format("Found valid swizzled data set in file {}.", filename));
-                dataSets.emplace_back(dataSetSwizzled);
+                log("File {} missing optional swizzled data set, using fallback calculation.", filename);
             }
         } else {
-            log(fmt::format("File {} missing optional swizzled data set, using fallback calculation.\n", filename));
+            log("File {} missing optional swizzled data set, using fallback calculation.", filename);
         }
-        return loadChannel(defaultChannel);
+        return loadChannel(defaultChannel, 0);
     }
     catch (HighFive::Exception& err) {
-        log(fmt::format("Problem loading file {}", filename));
+        log("Problem loading file {}", filename);
         return false;
     }
 }
 
 // Calculates an X Profile for a given Y pixel coordinate and channel
-vector<float> Session::getXProfile(int y, int channel) {
+vector<float> Session::getXProfile(int y, int channel, int stokes) {
     if (!file || !file->isValid()) {
         log("No file loaded or invalid session");
         return vector<float>();
-    } else if (y < 0 || y >= imageInfo.height || channel < -1 || channel >= imageInfo.depth) {
+    } else if (y < 0 || y >= imageInfo.height || channel < 0 || channel >= imageInfo.depth || stokes < 0 || stokes >= imageInfo.stokes) {
         log("X profile out of range");
         return vector<float>();
     }
 
     vector<float> profile;
     profile.resize(imageInfo.width);
-    if (channel == currentChannel) {
+    if ((channel == currentChannel && stokes == currentStokes) || imageInfo.dimensions == 2) {
 
         for (auto i = 0; i < imageInfo.width; i++) {
-            profile[i] = currentChannelCache[0][y][i];
+            profile[i] = currentChannelCache[y * imageInfo.width + i];
         }
+        return profile;
     } else {
         try {
-            Matrix3F xP;
-            dataSets[2].select({channel, y, 0}, {1, 1, imageInfo.width}).read(xP);
-            memcpy(profile.data(), xP.data(), imageInfo.width * sizeof(float));
+            if (imageInfo.dimensions == 3) {
+                Matrix3F yP;
+                dataSets.at("main").select({channel, y, 0}, {1, 1, imageInfo.width}).read(yP);
+                memcpy(profile.data(), yP.data(), imageInfo.width * sizeof(float));
+            } else {
+                Matrix4F yP;
+                dataSets.at("main").select({stokes, channel, y, 0}, {1, 1, 1, imageInfo.width}).read(yP);
+                memcpy(profile.data(), yP.data(), imageInfo.width * sizeof(float));
+            }
             return profile;
         }
         catch (HighFive::Exception& err) {
-            log(fmt::format("Invalid profile request in file {}", imageInfo.filename));
+            log("Invalid profile request in file {}", imageInfo.filename);
             return vector<float>();
         }
     }
 }
 
 // Calculates a Y Profile for a given X pixel coordinate and channel
-vector<float> Session::getYProfile(int x, int channel) {
+vector<float> Session::getYProfile(int x, int channel, int stokes) {
     if (!file || !file->isValid()) {
         log("No file loaded or invalid session");
         return vector<float>();
-    } else if (x < 0 || x >= imageInfo.width || channel < -1 || channel >= imageInfo.depth) {
+    } else if (x < 0 || x >= imageInfo.width || channel < 0 || channel >= imageInfo.depth || stokes < 0 || stokes >= imageInfo.stokes) {
         log("Y profile out of range");
         return vector<float>();
     }
 
     vector<float> profile;
     profile.resize(imageInfo.height);
-    if (channel == currentChannel) {
+    if ((channel == currentChannel && stokes == currentStokes) || imageInfo.dimensions == 2) {
 
         for (auto i = 0; i < imageInfo.height; i++) {
-            profile[i] = currentChannelCache[0][i][x];
+            profile[i] = currentChannelCache[i * imageInfo.width + x];
         }
+        return profile;
     } else {
         try {
-            Matrix3F yP;
-            dataSets[2].select({channel, 0, x}, {1, imageInfo.height, 1}).read(yP);
-            memcpy(profile.data(), yP.data(), imageInfo.height * sizeof(float));
+            if (imageInfo.dimensions == 3) {
+                Matrix3F yP;
+                dataSets.at("main").select({channel, 0, x}, {1, imageInfo.height, 1}).read(yP);
+                memcpy(profile.data(), yP.data(), imageInfo.height * sizeof(float));
+            } else {
+                Matrix4F yP;
+                dataSets.at("main").select({stokes, channel, 0, x}, {1, 1, imageInfo.height, 1}).read(yP);
+                memcpy(profile.data(), yP.data(), imageInfo.height * sizeof(float));
+            }
             return profile;
         }
         catch (HighFive::Exception& err) {
-            log(fmt::format("Invalid profile request in file {}", imageInfo.filename));
+            log("Invalid profile request in file {}", imageInfo.filename);
             return vector<float>();
         }
     }
 }
 
 // Calculates a Z Profile for a given X and Y pixel coordinate
-vector<float> Session::getZProfile(int x, int y) {
+vector<float> Session::getZProfile(int x, int y, int stokes) {
     if (!file || !file->isValid()) {
         log("No file loaded or invalid session");
         return vector<float>();
-    } else if (x >= imageInfo.width || y >= imageInfo.height) {
+    } else if (x < 0 || x >= imageInfo.width || y < 0 || y >= imageInfo.height || stokes < 0 || stokes >= imageInfo.stokes) {
         log("Z profile out of range");
         return vector<float>();
     }
 
-    try {
-        vector<float> profile;
+    // If the requested coordinates are the same as the previous one, just use the cached value instead of reading from disk
+    if (cachedZProfile.size() == imageInfo.depth && cachedZProfileCoords.size() == 3 && cachedZProfileCoords[0] == x
+        && cachedZProfileCoords[1] == y && cachedZProfileCoords[2] == stokes) {
+        return cachedZProfile;
+    }
 
-        // The third data set is the swizzled dataset (if it exists)
-        if (dataSets.size() == 3) {
+    if (imageInfo.dimensions == 2) {
+        return {currentChannelCache[y * imageInfo.width + x]};
+    }
+
+    try {
+        // Check if swizzled dataset exists
+        if (dataSets.count("swizzled")) {
             // Even when reading a single slice, since we're selecting a 3D space, we need to read into a 3D data structure
             // and then copy to a 1D vector. This is a bug in HighFive that only occurs if the last dimension is zero
-            Matrix3F zP;
-            dataSets[2].select({x, y, 0}, {1, 1, imageInfo.depth}).read(zP);
-            profile.resize(imageInfo.depth);
-            memcpy(profile.data(), zP.data(), imageInfo.depth * sizeof(float));
+            if (imageInfo.dimensions == 3) {
+                Matrix3F zP;
+                dataSets.at("swizzled").select({x, y, 0}, {1, 1, imageInfo.depth}).read(zP);
+                cachedZProfile.resize(imageInfo.depth);
+                memcpy(cachedZProfile.data(), zP.data(), imageInfo.depth * sizeof(float));
+            } else {
+                Matrix4F zP;
+                dataSets.at("swizzled").select({stokes, x, y, 0}, {1, 1, 1, imageInfo.depth}).read(zP);
+                cachedZProfile.resize(imageInfo.depth);
+                memcpy(cachedZProfile.data(), zP.data(), imageInfo.depth * sizeof(float));
+            }
         } else {
-            dataSets[0].select({0, y, x}, {imageInfo.depth, 1, 1}).read(profile);
+            if (imageInfo.dimensions == 3) {
+                dataSets.at("main").select({0, y, x}, {imageInfo.depth, 1, 1}).read(cachedZProfile);
+            } else {
+                Matrix4F zP;
+                dataSets.at("main").select({stokes, 0, y, x}, {1, imageInfo.depth, 1, 1}).read(zP);
+                cachedZProfile.resize(imageInfo.depth);
+                memcpy(cachedZProfile.data(), zP.data(), imageInfo.depth * sizeof(float));
+
+            }
         }
-        return profile;
+        cachedZProfileCoords = {x, y, stokes};
+        return cachedZProfile;
     }
     catch (HighFive::Exception& err) {
-        log(fmt::format("Invalid profile request in file {}", imageInfo.filename));
+        log("Invalid profile request in file {}", imageInfo.filename);
         return vector<float>();
     }
 }
@@ -477,9 +623,9 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
         return vector<float>();
     }
 
-    if (currentChannel != regionReadRequest.channel()) {
-        if (!loadChannel(regionReadRequest.channel())) {
-            log(fmt::format("Select channel {} is invalid!", regionReadRequest.channel()));
+    if (currentChannel != regionReadRequest.channel() || currentStokes != regionReadRequest.stokes()) {
+        if (!loadChannel(regionReadRequest.channel(), regionReadRequest.stokes())) {
+            log("Selected channel {} is invalid!", regionReadRequest.channel());
             return vector<float>();
         }
     }
@@ -491,8 +637,8 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
     const int width = regionReadRequest.width();
 
     if (imageInfo.height < y + height || imageInfo.width < x + width) {
-        log(fmt::format("Selected region ({}, {}) -> ({}, {} in channel {} is invalid!",
-                        x, y, x + width, y + height, regionReadRequest.channel()));
+        log("Selected region ({}, {}) -> ({}, {} in channel {} is invalid!",
+            x, y, x + width, y + height, regionReadRequest.channel());
         return vector<float>();
     }
 
@@ -509,7 +655,7 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
                 int pixelCount = 0;
                 for (auto pixelX = 0; pixelX < mip; pixelX++) {
                     for (auto pixelY = 0; pixelY < mip; pixelY++) {
-                        float pixVal = currentChannelCache[0][y + j * mip + pixelY][x + i * mip + pixelX];
+                        float pixVal = currentChannelCache[(y + j * mip + pixelY) * imageInfo.width + (x + i * mip + pixelX)];
                         if (!isnan(pixVal)) {
                             pixelCount++;
                             pixelSum += pixVal;
@@ -523,11 +669,135 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
         // Nearest neighbour filtering
         for (auto j = 0; j < numRowsRegion; j++) {
             for (auto i = 0; i < rowLengthRegion; i++) {
-                regionData[j * rowLengthRegion + i] = currentChannelCache[0][y + j * mip][x + i * mip];
+                regionData[j * rowLengthRegion + i] = currentChannelCache[(y + j * mip) * imageInfo.width + (x + i * mip)];
             }
         }
     }
     return regionData;
+}
+
+RegionStats Session::getRegionStats2D(int xMin, int xMax, int yMin, int yMax) {
+    float sum = 0;
+    float sumSquared = 0;
+    float minVal = numeric_limits<float>::max();
+    float maxVal = -numeric_limits<float>::max();
+    int nanCount = 0;
+    int N = ((yMax - yMin) * (xMax - xMin));
+    auto& dataSet = dataSets.at("main");
+    Matrix2F processSlice;
+    dataSet.select({yMin, xMin}, {yMax - yMin, xMax - xMin}).read(processSlice);
+    auto data = processSlice.data();
+    for (auto j = 0; j < N; j++) {
+        auto& v = data[j];
+        sum += isnan(v) ? 0 : v;
+        sumSquared += isnan(v) ? 0 : v * v;
+        minVal = fmin(minVal, v);
+        maxVal = fmax(maxVal, v);
+        nanCount += isnan(v);
+    }
+    RegionStats stats;
+    stats.minVal = minVal;
+    stats.maxVal = maxVal;
+    stats.mean = sum / max(N - nanCount, 1);
+    stats.stdDev = sqrtf(sumSquared / (max(N - nanCount, 1)) - stats.mean * stats.mean);
+    stats.nanCount = nanCount;
+    return stats;
+}
+
+vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes) {
+    vector<RegionStats> allStats(channelMax - channelMin);
+    Matrix3F processSlice3D;
+    Matrix4F processSlice4D;
+    auto tStart = chrono::high_resolution_clock::now();
+    for (auto i = channelMin; i < channelMax; i++) {
+        float sum = 0;
+        float sumSquared = 0;
+        float minVal = numeric_limits<float>::max();
+        float maxVal = -numeric_limits<float>::max();
+        int nanCount = 0;
+        int N = ((yMax - yMin) * (xMax - xMin));
+        auto& dataSet = dataSets.at("main");
+        float* data = nullptr;
+        if (imageInfo.dimensions == 4) {
+            dataSet.select({stokes, i, yMin, xMin}, {1, 1, yMax - yMin, xMax - xMin}).read(processSlice4D);
+            data = processSlice4D.data();
+        } else {
+            dataSet.select({i, yMin, xMin}, {1, yMax - yMin, xMax - xMin}).read(processSlice3D);
+            data = processSlice3D.data();
+        }
+        for (auto j = 0; j < N; j++) {
+            auto& v = data[j];
+            sum += isnan(v) ? 0 : v;
+            sumSquared += isnan(v) ? 0 : v * v;
+            minVal = fmin(minVal, v);
+            maxVal = fmax(maxVal, v);
+            nanCount += isnan(v);
+        }
+        RegionStats stats;
+        stats.minVal = minVal;
+        stats.maxVal = maxVal;
+        stats.mean = sum / max(N - nanCount, 1);
+        stats.stdDev = sqrtf(sumSquared / (max(N - nanCount, 1)) - stats.mean * stats.mean);
+        stats.nanCount = nanCount;
+        allStats[i] = stats;
+    }
+    auto tEnd = chrono::high_resolution_clock::now();
+    auto dtRegion = chrono::duration_cast<chrono::microseconds>(tEnd - tStart).count();
+    log("{}x{} region stats for {} channels calculated in {:.1f} ms at {:.2f} ms/channel",
+        xMax - xMin,
+        yMax - yMin,
+        allStats.size(),
+        dtRegion * 1e-3,
+        dtRegion * 1e-3 / allStats.size());
+    return allStats;
+
+}
+
+vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes) {
+    vector<RegionStats> allStats(channelMax - channelMin);
+    Matrix3F processSlice3D;
+    Matrix4F processSlice4D;
+    auto tStart = chrono::high_resolution_clock::now();
+    auto numZ = channelMax - channelMin;
+    auto numY = yMax - yMin;
+    for (auto x = xMin; x < xMax; x++) {
+        auto& dataSetSwizzled = dataSets.at("swizzled");
+        float* data = nullptr;
+        if (imageInfo.dimensions == 4) {
+            dataSetSwizzled.select({stokes, x, yMin, channelMin}, {1, 1, yMax - yMin, channelMax}).read(processSlice4D);
+            data = processSlice4D.data();
+        } else {
+            dataSetSwizzled.select({x, yMin, channelMin}, {1, yMax - yMin, channelMax}).read(processSlice3D);
+            data = processSlice3D.data();
+        }
+
+        for (auto y = 0; y < numY; y++) {
+            for (auto z = 0; z < numZ; z++) {
+                auto& stats = allStats[z];
+                auto& v = data[y * numZ + z];
+                stats.mean += isnan(v) ? 0 : v;;
+                stats.stdDev += isnan(v) ? 0 : v * v;
+                stats.minVal = fmin(stats.minVal, v);
+                stats.maxVal = fmax(stats.maxVal, v);
+                stats.nanCount += isnan(v);
+            }
+        }
+    }
+    int N = ((yMax - yMin) * (xMax - xMin));
+    for (auto z = 0; z < numZ; z++) {
+        auto& stats = allStats[z];
+        stats.mean /= max(N - stats.nanCount, 1);
+        stats.stdDev = sqrtf(stats.stdDev / max(N - stats.nanCount, 1) - stats.mean * stats.mean);
+    }
+    auto tEnd = chrono::high_resolution_clock::now();
+    auto dtRegion = chrono::duration_cast<chrono::microseconds>(tEnd - tStart).count();
+    log("{}x{} region stats for {} channels calculated in {:.1f} ms at {:.2f} ms/channel using swizzled dataset",
+        xMax - xMin,
+        yMax - yMin,
+        allStats.size(),
+        dtRegion * 1e-3,
+        dtRegion * 1e-3 / allStats.size());
+    return allStats;
 }
 
 // Event response to region read request
@@ -540,7 +810,7 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
     auto tStartRead = chrono::high_resolution_clock::now();
     vector<float> regionData = readRegion(regionReadRequest, false);
     auto tEndRead = chrono::high_resolution_clock::now();
-    auto dtRead = chrono::duration_cast<std::chrono::microseconds>(tEndRead - tStartRead).count();
+    auto dtRead = chrono::duration_cast<chrono::microseconds>(tEndRead - tStartRead).count();
 
     if (regionData.size()) {
         auto numValues = regionData.size();
@@ -555,13 +825,11 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
         regionReadResponse.set_height(numRows);
         regionReadResponse.set_mip(regionReadRequest.mip());
         regionReadResponse.set_channel(regionReadRequest.channel());
+        regionReadResponse.set_stokes(regionReadRequest.stokes());
         regionReadResponse.set_num_values(numValues);
 
-
-        // Stats for channel average stored in last channelStats entry. This will change when we change the schema
-        int channel = (currentChannel == -1) ? imageInfo.depth : currentChannel;
-        if (imageInfo.channelStats.count(channel) && imageInfo.channelStats[channel].nanCount != imageInfo.width * imageInfo.height) {
-            auto& channelStats = imageInfo.channelStats[channel];
+        if (imageInfo.channelStats[currentStokes][currentChannel].nanCount != imageInfo.width * imageInfo.height) {
+            auto& channelStats = imageInfo.channelStats[currentStokes][currentChannel];
             auto stats = regionReadResponse.mutable_stats();
             stats->set_mean(channelStats.mean);
             stats->set_min_val(channelStats.minVal);
@@ -569,20 +837,21 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             stats->set_nan_counts(channelStats.nanCount);
             stats->clear_percentiles();
             auto percentiles = stats->mutable_percentiles();
-            for (auto& v: channelStats.percentiles) {
-                percentiles->add_percentiles(v);
+            for (auto& v: channelStats.percentileRanks) {
+                percentiles->add_ranks(v);
             }
-            for (auto& v: channelStats.percentileVals) {
+            for (auto& v: channelStats.percentiles) {
                 percentiles->add_values(v);
             }
 
-            if (currentChannelHistogram.bins.size() && !isnan(currentChannelHistogram.firstBinCenter)
-                && !isnan(currentChannelHistogram.binWidth)) {
+            if (channelStats.histogramBins.size() && !isnan(channelStats.minVal) && !isnan(channelStats.maxVal)) {
+                float binWidth = (channelStats.maxVal - channelStats.minVal) / channelStats.histogramBins.size();
+                float firstBinCenter = channelStats.minVal + binWidth / 2.0;
                 auto hist = stats->mutable_hist();
-                hist->set_first_bin_center(currentChannelHistogram.firstBinCenter);
-                hist->set_n(currentChannelHistogram.N);
-                hist->set_bin_width(currentChannelHistogram.binWidth);
-                hist->set_bins(currentChannelHistogram.bins.data(), currentChannelHistogram.N * sizeof(int));
+                hist->set_first_bin_center(firstBinCenter);
+                hist->set_n(channelStats.histogramBins.size());
+                hist->set_bin_width(binWidth);
+                hist->set_bins(channelStats.histogramBins.data(), channelStats.histogramBins.size() * sizeof(int));
             } else {
                 stats->clear_hist();
             }
@@ -600,8 +869,6 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             vector<vector<int32_t>> nanEncodings(numSubsets);
             vector<future<size_t>> futureSizes;
 
-            // Only launch in async (threaded) mode when image size is > 0.1 Mpix and multiple subsets are requested
-            auto launchPolicy = (numSubsets > 1 && numRows * rowLength > 1e5) ? launch::async : launch::deferred;
             auto tStartCompress = chrono::high_resolution_clock::now();
             for (auto i = 0; i < numSubsets; i++) {
                 auto& compressionBuffer = compressionBuffers[i];
@@ -627,7 +894,7 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             }
 
             auto tEndCompress = chrono::high_resolution_clock::now();
-            auto dtCompress = chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
+            auto dtCompress = chrono::duration_cast<chrono::microseconds>(tEndCompress - tStartCompress).count();
 
             // Don't include all-NaN calculations in the average speed calculation
             if (regionReadResponse.stats().nan_counts() != regionReadResponse.num_values()) {
@@ -636,10 +903,10 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
             }
 
             if (verboseLogging) {
-                log(fmt::format("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs at {:.2f} Mpix/s using {} threads (Average {:.2f} Mpix/s) \n",
-                                numRows * rowLength * sizeof(float) / 1e3,
-                                accumulate(compressedSizes.begin(), compressedSizes.end(), 0) / 1e3,
-                                dtCompress, (float) (numRows * rowLength) / dtCompress, numSubsets, rateSum / max(rateCount, 1)));
+                log("Image data of size {:.1f} kB compressed to {:.1f} kB in {} μs at {:.2f} Mpix/s using {} threads (Average {:.2f} Mpix/s)",
+                    numRows * rowLength * sizeof(float) / 1e3,
+                    accumulate(compressedSizes.begin(), compressedSizes.end(), 0) / 1e3,
+                    dtCompress, (float) (numRows * rowLength) / dtCompress, numSubsets, rateSum / max(rateCount, 1));
             }
 
             for (auto i = 0; i < numSubsets; i++) {
@@ -666,7 +933,7 @@ void Session::onRegionRead(const Requests::RegionReadRequest& regionReadRequest)
                 regionReadResponse.set_image_data(0, regionData.data(), numRows * rowLength * sizeof(float));
             }
             auto tEnd = chrono::high_resolution_clock::now();
-            auto dtSetImageData = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
+            auto dtSetImageData = chrono::duration_cast<chrono::microseconds>(tEnd - tStart).count();
             if (verboseLogging) {
                 fmt::print("Image data of size {:.1f} kB copied to protobuf in {} μs\n",
                            numRows * rowLength * sizeof(float) / 1e3,
@@ -687,16 +954,17 @@ void Session::onFileLoad(const Requests::FileLoadRequest& fileLoadRequest) {
     eventMutex.lock();
     Responses::FileLoadResponse fileLoadResponse;
     if (loadFile(fileLoadRequest.filename())) {
-        log(fmt::format("File {} loaded successfully", fileLoadRequest.filename()));
+        log("File {} loaded successfully", fileLoadRequest.filename());
 
         fileLoadResponse.set_success(true);
         fileLoadResponse.set_filename(fileLoadRequest.filename());
         fileLoadResponse.set_image_width(imageInfo.width);
         fileLoadResponse.set_image_height(imageInfo.height);
         fileLoadResponse.set_image_depth(imageInfo.depth);
+        fileLoadResponse.set_image_stokes(imageInfo.stokes);
 
     } else {
-        log(fmt::format("Error loading file {}", fileLoadRequest.filename()));
+        log("Error loading file {}", fileLoadRequest.filename());
         fileLoadResponse.set_success(false);
     }
     eventMutex.unlock();
@@ -710,34 +978,40 @@ void Session::onProfileRequest(const Requests::ProfileRequest& request) {
     response.set_x(request.x());
     response.set_y(request.y());
     response.set_channel(request.channel());
+    response.set_stokes(request.stokes());
 
-    if (0 <= request.x() < imageInfo.width && 0 <= request.y() < imageInfo.height && -1 <= request.channel() < imageInfo.depth) {
+    bool validX = 0 <= request.x() < imageInfo.width;
+    bool validY = 0 <= request.y() < imageInfo.height;
+    bool validZ = 0 <= request.channel() < imageInfo.depth;
+    bool validW = request.stokes() >= 0 && request.stokes() < imageInfo.stokes;
+
+    if (validX && validY && validZ && validW) {
         bool requestSuccess = true;
         if (request.request_x()) {
-            vector<float> profileX = getXProfile(request.y(), request.channel());
+            vector<float> profileX = getXProfile(request.y(), request.channel(), request.stokes());
             if (profileX.size()) {
                 google::protobuf::RepeatedField<float> data(profileX.begin(), profileX.end());
                 response.mutable_x_profile()->Swap(&data);
-            } else{
+            } else {
                 requestSuccess = false;
             }
         }
         // skip further profile calculations if the request has already failed
         if (requestSuccess && request.request_y()) {
-            vector<float> profileY = getYProfile(request.x(), request.channel());
+            vector<float> profileY = getYProfile(request.x(), request.channel(), request.stokes());
             if (profileY.size()) {
                 google::protobuf::RepeatedField<float> data(profileY.begin(), profileY.end());
                 response.mutable_y_profile()->Swap(&data);
-            } else{
+            } else {
                 requestSuccess = false;
             }
         }
         if (requestSuccess && request.request_z()) {
-            vector<float> profileZ = getZProfile(request.x(), request.y());
+            vector<float> profileZ = getZProfile(request.x(), request.y(), request.stokes());
             if (profileZ.size()) {
                 google::protobuf::RepeatedField<float> data(profileZ.begin(), profileZ.end());
                 response.mutable_z_profile()->Swap(&data);
-            } else{
+            } else {
                 requestSuccess = false;
             }
         }
@@ -759,14 +1033,8 @@ void Session::sendEvent(string eventName, google::protobuf::MessageLite& message
     }
     memset(binaryPayloadCache.data(), 0, eventNameLength);
     memcpy(binaryPayloadCache.data(), eventName.c_str(), min(eventName.length(), eventNameLength));
-    auto tStart = chrono::high_resolution_clock::now();
     message.SerializeToArray(binaryPayloadCache.data() + eventNameLength, messageLength);
-    auto tEnd = chrono::high_resolution_clock::now();
-    auto dtSerialize = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
-    tStart = chrono::high_resolution_clock::now();
     socket->send(binaryPayloadCache.data(), requiredSize, uWS::BINARY);
-    tEnd = chrono::high_resolution_clock::now();
-    auto dtSend = chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
 }
 
 void Session::log(const string& logMessage) {
@@ -781,4 +1049,16 @@ void Session::log(const string& logMessage) {
     timeString = timeString.substr(0, timeString.length() - 1);
 
     fmt::print("Session {} [{}] ({}): {}\n", uuidString, socket->getAddress().address, timeString, logMessage);
+}
+
+template<typename... Args>
+void Session::log(const char* templateString, Args... args) {
+    fmt::print(templateString, args...);
+    fmt::print("\n");
+}
+
+template<typename... Args>
+void Session::log(const std::string& templateString, Args... args) {
+    fmt::print(templateString, args...);
+    fmt::print("\n");
 }

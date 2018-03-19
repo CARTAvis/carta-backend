@@ -10,19 +10,20 @@ message RegionReadResponse {
     sfixed32 x = 5;
     sfixed32 y = 6;
     sfixed32 channel = 7;
-    sfixed32 width = 8;
-    sfixed32 height = 9;
-    sfixed32 mip = 10;
-    sfixed32 compression = 11;
-    sfixed32 num_values = 12;
-    Statistics stats = 13;
+    sfixed32 stokes = 8;
+    sfixed32 width = 9;
+    sfixed32 height = 10;
+    sfixed32 mip = 11;
+    sfixed32 compression = 12;
+    sfixed32 num_values = 13;
+    Statistics stats = 14;
 }
 
 message Statistics {
     float min_val = 1;
     float max_val = 2;
     float mean = 3;
-    float nan_counts = 4;
+    sfixed64 nan_counts = 4;
     Histogram hist = 5;
     Percentiles percentiles = 6;
 }
@@ -35,6 +36,6 @@ message Histogram {
 }
 
 message Percentiles {
-    repeated float percentiles = 1;
+    repeated float ranks = 1;
     repeated float values = 2;
 }
