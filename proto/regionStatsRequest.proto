@@ -8,4 +8,10 @@ message RegionStatsRequest {
     sfixed32 stokes = 4;
     sfixed32 width = 5;
     sfixed32 height = 6;
+    enum ShapeType {
+        RECTANGLE = 0;
+        ELLIPSE = 1;
+    }
+    ShapeType shape_type = 7;
 }
+

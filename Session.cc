@@ -677,69 +677,52 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
     return regionData;
 }
 
-RegionStats Session::getRegionStats2D(int xMin, int xMax, int yMin, int yMax) {
-    float sum = 0;
-    float sumSquared = 0;
-    float minVal = numeric_limits<float>::max();
-    float maxVal = -numeric_limits<float>::max();
-    int nanCount = 0;
-    int N = ((yMax - yMin) * (xMax - xMin));
-    auto& dataSet = dataSets.at("main");
-    Matrix2F processSlice;
-    dataSet.select({yMin, xMin}, {yMax - yMin, xMax - xMin}).read(processSlice);
-    auto data = processSlice.data();
-    for (auto j = 0; j < N; j++) {
-        auto& v = data[j];
-        sum += isnan(v) ? 0 : v;
-        sumSquared += isnan(v) ? 0 : v * v;
-        minVal = fmin(minVal, v);
-        maxVal = fmax(maxVal, v);
-        nanCount += isnan(v);
-    }
-    RegionStats stats;
-    stats.minVal = minVal;
-    stats.maxVal = maxVal;
-    stats.mean = sum / max(N - nanCount, 1);
-    stats.stdDev = sqrtf(sumSquared / (max(N - nanCount, 1)) - stats.mean * stats.mean);
-    stats.nanCount = nanCount;
-    return stats;
-}
-
-vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes) {
+vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes, RegionShapeType shapeType) {
+    auto tStart = chrono::high_resolution_clock::now();
     vector<RegionStats> allStats(channelMax - channelMin);
+    Matrix2F processSlice2D;
     Matrix3F processSlice3D;
     Matrix4F processSlice4D;
-    auto tStart = chrono::high_resolution_clock::now();
+    auto mask = getShapeMask(xMin, xMax, yMin, yMax, shapeType);
     for (auto i = channelMin; i < channelMax; i++) {
         float sum = 0;
         float sumSquared = 0;
         float minVal = numeric_limits<float>::max();
         float maxVal = -numeric_limits<float>::max();
         int nanCount = 0;
+        int validCount = 0;
         int N = ((yMax - yMin) * (xMax - xMin));
         auto& dataSet = dataSets.at("main");
         float* data = nullptr;
         if (imageInfo.dimensions == 4) {
             dataSet.select({stokes, i, yMin, xMin}, {1, 1, yMax - yMin, xMax - xMin}).read(processSlice4D);
             data = processSlice4D.data();
-        } else {
+        } else if (imageInfo.dimensions == 3) {
             dataSet.select({i, yMin, xMin}, {1, yMax - yMin, xMax - xMin}).read(processSlice3D);
             data = processSlice3D.data();
+        } else {
+            dataSet.select({yMin, xMin}, {yMax - yMin, xMax - xMin}).read(processSlice2D);
+            data = processSlice2D.data();
         }
         for (auto j = 0; j < N; j++) {
             auto& v = data[j];
+            if (!mask[N]) {
+                continue;
+            }
             sum += isnan(v) ? 0 : v;
             sumSquared += isnan(v) ? 0 : v * v;
             minVal = fmin(minVal, v);
             maxVal = fmax(maxVal, v);
             nanCount += isnan(v);
+            validCount += !isnan(v);
         }
         RegionStats stats;
         stats.minVal = minVal;
         stats.maxVal = maxVal;
-        stats.mean = sum / max(N - nanCount, 1);
-        stats.stdDev = sqrtf(sumSquared / (max(N - nanCount, 1)) - stats.mean * stats.mean);
+        stats.mean = sum / max(validCount, 1);
+        stats.stdDev = sqrtf(sumSquared / (max(validCount, 1)) - stats.mean * stats.mean);
         stats.nanCount = nanCount;
+        stats.validCount = validCount;
         allStats[i] = stats;
     }
     auto tEnd = chrono::high_resolution_clock::now();
@@ -754,25 +737,30 @@ vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yM
 
 }
 
-vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes) {
+vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes, RegionShapeType shapeType) {
+    auto tStart = chrono::high_resolution_clock::now();
     vector<RegionStats> allStats(channelMax - channelMin);
     Matrix3F processSlice3D;
     Matrix4F processSlice4D;
-    auto tStart = chrono::high_resolution_clock::now();
+    auto mask = getShapeMask(xMin, xMax, yMin, yMax, shapeType);
     auto numZ = channelMax - channelMin;
     auto numY = yMax - yMin;
-    for (auto x = xMin; x < xMax; x++) {
+    auto numX = xMax - xMin;
+    for (auto x = 0; x < numX; x++) {
         auto& dataSetSwizzled = dataSets.at("swizzled");
         float* data = nullptr;
         if (imageInfo.dimensions == 4) {
-            dataSetSwizzled.select({stokes, x, yMin, channelMin}, {1, 1, yMax - yMin, channelMax}).read(processSlice4D);
+            dataSetSwizzled.select({stokes, x + xMin, yMin, channelMin}, {1, 1, numY, channelMax - channelMin}).read(processSlice4D);
             data = processSlice4D.data();
         } else {
-            dataSetSwizzled.select({x, yMin, channelMin}, {1, yMax - yMin, channelMax}).read(processSlice3D);
+            dataSetSwizzled.select({x + xMin, yMin, channelMin}, {1, numY, channelMax - channelMin}).read(processSlice3D);
             data = processSlice3D.data();
         }
-
         for (auto y = 0; y < numY; y++) {
+            // skip masked values
+            if (!mask[y * numX + x]) {
+                continue;
+            }
             for (auto z = 0; z < numZ; z++) {
                 auto& stats = allStats[z];
                 auto& v = data[y * numZ + z];
@@ -781,14 +769,15 @@ vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin
                 stats.minVal = fmin(stats.minVal, v);
                 stats.maxVal = fmax(stats.maxVal, v);
                 stats.nanCount += isnan(v);
+                stats.validCount += !isnan(v);
             }
         }
     }
     int N = ((yMax - yMin) * (xMax - xMin));
     for (auto z = 0; z < numZ; z++) {
         auto& stats = allStats[z];
-        stats.mean /= max(N - stats.nanCount, 1);
-        stats.stdDev = sqrtf(stats.stdDev / max(N - stats.nanCount, 1) - stats.mean * stats.mean);
+        stats.mean /= max(stats.validCount, 1);
+        stats.stdDev = sqrtf(stats.stdDev / max(stats.validCount, 1) - stats.mean * stats.mean);
     }
     auto tEnd = chrono::high_resolution_clock::now();
     auto dtRegion = chrono::duration_cast<chrono::microseconds>(tEnd - tStart).count();
@@ -799,6 +788,28 @@ vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin
         dtRegion * 1e-3,
         dtRegion * 1e-3 / allStats.size());
     return allStats;
+}
+
+std::vector<bool> Session::getShapeMask(int xMin, int xMax, int yMin, int yMax, RegionShapeType shapeType) {
+    auto numY = abs(yMax - yMin);
+    auto numX = abs(xMax - xMin);
+    if (shapeType == RegionShapeType::RegionStatsRequest_ShapeType_RECTANGLE) {
+        vector<bool> mask(numX * numY, true);
+        return mask;
+    } else {
+        vector<bool> mask(numX * numY);
+        float xC = (xMax + xMin) / 2.0f;
+        float yC = (yMax + yMin) / 2.0f;
+        float xR = numX / 2.0f;
+        float yR = numY / 2.0f;
+        for (auto y = yMin; y < yMax; y++) {
+            for (auto x = xMin; x < xMax; x++) {
+                float testVal = ((x - xC) * (x - xC)) / (xR * xR) + ((y - yC) * (y - yC)) / (yR * yR);
+                mask[(y - yMin) * numX + (x - xMin)] = testVal <= 1;
+            }
+        }
+        return mask;
+    }
 }
 
 // Event response to region read request
@@ -1026,43 +1037,41 @@ void Session::onProfileRequest(const Requests::ProfileRequest& request) {
 
 // Event response to region stats request
 void Session::onRegionStatsRequest(const Requests::RegionStatsRequest& request) {
+    Responses::RegionStatsResponse response;
+    response.set_x(request.x());
+    response.set_y(request.y());
+    response.set_stokes(request.stokes());
+    response.set_width(request.width());
+    response.set_height(request.height());
 
-    async(launch::async, [&]{
-        Responses::RegionStatsResponse response;
-        response.set_x(request.x());
-        response.set_y(request.y());
-        response.set_stokes(request.stokes());
-        response.set_width(request.width());
-        response.set_height(request.height());
+    bool validX = request.x() >= 0 && request.x() < imageInfo.width;
+    bool validY = request.y() >= 0 && request.y() < imageInfo.height;
+    bool validW = request.stokes() >= 0 && request.stokes() < imageInfo.stokes;
 
-        bool validX = request.x() >= 0 && request.x() < imageInfo.width;
-        bool validY = request.y() >= 0 && request.y() < imageInfo.height;
-        bool validW = request.stokes() >= 0 && request.stokes() < imageInfo.stokes;
-
-        if (validX && validY && validW) {
-            vector<RegionStats> allStats;
-            if (imageInfo.dimensions == 2) {
-                allStats = {getRegionStats2D(request.x(), request.x() + request.width(), request.y(), request.y() + request.height())};
-            } else if (dataSets.count("swizzled")) {
-                allStats = getRegionStatsSwizzled(request.x(), request.x() + request.width(), request.y(), request.y() + request.height(), 0, imageInfo.depth, request.stokes());
-            } else {
-                allStats = getRegionStats(request.x(), request.x() + request.width(), request.y(), request.y() + request.height(), 0, imageInfo.depth, request.stokes());
-            }
-
-            for (auto& stats: allStats) {
-                response.add_min_vals(stats.minVal);
-                response.add_max_vals(stats.maxVal);
-                response.add_means(stats.mean);
-                response.add_std_devs(stats.stdDev);
-                response.add_nan_counts(stats.nanCount);
-            }
-            response.set_success(true);
+    if (validX && validY && validW) {
+        vector<RegionStats> allStats;
+        if (imageInfo.dimensions == 2) {
+            allStats = {getRegionStats(request.x(), request.x() + request.width(), request.y(), request.y() + request.height(), 0, 1, 0, request.shape_type())};
+        } else if (dataSets.count("swizzled")) {
+            allStats = getRegionStatsSwizzled(request.x(), request.x() + request.width(), request.y(), request.y() + request.height(), 0, imageInfo.depth, request.stokes(), request.shape_type());
         } else {
-            response.set_success(false);
+            allStats =
+                getRegionStats(request.x(), request.x() + request.width(), request.y(), request.y() + request.height(), 0, imageInfo.depth, request.stokes(), request.shape_type());
         }
 
-        sendEvent("region_stats", response);
-    });
+        for (auto& stats: allStats) {
+            response.add_min_vals(stats.minVal);
+            response.add_max_vals(stats.maxVal);
+            response.add_means(stats.mean);
+            response.add_std_devs(stats.stdDev);
+            response.add_nan_counts(stats.nanCount);
+        }
+        response.set_success(true);
+    } else {
+        response.set_success(false);
+    }
+
+    sendEvent("region_stats", response);
 }
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given protobuf message
@@ -1104,3 +1113,4 @@ void Session::log(const std::string& templateString, Args... args) {
     fmt::print(templateString, args...);
     fmt::print("\n");
 }
+

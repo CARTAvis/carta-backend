@@ -23,6 +23,7 @@ typedef boost::multi_array<float, 3> Matrix3F;
 typedef boost::multi_array<float, 2> Matrix2F;
 typedef boost::multi_array<int, 3> Matrix3I;
 typedef boost::multi_array<int, 2> Matrix2I;
+typedef Requests::RegionStatsRequest::ShapeType RegionShapeType;
 
 struct ChannelStats {
     float minVal;
@@ -40,6 +41,7 @@ struct RegionStats {
     float mean = 0;
     float stdDev = 0;
     int nanCount = 0;
+    int validCount = 0;
 };
 
 
@@ -96,9 +98,9 @@ protected:
     bool loadFile(const std::string& filename, int defaultChannel = 0);
     bool loadChannel(int channel, int stokes);
     bool loadStats();
-    std::vector<RegionStats> getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes);
-    std::vector<RegionStats> getRegionStatsSwizzled(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes);
-    RegionStats getRegionStats2D(int xMin, int xMax, int yMin, int yMax);
+    std::vector<RegionStats> getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes, RegionShapeType shapeType);
+    std::vector<RegionStats> getRegionStatsSwizzled(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes, RegionShapeType shapeType);
+    std::vector<bool> getShapeMask(int xMin, int xMax, int yMin, int yMax, RegionShapeType shapeType);
     std::vector<float> getXProfile(int y, int channel, int stokes);
     std::vector<float> getYProfile(int x, int channel, int stokes);
     std::vector<float> getZProfile(int x, int y, int stokes);
