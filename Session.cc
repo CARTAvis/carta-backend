@@ -1044,8 +1044,8 @@ void Session::onRegionStatsRequest(const Requests::RegionStatsRequest& request) 
     response.set_width(request.width());
     response.set_height(request.height());
 
-    bool validX = request.x() >= 0 && request.x() < imageInfo.width;
-    bool validY = request.y() >= 0 && request.y() < imageInfo.height;
+    bool validX = request.x() >= 0 && request.x() + request.width() < imageInfo.width;
+    bool validY = request.y() >= 0 && request.y() + request.height() < imageInfo.height;
     bool validW = request.stokes() >= 0 && request.stokes() < imageInfo.stokes;
 
     if (validX && validY && validW) {
