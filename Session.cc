@@ -723,6 +723,14 @@ vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yM
         stats.stdDev = sqrtf(sumSquared / (max(validCount, 1)) - stats.mean * stats.mean);
         stats.nanCount = nanCount;
         stats.validCount = validCount;
+
+        if (!stats.validCount) {
+            stats.mean = NAN;
+            stats.stdDev = NAN;
+            stats.minVal = NAN;
+            stats.maxVal = NAN;
+        }
+
         allStats[i] = stats;
     }
     auto tEnd = chrono::high_resolution_clock::now();
@@ -778,7 +786,15 @@ vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin
         auto& stats = allStats[z];
         stats.mean /= max(stats.validCount, 1);
         stats.stdDev = sqrtf(stats.stdDev / max(stats.validCount, 1) - stats.mean * stats.mean);
+
+        if (!stats.validCount) {
+            stats.mean = NAN;
+            stats.stdDev = NAN;
+            stats.minVal = NAN;
+            stats.maxVal = NAN;
+        }
     }
+
     auto tEnd = chrono::high_resolution_clock::now();
     auto dtRegion = chrono::duration_cast<chrono::microseconds>(tEnd - tStart).count();
     log("{}x{} region stats for {} channels calculated in {:.1f} ms at {:.2f} ms/channel using swizzled dataset",
