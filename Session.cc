@@ -1120,13 +1120,10 @@ void Session::log(const string& logMessage) {
 
 template<typename... Args>
 void Session::log(const char* templateString, Args... args) {
-    fmt::print(templateString, args...);
-    fmt::print("\n");
+    log(fmt::format(templateString, args...));
 }
 
 template<typename... Args>
 void Session::log(const std::string& templateString, Args... args) {
-    fmt::print(templateString, args...);
-    fmt::print("\n");
+    log(fmt::format(templateString, args...));
 }
-

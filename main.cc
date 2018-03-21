@@ -37,7 +37,11 @@ string getEventName(char* rawMessage) {
 
 void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
     sessions[ws] = new Session(ws, uuid_gen(), baseFolder, threadPool, verbose);
-    fmt::print("Client {} Connected. Clients: {}\n", boost::uuids::to_string(sessions[ws]->uuid), sessions.size());
+    time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
+    string timeString = ctime(&time);
+    timeString = timeString.substr(0, timeString.length() - 1);
+
+    fmt::print("Client {} [{}] Connected ({}). Clients: {}\n", boost::uuids::to_string(sessions[ws]->uuid), ws->getAddress().address, timeString, sessions.size());
 }
 
 void onDisconnect(WebSocket<SERVER>* ws, int code, char* message, size_t length) {
@@ -47,8 +51,10 @@ void onDisconnect(WebSocket<SERVER>* ws, int code, char* message, size_t length)
         delete session;
         sessions.erase(ws);
     }
-
-    fmt::print("Client {} Disconnected. Remaining clients: {}\n", boost::uuids::to_string(uuid), sessions.size());
+    time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
+    string timeString = ctime(&time);
+    timeString = timeString.substr(0, timeString.length() - 1);
+    fmt::print("Client {} [{}] Disconnected ({}). Remaining clients: {}\n", boost::uuids::to_string(uuid), ws->getAddress().address, timeString, sessions.size());
 }
 
 // Forward message requests to session callbacks after parsing message
