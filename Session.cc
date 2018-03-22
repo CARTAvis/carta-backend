@@ -706,15 +706,13 @@ vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yM
         }
         for (auto j = 0; j < N; j++) {
             auto& v = data[j];
-            if (!mask[N]) {
-                continue;
-            }
-            sum += isnan(v) ? 0 : v;
-            sumSquared += isnan(v) ? 0 : v * v;
-            minVal = fmin(minVal, v);
-            maxVal = fmax(maxVal, v);
-            nanCount += isnan(v);
-            validCount += !isnan(v);
+            bool valid = !isnan(v) && mask[j];
+            sum += valid ? v : 0;
+            sumSquared += valid ? v * v : 0;
+            minVal = valid ? minVal : fmin(minVal, v);
+            maxVal = valid ? maxVal : fmax(maxVal, v);
+            nanCount += !valid;
+            validCount += valid;;
         }
         RegionStats stats;
         stats.minVal = minVal;
@@ -765,7 +763,7 @@ vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin
             data = processSlice3D.data();
         }
         for (auto y = 0; y < numY; y++) {
-            // skip masked values
+            // skip all Z values for masked pixels
             if (!mask[y * numX + x]) {
                 continue;
             }
