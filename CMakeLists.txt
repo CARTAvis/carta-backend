@@ -18,7 +18,7 @@ INCLUDE_DIRECTORIES(${HighFive_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(proto)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-set(LINK_LIBS ${LINK_LIBS} proto ${PROTOBUF_LIBRARY} fmt hdf5_serial uWS ssl crypto z zfp ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+set(LINK_LIBS ${LINK_LIBS} proto ${PROTOBUF_LIBRARY} fmt hdf5_openmpi uWS ssl crypto z zfp ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 set(SOURCE_FILES main.cc Session.cc compression.cc)
 add_executable(hdf5_image_viewer ${SOURCE_FILES})
 target_link_libraries(hdf5_image_viewer ${LINK_LIBS})
