@@ -12,8 +12,10 @@ using namespace uWS;
 namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
+Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string apiKey, map<string, vector<string>>& permissionsMap, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
     : uuid(uuid),
+      apiKey(apiKey),
+      permissionsMap(permissionsMap),
       currentChannel(-1),
       currentStokes(-1),
       file(nullptr),
@@ -44,14 +46,55 @@ Session::~Session() {
 
 }
 
+bool Session::checkPermissionForEntry(string entry) {
+    fmt::print("Checking permissions for {}\n", entry);
+    if (!permissionsMap.count(entry)) {
+        return false;
+    }
+    auto& keys = permissionsMap[entry];
+    return (find(keys.begin(), keys.end(), "*") != keys.end()) || (find(keys.begin(), keys.end(), apiKey) != keys.end());
+}
+
+bool Session::checkPermissionForDirectory(std::string prefix) {
+    // Check for root folder permissions
+    if (!prefix.length() || prefix == "/") {
+        if (permissionsMap.count("/")) {
+            return checkPermissionForEntry("/");
+        }
+        return false;
+    }
+    else {
+        // trim trailing slash
+        if (prefix[prefix.length()-1] == '/') {
+            prefix = prefix.substr(0, prefix.length() - 1);
+        }
+        while (prefix.length() > 0) {
+            if (permissionsMap.count(prefix)) {
+                return checkPermissionForEntry(prefix);
+            }
+            auto lastSlash = prefix.find_last_of('/');
+
+            if (lastSlash == string::npos) {
+                return false;
+            }
+            else {
+                prefix = prefix.substr(0, lastSlash);
+            }
+        }
+        return false;
+    }
+}
+
 vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
     fs::path folderPath(folder);
     vector<string> files;
     try {
         if (fs::exists(folderPath) && fs::is_directory(folderPath)) {
+            bool hasPermission = checkPermissionForDirectory(prefix);
             for (auto& directoryEntry : fs::directory_iterator(folderPath)) {
                 fs::path filePath(directoryEntry);
-                if (fs::is_regular_file(filePath) && fs::file_size(directoryEntry) > 8) {
+                // Regular files will only be added if the user has permission
+                if (hasPermission && fs::is_regular_file(filePath) && fs::file_size(directoryEntry) > 8) {
                     uint64_t sig;
                     string filename = directoryEntry.path().string();
                     ifstream file(filename, ios::in | ios::binary);
@@ -62,6 +105,7 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
                         }
                     }
                     file.close();
+                // Sub-directories can have different permissions
                 } else if (fs::is_directory(filePath)) {
                     string newPrefix = filePath.string() + "/";
                     // Strip out the leading "./" in subdirectories

@@ -8,6 +8,8 @@
 #include <proto/fileLoadRequest.pb.h>
 #include <proto/regionReadRequest.pb.h>
 #include <proto/profileRequest.pb.h>
+#include <regex>
+#include <fstream>
 #include "ctpl.h"
 #include "Session.h"
 
@@ -18,11 +20,37 @@ using namespace uWS;
 namespace po = boost::program_options;
 
 map<WebSocket<SERVER>*, Session*> sessions;
+map<string, vector<string>> permissionsMap;
 boost::uuids::random_generator uuid_gen;
 
 string baseFolder = "./";
 bool verbose = false;
 ctpl::thread_pool threadPool;
+
+void readPermissions(string filename) {
+    ifstream permissionsFile(filename);
+    if (permissionsFile.good()) {
+        fmt::print("Reading permissions file\n");
+        string line;
+        regex commentRegex("\\s*#.*");
+        regex folderRegex("\\s*(\\S+):\\s*");
+        regex keyRegex("\\s*(\\S{4,}|\\*)\\s*");
+        string currentFolder;
+        while (getline(permissionsFile, line)) {
+            smatch matches;
+            if (regex_match(line, commentRegex)) {
+                continue;
+            } else if (regex_match(line, matches, folderRegex) && matches.size() == 2) {
+                currentFolder = matches[1].str();
+            } else if (currentFolder.length() && regex_match(line, matches, keyRegex) && matches.size() == 2) {
+                string key = matches[1].str();
+                permissionsMap[currentFolder].push_back(key);
+            }
+        }
+    } else {
+        fmt::print("Missing permissions file\n");
+    }
+}
 
 string getEventName(char* rawMessage) {
     int nullIndex = 0;
@@ -36,7 +64,15 @@ string getEventName(char* rawMessage) {
 }
 
 void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
-    sessions[ws] = new Session(ws, uuid_gen(), baseFolder, threadPool, verbose);
+    string url = httpRequest.getUrl().toString();
+    regex apiKeyRegex("apiKey=(.+)");
+    smatch matches;
+    string key;
+    if (regex_search(url, matches, apiKeyRegex) && matches.size() == 2) {
+        key = matches[1].str();
+    }
+
+    sessions[ws] = new Session(ws, uuid_gen(), key, permissionsMap, baseFolder, threadPool, verbose);
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string timeString = ctime(&time);
     timeString = timeString.substr(0, timeString.length() - 1);
@@ -133,6 +169,8 @@ int main(int argc, const char* argv[]) {
         if (vm.count("folder")) {
             baseFolder = vm["folder"].as<string>();
         }
+
+        readPermissions("permissions.txt");
 
         Hub h;
 

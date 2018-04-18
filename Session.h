@@ -44,8 +44,6 @@ struct RegionStats {
     int validCount = 0;
 };
 
-
-
 struct ImageInfo {
     std::string filename;
     std::string unit;
@@ -75,6 +73,8 @@ protected:
     ImageInfo imageInfo;
     std::mutex eventMutex;
     uWS::WebSocket<uWS::SERVER>* socket;
+    std::string apiKey;
+    std::map<std::string, std::vector<std::string> >& permissionsMap;
     std::string baseFolder;
     std::vector<char> binaryPayloadCache;
     std::vector<char> compressionBuffers[MAX_SUBSETS];
@@ -86,7 +86,13 @@ protected:
     int rateCount;
 
 public:
-    Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, std::string folder, ctpl::thread_pool& serverThreadPool, bool verbose = false);
+    Session(uWS::WebSocket<uWS::SERVER>* ws,
+            boost::uuids::uuid uuid,
+            std::string apiKey,
+            std::map<std::string, std::vector<std::string>>& permissionsMap,
+            std::string folder,
+            ctpl::thread_pool& serverThreadPool,
+            bool verbose = false);
     void onRegionReadRequest(const Requests::RegionReadRequest& regionReadRequest);
     void onFileLoad(const Requests::FileLoadRequest& fileLoadRequest);
     void onProfileRequest(const Requests::ProfileRequest& request);
@@ -106,9 +112,13 @@ protected:
     std::vector<float> getZProfile(int x, int y, int stokes);
     std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
     std::vector<std::string> getAvailableFiles(const std::string& folder, std::string prefix = "");
+    bool checkPermissionForDirectory(std:: string prefix);
+    bool checkPermissionForEntry(std::string entry);
     void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
     void log(const std::string& logMessage);
-    template<typename... Args> void log(const char* templateString, Args... args);
-    template<typename... Args> void log(const std::string& templateString, Args... args);
+    template<typename... Args>
+    void log(const char* templateString, Args... args);
+    template<typename... Args>
+    void log(const std::string& templateString, Args... args);
 };
 
