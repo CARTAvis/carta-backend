@@ -47,7 +47,6 @@ Session::~Session() {
 }
 
 bool Session::checkPermissionForEntry(string entry) {
-    fmt::print("Checking permissions for {}\n", entry);
     if (!permissionsMap.count(entry)) {
         return false;
     }
