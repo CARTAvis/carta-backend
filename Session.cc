@@ -46,6 +46,7 @@ Session::~Session() {
 
 }
 
+
 bool Session::checkPermissionForEntry(string entry) {
     fmt::print("Checking permissions for {}\n", entry);
     if (!permissionsMap.count(entry)) {
@@ -55,6 +56,9 @@ bool Session::checkPermissionForEntry(string entry) {
     return (find(keys.begin(), keys.end(), "*") != keys.end()) || (find(keys.begin(), keys.end(), apiKey) != keys.end());
 }
 
+// Checks whether the user's API key is valid for a particular directory.
+// This function is called recursively, starting with the requested directory, and then working
+// its way up parent directories until it finds a matching directory in the permissions map.
 bool Session::checkPermissionForDirectory(std::string prefix) {
     // Check for root folder permissions
     if (!prefix.length() || prefix == "/") {
@@ -85,6 +89,7 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
     }
 }
 
+// returns a list of valid HDF5 files available to the user
 vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
     fs::path folderPath(folder);
     vector<string> files;
@@ -134,6 +139,7 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
     return files;
 }
 
+// Calculates channel histogram if it is not cached already
 void Session::updateHistogram() {
     if (imageInfo.channelStats[currentStokes][currentChannel].histogramBins.size()) {
         return;
@@ -185,6 +191,8 @@ void Session::updateHistogram() {
     log("Cached histogram not found. Manually updated");
 }
 
+// Load statistics from file. This section of the code really needs some cleaning up. Should make an image abstract class, and implement
+// 2D, 3D and 4D image subclasses for this process.
 bool Session::loadStats() {
     if (!file || !file->isValid()) {
         log("No file loaded");
@@ -426,6 +434,7 @@ bool Session::loadStats() {
     return true;
 }
 
+// Loads a specific slice of the data cube
 bool Session::loadChannel(int channel, int stokes) {
 
     if (!file || !file->isValid()) {
@@ -456,6 +465,21 @@ bool Session::loadChannel(int channel, int stokes) {
 
 // Loads a file and the default channel.
 bool Session::loadFile(const string& filename, int defaultChannel) {
+
+    string directory;
+    auto lastSlash = filename.find_last_of('/');
+    if (lastSlash == string::npos) {
+        directory = "/";
+    }
+    else {
+        directory = filename.substr(0, lastSlash);
+    }
+
+    // Check that the file is in an accessible directory
+    if (!checkPermissionForDirectory(directory)) {
+        return false;
+    }
+
     if (filename == imageInfo.filename) {
         return true;
     }
@@ -495,6 +519,7 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
 
         loadStats();
 
+        // Swizzled data loaded if it exists. Used for Z-profiles and region stats
         if (group.exist("SwizzledData")) {
             if (imageInfo.dimensions == 3 && group.exist("SwizzledData/ZYX")) {
                 DataSet dataSetSwizzled = group.getDataSet("SwizzledData/ZYX");
@@ -877,10 +902,7 @@ void Session::onRegionReadRequest(const Requests::RegionReadRequest& regionReadR
 
     // Valid compression precision range: (4-31)
     bool compressed = regionReadRequest.compression() >= 4 && regionReadRequest.compression() < 32;
-    auto tStartRead = chrono::high_resolution_clock::now();
     vector<float> regionData = readRegion(regionReadRequest, false);
-    auto tEndRead = chrono::high_resolution_clock::now();
-    auto dtRead = chrono::duration_cast<chrono::microseconds>(tEndRead - tStartRead).count();
 
     if (regionData.size()) {
         auto numValues = regionData.size();
@@ -1132,7 +1154,7 @@ void Session::onRegionStatsRequest(const Requests::RegionStatsRequest& request) 
     sendEvent("region_stats", response);
 }
 
-// Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given protobuf message
+// Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::sendEvent(string eventName, google::protobuf::MessageLite& message) {
     size_t eventNameLength = 32;
     int messageLength = message.ByteSize();
@@ -1145,6 +1167,8 @@ void Session::sendEvent(string eventName, google::protobuf::MessageLite& message
     message.SerializeToArray(binaryPayloadCache.data() + eventNameLength, messageLength);
     socket->send(binaryPayloadCache.data(), requiredSize, uWS::BINARY);
 }
+
+// Helper functions for logging
 
 void Session::log(const string& logMessage) {
     // Shorten uuids a bit for brevity

@@ -3,12 +3,12 @@ Server for simple web-based interface for viewing HDF5 images (using the IDIA cu
 
 ## External dependencies
 The server build depends on the following libraries: 
-* [zfp](https://github.com/LLNL/zfp) for data compression. The same library is used on the client, after being compiled to WebAssembly. Build and install from git repo.
+* [zfp](https://github.com/LLNL/zfp) for data compression. The same library is used on the client, after being compiled to WebAssembly. Build and install from git repo. For best performance, build with AVX extensions. 
 * [fmt](https://github.com/fmtlib/fmt) for python-style (and safe printf-style) string formating and printing. Debian package `libfmt3-dev`. 
-* [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required) 
+* [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu) 
 * [HighFive](https://github.com/BlueBrain/HighFive) as a high level interface to HDF5. Build and install from git repo.
-* [HDF5](https://support.hdfgroup.org/HDF5/) for low level HDF5 support (required by HighFive). Debian package `libhdf5-dev`.
+* [HDF5](https://support.hdfgroup.org/HDF5/) for low level HDF5 support (required by HighFive). Debian package `libhdf5-dev`. By default, the MPI version of the HDF5 library is targeted.
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.
-* boost [uuid](http://www.boost.org/doc/libs/release/libs/uuid), [program_options](http://www.boost.org/doc/libs/release/libs/program_options) and [multi-array](http://www.boost.org/doc/libs/release/libs/multi_array/) modules (All easily installed through `apt`)
+* boost [filesystem](https://www.boost.org/doc/libs/release/libs/filesystem), [uuid](http://www.boost.org/doc/libs/release/libs/uuid), [program_options](http://www.boost.org/doc/libs/release/libs/program_options) and [multi-array](http://www.boost.org/doc/libs/release/libs/multi_array/) modules (All easily installed through `apt`)
 
 Use cmake to build. Currently, the server looks for HDF5 files in the `$HOME` directory. 

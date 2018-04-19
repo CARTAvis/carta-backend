@@ -27,6 +27,7 @@ string baseFolder = "./";
 bool verbose = false;
 ctpl::thread_pool threadPool;
 
+// Reads a permissions file to determine which API keys are required to access various subdirectories
 void readPermissions(string filename) {
     ifstream permissionsFile(filename);
     if (permissionsFile.good()) {
@@ -52,6 +53,7 @@ void readPermissions(string filename) {
     }
 }
 
+// Looks for null termination in a char array to determine event names from message payloads
 string getEventName(char* rawMessage) {
     int nullIndex = 0;
     for (auto i = 0; i < 32; i++) {
@@ -63,6 +65,7 @@ string getEventName(char* rawMessage) {
     return string(rawMessage, nullIndex);
 }
 
+// Called on connection. Creates session object and assigns UUID and API keys to it
 void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
     string url = httpRequest.getUrl().toString();
     regex apiKeyRegex("apiKey=(.+)");
@@ -80,6 +83,7 @@ void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
     fmt::print("Client {} [{}] Connected ({}). Clients: {}\n", boost::uuids::to_string(sessions[ws]->uuid), ws->getAddress().address, timeString, sessions.size());
 }
 
+// Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void onDisconnect(WebSocket<SERVER>* ws, int code, char* message, size_t length) {
     auto uuid = sessions[ws]->uuid;
     auto session = sessions[ws];
@@ -93,7 +97,7 @@ void onDisconnect(WebSocket<SERVER>* ws, int code, char* message, size_t length)
     fmt::print("Client {} [{}] Disconnected ({}). Remaining clients: {}\n", boost::uuids::to_string(uuid), ws->getAddress().address, timeString, sessions.size());
 }
 
-// Forward message requests to session callbacks after parsing message
+// Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode opCode) {
     auto session = sessions[ws];
 
@@ -134,6 +138,7 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
     }
 };
 
+// Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
         po::options_description desc("Allowed options");
