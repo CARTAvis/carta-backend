@@ -4,13 +4,15 @@
 #include <boost/multi_array.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <highfive/H5File.hpp>
+#include <H5Cpp.h>
+#include <H5File.h>
 #include <mutex>
 #include <stdio.h>
 #include <uWS/uWS.h>
 #include <proto/fileLoadRequest.pb.h>
 #include <proto/regionReadRequest.pb.h>
 #include <proto/profileRequest.pb.h>
+#include <cstdint>
 #include "proto/regionStatsRequest.pb.h"
 #include "proto/regionReadResponse.pb.h"
 
@@ -59,16 +61,13 @@ class Session {
 public:
     boost::uuids::uuid uuid;
 protected:
-    float* currentChannelCache;
-    Matrix2F currentChannelCache2D;
-    Matrix3F currentChannelCache3D;
-    Matrix4F currentChannelCache4D;
+    std::vector<float> currentChannelCache;
     std::vector<float> cachedZProfile;
     std::vector<int> cachedZProfileCoords;
     int currentChannel;
     int currentStokes;
-    std::unique_ptr<HighFive::File> file;
-    std::map<std::string, HighFive::DataSet> dataSets;
+    std::unique_ptr<H5::H5File> file;
+    std::map<std::string, H5::DataSet> dataSets;
 
     ImageInfo imageInfo;
     std::mutex eventMutex;

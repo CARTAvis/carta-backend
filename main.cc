@@ -10,6 +10,7 @@
 #include <proto/profileRequest.pb.h>
 #include <regex>
 #include <fstream>
+#include <iostream>
 #include "ctpl.h"
 #include "Session.h"
 
@@ -154,7 +155,7 @@ int main(int argc, const char* argv[]) {
         po::notify(vm);
 
         if (vm.count("help")) {
-            std::cout << desc << "\n";
+            cout << desc << "\n";
             return 0;
         }
 
