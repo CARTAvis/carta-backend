@@ -556,7 +556,7 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
             } else if (imageInfo.dimensions == 4 && H5Lexists(group.getId(), "SwizzledData/ZYXW", 0)) {
                 DataSet dataSetSwizzled = group.openDataSet("SwizzledData/ZYXW");
                 vector<hsize_t> swizzledDims(dataSetSwizzled.getSpace().getSimpleExtentNdims(), 0);
-                dataSet.getSpace().getSimpleExtentDims(swizzledDims.data(), NULL);
+                dataSetSwizzled.getSpace().getSimpleExtentDims(swizzledDims.data(), NULL);
                 if (swizzledDims.size() != 4 || swizzledDims[1] != dims[3]) {
                     log("Invalid swizzled data set in file {}, ignoring.", filename);
                 } else {
