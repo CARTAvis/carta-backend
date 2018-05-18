@@ -20,11 +20,6 @@
 #include "ctpl.h"
 
 #define MAX_SUBSETS 8
-typedef boost::multi_array<float, 4> Matrix4F;
-typedef boost::multi_array<float, 3> Matrix3F;
-typedef boost::multi_array<float, 2> Matrix2F;
-typedef boost::multi_array<int, 3> Matrix3I;
-typedef boost::multi_array<int, 2> Matrix2I;
 typedef Requests::RegionStatsRequest::ShapeType RegionShapeType;
 
 struct ChannelStats {

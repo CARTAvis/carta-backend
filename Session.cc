@@ -802,9 +802,6 @@ vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadR
 vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes, RegionShapeType shapeType) {
     auto tStart = chrono::high_resolution_clock::now();
     vector<RegionStats> allStats(channelMax - channelMin);
-    Matrix2F processSlice2D;
-    Matrix3F processSlice3D;
-    Matrix4F processSlice4D;
     auto mask = getShapeMask(xMin, xMax, yMin, yMax, shapeType);
     int N = ((yMax - yMin) * (xMax - xMin));
     auto& dataSet = dataSets["main"];
@@ -883,8 +880,6 @@ vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yM
 vector<RegionStats> Session::getRegionStatsSwizzled(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes, RegionShapeType shapeType) {
     auto tStart = chrono::high_resolution_clock::now();
     vector<RegionStats> allStats(channelMax - channelMin);
-    Matrix3F processSlice3D;
-    Matrix4F processSlice4D;
     auto mask = getShapeMask(xMin, xMax, yMin, yMax, shapeType);
     auto numZ = channelMax - channelMin;
     auto numY = yMax - yMin;
