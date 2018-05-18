@@ -4,7 +4,7 @@ Server for simple web-based interface for viewing HDF5 images (using the IDIA cu
 ## External dependencies
 The server build depends on the following libraries: 
 * [zfp](https://github.com/LLNL/zfp) for data compression. The same library is used on the client, after being compiled to WebAssembly. Build and install from git repo. For best performance, build with AVX extensions. 
-* [fmt](https://github.com/fmtlib/fmt) for python-style (and safe printf-style) string formating and printing. Debian package `libfmt3-dev`. 
+* [fmt](https://github.com/fmtlib/fmt) for python-style (and safe printf-style) string formatting and printing. Debian package `libfmt3-dev`. 
 * [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu) 
 * [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support. Debian packages `libhdf5-dev` and `libhdf5-cpp-100`. By default, the serial version of the HDF5 library is targeted.
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.
