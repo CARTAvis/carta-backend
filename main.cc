@@ -110,25 +110,42 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
     if (opCode == OpCode::BINARY) {
         if (length > 40) {
             string eventName = getEventName(rawMessage);
-            u_int64_t requestId = *((u_int64_t*)(rawMessage+32));
-            if (eventName == "fileload") {
+            u_int64_t requestId = *((u_int64_t*) (rawMessage + 32));
+            void* eventPayload = rawMessage + 40;
+            int payloadSize = (int) length - 40;
+
+            //CARTA ICD
+            if (eventName == "REGISTER_VIEWER") {
+                CARTA::RegisterViewer message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onRegisterViewer(message, requestId);
+                }
+            }
+            else if (eventName == "FILE_LIST_REQUEST") {
+                CARTA::FileListRequest message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onFileListRequest(message, requestId);
+                }
+            }
+            // legacy interface
+            else if (eventName == "fileload") {
                 Requests::FileLoadRequest fileLoadRequest;
-                if (fileLoadRequest.ParseFromArray(rawMessage + 40, length - 40)) {
+                if (fileLoadRequest.ParseFromArray(eventPayload, payloadSize)) {
                     session->onFileLoad(fileLoadRequest, requestId);
                 }
             } else if (eventName == "region_read") {
                 Requests::RegionReadRequest regionReadRequest;
-                if (regionReadRequest.ParseFromArray(rawMessage + 40, length - 40)) {
+                if (regionReadRequest.ParseFromArray(eventPayload, payloadSize)) {
                     session->onRegionReadRequest(regionReadRequest, requestId);
                 }
             } else if (eventName == "profile") {
                 Requests::ProfileRequest profileRequest;
-                if (profileRequest.ParseFromArray(rawMessage + 40, length - 40)) {
+                if (profileRequest.ParseFromArray(eventPayload, payloadSize)) {
                     session->onProfileRequest(profileRequest, requestId);
                 }
             } else if (eventName == "region_stats") {
                 Requests::RegionStatsRequest statsRequest;
-                if (statsRequest.ParseFromArray(rawMessage + 40, length - 40)) {
+                if (statsRequest.ParseFromArray(eventPayload, payloadSize)) {
                     session->onRegionStatsRequest(statsRequest, requestId);
                 }
             } else {

@@ -13,6 +13,8 @@
 #include <proto/regionReadRequest.pb.h>
 #include <proto/profileRequest.pb.h>
 #include <cstdint>
+#include <carta-protobuf/register_viewer.pb.h>
+#include <carta-protobuf/file_list.pb.h>
 #include "proto/regionStatsRequest.pb.h"
 #include "proto/regionReadResponse.pb.h"
 
@@ -91,6 +93,10 @@ public:
     void onFileLoad(const Requests::FileLoadRequest& fileLoadRequest, u_int64_t requestId);
     void onProfileRequest(const Requests::ProfileRequest& request, u_int64_t requestId);
     void onRegionStatsRequest(const Requests::RegionStatsRequest& request, u_int64_t requestId);
+    // CARTA ICD
+    void onRegisterViewer(const CARTA::RegisterViewer& message, uint64_t requestId);
+    void onFileListRequest(const CARTA::FileListRequest& request, uint64_t requestId);
+
     ~Session();
 
 protected:
@@ -105,6 +111,7 @@ protected:
     std::vector<float> getYProfile(int x, int channel, int stokes);
     std::vector<float> getZProfile(int x, int y, int stokes);
     std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
+    CARTA::FileListResponse getFileList(const std::string& folder);
     std::vector<std::string> getAvailableFiles(const std::string& folder, std::string prefix = "");
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);

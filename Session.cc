@@ -25,21 +25,6 @@ Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string apiKey, 
       rateSum(0),
       rateCount(0),
       socket(ws) {
-
-    eventMutex.lock();
-    auto tStart = chrono::high_resolution_clock::now();
-    availableFileList = getAvailableFiles(baseFolder);
-    auto tEnd = chrono::high_resolution_clock::now();
-    auto dtFileSearch = chrono::duration_cast<chrono::milliseconds>(tEnd - tStart).count();
-    fmt::print("Found {} HDF5 files in {} ms\n", availableFileList.size(), dtFileSearch);
-
-    Responses::ConnectionResponse connectionResponse;
-    connectionResponse.set_success("true");
-    for (auto& v: availableFileList) {
-        connectionResponse.add_available_files(v);
-    }
-    eventMutex.unlock();
-    sendEvent("connect", 0, connectionResponse);
 }
 
 Session::~Session() {
@@ -100,7 +85,7 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
                     if (H5File::isHdf5(filename)) {
                         files.push_back(prefix + directoryEntry.path().filename().string());
                     }
-                // Sub-directories can have different permissions
+                    // Sub-directories can have different permissions
                 } else if (fs::is_directory(filePath)) {
                     string newPrefix = filePath.string() + "/";
                     // Strip out the leading "./" in subdirectories
@@ -127,6 +112,44 @@ vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
         fmt::print("Error: {}\n", ex.what());
     }
     return files;
+}
+
+CARTA::FileListResponse Session::getFileList(const string& folder) {
+    string fullPath = baseFolder;
+    // constructs the full path based on the base folder and the folder string
+    if (folder.length()) {
+        fullPath = fmt::format("{}/{}", baseFolder, folder);
+    }
+    fs::path folderPath(fullPath);
+    CARTA::FileListResponse fileList;
+    try {
+        if (checkPermissionForDirectory(folder) && fs::exists(folderPath) && fs::is_directory(folderPath)) {
+            for (auto& directoryEntry : fs::directory_iterator(folderPath)) {
+                fs::path filePath(directoryEntry);
+                string filenameString = directoryEntry.path().filename().string();
+                // Check if it is a directory and the user has permission to access it
+                if (fs::is_directory(filePath) && checkPermissionForDirectory(filenameString)) {
+                    fileList.add_directories(filenameString);
+                }
+                // Check if it is an HDF5 file
+                else if (fs::is_regular_file(filePath) && H5File::isHdf5(directoryEntry.path().string())) {
+                    auto fileInfo = fileList.add_files();
+                    fileInfo->set_size(fs::file_size(directoryEntry));
+                    fileInfo->set_name(filenameString);
+                    fileInfo->set_type(CARTA::FileType::HDF5);
+                }
+            }
+        }
+    }
+    catch (const fs::filesystem_error& ex) {
+        fmt::print("Error: {}\n", ex.what());
+        fileList.set_success(false);
+        fileList.set_message(ex.what());
+        return fileList;
+    }
+
+    fileList.set_success(true);
+    return fileList;
 }
 
 // Calculates channel histogram if it is not cached already
@@ -465,8 +488,7 @@ bool Session::loadChannel(int channel, int stokes) {
     if (imageInfo.dimensions == 3) {
         count.insert(count.begin(), 1);
         start.insert(start.begin(), channel);
-    }
-    else if (imageInfo.dimensions == 4){
+    } else if (imageInfo.dimensions == 4) {
         count.insert(count.begin(), {1, 1});
         start.insert(start.begin(), {stokes, channel});
     }
@@ -532,7 +554,7 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
         imageInfo.stokes = (imageInfo.dimensions > 3) ? dims[imageInfo.dimensions - 4] : 1;
 
         dataSets.clear();
-        dataSets["main"]= dataSet;
+        dataSets["main"] = dataSet;
 
         if (H5Lexists(group.getId(), "Statistics", 0) && H5Lexists(group.getId(), "Statistics/Z", 0) && H5Lexists(group.getId(), "Statistics/Z/MEAN", 0)) {
             dataSets["average"] = group.openDataSet("Statistics/Z/MEAN");
@@ -551,7 +573,7 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
                     log("Invalid swizzled data set in file {}, ignoring.", filename);
                 } else {
                     log("Found valid swizzled data set in file {}.", filename);
-                    dataSets["swizzled"]= dataSetSwizzled;
+                    dataSets["swizzled"] = dataSetSwizzled;
                 }
             } else if (imageInfo.dimensions == 4 && H5Lexists(group.getId(), "SwizzledData/ZYXW", 0)) {
                 DataSet dataSetSwizzled = group.openDataSet("SwizzledData/ZYXW");
@@ -561,7 +583,7 @@ bool Session::loadFile(const string& filename, int defaultChannel) {
                     log("Invalid swizzled data set in file {}, ignoring.", filename);
                 } else {
                     log("Found valid swizzled data set in file {}.", filename);
-                    dataSets["swizzled"]= dataSetSwizzled;
+                    dataSets["swizzled"] = dataSetSwizzled;
                 }
             } else {
                 log("File {} missing optional swizzled data set, using fallback calculation.", filename);
@@ -823,8 +845,7 @@ vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yM
         if (imageInfo.dimensions == 3) {
             count.insert(count.begin(), 1);
             start.insert(start.begin(), i);
-        }
-        else if (imageInfo.dimensions == 4){
+        } else if (imageInfo.dimensions == 4) {
             count.insert(count.begin(), {1, 1});
             start.insert(start.begin(), {stokes, i});
         }
@@ -842,8 +863,8 @@ vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yM
             bool valid = !isnan(v) && mask[j];
             sum += valid ? v : 0;
             sumSquared += valid ? v * v : 0;
-            minVal = valid ? fmin(minVal, v): minVal;
-            maxVal = valid ? fmax(maxVal, v): maxVal;
+            minVal = valid ? fmin(minVal, v) : minVal;
+            maxVal = valid ? fmax(maxVal, v) : maxVal;
             nanCount += !valid;
             validCount += valid;;
         }
@@ -1227,9 +1248,31 @@ void Session::onRegionStatsRequest(const Requests::RegionStatsRequest& request, 
     sendEvent("region_stats", requestId, response);
 }
 
+// CARTA ICD implementation
+void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint64_t requestId) {
+    CARTA::RegisterViewerAck ackMessage;
+    ackMessage.set_success(true);
+    ackMessage.set_session_id(boost::uuids::to_string(uuid));
+    sendEvent("REGISTER_VIEWER_ACK", requestId, ackMessage);
+}
+
+void Session::onFileListRequest(const CARTA::FileListRequest& request, uint64_t requestId) {
+
+    string folder = request.directory();
+
+    log("Looking in folder {}", folder);
+    auto tStart = chrono::high_resolution_clock::now();
+    availableFileList = getAvailableFiles(folder);
+    auto tEnd = chrono::high_resolution_clock::now();
+    auto dtFileSearch = chrono::duration_cast<chrono::milliseconds>(tEnd - tStart).count();
+    fmt::print("Found {} HDF5 files in {} ms\n", availableFileList.size(), dtFileSearch);
+
+    CARTA::FileListResponse response = getFileList(folder);
+    sendEvent("FILE_LIST_RESPONSE", requestId, response);
+}
+
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::sendEvent(string eventName, u_int64_t eventId, google::protobuf::MessageLite& message) {
-    fmt::print("{}\n", eventId);
     size_t eventNameLength = 32;
     int messageLength = message.ByteSize();
     size_t requiredSize = eventNameLength + 8 + messageLength;
