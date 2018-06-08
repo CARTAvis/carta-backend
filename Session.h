@@ -87,10 +87,10 @@ public:
             std::string folder,
             ctpl::thread_pool& serverThreadPool,
             bool verbose = false);
-    void onRegionReadRequest(const Requests::RegionReadRequest& regionReadRequest);
-    void onFileLoad(const Requests::FileLoadRequest& fileLoadRequest);
-    void onProfileRequest(const Requests::ProfileRequest& request);
-    void onRegionStatsRequest(const Requests::RegionStatsRequest& request);
+    void onRegionReadRequest(const Requests::RegionReadRequest& regionReadRequest, u_int64_t requestId);
+    void onFileLoad(const Requests::FileLoadRequest& fileLoadRequest, u_int64_t requestId);
+    void onProfileRequest(const Requests::ProfileRequest& request, u_int64_t requestId);
+    void onRegionStatsRequest(const Requests::RegionStatsRequest& request, u_int64_t requestId);
     ~Session();
 
 protected:
@@ -108,7 +108,7 @@ protected:
     std::vector<std::string> getAvailableFiles(const std::string& folder, std::string prefix = "");
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
-    void sendEvent(std::string eventName, google::protobuf::MessageLite& message);
+    void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
     void log(const std::string& logMessage);
     template<typename... Args>
     void log(const char* templateString, Args... args);

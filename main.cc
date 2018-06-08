@@ -108,27 +108,28 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
     }
 
     if (opCode == OpCode::BINARY) {
-        if (length > 32) {
+        if (length > 40) {
             string eventName = getEventName(rawMessage);
+            u_int64_t requestId = *((u_int64_t*)(rawMessage+32));
             if (eventName == "fileload") {
                 Requests::FileLoadRequest fileLoadRequest;
-                if (fileLoadRequest.ParseFromArray(rawMessage + 32, length - 32)) {
-                    session->onFileLoad(fileLoadRequest);
+                if (fileLoadRequest.ParseFromArray(rawMessage + 40, length - 40)) {
+                    session->onFileLoad(fileLoadRequest, requestId);
                 }
             } else if (eventName == "region_read") {
                 Requests::RegionReadRequest regionReadRequest;
-                if (regionReadRequest.ParseFromArray(rawMessage + 32, length - 32)) {
-                    session->onRegionReadRequest(regionReadRequest);
+                if (regionReadRequest.ParseFromArray(rawMessage + 40, length - 40)) {
+                    session->onRegionReadRequest(regionReadRequest, requestId);
                 }
             } else if (eventName == "profile") {
                 Requests::ProfileRequest profileRequest;
-                if (profileRequest.ParseFromArray(rawMessage + 32, length - 32)) {
-                    session->onProfileRequest(profileRequest);
+                if (profileRequest.ParseFromArray(rawMessage + 40, length - 40)) {
+                    session->onProfileRequest(profileRequest, requestId);
                 }
             } else if (eventName == "region_stats") {
                 Requests::RegionStatsRequest statsRequest;
-                if (statsRequest.ParseFromArray(rawMessage + 32, length - 32)) {
-                    session->onRegionStatsRequest(statsRequest);
+                if (statsRequest.ParseFromArray(rawMessage + 40, length - 40)) {
+                    session->onRegionStatsRequest(statsRequest, requestId);
                 }
             } else {
                 fmt::print("Unknown event type {}\n", eventName);

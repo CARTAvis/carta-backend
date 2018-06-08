@@ -39,7 +39,7 @@ Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string apiKey, 
         connectionResponse.add_available_files(v);
     }
     eventMutex.unlock();
-    sendEvent("connect", connectionResponse);
+    sendEvent("connect", 0, connectionResponse);
 }
 
 Session::~Session() {
@@ -971,13 +971,13 @@ std::vector<bool> Session::getShapeMask(int xMin, int xMax, int yMin, int yMax, 
 }
 
 // Event response to region read request
-void Session::onRegionReadRequest(const Requests::RegionReadRequest& regionReadRequest) {
+void Session::onRegionReadRequest(const Requests::RegionReadRequest& regionReadRequest, u_int64_t requestId) {
     // Mutex used to prevent overlapping requests for a single client
     eventMutex.lock();
 
     // Valid compression precision range: (4-31)
     bool compressed = regionReadRequest.compression() >= 4 && regionReadRequest.compression() < 32;
-    vector<float> regionData = readRegion(regionReadRequest, false);
+    vector<float> regionData = readRegion(regionReadRequest, true);
 
     if (regionData.size()) {
         auto numValues = regionData.size();
@@ -1113,11 +1113,11 @@ void Session::onRegionReadRequest(const Requests::RegionReadRequest& regionReadR
         regionReadResponse.set_success(false);
     }
     eventMutex.unlock();
-    sendEvent("region_read", regionReadResponse);
+    sendEvent("region_read", requestId, regionReadResponse);
 }
 
 // Event response to file load request
-void Session::onFileLoad(const Requests::FileLoadRequest& fileLoadRequest) {
+void Session::onFileLoad(const Requests::FileLoadRequest& fileLoadRequest, u_int64_t requestId) {
     eventMutex.lock();
     Responses::FileLoadResponse fileLoadResponse;
     if (loadFile(fileLoadRequest.filename())) {
@@ -1135,11 +1135,11 @@ void Session::onFileLoad(const Requests::FileLoadRequest& fileLoadRequest) {
         fileLoadResponse.set_success(false);
     }
     eventMutex.unlock();
-    sendEvent("fileload", fileLoadResponse);
+    sendEvent("fileload", requestId, fileLoadResponse);
 }
 
 // Event response to profile request
-void Session::onProfileRequest(const Requests::ProfileRequest& request) {
+void Session::onProfileRequest(const Requests::ProfileRequest& request, u_int64_t requestId) {
     eventMutex.lock();
     Responses::ProfileResponse response;
     response.set_x(request.x());
@@ -1187,11 +1187,11 @@ void Session::onProfileRequest(const Requests::ProfileRequest& request) {
         response.set_success(false);
     }
     eventMutex.unlock();
-    sendEvent("profile", response);
+    sendEvent("profile", requestId, response);
 }
 
 // Event response to region stats request
-void Session::onRegionStatsRequest(const Requests::RegionStatsRequest& request) {
+void Session::onRegionStatsRequest(const Requests::RegionStatsRequest& request, u_int64_t requestId) {
     Responses::RegionStatsResponse response;
     response.set_x(request.x());
     response.set_y(request.y());
@@ -1224,21 +1224,22 @@ void Session::onRegionStatsRequest(const Requests::RegionStatsRequest& request) 
     } else {
         response.set_success(false);
     }
-
-    sendEvent("region_stats", response);
+    sendEvent("region_stats", requestId, response);
 }
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
-void Session::sendEvent(string eventName, google::protobuf::MessageLite& message) {
+void Session::sendEvent(string eventName, u_int64_t eventId, google::protobuf::MessageLite& message) {
+    fmt::print("{}\n", eventId);
     size_t eventNameLength = 32;
     int messageLength = message.ByteSize();
-    size_t requiredSize = eventNameLength + messageLength;
+    size_t requiredSize = eventNameLength + 8 + messageLength;
     if (binaryPayloadCache.size() < requiredSize) {
         binaryPayloadCache.resize(requiredSize);
     }
     memset(binaryPayloadCache.data(), 0, eventNameLength);
     memcpy(binaryPayloadCache.data(), eventName.c_str(), min(eventName.length(), eventNameLength));
-    message.SerializeToArray(binaryPayloadCache.data() + eventNameLength, messageLength);
+    memcpy(binaryPayloadCache.data() + eventNameLength, &eventId, 4);
+    message.SerializeToArray(binaryPayloadCache.data() + eventNameLength + 8, messageLength);
     socket->send(binaryPayloadCache.data(), requiredSize, uWS::BINARY);
 }
 

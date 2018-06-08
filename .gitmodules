@@ -1,0 +1,3 @@
+[submodule "carta-protobuf"]
+	path = carta-protobuf
+	url = https://github.com/idia-astro/carta-protobuf.git
