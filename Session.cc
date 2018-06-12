@@ -186,8 +186,6 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
                             headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
                             *headerEntry->mutable_value() = fmt::format("{:f}", numericValue);
                         }
-
-                        log("attr #{}: Name: {}; Value: {}", i, headerEntry->name(), headerEntry->value());
                     }
                 }
                 else {
