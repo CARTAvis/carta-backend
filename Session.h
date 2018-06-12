@@ -15,6 +15,8 @@
 #include <cstdint>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/file_list.pb.h>
+#include <carta-protobuf/file_info.pb.h>
+#include <boost/filesystem.hpp>
 #include "proto/regionStatsRequest.pb.h"
 #include "proto/regionReadResponse.pb.h"
 
@@ -96,6 +98,7 @@ public:
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint64_t requestId);
     void onFileListRequest(const CARTA::FileListRequest& request, uint64_t requestId);
+    void onFileInfoRequest(const CARTA::FileInfoRequest& request, uint64_t requestId);
 
     ~Session();
 
@@ -112,7 +115,8 @@ protected:
     std::vector<float> getZProfile(int x, int y, int stokes);
     std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
     CARTA::FileListResponse getFileList(const std::string& folder);
-    std::vector<std::string> getAvailableFiles(const std::string& folder, std::string prefix = "");
+    bool fillFileInfo(CARTA::FileInfo* fileInfo, boost::filesystem::path& path, std::string& message);
+    bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const std::string folder, const std::string filename, std::string& message);
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);

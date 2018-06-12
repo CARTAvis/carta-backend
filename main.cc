@@ -127,6 +127,12 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
                     session->onFileListRequest(message, requestId);
                 }
             }
+            else if (eventName == "FILE_INFO_REQUEST") {
+                CARTA::FileInfoRequest message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onFileInfoRequest(message, requestId);
+                }
+            }
             // legacy interface
             else if (eventName == "fileload") {
                 Requests::FileLoadRequest fileLoadRequest;

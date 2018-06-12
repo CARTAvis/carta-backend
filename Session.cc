@@ -1,4 +1,5 @@
 #include "Session.h"
+#include "cmake-build-release/carta-protobuf/file_info.pb.h"
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <proto/fileLoadResponse.pb.h>
@@ -8,11 +9,10 @@
 
 using namespace H5;
 using namespace std;
-using namespace uWS;
 namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(WebSocket<SERVER>* ws, boost::uuids::uuid uuid, string apiKey, map<string, vector<string>>& permissionsMap, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, string apiKey, map<string, vector<string>>& permissionsMap, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
     : uuid(uuid),
       apiKey(apiKey),
       permissionsMap(permissionsMap),
@@ -70,50 +70,6 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
     }
 }
 
-// returns a list of valid HDF5 files available to the user
-vector<string> Session::getAvailableFiles(const string& folder, string prefix) {
-    fs::path folderPath(folder);
-    vector<string> files;
-    try {
-        if (fs::exists(folderPath) && fs::is_directory(folderPath)) {
-            bool hasPermission = checkPermissionForDirectory(prefix);
-            for (auto& directoryEntry : fs::directory_iterator(folderPath)) {
-                fs::path filePath(directoryEntry);
-                // Regular files will only be added if the user has permission
-                if (hasPermission && fs::is_regular_file(filePath) && fs::file_size(directoryEntry) > 8) {
-                    string filename = directoryEntry.path().string();
-                    if (H5File::isHdf5(filename)) {
-                        files.push_back(prefix + directoryEntry.path().filename().string());
-                    }
-                    // Sub-directories can have different permissions
-                } else if (fs::is_directory(filePath)) {
-                    string newPrefix = filePath.string() + "/";
-                    // Strip out the leading "./" in subdirectories
-                    if (newPrefix.length() > 2 && newPrefix.substr(0, 2) == "./") {
-                        newPrefix = prefix.substr(2);
-                    }
-
-                    // Strip out base folder path as well (boost < 1.60 doesn't have relative path functionality)
-                    if (newPrefix.length() > folderPath.string().length() && newPrefix.substr(0, folderPath.string().length()) == folderPath.string()) {
-                        newPrefix = newPrefix.substr(folderPath.string().length());
-                        if (newPrefix.length() > 0 && newPrefix[0] == '/') {
-                            newPrefix = newPrefix.substr(1);
-                        }
-                    }
-
-                    auto dir_files = getAvailableFiles(filePath.string(), prefix + newPrefix);
-                    files.insert(files.end(), dir_files.begin(), dir_files.end());
-                }
-            }
-
-        }
-    }
-    catch (const fs::filesystem_error& ex) {
-        fmt::print("Error: {}\n", ex.what());
-    }
-    return files;
-}
-
 CARTA::FileListResponse Session::getFileList(const string& folder) {
     string fullPath = baseFolder;
     // constructs the full path based on the base folder and the folder string
@@ -122,6 +78,8 @@ CARTA::FileListResponse Session::getFileList(const string& folder) {
     }
     fs::path folderPath(fullPath);
     CARTA::FileListResponse fileList;
+    string message;
+
     try {
         if (checkPermissionForDirectory(folder) && fs::exists(folderPath) && fs::is_directory(folderPath)) {
             for (auto& directoryEntry : fs::directory_iterator(folderPath)) {
@@ -132,11 +90,13 @@ CARTA::FileListResponse Session::getFileList(const string& folder) {
                     fileList.add_directories(filenameString);
                 }
                 // Check if it is an HDF5 file
-                else if (fs::is_regular_file(filePath) && H5File::isHdf5(directoryEntry.path().string())) {
+                else if (fs::is_regular_file(filePath) && H5File::isHdf5(filePath.string())) {
                     auto fileInfo = fileList.add_files();
-                    fileInfo->set_size(fs::file_size(directoryEntry));
-                    fileInfo->set_name(filenameString);
-                    fileInfo->set_type(CARTA::FileType::HDF5);
+                    if (!fillFileInfo(fileInfo, filePath, message)) {
+                        fileList.set_success(false);
+                        fileList.set_message(message);
+                        return fileList;
+                    }
                 }
             }
         }
@@ -150,6 +110,107 @@ CARTA::FileListResponse Session::getFileList(const string& folder) {
 
     fileList.set_success(true);
     return fileList;
+}
+
+bool Session::fillFileInfo(CARTA::FileInfo* fileInfo, fs::path& path, string& message) {
+    string filenameString = path.filename().string();
+    fileInfo->set_size(fs::file_size(path));
+    fileInfo->set_name(filenameString);
+    fileInfo->set_type(CARTA::FileType::HDF5);
+    return true;
+}
+
+bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const string folder, const string filename, string& message) {
+    string pathString;
+    // constructs the full path based on the base folder, the folder string and the filename
+    if (folder.length()) {
+        pathString = fmt::format("{}/{}/{}", baseFolder, folder, filename);
+    }
+    else {
+        pathString = fmt::format("{}/{}", baseFolder, filename);
+    }
+
+    fs::path filePath(pathString);
+
+    try {
+        if (fs::is_regular_file(filePath) && H5File::isHdf5(filePath.string())){
+            if (!fillFileInfo(fileInfo, filePath, message)) {
+                return false;
+            }
+
+            // Add extended info
+            H5File file(filePath.string(), H5F_ACC_RDONLY);
+            if (H5Lexists(file.getId(), "0", 0)) {
+                H5::Group topLevelGroup = file.openGroup("0");
+                if (H5Lexists(topLevelGroup.getId(), "DATA", 0)) {
+                    DataSet dataSet = topLevelGroup.openDataSet("DATA");
+                    vector<hsize_t> dims(dataSet.getSpace().getSimpleExtentNdims(), 0);
+                    dataSet.getSpace().getSimpleExtentDims(dims.data(), NULL);
+                    uint32_t N = dims.size();
+                    extendedInfo->set_dimensions(N);
+                    if (N < 2 || N > 4) {
+                        message = "Image must be 2D, 3D or 4D.";
+                        return false;
+                    }
+                    extendedInfo->set_width(dims[N - 1]);
+                    extendedInfo->set_height(dims[N - 2]);
+                    extendedInfo->set_depth((N > 2) ? dims[N - 3] : 1);
+                    extendedInfo->set_stokes((N > 3) ? dims[N - 4] : 1);
+
+                    H5O_info_t groupInfo;
+                    H5Oget_info(topLevelGroup.getId(), &groupInfo);
+                    for (auto i = 0; i< groupInfo.num_attrs; i++) {
+                        Attribute attr = topLevelGroup.openAttribute(i);
+                        hid_t attrTypeId = H5Aget_type(attr.getId());
+                        auto headerEntry = extendedInfo->add_header_entries();
+                        headerEntry->set_name(attr.getName());
+
+                        auto typeClass = H5Tget_class(attrTypeId);
+                        if (typeClass == H5T_STRING) {
+                            attr.read(attr.getStrType(), *headerEntry->mutable_value());
+                            headerEntry->set_entry_type(CARTA::EntryType::STRING);
+                        }
+                        else if (typeClass == H5T_INTEGER) {
+                            int64_t valueInt;
+                            DataType intType(PredType::NATIVE_INT64);
+                            attr.read(intType, &valueInt);
+                            *headerEntry->mutable_value() = fmt::format("{}", valueInt);
+                            headerEntry->set_numeric_value(valueInt);
+                            headerEntry->set_entry_type(CARTA::EntryType::INT);
+                        }
+                        else if (typeClass == H5T_FLOAT) {
+                            DataType doubleType(PredType::NATIVE_DOUBLE);
+                            double numericValue = 0;
+                            attr.read(doubleType, &numericValue);
+                            headerEntry->set_numeric_value(numericValue);
+                            headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
+                            *headerEntry->mutable_value() = fmt::format("{:f}", numericValue);
+                        }
+
+                        log("attr #{}: Name: {}; Value: {}", i, headerEntry->name(), headerEntry->value());
+                    }
+                }
+                else {
+                    message = "File is missing DATA dataset";
+                    return false;
+                }
+            }
+            else {
+                message = "File is missing top-level group";
+                return false;
+            }
+        }
+        else {
+            message = "File is not a valid HDF5 file";
+            return false;
+        }
+    }
+    catch (const fs::filesystem_error& ex) {
+        message = ex.what();
+        return false;
+    }
+
+    return true;
 }
 
 // Calculates channel histogram if it is not cached already
@@ -1257,18 +1318,20 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint64_t re
 }
 
 void Session::onFileListRequest(const CARTA::FileListRequest& request, uint64_t requestId) {
-
     string folder = request.directory();
-
-    log("Looking in folder {}", folder);
-    auto tStart = chrono::high_resolution_clock::now();
-    availableFileList = getAvailableFiles(folder);
-    auto tEnd = chrono::high_resolution_clock::now();
-    auto dtFileSearch = chrono::duration_cast<chrono::milliseconds>(tEnd - tStart).count();
-    fmt::print("Found {} HDF5 files in {} ms\n", availableFileList.size(), dtFileSearch);
-
     CARTA::FileListResponse response = getFileList(folder);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
+}
+
+void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint64_t requestId) {
+    CARTA::FileInfoResponse response;
+    auto fileInfo = response.mutable_file_info();
+    auto fileInfoExtended = response.mutable_file_info_extended();
+    string message;
+    bool success = fillExtendedFileInfo(fileInfoExtended, fileInfo, request.directory(), request.file(), message);
+    response.set_success(success);
+    response.set_message(message);
+    sendEvent("FILE_INFO_RESPONSE", requestId, response);
 }
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
