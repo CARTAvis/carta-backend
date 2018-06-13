@@ -68,15 +68,7 @@ string getEventName(char* rawMessage) {
 
 // Called on connection. Creates session object and assigns UUID and API keys to it
 void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
-    string url = httpRequest.getUrl().toString();
-    regex apiKeyRegex("apiKey=(.+)");
-    smatch matches;
-    string key;
-    if (regex_search(url, matches, apiKeyRegex) && matches.size() == 2) {
-        key = matches[1].str();
-    }
-
-    sessions[ws] = new Session(ws, uuid_gen(), key, permissionsMap, baseFolder, threadPool, verbose);
+    sessions[ws] = new Session(ws, uuid_gen(), permissionsMap, baseFolder, threadPool, verbose);
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string timeString = ctime(&time);
     timeString = timeString.substr(0, timeString.length() - 1);
@@ -203,11 +195,11 @@ int main(int argc, const char* argv[]) {
         readPermissions("permissions.txt");
 
         Hub h;
-
         h.onMessage(&onMessage);
         h.onConnection(&onConnect);
         h.onDisconnection(&onDisconnect);
         if (h.listen(port)) {
+            h.getDefaultGroup<uWS::SERVER>().startAutoPing(5000);
             fmt::print("Listening on port {} with data folder {} and {} threads in thread pool\n", port, baseFolder, threadCount);
             h.run();
         } else {

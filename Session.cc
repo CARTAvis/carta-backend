@@ -12,9 +12,8 @@ using namespace std;
 namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, string apiKey, map<string, vector<string>>& permissionsMap, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, map<string, vector<string>>& permissionsMap, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
     : uuid(uuid),
-      apiKey(apiKey),
       permissionsMap(permissionsMap),
       currentChannel(-1),
       currentStokes(-1),
@@ -1309,6 +1308,7 @@ void Session::onRegionStatsRequest(const Requests::RegionStatsRequest& request, 
 
 // CARTA ICD implementation
 void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint64_t requestId) {
+    apiKey = message.api_key();
     CARTA::RegisterViewerAck ackMessage;
     ackMessage.set_success(true);
     ackMessage.set_session_id(boost::uuids::to_string(uuid));

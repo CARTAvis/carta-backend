@@ -86,7 +86,6 @@ protected:
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
             boost::uuids::uuid uuid,
-            std::string apiKey,
             std::map<std::string, std::vector<std::string>>& permissionsMap,
             std::string folder,
             ctpl::thread_pool& serverThreadPool,
