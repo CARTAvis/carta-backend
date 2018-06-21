@@ -113,7 +113,7 @@ protected:
     std::vector<float> getYProfile(int x, int channel, int stokes);
     std::vector<float> getZProfile(int x, int y, int stokes);
     std::vector<float> readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter = true);
-    CARTA::FileListResponse getFileList(const std::string& folder);
+    CARTA::FileListResponse getFileList(std::string folder);
     bool fillFileInfo(CARTA::FileInfo* fileInfo, boost::filesystem::path& path, std::string& message);
     bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const std::string folder, const std::string filename, std::string& message);
     bool checkPermissionForDirectory(std:: string prefix);
