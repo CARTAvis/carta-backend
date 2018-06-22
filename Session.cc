@@ -127,10 +127,18 @@ bool Session::fillFileInfo(CARTA::FileInfo* fileInfo, fs::path& path, string& me
     fileInfo->set_size(fs::file_size(path));
     fileInfo->set_name(filenameString);
     fileInfo->set_type(CARTA::FileType::HDF5);
-    return true;
+    H5File file(path.string(), H5F_ACC_RDONLY);
+    auto N = file.getNumObjs();
+    for (auto i = 0; i < N; i++) {
+        if (file.getObjTypeByIdx(i) == H5G_GROUP) {
+            string groupName = file.getObjnameByIdx(i);
+            fileInfo->add_hdu_list(groupName);
+        }
+    }
+    return fileInfo->hdu_list_size()>0;
 }
 
-bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const string folder, const string filename, string& message) {
+bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const string folder, const string filename, string hdu, string& message) {
     string pathString;
     // constructs the full path based on the base folder, the folder string and the filename
     if (folder.length()) {
@@ -149,8 +157,24 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
 
             // Add extended info
             H5File file(filePath.string(), H5F_ACC_RDONLY);
-            if (H5Lexists(file.getId(), "0", 0)) {
-                H5::Group topLevelGroup = file.openGroup("0");
+            bool hasHDU;
+            if (hdu.length()){
+                hasHDU =  H5Lexists(file.getId(), hdu.c_str(), 0);
+            }
+            else {
+                auto N = file.getNumObjs();
+                hasHDU = false;
+                for (auto i = 0; i < N; i++) {
+                    if (file.getObjTypeByIdx(i) == H5G_GROUP) {
+                        hdu = file.getObjnameByIdx(i);
+                        hasHDU = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasHDU) {
+                H5::Group topLevelGroup = file.openGroup(hdu);
                 if (H5Lexists(topLevelGroup.getId(), "DATA", 0)) {
                     DataSet dataSet = topLevelGroup.openDataSet("DATA");
                     vector<hsize_t> dims(dataSet.getSpace().getSimpleExtentNdims(), 0);
@@ -1334,7 +1358,7 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint64_t 
     auto fileInfo = response.mutable_file_info();
     auto fileInfoExtended = response.mutable_file_info_extended();
     string message;
-    bool success = fillExtendedFileInfo(fileInfoExtended, fileInfo, request.directory(), request.file(), message);
+    bool success = fillExtendedFileInfo(fileInfoExtended, fileInfo, request.directory(), request.file(), request.hdu(), message);
     response.set_success(success);
     response.set_message(message);
     sendEvent("FILE_INFO_RESPONSE", requestId, response);
