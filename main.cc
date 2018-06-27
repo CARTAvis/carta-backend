@@ -125,30 +125,37 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
                     session->onFileInfoRequest(message, requestId);
                 }
             }
-            // legacy interface
-            else if (eventName == "fileload") {
-                Requests::FileLoadRequest fileLoadRequest;
-                if (fileLoadRequest.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onFileLoad(fileLoadRequest, requestId);
+            else if (eventName == "OPEN_FILE") {
+                CARTA::OpenFile message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onOpenFile(message, requestId);
                 }
-            } else if (eventName == "region_read") {
-                Requests::RegionReadRequest regionReadRequest;
-                if (regionReadRequest.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onRegionReadRequest(regionReadRequest, requestId);
-                }
-            } else if (eventName == "profile") {
-                Requests::ProfileRequest profileRequest;
-                if (profileRequest.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onProfileRequest(profileRequest, requestId);
-                }
-            } else if (eventName == "region_stats") {
-                Requests::RegionStatsRequest statsRequest;
-                if (statsRequest.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onRegionStatsRequest(statsRequest, requestId);
-                }
-            } else {
+            }
+            else {
                 fmt::print("Unknown event type {}\n", eventName);
             }
+//            // legacy interface
+//            else if (eventName == "fileload") {
+//                Requests::FileLoadRequest fileLoadRequest;
+//                if (fileLoadRequest.ParseFromArray(eventPayload, payloadSize)) {
+//                    session->onFileLoad(fileLoadRequest, requestId);
+//                }
+//            } else if (eventName == "region_read") {
+//                Requests::RegionReadRequest regionReadRequest;
+//                if (regionReadRequest.ParseFromArray(eventPayload, payloadSize)) {
+//                    session->onRegionReadRequest(regionReadRequest, requestId);
+//                }
+//            } else if (eventName == "profile") {
+//                Requests::ProfileRequest profileRequest;
+//                if (profileRequest.ParseFromArray(eventPayload, payloadSize)) {
+//                    session->onProfileRequest(profileRequest, requestId);
+//                }
+//            } else if (eventName == "region_stats") {
+//                Requests::RegionStatsRequest statsRequest;
+//                if (statsRequest.ParseFromArray(eventPayload, payloadSize)) {
+//                    session->onRegionStatsRequest(statsRequest, requestId);
+//                }
+
         }
     } else {
         fmt::print("Invalid event type\n");
