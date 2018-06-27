@@ -16,35 +16,31 @@ struct ChannelStats {
     int64_t nanCount;
 };
 
-struct ImageInfo {
+class Frame {
+private:
+    bool valid;
+    int channelIndex;
+    int stokesIndex;
+    std::string uuid;
     std::string filename;
     std::string unit;
-    int depth;
     int width;
     int height;
+    int depth;
     int stokes;
     int dimensions;
-    std::vector<std::vector<ChannelStats>> channelStats;
-};
-
-class Frame {
-public:
     std::vector<float> channelCache;
     std::vector<float> zProfileCache;
     std::vector<int> zProfileCoords;
-    int currentChannel;
-    int currentStokes;
-
+    std::vector<std::vector<ChannelStats>> channelStats;
     H5::H5File file;
     H5::Group hduGroup;
     std::map<std::string, H5::DataSet> dataSets;
-    ImageInfo imageInfo;
-    bool valid;
 
+public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = 0);
-    bool setChannels(int channel, int stokes);
+    bool setChannels(int newChannel, int newStokes);
     bool loadStats();
+    bool isValid();
     std::vector<float> getImageData(CARTA::ImageBounds imageBounds, int mip, bool meanFilter = true);
-private:
-    std::string uuid;
 };

@@ -237,7 +237,7 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
 
 //// Calculates channel histogram if it is not cached already
 //void Session::updateHistogram() {
-//    if (imageInfo.channelStats[currentStokes][currentChannel].histogramBins.size()) {
+//    if (imageInfo.channelStats[currentStokes][channelIndex].histogramBins.size()) {
 //        return;
 //    }
 //
@@ -264,7 +264,7 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
 //        }
 //    }
 //
-//    ChannelStats& stats = imageInfo.channelStats[currentStokes][currentChannel];
+//    ChannelStats& stats = imageInfo.channelStats[currentStokes][channelIndex];
 //
 //    stats.minVal = minVal;
 //    stats.maxVal = maxVal;
@@ -583,7 +583,7 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
 //    dataSets["main"].read(currentChannelCache.data(), PredType::NATIVE_FLOAT, memspace, sliceDataSpace);
 //
 //    currentStokes = stokes;
-//    currentChannel = channel;
+//    channelIndex = channel;
 //    updateHistogram();
 //    return true;
 //}
@@ -692,7 +692,7 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
 //
 //    vector<float> profile;
 //    profile.resize(imageInfo.width);
-//    if ((channel == currentChannel && stokes == currentStokes) || imageInfo.dimensions == 2) {
+//    if ((channel == channelIndex && stokes == currentStokes) || imageInfo.dimensions == 2) {
 //
 //        for (auto i = 0; i < imageInfo.width; i++) {
 //            profile[i] = currentChannelCache[y * imageInfo.width + i];
@@ -738,7 +738,7 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
 //
 //    vector<float> profile;
 //    profile.resize(imageInfo.height);
-//    if ((channel == currentChannel && stokes == currentStokes) || imageInfo.dimensions == 2) {
+//    if ((channel == channelIndex && stokes == currentStokes) || imageInfo.dimensions == 2) {
 //
 //        for (auto i = 0; i < imageInfo.height; i++) {
 //            profile[i] = currentChannelCache[i * imageInfo.width + x];
@@ -849,7 +849,7 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
 //        return vector<float>();
 //    }
 //
-//    if (currentChannel != regionReadRequest.channel() || currentStokes != regionReadRequest.stokes()) {
+//    if (channelIndex != regionReadRequest.channel() || currentStokes != regionReadRequest.stokes()) {
 //        if (!loadChannel(regionReadRequest.channel(), regionReadRequest.stokes())) {
 //            log("Selected channel {} is invalid!", regionReadRequest.channel());
 //            return vector<float>();
@@ -1097,8 +1097,8 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
 //        regionReadResponse.set_stokes(regionReadRequest.stokes());
 //        regionReadResponse.set_num_values(numValues);
 //
-//        if (imageInfo.channelStats[currentStokes][currentChannel].nanCount != imageInfo.width * imageInfo.height) {
-//            auto& channelStats = imageInfo.channelStats[currentStokes][currentChannel];
+//        if (imageInfo.channelStats[currentStokes][channelIndex].nanCount != imageInfo.width * imageInfo.height) {
+//            auto& channelStats = imageInfo.channelStats[currentStokes][channelIndex];
 //            auto stats = regionReadResponse.mutable_stats();
 //            stats->set_mean(channelStats.mean);
 //            stats->set_min_val(channelStats.minVal);
@@ -1375,7 +1375,7 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint64_t requestId) {
         string hdu = fileInfo->hdu_list(0);
 
         auto frame = new Frame(boost::uuids::to_string(uuid), filename, hdu);
-        if (frame->valid) {
+        if (frame->isValid()) {
             ack.set_success(true);
             frames[message.file_id()].reset(frame);
         }
