@@ -1374,10 +1374,10 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint64_t requestId) {
         }
         string hdu = fileInfo->hdu_list(0);
 
-        auto frame = new Frame(boost::uuids::to_string(uuid), filename, hdu);
+        auto frame = unique_ptr<Frame>(new Frame(boost::uuids::to_string(uuid), filename, hdu));
         if (frame->isValid()) {
             ack.set_success(true);
-            frames[message.file_id()].reset(frame);
+            frames[message.file_id()] = move(frame);
         }
         else {
             ack.set_success(false);
