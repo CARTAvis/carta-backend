@@ -1364,7 +1364,7 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint64_t requestId) {
     auto fileInfoExtended = ack.mutable_file_info_extended();
     string errMessage;
     bool infoSuccess = fillExtendedFileInfo(fileInfoExtended, fileInfo, message.directory(), message.file(), message.hdu(), errMessage);
-    if (infoSuccess) {
+    if (infoSuccess && fileInfo->hdu_list_size()) {
         string filename;
         if (message.directory().length() && message.directory() != "/") {
             filename = fmt::format("{}/{}/{}", baseFolder, message.directory(), message.file());
