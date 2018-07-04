@@ -585,98 +585,6 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
 //    return true;
 //}
 
-// Loads a file and the default channel.
-//bool Session::loadFile(Frame& frame, const string& filename, const string& hdu, int defaultChannel) {
-//    string directory;
-//    auto lastSlash = filename.find_last_of('/');
-//    if (lastSlash == string::npos) {
-//        directory = "/";
-//    } else {
-//        directory = filename.substr(0, lastSlash);
-//    }
-//
-//    // Check that the file is in an accessible directory
-//    if (!checkPermissionForDirectory(directory)) {
-//        return false;
-//    }
-//
-//    if (filename == frame.imageInfo.filename) {
-//        return true;
-//    }
-//
-//    if (find(availableFileList.begin(), availableFileList.end(), filename) == availableFileList.end()) {
-//        log("Problem loading file {}: File is not in available file list.", filename);
-//        return false;
-//    }
-//
-//    try {
-//        frame.file.reset(new H5File(fmt::format("{}/{}", baseFolder, filename), H5F_ACC_RDONLY));
-//
-//        frame.imageInfo.filename = filename;
-//        auto group = frame.file->openGroup(hdu);
-//
-//        DataSet dataSet = group.openDataSet("DATA");
-//        vector<hsize_t> dims(dataSet.getSpace().getSimpleExtentNdims(), 0);
-//        dataSet.getSpace().getSimpleExtentDims(dims.data(), NULL);
-//
-//        frame.imageInfo.dimensions = dims.size();
-//
-//        if (frame.imageInfo.dimensions < 2 || frame.imageInfo.dimensions > 4) {
-//            log("Problem loading file {}: Image must be 2D, 3D or 4D.", filename);
-//            return false;
-//        }
-//
-//        frame.imageInfo.width = dims[frame.imageInfo.dimensions - 1];
-//        frame.imageInfo.height = dims[frame.imageInfo.dimensions - 2];
-//        frame.imageInfo.depth = (frame.imageInfo.dimensions > 2) ? dims[frame.imageInfo.dimensions - 3] : 1;
-//        frame.imageInfo.stokes = (frame.imageInfo.dimensions > 3) ? dims[frame.imageInfo.dimensions - 4] : 1;
-//
-//        frame.dataSets.clear();
-//        frame.dataSets["main"] = dataSet;
-//
-//        if (H5Lexists(group.getId(), "Statistics", 0) && H5Lexists(group.getId(), "Statistics/Z", 0) && H5Lexists(group.getId(), "Statistics/Z/MEAN", 0)) {
-//            frame.dataSets["average"] = group.openDataSet("Statistics/Z/MEAN");
-//        }
-//
-//        loadStats(frame);
-//
-//        // Swizzled data loaded if it exists. Used for Z-profiles and region stats
-//        if (H5Lexists(group.getId(), "SwizzledData", 0)) {
-//            if (frame.imageInfo.dimensions == 3 && H5Lexists(group.getId(), "SwizzledData/ZYX", 0)) {
-//                DataSet dataSetSwizzled = group.openDataSet("SwizzledData/ZYX");
-//                vector<hsize_t> swizzledDims(dataSetSwizzled.getSpace().getSimpleExtentNdims(), 0);
-//                dataSetSwizzled.getSpace().getSimpleExtentDims(swizzledDims.data(), NULL);
-//
-//                if (swizzledDims.size() != 3 || swizzledDims[0] != dims[2]) {
-//                    log("Invalid swizzled data set in file {}, ignoring.", filename);
-//                } else {
-//                    log("Found valid swizzled data set in file {}.", filename);
-//                    dataSets["swizzled"] = dataSetSwizzled;
-//                }
-//            } else if (frame.imageInfo.dimensions == 4 && H5Lexists(group.getId(), "SwizzledData/ZYXW", 0)) {
-//                DataSet dataSetSwizzled = group.openDataSet("SwizzledData/ZYXW");
-//                vector<hsize_t> swizzledDims(dataSetSwizzled.getSpace().getSimpleExtentNdims(), 0);
-//                dataSetSwizzled.getSpace().getSimpleExtentDims(swizzledDims.data(), NULL);
-//                if (swizzledDims.size() != 4 || swizzledDims[1] != dims[3]) {
-//                    log("Invalid swizzled data set in file {}, ignoring.", filename);
-//                } else {
-//                    log("Found valid swizzled data set in file {}.", filename);
-//                    frame.dataSets["swizzled"] = dataSetSwizzled;
-//                }
-//            } else {
-//                log("File {} missing optional swizzled data set, using fallback calculation.", filename);
-//            }
-//        } else {
-//            log("File {} missing optional swizzled data set, using fallback calculation.", filename);
-//        }
-//        return loadChannel(frame, defaultChannel, 0);
-//    }
-//    catch (FileIException& err) {
-//        log("Problem loading file {}", filename);
-//        return false;
-//    }
-//}
-
 //// Calculates an X Profile for a given Y pixel coordinate and channel
 //vector<float> Session::getXProfile(int y, int channel, int stokes) {
 //    if (!file) {
@@ -836,67 +744,6 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
 //        log("Invalid profile request in file {}", imageInfo.filename);
 //        return vector<float>();
 //    }
-//}
-
-//// Reads a region corresponding to the given region request. If the current channel is not the same as
-//// the channel specified in the request, the new channel is loaded
-//vector<float> Session::readRegion(const Requests::RegionReadRequest& regionReadRequest, bool meanFilter) {
-//    if (!file) {
-//        log("No file loaded");
-//        return vector<float>();
-//    }
-//
-//    if (channelIndex != regionReadRequest.channel() || currentStokes != regionReadRequest.stokes()) {
-//        if (!loadChannel(regionReadRequest.channel(), regionReadRequest.stokes())) {
-//            log("Selected channel {} is invalid!", regionReadRequest.channel());
-//            return vector<float>();
-//        }
-//    }
-//
-//    const int mip = regionReadRequest.mip();
-//    const int x = regionReadRequest.x();
-//    const int y = regionReadRequest.y();
-//    const int height = regionReadRequest.height();
-//    const int width = regionReadRequest.width();
-//
-//    if (imageInfo.height < y + height || imageInfo.width < x + width) {
-//        log("Selected region ({}, {}) -> ({}, {} in channel {} is invalid!",
-//            x, y, x + width, y + height, regionReadRequest.channel());
-//        return vector<float>();
-//    }
-//
-//    size_t numRowsRegion = height / mip;
-//    size_t rowLengthRegion = width / mip;
-//    vector<float> regionData;
-//    regionData.resize(numRowsRegion * rowLengthRegion);
-//
-//    if (meanFilter) {
-//        // Perform down-sampling by calculating the mean for each MIPxMIP block
-//        for (auto j = 0; j < numRowsRegion; j++) {
-//            for (auto i = 0; i < rowLengthRegion; i++) {
-//                float pixelSum = 0;
-//                int pixelCount = 0;
-//                for (auto pixelX = 0; pixelX < mip; pixelX++) {
-//                    for (auto pixelY = 0; pixelY < mip; pixelY++) {
-//                        float pixVal = currentChannelCache[(y + j * mip + pixelY) * imageInfo.width + (x + i * mip + pixelX)];
-//                        if (!isnan(pixVal)) {
-//                            pixelCount++;
-//                            pixelSum += pixVal;
-//                        }
-//                    }
-//                }
-//                regionData[j * rowLengthRegion + i] = pixelCount ? pixelSum / pixelCount : NAN;
-//            }
-//        }
-//    } else {
-//        // Nearest neighbour filtering
-//        for (auto j = 0; j < numRowsRegion; j++) {
-//            for (auto i = 0; i < rowLengthRegion; i++) {
-//                regionData[j * rowLengthRegion + i] = currentChannelCache[(y + j * mip) * imageInfo.width + (x + i * mip)];
-//            }
-//        }
-//    }
-//    return regionData;
 //}
 
 //vector<RegionStats> Session::getRegionStats(int xMin, int xMax, int yMin, int yMax, int channelMin, int channelMax, int stokes, RegionShapeType shapeType) {
@@ -1408,8 +1255,6 @@ void Session::onSetImageView(const SetImageView& message, uint64_t requestId) {
             rasterImageData.mutable_image_bounds()->set_y_max(message.image_bounds().y_max());
             // Copy image data and send event
             rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
-            //google::protobuf::RepeatedField<float> data(imageData.begin(), imageData.end());
-            //rasterImageData.mutable_uncompressed_data()->Swap(&data);
             sendEvent("RASTER_IMAGE_DATA", requestId, rasterImageData);
         }
     } else {
