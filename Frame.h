@@ -42,5 +42,7 @@ public:
     bool setChannels(int newChannel, int newStokes);
     bool loadStats();
     bool isValid();
+    int currentStokes();
+    int currentChannel();
     std::vector<float> getImageData(CARTA::ImageBounds imageBounds, int mip, bool meanFilter = true);
 };

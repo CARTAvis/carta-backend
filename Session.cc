@@ -1,11 +1,9 @@
 #include "Session.h"
-#include <proto/fileLoadResponse.pb.h>
-#include <proto/connectionResponse.pb.h>
-#include <proto/profileResponse.pb.h>
-#include <proto/regionStatsResponse.pb.h>
+#include <carta-protobuf/raster_image.pb.h>
 
 using namespace H5;
 using namespace std;
+using namespace CARTA;
 namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
@@ -66,14 +64,14 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
     }
 }
 
-CARTA::FileListResponse Session::getFileList(string folder) {
+FileListResponse Session::getFileList(string folder) {
     string fullPath = baseFolder;
     // constructs the full path based on the base folder and the folder string (unless folder is empty or root)
     if (folder.length() && folder != "/") {
         fullPath = fmt::format("{}/{}", baseFolder, folder);
     }
     fs::path folderPath(fullPath);
-    CARTA::FileListResponse fileList;
+    FileListResponse fileList;
     if (folder.length() && folder != "/") {
         fileList.set_directory(folder);
         auto lastSlashPosition = folder.find_last_of('/');
@@ -119,11 +117,11 @@ CARTA::FileListResponse Session::getFileList(string folder) {
     return fileList;
 }
 
-bool Session::fillFileInfo(CARTA::FileInfo* fileInfo, fs::path& path, string& message) {
+bool Session::fillFileInfo(FileInfo* fileInfo, fs::path& path, string& message) {
     string filenameString = path.filename().string();
     fileInfo->set_size(fs::file_size(path));
     fileInfo->set_name(filenameString);
-    fileInfo->set_type(CARTA::FileType::HDF5);
+    fileInfo->set_type(FileType::HDF5);
     H5File file(path.string(), H5F_ACC_RDONLY);
     auto N = file.getNumObjs();
     for (auto i = 0; i < N; i++) {
@@ -132,10 +130,10 @@ bool Session::fillFileInfo(CARTA::FileInfo* fileInfo, fs::path& path, string& me
             fileInfo->add_hdu_list(groupName);
         }
     }
-    return fileInfo->hdu_list_size()>0;
+    return fileInfo->hdu_list_size() > 0;
 }
 
-bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const string folder, const string filename, string hdu, string& message) {
+bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fileInfo, const string folder, const string filename, string hdu, string& message) {
     string pathString;
     // constructs the full path based on the base folder, the folder string and the filename
     if (folder.length()) {
@@ -155,10 +153,9 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
             // Add extended info
             H5File file(filePath.string(), H5F_ACC_RDONLY);
             bool hasHDU;
-            if (hdu.length()){
-                hasHDU =  H5Lexists(file.getId(), hdu.c_str(), 0);
-            }
-            else {
+            if (hdu.length()) {
+                hasHDU = H5Lexists(file.getId(), hdu.c_str(), 0);
+            } else {
                 auto N = file.getNumObjs();
                 hasHDU = false;
                 for (auto i = 0; i < N; i++) {
@@ -198,20 +195,20 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
                         auto typeClass = H5Tget_class(attrTypeId);
                         if (typeClass == H5T_STRING) {
                             attr.read(attr.getStrType(), *headerEntry->mutable_value());
-                            headerEntry->set_entry_type(CARTA::EntryType::STRING);
+                            headerEntry->set_entry_type(EntryType::STRING);
                         } else if (typeClass == H5T_INTEGER) {
                             int64_t valueInt;
                             DataType intType(PredType::NATIVE_INT64);
                             attr.read(intType, &valueInt);
                             *headerEntry->mutable_value() = fmt::format("{}", valueInt);
                             headerEntry->set_numeric_value(valueInt);
-                            headerEntry->set_entry_type(CARTA::EntryType::INT);
+                            headerEntry->set_entry_type(EntryType::INT);
                         } else if (typeClass == H5T_FLOAT) {
                             DataType doubleType(PredType::NATIVE_DOUBLE);
                             double numericValue = 0;
                             attr.read(doubleType, &numericValue);
                             headerEntry->set_numeric_value(numericValue);
-                            headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
+                            headerEntry->set_entry_type(EntryType::FLOAT);
                             *headerEntry->mutable_value() = fmt::format("{:f}", numericValue);
                         }
                     }
@@ -1330,25 +1327,25 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
 //}
 
 // CARTA ICD implementation
-void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint64_t requestId) {
+void Session::onRegisterViewer(const RegisterViewer& message, uint64_t requestId) {
     apiKey = message.api_key();
-    CARTA::RegisterViewerAck ackMessage;
+    RegisterViewerAck ackMessage;
     ackMessage.set_success(true);
     ackMessage.set_session_id(boost::uuids::to_string(uuid));
     sendEvent("REGISTER_VIEWER_ACK", requestId, ackMessage);
 }
 
-void Session::onFileListRequest(const CARTA::FileListRequest& request, uint64_t requestId) {
+void Session::onFileListRequest(const FileListRequest& request, uint64_t requestId) {
     string folder = request.directory();
     if (folder.length() > 1 && folder[0] == '/') {
         folder = folder.substr(1);
     }
-    CARTA::FileListResponse response = getFileList(folder);
+    FileListResponse response = getFileList(folder);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
 }
 
-void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint64_t requestId) {
-    CARTA::FileInfoResponse response;
+void Session::onFileInfoRequest(const FileInfoRequest& request, uint64_t requestId) {
+    FileInfoResponse response;
     auto fileInfo = response.mutable_file_info();
     auto fileInfoExtended = response.mutable_file_info_extended();
     string message;
@@ -1358,8 +1355,8 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint64_t 
     sendEvent("FILE_INFO_RESPONSE", requestId, response);
 }
 
-void Session::onOpenFile(const CARTA::OpenFile& message, uint64_t requestId) {
-    CARTA::OpenFileAck ack;
+void Session::onOpenFile(const OpenFile& message, uint64_t requestId) {
+    OpenFileAck ack;
     auto fileInfo = ack.mutable_file_info();
     auto fileInfoExtended = ack.mutable_file_info_extended();
     string errMessage;
@@ -1368,8 +1365,7 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint64_t requestId) {
         string filename;
         if (message.directory().length() && message.directory() != "/") {
             filename = fmt::format("{}/{}/{}", baseFolder, message.directory(), message.file());
-        }
-        else {
+        } else {
             filename = fmt::format("{}/{}", baseFolder, message.file());
         }
         string hdu = fileInfo->hdu_list(0);
@@ -1378,17 +1374,48 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint64_t requestId) {
         if (frame->isValid()) {
             ack.set_success(true);
             frames[message.file_id()] = move(frame);
-        }
-        else {
+        } else {
             ack.set_success(false);
             ack.set_message("Could not load file");
         }
-    }
-    else {
+    } else {
         ack.set_success(false);
         ack.set_message(errMessage);
     }
     sendEvent("OPEN_FILE_ACK", requestId, ack);
+}
+
+void Session::onSetImageView(const SetImageView& message, uint64_t requestId) {
+    RasterImageData rasterImageData;
+    // Check if frame is loaded
+    if (frames.count(message.file_id())) {
+        auto& frame = frames[message.file_id()];
+        auto imageData = frame->getImageData(message.image_bounds(), message.mip());
+        // Check if image data is valid
+        if (!imageData.empty()) {
+            rasterImageData.set_file_id(message.file_id());
+            rasterImageData.set_stokes(frame->currentStokes());
+            rasterImageData.set_channel(frame->currentChannel());
+            rasterImageData.set_mip(message.mip());
+            // Uncompressed only for now
+            rasterImageData.set_compression_type(CompressionType::NONE);
+            rasterImageData.set_compression_quality(0);
+            rasterImageData.set_num_subsets(1);
+            // Copy over image bounds
+            rasterImageData.mutable_image_bounds()->set_x_min(message.image_bounds().x_min());
+            rasterImageData.mutable_image_bounds()->set_x_max(message.image_bounds().x_max());
+            rasterImageData.mutable_image_bounds()->set_y_min(message.image_bounds().y_min());
+            rasterImageData.mutable_image_bounds()->set_y_max(message.image_bounds().y_max());
+            // Copy image data and send event
+            rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
+            //google::protobuf::RepeatedField<float> data(imageData.begin(), imageData.end());
+            //rasterImageData.mutable_uncompressed_data()->Swap(&data);
+            sendEvent("RASTER_IMAGE_DATA", requestId, rasterImageData);
+        }
+    } else {
+        // TODO: error handling
+    }
+
 }
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message

@@ -7,7 +7,7 @@
 #include <H5Cpp.h>
 #include <H5File.h>
 #include <mutex>
-#include <stdio.h>
+#include <cstdio>
 #include <uWS/uWS.h>
 #include <proto/fileLoadRequest.pb.h>
 #include <proto/regionReadRequest.pb.h>
@@ -17,6 +17,7 @@
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/open_file.pb.h>
+#include <carta-protobuf/set_image_view.pb.h>
 #include <boost/filesystem.hpp>
 #include "proto/regionStatsRequest.pb.h"
 #include "proto/regionReadResponse.pb.h"
@@ -76,6 +77,7 @@ public:
     void onFileListRequest(const CARTA::FileListRequest& request, uint64_t requestId);
     void onFileInfoRequest(const CARTA::FileInfoRequest& request, uint64_t requestId);
     void onOpenFile(const CARTA::OpenFile& message, uint64_t requestId);
+    void onSetImageView(const CARTA::SetImageView& message, uint64_t requestId);
     ~Session();
 
 protected:

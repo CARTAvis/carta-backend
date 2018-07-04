@@ -131,6 +131,12 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
                     session->onOpenFile(message, requestId);
                 }
             }
+            else if (eventName == "SET_IMAGE_VIEW") {
+                CARTA::SetImageView message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onSetImageView(message, requestId);
+                }
+            }
             else {
                 fmt::print("Unknown event type {}\n", eventName);
             }

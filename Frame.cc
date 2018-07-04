@@ -374,6 +374,14 @@ bool Frame::loadStats() {
     return true;
 }
 
+int Frame::currentStokes() {
+    return stokesIndex;
+}
+
+int Frame::currentChannel() {
+    return channelIndex;
+}
+
 vector<float> Frame::getImageData(CARTA::ImageBounds imageBounds, int mip, bool meanFilter) {
     if (!valid) {
         return vector<float>();
@@ -381,15 +389,15 @@ vector<float> Frame::getImageData(CARTA::ImageBounds imageBounds, int mip, bool 
 
     const int x = imageBounds.x_min();
     const int y = imageBounds.y_min();
-    const int height = imageBounds.y_max() - imageBounds.y_min();
-    const int width = imageBounds.x_max() - imageBounds.x_min();
+    const int reqHeight = imageBounds.y_max() - imageBounds.y_min();
+    const int reqWidth = imageBounds.x_max() - imageBounds.x_min();
 
-    if (height < y + height || width < x + width) {
+    if (height < y + reqHeight || width < x + reqWidth) {
         return vector<float>();
     }
 
-    size_t numRowsRegion = height / mip;
-    size_t rowLengthRegion = width / mip;
+    size_t numRowsRegion = reqHeight / mip;
+    size_t rowLengthRegion = reqWidth / mip;
     vector<float> regionData;
     regionData.resize(numRowsRegion * rowLengthRegion);
 
@@ -401,7 +409,7 @@ vector<float> Frame::getImageData(CARTA::ImageBounds imageBounds, int mip, bool 
                 int pixelCount = 0;
                 for (auto pixelX = 0; pixelX < mip; pixelX++) {
                     for (auto pixelY = 0; pixelY < mip; pixelY++) {
-                        float pixVal = channelCache[(y + j * mip + pixelY) * width + (x + i * mip + pixelX)];
+                        float pixVal = channelCache[(y + j * mip + pixelY) * reqWidth + (x + i * mip + pixelX)];
                         if (!isnan(pixVal)) {
                             pixelCount++;
                             pixelSum += pixVal;
@@ -415,7 +423,7 @@ vector<float> Frame::getImageData(CARTA::ImageBounds imageBounds, int mip, bool 
         // Nearest neighbour filtering
         for (auto j = 0; j < numRowsRegion; j++) {
             for (auto i = 0; i < rowLengthRegion; i++) {
-                regionData[j * rowLengthRegion + i] = channelCache[(y + j * mip) * width + (x + i * mip)];
+                regionData[j * rowLengthRegion + i] = channelCache[(y + j * mip) * reqWidth + (x + i * mip)];
             }
         }
     }
