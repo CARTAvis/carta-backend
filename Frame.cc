@@ -409,7 +409,9 @@ vector<float> Frame::getImageData(CARTA::ImageBounds imageBounds, int mip, bool 
                 int pixelCount = 0;
                 for (auto pixelX = 0; pixelX < mip; pixelX++) {
                     for (auto pixelY = 0; pixelY < mip; pixelY++) {
-                        float pixVal = channelCache[(y + j * mip + pixelY) * reqWidth + (x + i * mip + pixelX)];
+                        auto imageRow = y + j * mip + pixelY;
+                        auto imageCol = x + i * mip + pixelX;
+                        float pixVal = channelCache[imageRow * width + imageCol];
                         if (!isnan(pixVal)) {
                             pixelCount++;
                             pixelSum += pixVal;
@@ -423,7 +425,9 @@ vector<float> Frame::getImageData(CARTA::ImageBounds imageBounds, int mip, bool 
         // Nearest neighbour filtering
         for (auto j = 0; j < numRowsRegion; j++) {
             for (auto i = 0; i < rowLengthRegion; i++) {
-                regionData[j * rowLengthRegion + i] = channelCache[(y + j * mip) * reqWidth + (x + i * mip)];
+                auto imageRow = y + j * mip;
+                auto imageCol = x + i * mip;
+                regionData[j * rowLengthRegion + i] = channelCache[imageRow * width + imageCol];
             }
         }
     }
