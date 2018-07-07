@@ -1,6 +1,6 @@
 #include "Session.h"
 #include <carta-protobuf/raster_image.pb.h>
-
+#include <carta-protobuf/region_histogram.pb.h>
 using namespace H5;
 using namespace std;
 using namespace CARTA;
@@ -289,6 +289,17 @@ void Session::onOpenFile(const OpenFile& message, uint64_t requestId) {
         ack.set_message(errMessage);
     }
     sendEvent("OPEN_FILE_ACK", requestId, ack);
+
+    // Send histogram of the default channel
+    if (ack.success()) {
+        RegionHistogramData histogramMessage;
+        histogramMessage.set_file_id(message.file_id());
+        histogramMessage.set_stokes(frames[message.file_id()]->currentStokes());
+        // -1 corresponds to the entire current XY plane
+        histogramMessage.set_region_id(-1);
+        histogramMessage.mutable_histograms()->AddAllocated(new Histogram(frames[message.file_id()]->currentHistogram()));
+        sendEvent("REGION_HISTOGRAM_DATA", 0, histogramMessage);
+    }
 }
 
 void Session::onSetImageView(const SetImageView& message, uint64_t requestId) {

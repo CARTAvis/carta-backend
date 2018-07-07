@@ -433,3 +433,50 @@ vector<float> Frame::getImageData(CARTA::ImageBounds imageBounds, int mip, bool 
     }
     return regionData;
 }
+
+CARTA::Histogram Frame::currentHistogram() {
+    CARTA::Histogram histogram;
+    histogram.set_channel(channelIndex);
+
+    // Calculate histogram if it hasn't been stored
+    if (channelStats[stokesIndex][channelIndex].histogramBins.empty()) {
+        float minVal = channelCache[0];
+        float maxVal = channelCache[0];
+        float sum = 0.0f;
+        int count = 0;
+        for (auto i = 0; i < width * height; i++) {
+            auto v = channelCache[i];
+            minVal = fmin(minVal, v);
+            maxVal = fmax(maxVal, v);
+            sum += isnan(v) ? 0.0 : v;
+            count += isnan(v) ? 0 : 1;
+        }
+
+        ChannelStats& stats = channelStats[stokesIndex][channelIndex];
+        stats.minVal = minVal;
+        stats.maxVal = maxVal;
+        stats.nanCount = count;
+        stats.mean = sum / max(count, 1);
+        int N = int(max(sqrt(width * height), 2.0));
+        stats.histogramBins.resize(N, 0);
+        float binWidth = (stats.maxVal / stats.minVal) / N;
+
+        for (auto i = 0; i < width * height; i++) {
+            auto v = channelCache[i];
+            if (isnan(v)) {
+                continue;
+            }
+            int bin = min((int) ((v - minVal) / binWidth), N - 1);
+            stats.histogramBins[bin]++;
+        }
+    }
+
+    // Create histogram object
+    auto& currentStats = channelStats[stokesIndex][channelIndex];
+    histogram.set_num_bins(currentStats.histogramBins.size());
+    histogram.set_bin_width((currentStats.maxVal - currentStats.minVal)/currentStats.histogramBins.size());
+    histogram.set_first_bin_center(currentStats.minVal + histogram.bin_width()/2.0);
+    *histogram.mutable_bins() = {currentStats.histogramBins.begin(), currentStats.histogramBins.end()};
+
+    return histogram;
+}

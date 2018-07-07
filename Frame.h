@@ -45,4 +45,5 @@ public:
     int currentStokes();
     int currentChannel();
     std::vector<float> getImageData(CARTA::ImageBounds imageBounds, int mip, bool meanFilter = true);
+    CARTA::Histogram currentHistogram();
 };
