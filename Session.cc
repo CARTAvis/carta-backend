@@ -314,17 +314,37 @@ void Session::onSetImageView(const SetImageView& message, uint64_t requestId) {
             rasterImageData.set_stokes(frame->currentStokes());
             rasterImageData.set_channel(frame->currentChannel());
             rasterImageData.set_mip(message.mip());
-            // Uncompressed only for now
-            rasterImageData.set_compression_type(CompressionType::NONE);
-            rasterImageData.set_compression_quality(0);
-            rasterImageData.set_num_subsets(1);
             // Copy over image bounds
             rasterImageData.mutable_image_bounds()->set_x_min(message.image_bounds().x_min());
             rasterImageData.mutable_image_bounds()->set_x_max(message.image_bounds().x_max());
             rasterImageData.mutable_image_bounds()->set_y_min(message.image_bounds().y_min());
             rasterImageData.mutable_image_bounds()->set_y_max(message.image_bounds().y_max());
-            // Copy image data and send event
-            rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
+
+
+            // Uncompressed data
+            // rasterImageData.set_compression_type(CompressionType::NONE);
+            // rasterImageData.set_compression_quality(0);
+            // rasterImageData.set_num_subsets(1);
+            // rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
+
+            // Work out NaN run-length encodings
+            auto nanEncodings = getNanEncodings(imageData, 0, imageData.size());
+            // Compress using ZFP
+            size_t compressedSize;
+            auto w = (message.image_bounds().x_max() - message.image_bounds().x_min())/message.mip();
+            auto h = (message.image_bounds().y_max() - message.image_bounds().y_min())/message.mip();
+            int precision = 11;
+            compress(imageData, 0, compressionBuffer, compressedSize, w, h, precision);
+
+            rasterImageData.set_compression_type(CompressionType::ZFP);
+            rasterImageData.set_compression_quality(precision);
+            rasterImageData.set_num_subsets(1);
+            rasterImageData.add_image_data(compressionBuffer.data(), compressedSize);
+            rasterImageData.add_nan_encodings(nanEncodings.data(), nanEncodings.size()* sizeof(int));
+
+            if (verboseLogging) {
+                fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB\n", w * h * sizeof(float) / 1e3, compressedSize / 1e3);
+            }
             sendEvent("RASTER_IMAGE_DATA", requestId, rasterImageData);
         }
     } else {

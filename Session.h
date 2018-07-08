@@ -51,10 +51,8 @@ protected:
     std::map<std::string, std::vector<std::string> >& permissionsMap;
     std::string baseFolder;
     std::vector<char> binaryPayloadCache;
-    std::vector<char> compressionBuffers[MAX_SUBSETS];
-    std::vector<std::string> availableFileList;
+    std::vector<char> compressionBuffer;
     bool verboseLogging;
-    Responses::RegionReadResponse regionReadResponse;
     ctpl::thread_pool& threadPool;
     float rateSum;
     int rateCount;
