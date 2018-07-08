@@ -9,9 +9,6 @@
 #include <mutex>
 #include <cstdio>
 #include <uWS/uWS.h>
-#include <proto/fileLoadRequest.pb.h>
-#include <proto/regionReadRequest.pb.h>
-#include <proto/profileRequest.pb.h>
 #include <cstdint>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/file_list.pb.h>
@@ -51,7 +48,7 @@ protected:
     std::map<std::string, std::vector<std::string> >& permissionsMap;
     std::string baseFolder;
     std::vector<char> binaryPayloadCache;
-    std::vector<char> compressionBuffer;
+    std::vector<char> compressionBuffers[MAX_SUBSETS];
     bool verboseLogging;
     ctpl::thread_pool& threadPool;
     float rateSum;

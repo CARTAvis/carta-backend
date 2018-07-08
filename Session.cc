@@ -1,6 +1,7 @@
 #include "Session.h"
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+
 using namespace H5;
 using namespace std;
 using namespace CARTA;
@@ -320,31 +321,68 @@ void Session::onSetImageView(const SetImageView& message, uint64_t requestId) {
             rasterImageData.mutable_image_bounds()->set_y_min(message.image_bounds().y_min());
             rasterImageData.mutable_image_bounds()->set_y_max(message.image_bounds().y_max());
 
+            if (message.compression_type() == CompressionType::NONE) {
+                rasterImageData.set_compression_type(CompressionType::NONE);
+                rasterImageData.set_compression_quality(0);
+                rasterImageData.set_num_subsets(1);
+                rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
+            } else if (message.compression_type() == CompressionType::ZFP) {
+                int numSubsets = min((int) message.num_subsets(), MAX_SUBSETS);
+                int precision = lround(message.compression_quality());
+                auto rowLength = (message.image_bounds().x_max() - message.image_bounds().x_min()) / message.mip();
+                auto numRows = (message.image_bounds().y_max() - message.image_bounds().y_min()) / message.mip();
+                rasterImageData.set_num_subsets(numSubsets);
+                rasterImageData.set_compression_type(CompressionType::ZFP);
+                rasterImageData.set_compression_quality(precision);
 
-            // Uncompressed data
-            // rasterImageData.set_compression_type(CompressionType::NONE);
-            // rasterImageData.set_compression_quality(0);
-            // rasterImageData.set_num_subsets(1);
-            // rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
+                vector<size_t> compressedSizes(numSubsets);
+                vector<vector<int32_t>> nanEncodings(numSubsets);
+                vector<future<size_t>> futureSizes;
 
-            // Work out NaN run-length encodings
-            auto nanEncodings = getNanEncodings(imageData, 0, imageData.size());
-            // Compress using ZFP
-            size_t compressedSize;
-            auto w = (message.image_bounds().x_max() - message.image_bounds().x_min())/message.mip();
-            auto h = (message.image_bounds().y_max() - message.image_bounds().y_min())/message.mip();
-            int precision = 11;
-            compress(imageData, 0, compressionBuffer, compressedSize, w, h, precision);
+                auto tStartCompress = chrono::high_resolution_clock::now();
+                for (auto i = 0; i < numSubsets; i++) {
+                    auto& compressionBuffer = compressionBuffers[i];
+                    futureSizes.push_back(threadPool.push([&nanEncodings, &imageData, &compressionBuffer, numRows, numSubsets, rowLength, i, precision](int) {
+                        int subsetRowStart = i * (numRows / numSubsets);
+                        int subsetRowEnd = (i + 1) * (numRows / numSubsets);
+                        if (i == numSubsets - 1) {
+                            subsetRowEnd = numRows;
+                        }
+                        int subsetElementStart = subsetRowStart * rowLength;
+                        int subsetElementEnd = subsetRowEnd * rowLength;
 
-            rasterImageData.set_compression_type(CompressionType::ZFP);
-            rasterImageData.set_compression_quality(precision);
-            rasterImageData.set_num_subsets(1);
-            rasterImageData.add_image_data(compressionBuffer.data(), compressedSize);
-            rasterImageData.add_nan_encodings(nanEncodings.data(), nanEncodings.size()* sizeof(int));
+                        size_t compressedSize;
+                        nanEncodings[i] = getNanEncodings(imageData, subsetElementStart, subsetElementEnd - subsetElementStart);
+                        compress(imageData, subsetElementStart, compressionBuffer, compressedSize, rowLength, subsetRowEnd - subsetRowStart, precision);
+                        return compressedSize;
+                    }));
+                }
 
-            if (verboseLogging) {
-                fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB\n", w * h * sizeof(float) / 1e3, compressedSize / 1e3);
+                // Wait for completed compression threads
+                for (auto i = 0; i < numSubsets; i++) {
+                    compressedSizes[i] = futureSizes[i].get();
+
+                }
+                auto tEndCompress = chrono::high_resolution_clock::now();
+                auto dtCompress = chrono::duration_cast<chrono::microseconds>(tEndCompress - tStartCompress).count();
+
+                // Complete message
+                for (auto i = 0; i < numSubsets; i++) {
+                    rasterImageData.add_image_data(compressionBuffers[i].data(), compressedSizes[i]);
+                    rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(), nanEncodings[i].size() * sizeof(int));
+                }
+
+                if (verboseLogging) {
+                    fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s\n",
+                               numRows * rowLength * sizeof(float) / 1e3,
+                               accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
+                               1e-3 * dtCompress,
+                               (float) (numRows * rowLength) / dtCompress);
+                }
+            } else {
+                // TODO: error handling for SZ
             }
+            // Send completed event to client
             sendEvent("RASTER_IMAGE_DATA", requestId, rasterImageData);
         }
     } else {
