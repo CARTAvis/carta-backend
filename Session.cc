@@ -324,14 +324,12 @@ void Session::onSetImageView(const SetImageView& message, uint64_t requestId) {
             if (message.compression_type() == CompressionType::NONE) {
                 rasterImageData.set_compression_type(CompressionType::NONE);
                 rasterImageData.set_compression_quality(0);
-                rasterImageData.set_num_subsets(1);
                 rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
             } else if (message.compression_type() == CompressionType::ZFP) {
                 int numSubsets = min((int) message.num_subsets(), MAX_SUBSETS);
                 int precision = lround(message.compression_quality());
                 auto rowLength = (message.image_bounds().x_max() - message.image_bounds().x_min()) / message.mip();
                 auto numRows = (message.image_bounds().y_max() - message.image_bounds().y_min()) / message.mip();
-                rasterImageData.set_num_subsets(numSubsets);
                 rasterImageData.set_compression_type(CompressionType::ZFP);
                 rasterImageData.set_compression_quality(precision);
 

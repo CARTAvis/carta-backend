@@ -100,11 +100,11 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
     }
 
     if (opCode == OpCode::BINARY) {
-        if (length > 40) {
+        if (length > 36) {
             string eventName = getEventName(rawMessage);
-            u_int64_t requestId = *((u_int64_t*) (rawMessage + 32));
-            void* eventPayload = rawMessage + 40;
-            int payloadSize = (int) length - 40;
+            uint32_t requestId = *((uint32_t*) (rawMessage + 32));
+            void* eventPayload = rawMessage + 36;
+            int payloadSize = (int) length - 36;
 
             //CARTA ICD
             if (eventName == "REGISTER_VIEWER") {
