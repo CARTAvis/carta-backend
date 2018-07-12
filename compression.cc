@@ -75,7 +75,7 @@ int decompress(vector<float>& array, vector<char>& compressionBuffer, size_t& co
 }
 
 // Removes NaNs from an array and returns run-length encoded list of NaNs
-vector<int32_t> getNanEncodings(vector<float>& array, int offset, int length) {
+vector<int32_t> getNanEncodingsSimple(vector<float>& array, int offset, int length) {
     int32_t prevIndex = offset;
     bool prev = false;
     vector<int32_t> encodedArray;
@@ -105,5 +105,61 @@ vector<int32_t> getNanEncodings(vector<float>& array, int offset, int length) {
         }
     }
     encodedArray.push_back(offset + length - prevIndex);
+    return encodedArray;
+}
+
+vector<int32_t> getNanEncodingsBlock(vector<float>& array, int offset, int w, int h) {
+    // Generate RLE NaN list
+    int length = w * h;
+    int32_t prevIndex = offset;
+    bool prev = false;
+    vector<int32_t> encodedArray;
+
+    for (auto i = offset; i < offset + length; i++) {
+        bool current = isnan(array[i]);
+        if (current != prev) {
+            encodedArray.push_back(i - prevIndex);
+            prevIndex = i;
+            prev = current;
+        }
+    }
+    encodedArray.push_back(offset + length - prevIndex);
+
+    // Skip all-NaN images and NaN-free images
+    if (encodedArray.size() > 1) {
+        // Calculate average of 4x4 blocks (matching blocks used in ZFP), and replace NaNs with block average
+        for (auto i = 0; i < w; i += 4) {
+            for (auto j = 0; j < h; j += 4) {
+                int blockStart = offset + j * w + i;
+                int validCount = 0;
+                float sum = 0;
+                // Limit the block size when at the edges of the image
+                int blockWidth = min(4, w - i);
+                int blockHeight = min(4, h - j);
+                for (int x = 0; x < blockWidth; x++) {
+                    for (int y = 0; y < blockHeight; y++) {
+                        float v = array[blockStart + (y * w) + x];
+                        if (!isnan(v)) {
+                            validCount++;
+                            sum += v;
+                        }
+                    }
+                }
+
+                // Only process blocks which have at least one valid value AND at least one NaN. All-NaN blocks won't affect ZFP compression
+                if (validCount && validCount != blockWidth * blockHeight) {
+                    float average = sum / validCount;
+                    for (int x = 0; x < blockWidth; x++) {
+                        for (int y = 0; y < blockHeight; y++) {
+                            float v = array[blockStart + (y * w) + x];
+                            if (isnan(v)) {
+                                array[blockStart + (y * w) + x] = average;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     return encodedArray;
 }

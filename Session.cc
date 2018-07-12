@@ -350,7 +350,8 @@ void Session::onSetImageView(const SetImageView& message, uint64_t requestId) {
                         int subsetElementEnd = subsetRowEnd * rowLength;
 
                         size_t compressedSize;
-                        nanEncodings[i] = getNanEncodings(imageData, subsetElementStart, subsetElementEnd - subsetElementStart);
+                        // nanEncodings[i] = getNanEncodingsSimple(imageData, subsetElementStart, subsetElementEnd - subsetElementStart);
+                        nanEncodings[i] = getNanEncodingsBlock(imageData, subsetElementStart, rowLength, subsetRowEnd - subsetRowStart);
                         compress(imageData, subsetElementStart, compressionBuffer, compressedSize, rowLength, subsetRowEnd - subsetRowStart, precision);
                         return compressedSize;
                     }));
