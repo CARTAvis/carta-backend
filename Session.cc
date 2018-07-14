@@ -264,6 +264,7 @@ void Session::onFileInfoRequest(const FileInfoRequest& request, uint64_t request
 
 void Session::onOpenFile(const OpenFile& message, uint64_t requestId) {
     OpenFileAck ack;
+    ack.set_file_id(message.file_id());
     auto fileInfo = ack.mutable_file_info();
     auto fileInfoExtended = ack.mutable_file_info_extended();
     string errMessage;
