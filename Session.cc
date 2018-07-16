@@ -234,7 +234,7 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
 }
 
 // CARTA ICD implementation
-void Session::onRegisterViewer(const RegisterViewer& message, uint64_t requestId) {
+void Session::onRegisterViewer(const RegisterViewer& message, uint32_t requestId) {
     apiKey = message.api_key();
     RegisterViewerAck ackMessage;
     ackMessage.set_success(true);
@@ -242,7 +242,7 @@ void Session::onRegisterViewer(const RegisterViewer& message, uint64_t requestId
     sendEvent("REGISTER_VIEWER_ACK", requestId, ackMessage);
 }
 
-void Session::onFileListRequest(const FileListRequest& request, uint64_t requestId) {
+void Session::onFileListRequest(const FileListRequest& request, uint32_t requestId) {
     string folder = request.directory();
     if (folder.length() > 1 && folder[0] == '/') {
         folder = folder.substr(1);
@@ -251,7 +251,7 @@ void Session::onFileListRequest(const FileListRequest& request, uint64_t request
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
 }
 
-void Session::onFileInfoRequest(const FileInfoRequest& request, uint64_t requestId) {
+void Session::onFileInfoRequest(const FileInfoRequest& request, uint32_t requestId) {
     FileInfoResponse response;
     auto fileInfo = response.mutable_file_info();
     auto fileInfoExtended = response.mutable_file_info_extended();
@@ -262,7 +262,7 @@ void Session::onFileInfoRequest(const FileInfoRequest& request, uint64_t request
     sendEvent("FILE_INFO_RESPONSE", requestId, response);
 }
 
-void Session::onOpenFile(const OpenFile& message, uint64_t requestId) {
+void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
     OpenFileAck ack;
     ack.set_file_id(message.file_id());
     auto fileInfo = ack.mutable_file_info();
@@ -304,7 +304,16 @@ void Session::onOpenFile(const OpenFile& message, uint64_t requestId) {
     }
 }
 
-void Session::onSetImageView(const SetImageView& message, uint64_t requestId) {
+void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
+    auto id = message.file_id();
+    if (id == -1) {
+        frames.clear();
+    } else if (frames.count(id)) {
+        frames[id].reset();
+    }
+}
+
+void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
     RasterImageData rasterImageData;
     // Check if frame is loaded
     if (frames.count(message.file_id())) {

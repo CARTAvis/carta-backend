@@ -16,6 +16,7 @@
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
 #include <boost/filesystem.hpp>
+#include <carta-protobuf/close_file.pb.h>
 #include "proto/regionStatsRequest.pb.h"
 #include "proto/regionReadResponse.pb.h"
 
@@ -62,11 +63,12 @@ public:
             ctpl::thread_pool& serverThreadPool,
             bool verbose = false);
     // CARTA ICD
-    void onRegisterViewer(const CARTA::RegisterViewer& message, uint64_t requestId);
-    void onFileListRequest(const CARTA::FileListRequest& request, uint64_t requestId);
-    void onFileInfoRequest(const CARTA::FileInfoRequest& request, uint64_t requestId);
-    void onOpenFile(const CARTA::OpenFile& message, uint64_t requestId);
-    void onSetImageView(const CARTA::SetImageView& message, uint64_t requestId);
+    void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
+    void onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId);
+    void onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t requestId);
+    void onOpenFile(const CARTA::OpenFile& message, uint32_t requestId);
+    void onCloseFile(const CARTA::CloseFile& message, uint32_t requestId);
+    void onSetImageView(const CARTA::SetImageView& message, uint32_t requestId);
     ~Session();
 
 protected:

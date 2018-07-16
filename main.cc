@@ -11,6 +11,7 @@
 #include <regex>
 #include <fstream>
 #include <iostream>
+#include <carta-protobuf/close_file.pb.h>
 #include "ctpl.h"
 #include "Session.h"
 
@@ -135,6 +136,12 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
                 CARTA::SetImageView message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onSetImageView(message, requestId);
+                }
+            }
+            else if (eventName == "CLOSE_FILE") {
+                CARTA::CloseFile message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onCloseFile(message, requestId);
                 }
             }
             else {
