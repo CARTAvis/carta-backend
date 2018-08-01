@@ -314,32 +314,51 @@ void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
 }
 
 void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
-    RasterImageData rasterImageData;
     // Check if frame is loaded
+    compressionType = message.compression_type();
+    compressionQuality = message.compression_quality();
+    numSubsets = message.num_subsets();
+
     if (frames.count(message.file_id())) {
         auto& frame = frames[message.file_id()];
-        auto imageData = frame->getImageData(message.image_bounds(), message.mip());
+        if (!frame->setBounds(message.image_bounds(), message.mip())) {
+            // TODO: Error handling on bounds
+        }
+        sendImageData(message.file_id(), requestId);
+    } else {
+        // TODO: error handling
+    }
+
+}
+
+void Session::sendImageData(int fileId, uint32_t requestId) {
+    if (frames.count(fileId)) {
+        RasterImageData rasterImageData;
+        auto& frame = frames[fileId];
+        auto imageData = frame->getImageData();
         // Check if image data is valid
         if (!imageData.empty()) {
-            rasterImageData.set_file_id(message.file_id());
+            rasterImageData.set_file_id(fileId);
             rasterImageData.set_stokes(frame->currentStokes());
             rasterImageData.set_channel(frame->currentChannel());
-            rasterImageData.set_mip(message.mip());
+            rasterImageData.set_mip(frame->currentMip());
             // Copy over image bounds
-            rasterImageData.mutable_image_bounds()->set_x_min(message.image_bounds().x_min());
-            rasterImageData.mutable_image_bounds()->set_x_max(message.image_bounds().x_max());
-            rasterImageData.mutable_image_bounds()->set_y_min(message.image_bounds().y_min());
-            rasterImageData.mutable_image_bounds()->set_y_max(message.image_bounds().y_max());
+            auto imageBounds = frame->currentBounds();
+            auto mip = frame->currentMip();
+            rasterImageData.mutable_image_bounds()->set_x_min(imageBounds.x_min());
+            rasterImageData.mutable_image_bounds()->set_x_max(imageBounds.x_max());
+            rasterImageData.mutable_image_bounds()->set_y_min(imageBounds.y_min());
+            rasterImageData.mutable_image_bounds()->set_y_max(imageBounds.y_max());
 
-            if (message.compression_type() == CompressionType::NONE) {
+            if (compressionType == CompressionType::NONE) {
                 rasterImageData.set_compression_type(CompressionType::NONE);
                 rasterImageData.set_compression_quality(0);
                 rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
-            } else if (message.compression_type() == CompressionType::ZFP) {
-                int numSubsets = min((int) message.num_subsets(), MAX_SUBSETS);
-                int precision = lround(message.compression_quality());
-                auto rowLength = (message.image_bounds().x_max() - message.image_bounds().x_min()) / message.mip();
-                auto numRows = (message.image_bounds().y_max() - message.image_bounds().y_min()) / message.mip();
+            } else if (compressionType == CompressionType::ZFP) {
+
+                int precision = lround(compressionQuality);
+                auto rowLength = (imageBounds.x_max() - imageBounds.x_min()) / mip;
+                auto numRows = (imageBounds.y_max() - imageBounds.y_min()) / mip;
                 rasterImageData.set_compression_type(CompressionType::ZFP);
                 rasterImageData.set_compression_quality(precision);
 
@@ -348,12 +367,13 @@ void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
                 vector<future<size_t>> futureSizes;
 
                 auto tStartCompress = chrono::high_resolution_clock::now();
-                for (auto i = 0; i < numSubsets; i++) {
+                int N = min(numSubsets, MAX_SUBSETS);;
+                for (auto i = 0; i < N; i++) {
                     auto& compressionBuffer = compressionBuffers[i];
-                    futureSizes.push_back(threadPool.push([&nanEncodings, &imageData, &compressionBuffer, numRows, numSubsets, rowLength, i, precision](int) {
-                        int subsetRowStart = i * (numRows / numSubsets);
-                        int subsetRowEnd = (i + 1) * (numRows / numSubsets);
-                        if (i == numSubsets - 1) {
+                    futureSizes.push_back(threadPool.push([&nanEncodings, &imageData, &compressionBuffer, numRows, N, rowLength, i, precision](int) {
+                        int subsetRowStart = i * (numRows / N);
+                        int subsetRowEnd = (i + 1) * (numRows / N);
+                        if (i == N - 1) {
                             subsetRowEnd = numRows;
                         }
                         int subsetElementStart = subsetRowStart * rowLength;
@@ -394,10 +414,28 @@ void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
             // Send completed event to client
             sendEvent("RASTER_IMAGE_DATA", requestId, rasterImageData);
         }
+    }
+}
+
+void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId) {
+    if (frames.count(message.file_id())) {
+        auto& frame = frames[message.file_id()];
+        if (!frame->setChannels(message.channel(), message.stokes())) {
+            // TODO: Error handling on bounds
+        }
+        // Send updated histogram
+        RegionHistogramData histogramMessage;
+        histogramMessage.set_file_id(message.file_id());
+        histogramMessage.set_stokes(frames[message.file_id()]->currentStokes());
+        // -1 corresponds to the entire current XY plane
+        histogramMessage.set_region_id(-1);
+        histogramMessage.mutable_histograms()->AddAllocated(new Histogram(frames[message.file_id()]->currentHistogram()));
+        sendEvent("REGION_HISTOGRAM_DATA", 0, histogramMessage);
+
+        sendImageData(message.file_id(), requestId);
     } else {
         // TODO: error handling
     }
-
 }
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message

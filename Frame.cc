@@ -110,6 +110,25 @@ bool Frame::setChannels(int newChannel, int newStokes) {
     return true;
 }
 
+bool Frame::setBounds(CARTA::ImageBounds imageBounds, int newMip) {
+    if (!valid) {
+        return false;
+    }
+
+    const int x = imageBounds.x_min();
+    const int y = imageBounds.y_min();
+    const int reqHeight = imageBounds.y_max() - imageBounds.y_min();
+    const int reqWidth = imageBounds.x_max() - imageBounds.x_min();
+
+    if (height < y + reqHeight || width < x + reqWidth) {
+        return false;
+    }
+
+    bounds = imageBounds;
+    mip = newMip;
+    return true;
+}
+
 bool Frame::loadStats() {
     if (!valid) {
         log(uuid, "No file loaded");
@@ -374,23 +393,15 @@ bool Frame::loadStats() {
     return true;
 }
 
-int Frame::currentStokes() {
-    return stokesIndex;
-}
-
-int Frame::currentChannel() {
-    return channelIndex;
-}
-
-vector<float> Frame::getImageData(CARTA::ImageBounds imageBounds, int mip, bool meanFilter) {
+vector<float> Frame::getImageData(bool meanFilter) {
     if (!valid) {
         return vector<float>();
     }
 
-    const int x = imageBounds.x_min();
-    const int y = imageBounds.y_min();
-    const int reqHeight = imageBounds.y_max() - imageBounds.y_min();
-    const int reqWidth = imageBounds.x_max() - imageBounds.x_min();
+    const int x = bounds.x_min();
+    const int y = bounds.y_min();
+    const int reqHeight = bounds.y_max() - bounds.y_min();
+    const int reqWidth = bounds.x_max() - bounds.x_min();
 
     if (height < y + reqHeight || width < x + reqWidth) {
         return vector<float>();
@@ -479,4 +490,21 @@ CARTA::Histogram Frame::currentHistogram() {
     *histogram.mutable_bins() = {currentStats.histogramBins.begin(), currentStats.histogramBins.end()};
 
     return histogram;
+}
+
+
+int Frame::currentStokes() {
+    return stokesIndex;
+}
+
+int Frame::currentChannel() {
+    return channelIndex;
+}
+
+int Frame::currentMip() {
+    return mip;
+}
+
+CARTA::ImageBounds Frame::currentBounds() {
+    return bounds;
 }

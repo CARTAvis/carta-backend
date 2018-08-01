@@ -15,8 +15,9 @@
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
-#include <boost/filesystem.hpp>
+#include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/close_file.pb.h>
+#include <boost/filesystem.hpp>
 #include "proto/regionStatsRequest.pb.h"
 #include "proto/regionReadResponse.pb.h"
 
@@ -54,6 +55,9 @@ protected:
     ctpl::thread_pool& threadPool;
     float rateSum;
     int rateCount;
+    CARTA::CompressionType compressionType;
+    float compressionQuality;
+    int numSubsets;
 
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
@@ -69,6 +73,7 @@ public:
     void onOpenFile(const CARTA::OpenFile& message, uint32_t requestId);
     void onCloseFile(const CARTA::CloseFile& message, uint32_t requestId);
     void onSetImageView(const CARTA::SetImageView& message, uint32_t requestId);
+    void onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId);
     ~Session();
 
 protected:
@@ -77,6 +82,7 @@ protected:
     bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const std::string folder, const std::string filename, std::string hdu, std::string& message);
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
+    void sendImageData(int fileId, uint32_t requestId);
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
 };
 

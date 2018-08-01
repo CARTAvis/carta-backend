@@ -5,13 +5,9 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/program_options.hpp>
-#include <proto/fileLoadRequest.pb.h>
-#include <proto/regionReadRequest.pb.h>
-#include <proto/profileRequest.pb.h>
 #include <regex>
 #include <fstream>
 #include <iostream>
-#include <carta-protobuf/close_file.pb.h>
 #include "ctpl.h"
 #include "Session.h"
 
@@ -132,16 +128,22 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
                     session->onOpenFile(message, requestId);
                 }
             }
+            else if (eventName == "CLOSE_FILE") {
+                CARTA::CloseFile message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onCloseFile(message, requestId);
+                }
+            }
             else if (eventName == "SET_IMAGE_VIEW") {
                 CARTA::SetImageView message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onSetImageView(message, requestId);
                 }
             }
-            else if (eventName == "CLOSE_FILE") {
-                CARTA::CloseFile message;
+            else if (eventName == "SET_IMAGE_CHANNELS") {
+                CARTA::SetImageChannels message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onCloseFile(message, requestId);
+                    session->onSetImageChannels(message, requestId);
                 }
             }
             else {

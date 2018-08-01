@@ -29,6 +29,8 @@ private:
     int depth;
     int stokes;
     int dimensions;
+    CARTA::ImageBounds bounds;
+    int mip;
     std::vector<float> channelCache;
     std::vector<float> zProfileCache;
     std::vector<int> zProfileCoords;
@@ -39,11 +41,15 @@ private:
 
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = 0);
+    bool setBounds(CARTA::ImageBounds imageBounds, int newMip);
     bool setChannels(int newChannel, int newStokes);
     bool loadStats();
     bool isValid();
     int currentStokes();
     int currentChannel();
-    std::vector<float> getImageData(CARTA::ImageBounds imageBounds, int mip, bool meanFilter = true);
+    CARTA::ImageBounds currentBounds();
+    int currentMip();
+
+    std::vector<float> getImageData(bool meanFilter = true);
     CARTA::Histogram currentHistogram();
 };
