@@ -31,7 +31,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         dataSets.clear();
         dataSets["main"] = dataSet;
 
-        loadStats();
+        loadStats(false);
 
         // Swizzled data loaded if it exists. Used for Z-profiles and region stats
         if (H5Lexists(hduGroup.getId(), "SwizzledData", 0)) {
@@ -129,7 +129,7 @@ bool Frame::setBounds(CARTA::ImageBounds imageBounds, int newMip) {
     return true;
 }
 
-bool Frame::loadStats() {
+bool Frame::loadStats(bool loadPercentiles) {
     if (!valid) {
         log(uuid, "No file loaded");
         return false;
@@ -327,64 +327,66 @@ bool Frame::loadStats() {
             log(uuid, "Missing Histograms group");
             return false;
         }
-        if (H5Lexists(statsGroup.getId(), "PERCENTILES", 0) && H5Lexists(hduGroup.getId(), "PERCENTILE_RANKS", 0)) {
-            auto dataSetPercentiles = statsGroup.openDataSet("PERCENTILES");
-            auto dataSetPercentilesRank = hduGroup.openDataSet("PERCENTILE_RANKS");
 
-            auto dataSpacePercentiles = dataSetPercentiles.getSpace();
-            vector<hsize_t> dims(dataSpacePercentiles.getSimpleExtentNdims(), 0);
-            dataSpacePercentiles.getSimpleExtentDims(dims.data(), NULL);
-            auto dataSpaceRank = dataSetPercentilesRank.getSpace();
-            vector<hsize_t> dimsRanks(dataSpaceRank.getSimpleExtentNdims(), 0);
-            dataSpaceRank.getSimpleExtentDims(dimsRanks.data(), NULL);
+        if (loadPercentiles) {
+            if (H5Lexists(statsGroup.getId(), "PERCENTILES", 0) && H5Lexists(hduGroup.getId(), "PERCENTILE_RANKS", 0)) {
+                auto dataSetPercentiles = statsGroup.openDataSet("PERCENTILES");
+                auto dataSetPercentilesRank = hduGroup.openDataSet("PERCENTILE_RANKS");
 
-            auto numRanks = dimsRanks[0];
-            vector<float> ranks(numRanks);
-            dataSetPercentilesRank.read(ranks.data(), PredType::NATIVE_FLOAT);
+                auto dataSpacePercentiles = dataSetPercentiles.getSpace();
+                vector<hsize_t> dims(dataSpacePercentiles.getSimpleExtentNdims(), 0);
+                dataSpacePercentiles.getSimpleExtentDims(dims.data(), NULL);
+                auto dataSpaceRank = dataSetPercentilesRank.getSpace();
+                vector<hsize_t> dimsRanks(dataSpaceRank.getSimpleExtentNdims(), 0);
+                dataSpaceRank.getSimpleExtentDims(dimsRanks.data(), NULL);
 
-            if (dimensions == 2 && dims.size() == 1 && dims[0] == numRanks) {
-                vector<float> vals(numRanks);
-                dataSetPercentiles.read(vals.data(), PredType::NATIVE_FLOAT);
-                channelStats[0][0].percentiles = vals;
-                channelStats[0][0].percentileRanks = ranks;
-            }
-                // 3D cubes
-            else if (dimensions == 3 && dims.size() == 2 && dims[0] == depth && dims[1] == numRanks) {
-                vector<float> vals(depth * numRanks);
-                dataSetPercentiles.read(vals.data(), PredType::NATIVE_FLOAT);
+                auto numRanks = dimsRanks[0];
+                vector<float> ranks(numRanks);
+                dataSetPercentilesRank.read(ranks.data(), PredType::NATIVE_FLOAT);
 
-                for (auto i = 0; i < depth; i++) {
-                    channelStats[0][i].percentileRanks = ranks;
-                    channelStats[0][i].percentiles.resize(numRanks);
-                    for (auto j = 0; j < numRanks; j++) {
-                        channelStats[0][i].percentiles[j] = vals[i * numRanks + j];
+                if (dimensions == 2 && dims.size() == 1 && dims[0] == numRanks) {
+                    vector<float> vals(numRanks);
+                    dataSetPercentiles.read(vals.data(), PredType::NATIVE_FLOAT);
+                    channelStats[0][0].percentiles = vals;
+                    channelStats[0][0].percentileRanks = ranks;
+                }
+                    // 3D cubes
+                else if (dimensions == 3 && dims.size() == 2 && dims[0] == depth && dims[1] == numRanks) {
+                    vector<float> vals(depth * numRanks);
+                    dataSetPercentiles.read(vals.data(), PredType::NATIVE_FLOAT);
+
+                    for (auto i = 0; i < depth; i++) {
+                        channelStats[0][i].percentileRanks = ranks;
+                        channelStats[0][i].percentiles.resize(numRanks);
+                        for (auto j = 0; j < numRanks; j++) {
+                            channelStats[0][i].percentiles[j] = vals[i * numRanks + j];
+                        }
                     }
                 }
-            }
-                // 4D cubes
-            else if (dimensions == 4 && dims.size() == 3 && dims[0] == stokes && dims[1] == depth && dims[2] == numRanks) {
-                vector<float> vals(stokes * depth * numRanks);
-                dataSetPercentiles.read(vals.data(), PredType::NATIVE_FLOAT);
+                    // 4D cubes
+                else if (dimensions == 4 && dims.size() == 3 && dims[0] == stokes && dims[1] == depth && dims[2] == numRanks) {
+                    vector<float> vals(stokes * depth * numRanks);
+                    dataSetPercentiles.read(vals.data(), PredType::NATIVE_FLOAT);
 
-                for (auto i = 0; i < stokes; i++) {
-                    for (auto j = 0; j < depth; j++) {
-                        auto& stats = channelStats[i][j];
-                        stats.percentiles.resize(numRanks);
-                        for (auto k = 0; k < numRanks; k++) {
-                            stats.percentiles[k] = vals[(i * depth + j) * numRanks + k];
+                    for (auto i = 0; i < stokes; i++) {
+                        for (auto j = 0; j < depth; j++) {
+                            auto& stats = channelStats[i][j];
+                            stats.percentiles.resize(numRanks);
+                            for (auto k = 0; k < numRanks; k++) {
+                                stats.percentiles[k] = vals[(i * depth + j) * numRanks + k];
+                            }
+                            stats.percentileRanks = ranks;
                         }
-                        stats.percentileRanks = ranks;
                     }
+                } else {
+                    log(uuid, "Missing Percentiles datasets");
+                    return false;
                 }
             } else {
-                log(uuid, "Missing Percentiles datasets");
+                log(uuid, "Missing Percentiles group");
                 return false;
             }
-        } else {
-            log(uuid, "Missing Percentiles group");
-            return false;
         }
-
     } else {
         log(uuid, "Missing Statistics group");
         return false;
@@ -485,13 +487,12 @@ CARTA::Histogram Frame::currentHistogram() {
     // Create histogram object
     auto& currentStats = channelStats[stokesIndex][channelIndex];
     histogram.set_num_bins(currentStats.histogramBins.size());
-    histogram.set_bin_width((currentStats.maxVal - currentStats.minVal)/currentStats.histogramBins.size());
-    histogram.set_first_bin_center(currentStats.minVal + histogram.bin_width()/2.0);
+    histogram.set_bin_width((currentStats.maxVal - currentStats.minVal) / currentStats.histogramBins.size());
+    histogram.set_first_bin_center(currentStats.minVal + histogram.bin_width() / 2.0);
     *histogram.mutable_bins() = {currentStats.histogramBins.begin(), currentStats.histogramBins.end()};
 
     return histogram;
 }
-
 
 int Frame::currentStokes() {
     return stokesIndex;

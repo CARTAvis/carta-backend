@@ -43,7 +43,7 @@ public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = 0);
     bool setBounds(CARTA::ImageBounds imageBounds, int newMip);
     bool setChannels(int newChannel, int newStokes);
-    bool loadStats();
+    bool loadStats(bool loadPercentiles = false);
     bool isValid();
     int currentStokes();
     int currentChannel();
