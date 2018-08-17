@@ -84,5 +84,6 @@ protected:
     bool checkPermissionForEntry(std::string entry);
     void sendImageData(int fileId, uint32_t requestId);
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
+    void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
 

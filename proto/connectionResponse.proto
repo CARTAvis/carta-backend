@@ -1,8 +1,0 @@
-syntax = "proto3";
-package Responses;
-
-// Response after client connects to server
-message ConnectionResponse {
-    bool success = 1;
-    repeated string available_files = 2;
-}

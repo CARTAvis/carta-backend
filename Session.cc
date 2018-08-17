@@ -1,6 +1,7 @@
 #include "Session.h"
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/error.pb.h>
 
 using namespace H5;
 using namespace std;
@@ -109,6 +110,7 @@ FileListResponse Session::getFileList(string folder) {
     }
     catch (const fs::filesystem_error& ex) {
         fmt::print("Error: {}\n", ex.what());
+        sendLogEvent(ex.what(), {"file-list"}, CARTA::ErrorSeverity::ERROR);
         fileList.set_success(false);
         fileList.set_message(ex.what());
         return fileList;
@@ -402,11 +404,13 @@ void Session::sendImageData(int fileId, uint32_t requestId) {
                 }
 
                 if (verboseLogging) {
-                    fmt::print("Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s\n",
+                    string compressionInfo = fmt::format("Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s\n",
                                numRows * rowLength * sizeof(float) / 1e3,
                                accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
                                1e-3 * dtCompress,
                                (float) (numRows * rowLength) / dtCompress);
+                    fmt::print(compressionInfo);
+                    sendLogEvent(compressionInfo, {"zfp"}, CARTA::ErrorSeverity::DEBUG);
                 }
             } else {
                 // TODO: error handling for SZ
@@ -451,4 +455,12 @@ void Session::sendEvent(string eventName, u_int64_t eventId, google::protobuf::M
     memcpy(binaryPayloadCache.data() + eventNameLength, &eventId, 4);
     message.SerializeToArray(binaryPayloadCache.data() + eventNameLength + 8, messageLength);
     socket->send(binaryPayloadCache.data(), requiredSize, uWS::BINARY);
+}
+
+void Session::sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity) {
+    CARTA::ErrorData errorData;
+    errorData.set_message(message);
+    errorData.set_severity(severity);
+    *errorData.mutable_tags() = {tags.begin(), tags.end()};
+    sendEvent("ERROR_DATA", 0, errorData);
 }
