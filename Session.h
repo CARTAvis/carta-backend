@@ -18,15 +18,12 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/close_file.pb.h>
 #include <boost/filesystem.hpp>
-#include "proto/regionStatsRequest.pb.h"
-#include "proto/regionReadResponse.pb.h"
 
 #include "compression.h"
 #include "Frame.h"
 #include "ctpl.h"
 
 #define MAX_SUBSETS 8
-typedef Requests::RegionStatsRequest::ShapeType RegionShapeType;
 
 struct RegionStats {
     float minVal = std::numeric_limits<float>::max();
