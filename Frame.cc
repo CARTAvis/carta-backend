@@ -472,14 +472,14 @@ CARTA::Histogram Frame::currentHistogram() {
         stats.mean = sum / max(count, 1);
         int N = int(max(sqrt(width * height), 2.0));
         stats.histogramBins.resize(N, 0);
-        float binWidth = (stats.maxVal / stats.minVal) / N;
+        float binWidth = (stats.maxVal - stats.minVal) / N;
 
         for (auto i = 0; i < width * height; i++) {
             auto v = channelCache[i];
             if (isnan(v)) {
                 continue;
             }
-            int bin = min((int) ((v - minVal) / binWidth), N - 1);
+            int bin = max(min((int) ((v - minVal) / binWidth), N - 1), 0);
             stats.histogramBins[bin]++;
         }
     }
