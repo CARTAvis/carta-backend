@@ -18,12 +18,16 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/close_file.pb.h>
 #include <boost/filesystem.hpp>
+#include <carta-protobuf/set_cursor.pb.h>
 
 #include "compression.h"
 #include "Frame.h"
 #include "ctpl.h"
+#include "cmake-build-debug/carta-protobuf/region_requirements.pb.h"
+#include "cmake-build-debug/carta-protobuf/spatial_profile.pb.h"
 
 #define MAX_SUBSETS 8
+#define CURSOR_REGION_ID 0
 
 struct RegionStats {
     float minVal = std::numeric_limits<float>::max();
@@ -34,6 +38,15 @@ struct RegionStats {
     int validCount = 0;
 };
 
+struct PointRegion {
+    float x;
+    float y;
+};
+
+struct SpatialRequirements {
+    // map of regionId to list of required spatial profiles
+    std::map<int, std::vector<std::string>> profiles;
+};
 
 class Session {
 public:
@@ -55,6 +68,9 @@ protected:
     CARTA::CompressionType compressionType;
     float compressionQuality;
     int numSubsets;
+    PointRegion cursorPosition;
+    int cursorFileId;
+    std::map<int, SpatialRequirements> spatialRequirements;
 
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
@@ -71,6 +87,8 @@ public:
     void onCloseFile(const CARTA::CloseFile& message, uint32_t requestId);
     void onSetImageView(const CARTA::SetImageView& message, uint32_t requestId);
     void onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId);
+    void onSetCursor(const CARTA::SetCursor& message, uint32_t requestId);
+    void onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId);
     ~Session();
 
 protected:
@@ -80,6 +98,7 @@ protected:
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
     void sendImageData(int fileId, uint32_t requestId);
+    void checkAndUpdateSpatialProfiles();
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };

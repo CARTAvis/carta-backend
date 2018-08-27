@@ -442,6 +442,41 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
     }
 }
 
+void Session::onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId) {
+    if (frames.count(message.file_id())) {
+        auto& fileRequrements = spatialRequirements[message.file_id()];
+        fileRequrements.profiles[message.region_id()] = vector<string>(message.spatial_profiles().begin(), message.spatial_profiles().end());
+        checkAndUpdateSpatialProfiles();
+    }
+}
+
+void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
+    cursorFileId = message.file_id();
+    cursorPosition.x = message.point().x();
+    cursorPosition.y = message.point().y();
+    checkAndUpdateSpatialProfiles();
+}
+
+void Session::checkAndUpdateSpatialProfiles() {
+    if (spatialRequirements.count(cursorFileId) && frames.count(cursorFileId)) {
+        auto& fileRequirements = spatialRequirements[cursorFileId];
+        auto& frame = frames[cursorFileId];
+        // Only handle cursor region for now
+        if (fileRequirements.profiles.count(CURSOR_REGION_ID)) {
+            auto& requiredProfiles = fileRequirements.profiles[CURSOR_REGION_ID];
+            if (requiredProfiles.size()) {
+                SpatialProfileData spatialProfileData;
+                spatialProfileData.set_file_id(cursorFileId);
+                spatialProfileData.set_region_id(CURSOR_REGION_ID);
+                spatialProfileData.set_x(cursorPosition.x);
+                spatialProfileData.set_y(cursorPosition.y);
+                spatialProfileData.set_channel(frame->currentChannel());
+                spatialProfileData.set_stokes(frame->currentStokes());
+            }
+        }
+    }
+}
+
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::sendEvent(string eventName, u_int64_t eventId, google::protobuf::MessageLite& message) {
     size_t eventNameLength = 32;
@@ -464,3 +499,4 @@ void Session::sendLogEvent(std::string message, std::vector<std::string> tags, C
     *errorData.mutable_tags() = {tags.begin(), tags.end()};
     sendEvent("ERROR_DATA", 0, errorData);
 }
+

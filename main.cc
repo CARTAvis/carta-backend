@@ -10,6 +10,8 @@
 #include <iostream>
 #include "ctpl.h"
 #include "Session.h"
+#include "cmake-build-debug/carta-protobuf/set_cursor.pb.h"
+#include "cmake-build-debug/carta-protobuf/region_requirements.pb.h"
 
 #define MAX_THREADS 4
 
@@ -144,6 +146,18 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
                 CARTA::SetImageChannels message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onSetImageChannels(message, requestId);
+                }
+            }
+            else if (eventName == "SET_CURSOR") {
+                CARTA::SetCursor message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onSetCursor(message, requestId);
+                }
+            }
+            else if (eventName == "SET_SPATIAL_REQUIREMENTS") {
+                CARTA::SetSpatialRequirements message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onSetSpatialRequirements(message, requestId);
                 }
             }
             else {
