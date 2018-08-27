@@ -9,9 +9,10 @@ using namespace CARTA;
 namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, map<string, vector<string>>& permissionsMap, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, map<string, vector<string>>& permissionsMap, bool enforcePermissions, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
     : uuid(uuid),
       permissionsMap(permissionsMap),
+      permissionsEnabled(enforcePermissions),
       baseFolder(folder),
       verboseLogging(verbose),
       threadPool(serverThreadPool),
@@ -25,6 +26,10 @@ Session::~Session() {
 }
 
 bool Session::checkPermissionForEntry(string entry) {
+    // skip permissions map if we're not running with permissions enabled
+    if (!permissionsEnabled) {
+        return true;
+    }
     if (!permissionsMap.count(entry)) {
         return false;
     }
@@ -36,6 +41,10 @@ bool Session::checkPermissionForEntry(string entry) {
 // This function is called recursively, starting with the requested directory, and then working
 // its way up parent directories until it finds a matching directory in the permissions map.
 bool Session::checkPermissionForDirectory(std::string prefix) {
+    // skip permissions map if we're not running with permissions enabled
+    if (!permissionsEnabled) {
+        return true;
+    }
     // Check for root folder permissions
     if (!prefix.length() || prefix == "/") {
         if (permissionsMap.count("/")) {
