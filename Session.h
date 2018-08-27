@@ -45,6 +45,7 @@ protected:
     uWS::WebSocket<uWS::SERVER>* socket;
     std::string apiKey;
     std::map<std::string, std::vector<std::string> >& permissionsMap;
+    bool permissionsEnabled;
     std::string baseFolder;
     std::vector<char> binaryPayloadCache;
     std::vector<char> compressionBuffers[MAX_SUBSETS];
@@ -60,6 +61,7 @@ public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
             boost::uuids::uuid uuid,
             std::map<std::string, std::vector<std::string>>& permissionsMap,
+            bool enforcePermissions,
             std::string folder,
             ctpl::thread_pool& serverThreadPool,
             bool verbose = false);

@@ -23,6 +23,7 @@ boost::uuids::random_generator uuid_gen;
 
 string baseFolder = "./";
 bool verbose = false;
+bool usePermissions;
 ctpl::thread_pool threadPool;
 
 // Reads a permissions file to determine which API keys are required to access various subdirectories
@@ -65,7 +66,7 @@ string getEventName(char* rawMessage) {
 
 // Called on connection. Creates session object and assigns UUID and API keys to it
 void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
-    sessions[ws] = new Session(ws, uuid_gen(), permissionsMap, baseFolder, threadPool, verbose);
+    sessions[ws] = new Session(ws, uuid_gen(), permissionsMap, usePermissions, baseFolder, threadPool, verbose);
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string timeString = ctime(&time);
     timeString = timeString.substr(0, timeString.length() - 1);
@@ -109,44 +110,37 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onRegisterViewer(message, requestId);
                 }
-            }
-            else if (eventName == "FILE_LIST_REQUEST") {
+            } else if (eventName == "FILE_LIST_REQUEST") {
                 CARTA::FileListRequest message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onFileListRequest(message, requestId);
                 }
-            }
-            else if (eventName == "FILE_INFO_REQUEST") {
+            } else if (eventName == "FILE_INFO_REQUEST") {
                 CARTA::FileInfoRequest message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onFileInfoRequest(message, requestId);
                 }
-            }
-            else if (eventName == "OPEN_FILE") {
+            } else if (eventName == "OPEN_FILE") {
                 CARTA::OpenFile message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onOpenFile(message, requestId);
                 }
-            }
-            else if (eventName == "CLOSE_FILE") {
+            } else if (eventName == "CLOSE_FILE") {
                 CARTA::CloseFile message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onCloseFile(message, requestId);
                 }
-            }
-            else if (eventName == "SET_IMAGE_VIEW") {
+            } else if (eventName == "SET_IMAGE_VIEW") {
                 CARTA::SetImageView message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onSetImageView(message, requestId);
                 }
-            }
-            else if (eventName == "SET_IMAGE_CHANNELS") {
+            } else if (eventName == "SET_IMAGE_CHANNELS") {
                 CARTA::SetImageChannels message;
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onSetImageChannels(message, requestId);
                 }
-            }
-            else {
+            } else {
                 fmt::print("Unknown event type {}\n", eventName);
             }
         }
@@ -162,6 +156,7 @@ int main(int argc, const char* argv[]) {
         desc.add_options()
             ("help", "produce help message")
             ("verbose", "display verbose logging")
+            ("permissions", "use a permissions file for determining access")
             ("port", po::value<int>(), "set server port")
             ("threads", po::value<int>(), "set thread pool count")
             ("folder", po::value<string>(), "set folder for data files");
@@ -176,6 +171,7 @@ int main(int argc, const char* argv[]) {
         }
 
         verbose = vm.count("verbose");
+        usePermissions = vm.count("permissions");
 
         int port = 3002;
         if (vm.count("port")) {
@@ -192,7 +188,9 @@ int main(int argc, const char* argv[]) {
             baseFolder = vm["folder"].as<string>();
         }
 
-        readPermissions("permissions.txt");
+        if (usePermissions) {
+            readPermissions("permissions.txt");
+        }
 
         Hub h;
         h.onMessage(&onMessage);
