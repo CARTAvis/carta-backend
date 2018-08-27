@@ -17,14 +17,14 @@
 #include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/close_file.pb.h>
-#include <boost/filesystem.hpp>
 #include <carta-protobuf/set_cursor.pb.h>
+#include <carta-protobuf/region_requirements.pb.h>
+#include <carta-protobuf/spatial_profile.pb.h>
+#include <boost/filesystem.hpp>
 
 #include "compression.h"
 #include "Frame.h"
 #include "ctpl.h"
-#include "cmake-build-debug/carta-protobuf/region_requirements.pb.h"
-#include "cmake-build-debug/carta-protobuf/spatial_profile.pb.h"
 
 #define MAX_SUBSETS 8
 #define CURSOR_REGION_ID 0
