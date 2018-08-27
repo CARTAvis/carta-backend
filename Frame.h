@@ -41,6 +41,12 @@ private:
 
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = 0);
+    int getWidth();
+    int getHeight();
+    int getDepth();
+    int getStokes();
+    int getDimensions();
+
     bool setBounds(CARTA::ImageBounds imageBounds, int newMip);
     bool setChannels(int newChannel, int newStokes);
     bool loadStats(bool loadPercentiles = false);

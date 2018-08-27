@@ -70,6 +70,26 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
     }
 }
 
+int Frame::getWidth() {
+    return width;
+}
+
+int Frame::getHeight() {
+    return height;
+}
+
+int Frame::getDepth() {
+    return depth;
+}
+
+int Frame::getStokes() {
+    return stokes;
+}
+
+int Frame::getDimensions() {
+    return dimensions;
+}
+
 bool Frame::isValid() {
     return valid;
 }

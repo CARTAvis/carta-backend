@@ -481,6 +481,61 @@ void Session::checkAndUpdateSpatialProfiles() {
                 spatialProfileData.set_y(cursorPosition.y);
                 spatialProfileData.set_channel(frame->currentChannel());
                 spatialProfileData.set_stokes(frame->currentStokes());
+
+                for (auto& profileCoordinate: requiredProfiles) {
+                    // check coordinate validity
+                    auto coordinateLength = profileCoordinate.length();
+                    if (!coordinateLength || coordinateLength > 2) {
+                        continue;
+                    }
+                    int requiredStokes = frame->currentStokes();
+
+                    // Parse Stokes character for files with multiple Stokes values
+                    int numStokes = frame->getStokes();
+                    if (coordinateLength == 2 && numStokes >= 2) {
+                        char stokesChar = profileCoordinate[0];
+                        if (stokesChar == 'I') {
+                            requiredStokes = 0;
+                        }
+                        else if (stokesChar == 'Q') {
+                            requiredStokes = 1;
+                        }
+                        else if (stokesChar == 'U' && numStokes >= 3) {
+                            requiredStokes = 2;
+                        }
+                        else if (stokesChar == 'V' && numStokes >= 4) {
+                            requiredStokes = 3;
+                        }
+                        else {
+                            // TODO: Error handling for invalid Stokes requests
+                        }
+                    }
+
+                    // Parse coordinate character
+                    char coordChar = profileCoordinate[coordinateLength-1];
+                    if (coordChar == 'x') {
+                        auto newProfile = spatialProfileData.add_profiles();
+                        newProfile->set_coordinate(profileCoordinate);
+                        newProfile->set_start(0);
+                        newProfile->set_end(frame->getWidth());
+                        auto profile = frame->getXProfile(spatialProfileData.y(), spatialProfileData.channel(), requiredStokes);
+                        *newProfile->mutable_values() = {profile.begin(), profile.end()};
+                    }
+                    else if (coordChar == 'y') {
+                        auto newProfile = spatialProfileData.add_profiles();
+                        newProfile->set_coordinate(profileCoordinate);
+                        newProfile->set_start(0);
+                        newProfile->set_end(frame->getHeight());
+                        auto profile = frame->getYProfile(spatialProfileData.x(), spatialProfileData.channel(), requiredStokes);
+                        *newProfile->mutable_values() = {profile.begin(), profile.end()};
+                    }
+                    else {
+                        // TODO: Error handling for invalid coordinate requests
+                    }
+                }
+
+                // Send required profiles
+                sendEvent("SPATIAL_PROFILE_DATA", 0, spatialProfileData);
             }
         }
     }
