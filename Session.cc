@@ -342,9 +342,13 @@ void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
 
 }
 
-void Session::sendImageData(int fileId, uint32_t requestId) {
+void Session::sendImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram) {
+    RasterImageData rasterImageData;
+    // Add histogram, if it exists
+    if (channelHistogram) {
+        rasterImageData.set_allocated_channel_histogram_data(channelHistogram);
+    }
     if (frames.count(fileId)) {
-        RasterImageData rasterImageData;
         auto& frame = frames[fileId];
         auto imageData = frame->getImageData();
         // Check if image data is valid
@@ -437,15 +441,15 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
             // TODO: Error handling on bounds
         }
         // Send updated histogram
-        RegionHistogramData histogramMessage;
-        histogramMessage.set_file_id(message.file_id());
-        histogramMessage.set_stokes(frames[message.file_id()]->currentStokes());
+        RegionHistogramData* histogramMessage = new RegionHistogramData();
+        histogramMessage->set_file_id(message.file_id());
+        histogramMessage->set_stokes(frames[message.file_id()]->currentStokes());
         // -1 corresponds to the entire current XY plane
-        histogramMessage.set_region_id(-1);
-        histogramMessage.mutable_histograms()->AddAllocated(new Histogram(frames[message.file_id()]->currentHistogram()));
-        sendEvent("REGION_HISTOGRAM_DATA", 0, histogramMessage);
-
-        sendImageData(message.file_id(), requestId);
+        histogramMessage->set_region_id(-1);
+        histogramMessage->mutable_histograms()->AddAllocated(new Histogram(frames[message.file_id()]->currentHistogram()));
+        //sendEvent("REGION_HISTOGRAM_DATA", 0, histogramMessage);
+        // Histogram message now managed by the image data object
+        sendImageData(message.file_id(), requestId, histogramMessage);
     } else {
         // TODO: error handling
     }
