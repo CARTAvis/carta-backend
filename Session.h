@@ -18,6 +18,7 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/close_file.pb.h>
 #include <boost/filesystem.hpp>
+#include <carta-protobuf/region_histogram.pb.h>
 
 #include "compression.h"
 #include "Frame.h"
@@ -81,7 +82,7 @@ protected:
     bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const std::string folder, const std::string filename, std::string hdu, std::string& message);
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
-    void sendImageData(int fileId, uint32_t requestId);
+    void sendImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram = nullptr);
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
