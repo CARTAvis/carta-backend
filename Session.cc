@@ -196,6 +196,9 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
                     extendedInfo->set_depth((N > 2) ? dims[N - 3] : 1);
                     extendedInfo->set_stokes((N > 3) ? dims[N - 4] : 1);
 
+
+                    string coordinateTypeX, coordinateTypeY, radeSys;
+
                     H5O_info_t groupInfo;
                     H5Oget_info(topLevelGroup.getId(), &groupInfo);
                     for (auto i = 0; i < groupInfo.num_attrs; i++) {
@@ -208,6 +211,16 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
                         if (typeClass == H5T_STRING) {
                             attr.read(attr.getStrType(), *headerEntry->mutable_value());
                             headerEntry->set_entry_type(EntryType::STRING);
+                            if (headerEntry->name() == "CTYPE1") {
+                                coordinateTypeX = headerEntry->value();
+                            }
+                            else if (headerEntry->name() == "CTYPE2") {
+                                coordinateTypeY = headerEntry->value();
+                            }
+                            else if (headerEntry->name() == "RADESYS") {
+                                radeSys = headerEntry->value();
+                            }
+
                         } else if (typeClass == H5T_INTEGER) {
                             int64_t valueInt;
                             DataType intType(PredType::NATIVE_INT64);
@@ -224,6 +237,42 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
                             *headerEntry->mutable_value() = fmt::format("{:f}", numericValue);
                         }
                     }
+
+                    // Basic computed info
+                    auto computedEntryName = extendedInfo->add_computed_entries();
+                    computedEntryName->set_name("Name");
+                    computedEntryName->set_entry_type(EntryType::STRING);
+                    computedEntryName->set_value(fileInfo->name());
+
+                    auto computedEntryShape = extendedInfo->add_computed_entries();
+                    computedEntryShape->set_name("Shape");
+                    computedEntryShape->set_entry_type(EntryType::STRING);
+                    string shapeString;
+                    if (N == 2) {
+                        shapeString = fmt::format("[{}, {}]", extendedInfo->width(), extendedInfo->height());
+                    }
+                    else if (N == 3) {
+                        shapeString = fmt::format("[{}, {}, {}]", extendedInfo->width(), extendedInfo->height(), extendedInfo->depth());
+                    }
+                    else if (N == 4) {
+                        shapeString = fmt::format("[{}, {}, {}, {}]", extendedInfo->width(), extendedInfo->height(), extendedInfo->depth(), extendedInfo->stokes());
+                    }
+                    computedEntryShape->set_value(shapeString);
+
+                    if (coordinateTypeX.length() && coordinateTypeY.length()) {
+                        auto computedEntryCoordniateType = extendedInfo->add_computed_entries();
+                        computedEntryCoordniateType->set_name("Coordinate type");
+                        computedEntryCoordniateType->set_entry_type(EntryType::STRING);
+                        computedEntryCoordniateType->set_value(fmt::format("{}, {}", coordinateTypeX, coordinateTypeY));
+                    }
+
+                    if (radeSys.length()) {
+                        auto computedEntryCelestialFrame = extendedInfo->add_computed_entries();
+                        computedEntryCelestialFrame->set_name("Celestial frame");
+                        computedEntryCelestialFrame->set_entry_type(EntryType::STRING);
+                        computedEntryCelestialFrame->set_value(radeSys);
+                    }
+
                 } else {
                     message = "File is missing DATA dataset";
                     return false;
@@ -467,7 +516,12 @@ void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
     cursorFileId = message.file_id();
     cursorPosition.x = message.point().x();
     cursorPosition.y = message.point().y();
-    checkAndUpdateSpatialProfiles();
+    if (message.has_spatial_requirements()) {
+        onSetSpatialRequirements(message.spatial_requirements(), requestId);
+    }
+    else {
+        checkAndUpdateSpatialProfiles();
+    }
 }
 
 void Session::checkAndUpdateSpatialProfiles() {
