@@ -41,6 +41,12 @@ private:
 
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = 0);
+    int getWidth();
+    int getHeight();
+    int getDepth();
+    int getStokes();
+    int getDimensions();
+
     bool setBounds(CARTA::ImageBounds imageBounds, int newMip);
     bool setChannels(int newChannel, int newStokes);
     bool loadStats(bool loadPercentiles = false);
@@ -51,5 +57,8 @@ public:
     int currentMip();
 
     std::vector<float> getImageData(bool meanFilter = true);
+    std::vector<float> getXProfile(int y, int profileChannel, int profileStokes, int startX = -1, int endX = -1);
+    std::vector<float> getYProfile(int x, int profileChannel, int profileStokes, int startY = -1, int endY = -1);
+    //std::vector<float> getZProfile(int x, int y, int profileStokes, int startZ = -1, int endZ = -1);
     CARTA::Histogram currentHistogram();
 };

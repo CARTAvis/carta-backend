@@ -17,6 +17,9 @@
 #include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/close_file.pb.h>
+#include <carta-protobuf/set_cursor.pb.h>
+#include <carta-protobuf/region_requirements.pb.h>
+#include <carta-protobuf/spatial_profile.pb.h>
 #include <boost/filesystem.hpp>
 #include <carta-protobuf/region_histogram.pb.h>
 
@@ -25,6 +28,7 @@
 #include "ctpl.h"
 
 #define MAX_SUBSETS 8
+#define CURSOR_REGION_ID 0
 
 struct RegionStats {
     float minVal = std::numeric_limits<float>::max();
@@ -35,6 +39,15 @@ struct RegionStats {
     int validCount = 0;
 };
 
+struct PointRegion {
+    float x;
+    float y;
+};
+
+struct SpatialRequirements {
+    // map of regionId to list of required spatial profiles
+    std::map<int, std::vector<std::string>> profiles;
+};
 
 class Session {
 public:
@@ -57,6 +70,9 @@ protected:
     CARTA::CompressionType compressionType;
     float compressionQuality;
     int numSubsets;
+    PointRegion cursorPosition;
+    int cursorFileId;
+    std::map<int, SpatialRequirements> spatialRequirements;
 
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
@@ -74,6 +90,8 @@ public:
     void onCloseFile(const CARTA::CloseFile& message, uint32_t requestId);
     void onSetImageView(const CARTA::SetImageView& message, uint32_t requestId);
     void onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId);
+    void onSetCursor(const CARTA::SetCursor& message, uint32_t requestId);
+    void onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId);
     ~Session();
 
 protected:
@@ -82,6 +100,7 @@ protected:
     bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const std::string folder, const std::string filename, std::string hdu, std::string& message);
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
+    void checkAndUpdateSpatialProfiles();
     void sendImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram = nullptr);
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);

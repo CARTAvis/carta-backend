@@ -70,8 +70,44 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
     }
 }
 
+int Frame::getWidth() {
+    return width;
+}
+
+int Frame::getHeight() {
+    return height;
+}
+
+int Frame::getDepth() {
+    return depth;
+}
+
+int Frame::getStokes() {
+    return stokes;
+}
+
+int Frame::getDimensions() {
+    return dimensions;
+}
+
 bool Frame::isValid() {
     return valid;
+}
+
+int Frame::currentStokes() {
+    return stokesIndex;
+}
+
+int Frame::currentChannel() {
+    return channelIndex;
+}
+
+int Frame::currentMip() {
+    return mip;
+}
+
+CARTA::ImageBounds Frame::currentBounds() {
+    return bounds;
 }
 
 bool Frame::setChannels(int newChannel, int newStokes) {
@@ -494,18 +530,76 @@ CARTA::Histogram Frame::currentHistogram() {
     return histogram;
 }
 
-int Frame::currentStokes() {
-    return stokesIndex;
+std::vector<float> Frame::getXProfile(int y, int profileChannel, int profileStokes, int startX, int endX) {
+    //check bounds
+    if (y < 0 || y > height -1 || profileChannel < 0 || profileChannel > depth -1 || profileStokes < 0 || profileStokes > stokes -1) {
+        return vector<float>();
+    }
+    else {
+        vector<float> profile(width);
+        // check to see whether the channel required is currently cached (common use case)
+        if ((profileChannel == channelIndex && profileStokes == stokesIndex) || dimensions == 2) {
+            // re-use existing cache
+            for (auto i = 0; i < width; i++) {
+                profile[i] = channelCache[y * width + i];
+            }
+        }
+        else {
+            // read profile from file
+            // Defines dimensions of hyperslab in 3D
+            vector<hsize_t> count = {1, 1, width};
+            vector<hsize_t> start = {profileChannel, y, 0};
+
+            // Append stokes parameter to hyperslab dimensions in 4D
+            if (dimensions == 4) {
+                count.insert(count.begin(), 1);
+                start.insert(start.begin(), profileStokes);
+            }
+
+            // Read data into memory space
+            hsize_t memDims[] = {width};
+            DataSpace memspace(1, memDims);
+            auto sliceDataSpace = dataSets["main"].getSpace();
+            sliceDataSpace.selectHyperslab(H5S_SELECT_SET, count.data(), start.data());
+            dataSets["main"].read(profile.data(), PredType::NATIVE_FLOAT, memspace, sliceDataSpace);
+        }
+        return profile;
+    }
 }
 
-int Frame::currentChannel() {
-    return channelIndex;
-}
+std::vector<float> Frame::getYProfile(int x, int profileChannel, int profileStokes, int startY, int endY) {
+    //check bounds
+    if (x < 0 || x > width -1 || profileChannel < 0 || profileChannel > depth -1 || profileStokes < 0 || profileStokes > stokes -1) {
+        return vector<float>();
+    }
+    else {
+        vector<float> profile(height);
+        // check to see whether the channel required is currently cached (common use case)
+        if ((profileChannel == channelIndex && profileStokes == stokesIndex) || dimensions == 2) {
+            // re-use existing cache
+            for (auto i = 0; i < height; i++) {
+                profile[i] = channelCache[i * width + x];
+            }
+        }
+        else {
+            // read profile from file
+            // Defines dimensions of hyperslab in 3D
+            vector<hsize_t> count = {1, height, 1};
+            vector<hsize_t> start = {profileChannel, 0, x};
 
-int Frame::currentMip() {
-    return mip;
-}
+            // Append stokes parameter to hyperslab dimensions in 4D
+            if (dimensions == 4) {
+                count.insert(count.begin(), 1);
+                start.insert(start.begin(), profileStokes);
+            }
 
-CARTA::ImageBounds Frame::currentBounds() {
-    return bounds;
+            // Read data into memory space
+            hsize_t memDims[] = {height};
+            DataSpace memspace(1, memDims);
+            auto sliceDataSpace = dataSets["main"].getSpace();
+            sliceDataSpace.selectHyperslab(H5S_SELECT_SET, count.data(), start.data());
+            dataSets["main"].read(profile.data(), PredType::NATIVE_FLOAT, memspace, sliceDataSpace);
+        }
+        return profile;
+    }
 }

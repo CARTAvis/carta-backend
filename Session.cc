@@ -196,6 +196,9 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
                     extendedInfo->set_depth((N > 2) ? dims[N - 3] : 1);
                     extendedInfo->set_stokes((N > 3) ? dims[N - 4] : 1);
 
+
+                    string coordinateTypeX, coordinateTypeY, radeSys;
+
                     H5O_info_t groupInfo;
                     H5Oget_info(topLevelGroup.getId(), &groupInfo);
                     for (auto i = 0; i < groupInfo.num_attrs; i++) {
@@ -208,6 +211,16 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
                         if (typeClass == H5T_STRING) {
                             attr.read(attr.getStrType(), *headerEntry->mutable_value());
                             headerEntry->set_entry_type(EntryType::STRING);
+                            if (headerEntry->name() == "CTYPE1") {
+                                coordinateTypeX = headerEntry->value();
+                            }
+                            else if (headerEntry->name() == "CTYPE2") {
+                                coordinateTypeY = headerEntry->value();
+                            }
+                            else if (headerEntry->name() == "RADESYS") {
+                                radeSys = headerEntry->value();
+                            }
+
                         } else if (typeClass == H5T_INTEGER) {
                             int64_t valueInt;
                             DataType intType(PredType::NATIVE_INT64);
@@ -224,6 +237,42 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
                             *headerEntry->mutable_value() = fmt::format("{:f}", numericValue);
                         }
                     }
+
+                    // Basic computed info
+                    auto computedEntryName = extendedInfo->add_computed_entries();
+                    computedEntryName->set_name("Name");
+                    computedEntryName->set_entry_type(EntryType::STRING);
+                    computedEntryName->set_value(fileInfo->name());
+
+                    auto computedEntryShape = extendedInfo->add_computed_entries();
+                    computedEntryShape->set_name("Shape");
+                    computedEntryShape->set_entry_type(EntryType::STRING);
+                    string shapeString;
+                    if (N == 2) {
+                        shapeString = fmt::format("[{}, {}]", extendedInfo->width(), extendedInfo->height());
+                    }
+                    else if (N == 3) {
+                        shapeString = fmt::format("[{}, {}, {}]", extendedInfo->width(), extendedInfo->height(), extendedInfo->depth());
+                    }
+                    else if (N == 4) {
+                        shapeString = fmt::format("[{}, {}, {}, {}]", extendedInfo->width(), extendedInfo->height(), extendedInfo->depth(), extendedInfo->stokes());
+                    }
+                    computedEntryShape->set_value(shapeString);
+
+                    if (coordinateTypeX.length() && coordinateTypeY.length()) {
+                        auto computedEntryCoordniateType = extendedInfo->add_computed_entries();
+                        computedEntryCoordniateType->set_name("Coordinate type");
+                        computedEntryCoordniateType->set_entry_type(EntryType::STRING);
+                        computedEntryCoordniateType->set_value(fmt::format("{}, {}", coordinateTypeX, coordinateTypeY));
+                    }
+
+                    if (radeSys.length()) {
+                        auto computedEntryCelestialFrame = extendedInfo->add_computed_entries();
+                        computedEntryCelestialFrame->set_name("Celestial frame");
+                        computedEntryCelestialFrame->set_entry_type(EntryType::STRING);
+                        computedEntryCelestialFrame->set_value(radeSys);
+                    }
+
                 } else {
                     message = "File is missing DATA dataset";
                     return false;
@@ -455,6 +504,101 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
     }
 }
 
+void Session::onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId) {
+    if (frames.count(message.file_id())) {
+        auto& fileRequrements = spatialRequirements[message.file_id()];
+        fileRequrements.profiles[message.region_id()] = vector<string>(message.spatial_profiles().begin(), message.spatial_profiles().end());
+        checkAndUpdateSpatialProfiles();
+    }
+}
+
+void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
+    cursorFileId = message.file_id();
+    cursorPosition.x = message.point().x();
+    cursorPosition.y = message.point().y();
+    if (message.has_spatial_requirements()) {
+        onSetSpatialRequirements(message.spatial_requirements(), requestId);
+    }
+    else {
+        checkAndUpdateSpatialProfiles();
+    }
+}
+
+void Session::checkAndUpdateSpatialProfiles() {
+    if (spatialRequirements.count(cursorFileId) && frames.count(cursorFileId)) {
+        auto& fileRequirements = spatialRequirements[cursorFileId];
+        auto& frame = frames[cursorFileId];
+        // Only handle cursor region for now
+        if (fileRequirements.profiles.count(CURSOR_REGION_ID)) {
+            auto& requiredProfiles = fileRequirements.profiles[CURSOR_REGION_ID];
+            if (requiredProfiles.size()) {
+                SpatialProfileData spatialProfileData;
+                spatialProfileData.set_file_id(cursorFileId);
+                spatialProfileData.set_region_id(CURSOR_REGION_ID);
+                spatialProfileData.set_x(cursorPosition.x);
+                spatialProfileData.set_y(cursorPosition.y);
+                spatialProfileData.set_channel(frame->currentChannel());
+                spatialProfileData.set_stokes(frame->currentStokes());
+
+                for (auto& profileCoordinate: requiredProfiles) {
+                    // check coordinate validity
+                    auto coordinateLength = profileCoordinate.length();
+                    if (!coordinateLength || coordinateLength > 2) {
+                        continue;
+                    }
+                    int requiredStokes = frame->currentStokes();
+
+                    // Parse Stokes character for files with multiple Stokes values
+                    int numStokes = frame->getStokes();
+                    if (coordinateLength == 2 && numStokes >= 2) {
+                        char stokesChar = profileCoordinate[0];
+                        if (stokesChar == 'I') {
+                            requiredStokes = 0;
+                        }
+                        else if (stokesChar == 'Q') {
+                            requiredStokes = 1;
+                        }
+                        else if (stokesChar == 'U' && numStokes >= 3) {
+                            requiredStokes = 2;
+                        }
+                        else if (stokesChar == 'V' && numStokes >= 4) {
+                            requiredStokes = 3;
+                        }
+                        else {
+                            // TODO: Error handling for invalid Stokes requests
+                        }
+                    }
+
+                    // Parse coordinate character
+                    char coordChar = profileCoordinate[coordinateLength-1];
+                    if (coordChar == 'x') {
+                        auto newProfile = spatialProfileData.add_profiles();
+                        newProfile->set_coordinate(profileCoordinate);
+                        newProfile->set_start(0);
+                        newProfile->set_end(frame->getWidth());
+                        auto profile = frame->getXProfile(spatialProfileData.y(), spatialProfileData.channel(), requiredStokes);
+                        *newProfile->mutable_values() = {profile.begin(), profile.end()};
+                    }
+                    else if (coordChar == 'y') {
+                        auto newProfile = spatialProfileData.add_profiles();
+                        newProfile->set_coordinate(profileCoordinate);
+                        newProfile->set_start(0);
+                        newProfile->set_end(frame->getHeight());
+                        auto profile = frame->getYProfile(spatialProfileData.x(), spatialProfileData.channel(), requiredStokes);
+                        *newProfile->mutable_values() = {profile.begin(), profile.end()};
+                    }
+                    else {
+                        // TODO: Error handling for invalid coordinate requests
+                    }
+                }
+
+                // Send required profiles
+                sendEvent("SPATIAL_PROFILE_DATA", 0, spatialProfileData);
+            }
+        }
+    }
+}
+
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::sendEvent(string eventName, u_int64_t eventId, google::protobuf::MessageLite& message) {
     size_t eventNameLength = 32;
@@ -477,3 +621,4 @@ void Session::sendLogEvent(std::string message, std::vector<std::string> tags, C
     *errorData.mutable_tags() = {tags.begin(), tags.end()};
     sendEvent("ERROR_DATA", 0, errorData);
 }
+

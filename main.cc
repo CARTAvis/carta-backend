@@ -140,7 +140,20 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
                 if (message.ParseFromArray(eventPayload, payloadSize)) {
                     session->onSetImageChannels(message, requestId);
                 }
-            } else {
+            }
+            else if (eventName == "SET_CURSOR") {
+                CARTA::SetCursor message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onSetCursor(message, requestId);
+                }
+            }
+            else if (eventName == "SET_SPATIAL_REQUIREMENTS") {
+                CARTA::SetSpatialRequirements message;
+                if (message.ParseFromArray(eventPayload, payloadSize)) {
+                    session->onSetSpatialRequirements(message, requestId);
+                }
+            }
+            else {
                 fmt::print("Unknown event type {}\n", eventName);
             }
         }
