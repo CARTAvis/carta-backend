@@ -39,13 +39,14 @@ RUN \
   git clone https://github.com/casacore/casacore.git && \
   mkdir -p casacore/build && cd casacore/build && \
   cmake .. -DUSE_FFTW3=ON -DUSE_HDF5=ON -DUSE_THREADS=ON -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo && \
-  make -j4 && make install && \
+  make && make install && \
   cd /root && rm -rf casacore
 
 # uWS
 RUN \
   cd /root && \
   git clone https://github.com/uNetworking/uWebSockets.git && \
+  cd uWebSockets && git checkout v0.14 && cd .. && \
   make default install -C uWebSockets && \
   rm -rf uWebSockets
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(hdf5_image_viewer)
+project(carta_backend)
 
 #set(CMAKE_CXX_COMPILER cc)
 set(CMAKE_CXX_STANDARD 11)
@@ -33,8 +33,8 @@ set(SOURCE_FILES
   AnimationQueue.cc
   util.cc)
 add_definitions(-DHAVE_HDF5)
-add_executable(hdf5_image_viewer ${SOURCE_FILES})
-target_link_libraries(hdf5_image_viewer ${LINK_LIBS})
+add_executable(carta_backend ${SOURCE_FILES})
+target_link_libraries(carta_backend ${LINK_LIBS})
 
 # Tests
 option(test "Build all tests." OFF)
