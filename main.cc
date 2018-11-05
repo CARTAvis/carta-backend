@@ -8,8 +8,13 @@
 #include <regex>
 #include <fstream>
 #include <iostream>
-#include "ctpl.h"
+#include <tuple>
+#include <tbb/concurrent_queue.h>
+#include <tbb/task_scheduler_init.h>
+#include "AnimationQueue.h"
 #include "Session.h"
+#include "OnMessageTask.h"
+#include "util.h"
 
 #define MAX_THREADS 4
 
@@ -17,14 +22,18 @@ using namespace std;
 using namespace uWS;
 namespace po = boost::program_options;
 
-map<WebSocket<SERVER>*, Session*> sessions;
-map<string, vector<string>> permissionsMap;
+using key_type = std::string;
+
+unordered_map<key_type, Session*> sessions;
+unordered_map<key_type, carta::AnimationQueue*> animationQueues;
+unordered_map<string, vector<string>> permissionsMap;
+unordered_map<key_type, tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>*> msgQueues;
 boost::uuids::random_generator uuid_gen;
+Hub h;
 
 string baseFolder = "./";
 bool verbose = false;
 bool usePermissions;
-ctpl::thread_pool threadPool;
 
 // Reads a permissions file to determine which API keys are required to access various subdirectories
 void readPermissions(string filename) {
@@ -52,45 +61,50 @@ void readPermissions(string filename) {
     }
 }
 
-// Looks for null termination in a char array to determine event names from message payloads
-string getEventName(char* rawMessage) {
-    int nullIndex = 0;
-    for (auto i = 0; i < 32; i++) {
-        if (!rawMessage[i]) {
-            nullIndex = i;
-            break;
-        }
-    }
-    return string(rawMessage, nullIndex);
-}
-
 // Called on connection. Creates session object and assigns UUID and API keys to it
 void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
-    sessions[ws] = new Session(ws, uuid_gen(), permissionsMap, usePermissions, baseFolder, threadPool, verbose);
+    ws->setUserData(new std::string(boost::uuids::to_string(uuid_gen())));
+    auto &uuid = *((std::string*)ws->getUserData());
+    uS::Async *outgoing = new uS::Async(h.getLoop());
+    outgoing->setData(&uuid);
+    outgoing->start(
+        [](uS::Async *async) -> void {
+            auto uuid = *((std::string*)async->getData());
+            sessions[uuid]->sendPendingMessages();
+        });
+    sessions[uuid] = new Session(ws, uuid, permissionsMap, usePermissions, baseFolder, outgoing, verbose);
+    animationQueues[uuid] = new carta::AnimationQueue(sessions[uuid]);
+    msgQueues[uuid] = new tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>;
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string timeString = ctime(&time);
     timeString = timeString.substr(0, timeString.length() - 1);
 
-    fmt::print("Client {} [{}] Connected ({}). Clients: {}\n", boost::uuids::to_string(sessions[ws]->uuid), ws->getAddress().address, timeString, sessions.size());
+    log(uuid, "Client {} [{}] Connected ({}). Clients: {}", uuid, ws->getAddress().address, timeString, sessions.size());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void onDisconnect(WebSocket<SERVER>* ws, int code, char* message, size_t length) {
-    auto uuid = sessions[ws]->uuid;
-    auto session = sessions[ws];
+    auto &uuid = *((std::string*)ws->getUserData());
+    auto session = sessions[uuid];
     if (session) {
         delete session;
-        sessions.erase(ws);
+        sessions.erase(uuid);
+        delete animationQueues[uuid];
+        animationQueues.erase(uuid);
+        delete msgQueues[uuid];
+        msgQueues.erase(uuid);
     }
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string timeString = ctime(&time);
     timeString = timeString.substr(0, timeString.length() - 1);
-    fmt::print("Client {} [{}] Disconnected ({}). Remaining clients: {}\n", boost::uuids::to_string(uuid), ws->getAddress().address, timeString, sessions.size());
+    log(uuid, "Client {} [{}] Disconnected ({}). Remaining clients: {}", uuid, ws->getAddress().address, timeString, sessions.size());
+    delete &uuid;
 }
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode opCode) {
-    auto session = sessions[ws];
+    auto uuid = *((std::string*)ws->getUserData());
+    auto session = sessions[uuid];
 
     if (!session) {
         fmt::print("Missing session!\n");
@@ -99,66 +113,22 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
 
     if (opCode == OpCode::BINARY) {
         if (length > 36) {
-            string eventName = getEventName(rawMessage);
-            uint32_t requestId = *((uint32_t*) (rawMessage + 32));
-            void* eventPayload = rawMessage + 36;
-            int payloadSize = (int) length - 36;
-
-            //CARTA ICD
-            if (eventName == "REGISTER_VIEWER") {
-                CARTA::RegisterViewer message;
-                if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onRegisterViewer(message, requestId);
-                }
-            } else if (eventName == "FILE_LIST_REQUEST") {
-                CARTA::FileListRequest message;
-                if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onFileListRequest(message, requestId);
-                }
-            } else if (eventName == "FILE_INFO_REQUEST") {
-                CARTA::FileInfoRequest message;
-                if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onFileInfoRequest(message, requestId);
-                }
-            } else if (eventName == "OPEN_FILE") {
-                CARTA::OpenFile message;
-                if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onOpenFile(message, requestId);
-                }
-            } else if (eventName == "CLOSE_FILE") {
-                CARTA::CloseFile message;
-                if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onCloseFile(message, requestId);
-                }
-            } else if (eventName == "SET_IMAGE_VIEW") {
-                CARTA::SetImageView message;
-                if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onSetImageView(message, requestId);
-                }
-            } else if (eventName == "SET_IMAGE_CHANNELS") {
+            static const size_t max_len = 32;
+            std::string eventName(rawMessage, std::min(std::strlen(rawMessage), max_len));
+            uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
+            std::vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
+            msgQueues[uuid]->push(std::make_tuple(eventName, requestId, eventPayload));
+            OnMessageTask *omt = new(tbb::task::allocate_root()) OnMessageTask(
+                uuid, session, msgQueues[uuid], animationQueues[uuid]);
+            if(eventName == "SET_IMAGE_CHANNELS") {
                 CARTA::SetImageChannels message;
-                if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onSetImageChannels(message, requestId);
-                }
+                message.ParseFromArray(eventPayload.data(), eventPayload.size());
+                animationQueues[uuid]->addRequest(message, requestId);
             }
-            else if (eventName == "SET_CURSOR") {
-                CARTA::SetCursor message;
-                if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onSetCursor(message, requestId);
-                }
-            }
-            else if (eventName == "SET_SPATIAL_REQUIREMENTS") {
-                CARTA::SetSpatialRequirements message;
-                if (message.ParseFromArray(eventPayload, payloadSize)) {
-                    session->onSetSpatialRequirements(message, requestId);
-                }
-            }
-            else {
-                fmt::print("Unknown event type {}\n", eventName);
-            }
+            tbb::task::enqueue(*omt);
         }
     } else {
-        fmt::print("Invalid event type\n");
+        log(uuid, "Invalid event type");
     }
 };
 
@@ -191,11 +161,13 @@ int main(int argc, const char* argv[]) {
             port = vm["port"].as<int>();
         }
 
-        int threadCount = MAX_THREADS;
+        int threadCount = tbb::task_scheduler_init::default_num_threads();
         if (vm.count("threads")) {
             threadCount = vm["threads"].as<int>();
         }
-        threadPool.resize(threadCount);
+        // Construct task scheduler
+        tbb::task_scheduler_init task_sched(threadCount);
+
 
         if (vm.count("folder")) {
             baseFolder = vm["folder"].as<string>();
@@ -205,7 +177,6 @@ int main(int argc, const char* argv[]) {
             readPermissions("permissions.txt");
         }
 
-        Hub h;
         h.onMessage(&onMessage);
         h.onConnection(&onConnect);
         h.onDisconnection(&onDisconnect);

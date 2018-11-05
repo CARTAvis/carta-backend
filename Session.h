@@ -2,86 +2,76 @@
 
 #include <fmt/format.h>
 #include <boost/multi_array.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <H5Cpp.h>
-#include <H5File.h>
 #include <mutex>
 #include <cstdio>
 #include <uWS/uWS.h>
 #include <cstdint>
+#include <unordered_map>
+#include <casacore/casa/aips.h>
+#include <casacore/casa/OS/File.h>
+#include <tbb/concurrent_queue.h>
+
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/open_file.pb.h>
+#include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
-#include <carta-protobuf/close_file.pb.h>
+#include <carta-protobuf/raster_image.pb.h>
+#include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
-#include <carta-protobuf/spatial_profile.pb.h>
-#include <boost/filesystem.hpp>
-#include <carta-protobuf/region_histogram.pb.h>
 
 #include "compression.h"
 #include "Frame.h"
-#include "ctpl.h"
 
 #define MAX_SUBSETS 8
-#define CURSOR_REGION_ID 0
 
-struct RegionStats {
-    float minVal = std::numeric_limits<float>::max();
-    float maxVal = -std::numeric_limits<float>::max();
-    float mean = 0;
-    float stdDev = 0;
-    int nanCount = 0;
-    int validCount = 0;
-};
-
-struct PointRegion {
-    float x;
-    float y;
-};
-
-struct SpatialRequirements {
-    // map of regionId to list of required spatial profiles
-    std::map<int, std::vector<std::string>> profiles;
+struct CompressionSettings {
+    CARTA::CompressionType type;
+    float quality;
+    int nsubsets;
 };
 
 class Session {
 public:
-    boost::uuids::uuid uuid;
+    std::string uuid;
 protected:
-    // TODO: clean up frames on session delete
-    std::map<int, std::unique_ptr<Frame>> frames;
-    std::mutex eventMutex;
+    // communication
     uWS::WebSocket<uWS::SERVER>* socket;
-    std::string apiKey;
-    std::map<std::string, std::vector<std::string> >& permissionsMap;
-    bool permissionsEnabled;
-    std::string baseFolder;
     std::vector<char> binaryPayloadCache;
-    std::vector<char> compressionBuffers[MAX_SUBSETS];
+
+    // permissions
+    std::unordered_map<std::string, std::vector<std::string> >& permissionsMap;
+    bool permissionsEnabled;
+    std::string apiKey;
+
+    std::string baseFolder;
     bool verboseLogging;
-    ctpl::thread_pool& threadPool;
-    float rateSum;
-    int rateCount;
-    CARTA::CompressionType compressionType;
-    float compressionQuality;
-    int numSubsets;
-    PointRegion cursorPosition;
-    int cursorFileId;
-    std::map<int, SpatialRequirements> spatialRequirements;
+
+    // <file_id, Frame>: one frame per image file
+    std::unordered_map<int, std::unique_ptr<Frame>> frames;
+
+    // Notification mechanism when outgoing messages are ready
+    uS::Async *outgoing;
+
+    // for data compression
+    CompressionSettings compressionSettings;
+
+    // Return message queue
+    tbb::concurrent_queue<std::vector<char>> out_msgs;
 
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
-            boost::uuids::uuid uuid,
-            std::map<std::string, std::vector<std::string>>& permissionsMap,
+            std::string uuid,
+            std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
             bool enforcePermissions,
             std::string folder,
-            ctpl::thread_pool& serverThreadPool,
+            uS::Async *outgoing,
             bool verbose = false);
+    ~Session();
+
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
     void onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId);
@@ -92,16 +82,36 @@ public:
     void onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId);
     void onSetCursor(const CARTA::SetCursor& message, uint32_t requestId);
     void onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId);
-    ~Session();
+    void onSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
+    void onSetSpectralRequirements(const CARTA::SetSpectralRequirements& message, uint32_t requestId);
+    void onSetStatsRequirements(const CARTA::SetStatsRequirements& message, uint32_t requestId);
+
+    void sendPendingMessages();
 
 protected:
+    // ICD: File list response
     CARTA::FileListResponse getFileList(std::string folder);
-    bool fillFileInfo(CARTA::FileInfo* fileInfo, boost::filesystem::path& path, std::string& message);
-    bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const std::string folder, const std::string filename, std::string hdu, std::string& message);
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
-    void checkAndUpdateSpatialProfiles();
-    void sendImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram = nullptr);
+
+    // ICD: File info response
+    bool fillFileInfo(CARTA::FileInfo* fileInfo, const std::string& filename);
+    bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo,
+        const std::string folder, const std::string filename, std::string hdu, std::string& message);
+
+    // ICD: Send data streams
+    // raster image data, optionally with histogram
+    void sendRasterImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram = nullptr);
+    CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId=-1);
+    // profile data
+    void sendSpatialProfileData(int fileId, int regionId);
+    void sendSpectralProfileData(int fileId, int regionId);
+    void sendRegionStatsData(int fileId, int regionId);
+
+    // data compression
+    void setCompression(CARTA::CompressionType type, float quality, int nsubsets);
+
+    // Send protobuf messages
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };

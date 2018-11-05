@@ -1,28 +1,37 @@
 #include "Session.h"
+#include "FileInfoLoader.h"
+#include "compression.h"
+#include "util.h"
+
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/error.pb.h>
 
-using namespace H5;
+#include <casacore/casa/OS/Path.h>
+#include <casacore/casa/OS/DirectoryIterator.h>
+
+#include <tbb/tbb.h>
+
 using namespace std;
 using namespace CARTA;
-namespace fs = boost::filesystem;
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, boost::uuids::uuid uuid, map<string, vector<string>>& permissionsMap, bool enforcePermissions, string folder, ctpl::thread_pool& serverThreadPool, bool verbose)
-    : uuid(uuid),
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, unordered_map<string, vector<string>>& permissionsMap, bool enforcePermissions, string folder, uS::Async *outgoing, bool verbose)
+    : uuid(std::move(uuid)),
+      socket(ws),
       permissionsMap(permissionsMap),
       permissionsEnabled(enforcePermissions),
       baseFolder(folder),
       verboseLogging(verbose),
-      threadPool(serverThreadPool),
-      rateSum(0),
-      rateCount(0),
-      socket(ws) {
+      outgoing(outgoing) {
 }
 
 Session::~Session() {
-
+    for (auto& frame : frames) {
+        frame.second.reset();
+    }
+    frames.clear();
+    outgoing->close();
 }
 
 bool Session::checkPermissionForEntry(string entry) {
@@ -75,237 +84,140 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
     }
 }
 
+// ********************************************************************************
+// File browser
+
 FileListResponse Session::getFileList(string folder) {
-    string fullPath = baseFolder;
-    // constructs the full path based on the base folder and the folder string (unless folder is empty or root)
-    if (folder.length() && folder != "/") {
-        fullPath = fmt::format("{}/{}", baseFolder, folder);
-    }
-    fs::path folderPath(fullPath);
+    // fill FileListResponse
+    casacore::Path fullPath(baseFolder);
     FileListResponse fileList;
     if (folder.length() && folder != "/") {
+        fullPath.append(folder);
         fileList.set_directory(folder);
-        auto lastSlashPosition = folder.find_last_of('/');
-        if (lastSlashPosition != string::npos) {
-            fileList.set_parent(folder.substr(0, lastSlashPosition));
-        } else {
-            fileList.set_parent("/");
-        }
+        fileList.set_parent(fullPath.dirName());
     }
 
+    casacore::File folderPath(fullPath);
     string message;
 
     try {
-        if (checkPermissionForDirectory(folder) && fs::exists(folderPath) && fs::is_directory(folderPath)) {
-            for (auto& directoryEntry : fs::directory_iterator(folderPath)) {
-                fs::path filePath(directoryEntry);
-                string filenameString = directoryEntry.path().filename().string();
-                // Check if it is a directory and the user has permission to access it
-                string pathNameRelative = (folder.length() && folder != "/") ? folder + "/" + filenameString : filenameString;
-                if (fs::is_directory(filePath) && checkPermissionForDirectory(pathNameRelative)) {
-                    fileList.add_subdirectories(filenameString);
-                }
-                    // Check if it is an HDF5 file
-                else if (fs::is_regular_file(filePath) && H5File::isHdf5(filePath.string())) {
-                    auto fileInfo = fileList.add_files();
-                    if (!fillFileInfo(fileInfo, filePath, message)) {
-                        fileList.set_success(false);
-                        fileList.set_message(message);
-                        return fileList;
+        if (checkPermissionForDirectory(folder) && folderPath.exists() && folderPath.isDirectory()) {
+            casacore::Directory startDir(fullPath);
+            casacore::DirectoryIterator dirIter(startDir);
+            while (!dirIter.pastEnd()) {
+                casacore::File ccfile(dirIter.file());  // casacore File
+                casacore::String fullpath(ccfile.path().absoluteName());
+                casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
+                bool addImage(false);
+                if (ccfile.isDirectory()) {
+                    if ((imType==casacore::ImageOpener::AIPSPP) || (imType==casacore::ImageOpener::MIRIAD))
+                        addImage = true;
+                    else if (imType==casacore::ImageOpener::UNKNOWN) {
+                        // Check if it is a directory and the user has permission to access it
+                        casacore::String dirname(ccfile.path().baseName());
+                        string pathNameRelative = (folder.length() && folder != "/") ? folder.append("/" + dirname) : dirname;
+                        if (checkPermissionForDirectory(pathNameRelative))
+                           fileList.add_subdirectories(dirname);
                     }
+                } else if (ccfile.isRegular() &&
+                    ((imType==casacore::ImageOpener::FITS) || (imType==casacore::ImageOpener::HDF5))) {
+                        addImage = true;
                 }
+
+                if (addImage) { // add image to file list
+                    auto fileInfo = fileList.add_files();
+                    bool ok = fillFileInfo(fileInfo, fullpath);
+                }
+                dirIter++;
             }
+        } else {
+            fileList.set_success(false);
+            fileList.set_message("Cannot read directory; check name and permissions.");
+            return fileList;
         }
-    }
-    catch (const fs::filesystem_error& ex) {
-        fmt::print("Error: {}\n", ex.what());
-        sendLogEvent(ex.what(), {"file-list"}, CARTA::ErrorSeverity::ERROR);
+    } catch (casacore::AipsError& err) {
+        log(uuid, "Error: {}", err.getMesg().c_str());
+        sendLogEvent(err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR);
         fileList.set_success(false);
-        fileList.set_message(ex.what());
+        fileList.set_message(err.getMesg());
         return fileList;
     }
-
     fileList.set_success(true);
     return fileList;
 }
 
-bool Session::fillFileInfo(FileInfo* fileInfo, fs::path& path, string& message) {
-    string filenameString = path.filename().string();
-    fileInfo->set_size(fs::file_size(path));
-    fileInfo->set_name(filenameString);
-    fileInfo->set_type(FileType::HDF5);
-    H5File file(path.string(), H5F_ACC_RDONLY);
-    auto N = file.getNumObjs();
-    for (auto i = 0; i < N; i++) {
-        if (file.getObjTypeByIdx(i) == H5G_GROUP) {
-            string groupName = file.getObjnameByIdx(i);
-            fileInfo->add_hdu_list(groupName);
-        }
-    }
-    return fileInfo->hdu_list_size() > 0;
+bool Session::fillFileInfo(FileInfo* fileInfo, const string& filename) {
+    // fill FileInfo submessage
+    FileInfoLoader infoLoader(filename);
+    return infoLoader.fillFileInfo(fileInfo);
 }
 
-bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fileInfo, const string folder, const string filename, string hdu, string& message) {
-    string pathString;
-    // constructs the full path based on the base folder, the folder string and the filename
-    if (folder.length()) {
-        pathString = fmt::format("{}/{}/{}", baseFolder, folder, filename);
-    } else {
-        pathString = fmt::format("{}/{}", baseFolder, filename);
-    }
-
-    fs::path filePath(pathString);
-
+bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fileInfo, 
+        const string folder, const string filename, string hdu, string& message) {
+    // fill FileInfoResponse submessages FileInfo and FileInfoExtended
+    bool extFileInfoOK(true);
+    casacore::Path ccpath(baseFolder);
+    ccpath.append(folder);
+    ccpath.append(filename);
+    casacore::File ccfile(ccpath);
+    casacore::String fullname(ccfile.path().absoluteName());
     try {
-        if (fs::is_regular_file(filePath) && H5File::isHdf5(filePath.string())) {
-            if (!fillFileInfo(fileInfo, filePath, message)) {
-                return false;
-            }
-
-            // Add extended info
-            H5File file(filePath.string(), H5F_ACC_RDONLY);
-            bool hasHDU;
-            if (hdu.length()) {
-                hasHDU = H5Lexists(file.getId(), hdu.c_str(), 0);
-            } else {
-                auto N = file.getNumObjs();
-                hasHDU = false;
-                for (auto i = 0; i < N; i++) {
-                    if (file.getObjTypeByIdx(i) == H5G_GROUP) {
-                        hdu = file.getObjnameByIdx(i);
-                        hasHDU = true;
-                        break;
-                    }
-                }
-            }
-
-            if (hasHDU) {
-                H5::Group topLevelGroup = file.openGroup(hdu);
-                if (H5Lexists(topLevelGroup.getId(), "DATA", 0)) {
-                    DataSet dataSet = topLevelGroup.openDataSet("DATA");
-                    vector<hsize_t> dims(dataSet.getSpace().getSimpleExtentNdims(), 0);
-                    dataSet.getSpace().getSimpleExtentDims(dims.data(), NULL);
-                    uint32_t N = dims.size();
-                    extendedInfo->set_dimensions(N);
-                    if (N < 2 || N > 4) {
-                        message = "Image must be 2D, 3D or 4D.";
-                        return false;
-                    }
-                    extendedInfo->set_width(dims[N - 1]);
-                    extendedInfo->set_height(dims[N - 2]);
-                    extendedInfo->set_depth((N > 2) ? dims[N - 3] : 1);
-                    extendedInfo->set_stokes((N > 3) ? dims[N - 4] : 1);
-
-
-                    string coordinateTypeX, coordinateTypeY, radeSys;
-
-                    H5O_info_t groupInfo;
-                    H5Oget_info(topLevelGroup.getId(), &groupInfo);
-                    for (auto i = 0; i < groupInfo.num_attrs; i++) {
-                        Attribute attr = topLevelGroup.openAttribute(i);
-                        hid_t attrTypeId = H5Aget_type(attr.getId());
-                        auto headerEntry = extendedInfo->add_header_entries();
-                        headerEntry->set_name(attr.getName());
-
-                        auto typeClass = H5Tget_class(attrTypeId);
-                        if (typeClass == H5T_STRING) {
-                            attr.read(attr.getStrType(), *headerEntry->mutable_value());
-                            headerEntry->set_entry_type(EntryType::STRING);
-                            if (headerEntry->name() == "CTYPE1") {
-                                coordinateTypeX = headerEntry->value();
-                            }
-                            else if (headerEntry->name() == "CTYPE2") {
-                                coordinateTypeY = headerEntry->value();
-                            }
-                            else if (headerEntry->name() == "RADESYS") {
-                                radeSys = headerEntry->value();
-                            }
-
-                        } else if (typeClass == H5T_INTEGER) {
-                            int64_t valueInt;
-                            DataType intType(PredType::NATIVE_INT64);
-                            attr.read(intType, &valueInt);
-                            *headerEntry->mutable_value() = fmt::format("{}", valueInt);
-                            headerEntry->set_numeric_value(valueInt);
-                            headerEntry->set_entry_type(EntryType::INT);
-                        } else if (typeClass == H5T_FLOAT) {
-                            DataType doubleType(PredType::NATIVE_DOUBLE);
-                            double numericValue = 0;
-                            attr.read(doubleType, &numericValue);
-                            headerEntry->set_numeric_value(numericValue);
-                            headerEntry->set_entry_type(EntryType::FLOAT);
-                            *headerEntry->mutable_value() = fmt::format("{:f}", numericValue);
-                        }
-                    }
-
-                    // Basic computed info
-                    auto computedEntryName = extendedInfo->add_computed_entries();
-                    computedEntryName->set_name("Name");
-                    computedEntryName->set_entry_type(EntryType::STRING);
-                    computedEntryName->set_value(fileInfo->name());
-
-                    auto computedEntryShape = extendedInfo->add_computed_entries();
-                    computedEntryShape->set_name("Shape");
-                    computedEntryShape->set_entry_type(EntryType::STRING);
-                    string shapeString;
-                    if (N == 2) {
-                        shapeString = fmt::format("[{}, {}]", extendedInfo->width(), extendedInfo->height());
-                    }
-                    else if (N == 3) {
-                        shapeString = fmt::format("[{}, {}, {}]", extendedInfo->width(), extendedInfo->height(), extendedInfo->depth());
-                    }
-                    else if (N == 4) {
-                        shapeString = fmt::format("[{}, {}, {}, {}]", extendedInfo->width(), extendedInfo->height(), extendedInfo->depth(), extendedInfo->stokes());
-                    }
-                    computedEntryShape->set_value(shapeString);
-
-                    if (coordinateTypeX.length() && coordinateTypeY.length()) {
-                        auto computedEntryCoordniateType = extendedInfo->add_computed_entries();
-                        computedEntryCoordniateType->set_name("Coordinate type");
-                        computedEntryCoordniateType->set_entry_type(EntryType::STRING);
-                        computedEntryCoordniateType->set_value(fmt::format("{}, {}", coordinateTypeX, coordinateTypeY));
-                    }
-
-                    if (radeSys.length()) {
-                        auto computedEntryCelestialFrame = extendedInfo->add_computed_entries();
-                        computedEntryCelestialFrame->set_name("Celestial frame");
-                        computedEntryCelestialFrame->set_entry_type(EntryType::STRING);
-                        computedEntryCelestialFrame->set_value(radeSys);
-                    }
-
-                } else {
-                    message = "File is missing DATA dataset";
-                    return false;
-                }
-            } else {
-                message = "File is missing top-level group";
-                return false;
-            }
-        } else {
-            message = "File is not a valid HDF5 file";
-            return false;
+        FileInfoLoader infoLoader(fullname);
+        if (!infoLoader.fillFileInfo(fileInfo)) {
+             return false;
         }
+        extFileInfoOK = infoLoader.fillFileExtInfo(extendedInfo, hdu, message);
+    } catch (casacore::AipsError& ex) {
+        message = ex.getMesg();
+        extFileInfoOK = false;
     }
-    catch (const fs::filesystem_error& ex) {
-        message = ex.what();
-        return false;
-    }
-    return true;
+    return extFileInfoOK;
 }
 
+
+// ********************************************************************************
+// Histogram message; sent separately or within RasterImageData
+
+CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId, const int32_t regionId) {
+    RegionHistogramData* histogramMessage(nullptr);
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        histogramMessage = new RegionHistogramData();
+        histogramMessage->set_file_id(fileId);
+        histogramMessage->set_region_id(regionId);
+        frame->fillRegionHistogramData(regionId, histogramMessage);
+    }
+    return histogramMessage;
+}
+
+// ********************************************************************************
+// Compress data
+
+void Session::setCompression(CARTA::CompressionType type, float quality, int nsubsets) {
+    compressionSettings.type = type;
+    compressionSettings.quality = quality;
+    compressionSettings.nsubsets = nsubsets;
+}
+
+// *********************************************************************************
 // CARTA ICD implementation
+
 void Session::onRegisterViewer(const RegisterViewer& message, uint32_t requestId) {
     apiKey = message.api_key();
     RegisterViewerAck ackMessage;
     ackMessage.set_success(true);
-    ackMessage.set_session_id(boost::uuids::to_string(uuid));
+    ackMessage.set_session_id(uuid);
     sendEvent("REGISTER_VIEWER_ACK", requestId, ackMessage);
 }
 
 void Session::onFileListRequest(const FileListRequest& request, uint32_t requestId) {
     string folder = request.directory();
-    if (folder.length() > 1 && folder[0] == '/') {
-        folder = folder.substr(1);
+    // strip baseFolder from folder
+    string basePath(baseFolder);
+    if (basePath.back()=='/') basePath.pop_back();
+    if (folder.find(basePath)==0) {
+        folder.replace(0, basePath.length(), "");
+        if (folder.front()=='/') folder.replace(0,1,""); // remove leading '/'
     }
     FileListResponse response = getFileList(folder);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
@@ -330,15 +242,14 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
     string errMessage;
     bool infoSuccess = fillExtendedFileInfo(fileInfoExtended, fileInfo, message.directory(), message.file(), message.hdu(), errMessage);
     if (infoSuccess && fileInfo->hdu_list_size()) {
-        string filename;
-        if (message.directory().length() && message.directory() != "/") {
-            filename = fmt::format("{}/{}/{}", baseFolder, message.directory(), message.file());
-        } else {
-            filename = fmt::format("{}/{}", baseFolder, message.file());
-        }
+        // form filename with path
+        casacore::Path path(baseFolder);
+        path.append(message.directory());
+        path.append(message.file());
+        string filename(path.absoluteName());
+        // create Frame for open file
         string hdu = fileInfo->hdu_list(0);
-
-        auto frame = unique_ptr<Frame>(new Frame(boost::uuids::to_string(uuid), filename, hdu));
+        auto frame = unique_ptr<Frame>(new Frame(uuid, filename, hdu));
         if (frame->isValid()) {
             ack.set_success(true);
             frames[message.file_id()] = move(frame);
@@ -351,22 +262,14 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
         ack.set_message(errMessage);
     }
     sendEvent("OPEN_FILE_ACK", requestId, ack);
-
-    // Send histogram of the default channel
-    if (ack.success()) {
-        RegionHistogramData histogramMessage;
-        histogramMessage.set_file_id(message.file_id());
-        histogramMessage.set_stokes(frames[message.file_id()]->currentStokes());
-        // -1 corresponds to the entire current XY plane
-        histogramMessage.set_region_id(-1);
-        histogramMessage.mutable_histograms()->AddAllocated(new Histogram(frames[message.file_id()]->currentHistogram()));
-        sendEvent("REGION_HISTOGRAM_DATA", 0, histogramMessage);
-    }
 }
 
 void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
     auto id = message.file_id();
     if (id == -1) {
+        for (auto& frame : frames) {
+            frame.second.reset();
+        }
         frames.clear();
     } else if (frames.count(id)) {
         frames[id].reset();
@@ -374,24 +277,162 @@ void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
 }
 
 void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
-    // Check if frame is loaded
-    compressionType = message.compression_type();
-    compressionQuality = message.compression_quality();
-    numSubsets = message.num_subsets();
-
-    if (frames.count(message.file_id())) {
-        auto& frame = frames[message.file_id()];
-        if (!frame->setBounds(message.image_bounds(), message.mip())) {
-            // TODO: Error handling on bounds
+    auto fileId = message.file_id();
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        // set new view in Frame
+        if (frame->setBounds(message.image_bounds(), message.mip())) {
+            // save compression settings for sending raster data
+            CARTA::CompressionType ctype(message.compression_type());
+            int numsets(message.num_subsets());
+            float quality(message.compression_quality());
+            setCompression(ctype, quality, numsets);
+            // RESPONSE
+            CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+            sendRasterImageData(fileId, requestId, histogramData);
+        } else {
+            string error = "Image bounds out of range; cannot update image";
+            sendLogEvent(error, {"image-view"}, CARTA::ErrorSeverity::ERROR);
         }
-        sendImageData(message.file_id(), requestId);
     } else {
-        // TODO: error handling
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"set-view"}, CARTA::ErrorSeverity::ERROR);
     }
-
 }
 
-void Session::sendImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram) {
+void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId) {
+    auto fileId(message.file_id());
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        size_t newChannel(message.channel()), newStokes(message.stokes());
+        bool channelChanged(newChannel != frame->currentChannel()),
+             stokesChanged(newStokes != frame->currentStokes());
+        string errMessage;
+        if (frame->setImageChannels(message.channel(), message.stokes(), errMessage)) {
+            // RESPONSE: updated histogram, spatial profile, spectral profile
+            // Histogram message now managed by the raster image data
+            RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+            sendRasterImageData(fileId, requestId, histogramData);
+            if (channelChanged || stokesChanged)
+                sendSpatialProfileData(fileId, CURSOR_REGION_ID);
+            if (stokesChanged)
+                sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+        } else {
+            sendLogEvent(errMessage, {"image-channels"}, CARTA::ErrorSeverity::ERROR);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"set-channels"}, CARTA::ErrorSeverity::ERROR);
+    }
+}
+
+void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
+    auto fileId(message.file_id());
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        if (frame->setCursorRegion(CURSOR_REGION_ID, message.point())) {
+            if (message.has_spatial_requirements()) {
+                onSetSpatialRequirements(message.spatial_requirements(), requestId);
+                sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+            } else {
+                // RESPONSE
+                sendSpatialProfileData(fileId, CURSOR_REGION_ID);
+                sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+            }
+        } else {
+            string error = "Cursor point out of range";
+            sendLogEvent(error, {"set-cursor"}, CARTA::ErrorSeverity::ERROR);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"set-cursor"}, CARTA::ErrorSeverity::ERROR);
+    }
+}
+
+void Session::onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId) {
+    auto fileId(message.file_id());
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        auto regionId = message.region_id();
+        if (frame->setRegionSpatialRequirements(regionId, vector<string>(message.spatial_profiles().begin(),
+            message.spatial_profiles().end()))) {
+            // RESPONSE
+            sendSpatialProfileData(fileId, regionId);
+        } else {
+            string error = fmt::format("Spatial requirements for region id {} failed to validate ", regionId);
+            sendLogEvent(error, {"set-spatial"}, CARTA::ErrorSeverity::ERROR);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"set-spatial"}, CARTA::ErrorSeverity::ERROR);
+    }
+}
+
+void Session::onSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t requestId) {
+    auto fileId(message.file_id());
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        auto regionId = message.region_id();
+        if (frame->setRegionHistogramRequirements(regionId, vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(), message.histograms().end()))) {
+            // RESPONSE
+            RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
+            if (histogramData != nullptr) {
+                sendEvent("REGION_HISTOGRAM_DATA", requestId, *histogramData);
+            } else {
+                string error = "Failed to load histogram data";
+                sendLogEvent(error, {"set-histogram"}, CARTA::ErrorSeverity::ERROR);
+            }
+        } else {
+            string error = fmt::format("Histogram requirements for region id {} failed to validate ", regionId);
+            sendLogEvent(error, {"set-histogram"}, CARTA::ErrorSeverity::ERROR);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"set-histogram"}, CARTA::ErrorSeverity::ERROR);
+    }
+}
+
+void Session::onSetSpectralRequirements(const CARTA::SetSpectralRequirements& message, uint32_t requestId) {
+    auto fileId(message.file_id());
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        auto regionId = message.region_id();
+        if (frame->setRegionSpectralRequirements(regionId,
+            vector<CARTA::SetSpectralRequirements_SpectralConfig>(message.spectral_profiles().begin(),
+            message.spectral_profiles().end()))) {
+            // RESPONSE
+            sendSpectralProfileData(fileId, regionId);
+        } else {
+            string error = fmt::format("Spectral requirements for region id {} failed to validate ", regionId);
+            sendLogEvent(error, {"set-spectral"}, CARTA::ErrorSeverity::ERROR);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"set-spectral"}, CARTA::ErrorSeverity::ERROR);
+    }
+}
+
+void Session::onSetStatsRequirements(const CARTA::SetStatsRequirements& message, uint32_t requestId) {
+    auto fileId(message.file_id());
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        auto regionId = message.region_id();
+        if (frame->setRegionStatsRequirements(regionId, vector<int>(message.stats().begin(), message.stats().end()))) {
+            // RESPONSE
+            sendRegionStatsData(fileId, regionId);
+        } else {
+            string error = fmt::format("Stats requirements for region id {} failed to validate ", regionId);
+            sendLogEvent(error, {"set-stats"}, CARTA::ErrorSeverity::ERROR);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"set-stats"}, CARTA::ErrorSeverity::ERROR);
+    }
+}
+
+// ******** SEND DATA STREAMS *********
+
+void Session::sendRasterImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram) {
     RasterImageData rasterImageData;
     // Add histogram, if it exists
     if (channelHistogram) {
@@ -414,27 +455,28 @@ void Session::sendImageData(int fileId, uint32_t requestId, CARTA::RegionHistogr
             rasterImageData.mutable_image_bounds()->set_y_min(imageBounds.y_min());
             rasterImageData.mutable_image_bounds()->set_y_max(imageBounds.y_max());
 
+            auto compressionType = compressionSettings.type;
             if (compressionType == CompressionType::NONE) {
                 rasterImageData.set_compression_type(CompressionType::NONE);
                 rasterImageData.set_compression_quality(0);
                 rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
             } else if (compressionType == CompressionType::ZFP) {
 
-                int precision = lround(compressionQuality);
+                int precision = lround(compressionSettings.quality);
                 auto rowLength = (imageBounds.x_max() - imageBounds.x_min()) / mip;
                 auto numRows = (imageBounds.y_max() - imageBounds.y_min()) / mip;
                 rasterImageData.set_compression_type(CompressionType::ZFP);
                 rasterImageData.set_compression_quality(precision);
 
+                auto numSubsets(compressionSettings.nsubsets);
+                vector<char> compressionBuffers[numSubsets];
                 vector<size_t> compressedSizes(numSubsets);
                 vector<vector<int32_t>> nanEncodings(numSubsets);
-                vector<future<size_t>> futureSizes;
 
-                auto tStartCompress = chrono::high_resolution_clock::now();
-                int N = min(numSubsets, MAX_SUBSETS);;
-                for (auto i = 0; i < N; i++) {
-                    auto& compressionBuffer = compressionBuffers[i];
-                    futureSizes.push_back(threadPool.push([&nanEncodings, &imageData, &compressionBuffer, numRows, N, rowLength, i, precision](int) {
+                auto N = min(numSubsets, MAX_SUBSETS);
+                auto range = tbb::blocked_range<int>(0, N);
+                auto loop = [&](const tbb::blocked_range<int> &r) {
+                    for(int i = r.begin(); i != r.end(); ++i) {
                         int subsetRowStart = i * (numRows / N);
                         int subsetRowEnd = (i + 1) * (numRows / N);
                         if (i == N - 1) {
@@ -442,20 +484,12 @@ void Session::sendImageData(int fileId, uint32_t requestId, CARTA::RegionHistogr
                         }
                         int subsetElementStart = subsetRowStart * rowLength;
                         int subsetElementEnd = subsetRowEnd * rowLength;
-
-                        size_t compressedSize;
-                        // nanEncodings[i] = getNanEncodingsSimple(imageData, subsetElementStart, subsetElementEnd - subsetElementStart);
                         nanEncodings[i] = getNanEncodingsBlock(imageData, subsetElementStart, rowLength, subsetRowEnd - subsetRowStart);
-                        compress(imageData, subsetElementStart, compressionBuffer, compressedSize, rowLength, subsetRowEnd - subsetRowStart, precision);
-                        return compressedSize;
-                    }));
-                }
-
-                // Wait for completed compression threads
-                for (auto i = 0; i < numSubsets; i++) {
-                    compressedSizes[i] = futureSizes[i].get();
-
-                }
+                        compress(imageData, subsetElementStart, compressionBuffers[i], compressedSizes[i], rowLength, subsetRowEnd - subsetRowStart, precision);
+                    }
+                };
+                auto tStartCompress = chrono::high_resolution_clock::now();
+                tbb::parallel_for(range, loop);
                 auto tEndCompress = chrono::high_resolution_clock::now();
                 auto dtCompress = chrono::duration_cast<chrono::microseconds>(tEndCompress - tStartCompress).count();
 
@@ -466,12 +500,12 @@ void Session::sendImageData(int fileId, uint32_t requestId, CARTA::RegionHistogr
                 }
 
                 if (verboseLogging) {
-                    string compressionInfo = fmt::format("Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s\n",
+                    string compressionInfo = fmt::format("Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s",
                                numRows * rowLength * sizeof(float) / 1e3,
                                accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
                                1e-3 * dtCompress,
                                (float) (numRows * rowLength) / dtCompress);
-                    fmt::print(compressionInfo);
+                    log(uuid, compressionInfo);
                     sendLogEvent(compressionInfo, {"zfp"}, CARTA::ErrorSeverity::DEBUG);
                 }
             } else {
@@ -479,139 +513,91 @@ void Session::sendImageData(int fileId, uint32_t requestId, CARTA::RegionHistogr
             }
             // Send completed event to client
             sendEvent("RASTER_IMAGE_DATA", requestId, rasterImageData);
+        } else {
+            string error = "Raster image data failed to load";
+            sendLogEvent(error, {"raster-data"}, CARTA::ErrorSeverity::ERROR);
         }
     }
 }
 
-void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId) {
-    if (frames.count(message.file_id())) {
-        auto& frame = frames[message.file_id()];
-        if (!frame->setChannels(message.channel(), message.stokes())) {
-            // TODO: Error handling on bounds
+void Session::sendSpatialProfileData(int fileId, int regionId) {
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        CARTA::SpatialProfileData spatialProfileData;
+        if (frame->fillSpatialProfileData(regionId, spatialProfileData)) {
+            spatialProfileData.set_file_id(fileId);
+            spatialProfileData.set_region_id(regionId);
+            sendEvent("SPATIAL_PROFILE_DATA", 0, spatialProfileData);
+        } else {
+            string error = "Spatial profile data failed to load";
+            sendLogEvent(error, {"spatial-profile"}, CARTA::ErrorSeverity::ERROR);
         }
-        // Send updated histogram
-        RegionHistogramData* histogramMessage = new RegionHistogramData();
-        histogramMessage->set_file_id(message.file_id());
-        histogramMessage->set_stokes(frames[message.file_id()]->currentStokes());
-        // -1 corresponds to the entire current XY plane
-        histogramMessage->set_region_id(-1);
-        histogramMessage->mutable_histograms()->AddAllocated(new Histogram(frames[message.file_id()]->currentHistogram()));
-        //sendEvent("REGION_HISTOGRAM_DATA", 0, histogramMessage);
-        // Histogram message now managed by the image data object
-        sendImageData(message.file_id(), requestId, histogramMessage);
     } else {
-        // TODO: error handling
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"spatial-profile"}, CARTA::ErrorSeverity::ERROR);
     }
 }
 
-void Session::onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId) {
-    if (frames.count(message.file_id())) {
-        auto& fileRequrements = spatialRequirements[message.file_id()];
-        fileRequrements.profiles[message.region_id()] = vector<string>(message.spatial_profiles().begin(), message.spatial_profiles().end());
-        checkAndUpdateSpatialProfiles();
-    }
-}
-
-void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
-    cursorFileId = message.file_id();
-    cursorPosition.x = message.point().x();
-    cursorPosition.y = message.point().y();
-    if (message.has_spatial_requirements()) {
-        onSetSpatialRequirements(message.spatial_requirements(), requestId);
-    }
-    else {
-        checkAndUpdateSpatialProfiles();
-    }
-}
-
-void Session::checkAndUpdateSpatialProfiles() {
-    if (spatialRequirements.count(cursorFileId) && frames.count(cursorFileId)) {
-        auto& fileRequirements = spatialRequirements[cursorFileId];
-        auto& frame = frames[cursorFileId];
-        // Only handle cursor region for now
-        if (fileRequirements.profiles.count(CURSOR_REGION_ID)) {
-            auto& requiredProfiles = fileRequirements.profiles[CURSOR_REGION_ID];
-            if (requiredProfiles.size()) {
-                SpatialProfileData spatialProfileData;
-                spatialProfileData.set_file_id(cursorFileId);
-                spatialProfileData.set_region_id(CURSOR_REGION_ID);
-                spatialProfileData.set_x(cursorPosition.x);
-                spatialProfileData.set_y(cursorPosition.y);
-                spatialProfileData.set_channel(frame->currentChannel());
-                spatialProfileData.set_stokes(frame->currentStokes());
-
-                for (auto& profileCoordinate: requiredProfiles) {
-                    // check coordinate validity
-                    auto coordinateLength = profileCoordinate.length();
-                    if (!coordinateLength || coordinateLength > 2) {
-                        continue;
-                    }
-                    int requiredStokes = frame->currentStokes();
-
-                    // Parse Stokes character for files with multiple Stokes values
-                    int numStokes = frame->getStokes();
-                    if (coordinateLength == 2 && numStokes >= 2) {
-                        char stokesChar = profileCoordinate[0];
-                        if (stokesChar == 'I') {
-                            requiredStokes = 0;
-                        }
-                        else if (stokesChar == 'Q') {
-                            requiredStokes = 1;
-                        }
-                        else if (stokesChar == 'U' && numStokes >= 3) {
-                            requiredStokes = 2;
-                        }
-                        else if (stokesChar == 'V' && numStokes >= 4) {
-                            requiredStokes = 3;
-                        }
-                        else {
-                            // TODO: Error handling for invalid Stokes requests
-                        }
-                    }
-
-                    // Parse coordinate character
-                    char coordChar = profileCoordinate[coordinateLength-1];
-                    if (coordChar == 'x') {
-                        auto newProfile = spatialProfileData.add_profiles();
-                        newProfile->set_coordinate(profileCoordinate);
-                        newProfile->set_start(0);
-                        newProfile->set_end(frame->getWidth());
-                        auto profile = frame->getXProfile(spatialProfileData.y(), spatialProfileData.channel(), requiredStokes);
-                        *newProfile->mutable_values() = {profile.begin(), profile.end()};
-                    }
-                    else if (coordChar == 'y') {
-                        auto newProfile = spatialProfileData.add_profiles();
-                        newProfile->set_coordinate(profileCoordinate);
-                        newProfile->set_start(0);
-                        newProfile->set_end(frame->getHeight());
-                        auto profile = frame->getYProfile(spatialProfileData.x(), spatialProfileData.channel(), requiredStokes);
-                        *newProfile->mutable_values() = {profile.begin(), profile.end()};
-                    }
-                    else {
-                        // TODO: Error handling for invalid coordinate requests
-                    }
-                }
-
-                // Send required profiles
-                sendEvent("SPATIAL_PROFILE_DATA", 0, spatialProfileData);
-            }
+void Session::sendSpectralProfileData(int fileId, int regionId) {
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        CARTA::SpectralProfileData spectralProfileData;
+        if (frame->fillSpectralProfileData(regionId, spectralProfileData)) {
+            spectralProfileData.set_file_id(fileId);
+            spectralProfileData.set_region_id(regionId);
+            sendEvent("SPECTRAL_PROFILE_DATA", 0, spectralProfileData);
+        } else {
+            string error = "Spectral profile data failed to load";
+            sendLogEvent(error, {"spectral-profile"}, CARTA::ErrorSeverity::ERROR);
         }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"spectral-profile"}, CARTA::ErrorSeverity::ERROR);
     }
 }
+
+void Session::sendRegionStatsData(int fileId, int regionId) {
+    if (frames.count(fileId)) {
+        auto& frame = frames[fileId];
+        CARTA::RegionStatsData regionStatsData;
+        if (frame->fillRegionStatsData(regionId, regionStatsData)) {
+            regionStatsData.set_file_id(fileId);
+            regionStatsData.set_region_id(regionId);
+            sendEvent("REGION_STATS_DATA", 0, regionStatsData);
+        } else {
+            string error = "Region stats data failed to load";
+            sendLogEvent(error, {"region-stats"}, CARTA::ErrorSeverity::ERROR);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"region-stats"}, CARTA::ErrorSeverity::ERROR);
+    }
+}
+
+// *********************************************************************************
+// SEND uWEBSOCKET MESSAGES
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::sendEvent(string eventName, u_int64_t eventId, google::protobuf::MessageLite& message) {
-    size_t eventNameLength = 32;
+    static const size_t eventNameLength = 32;
     int messageLength = message.ByteSize();
     size_t requiredSize = eventNameLength + 8 + messageLength;
-    if (binaryPayloadCache.size() < requiredSize) {
-        binaryPayloadCache.resize(requiredSize);
+    std::vector<char> msg(requiredSize, 0);
+    std::copy_n(eventName.begin(), min(eventName.length(), eventNameLength), msg.begin());
+    memcpy(msg.data() + eventNameLength, &eventId, 4);
+    message.SerializeToArray(msg.data() + eventNameLength + 8, messageLength);
+    out_msgs.push(msg);
+    outgoing->send();
+    //socket->send(msg.data(), msg.size(), uWS::BINARY);
+}
+
+void Session::sendPendingMessages() {
+    // Do not parallelize: this must be done serially
+    // due to the constraints of uWS.
+    std::vector<char> msg;
+    while(out_msgs.try_pop(msg)) {
+        socket->send(msg.data(), msg.size(), uWS::BINARY);
     }
-    memset(binaryPayloadCache.data(), 0, eventNameLength);
-    memcpy(binaryPayloadCache.data(), eventName.c_str(), min(eventName.length(), eventNameLength));
-    memcpy(binaryPayloadCache.data() + eventNameLength, &eventId, 4);
-    message.SerializeToArray(binaryPayloadCache.data() + eventNameLength + 8, messageLength);
-    socket->send(binaryPayloadCache.data(), requiredSize, uWS::BINARY);
 }
 
 void Session::sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity) {
@@ -621,4 +607,3 @@ void Session::sendLogEvent(std::string message, std::vector<std::string> tags, C
     *errorData.mutable_tags() = {tags.begin(), tags.end()};
     sendEvent("ERROR_DATA", 0, errorData);
 }
-

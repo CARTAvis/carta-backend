@@ -1,0 +1,140 @@
+language: cpp
+os: osx
+compiler: clang
+osx_image: xcode9.4
+# If we use "osx_image: xcode10", everything builds, but the executable crashes with "Bus error: 10"
+
+cache:
+  directories:
+  - $HOME/casacore
+  - $HOME/package
+
+before_install:
+   - sudo rm /usr/local/include/c++
+   - brew install gcc
+   - brew install tbb fmt protobuf cfitsio wcslib fftw boost-python hdf5
+# using default system openssl   - brew install openssl
+
+env:
+  global:
+    - secure: "ptSSAbjx9Oy7Pdy+9/z+g8kx2jX6GCwvbUyOD9EhOZ7JbMgfuoLNmefdBI7+4vNIPxVECtwzs4iwAGq59u0zl32oap6oy+54rVrnaLto0wotDt7u2RSC0xkw+nZL7Y5IUnQm+YD/+4w+r8x2Iolu3ZlaODftAZ1Le1pVeFm4hV7TsG4SqasiGH0Vr/+xHT2be+1DyCzCCKsTiLwmDG4nGBO9a2AJAC6BZapzpHppYACGTM+8ydlSXn439Xno4lyhSgzIp3rQUHqJ4OBU5XoAmikJzSBfuJZshKiQ696utm9hxFHtRzjLUlkkXNhDXKIP7OQ6J8iOX42sStwYhleZdBgnsVtj7f6HdR0kRfROn0qGq44s9uWnnlzyoGBSCTD7liy9zm3XOlVD+55Oas1rihKpz2u214xAMAgMyDC20hdWBxpOdROyAJI32ZRsajC5bQa94dH3MD75vKXsfdUTWxUumDNrgr90qx02+zfMixH7yIXNYAAf0UUS9+REpzkJq4Py/XqLWmdzfZsHaCbsfLaJ/vYFuf4/7ovw/Pm2F2FxllrTVtTQq3dGcPvUPop0cJl1BAoSpzMdS8NjDeCjlr0tZgum2yC87Z+wscjs+bmh3SLQ+MQM/2zWzJJ/pUUhTLKYEUC6LanHqdl/F78NKkGJH2SzpMwJAOrIIo7KZvQ="
+    - secure: "nq9Lb5qEp7vwUZIjeQg4Q3Wvf5/8iPm+xCA8lIUBSfT5gJ8c0l+MqH4FopOSF/DbwFKfdky33Wk/pgJOKIScFBqVbsxOIhHd9jPed5G/HIxcBbdDYIpwd4loQVqpTY5HiQzmQwk99ygRbEyVDUENLhcGLm+LK4Hfbq3ftpQT6lHPQruDbHIEpAoZErwsjT9LEGgWUFCoH97SRttnMKsuCcwFCqdEXKV9DmfLWIvsPnC/eQKdMRHUOQ5dgacmp6rHWn1DGhP5Z21fM+R7ODxIi0oeYxvTWxFGxR9GYyQy2zZT4+YkIfcxqJerrhtGA0drAFMpidxUKj+j2RSQ4kyr3UHHfLmUUoSKHRiwlQ8VzvoZj/Smszp0zSaV/z8OaNgrZXKKiSh8Vv2xjGIqZIDdp4wcw4iTjO9En6tTSeD5jDDrYmYBoSZ4v1LKPps7Zf49Gr0B6rWQ46dRNcY4S0e6O4I2oZFZ1WqCFqjp/brHbGxjyN6BG7tLiqDWMahkJFn4XLiIFnUBARI/yDn0Wshj/O9dQO23KzQK0N/GjCseQ3vHIBAySGMME02CcZIzT6w8eB62U2otYNfCF/F9tjNsFUdzNq1xD4XPX6lP8N13bG+IV81VBLowC9CUQPXOuoZojtQrqTuLRY56mK1RS/M8a6ZLs6bhOQjKnhgvE3YUXxE=" 
+    - secure: "CkS/GZxkBRvqXSp0oEp30PIc6G7AgD3b6lVsNImPpnmecV7BfZ062dkE+rriyWqri0TPqaPzQgUurltFdWpbamygRAeOf8Eh8X5mrRH2Db2OUFZBa88OYvPZ6oZgL3OeSkDASLPQxaEVKNLlJ9DWj7W69EufZiXTYxawhZg4rduHTQaDLtUmVGsy/MWpkdu98CGLfcTIhgEdlHn+xK7ERPD00uAogRsTJZHt98/RGF8pYaCr2GWvsKzm3gwiTpbK2/zSf2xeUhdVHhCtspO/hSdGV9Hq+HsKY18vYRsW944bk9vuV0bS5JSZiqR8A6yyIVtuYQD43fyP8D6Na0bYrIqMr72HHd2knNemPynvVIDokbQIWp9VDYflEYIzBMYPvDyeifl6MPK+HBrFvupoBxmiHPfl/md4PnmI9YUYl94ryzuzxzkgLQ9/SPHOZc8HFqMGWDqm6bQe8ZyUiWHLbVo94p7GecmUMwJ1keUW7cC6GGst61NaP/ZTgAOfLpgpBNDxuIeZ8KFqhppPjfT3wYdRujBvvoeR1a9kxsXHBA7QeJgiNWM1aEcapgs3Ec8dZizPzKV3xwvhHV0J8PbtGbe7hdE3IeNdpIVzScUPd1KyiGTEp0sVbjkoqmbzQpHKDEwswaxwf1hCjTu+2hTrHUgSQgdJny3yvagzVrWgeDE="
+    - secure: "mFP0Xpy/+3tJcCnmP6s2j/DiE0Jrb3ubmn4z8MWa4iMrYQZrsf8AHoR1Jms+phkksZEg5zfsB8MjhaogxVxU5SJOCtTOivI51OPPt1PdmuVD5/KvoBVc5fwXq+XbW9AHrFNXq2XdEoQRZ/dRf/n/JXUk0lBUFGHjeZLAkjA4ZfCinrF9T2D3CDPrtfcSYSkYb+o3sPcuiIwxVILjMPMqWYetcSoaio2cmW7VeAaf/Cxn+9C8RH54igGf41D1nWDpwSkTdozr3/jNhesselGWhAC/iknHr0lTtF/fMOAKm0JEm1alj0gg2E1o1SPSEpcXfWYlRpschxE6qC3gISc7pIInk/LjhndupkjsWvuWNkIOrIW1ZoHEO8VIOz6V0O2T4Skx9v3ftVbtRa3tzA8X18+VABo70NLKS6v+9koXOLpkuEqSggzik989l08YstlqWg7JSGEEkTOl52TUaYJiRjKhtUB2DDps/oDMmz+9NX9RShelI2SbgqLTlZWlUIj5aVL42n2cnXO7ITnLYBwg0rEdHXorEKaiG45Wfj+BDXdygKwNOpUICtmL3P+MtIP1wzoKsdS83D5mDHmZRDabC9nMJmIUI5n5kuIjEy4XPusd7/I1z1J47NN7lpuQ/MUZP9I8MaM4YF+NhPcpQS2XvGKqaBGeNdKC9sjvselZbug="
+    - secure: "OC4hE2UO3kIysJ9e+e4qzwH4X4a22qa+nT//mnq/BsodE/L6H0u4oWFGDZ7e6oYXMF+TCIj5CiBRgIbONPrDNdi2c0FtpSTG84+qHE6VuXBu2mBD3y42BABJVZ00lWdLVJSwdMY1KH2S2DzxtmR0KMHrGvVIk6D/TKK1dapt7Vz63nOzTepuQsqFsCQeZtddbRuJcJr9oPGJgNXlorJpJ0oJj87nASdU0lFWguV3UxotZO743AlSwS9HZ4gNg2d+JWd2cmnilREoeGtys2cp9Gv4DxyybGuEnjRuxGesnacMeTLig23hU9aa80fTFpwL23yyD5gxcA1orGCZSVZAricfPnC1lR5IfR8a3++WqAN3ciz22upcaTq0OMLB4o796rYYwt1ZbMwmFGaJwY7VGrRz87zQrELBj5o002iI3KH3puxpu/kNm6oiorNOFKPeQWfBYQ5gf8rAoGXKEfWd0vGQ8b7Zejr3tjDx4Dk1s65ViMg2k13PvmDNRTMEanQwyRZ2EWmU35tH7U4jSvM0hDcWBih8ouHp5JEF+UF/RUIPUKw5EWkVIaILV1X5MDWpou7f04P9U+X97pQHOsl/on5JC+Fys9eQ7yhFIveXh03iiHa0AP0IFmhuwLYWbcPDKwiCiw2oN1sGTeLooijpugg9gsHgmLz92uONrruswNA="  
+
+global:
+  - CI_NODE_TOTAL=2 # attempt to speed up the build process so the casacore stage can finish within 50 minutes
+
+jobs:
+  include:
+    - stage: build casacore
+      install: true
+      script:
+        - ls /usr/local/opt/openssl/
+        - cd $HOME
+        - ls
+        - ls $HOME/casacore/
+        - if [ -e "$HOME/casacore/lib" ]; then echo "casacore cache exists"; else echo "building casacore" && $TRAVIS_BUILD_DIR/scripts/ci_mac_casacore.sh; fi
+
+    - stage: build carta-backend
+      install: true
+      script:
+        # copy cached casacore to default system location
+        - sudo cp -r $HOME/casacore/lib/* /usr/local/lib/
+        - sudo cp -r $HOME/casacore/include/casacore /usr/local/include/
+        - cd $HOME
+
+         # echo install libuv
+        - git clone https://github.com/libuv/libuv.git
+        - cd libuv
+        - sh autogen.sh
+        - ./configure
+        - make -j 2
+        - sudo make install
+        - cd ..
+
+        # install uWebsockets
+        - git clone https://github.com/uNetworking/uWebSockets.git
+        - cd uWebsockets
+        - git checkout c7aa984 # changing to the old non-'clang'-only Makefile
+        - make
+        - sudo make install
+        - cd ..
+
+        # install zfp
+        - git clone https://github.com/LLNL/zfp.git
+        - cd zfp && mkdir build && cd build
+        - cmake ..
+        - make
+        - sudo make install
+        - cd ../..
+
+        # build carta-backend
+        - echo "Building carta-backend" 
+        - cd $TRAVIS_BUILD_DIR
+        - git submodule init && git submodule update
+        - sed -i '' 's/hdf5_serial/hdf5/g' CMakeLists.txt # fix for Mac hdf5 filename
+        - sed -i '' 's/target_link_libraries(hdf5_image_viewer/target_link_libraries(hdf5_image_viewer uv/g' CMakeLists.txt # fix to find uv
+        - mkdir build && cd build
+        - cmake -DCMAKE_CXX_FLAGS="-I /usr/local/opt/openssl/include" -DCMAKE_CXX_STANDARD_LIBRARIES="-L /usr/local/Cellar/fmt/5.1.0/lib -L /usr/local/Cellar/hdf5/1.10.3/lib -L /usr/local/lib -L /usr/local/opt/openssl/lib" ..
+        - make
+        - ls -sort
+        - otool -L hdf5_image_viewer
+
+        - echo "Package carta-backend"
+        # install macdylibbundler
+        - git clone https://github.com/auriamg/macdylibbundler.git
+        - cd macdylibbundler
+        - make
+        - sudo make install
+        - cd ..
+        - mkdir -p package/bin && cd package/bin && cp ../../hdf5_image_viewer .
+        - cp $TRAVIS_BUILD_DIR/scripts/run.sh .
+        - cp /usr/local/lib/libuWS.dylib .
+#        - install_name_tool -change @rpath/libzfp.0.dylib /usr/local/lib/libzfp.0.dylib hdf5_image_viewer
+        - otool -L hdf5_image_viewer
+        # Problematic for dylibbundler to find libzfp.0.dylib. 
+        # (Changing path with install_name_tool does not seem to work).
+        # Location needs to be manually entered in dylibbundler several times.
+        # dylibbundler also needs location of libboost_system-mt.dylib entered manually.
+        # To save more trial-and-error to find the correct sequence, copy libzfp.0.dylib to 
+        # /usr/local/opt/boost/lib/ (same location as libboost_system-mt.dylib) 
+        # so that "keyboard_input.txt" only needs to send one entry multiple times.
+        #
+        - sudo cp /usr/local/lib/libzfp.0.dylib /usr/local/opt/boost/lib/
+
+        - dylibbundler -od -of -b -d ../libs -x hdf5_image_viewer < $TRAVIS_BUILD_DIR/scripts/keyboard_input.txt
+        - rm libuWS.dylib
+        - otool -L hdf5_image_viewer
+
+        - cd .. && mkdir etc && cd etc
+#        - curl -O -L http://alma.asiaa.sinica.edu.tw/_downloads/measures_data.tar.gz
+#        - tar -xvf measures_data.tar.gz
+#        - rm measures_data.tar.gz
+#        - mv measures_data data        
+        - cd ..
+        - ls bin/
+        - ls libs/
+        - ls etc/
+        - cd ..
+        - rm -rf $HOME/package #remove any old cached package directory
+        - cp -r package $HOME/
+
+    - stage: upload package
+      install: true
+      script:
+        - echo "Upload the package"
+        - cd $HOME
+        - ls -sort
+        - mv package package_$TRAVIS_JOB_NUMBER
+        - tar -czvf package_$TRAVIS_JOB_NUMBER.tar.gz package_$TRAVIS_JOB_NUMBER
+        - export SSHPASS=$DEPLOY_PASS
+
+        - brew install https://raw.githubusercontent.com/kadwanev/bigboybrew/master/Library/Formula/sshpass.rb
+
+        - export SSHPASS=$DEPLOY_PASS
+#        - sshpass -e scp -o stricthostkeychecking=no -P $DEPLOY_PORT package_$TRAVIS_JOB_NUMBER.tar.gz $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
+        - sshpass -e scp -o stricthostkeychecking=no -P $DEPLOY_PORT package_$TRAVIS_JOB_NUMBER.tar.gz $DEPLOY_USER@140.109.177.145:$DEPLOY_PATH
+        - echo "Finished !!"
+
