@@ -80,7 +80,7 @@ jobs:
         - cmake -DCMAKE_CXX_FLAGS="-I /usr/local/opt/openssl/include" -DCMAKE_CXX_STANDARD_LIBRARIES="-L /usr/local/Cellar/fmt/5.1.0/lib -L /usr/local/Cellar/hdf5/1.10.4/lib -L /usr/local/lib -L /usr/local/opt/openssl/lib" ..
         - make
         - ls -sort
-        - otool -L carta-backend
+        - otool -L carta_backend
 
         - echo "Package carta-backend"
         # install macdylibbundler
@@ -109,10 +109,10 @@ jobs:
         - otool -L carta_backend
 
         - cd .. && mkdir etc && cd etc
-#        - curl -O -L http://alma.asiaa.sinica.edu.tw/_downloads/measures_data.tar.gz
-#        - tar -xvf measures_data.tar.gz
-#        - rm measures_data.tar.gz
-#        - mv measures_data data        
+        - curl -O -L http://alma.asiaa.sinica.edu.tw/_downloads/measures_data.tar.gz
+        - tar -xvf measures_data.tar.gz
+        - rm measures_data.tar.gz
+        - mv measures_data data        
         - cd ..
         - ls bin/
         - ls libs/
