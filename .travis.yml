@@ -80,7 +80,7 @@ jobs:
         - cmake -DCMAKE_CXX_FLAGS="-I /usr/local/opt/openssl/include" -DCMAKE_CXX_STANDARD_LIBRARIES="-L /usr/local/Cellar/fmt/5.1.0/lib -L /usr/local/Cellar/hdf5/1.10.4/lib -L /usr/local/lib -L /usr/local/opt/openssl/lib" ..
         - make
         - ls -sort
-        - otool -L hdf5_image_viewer
+        - otool -L carta-backend
 
         - echo "Package carta-backend"
         # install macdylibbundler
@@ -92,7 +92,7 @@ jobs:
         - mkdir -p package/bin && cd package/bin && cp ../../carta_backend .
         - cp $TRAVIS_BUILD_DIR/scripts/run.sh .
         - cp /usr/local/lib/libuWS.dylib .
-#        - install_name_tool -change @rpath/libzfp.0.dylib /usr/local/lib/libzfp.0.dylib hdf5_image_viewer
+#        - install_name_tool -change @rpath/libzfp.0.dylib /usr/local/lib/libzfp.0.dylib carta-backend
         - otool -L carta_backend
         # Problematic for dylibbundler to find libzfp.0.dylib. 
         # (Changing path with install_name_tool does not seem to work).
