@@ -41,6 +41,8 @@ public:
     virtual ~FileLoader() = default;
 
     static FileLoader* getLoader(const std::string &file);
+    // return coordinates for axis types
+    virtual void findCoords(int& spectralAxis, int& stokesAxis);
 
     // Do anything required to open the file (set up cache size, etc)
     virtual void openFile(const std::string &file, const std::string &hdu) = 0;
@@ -49,8 +51,8 @@ public:
     // Return a casacore image type representing the data stored in the
     // specified HDU/group/table/etc.
     virtual image_ref loadData(FileInfo::Data ds) = 0;
-    // For 4D images, return which axis is Stokes; else -1
-    virtual int stokesAxis() = 0;
+protected:
+    virtual const casacore::CoordinateSystem& getCoordSystem() = 0;
 };
 
 } // namespace carta

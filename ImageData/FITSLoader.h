@@ -15,7 +15,7 @@ public:
     void openFile(const std::string &file, const std::string &hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
-    int stokesAxis() override;
+    const casacore::CoordinateSystem& getCoordSystem() override;
 
 private:
     std::string file, fitsHdu;
@@ -59,13 +59,8 @@ typename FITSLoader::image_ref FITSLoader::loadData(FileInfo::Data) {
     return *image;
 }
 
-int FITSLoader::stokesAxis() {
-    casacore::CoordinateSystem csys(image->coordinates());
-    casacore::Int coordnum = csys.findCoordinate(casacore::Coordinate::STOKES);
-    if (coordnum < 0)
-        return -1;
-    else
-        return csys.pixelAxes(coordnum)(0);
+const casacore::CoordinateSystem& FITSLoader::getCoordSystem() {
+    return image->coordinates();
 }
 
 } // namespace carta

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "FileLoader.h"
+#include "HDF5Attributes.h"
+
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
-#include <H5Cpp.h>
-#include <H5File.h>
 #include <string>
 #include <unordered_map>
 
@@ -15,7 +15,8 @@ public:
     void openFile(const std::string &file, const std::string &hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
-    int stokesAxis() override;
+    const casacore::CoordinateSystem& getCoordSystem() override;
+    void findCoords(int& spectralAxis, int& stokesAxis) override;
 
 private:
     static std::string dataSetToString(FileInfo::Data ds);
@@ -101,30 +102,64 @@ std::string HDF5Loader::dataSetToString(FileInfo::Data ds) {
     return (um.find(ds) != um.end()) ? um[ds] : "";
 }
 
-int HDF5Loader::stokesAxis() {
-    // returns -1 if no stokes axis
-    H5::H5File hdf5file(file, H5F_ACC_RDONLY);
-    H5::Group topLevelGroup = hdf5file.openGroup(hdf5Hdu);
-    hid_t groupId = topLevelGroup.getId();
-    char* type;
-    // read CTYPE3
-    hid_t ctypeID = H5Aopen_name(groupId, "CTYPE3");
-    if (ctypeID > 0) {
-        H5Aread(ctypeID, H5T_STRING, type);
-        H5Aclose(ctypeID);
-        std::string typestr3(type);
-        if (typestr3.compare("STOKES")) return 2;
-        // read CTYPE4
-        ctypeID = H5Aopen_name(groupId, "CTYPE4");
-	if (ctypeID > 0) {
-            H5Aread(ctypeID, H5T_STRING, type);
-            std::string typestr4(type);
-            H5Aclose(ctypeID);
-            if (typestr4.compare("STOKES")) return 3;
-        }
+const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
+    // this does not work: 
+    // (/casacore/lattices/LEL/LELCoordinates.cc : 69) Failed AlwaysAssert !coords_p.null()
+    const casacore::LELImageCoord* lelImCoords =
+        dynamic_cast<const casacore::LELImageCoord*>(&(loadData(FileInfo::Data::XYZW).lelCoordinates().coordinates()));
+    return lelImCoords->coordinates();
+}
+
+void HDF5Loader::findCoords(int& spectralAxis, int& stokesAxis) {
+    // find spectral and stokes axis in 4D image; cannot use CoordinateSystem!
+    // load attributes
+    casacore::HDF5File hdfFile(file);
+    casacore::HDF5Group hdfGroup(hdfFile, hdf5Hdu, true);
+    casacore::Record attributes = HDF5Attributes::doReadAttributes(hdfGroup.getHid());
+    hdfGroup.close();
+    hdfFile.close();
+    if (attributes.empty()) { // use defaults
+        spectralAxis = 2;
+        stokesAxis = 3;
+	return;
     }
-    // no stokes axis
-    return -1;
+
+    casacore::String cType3, cType4;
+    if (attributes.isDefined("CTYPE3")) {
+        cType3 = attributes.asString("CTYPE3");
+	cType3.upcase();
+    }
+    if (attributes.isDefined("CTYPE4")) {
+        cType4 = attributes.asString("CTYPE4");
+	cType4.upcase();
+    }
+    // find spectral axis
+    if ((cType3.startsWith("FREQ") || cType3.startsWith("VRAD") || cType3.startsWith("VELO")))
+        spectralAxis = 2;
+    else if ((cType4.startsWith("FREQ") || cType4.startsWith("VRAD") || cType4.startsWith("VELO")))
+        spectralAxis = 3;
+    else
+        spectralAxis = -1;
+    // find stokes axis
+    if (cType3 == "STOKES")
+        stokesAxis = 2;
+    else if (cType4 == "STOKES")
+        stokesAxis = 3;
+    else 
+        stokesAxis = -1;
+    // make assumptions if both not found
+    if (spectralAxis < 0) { // not found
+        if (stokesAxis < 0) {  // not found, use defaults
+            spectralAxis = 2;
+            stokesAxis = 3;
+        } else { // stokes found, set chan to other one
+            if (stokesAxis==2) spectralAxis = 3;
+            else spectralAxis = 2;
+        }
+    } else {  // chan found, set stokes to other one
+        if (spectralAxis == 2) stokesAxis = 3;
+        else stokesAxis = 2;
+    } 
 }
 
 } // namespace carta

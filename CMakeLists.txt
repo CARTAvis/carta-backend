@@ -21,10 +21,11 @@ set(LINK_LIBS ${LINK_LIBS} carta-protobuf ${PROTOBUF_LIBRARY} fmt hdf5_serial hd
 set(SOURCE_FILES
   main.cc
   Session.cc
-  FileInfoLoader.cc
   Frame.cc
   compression.cc
+  ImageData/HDF5Attributes.cc
   ImageData/FileLoader.cc
+  FileInfoLoader.cc
   Region/Region.cc
   Region/RegionStats.cc
   Region/RegionProfiler.cc

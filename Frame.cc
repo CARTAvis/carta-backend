@@ -11,7 +11,8 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
     : uuid(uuidString),
       valid(true),
       filename(filename),
-      loader(FileLoader::getLoader(filename)) {
+      loader(FileLoader::getLoader(filename)),
+      spectralAxis(-1), stokesAxis(-1) {
     try {
         if (loader==nullptr) {
             log(uuid, "Problem loading file {}: loader not implemented", filename);
@@ -29,16 +30,15 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
             return;
         }
 
-        // determine chan and stokes axes
-        stokesAxis = loader->stokesAxis();
-        if (ndims < 3) chanAxis = -1;
-        else chanAxis = 2;
-        if (ndims == 4 && stokesAxis==2) chanAxis=3;
+        // determine axis order (0-based)
+        if (ndims == 3) { // use defaults
+            spectralAxis = 2;
+            stokesAxis = -1;
+        } else if (ndims == 4) {  // find spectral and stokes axes
+            loader->findCoords(spectralAxis, stokesAxis);
+        } 
 
         log(uuid, "Opening image with dimensions: {}", imageShape);
-        // string axesInfo = fmt::format("Opening image with dimensions: {}", dimensions);
-        // sendLogEvent(axesInfo, {"file"}, CARTA::ErrorSeverity::DEBUG);
-
         // set current channel, stokes, channelCache
         std::string errMessage;
         valid = setImageChannels(defaultChannel, 0, errMessage);
@@ -159,7 +159,7 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
         return false;
     }
 
-    size_t depth(chanAxis>=0 ? imageShape(chanAxis) : 1);
+    size_t depth(spectralAxis>=0 ? imageShape(spectralAxis) : 1);
     size_t nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
     channelStats.resize(nstokes);
     for (auto i = 0; i < nstokes; i++) {
@@ -448,7 +448,7 @@ bool Frame::setBounds(CARTA::ImageBounds imageBounds, int newMip) {
     const int reqHeight = imageBounds.y_max() - imageBounds.y_min();
     const int reqWidth = imageBounds.x_max() - imageBounds.x_min();
 
-    if (imageShape(1) < y + reqHeight || imageShape(0) < x + reqWidth) {
+    if ((imageShape(1) < y + reqHeight) || (imageShape(0) < x + reqWidth)) {
         return false;
     }
 
@@ -474,7 +474,7 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
         log(uuid, message);
         return false;
     } else {
-        size_t depth(chanAxis>=0 ? imageShape(chanAxis) : 1);
+        size_t depth(spectralAxis>=0 ? imageShape(spectralAxis) : 1);
         if (newChannel < 0 || newChannel >= depth) {
             message = fmt::format("Channel {} is invalid in file {}", newChannel, filename);
             log(uuid, message);
@@ -503,30 +503,14 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
 
     // update Spatial requirements with current channel/stokes
     if (channelChanged || stokesChanged) {
-        if (!regions.count(CURSOR_REGION_ID)) {
-            // create cursor region; also sets spatial reqs
-            CARTA::Point centerPoint;
-            centerPoint.set_x(imageShape(0)/2);
-            centerPoint.set_y(imageShape(1)/2);
-            setCursorRegion(CURSOR_REGION_ID, centerPoint);
-        } else { // just set spatial reqs
-            std::vector<std::string> spatialProfiles;
-            setRegionSpatialRequirements(CURSOR_REGION_ID, spatialProfiles);
-        }
+        std::vector<std::string> spatialProfiles;
+        setRegionSpatialRequirements(CURSOR_REGION_ID, spatialProfiles);
     }
 
     // update Spectral requirements with current stokes
     if (stokesChanged) {
-        if (!regions.count(CURSOR_REGION_ID)) {
-            // create cursor region; also sets spectral reqs
-            CARTA::Point centerPoint;
-            centerPoint.set_x(imageShape(0)/2);
-            centerPoint.set_y(imageShape(1)/2);
-            setCursorRegion(CURSOR_REGION_ID, centerPoint);
-        } else {
-            std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectralProfiles;
-            setRegionSpectralRequirements(CURSOR_REGION_ID, spectralProfiles);
-        }
+        std::vector<CARTA::SetSpectralRequirements_SpectralConfig> spectralProfiles;
+        setRegionSpectralRequirements(CURSOR_REGION_ID, spectralProfiles);
     }
 
     return true;
@@ -548,69 +532,51 @@ void Frame::getChannelMatrix(casacore::Matrix<float>& chanMatrix, size_t channel
 }
 
 casacore::Slicer Frame::getChannelMatrixSlicer(size_t channel, size_t stokes) {
-    casacore::IPosition count(2, imageShape(0), imageShape(1));
-    casacore::IPosition start(2, 0, 0);
+    // slicer for spectral and stokes axes to select channel, stokes
+    casacore::IPosition count(imageShape);
+    casacore::IPosition start(imageShape.size());
+    start = 0;
 
-    // slice image data
-    if(ndims == 3) {
-        count.append(casacore::IPosition(1, 1));
-        start.append(casacore::IPosition(1, channel));
-    } else if (ndims == 4) {
-        count.append(casacore::IPosition(2, 1, 1));
-        if (stokesAxis==2)
-            start.append(casacore::IPosition(2, stokes, channel));
-        else
-            start.append(casacore::IPosition(2, channel, stokes));
+    if (spectralAxis >= 0) {
+        start(spectralAxis) = channel;
+        count(spectralAxis) = 1;
     }
-    // slice image data
+    if (stokesAxis >= 0) {
+        start(stokesAxis) = stokes;
+        count(stokesAxis) = 1;
+    }
+    // slicer for image data
     casacore::Slicer section(start, count);
     return section;
 }
 
 void Frame::getProfileSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes) {
-    // to slice image data along x, y, or channel axis (indicated with -1)
-    casacore::IPosition start, count;
-    if (x<0) { // get x profile
-        start = casacore::IPosition(1,0);
-        count = casacore::IPosition(1,imageShape(0));
-    } else {
-        start = casacore::IPosition(1,x);
-        count = casacore::IPosition(1,1);
+    // to slice image data along x, y, or spectral axis (indicated with -1)
+    // Start with entire image:
+    casacore::IPosition count(imageShape);
+    casacore::IPosition start(imageShape.size());
+    start = 0;
+
+    if (x >= 0) {
+        start(0) = x;
+        count(0) = 1;
     }
 
-    if (y<0) { // get y profile
-        start.append(casacore::IPosition(1,0));
-        count.append(casacore::IPosition(1,imageShape(1)));
-    } else {
-        start.append(casacore::IPosition(1,y));
-        count.append(casacore::IPosition(1,1));
+    if (y >= 0) { 
+        start(1) = y;
+        count(1) = 1;
     }
 
-    if(ndims == 3) {
-        if (channel<0) { // get spectral profile
-            start.append(casacore::IPosition(1,0));
-            count.append(casacore::IPosition(1,imageShape(2)));
-        } else {
-            start.append(casacore::IPosition(1,channel));
-            count.append(casacore::IPosition(1,1));
-        }
-    } else if(ndims==4) {
-        if (channel<0) { // get spectral profile with stokes
-            if (stokesAxis==2) {
-                start.append(casacore::IPosition(2,stokes,0));
-                count.append(casacore::IPosition(2,1,imageShape(3)));
-            } else {
-                start.append(casacore::IPosition(2,0,stokes));
-                count.append(casacore::IPosition(2,imageShape(2),1));
-            }
-        } else {
-            if (stokesAxis==2)
-                start.append(casacore::IPosition(2,stokes,channel));
-            else
-                start.append(casacore::IPosition(2,channel,stokes));
-            count.append(casacore::IPosition(2,1,1));
-        }
+    if ((channel >= 0) && (spectralAxis >=0)) {
+        start(spectralAxis) = channel;
+        count(spectralAxis) = 1;
     }
+
+    if ((stokes >= 0) && (stokesAxis >=0)) {
+        start(stokesAxis) = stokes;
+        count(stokesAxis) = 1;
+    }
+ 
     casacore::Slicer section(start, count);
     latticeSlicer = section;
 }
@@ -641,7 +607,7 @@ bool Frame::setRegionChannels(int regionId, int minchan, int maxchan, std::vecto
     // set chans to current if -1; set stokes to current if empty
     if (regions.count(regionId)) {
         // validate
-        int nchan(chanAxis>=0 ? imageShape(chanAxis) : 1);
+        int nchan(spectralAxis>=0 ? imageShape(spectralAxis) : 1);
         if (minchan > nchan || maxchan > nchan)
             return false;
         int nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
@@ -692,7 +658,7 @@ void Frame::setImageRegion() {
 
     // set image region channels: all channels, all stokes
     int minchan(0);
-    int maxchan = (chanAxis>0 ? imageShape(chanAxis)-1 : 0);
+    int maxchan = (spectralAxis>0 ? imageShape(spectralAxis)-1 : 0);
     std::vector<int> stokes;
     if (stokesAxis > 0) {
         for (int i=0; i<imageShape(stokesAxis); ++i)
@@ -770,7 +736,7 @@ bool Frame::setRegionHistogramRequirements(int regionId,
 
 bool Frame::setRegionSpatialRequirements(int regionId, const std::vector<std::string>& profiles) {
     // set requested spatial profiles e.g. ["Qx", "Uy"] or just ["x","y"] to use current stokes
-    if (!regions.count(regionId) && regionId==0) {
+    if (!regions.count(regionId) && (regionId == CURSOR_REGION_ID)) {
         // frontend sends spatial reqs for cursor before SET_CURSOR; set cursor region
         CARTA::Point centerPoint;
         centerPoint.set_x(imageShape(0)/2);
@@ -796,7 +762,7 @@ bool Frame::setRegionSpatialRequirements(int regionId, const std::vector<std::st
 bool Frame::setRegionSpectralRequirements(int regionId,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
     // set requested spectral profiles e.g. ["Qz", "Uz"] or just ["z"] to use current stokes
-    if (!regions.count(regionId) && regionId==0) {
+    if (!regions.count(regionId) && (regionId == CURSOR_REGION_ID)) {
         // in case frontend sends spectral reqs for cursor before SET_CURSOR; set cursor region
         CARTA::Point centerPoint;
         centerPoint.set_x(imageShape(0)/2);
@@ -834,6 +800,7 @@ bool Frame::setRegionStatsRequirements(int regionId, const std::vector<int> stat
 // ***** region data *****
 
 bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData) {
+    bool histogramOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         histogramData->set_stokes(currentStokes());
@@ -846,7 +813,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             if (reqChannel==-1) {
                 reqChannels.push_back(currentChannel());
             } else if (reqChannel == -2) { // all channels
-                for (size_t i=0; i<imageShape(chanAxis); ++i)
+                for (size_t i=0; i<imageShape(spectralAxis); ++i)
                    reqChannels.push_back(i);
             } else {
                 reqChannels.push_back(reqChannel);
@@ -870,13 +837,13 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                 }
             }
         }
-        return true;
-    } else {
-        return false;
-    }
+        histogramOK = true;
+    } 
+    return histogramOK;
 }
 
 bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData) {
+    bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         // set profile parameters
@@ -884,10 +851,18 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
         int x(ctrlPts[0].x()), y(ctrlPts[0].y());
         profileData.set_x(x);
         profileData.set_y(y);
-        int chan(currentChannel());
+        int chan(currentChannel()), stokes(currentStokes());
         profileData.set_channel(chan);
-        profileData.set_stokes(currentStokes());
-        profileData.set_value(channelCache(casacore::IPosition(2, x, y)));
+        profileData.set_stokes(stokes);
+        casacore::uInt imSize(imageShape.size());
+        casacore::IPosition valuePos(imSize);
+        valuePos(0) = x;
+        valuePos(1) = y;
+        if (imSize>=3 && spectralAxis>=0)
+            valuePos(spectralAxis) = chan;
+        if (imSize>3 && stokesAxis>=0)
+            valuePos(stokesAxis) = stokes;
+        profileData.set_value(channelCache(valuePos));
         // set profiles
         for (size_t i=0; i<region->numSpatialProfiles(); ++i) {
             // SpatialProfile
@@ -897,7 +872,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
             // get <axis, stokes> for slicing image data
             std::pair<int,int> axisStokes = region->getSpatialProfileReq(i);
             std::vector<float> profile;
-            if (axisStokes.second == currentStokes()) {
+            if (axisStokes.second == stokes) {
                 // use stored channel matrix 
                 switch (axisStokes.first) {
                     case 0: { // x
@@ -932,13 +907,13 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
             }
             *newProfile->mutable_values() = {profile.begin(), profile.end()};
         }
-        return true;
-    } else {
-        return false;
-    }
+        profileOK = true;
+    } 
+    return profileOK;
 }
 
 bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData) {
+    bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         // set profile parameters
@@ -962,13 +937,13 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 region->fillProfileStats(i, profileData, subLattice);
             }
         }
-        return true;
-    } else {
-        return false;
+        profileOK = true;
     }
+    return profileOK;
 }
 
 bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData) {
+    bool statsOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         int currChan(currentChannel()), currStokes(currentStokes());
@@ -978,9 +953,8 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         lattSlicer = getChannelMatrixSlicer(currChan, currStokes);  // for entire 2D image, for now
         casacore::SubLattice<float> subLattice(loader->loadData(FileInfo::Data::XYZW), lattSlicer);
         region->fillStatsData(statsData, subLattice);
-        return true;
-    } else {
-        return false;
+        statsOK = true;
     }
+    return statsOK;
 }
 
