@@ -7,6 +7,7 @@ osx_image: xcode9.4
 cache:
   directories:
     - $HOME/casacore
+    - $HOME/measures_data
     - $HOME/package
 
 before_install:
@@ -109,7 +110,8 @@ jobs:
         - otool -L carta_backend
 
         - cd .. && mkdir etc && cd etc
-        - curl -O -L http://alma.asiaa.sinica.edu.tw/_downloads/measures_data.tar.gz
+        - if [ -e "$HOME/measures_data/measures_data.tar.gz" ]; then echo "measures data cache exists"; else echo "downloading measures data" && curl -o $HOME/measures_data/measures_data.tar.gz  http://alma.asiaa.sinica.edu.tw/_downloads/measures_data.tar.gz; fi
+        - cp $HOME/measures_data/measures_data.tar.gz .
         - tar -xvf measures_data.tar.gz
         - rm measures_data.tar.gz
         - mv measures_data data        
@@ -134,7 +136,6 @@ jobs:
         - brew install https://raw.githubusercontent.com/kadwanev/bigboybrew/master/Library/Formula/sshpass.rb
 
         - export SSHPASS=$DEPLOY_PASS
-#        - sshpass -e scp -o stricthostkeychecking=no -P $DEPLOY_PORT package_$TRAVIS_JOB_NUMBER.tar.gz $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
-        - sshpass -e scp -o stricthostkeychecking=no -P $DEPLOY_PORT package_$TRAVIS_JOB_NUMBER.tar.gz $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
+        - travis_wait 20 sshpass -e scp -o stricthostkeychecking=no -P $DEPLOY_PORT package_$TRAVIS_JOB_NUMBER.tar.gz $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
         - echo "Finished !!"
 
