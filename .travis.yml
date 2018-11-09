@@ -11,7 +11,8 @@ cache:
     - $HOME/package
 
 before_install:
-    - sudo rm /usr/local/include/c++
+    - ls /usr/local/include/
+#    - sudo rm /usr/local/include/c++
     - brew install gcc
     - brew install tbb fmt protobuf cfitsio wcslib fftw boost-python hdf5
 # using default system openssl   - brew install openssl
