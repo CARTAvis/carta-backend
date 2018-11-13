@@ -1,7 +1,6 @@
 #pragma once
 
 #include <fmt/format.h>
-#include <boost/multi_array.hpp>
 #include <mutex>
 #include <cstdio>
 #include <uWS/uWS.h>

@@ -5,7 +5,7 @@ RUN \
   apt-get update && \
   apt-get -y upgrade && \
   apt-get install -y bison build-essential byobu cmake curl default-jre emacs \
-    fftw3-dev flex gdb gcc gfortran git git-lfs htop libblas-dev libboost-all-dev \
+    fftw3-dev flex gdb gcc gfortran git git-lfs htop libblas-dev \
     libcfitsio-dev libfmt-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
     libprotobuf-dev libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev \
     man protobuf-compiler python-pip python3-pip software-properties-common \

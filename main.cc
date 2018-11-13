@@ -1,16 +1,14 @@
 #include <vector>
 #include <fmt/format.h>
 #include <uWS/uWS.h>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/program_options.hpp>
 #include <regex>
 #include <fstream>
 #include <iostream>
 #include <tuple>
 #include <tbb/concurrent_queue.h>
 #include <tbb/task_scheduler_init.h>
+#include <casacore/casa/OS/HostInfo.h>
+#include <casacore/casa/Inputs/Input.h>
 #include "AnimationQueue.h"
 #include "Session.h"
 #include "OnMessageTask.h"
@@ -20,7 +18,6 @@
 
 using namespace std;
 using namespace uWS;
-namespace po = boost::program_options;
 
 using key_type = std::string;
 
@@ -28,12 +25,11 @@ unordered_map<key_type, Session*> sessions;
 unordered_map<key_type, carta::AnimationQueue*> animationQueues;
 unordered_map<string, vector<string>> permissionsMap;
 unordered_map<key_type, tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>*> msgQueues;
-boost::uuids::random_generator uuid_gen;
+int sessionNumber;
 Hub h;
 
-string baseFolder = "./";
-bool verbose = false;
-bool usePermissions;
+std::string baseFolder("./"), version_id("1.0");
+bool verbose, usePermissions;
 
 // Reads a permissions file to determine which API keys are required to access various subdirectories
 void readPermissions(string filename) {
@@ -63,7 +59,9 @@ void readPermissions(string filename) {
 
 // Called on connection. Creates session object and assigns UUID and API keys to it
 void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
-    ws->setUserData(new std::string(boost::uuids::to_string(uuid_gen())));
+    std::string uuidstr = fmt::format("{}{}", ++sessionNumber,
+        casacore::Int(casacore::HostInfo::secondsFrom1970()));
+    ws->setUserData(new std::string(uuidstr));
     auto &uuid = *((std::string*)ws->getUserData());
     uS::Async *outgoing = new uS::Async(h.getLoop());
     outgoing->setData(&uuid);
@@ -135,47 +133,31 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
-        po::options_description desc("Allowed options");
-        desc.add_options()
-            ("help", "produce help message")
-            ("verbose", "display verbose logging")
-            ("permissions", "use a permissions file for determining access")
-            ("port", po::value<int>(), "set server port")
-            ("threads", po::value<int>(), "set thread pool count")
-            ("folder", po::value<string>(), "set folder for data files");
+        // define and get input arguments
+        casacore::Input inp;
+	inp.version(version_id);
+	inp.create("verbose", "False", "display verbose logging", "Bool");
+	inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
+	int port(3002);
+	inp.create("port", std::to_string(port), "set server port", "Int");
+        int threadCount(tbb::task_scheduler_init::default_num_threads());
+	inp.create("threads", std::to_string(threadCount), "set thread pool count", "Int");
+	inp.create("folder", baseFolder, "set folder for data files", "String");
+	inp.readArguments(argc, argv);
 
-        po::variables_map vm;
-        po::store(po::parse_command_line(argc, argv, desc), vm);
-        po::notify(vm);
+	verbose = inp.getBool("verbose");
+	usePermissions = inp.getBool("permissions");
+	port = inp.getInt("port");
+	threadCount = inp.getInt("threads");
+	baseFolder = inp.getString("folder");
 
-        if (vm.count("help")) {
-            cout << desc << "\n";
-            return 0;
-        }
-
-        verbose = vm.count("verbose");
-        usePermissions = vm.count("permissions");
-
-        int port = 3002;
-        if (vm.count("port")) {
-            port = vm["port"].as<int>();
-        }
-
-        int threadCount = tbb::task_scheduler_init::default_num_threads();
-        if (vm.count("threads")) {
-            threadCount = vm["threads"].as<int>();
-        }
-        // Construct task scheduler
+        // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
-
-
-        if (vm.count("folder")) {
-            baseFolder = vm["folder"].as<string>();
-        }
-
         if (usePermissions) {
             readPermissions("permissions.txt");
         }
+
+	sessionNumber = 0;
 
         h.onMessage(&onMessage);
         h.onConnection(&onConnect);
