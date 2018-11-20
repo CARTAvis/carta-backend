@@ -38,7 +38,7 @@ RUN \
 RUN \
   git clone https://github.com/casacore/casacore.git && \
   mkdir -p casacore/build && cd casacore/build && \
-  cmake .. -DUSE_FFTW3=ON -DUSE_HDF5=ON -DUSE_THREADS=ON -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo && \
+  cmake .. -DUSE_FFTW3=ON -DUSE_HDF5=ON -DUSE_THREADS=ON -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBoost_NO_BOOST_CMAKE=1 -DBUILD_PYTHON=OFF && \
   make && make install && \
   cd /root && rm -rf casacore
 
