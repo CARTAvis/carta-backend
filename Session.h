@@ -10,17 +10,17 @@
 #include <casacore/casa/OS/File.h>
 #include <tbb/concurrent_queue.h>
 
-#include <carta-protobuf/register_viewer.pb.h>
-#include <carta-protobuf/file_list.pb.h>
-#include <carta-protobuf/file_info.pb.h>
-#include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/close_file.pb.h>
-#include <carta-protobuf/set_image_view.pb.h>
-#include <carta-protobuf/set_image_channels.pb.h>
+#include <carta-protobuf/file_info.pb.h>
+#include <carta-protobuf/file_list.pb.h>
+#include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/raster_image.pb.h>
+#include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/register_viewer.pb.h>
+#include <carta-protobuf/set_image_channels.pb.h>
+#include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
-#include <carta-protobuf/region_requirements.pb.h>
 
 #include "compression.h"
 #include "Frame.h"
@@ -80,6 +80,8 @@ public:
     void onSetImageView(const CARTA::SetImageView& message, uint32_t requestId);
     void onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId);
     void onSetCursor(const CARTA::SetCursor& message, uint32_t requestId);
+    void onSetRegion(const CARTA::SetRegion& message, uint32_t requestId);
+    void onRemoveRegion(const CARTA::RemoveRegion& message, uint32_t requestId);
     void onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId);
     void onSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
     void onSetSpectralRequirements(const CARTA::SetSpectralRequirements& message, uint32_t requestId);

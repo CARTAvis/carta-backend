@@ -2,9 +2,6 @@
 #include "FileInfoLoader.h"
 #include "compression.h"
 #include "util.h"
-
-#include <carta-protobuf/raster_image.pb.h>
-#include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/error.pb.h>
 
 #include <casacore/casa/OS/Path.h>
@@ -307,7 +304,7 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
         size_t newChannel(message.channel()), newStokes(message.stokes());
         bool channelChanged(newChannel != frame->currentChannel()),
              stokesChanged(newStokes != frame->currentStokes());
-	if (channelChanged || stokesChanged) {
+        if (channelChanged || stokesChanged) {
             string errMessage;
             if (frame->setImageChannels(message.channel(), message.stokes(), errMessage)) {
                 // RESPONSE: updated histogram, spatial profile, spectral profile
@@ -348,6 +345,42 @@ void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
         string error = fmt::format("File id {} not found", fileId);
         sendLogEvent(error, {"cursor"}, CARTA::ErrorSeverity::ERROR);
     }
+}
+
+void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
+    SetRegionAck ack;
+    auto fileId(message.file_id());
+    auto regionId(message.region_id());
+    ack.set_region_id(regionId);
+    if (frames.count(fileId)) {
+        if (message.region_id() <= 0) { // get region id unique across all frames
+            for (auto& frame : frames) // frames = map<fileId, unique_ptr<Frame>>
+                regionId = std::max(regionId, frame.second->getMaxRegionId());
+            ++regionId; // get next available
+            if (regionId == 0) // reserved for cursor
+                ++regionId;
+        }
+        std::vector<int> stokes = {message.stokes().begin(), message.stokes().end()};
+        std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
+        std::string errMessage;
+        auto& frame = frames[fileId];  // use frame in SetRegion message
+        bool success = frame->setRegion(regionId, message.region_name(), message.region_type(), message.channel_min(),
+            message.channel_max(), stokes, points, message.rotation(), errMessage);
+        ack.set_success(success);
+        ack.set_message(errMessage);
+        ack.set_region_id(regionId);
+    } else {
+        ack.set_success(false);
+        ack.set_message("Invalid file id");
+    }
+    // RESPONSE
+    sendEvent("SET_REGION_ACK", requestId, ack);
+}
+
+void Session::onRemoveRegion(const CARTA::RemoveRegion& message, uint32_t requestId) {
+    auto regionId(message.region_id());
+    for (auto& frame : frames)  // frames = map<fileId, unique_ptr<Frame>>
+        frame.second->removeRegion(regionId);
 }
 
 void Session::onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId) {

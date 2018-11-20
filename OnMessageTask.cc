@@ -1,17 +1,6 @@
 #include "OnMessageTask.h"
 #include "util.h"
 #include <algorithm>
-#include <carta-protobuf/close_file.pb.h>
-#include <carta-protobuf/file_info.pb.h>
-#include <carta-protobuf/file_list.pb.h>
-#include <carta-protobuf/open_file.pb.h>
-#include <carta-protobuf/raster_image.pb.h>
-#include <carta-protobuf/region_histogram.pb.h>
-#include <carta-protobuf/region_requirements.pb.h>
-#include <carta-protobuf/register_viewer.pb.h>
-#include <carta-protobuf/set_cursor.pb.h>
-#include <carta-protobuf/set_image_channels.pb.h>
-#include <carta-protobuf/set_image_view.pb.h>
 #include <chrono>
 #include <cstring>
 #include <fmt/format.h>
@@ -99,6 +88,16 @@ tbb::task* OnMessageTask::execute() {
         CARTA::SetStatsRequirements message;
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
             session->onSetStatsRequirements(message, requestId);
+        }
+    } else if (eventName == "SET_REGION") {
+        CARTA::SetRegion message;
+        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+            session->onSetRegion(message, requestId);
+        }
+    } else if (eventName == "REMOVE_REGION") {
+        CARTA::RemoveRegion message;
+        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+            session->onRemoveRegion(message, requestId);
         }
     } else {
         log(uuid, "Unknown event type {}", eventName);

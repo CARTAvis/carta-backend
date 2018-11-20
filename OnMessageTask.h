@@ -2,9 +2,9 @@
 
 #include "AnimationQueue.h"
 #include "Session.h"
-#include <string>
 #include <tbb/concurrent_queue.h>
 #include <tbb/task.h>
+#include <string>
 #include <tuple>
 #include <vector>
 

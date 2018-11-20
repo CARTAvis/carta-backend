@@ -11,7 +11,7 @@ Region::Region(const std::string& name, const CARTA::RegionType type) :
     m_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
 }
 
-void Region::setChannels(int minchan, int maxchan, std::vector<int>& stokes) {
+void Region::setChannels(int minchan, int maxchan, const std::vector<int>& stokes) {
     m_minchan = minchan;
     m_maxchan = maxchan;
     m_stokes = stokes;
@@ -47,14 +47,18 @@ size_t Region::numHistogramConfigs() {
     return m_stats->numHistogramConfigs();
 }
 
-void Region::fillHistogram(CARTA::Histogram* histogram, const casacore::Matrix<float>& chanMatrix,
-        const size_t chanIndex, const size_t stokesIndex) {
-    return m_stats->fillHistogram(histogram, chanMatrix, chanIndex, stokesIndex);
+void Region::fillHistogram(CARTA::Histogram* histogram, const casacore::Array<float>& histogramArray,
+        const size_t chanIndex, const size_t stokesIndex, const int numBins) {
+    return m_stats->fillHistogram(histogram, histogramArray, chanIndex, stokesIndex, numBins);
 }
 
 // stats
 void Region::setStatsRequirements(const std::vector<int>& statsTypes) {
     m_stats->setStatsRequirements(statsTypes);
+}
+
+size_t Region::numStats() {
+    return m_stats->numStats();
 }
 
 void Region::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice) {

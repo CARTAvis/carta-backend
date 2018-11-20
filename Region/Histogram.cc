@@ -5,29 +5,45 @@
 
 using namespace carta;
 
-Histogram::Histogram(int numBins, float minValue, float maxValue, const casacore::Matrix<float> &cm)
+Histogram::Histogram(int numBins, float minValue, float maxValue, const casacore::Array<float> &hArray)
     : binWidth((maxValue - minValue)/numBins),
       minVal(minValue),
       hist(numBins, 0),
-      chanMatrix(cm)
+      histArray(hArray)
 {}
 
 Histogram::Histogram(Histogram &h, tbb::split)
     : binWidth(h.binWidth),
       minVal(h.minVal),
       hist(h.hist.size(), 0),
-      chanMatrix(h.chanMatrix)
+      histArray(h.histArray)
 {}
 
 void Histogram::operator()(const tbb::blocked_range2d<size_t> &r) {
     std::vector<int> tmp(hist);
     for (auto j = r.rows().begin(); j != r.rows().end(); ++j) {
         for (auto i = r.cols().begin(); i != r.cols().end(); ++i) {
-            auto v = chanMatrix(i,j);
+            auto v = histArray(casacore::IPosition(2,i,j));
             if (std::isnan(v))
                 continue;
             int bin = std::max(std::min((int) ((v - minVal) / binWidth), (int)hist.size() - 1), 0);
             ++tmp[bin];
+        }
+    }
+    hist = tmp;
+}
+
+void Histogram::operator()(const tbb::blocked_range3d<size_t> &r) {
+    std::vector<int> tmp(hist);
+    for (auto k = r.pages().begin(); k != r.pages().end(); ++k) {
+        for (auto j = r.rows().begin(); j != r.rows().end(); ++j) {
+            for (auto i = r.cols().begin(); i != r.cols().end(); ++i) {
+                auto v = histArray(casacore::IPosition(3,i,j,k));
+                if (std::isnan(v))
+                    continue;
+                int bin = std::max(std::min((int) ((v - minVal) / binWidth), (int)hist.size() - 1), 0);
+                ++tmp[bin];
+            }
         }
     }
     hist = tmp;

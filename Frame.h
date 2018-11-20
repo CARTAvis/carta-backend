@@ -68,6 +68,7 @@ public:
     ~Frame();
 
     bool isValid();
+    int getMaxRegionId();
 
     // image data
     std::vector<float> getImageData(bool meanFilter = true);
@@ -84,12 +85,12 @@ public:
 
     // region data: pass through to Region
     // SET_REGION fields:
-    bool setRegion(int regionId, std::string name, CARTA::RegionType type, bool image=false);
-    bool setRegionChannels(int regionId, int minchan, int maxchan, std::vector<int>& stokes);
-    bool setRegionControlPoints(int regionId, std::vector<CARTA::Point>& points);
-    bool setRegionRotation(int regionId, float rotation);
+    bool setRegion(int regionId, std::string name, CARTA::RegionType type, int minchan,
+        int maxchan, std::vector<int>& stokes, std::vector<CARTA::Point>& points,
+        float rotation, std::string& message);
     // setRegion for cursor (defaults for fields not in SET_CURSOR)
     bool setCursorRegion(int regionId, const CARTA::Point& point);
+    void removeRegion(int regionId);
 
     // set requirements
     bool setRegionHistogramRequirements(int regionId,
@@ -99,7 +100,7 @@ public:
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
     bool setRegionStatsRequirements(int regionId, const std::vector<int> statsTypes);
 
-    // get region histograms, profiles
+    // get region histograms, profiles, stats
     bool fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData);
     bool fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData);
     bool fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData);

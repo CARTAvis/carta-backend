@@ -1,8 +1,8 @@
 //# RegionStats.cc: implementation of class for calculating region statistics and histograms
 
+#include "RegionStats.h"
 #include "Histogram.h"
 #include "MinMax.h"
-#include "RegionStats.h"
 
 #include <chrono>
 #include <cmath>
@@ -37,51 +37,56 @@ CARTA::SetHistogramRequirements_HistogramConfig RegionStats::getHistogramConfig(
     return config;
 }
 
-void RegionStats::fillHistogram(CARTA::Histogram* histogram, const casacore::Matrix<float>& chanMatrix,
-        const size_t chanIndex, const size_t stokesIndex) {
+void RegionStats::fillHistogram(CARTA::Histogram* histogram, const casacore::Array<float>& histogramArray,
+        const size_t chanIndex, const size_t stokesIndex, const int nBins) {
     // stored?
-    if (m_channelHistograms.count(chanIndex) && m_stokes==stokesIndex) {
+    if (m_channelHistograms.count(chanIndex) && m_stokes==stokesIndex && m_bins==nBins) {
         *histogram = m_channelHistograms[chanIndex];
     } else {
-        // create histogram for this channel, stokes
-        m_stokes = stokesIndex;
-
         // auto tStart = std::chrono::high_resolution_clock::now();
-
-        size_t nrow(chanMatrix.nrow()), ncol(chanMatrix.ncolumn());
-        int numBins(0);
-        for (auto& chanConfig : m_configs) {
-            if (chanConfig.channel()==chanIndex) {
-                numBins = chanConfig.num_bins();
-                break;
-            }
+        // find min, max for input array
+        casacore::IPosition inputShape(histogramArray.shape());
+        bool is2D(inputShape.size()==2);
+        MinMax<float> mm(histogramArray);
+        if (is2D) {
+            // (row_begin, row_end, col_begin, col_end)
+            tbb::blocked_range2d<size_t> range(0, inputShape(1), 0, inputShape(0));
+            tbb::parallel_reduce(range, mm);
+        } else {  // cube histogram
+            // (page_begin, page_end, row_begin, row_end, col_begin, col_end)
+            tbb::blocked_range3d<size_t> range(0, inputShape(2), 0, inputShape(1), 0, inputShape(0));
+            MinMax<float> mm(histogramArray);
+            tbb::parallel_reduce(range, mm);
         }
-        if (numBins < 0) 
-            numBins = int(max(sqrt(nrow * ncol), 2.0));
 
-        tbb::blocked_range2d<size_t> range(0, ncol, 0, nrow);
-        MinMax<float> mm(chanMatrix);
-        tbb::parallel_reduce(range, mm);
+        // find histogram for input array
         float minVal, maxVal;
         std::tie(minVal, maxVal) = mm.getMinMax();
-
-        Histogram hist(numBins, minVal, maxVal, chanMatrix);
-        tbb::parallel_reduce(range, hist);
+        Histogram hist(nBins, minVal, maxVal, histogramArray);
+        if (is2D) {
+            tbb::blocked_range2d<size_t> range(0, inputShape(1), 0, inputShape(0));
+            tbb::parallel_reduce(range, hist);
+        } else {  // cube histogram
+            tbb::blocked_range3d<size_t, size_t, size_t> range(0, inputShape(2), 0, inputShape(1), 0, inputShape(0));
+            tbb::parallel_reduce(range, hist);
+        }
         std::vector<int> histogramBins = hist.getHistogram();
         float binWidth = hist.getBinWidth();
-
         // auto tEnd = std::chrono::high_resolution_clock::now();
         // auto dt = std::chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
         // fmt::print("histogram loops took {}ms\n", dt/1e3);
 
         // fill histogram
         histogram->set_channel(chanIndex);
-        histogram->set_num_bins(numBins);
+        histogram->set_num_bins(nBins);
         histogram->set_bin_width(binWidth);
         histogram->set_first_bin_center(minVal + (binWidth / 2.0));
         *histogram->mutable_bins() = {histogramBins.begin(), histogramBins.end()};
 
+        // save for next time
         m_channelHistograms[chanIndex] = *histogram;
+        m_stokes = stokesIndex;
+        m_bins = nBins;
     }
 }
 
@@ -89,6 +94,10 @@ void RegionStats::fillHistogram(CARTA::Histogram* histogram, const casacore::Mat
 
 void RegionStats::setStatsRequirements(const std::vector<int>& statsTypes) {
     m_regionStats = statsTypes;
+}
+
+size_t RegionStats::numStats() {
+   return m_regionStats.size();
 }
 
 void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice) {

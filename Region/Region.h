@@ -19,7 +19,7 @@ public:
     ~Region() {};
 
     // set Region parameters
-    void setChannels(int minchan, int maxchan, std::vector<int>& stokes);
+    void setChannels(int minchan, int maxchan, const std::vector<int>& stokes);
     void setControlPoints(const std::vector<CARTA::Point>& points);
     void setRotation(const float rotation);
     // get Region parameters
@@ -29,8 +29,8 @@ public:
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
     CARTA::SetHistogramRequirements_HistogramConfig getHistogramConfig(int histogramIndex);
     size_t numHistogramConfigs();
-    void fillHistogram(CARTA::Histogram* histogram, const casacore::Matrix<float>& chanMatrix,
-        const size_t chanIndex, const size_t stokesIndex);
+    void fillHistogram(CARTA::Histogram* histogram, const casacore::Array<float>& histogramArray,
+        const size_t chanIndex, const size_t stokesIndex, const int numBins);
 
     // Spatial: pass through to RegionProfiler
     bool setSpatialRequirements(const std::vector<std::string>& profiles,
@@ -48,8 +48,9 @@ public:
     void fillProfileStats(int profileIndex, CARTA::SpectralProfileData& profileData, 
         casacore::SubLattice<float>& lattice);
 
-    // Region Stats
+    // Stats: pass through to RegionStats
     void setStatsRequirements(const std::vector<int>& statsTypes);
+    size_t numStats();
     void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice);
 
 private:
