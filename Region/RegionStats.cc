@@ -55,13 +55,12 @@ void RegionStats::fillHistogram(CARTA::Histogram* histogram, const casacore::Arr
         } else {  // cube histogram
             // (page_begin, page_end, row_begin, row_end, col_begin, col_end)
             tbb::blocked_range3d<size_t> range(0, inputShape(2), 0, inputShape(1), 0, inputShape(0));
-            MinMax<float> mm(histogramArray);
             tbb::parallel_reduce(range, mm);
         }
-
-        // find histogram for input array
         float minVal, maxVal;
         std::tie(minVal, maxVal) = mm.getMinMax();
+
+        // find histogram for input array
         Histogram hist(nBins, minVal, maxVal, histogramArray);
         if (is2D) {
             tbb::blocked_range2d<size_t> range(0, inputShape(1), 0, inputShape(0));

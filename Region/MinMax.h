@@ -10,7 +10,7 @@ namespace carta {
 
 template <typename T>
 class MinMax {
-    T min, max;
+    T minval, maxval;
     const casacore::Array<T> &histArray;
 
 public:
@@ -26,22 +26,22 @@ public:
 
 template <typename T>
 MinMax<T>::MinMax(const casacore::Array<T> &hArray)
-    : min(std::numeric_limits<T>::max()),
-      max(std::numeric_limits<T>::min()),
+    : minval(std::numeric_limits<T>::max()),
+      maxval(std::numeric_limits<T>::min()),
       histArray(hArray)
 {}
 
 template <typename T>
 MinMax<T>::MinMax(MinMax<T> &mm, tbb::split)
-    : min(std::numeric_limits<T>::max()),
-      max(std::numeric_limits<T>::min()),
+    : minval(std::numeric_limits<T>::max()),
+      maxval(std::numeric_limits<T>::min()),
       histArray(mm.histArray)
 {}
 
 template <typename T>
 void MinMax<T>::operator()(const tbb::blocked_range2d<size_t> &r) {
-    T tmin = min;
-    T tmax = max;
+    T tmin = minval;
+    T tmax = maxval;
     for(size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
         for(size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
             T val = histArray(casacore::IPosition(2,i,j));
@@ -51,14 +51,14 @@ void MinMax<T>::operator()(const tbb::blocked_range2d<size_t> &r) {
             tmax = std::max(tmax, val);
         }
     }
-    min = tmin;
-    max = tmax;
+    minval = tmin;
+    maxval = tmax;
 }
 
 template <typename T>
-void MinMax<T>::operator()(const tbb::blocked_range3d<size_t, size_t, size_t> &r) {
-    T tmin = min;
-    T tmax = max;
+void MinMax<T>::operator()(const tbb::blocked_range3d<size_t> &r) {
+    T tmin = minval;
+    T tmax = maxval;
     for(size_t k = r.pages().begin(); k != r.pages().end(); ++k) {
         for(size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
             for(size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
@@ -70,19 +70,19 @@ void MinMax<T>::operator()(const tbb::blocked_range3d<size_t, size_t, size_t> &r
             }
         }
     }
-    min = tmin;
-    max = tmax;
+    minval = tmin;
+    maxval = tmax;
 }
 
 template <typename T>
 void MinMax<T>::join(MinMax<T> &other) {
-    min = std::min(min, other.min);
-    max = std::max(max, other.max);
+    minval = std::min(minval, other.minval);
+    maxval = std::max(maxval, other.maxval);
 }
 
 template <typename T>
 std::pair<T,T> MinMax<T>::getMinMax() const {
-    return {min, max};
+    return {minval, maxval};
 }
 
 
