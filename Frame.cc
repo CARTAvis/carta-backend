@@ -40,6 +40,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
 
         log(uuid, "Opening image with dimensions: {}", imageShape);
         // set current channel, stokes, channelCache
+        channelCache.resize();
         std::string errMessage;
         valid = setImageChannels(defaultChannel, 0, errMessage);
 
