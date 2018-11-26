@@ -1,19 +1,30 @@
 language: cpp
 os: osx
 compiler: clang
-osx_image: xcode9.4
-# If we use "osx_image: xcode10", everything builds, but the executable crashes with "Bus error: 10"
+osx_image: xcode10.1
+
+python:
+  - 2.7
+
+language: node_js
+node_js:
+  - "8"
 
 cache:
   directories:
     - $HOME/casacore
     - $HOME/measures_data
     - $HOME/package
+    - $HOME/carta-frontend-built
+    - $HOME/emsdk
 
 before_install:
     - ls /usr/local/include/
 #    - sudo rm /usr/local/include/c++
-    - brew install gcc
+    - brew update > /dev/null
+    - brew install gcc || brew link --overwrite gcc
+    - brew link gcc # needed to use xcode10
+    - which gfortran
     - brew install tbb fmt protobuf cfitsio wcslib fftw hdf5
 # using default system openssl   - brew install openssl
 
@@ -129,7 +140,7 @@ jobs:
         - echo "Upload the package"
         - cd $HOME
         - ls -sort
-        - mv package package_$TRAVIS_JOB_NUMBER
+        - cp -r package package_$TRAVIS_JOB_NUMBER
         - tar -czvf package_$TRAVIS_JOB_NUMBER.tar.gz package_$TRAVIS_JOB_NUMBER
         - export SSHPASS=$DEPLOY_PASS
 
@@ -137,5 +148,49 @@ jobs:
 
         - export SSHPASS=$DEPLOY_PASS
         - sshpass -e scp -o stricthostkeychecking=no -P $DEPLOY_PORT package_$TRAVIS_JOB_NUMBER.tar.gz $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
+#        - echo "Finished !!"
+
+    - stage: run tests
+      install: true
+      script:
+#set up emscripten
+        - cd $HOME
+        - rm -rf emsdk
+        - git clone https://github.com/juj/emsdk.git
+        - cd emsdk
+        - git pull
+        - ./emsdk install sdk-1.38.11-64bit
+        - ./emsdk activate sdk-1.38.11-64bit
+        - source ./emsdk_env.sh
+        - cd $HOME
+# prepare frontend
+        - git clone https://github.com/idia-astro/carta-frontend.git
+        - cd carta-frontend
+        - git submodule init
+        - git submodule update
+        - npm install
+        - cd wasm_libs
+        - ./build_libs.sh
+        - cd ..
+        - cd wasm_src
+        - ./build_wrappers.sh
+        - cd ..
+        - cd protobuf
+        - ./build_proto.sh
+# prepare tests
+        - cd $HOME
+        - cd package
+        - ls -sort
+        - cd bin
+        - wget http://alma.asiaa.sinica.edu.tw/_downloads/QA.tar.gz
+        - tar -xvf QA.tar.gz
+        - cp -r QA/HD163296_CO_2_1_mom0_zoom.image .
+        - ls -sort
+        - ./run.sh & # run carta_backend in the background
+        - cd $HOME/carta-frontend/src
+        - rm -rf test # temporarily remove advanced jest tests
+        - rm ICD.test.ts
+        - cp $HOME/package/bin/QA/ICD.test.ts . # temporarily copy simple jest test
+        - npm run test < $TRAVIS_BUILD_DIR/scripts/q.txt
         - echo "Finished !!"
 
