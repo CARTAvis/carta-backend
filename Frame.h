@@ -1,3 +1,6 @@
+//# Frame.h: represents an open image file.  Handles slicing data and region calculations
+//# (profiles, histograms, stats)
+
 #pragma once
 #include <vector>
 #include <unordered_map>
@@ -31,6 +34,7 @@ private:
     // setup
     std::string uuid;
     bool valid;
+    std::mutex mutex;  // only one disk access at a time
 
     // image loader, shape, stats from image file
     std::string filename;

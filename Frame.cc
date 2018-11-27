@@ -535,6 +535,7 @@ void Frame::getChannelMatrix(casacore::Matrix<float>& chanMatrix, size_t channel
     // slice image data
     casacore::Slicer section = getChannelMatrixSlicer(channel, stokes);
     casacore::Array<float> tmp;
+    std::unique_lock<std::mutex> guard(mutex);
     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
     chanMatrix.reference(tmp);
 }
@@ -847,13 +848,16 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             if (!haveHistogram) { 
                 // get histogram from Region
                 casacore::Slicer latticeSlicer;
+                casacore::Array<float> histogramArray;
                 if (configChannel == -2) { // all channels in region
                     getProfileSlicer(latticeSlicer, -1, -1, -1, currStokes);
+                    std::unique_lock<std::mutex> guard(mutex);
+                    loader->loadData(FileInfo::Data::XYZW).getSlice(histogramArray, latticeSlicer, true);
                 } else { // requested channel (current or specified)
-                    getProfileSlicer(latticeSlicer, -1, -1, configChannel, currStokes);
+                    casacore::Matrix<float> chanMatrix;
+                    getChannelMatrix(chanMatrix, configChannel, currStokes);
+                    histogramArray.reference(chanMatrix);
                 }
-                casacore::Array<float> histogramArray;
-                loader->loadData(FileInfo::Data::XYZW).getSlice(histogramArray, latticeSlicer, true);
                 if (configNumBins < 0) configNumBins = defaultNumBins;
                 region->fillHistogram(newHistogram, histogramArray, configChannel, currStokes, configNumBins);
             }
@@ -923,6 +927,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     }
                 }
                 casacore::Array<float> tmp;
+                std::unique_lock<std::mutex> guard(mutex);
                 loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
                 profile = tmp.tovector();
             }
@@ -955,6 +960,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 if (profileStokes != currStokes)
                     getProfileSlicer(lattSlicer, x, y, -1, profileStokes);
                 casacore::SubLattice<float> subLattice(loader->loadData(FileInfo::Data::XYZW), lattSlicer);
+                std::unique_lock<std::mutex> guard(mutex);
                 region->fillProfileStats(i, profileData, subLattice);
             }
         }
