@@ -1,3 +1,5 @@
+//# AnimationQueue.h: uses tbb::concurrent_queue to keep channel requests in order for animation
+
 #pragma once
 
 #include "Session.h"

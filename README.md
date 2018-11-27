@@ -30,7 +30,6 @@ The server build depends on the following libraries:
 * [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu) 
 * [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support. Debian packages `libhdf5-dev` and `libhdf5-cpp-100`. By default, the serial version of the HDF5 library is targeted.
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.
-* boost [filesystem](https://www.boost.org/doc/libs/release/libs/filesystem), [uuid](http://www.boost.org/doc/libs/release/libs/uuid) and [program_options](http://www.boost.org/doc/libs/release/libs/program_options) modules (All easily installed through `apt`)
-* Threading Building Blocks [tbb](https://www.threadingbuildingblocks.org/download) for task parallelization.
+* [tbb]((https://www.threadingbuildingblocks.org/download) Threading Building Blocks for task parallelization.
 
 [![Build Status](http://acdc0.asiaa.sinica.edu.tw:47565/job/nrao-carta-backend/badge/icon)](http://acdc0.asiaa.sinica.edu.tw:47565/job/nrao-carta-backend) 

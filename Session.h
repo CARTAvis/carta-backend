@@ -1,3 +1,5 @@
+//# Session.h: representation of a client connected to a server; processes requests from frontend
+
 #pragma once
 
 #include <fmt/format.h>

@@ -1,3 +1,5 @@
+//# OnMessageTask.h: dequeues messages and calls appropriate Session handlers
+
 #pragma once
 
 #include "AnimationQueue.h"
