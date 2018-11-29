@@ -17,9 +17,15 @@ cmake ..
 make
 ```
 
-By default, the server runs on port 3002 and looks for image files in the `$HOME/Images` directory.  These can be changed with command-line arguments, for example:
+Command-line arguments are in the format arg=value.  Available arguments include:
 ```
-carta_backend --port 50505 --folder /path/to/data
+--help       List version and arguments
+debug        Debug level, default 0
+verbose      Verbose logging, default False
+permissions  Use a permissions file to determine directory access, default False
+port         Set server port, default 3002
+threads      Set thread pool count, default 4
+folder       Set folder for data files, default current directory
 ```
 
 ## External dependencies
