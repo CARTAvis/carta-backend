@@ -119,6 +119,7 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
             OnMessageTask *omt = new(tbb::task::allocate_root()) OnMessageTask(
                 uuid, session, msgQueues[uuid], animationQueues[uuid]);
             if(eventName == "SET_IMAGE_CHANNELS") {
+                // has its own queue to keep channels in order during animation
                 CARTA::SetImageChannels message;
                 message.ParseFromArray(eventPayload.data(), eventPayload.size());
                 animationQueues[uuid]->addRequest(message, requestId);
@@ -135,21 +136,21 @@ int main(int argc, const char* argv[]) {
     try {
         // define and get input arguments
         casacore::Input inp;
-	inp.version(version_id);
-	inp.create("verbose", "False", "display verbose logging", "Bool");
-	inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
-	int port(3002);
-	inp.create("port", std::to_string(port), "set server port", "Int");
+        inp.version(version_id);
+        inp.create("verbose", "False", "display verbose logging", "Bool");
+        inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
+        int port(3002);
+        inp.create("port", std::to_string(port), "set server port", "Int");
         int threadCount(tbb::task_scheduler_init::default_num_threads());
-	inp.create("threads", std::to_string(threadCount), "set thread pool count", "Int");
-	inp.create("folder", baseFolder, "set folder for data files", "String");
-	inp.readArguments(argc, argv);
+        inp.create("threads", std::to_string(threadCount), "set thread pool count", "Int");
+        inp.create("folder", baseFolder, "set folder for data files", "String");
+        inp.readArguments(argc, argv);
 
-	verbose = inp.getBool("verbose");
-	usePermissions = inp.getBool("permissions");
-	port = inp.getInt("port");
-	threadCount = inp.getInt("threads");
-	baseFolder = inp.getString("folder");
+        verbose = inp.getBool("verbose");
+        usePermissions = inp.getBool("permissions");
+        port = inp.getInt("port");
+        threadCount = inp.getInt("threads");
+        baseFolder = inp.getString("folder");
 
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
@@ -157,7 +158,7 @@ int main(int argc, const char* argv[]) {
             readPermissions("permissions.txt");
         }
 
-	sessionNumber = 0;
+        sessionNumber = 0;
 
         h.onMessage(&onMessage);
         h.onConnection(&onConnect);

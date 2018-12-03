@@ -116,6 +116,7 @@ protected:
 
     // Send protobuf messages
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
+    void sendFileEvent(int fileId, std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
 
