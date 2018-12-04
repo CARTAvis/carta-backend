@@ -29,6 +29,7 @@ tbb::task* OnMessageTask::execute() {
     uint32_t requestId;
     std::vector<char> eventPayload;
     std::tie(eventName, requestId, eventPayload) = msg;
+    log(uuid, "Processing operation {}", eventName);
     if (eventName == "REGISTER_VIEWER") {
         CARTA::RegisterViewer message;
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {

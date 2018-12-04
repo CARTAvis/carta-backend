@@ -7,12 +7,15 @@
 #include <fmt/format.h>
 
 #include <casacore/casa/OS/File.h>
+#include <casacore/casa/OS/Directory.h>
+#include <casacore/fits/FITS/hdu.h>
+#include <casacore/fits/FITS/fitsio.h>
 #include <casacore/fits/FITS/FITSTable.h>
 #include <casacore/casa/HDF5/HDF5File.h>
 #include <casacore/casa/HDF5/HDF5Group.h>
 #include <casacore/casa/HDF5/HDF5Error.h>
 #include <casacore/images/Images/ImageSummary.h>
-#include <casacore/images/Images/FITSImgParser.h>
+#include <casacore/images/Images/FITSImage.h>
 #include <casacore/images/Images/MIRIADImage.h>
 #include <casacore/images/Images/PagedImage.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
@@ -39,7 +42,12 @@ FileInfoLoader::fileType(const std::string &file) {
 bool FileInfoLoader::fillFileInfo(FileInfo* fileInfo) {
     // fill FileInfo submessage
     casacore::File ccfile(m_file);
-    fileInfo->set_size(ccfile.size());
+    int64_t fileInfoSize(ccfile.size());
+    if (ccfile.isDirectory()) {
+        casacore::Directory ccdir(ccfile);
+        fileInfoSize = ccdir.size();
+    }
+    fileInfo->set_size(fileInfoSize);
     fileInfo->set_name(ccfile.path().baseName());
     casacore::String absFileName(ccfile.path().absoluteName());
     fileInfo->set_type(convertFileType(m_type));
@@ -73,8 +81,8 @@ bool FileInfoLoader::getHduList(FileInfo* fileInfo, const std::string& filename)
         }
         hduOK = (fileInfo->hdu_list_size() > 0);
     } else if (fileInfo->type()==CARTA::FITS) {
-        casacore::FITSImgParser fitsParser(filename.c_str());
-        int numHdu(fitsParser.get_numhdu());
+        casacore::FitsInput fInput(filename.c_str(), casacore::FITS::Disk);
+        int numHdu(fInput.getnumhdu());
         for (int hdu=0; hdu<numHdu; ++hdu) {
             fileInfo->add_hdu_list(casacore::String::toString(hdu));
         }
@@ -453,21 +461,35 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
         casacore::String ccHdu(hdu);
         casacore::uInt hdunum;
         ccHdu.fromString(hdunum, true);
-        hdunum += 1;  // FITSTable starts at 1
+
+        // check shape
+        casacore::Int ndim(0);
+        casacore::IPosition dataShape;
+        try {
+            casacore::FITSImage fitsImg(m_file, 0, hdunum);
+            dataShape = fitsImg.shape();
+            ndim = dataShape.size();
+            if (ndim < 2 || ndim > 4) {
+                message = "Image must be 2D, 3D or 4D.";
+                return false;
+            }
+        } catch (casacore::AipsError& err) {
+            message = err.getMesg();
+            if (message.find("diagonal") != std::string::npos) // "ArrayBase::diagonal() - diagonal out of range"
+                message = "Failed to open image at specified HDU.";
+            else if (message.find("No image at specified location") != std::string::npos)
+                message = "No image at specified HDU.";
+            return false;
+        }
+        extendedInfo->set_dimensions(ndim);
 
         // use FITSTable to get Record of hdu entries
+        hdunum += 1;  // FITSTable starts at 1
         casacore::FITSTable fitsTable(m_file, hdunum, true); 
         casacore::Record hduEntries(fitsTable.primaryKeywords().toRecord());
         // set dims
-        casacore::Int ndim = hduEntries.asInt("NAXIS");
-        extendedInfo->set_dimensions(ndim);
-        if (ndim < 2 || ndim > 4) {
-            message = "Image must be 2D, 3D or 4D.";
-            return false;
-        }
-        int naxis1(hduEntries.asInt("NAXIS1")), naxis2(hduEntries.asInt("NAXIS2"));
-        extendedInfo->set_width(naxis1);
-        extendedInfo->set_height(naxis2);
+        extendedInfo->set_width(dataShape(0));
+        extendedInfo->set_height(dataShape(1));
         extendedInfo->add_stokes_vals(""); // not in header
 
         // if in header, save values for computed entries
@@ -542,16 +564,6 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
         }
 
         // shape, chan, stokes entries first
-        casacore::IPosition dataShape(2, naxis1, naxis2);
-        if (ndim == 3) {
-            int naxis3 = hduEntries.asInt("NAXIS3");
-            dataShape.append(casacore::IPosition(1, naxis3));
-        } else if (ndim == 4) {
-            // determine spectral and stokes axes
-            int naxis3 = hduEntries.asInt("NAXIS3");
-            int naxis4 = hduEntries.asInt("NAXIS4");
-            dataShape.append(casacore::IPosition(2, naxis3, naxis4));
-        }
         int chanAxis, stokesAxis;
         findChanStokesAxis(dataShape, coordTypeX, coordTypeY, coordType3, coordType4, chanAxis, stokesAxis);
         addShapeEntries(extendedInfo, dataShape, chanAxis, stokesAxis);
