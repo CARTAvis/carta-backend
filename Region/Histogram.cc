@@ -24,7 +24,7 @@ void Histogram::operator()(const tbb::blocked_range2d<size_t> &r) {
     for (auto j = r.rows().begin(); j != r.rows().end(); ++j) {
         for (auto i = r.cols().begin(); i != r.cols().end(); ++i) {
             auto v = histArray(casacore::IPosition(2,i,j));
-            if (std::isnan(v))
+            if (std::isnan(v) || std::isinf(v))
                 continue;
             int bin = std::max(std::min((int) ((v - minVal) / binWidth), (int)hist.size() - 1), 0);
             ++tmp[bin];
@@ -39,7 +39,7 @@ void Histogram::operator()(const tbb::blocked_range3d<size_t> &r) {
         for (auto j = r.rows().begin(); j != r.rows().end(); ++j) {
             for (auto i = r.cols().begin(); i != r.cols().end(); ++i) {
                 auto v = histArray(casacore::IPosition(3,i,j,k));
-                if (std::isnan(v))
+                if (std::isnan(v) || std::isinf(v))
                     continue;
                 int bin = std::max(std::min((int) ((v - minVal) / binWidth), (int)hist.size() - 1), 0);
                 ++tmp[bin];

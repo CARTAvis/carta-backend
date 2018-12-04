@@ -131,7 +131,7 @@ std::vector<float> Frame::getImageData(bool meanFilter) {
                             auto imageRow = y + j * mip + pixelY;
                             auto imageCol = x + i * mip + pixelX;
                             float pixVal = channelCache(imageCol, imageRow);
-                            if (!isnan(pixVal)) {
+                            if (!isnan(pixVal) && !isinf(pixVal)) {
                                 pixelCount++;
                                 pixelSum += pixVal;
                             }

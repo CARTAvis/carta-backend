@@ -45,7 +45,7 @@ void MinMax<T>::operator()(const tbb::blocked_range2d<size_t> &r) {
     for(size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
         for(size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
             T val = histArray(casacore::IPosition(2,i,j));
-            if(std::isnan(val))
+            if(std::isnan(val) || std::isinf(val))
                 continue;
             tmin = std::min(tmin, val);
             tmax = std::max(tmax, val);
@@ -63,7 +63,7 @@ void MinMax<T>::operator()(const tbb::blocked_range3d<size_t> &r) {
         for(size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
             for(size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
                 T val = histArray(casacore::IPosition(3,i,j,k));
-                if(std::isnan(val))
+                if(std::isnan(val) || std::isinf(val))
                     continue;
                 tmin = std::min(tmin, val);
                 tmax = std::max(tmax, val);
