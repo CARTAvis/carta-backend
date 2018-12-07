@@ -6,7 +6,6 @@
 
 #include <casacore/casa/OS/Path.h>
 #include <casacore/casa/OS/DirectoryIterator.h>
-
 #include <tbb/tbb.h>
 
 using namespace std;
@@ -25,9 +24,12 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, unordered_ma
 
 Session::~Session() {
     for (auto& frame : frames) {
-        frame.second.reset();
+        int fileId(frame.first);
+        auto& frMutex = frameMutex.at(fileId);
+        std::unique_lock<std::mutex> lock(frMutex);
+        frame.second.reset();  // delete Frame
+        lock.unlock();
     }
-    frames.clear();
     outgoing->close();
 }
 
@@ -172,30 +174,6 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
 }
 
 
-// ********************************************************************************
-// Histogram message; sent separately or within RasterImageData
-
-CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId, const int32_t regionId) {
-    RegionHistogramData* histogramMessage(nullptr);
-    if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        histogramMessage = new RegionHistogramData();
-        histogramMessage->set_file_id(fileId);
-        histogramMessage->set_region_id(regionId);
-        frame->fillRegionHistogramData(regionId, histogramMessage);
-    }
-    return histogramMessage;
-}
-
-// ********************************************************************************
-// Compress data
-
-void Session::setCompression(CARTA::CompressionType type, float quality, int nsubsets) {
-    compressionSettings.type = type;
-    compressionSettings.quality = quality;
-    compressionSettings.nsubsets = nsubsets;
-}
-
 // *********************************************************************************
 // CARTA ICD implementation
 
@@ -232,14 +210,15 @@ void Session::onFileInfoRequest(const FileInfoRequest& request, uint32_t request
 }
 
 void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
-    OpenFileAck ack;
     auto fileId(message.file_id());
+    OpenFileAck ack;
     ack.set_file_id(fileId);
     auto fileInfo = ack.mutable_file_info();
     auto fileInfoExtended = ack.mutable_file_info_extended();
     string errMessage;
-    bool infoSuccess = fillExtendedFileInfo(fileInfoExtended, fileInfo, message.directory(), message.file(), message.hdu(), errMessage);
-    if (infoSuccess && fileInfo->hdu_list_size()) {
+    bool success(false);
+    if (fillExtendedFileInfo(fileInfoExtended, fileInfo, message.directory(), message.file(),
+        message.hdu(), errMessage)) {
         // form filename with path
         casacore::Path path(baseFolder);
         path.append(message.directory());
@@ -249,16 +228,16 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
         string hdu = fileInfo->hdu_list(0);
         auto frame = unique_ptr<Frame>(new Frame(uuid, filename, hdu));
         if (frame->isValid()) {
-            ack.set_success(true);
+            success = true;
+            std::unique_lock<std::mutex> lock(frameMutex[fileId]);  // creates mutex if does not exist
             frames[fileId] = move(frame);
+            lock.unlock();
         } else {
-            ack.set_success(false);
-            ack.set_message("Could not load file");
+            errMessage = "Could not load image";
         }
-    } else {
-        ack.set_success(false);
-        ack.set_message(errMessage);
-    }
+    } 
+    ack.set_success(success);
+    ack.set_message(errMessage);
     sendEvent("OPEN_FILE_ACK", requestId, ack);
 }
 
@@ -266,31 +245,38 @@ void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
     auto fileId = message.file_id();
     if (fileId == -1) {
         for (auto& frame : frames) {
-            frame.second.reset();
+            int fileId(frame.first);
+            std::unique_lock<std::mutex> lock(frameMutex[fileId]);
+            frame.second.reset();  // delete Frame
+            frames.erase(fileId);
+            lock.unlock();
         }
-        frames.clear();
     } else if (frames.count(fileId)) {
+        std::unique_lock<std::mutex> lock(frameMutex[fileId]);
         frames[fileId].reset();
+        frames.erase(fileId);
+        lock.unlock();
     }
 }
 
 void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
     auto fileId = message.file_id();
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        // set new view in Frame
-        if (frame->setBounds(message.image_bounds(), message.mip())) {
-            // save compression settings for sending raster data
+        try {
             CARTA::CompressionType ctype(message.compression_type());
-            int numsets(message.num_subsets());
             float quality(message.compression_quality());
-            setCompression(ctype, quality, numsets);
-            // RESPONSE
-            CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
-            sendRasterImageData(fileId, requestId, histogramData);
-        } else {
-            string error = "Image bounds out of range; cannot update image";
-            sendLogEvent(error, {"view"}, CARTA::ErrorSeverity::ERROR);
+            int numsets(message.num_subsets());
+            bool compressionUpdated = frames.at(fileId)->setCompression(ctype, quality, numsets);
+            // set new view in Frame
+            bool boundsUpdated = frames.at(fileId)->setBounds(message.image_bounds(), message.mip());
+            if (compressionUpdated or boundsUpdated) {
+                // RESPONSE
+                CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+                sendRasterImageData(fileId, requestId, histogramData);
+            }
+        } catch (std::out_of_range& rangeError) {   // unordered_map.at() exception
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
@@ -301,13 +287,10 @@ void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
 void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId) {
     auto fileId(message.file_id());
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        size_t newChannel(message.channel()), newStokes(message.stokes());
-        bool channelChanged(newChannel != frame->currentChannel()),
-             stokesChanged(newStokes != frame->currentStokes());
-        if (channelChanged || stokesChanged) {
+        try {
             string errMessage;
-            if (frame->setImageChannels(message.channel(), message.stokes(), errMessage)) {
+            bool stokesChanged(message.stokes() != frames.at(fileId)->currentStokes());
+            if (frames.at(fileId)->setImageChannels(message.channel(), message.stokes(), errMessage)) {
                 // RESPONSE: updated histogram, spatial profile, spectral profile
                 // Histogram included in the raster image data message
                 RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
@@ -318,6 +301,9 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
             } else {
                 sendLogEvent(errMessage, {"channels"}, CARTA::ErrorSeverity::ERROR);
             }
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"channels"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
@@ -328,19 +314,23 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
 void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
     auto fileId(message.file_id());
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        if (frame->setCursorRegion(CURSOR_REGION_ID, message.point())) {
-            if (message.has_spatial_requirements()) {
-                onSetSpatialRequirements(message.spatial_requirements(), requestId);
-                sendSpectralProfileData(fileId, CURSOR_REGION_ID);
-            } else {
+        try {
+            if (frames.at(fileId)->setCursorRegion(CURSOR_REGION_ID, message.point())) {
                 // RESPONSE
-                sendSpatialProfileData(fileId, CURSOR_REGION_ID);
-                sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                if (message.has_spatial_requirements()) {
+                    onSetSpatialRequirements(message.spatial_requirements(), requestId);
+                    sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                } else {
+                    sendSpatialProfileData(fileId, CURSOR_REGION_ID);
+                    sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                }
+            } else {
+                string error = "Cursor point out of range";
+                sendLogEvent(error, {"cursor"}, CARTA::ErrorSeverity::ERROR);
             }
-        } else {
-            string error = "Cursor point out of range";
-            sendLogEvent(error, {"cursor"}, CARTA::ErrorSeverity::ERROR);
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"cursor"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
@@ -349,53 +339,62 @@ void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
 }
 
 void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
-    SetRegionAck ack;
     auto fileId(message.file_id());
     auto regionId(message.region_id());
-    ack.set_region_id(regionId);
+    std::string errMessage;
+    bool success(false);
+
     if (frames.count(fileId)) {
-        if (message.region_id() <= 0) { // get region id unique across all frames
-            for (auto& frame : frames) // frames = map<fileId, unique_ptr<Frame>>
-                regionId = std::max(regionId, frame.second->getMaxRegionId());
-            ++regionId; // get next available
-            if (regionId == 0) // reserved for cursor
-                ++regionId;
+        try {
+            if (message.region_id() <= 0) { // get region id unique across all frames
+                for (auto& frame : frames) { // frames = map<fileId, unique_ptr<Frame>>
+                    regionId = std::max(regionId, frame.second->getMaxRegionId());
+                }
+                ++regionId; // get next available
+                if (regionId == 0) ++regionId; // reserved for cursor
+            }
+            std::vector<int> stokes = {message.stokes().begin(), message.stokes().end()};
+            std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
+            auto& frame = frames[fileId];  // use frame in SetRegion message
+            success = frames.at(fileId)->setRegion(regionId, message.region_name(), message.region_type(),
+                message.channel_min(), message.channel_max(), stokes, points, message.rotation(), errMessage);
+        } catch (std::out_of_range& rangeError) {
+            errMessage = fmt::format("File id {} closed", fileId);
         }
-        std::vector<int> stokes = {message.stokes().begin(), message.stokes().end()};
-        std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
-        std::string errMessage;
-        auto& frame = frames[fileId];  // use frame in SetRegion message
-        bool success = frame->setRegion(regionId, message.region_name(), message.region_type(), message.channel_min(),
-            message.channel_max(), stokes, points, message.rotation(), errMessage);
-        ack.set_success(success);
-        ack.set_message(errMessage);
-        ack.set_region_id(regionId);
     } else {
-        ack.set_success(false);
-        ack.set_message("Invalid file id");
+        errMessage = fmt::format("File id {} not found", fileId);
     }
     // RESPONSE
+    SetRegionAck ack;
+    ack.set_region_id(regionId);
+    ack.set_success(success);
+    ack.set_message(errMessage);
     sendEvent("SET_REGION_ACK", requestId, ack);
 }
 
 void Session::onRemoveRegion(const CARTA::RemoveRegion& message, uint32_t requestId) {
     auto regionId(message.region_id());
-    for (auto& frame : frames)  // frames = map<fileId, unique_ptr<Frame>>
-        frame.second->removeRegion(regionId);
+    for (auto& frame : frames) {  // frames = map<fileId, unique_ptr<Frame>>
+        if (frame.second) frame.second->removeRegion(regionId);
+    }
 }
 
 void Session::onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId) {
     auto fileId(message.file_id());
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        auto regionId = message.region_id();
-        if (frame->setRegionSpatialRequirements(regionId, vector<string>(message.spatial_profiles().begin(),
-            message.spatial_profiles().end()))) {
-            // RESPONSE
-            sendSpatialProfileData(fileId, regionId);
-        } else {
-            string error = fmt::format("Spatial requirements for region id {} failed to validate ", regionId);
-            sendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
+        try {
+            auto regionId = message.region_id();
+            if (frames.at(fileId)->setRegionSpatialRequirements(regionId,
+                vector<string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
+                // RESPONSE
+                sendSpatialProfileData(fileId, regionId);
+            } else {
+                string error = fmt::format("Spatial requirements for region id {} failed to validate ", regionId);
+                sendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
+            }
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
@@ -406,20 +405,24 @@ void Session::onSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
 void Session::onSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t requestId) {
     auto fileId(message.file_id());
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        auto regionId = message.region_id();
-        if (frame->setRegionHistogramRequirements(regionId, vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(), message.histograms().end()))) {
-            // RESPONSE
-            RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
-            if (histogramData != nullptr) {
-                sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramData);
+        try {
+            auto regionId = message.region_id();
+            if (frames.at(fileId)->setRegionHistogramRequirements(regionId, vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(), message.histograms().end()))) {
+                // RESPONSE
+                RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
+                if (histogramData != nullptr) {
+                    sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", 0, *histogramData);
+                } else {
+                    string error = "Failed to load histogram data";
+                    sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
+                }
             } else {
-                string error = "Failed to load histogram data";
+                string error = fmt::format("Histogram requirements for region id {} failed to validate ", regionId);
                 sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
             }
-        } else {
-            string error = fmt::format("Histogram requirements for region id {} failed to validate ", regionId);
-            sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
@@ -430,16 +433,20 @@ void Session::onSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
 void Session::onSetSpectralRequirements(const CARTA::SetSpectralRequirements& message, uint32_t requestId) {
     auto fileId(message.file_id());
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        auto regionId = message.region_id();
-        if (frame->setRegionSpectralRequirements(regionId,
-            vector<CARTA::SetSpectralRequirements_SpectralConfig>(message.spectral_profiles().begin(),
-            message.spectral_profiles().end()))) {
-            // RESPONSE
-            sendSpectralProfileData(fileId, regionId);
-        } else {
-            string error = fmt::format("Spectral requirements for region id {} failed to validate ", regionId);
-            sendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
+        try {
+            auto regionId = message.region_id();
+            if (frames.at(fileId)->setRegionSpectralRequirements(regionId,
+                vector<CARTA::SetSpectralRequirements_SpectralConfig>(message.spectral_profiles().begin(),
+                message.spectral_profiles().end()))) {
+                // RESPONSE
+                sendSpectralProfileData(fileId, regionId);
+            } else {
+                string error = fmt::format("Spectral requirements for region id {} failed to validate ", regionId);
+                sendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
+            }
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
@@ -450,14 +457,19 @@ void Session::onSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
 void Session::onSetStatsRequirements(const CARTA::SetStatsRequirements& message, uint32_t requestId) {
     auto fileId(message.file_id());
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        auto regionId = message.region_id();
-        if (frame->setRegionStatsRequirements(regionId, vector<int>(message.stats().begin(), message.stats().end()))) {
-            // RESPONSE
-            sendRegionStatsData(fileId, regionId);
-        } else {
-            string error = fmt::format("Stats requirements for region id {} failed to validate ", regionId);
-            sendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
+        try {
+            auto regionId = message.region_id();
+            if (frames.at(fileId)->setRegionStatsRequirements(regionId, vector<int>(message.stats().begin(),
+                message.stats().end()))) {
+                // RESPONSE
+                sendRegionStatsData(fileId, regionId);
+            } else {
+                string error = fmt::format("Stats requirements for region id {} failed to validate ", regionId);
+                sendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
+            }
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
@@ -467,6 +479,27 @@ void Session::onSetStatsRequirements(const CARTA::SetStatsRequirements& message,
 
 // ******** SEND DATA STREAMS *********
 
+// Histogram message; sent separately or within RasterImageData
+CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId, const int32_t regionId) {
+    RegionHistogramData* histogramMessage(nullptr);
+    if (frames.count(fileId)) {
+        try {
+            histogramMessage = new RegionHistogramData();
+            histogramMessage->set_file_id(fileId);
+            histogramMessage->set_region_id(regionId);
+            frames.at(fileId)->fillRegionHistogramData(regionId, histogramMessage);
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
+    }
+    return histogramMessage;
+}
+
+
 void Session::sendRasterImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram) {
     RasterImageData rasterImageData;
     // Add histogram, if it exists
@@ -474,98 +507,115 @@ void Session::sendRasterImageData(int fileId, uint32_t requestId, CARTA::RegionH
         rasterImageData.set_allocated_channel_histogram_data(channelHistogram);
     }
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        auto imageData = frame->getImageData();
-        // Check if image data is valid
-        if (!imageData.empty()) {
-            rasterImageData.set_file_id(fileId);
-            rasterImageData.set_stokes(frame->currentStokes());
-            rasterImageData.set_channel(frame->currentChannel());
-            rasterImageData.set_mip(frame->currentMip());
-            // Copy over image bounds
-            auto imageBounds = frame->currentBounds();
-            auto mip = frame->currentMip();
-            rasterImageData.mutable_image_bounds()->set_x_min(imageBounds.x_min());
-            rasterImageData.mutable_image_bounds()->set_x_max(imageBounds.x_max());
-            rasterImageData.mutable_image_bounds()->set_y_min(imageBounds.y_min());
-            rasterImageData.mutable_image_bounds()->set_y_max(imageBounds.y_max());
+        try {
+            auto imageData = frames.at(fileId)->getImageData();
+            if (!imageData.empty()) {
+                rasterImageData.set_file_id(fileId);
+                rasterImageData.set_stokes(frames.at(fileId)->currentStokes());
+                rasterImageData.set_channel(frames.at(fileId)->currentChannel());
+                rasterImageData.set_mip(frames.at(fileId)->currentMip());
+                // Copy over image bounds
+                auto imageBounds = frames.at(fileId)->currentBounds();
+                auto mip = frames.at(fileId)->currentMip();
+                rasterImageData.mutable_image_bounds()->set_x_min(imageBounds.x_min());
+                rasterImageData.mutable_image_bounds()->set_x_max(imageBounds.x_max());
+                rasterImageData.mutable_image_bounds()->set_y_min(imageBounds.y_min());
+                rasterImageData.mutable_image_bounds()->set_y_max(imageBounds.y_max());
 
-            auto compressionType = compressionSettings.type;
-            if (compressionType == CompressionType::NONE) {
-                rasterImageData.set_compression_type(CompressionType::NONE);
-                rasterImageData.set_compression_quality(0);
-                rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
-            } else if (compressionType == CompressionType::ZFP) {
+                auto compressionSettings = frames.at(fileId)->getCompressionSettings();
+                auto compressionType = compressionSettings.type;
+                if (compressionType == CompressionType::NONE) {
+                    rasterImageData.set_compression_type(CompressionType::NONE);
+                    rasterImageData.set_compression_quality(0);
+                    rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
+                } else if (compressionType == CompressionType::ZFP) {
+                    int precision = lround(compressionSettings.quality);
+                    auto rowLength = (imageBounds.x_max() - imageBounds.x_min()) / mip;
+                    auto numRows = (imageBounds.y_max() - imageBounds.y_min()) / mip;
+                    rasterImageData.set_compression_type(CompressionType::ZFP);
+                    rasterImageData.set_compression_quality(precision);
 
-                int precision = lround(compressionSettings.quality);
-                auto rowLength = (imageBounds.x_max() - imageBounds.x_min()) / mip;
-                auto numRows = (imageBounds.y_max() - imageBounds.y_min()) / mip;
-                rasterImageData.set_compression_type(CompressionType::ZFP);
-                rasterImageData.set_compression_quality(precision);
+                    auto numSubsets(compressionSettings.nsubsets);
+                    vector<vector<char>> compressionBuffers(numSubsets);
+                    vector<size_t> compressedSizes(numSubsets);
+                    vector<vector<int32_t>> nanEncodings(numSubsets);
 
-                auto numSubsets(compressionSettings.nsubsets);
-                vector<char> compressionBuffers[numSubsets];
-                vector<size_t> compressedSizes(numSubsets);
-                vector<vector<int32_t>> nanEncodings(numSubsets);
-
-                auto N = min(numSubsets, MAX_SUBSETS);
-                auto range = tbb::blocked_range<int>(0, N);
-                auto loop = [&](const tbb::blocked_range<int> &r) {
-                    for(int i = r.begin(); i != r.end(); ++i) {
-                        int subsetRowStart = i * (numRows / N);
-                        int subsetRowEnd = (i + 1) * (numRows / N);
-                        if (i == N - 1) {
-                            subsetRowEnd = numRows;
+                    auto N = min(numSubsets, MAX_SUBSETS);
+                    auto range = tbb::blocked_range<int>(0, N);
+                    auto loop = [&](const tbb::blocked_range<int> &r) {
+                        for(int i = r.begin(); i != r.end(); ++i) {
+                            int subsetRowStart = i * (numRows / N);
+                            int subsetRowEnd = (i + 1) * (numRows / N);
+                            if (i == N - 1) {
+                                subsetRowEnd = numRows;
+                            }
+                            int subsetElementStart = subsetRowStart * rowLength;
+                            int subsetElementEnd = subsetRowEnd * rowLength;
+                            nanEncodings[i] = getNanEncodingsBlock(imageData, subsetElementStart, rowLength,
+                                subsetRowEnd - subsetRowStart);
+                            compress(imageData, subsetElementStart, compressionBuffers[i], compressedSizes[i],
+                                rowLength, subsetRowEnd - subsetRowStart, precision);
                         }
-                        int subsetElementStart = subsetRowStart * rowLength;
-                        int subsetElementEnd = subsetRowEnd * rowLength;
-                        nanEncodings[i] = getNanEncodingsBlock(imageData, subsetElementStart, rowLength, subsetRowEnd - subsetRowStart);
-                        compress(imageData, subsetElementStart, compressionBuffers[i], compressedSizes[i], rowLength, subsetRowEnd - subsetRowStart, precision);
+                    };
+                    auto tStartCompress = chrono::high_resolution_clock::now();
+                    tbb::parallel_for(range, loop);
+                    auto tEndCompress = chrono::high_resolution_clock::now();
+                    auto dtCompress = chrono::duration_cast<chrono::microseconds>(tEndCompress - tStartCompress).count();
+
+                    // Complete message
+                    for (auto i = 0; i < numSubsets; i++) {
+                        rasterImageData.add_image_data(compressionBuffers[i].data(), compressedSizes[i]);
+                        rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(), nanEncodings[i].size() * sizeof(int));
                     }
-                };
-                auto tStartCompress = chrono::high_resolution_clock::now();
-                tbb::parallel_for(range, loop);
-                auto tEndCompress = chrono::high_resolution_clock::now();
-                auto dtCompress = chrono::duration_cast<chrono::microseconds>(tEndCompress - tStartCompress).count();
 
-                // Complete message
-                for (auto i = 0; i < numSubsets; i++) {
-                    rasterImageData.add_image_data(compressionBuffers[i].data(), compressedSizes[i]);
-                    rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(), nanEncodings[i].size() * sizeof(int));
-                }
-
-                if (verboseLogging) {
-                    string compressionInfo = fmt::format("Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s",
-                               numRows * rowLength * sizeof(float) / 1e3,
-                               accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
-                               1e-3 * dtCompress,
-                               (float) (numRows * rowLength) / dtCompress);
-                    log(uuid, compressionInfo);
-                    sendLogEvent(compressionInfo, {"zfp"}, CARTA::ErrorSeverity::DEBUG);
+                    if (verboseLogging) {
+                        string compressionInfo = fmt::format(
+                            "Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s",
+                            numRows * rowLength * sizeof(float) / 1e3,
+                            accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
+                            1e-3 * dtCompress,
+                            (float) (numRows * rowLength) / dtCompress);
+                        log(uuid, compressionInfo);
+                        sendLogEvent(compressionInfo, {"zfp"}, CARTA::ErrorSeverity::DEBUG);
+                    }
+                    // Send completed event to client
+                    sendFileEvent(fileId, "RASTER_IMAGE_DATA", 0, rasterImageData);
+                } else {
+                    string error = "SZ compression not implemented";
+                    sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
                 }
             } else {
-                // TODO: error handling for SZ
+                string error = "Raster image data failed to load";
+                sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
             }
-            // Send completed event to client
-            sendFileEvent(fileId, "RASTER_IMAGE_DATA", requestId, rasterImageData);
-        } else {
-            string error = "Raster image data failed to load";
-            sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::DEBUG);
         }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::DEBUG);
     }
 }
 
 void Session::sendSpatialProfileData(int fileId, int regionId) {
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        CARTA::SpatialProfileData spatialProfileData;
-        if (frame->fillSpatialProfileData(regionId, spatialProfileData)) {
-            spatialProfileData.set_file_id(fileId);
-            spatialProfileData.set_region_id(regionId);
-            sendFileEvent(fileId, "SPATIAL_PROFILE_DATA", 0, spatialProfileData);
-        } else {
-            string error = "Spatial profile data failed to load";
-            sendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
+        try {
+            if (regionId == CURSOR_REGION_ID && !frames.at(fileId)->isCursorSet()) {
+                return;  // do not send profile unless frontend set cursor
+            }
+            CARTA::SpatialProfileData spatialProfileData;
+            if (frames.at(fileId)->fillSpatialProfileData(regionId, spatialProfileData)) {
+                spatialProfileData.set_file_id(fileId);
+                spatialProfileData.set_region_id(regionId);
+                sendFileEvent(fileId, "SPATIAL_PROFILE_DATA", 0, spatialProfileData);
+            } else {
+                string error = "Spatial profile data failed to load";
+                sendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
+            }
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
@@ -575,15 +625,22 @@ void Session::sendSpatialProfileData(int fileId, int regionId) {
 
 void Session::sendSpectralProfileData(int fileId, int regionId) {
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        CARTA::SpectralProfileData spectralProfileData;
-        if (frame->fillSpectralProfileData(regionId, spectralProfileData)) {
-            spectralProfileData.set_file_id(fileId);
-            spectralProfileData.set_region_id(regionId);
-            sendFileEvent(fileId, "SPECTRAL_PROFILE_DATA", 0, spectralProfileData);
-        } else {
-            string error = "Spectral profile data failed to load";
-            sendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
+        try {
+            if (regionId == CURSOR_REGION_ID && !frames.at(fileId)->isCursorSet()) {
+                return;  // do not send profile unless frontend set cursor
+            }
+            CARTA::SpectralProfileData spectralProfileData;
+            if (frames.at(fileId)->fillSpectralProfileData(regionId, spectralProfileData)) {
+                spectralProfileData.set_file_id(fileId);
+                spectralProfileData.set_region_id(regionId);
+                sendFileEvent(fileId, "SPECTRAL_PROFILE_DATA", 0, spectralProfileData);
+            } else {
+                string error = "Spectral profile data failed to load";
+                sendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
+            }
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
@@ -593,15 +650,19 @@ void Session::sendSpectralProfileData(int fileId, int regionId) {
 
 void Session::sendRegionStatsData(int fileId, int regionId) {
     if (frames.count(fileId)) {
-        auto& frame = frames[fileId];
-        CARTA::RegionStatsData regionStatsData;
-        if (frame->fillRegionStatsData(regionId, regionStatsData)) {
-            regionStatsData.set_file_id(fileId);
-            regionStatsData.set_region_id(regionId);
-            sendFileEvent(fileId, "REGION_STATS_DATA", 0, regionStatsData);
-        } else {
-            string error = "Region stats data failed to load";
-            sendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
+        try {
+            CARTA::RegionStatsData regionStatsData;
+            if (frames.at(fileId)->fillRegionStatsData(regionId, regionStatsData)) {
+                regionStatsData.set_file_id(fileId);
+                regionStatsData.set_region_id(regionId);
+                sendFileEvent(fileId, "REGION_STATS_DATA", 0, regionStatsData);
+            } else {
+                string error = "Region stats data failed to load";
+                sendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
+            }
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);

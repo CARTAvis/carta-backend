@@ -1,30 +1,39 @@
-#include <vector>
-#include <fmt/format.h>
-#include <uWS/uWS.h>
-#include <regex>
-#include <fstream>
-#include <iostream>
-#include <tuple>
-#include <tbb/concurrent_queue.h>
-#include <tbb/task_scheduler_init.h>
+#include "AnimationQueue.h"
+#include "FileSettings.h"
+#include "OnMessageTask.h"
+#include "Session.h"
+#include "util.h"
+
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/casa/Inputs/Input.h>
-#include "AnimationQueue.h"
-#include "Session.h"
-#include "OnMessageTask.h"
-#include "util.h"
+#include <fmt/format.h>
+#include <tbb/concurrent_queue.h>
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/task_scheduler_init.h>
+#include <uWS/uWS.h>
+
+#include <fstream>
+#include <iostream>
+#include <regex>
+#include <tuple>
+#include <vector>
 
 #define MAX_THREADS 4
 
 using namespace std;
 using namespace uWS;
 
+// key is uuid:
 using key_type = std::string;
-
 unordered_map<key_type, Session*> sessions;
 unordered_map<key_type, carta::AnimationQueue*> animationQueues;
-unordered_map<string, vector<string>> permissionsMap;
+unordered_map<key_type, carta::FileSettings*> fileSettings;
+// msgQueue holds eventName, requestId, message
 unordered_map<key_type, tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>*> msgQueues;
+
+// key is current folder
+unordered_map<string, vector<string>> permissionsMap;
+
 int sessionNumber;
 Hub h;
 
@@ -73,11 +82,12 @@ void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
     sessions[uuid] = new Session(ws, uuid, permissionsMap, usePermissions, baseFolder, outgoing, verbose);
     animationQueues[uuid] = new carta::AnimationQueue(sessions[uuid]);
     msgQueues[uuid] = new tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>;
+    fileSettings[uuid] = new carta::FileSettings(sessions[uuid]);
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string timeString = ctime(&time);
     timeString = timeString.substr(0, timeString.length() - 1);
 
-    log(uuid, "Client {} [{}] Connected ({}). Clients: {}", uuid, ws->getAddress().address, timeString, sessions.size());
+    log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, sessions.size());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -91,11 +101,13 @@ void onDisconnect(WebSocket<SERVER>* ws, int code, char* message, size_t length)
         animationQueues.erase(uuid);
         delete msgQueues[uuid];
         msgQueues.erase(uuid);
+        delete fileSettings[uuid];
+        fileSettings.erase(uuid);
     }
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string timeString = ctime(&time);
     timeString = timeString.substr(0, timeString.length() - 1);
-    log(uuid, "Client {} [{}] Disconnected ({}). Remaining clients: {}", uuid, ws->getAddress().address, timeString, sessions.size());
+    log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
     delete &uuid;
 }
 
@@ -117,12 +129,20 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
             std::vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
             msgQueues[uuid]->push(std::make_tuple(eventName, requestId, eventPayload));
             OnMessageTask *omt = new(tbb::task::allocate_root()) OnMessageTask(
-                uuid, session, msgQueues[uuid], animationQueues[uuid]);
+                uuid, session, msgQueues[uuid], animationQueues[uuid], fileSettings[uuid]);
             if(eventName == "SET_IMAGE_CHANNELS") {
                 // has its own queue to keep channels in order during animation
                 CARTA::SetImageChannels message;
                 message.ParseFromArray(eventPayload.data(), eventPayload.size());
                 animationQueues[uuid]->addRequest(message, requestId);
+            } else if(eventName == "SET_IMAGE_VIEW") {
+                CARTA::SetImageView message;
+                message.ParseFromArray(eventPayload.data(), eventPayload.size());
+                fileSettings[uuid]->addViewSetting(message, requestId);
+            } else if(eventName == "SET_CURSOR") {
+                CARTA::SetCursor message;
+                message.ParseFromArray(eventPayload.data(), eventPayload.size());
+                fileSettings[uuid]->addCursorSetting(message, requestId);
             }
             tbb::task::enqueue(*omt);
         }

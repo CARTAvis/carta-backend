@@ -12,12 +12,13 @@ std::string getEventName(char* rawMessage) {
 }
 
 OnMessageTask::OnMessageTask(std::string uuid_, Session *session_,
-                             tbb::concurrent_queue<std::tuple<std::string,uint32_t,std::vector<char>>> *mqueue_,
-                             carta::AnimationQueue *aqueue_)
+        tbb::concurrent_queue<std::tuple<std::string,uint32_t,std::vector<char>>> *mqueue_,
+        carta::AnimationQueue *aqueue_, carta::FileSettings *fsettings_)
     : uuid(uuid_),
       session(session_),
       mqueue(mqueue_),
-      aqueue(aqueue_)
+      aqueue(aqueue_),
+      fsettings(fsettings_)
 {}
 
 tbb::task* OnMessageTask::execute() {
@@ -58,7 +59,7 @@ tbb::task* OnMessageTask::execute() {
     } else if (eventName == "SET_IMAGE_VIEW") {
         CARTA::SetImageView message;
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onSetImageView(message, requestId);
+            fsettings->executeOne("SET_IMAGE_VIEW", message.file_id());
         }
     } else if (eventName == "SET_IMAGE_CHANNELS") {
         CARTA::SetImageChannels message;
@@ -68,7 +69,7 @@ tbb::task* OnMessageTask::execute() {
     } else if (eventName == "SET_CURSOR") {
         CARTA::SetCursor message;
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onSetCursor(message, requestId);
+            fsettings->executeOne("SET_CURSOR", message.file_id());
         }
     } else if (eventName == "SET_SPATIAL_REQUIREMENTS") {
         CARTA::SetSpatialRequirements message;

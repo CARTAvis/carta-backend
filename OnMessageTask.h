@@ -3,7 +3,9 @@
 #pragma once
 
 #include "AnimationQueue.h"
+#include "FileSettings.h"
 #include "Session.h"
+
 #include <tbb/concurrent_queue.h>
 #include <tbb/task.h>
 #include <string>
@@ -13,13 +15,15 @@
 class OnMessageTask : public tbb::task {
     std::string uuid;
     Session *session;
+
     tbb::concurrent_queue<std::tuple<std::string,uint32_t,std::vector<char>>> *mqueue;
     carta::AnimationQueue *aqueue;
+    carta::FileSettings *fsettings;
 
     tbb::task* execute();
 
 public:
     OnMessageTask(std::string uuid_, Session *session_,
-                  tbb::concurrent_queue<std::tuple<std::string,uint32_t,std::vector<char>>> *mq,
-                  carta::AnimationQueue *aq = nullptr);
+        tbb::concurrent_queue<std::tuple<std::string,uint32_t,std::vector<char>>> *mq,
+        carta::AnimationQueue *aq = nullptr, carta::FileSettings *fs = nullptr);
 };

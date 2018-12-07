@@ -15,15 +15,14 @@ class RegionProfiler {
 public:
 
     // spatial
-    bool setSpatialRequirements(const std::vector<std::string>& profiles,
-        const int nstokes, const int defaultStokes);
+    bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
     size_t numSpatialProfiles();
     std::pair<int,int> getSpatialProfileReq(int profileIndex);
     std::string getSpatialProfileStr(int profileIndex);
 
     // spectral
     bool setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles,
-        const int nstokes, const int defaultStokes);
+        const int nstokes);
     size_t numSpectralProfiles();
     // return false if profileIndex out of range:
     bool getSpectralConfigStokes(int& stokes, int profileIndex);

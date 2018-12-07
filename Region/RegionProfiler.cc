@@ -7,7 +7,7 @@ using namespace carta;
 // ***** spatial *****
 
 bool RegionProfiler::setSpatialRequirements(const std::vector<std::string>& profiles,
-            const int nstokes, const int defaultStokes) {
+            const int nstokes) {
     // process profile strings into pairs <axis, stokes>
     m_spatialProfiles.clear();
     m_profilePairs.clear();
@@ -20,8 +20,6 @@ bool RegionProfiler::setSpatialRequirements(const std::vector<std::string>& prof
             continue;
         if (axisStokes.second > (nstokes-1)) // invalid stokes
             continue;
-        else if (axisStokes.second < 0) // not specified
-            axisStokes.second = defaultStokes;
         m_spatialProfiles.push_back(profile);
         m_profilePairs.push_back(axisStokes);
     }
@@ -68,7 +66,7 @@ std::string RegionProfiler::getSpatialProfileStr(int profileIndex) {
 // ***** spectral *****
 
 bool RegionProfiler::setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs,
-        const int nstokes, const int defaultStokes) {
+        const int nstokes) {
     // parse stokes into index
     m_spectralConfigs.clear();
     m_spectralStokes.clear();
@@ -81,14 +79,8 @@ bool RegionProfiler::setSpectralRequirements(const std::vector<CARTA::SetSpectra
             continue;
         if (axisStokes.second > (nstokes-1)) // invalid stokes
             continue;
-        int stokes;
-        if (axisStokes.second < 0) { // use default
-            stokes = defaultStokes;
-        } else {
-            stokes = axisStokes.second;
-        }
         m_spectralConfigs.push_back(config);
-        m_spectralStokes.push_back(stokes);
+        m_spectralStokes.push_back(axisStokes.second);
     }
     return (configs.size()==m_spectralConfigs.size());
 }
