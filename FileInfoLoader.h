@@ -46,6 +46,10 @@ private:
     void findChanStokesAxis(const casacore::IPosition& dataShape, const casacore::String& axisType1,
         const casacore::String& axisType2, const casacore::String& axisType3, const casacore::String& axisType4,
 	int& chanAxis, int& stokesAxis);
+    std::string unitConversion(const double value, const std::string& unit);
+    std::string deg2arcsec(const double degree);
+    std::string convertHz(const double hz);
+
 
     std::string m_file;
     casacore::ImageOpener::ImageTypes m_type; 

@@ -4,6 +4,7 @@
 #include "ImageData/HDF5Attributes.h"
 
 #include <algorithm>
+#include <regex>
 #include <fmt/format.h>
 
 #include <casacore/casa/OS/File.h>
@@ -440,8 +441,8 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(FileInfoExtended* extendedInfo, string&
         cr1 = makeValueStr(coordTypeX, crval1, cunit1);
         cr2 = makeValueStr(coordTypeY, crval2, cunit2);
         crDegStr = fmt::format("[{}, {}]", cr1, cr2);
-        if (!(cdelt1 == 0.0 && cdelt2 == 0.0)) 
-            axisInc = fmt::format("{} {}, {} {}", cdelt1, cunit1, cdelt2, cunit2);
+        if (!(cdelt1 == 0.0 && cdelt2 == 0.0))
+            axisInc = fmt::format("{}, {}", unitConversion(cdelt1, cunit1), unitConversion(cdelt2, cunit2));
         makeRadesysStr(radeSys, equinox);
 
         // fill computed_entries
@@ -580,7 +581,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
         cr2 = makeValueStr(coordTypeY, crval2, cunit2);
         crDegStr = fmt::format("[{}, {}]", cr1, cr2);
         if (!(cdelt1 == 0.0 && cdelt2 == 0.0)) 
-            axisInc = fmt::format("{} {}, {} {}", cdelt1, cunit1, cdelt2, cunit2);
+            axisInc = fmt::format("{}, {}", unitConversion(cdelt1, cunit1), unitConversion(cdelt2, cunit2));
         makeRadesysStr(radeSys, equinox);
 
         // fill computed_entries
@@ -799,7 +800,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             cr0 = makeValueStr(coordTypeX, crval0, cunit0);
             cr1 = makeValueStr(coordTypeY, crval1, cunit1);
             crDegStr = fmt::format("[{} {}]", cr0, cr1);
-            axisInc = fmt::format("{} {}, {} {}", cdelt0, cunit0, cdelt1, cunit1);
+            axisInc = fmt::format("{}, {}", unitConversion(cdelt0, cunit0), unitConversion(cdelt1, cunit1));
         }
         addComputedEntries(extendedInfo, xyCoords, crPixels, crCoords, crDegStr, radeSys,
             specSys, bunit, axisInc);
@@ -867,6 +868,7 @@ void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
         entry->set_value(bunit);
         entry->set_entry_type(EntryType::STRING);
     }
+
     if (!axisInc.empty()) {
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Pixel increment");
@@ -875,3 +877,53 @@ void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
     }
 }
 
+std::string FileInfoLoader::unitConversion(const double value, const std::string& unit) {
+    if (std::regex_match(unit, std::regex("deg", std::regex::icase))) {
+        return deg2arcsec(value);
+    } else if (std::regex_match(unit, std::regex("hz", std::regex::icase))) {
+        return convertHz(value);
+    } else if (std::regex_match(unit, std::regex("arcsec", std::regex::icase))) {
+        char buf[512];
+        snprintf(buf, sizeof(buf), "%.3f\"", value);
+        return std::string(buf);
+    } else { // unknown
+        char buf[512];
+        snprintf(buf, sizeof(buf), "%.3f", value);
+        return std::string(buf) + " " + unit;
+    }
+}
+
+// Unit conversion: convert degree to arcsec
+std::string FileInfoLoader::deg2arcsec(const double degree) {
+    // 1 degree = 60 arcmin = 60*60 arcsec
+    double arcs = fabs(degree * 3600);
+
+    // customized format of arcsec
+    char buf[512];
+    if (arcs >= 60.0){ // arcs >= 60, convert to arcmin
+        snprintf(buf, sizeof(buf), "%.2f\'", degree < 0 ? -1*arcs/60 : arcs/60);
+    } else if (arcs < 60.0 && arcs > 0.1) { // 0.1 < arcs < 60
+        snprintf(buf, sizeof(buf), "%.2f\"", degree < 0 ? -1*arcs : arcs);
+    } else if (arcs <= 0.1 && arcs > 0.01) { // 0.01 < arcs <= 0.1
+        snprintf(buf, sizeof(buf), "%.3f\"", degree < 0 ? -1*arcs : arcs);
+    } else { // arcs <= 0.01
+        snprintf(buf, sizeof(buf), "%.4f\"", degree < 0 ? -1*arcs : arcs);
+    }
+
+    return std::string(buf);
+}
+
+// Unit conversion: convert Hz to MHz or GHz
+std::string FileInfoLoader::convertHz(const double hz) {
+    char buf[512];
+
+    if (hz >= 1.0e9) {
+        snprintf(buf, sizeof(buf), "%.4f GHz", hz/1.0e9);
+    } else if (hz < 1.0e9 && hz >= 1.0e6) {
+        snprintf(buf, sizeof(buf), "%.4f MHz", hz/1.0e6);
+    } else {
+        snprintf(buf, sizeof(buf), "%.4f Hz", hz);
+    }
+
+    return std::string(buf);
+}
