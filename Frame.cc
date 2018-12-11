@@ -41,7 +41,6 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         } 
 
         // set current channel, stokes, channelCache
-        channelCache.resize();
         std::string errMessage;
         setImageChannels(defaultChannel, 0, errMessage);
 
@@ -99,12 +98,11 @@ int Frame::getMaxRegionId() {
 // ********************************************************************
 // Image data
 
-std::vector<float> Frame::getImageData(bool meanFilter) {
+std::vector<float> Frame::getImageData(CARTA::ImageBounds& bounds, int mip, bool meanFilter) {
     if (!valid) {
         return std::vector<float>();
     }
 
-    CARTA::ImageBounds bounds(currentBounds());
     const int x = bounds.x_min();
     const int y = bounds.y_min();
     const int reqHeight = bounds.y_max() - bounds.y_min();
@@ -122,9 +120,8 @@ std::vector<float> Frame::getImageData(bool meanFilter) {
     int nImgCol = imageShape(0);
 
     // read lock channelCache
-    //bool writeLock(false);
-    //tbb::queuing_rw_mutex::scoped_lock lock(cacheMutex, writeLock);
-    std::vector<float> cacheData(channelCache.tovector());
+    bool writeLock(false);
+    tbb::queuing_rw_mutex::scoped_lock lock(cacheMutex, writeLock);
 
     if (meanFilter) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
@@ -139,7 +136,7 @@ std::vector<float> Frame::getImageData(bool meanFilter) {
                             auto imageRow = y + j * mip + pixelY;
                             auto imageCol = x + i * mip + pixelX;
                             //float pixVal = channelCache(imageCol, imageRow);
-                            float pixVal = cacheData[(imageRow * nImgCol) + imageCol];
+                            float pixVal = channelCache[(imageRow * nImgCol) + imageCol];
                             if (!isnan(pixVal) && !isinf(pixVal)) {
                                 pixelCount++;
                                 pixelSum += pixVal;
@@ -160,7 +157,7 @@ std::vector<float> Frame::getImageData(bool meanFilter) {
                     auto imageRow = y + j * mip;
                     auto imageCol = x + i * mip;
                     //regionData[j * rowLengthRegion + i] = channelCache(imageCol, imageRow);
-                    regionData[j * rowLengthRegion + i] = cacheData[(imageRow * nImgCol) + imageCol];
+                    regionData[j * rowLengthRegion + i] = channelCache[(imageRow * nImgCol) + imageCol];
                 }
             }
         };
@@ -464,12 +461,6 @@ bool Frame::setBounds(CARTA::ImageBounds imageBounds, int newMip) {
     const int xmax = imageBounds.x_max();
     const int ymin = imageBounds.y_min();
     const int ymax = imageBounds.y_max();
-
-    CARTA::ImageBounds currBounds(currentBounds());
-    if ((newMip==currentMip()) && (xmin==currBounds.x_min()) && (xmax==currBounds.x_max()) &&
-        (ymin==currBounds.y_min()) && (ymax==currBounds.y_max()))
-        return false; // no change
-
     const int reqHeight = ymax - ymin;
     const int reqWidth = xmax - xmin;
 
@@ -482,15 +473,10 @@ bool Frame::setBounds(CARTA::ImageBounds imageBounds, int newMip) {
     return true;
 }
 
-bool Frame::setCompression(CARTA::CompressionType type, float quality, int nsubsets) {
-    bool update = ((compression.type != type) || (compression.quality != quality) || 
-        (compression.nsubsets != nsubsets));
-    if (update) {
-        compression.type = type;
-        compression.quality = quality;
-        compression.nsubsets = nsubsets;
-    }
-    return update;
+void Frame::setCompression(CompressionSettings& settings) {
+    compression.type = settings.type;
+    compression.quality = settings.quality;
+    compression.nsubsets = settings.nsubsets;
 }
 
 CARTA::ImageBounds Frame::currentBounds() {
@@ -501,7 +487,7 @@ int Frame::currentMip() {
     return mip;
 }
 
-CompressionSettings Frame::getCompressionSettings() {
+CompressionSettings Frame::compressionSettings() {
     return compression;
 }
 
@@ -548,8 +534,7 @@ void Frame::setChannelCache(size_t channel, size_t stokes) {
         casacore::Array<float> tmp;
         std::lock_guard<std::mutex> guard(latticeMutex);
         loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
-        channelCache.resize();
-        channelCache.reference(tmp);
+	channelCache = tmp.tovector();
     }
 }
 
@@ -853,18 +838,26 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             if (!haveHistogram) { 
                 // get histogram from Region
                 casacore::Slicer latticeSlicer;
-                casacore::Array<float> histogramArray;
+                bool writeLock(false);
+                tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+                std::vector<float> data;
                 if (configChannel == -2) { // all channels in region
                     getLatticeSlicer(latticeSlicer, -1, -1, -1, currStokes);
                     std::unique_lock<std::mutex> guard(latticeMutex);
-                    loader->loadData(FileInfo::Data::XYZW).getSlice(histogramArray, latticeSlicer, true);
+		    casacore::Array<float> tmp;
+                    loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, latticeSlicer, true);
+		    data = tmp.tovector();
                 } else { // requested channel (current or specified)
-                    casacore::Matrix<float> chanMatrix;
-                    getChannelMatrix(chanMatrix, configChannel, currStokes);
-                    histogramArray.reference(chanMatrix);
+                    if (config.channel() == -1) {
+                        data = channelCache;
+                    } else {
+                        casacore::Matrix<float> chanMatrix;
+                        getChannelMatrix(chanMatrix, configChannel, currStokes);
+		        data = chanMatrix.tovector();
+                    }
                 }
                 if (configNumBins < 0) configNumBins = defaultNumBins;
-                region->fillHistogram(newHistogram, histogramArray, configChannel, currStokes, configNumBins);
+                region->fillHistogram(newHistogram, data, configChannel, currStokes, configNumBins);
             }
         }
         histogramOK = true;
@@ -883,8 +876,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
         casacore::uInt nImageCol(imageShape(0)), nImageRow(imageShape(1));
         bool writeLock(false);
         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-        std::vector<float> cacheData(channelCache.tovector());
-        float value = cacheData[(y*nImageCol) + x];
+        float value = channelCache[(y*nImageCol) + x];
         cacheLock.release();
         profileData.set_x(x);
         profileData.set_y(y);
@@ -906,7 +898,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
                         auto xStart = y * nImageCol;
                         for (unsigned int i=0; i<imageShape(0); ++i) {
-                            profile.push_back(cacheData[xStart + i]);
+                            profile.push_back(channelCache[xStart + i]);
                         }
                         cacheLock.release();
                         end = imageShape(0);
@@ -915,7 +907,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     case 1: { // y
                         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
                         for (unsigned int i=0; i<imageShape(1); ++i) {
-                            profile.push_back(cacheData[(i * nImageCol) + x]);
+                            profile.push_back(channelCache[(i * nImageCol) + x]);
                         }
                         cacheLock.release();
                         end = imageShape(1);

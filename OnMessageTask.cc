@@ -54,6 +54,7 @@ tbb::task* OnMessageTask::execute() {
     } else if (eventName == "CLOSE_FILE") {
         CARTA::CloseFile message;
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+            fsettings->clearSettings(message.file_id());
             session->onCloseFile(message, requestId);
         }
     } else if (eventName == "SET_IMAGE_VIEW") {

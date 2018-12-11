@@ -19,7 +19,8 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, unordered_ma
       permissionsEnabled(enforcePermissions),
       baseFolder(folder),
       verboseLogging(verbose),
-      outgoing(outgoing) {
+      outgoing(outgoing),
+      newFrame(false) {
 }
 
 Session::~Session() {
@@ -232,6 +233,7 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
             std::unique_lock<std::mutex> lock(frameMutex[fileId]);  // creates mutex if does not exist
             frames[fileId] = move(frame);
             lock.unlock();
+            newFrame = true;
         } else {
             errMessage = "Could not load image";
         }
@@ -263,16 +265,31 @@ void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
     auto fileId = message.file_id();
     if (frames.count(fileId)) {
         try {
-            CARTA::CompressionType ctype(message.compression_type());
-            float quality(message.compression_quality());
-            int numsets(message.num_subsets());
-            bool compressionUpdated = frames.at(fileId)->setCompression(ctype, quality, numsets);
-            // set new view in Frame
-            bool boundsUpdated = frames.at(fileId)->setBounds(message.image_bounds(), message.mip());
-            if (compressionUpdated or boundsUpdated) {
+            CARTA::ImageBounds bounds(message.image_bounds());
+            int mip(message.mip());
+            if (frames.at(fileId)->setBounds(bounds, mip)) {
+                std::vector<float> imageData = frames.at(fileId)->getImageData(bounds, mip);
+                CompressionSettings csettings;
+                csettings.type = message.compression_type();
+                csettings.quality = message.compression_quality();
+                csettings.nsubsets = message.num_subsets();
+                frames.at(fileId)->setCompression(csettings);
                 // RESPONSE
-                CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
-                sendRasterImageData(fileId, requestId, histogramData);
+                RasterImageData rasterImageData;
+                rasterImageData.set_file_id(fileId);
+                rasterImageData.set_stokes(frames.at(fileId)->currentStokes());
+                rasterImageData.set_channel(frames.at(fileId)->currentChannel());
+                rasterImageData.set_mip(mip);
+                rasterImageData.mutable_image_bounds()->set_x_min(bounds.x_min());
+                rasterImageData.mutable_image_bounds()->set_x_max(bounds.x_max());
+                rasterImageData.mutable_image_bounds()->set_y_min(bounds.y_min());
+                rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
+                if (newFrame) {
+                    RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+                    rasterImageData.set_allocated_channel_histogram_data(histogramData);
+                    newFrame = false;
+                }
+                sendRasterImageData(rasterImageData, requestId, imageData, csettings, bounds, mip);
             }
         } catch (std::out_of_range& rangeError) {   // unordered_map.at() exception
             string error = fmt::format("File id {} closed", fileId);
@@ -289,12 +306,28 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
     if (frames.count(fileId)) {
         try {
             string errMessage;
-            bool stokesChanged(message.stokes() != frames.at(fileId)->currentStokes());
-            if (frames.at(fileId)->setImageChannels(message.channel(), message.stokes(), errMessage)) {
+            auto channel = message.channel();
+            auto stokes = message.stokes();
+            bool stokesChanged(stokes != frames.at(fileId)->currentStokes());
+            if (frames.at(fileId)->setImageChannels(channel, stokes, errMessage)) {
+                auto bounds = frames.at(fileId)->currentBounds();
+                auto mip = frames.at(fileId)->currentMip();
+                std::vector<float> imageData = frames.at(fileId)->getImageData(bounds, mip);
+                CompressionSettings csettings = frames.at(fileId)->compressionSettings();
                 // RESPONSE: updated histogram, spatial profile, spectral profile
                 // Histogram included in the raster image data message
+                RasterImageData rasterImageData;
+                rasterImageData.set_file_id(fileId);
+                rasterImageData.set_stokes(stokes);
+                rasterImageData.set_channel(channel);
+                rasterImageData.set_mip(mip);
+                rasterImageData.mutable_image_bounds()->set_x_min(bounds.x_min());
+                rasterImageData.mutable_image_bounds()->set_x_max(bounds.x_max());
+                rasterImageData.mutable_image_bounds()->set_y_min(bounds.y_min());
+                rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
                 RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
-                sendRasterImageData(fileId, requestId, histogramData);
+                rasterImageData.set_allocated_channel_histogram_data(histogramData);
+                sendRasterImageData(rasterImageData, requestId, imageData, csettings, bounds, mip);
                 sendSpatialProfileData(fileId, CURSOR_REGION_ID);
                 if (stokesChanged)
                     sendSpectralProfileData(fileId, CURSOR_REGION_ID);
@@ -500,42 +533,27 @@ CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId
 }
 
 
-void Session::sendRasterImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram) {
-    RasterImageData rasterImageData;
-    // Add histogram, if it exists
-    if (channelHistogram) {
-        rasterImageData.set_allocated_channel_histogram_data(channelHistogram);
-    }
+void Session::sendRasterImageData(CARTA::RasterImageData& rasterImageData,
+    uint32_t requestId, std::vector<float>& imageData, CompressionSettings& compression,
+    CARTA::ImageBounds& bounds, int mip) {
+    auto fileId = rasterImageData.file_id();
     if (frames.count(fileId)) {
         try {
-            auto imageData = frames.at(fileId)->getImageData();
             if (!imageData.empty()) {
-                rasterImageData.set_file_id(fileId);
-                rasterImageData.set_stokes(frames.at(fileId)->currentStokes());
-                rasterImageData.set_channel(frames.at(fileId)->currentChannel());
-                rasterImageData.set_mip(frames.at(fileId)->currentMip());
-                // Copy over image bounds
-                auto imageBounds = frames.at(fileId)->currentBounds();
-                auto mip = frames.at(fileId)->currentMip();
-                rasterImageData.mutable_image_bounds()->set_x_min(imageBounds.x_min());
-                rasterImageData.mutable_image_bounds()->set_x_max(imageBounds.x_max());
-                rasterImageData.mutable_image_bounds()->set_y_min(imageBounds.y_min());
-                rasterImageData.mutable_image_bounds()->set_y_max(imageBounds.y_max());
-
-                auto compressionSettings = frames.at(fileId)->getCompressionSettings();
-                auto compressionType = compressionSettings.type;
+                auto compressionType = compression.type;
                 if (compressionType == CompressionType::NONE) {
                     rasterImageData.set_compression_type(CompressionType::NONE);
                     rasterImageData.set_compression_quality(0);
                     rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
                 } else if (compressionType == CompressionType::ZFP) {
-                    int precision = lround(compressionSettings.quality);
-                    auto rowLength = (imageBounds.x_max() - imageBounds.x_min()) / mip;
-                    auto numRows = (imageBounds.y_max() - imageBounds.y_min()) / mip;
+                    int precision = lround(compression.quality);
                     rasterImageData.set_compression_type(CompressionType::ZFP);
                     rasterImageData.set_compression_quality(precision);
 
-                    auto numSubsets(compressionSettings.nsubsets);
+                    auto rowLength = (bounds.x_max() - bounds.x_min()) / mip;
+                    auto numRows = (bounds.y_max() - bounds.y_min()) / mip;
+                    auto numSubsets = compression.nsubsets;
+
                     vector<vector<char>> compressionBuffers(numSubsets);
                     vector<size_t> compressedSizes(numSubsets);
                     vector<vector<int32_t>> nanEncodings(numSubsets);

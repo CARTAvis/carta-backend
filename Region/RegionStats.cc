@@ -36,43 +36,24 @@ CARTA::SetHistogramRequirements_HistogramConfig RegionStats::getHistogramConfig(
     return config;
 }
 
-void RegionStats::fillHistogram(CARTA::Histogram* histogram, const casacore::Array<float>& histogramArray,
+void RegionStats::fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
         const size_t chanIndex, const size_t stokesIndex, const int nBins) {
     // stored?
     if (m_channelHistograms.count(chanIndex) && m_stokes==stokesIndex && m_bins==nBins) {
         *histogram = m_channelHistograms[chanIndex];
     } else {
-        // auto tStart = std::chrono::high_resolution_clock::now();
+        tbb::blocked_range<size_t> range(0, data.size());
         // find min, max for input array
-        casacore::IPosition inputShape(histogramArray.shape());
-        bool is2D(inputShape.size()==2);
-        MinMax<float> mm(histogramArray);
-        if (is2D) {
-            // (row_begin, row_end, col_begin, col_end)
-            tbb::blocked_range2d<size_t> range(0, inputShape(1), 0, inputShape(0));
-            tbb::parallel_reduce(range, mm);
-        } else {  // cube histogram
-            // (page_begin, page_end, row_begin, row_end, col_begin, col_end)
-            tbb::blocked_range3d<size_t> range(0, inputShape(2), 0, inputShape(1), 0, inputShape(0));
-            tbb::parallel_reduce(range, mm);
-        }
+        MinMax<float> mm(data);
+        tbb::parallel_reduce(range, mm);
         float minVal, maxVal;
         std::tie(minVal, maxVal) = mm.getMinMax();
 
         // find histogram for input array
-        Histogram hist(nBins, minVal, maxVal, histogramArray);
-        if (is2D) {
-            tbb::blocked_range2d<size_t> range(0, inputShape(1), 0, inputShape(0));
-            tbb::parallel_reduce(range, hist);
-        } else {  // cube histogram
-            tbb::blocked_range3d<size_t, size_t, size_t> range(0, inputShape(2), 0, inputShape(1), 0, inputShape(0));
-            tbb::parallel_reduce(range, hist);
-        }
+        Histogram hist(nBins, minVal, maxVal, data);
+        tbb::parallel_reduce(range, hist);
         std::vector<int> histogramBins = hist.getHistogram();
         float binWidth = hist.getBinWidth();
-        // auto tEnd = std::chrono::high_resolution_clock::now();
-        // auto dt = std::chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
-        // fmt::print("histogram loops took {}ms\n", dt/1e3);
 
         // fill histogram
         histogram->set_channel(chanIndex);

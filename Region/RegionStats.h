@@ -22,7 +22,7 @@ public:
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
     size_t numHistogramConfigs();
     CARTA::SetHistogramRequirements_HistogramConfig getHistogramConfig(int histogramIndex);
-    void fillHistogram(CARTA::Histogram* histogram, const casacore::Array<float>& histogramArray,
+    void fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
         const size_t chanIndex, const size_t stokesIndex, const int nBins);
 
     // Stats

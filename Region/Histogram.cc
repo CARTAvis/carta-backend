@@ -5,46 +5,28 @@
 
 using namespace carta;
 
-Histogram::Histogram(int numBins, float minValue, float maxValue, const casacore::Array<float> &hArray)
+Histogram::Histogram(int numBins, float minValue, float maxValue, const std::vector<float> &data_)
     : binWidth((maxValue - minValue)/numBins),
       minVal(minValue),
       hist(numBins, 0),
-      histArray(hArray)
+      data(data_)
 {}
 
 Histogram::Histogram(Histogram &h, tbb::split)
     : binWidth(h.binWidth),
       minVal(h.minVal),
       hist(h.hist.size(), 0),
-      histArray(h.histArray)
+      data(h.data)
 {}
 
-void Histogram::operator()(const tbb::blocked_range2d<size_t> &r) {
+void Histogram::operator()(const tbb::blocked_range<size_t> &r) {
     std::vector<int> tmp(hist);
-    for (auto j = r.rows().begin(); j != r.rows().end(); ++j) {
-        for (auto i = r.cols().begin(); i != r.cols().end(); ++i) {
-            auto v = histArray(casacore::IPosition(2,i,j));
-            if (std::isnan(v) || std::isinf(v))
-                continue;
-            int bin = std::max(std::min((int) ((v - minVal) / binWidth), (int)hist.size() - 1), 0);
-            ++tmp[bin];
-        }
-    }
-    hist = tmp;
-}
-
-void Histogram::operator()(const tbb::blocked_range3d<size_t> &r) {
-    std::vector<int> tmp(hist);
-    for (auto k = r.pages().begin(); k != r.pages().end(); ++k) {
-        for (auto j = r.rows().begin(); j != r.rows().end(); ++j) {
-            for (auto i = r.cols().begin(); i != r.cols().end(); ++i) {
-                auto v = histArray(casacore::IPosition(3,i,j,k));
-                if (std::isnan(v) || std::isinf(v))
-                    continue;
-                int bin = std::max(std::min((int) ((v - minVal) / binWidth), (int)hist.size() - 1), 0);
-                ++tmp[bin];
-            }
-        }
+    for (auto i = r.begin(); i != r.end(); ++i) {
+        auto v = data[i];
+        if (std::isnan(v) || std::isinf(v))
+            continue;
+        int bin = std::max(std::min((int) ((v - minVal) / binWidth), (int)hist.size() - 1), 0);
+        ++tmp[bin];
     }
     hist = tmp;
 }

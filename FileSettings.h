@@ -21,6 +21,7 @@ public:
     void addViewSetting(CARTA::SetImageView message, uint32_t requestId);
     void addCursorSetting(CARTA::SetCursor message, uint32_t requestId);
     bool executeOne(const std::string eventName, const uint32_t fileId);
+    void clearSettings(const uint32_t fileId);
 
 private:
     Session *session;

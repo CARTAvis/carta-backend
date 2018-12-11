@@ -60,7 +60,7 @@ private:
     size_t stokesIndex;
 
     // saved matrix for current channelIndex, stokesIndex
-    casacore::Matrix<float> channelCache;
+    std::vector<float> channelCache;
     tbb::queuing_rw_mutex cacheMutex; // allow concurrent reads but lock for write
     void setChannelCache(size_t channel, size_t stokes);
 
@@ -89,14 +89,14 @@ public:
     int getMaxRegionId();
 
     // image data
-    std::vector<float> getImageData(bool meanFilter = true);
+    std::vector<float> getImageData(CARTA::ImageBounds& bounds, int mip, bool meanFilter = true);
 
     // image view
     bool setBounds(CARTA::ImageBounds imageBounds, int newMip);
-    bool setCompression(CARTA::CompressionType type, float quality, int nsubsets);
+    void setCompression(CompressionSettings& settings);
     CARTA::ImageBounds currentBounds();
     int currentMip();
-    CompressionSettings getCompressionSettings();
+    CompressionSettings compressionSettings();
 
     // image channels
     bool setImageChannels(int newChannel, int newStokes, std::string& message);

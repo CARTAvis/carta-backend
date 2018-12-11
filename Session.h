@@ -50,6 +50,8 @@ protected:
     std::unordered_map<int, std::unique_ptr<Frame>> frames;
     // <file_id, mutex>:  lock frame to create/destroy
     std::unordered_map<int, std::mutex> frameMutex;
+    // flag to send histogram with data
+    bool newFrame;
 
     // Notification mechanism when outgoing messages are ready
     uS::Async *outgoing;
@@ -98,7 +100,9 @@ protected:
 
     // ICD: Send data streams
     // raster image data, optionally with histogram
-    void sendRasterImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram = nullptr);
+    void sendRasterImageData(CARTA::RasterImageData& rasterData, uint32_t requestId,
+        std::vector<float>& imageData, CompressionSettings& compression,
+	CARTA::ImageBounds& bounds, int mip);
     CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId=-1);
     // profile data
     void sendSpatialProfileData(int fileId, int regionId);

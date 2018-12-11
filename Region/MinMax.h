@@ -11,64 +11,42 @@ namespace carta {
 template <typename T>
 class MinMax {
     T minval, maxval;
-    const casacore::Array<T> &histArray;
+    const std::vector<T> &data;
 
 public:
-    MinMax(const casacore::Array<T> &hArray);
+    MinMax(const std::vector<T> &data_);
     MinMax(MinMax &mm, tbb::split);
 
-    void operator()(const tbb::blocked_range2d<size_t> &r);
-    void operator()(const tbb::blocked_range3d<size_t> &r);
+    void operator()(const tbb::blocked_range<size_t> &r);
     void join(MinMax &other);
 
     std::pair<T,T> getMinMax() const;
 };
 
 template <typename T>
-MinMax<T>::MinMax(const casacore::Array<T> &hArray)
+MinMax<T>::MinMax(const std::vector<T> &data_)
     : minval(std::numeric_limits<T>::max()),
       maxval(std::numeric_limits<T>::min()),
-      histArray(hArray)
+      data(data_)
 {}
 
 template <typename T>
 MinMax<T>::MinMax(MinMax<T> &mm, tbb::split)
     : minval(std::numeric_limits<T>::max()),
       maxval(std::numeric_limits<T>::min()),
-      histArray(mm.histArray)
+      data(mm.data)
 {}
 
 template <typename T>
-void MinMax<T>::operator()(const tbb::blocked_range2d<size_t> &r) {
+void MinMax<T>::operator()(const tbb::blocked_range<size_t> &r) {
     T tmin = minval;
     T tmax = maxval;
-    for(size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
-        for(size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
-            T val = histArray(casacore::IPosition(2,i,j));
-            if(std::isnan(val) || std::isinf(val))
-                continue;
-            tmin = std::min(tmin, val);
-            tmax = std::max(tmax, val);
-        }
-    }
-    minval = tmin;
-    maxval = tmax;
-}
-
-template <typename T>
-void MinMax<T>::operator()(const tbb::blocked_range3d<size_t> &r) {
-    T tmin = minval;
-    T tmax = maxval;
-    for(size_t k = r.pages().begin(); k != r.pages().end(); ++k) {
-        for(size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
-            for(size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
-                T val = histArray(casacore::IPosition(3,i,j,k));
-                if(std::isnan(val) || std::isinf(val))
-                    continue;
-                tmin = std::min(tmin, val);
-                tmax = std::max(tmax, val);
-            }
-        }
+    for(size_t i = r.begin(); i != r.end(); ++i) {
+        T val = data[i];
+        if(std::isnan(val) || std::isinf(val))
+            continue;
+        tmin = std::min(tmin, val);
+        tmax = std::max(tmax, val);
     }
     minval = tmin;
     maxval = tmax;

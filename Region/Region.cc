@@ -47,9 +47,9 @@ size_t Region::numHistogramConfigs() {
     return m_stats->numHistogramConfigs();
 }
 
-void Region::fillHistogram(CARTA::Histogram* histogram, const casacore::Array<float>& histogramArray,
+void Region::fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
         const size_t chanIndex, const size_t stokesIndex, const int numBins) {
-    return m_stats->fillHistogram(histogram, histogramArray, chanIndex, stokesIndex, numBins);
+    return m_stats->fillHistogram(histogram, data, chanIndex, stokesIndex, numBins);
 }
 
 // stats
