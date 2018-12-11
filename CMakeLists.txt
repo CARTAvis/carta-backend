@@ -29,6 +29,7 @@ set(SOURCE_FILES
   Region/Histogram.cc
   OnMessageTask.cc
   AnimationQueue.cc
+  FileSettings.cc
   util.cc)
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

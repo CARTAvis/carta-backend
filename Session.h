@@ -2,15 +2,16 @@
 
 #pragma once
 
-#include <fmt/format.h>
-#include <mutex>
-#include <cstdio>
-#include <uWS/uWS.h>
 #include <cstdint>
+#include <cstdio>
+#include <mutex>
 #include <unordered_map>
+
 #include <casacore/casa/aips.h>
 #include <casacore/casa/OS/File.h>
+#include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
+#include <uWS/uWS.h>
 
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/file_info.pb.h>
@@ -28,12 +29,6 @@
 #include "Frame.h"
 
 #define MAX_SUBSETS 8
-
-struct CompressionSettings {
-    CARTA::CompressionType type;
-    float quality;
-    int nsubsets;
-};
 
 class Session {
 public:
@@ -53,12 +48,13 @@ protected:
 
     // <file_id, Frame>: one frame per image file
     std::unordered_map<int, std::unique_ptr<Frame>> frames;
+    // <file_id, mutex>:  lock frame to create/destroy
+    std::unordered_map<int, std::mutex> frameMutex;
+    // flag to send histogram with data
+    bool newFrame;
 
     // Notification mechanism when outgoing messages are ready
     uS::Async *outgoing;
-
-    // for data compression
-    CompressionSettings compressionSettings;
 
     // Return message queue
     tbb::concurrent_queue<std::vector<char>> out_msgs;
@@ -104,15 +100,14 @@ protected:
 
     // ICD: Send data streams
     // raster image data, optionally with histogram
-    void sendRasterImageData(int fileId, uint32_t requestId, CARTA::RegionHistogramData* channelHistogram = nullptr);
+    void sendRasterImageData(CARTA::RasterImageData& rasterData, uint32_t requestId,
+        std::vector<float>& imageData, CompressionSettings& compression,
+	CARTA::ImageBounds& bounds, int mip);
     CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId=-1);
     // profile data
     void sendSpatialProfileData(int fileId, int regionId);
     void sendSpectralProfileData(int fileId, int regionId);
     void sendRegionStatsData(int fileId, int regionId);
-
-    // data compression
-    void setCompression(CARTA::CompressionType type, float quality, int nsubsets);
 
     // Send protobuf messages
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);

@@ -47,9 +47,9 @@ size_t Region::numHistogramConfigs() {
     return m_stats->numHistogramConfigs();
 }
 
-void Region::fillHistogram(CARTA::Histogram* histogram, const casacore::Array<float>& histogramArray,
+void Region::fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
         const size_t chanIndex, const size_t stokesIndex, const int numBins) {
-    return m_stats->fillHistogram(histogram, histogramArray, chanIndex, stokesIndex, numBins);
+    return m_stats->fillHistogram(histogram, data, chanIndex, stokesIndex, numBins);
 }
 
 // stats
@@ -70,9 +70,8 @@ void Region::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::Su
 
 // spatial
 
-bool Region::setSpatialRequirements(const std::vector<std::string>& profiles,
-        const int nstokes, const int defaultStokes) {
-    return m_profiler->setSpatialRequirements(profiles, nstokes, defaultStokes);
+bool Region::setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes) {
+    return m_profiler->setSpatialRequirements(profiles, nstokes);
 }
 
 size_t Region::numSpatialProfiles() {
@@ -90,8 +89,8 @@ std::string Region::getSpatialProfileStr(int profileIndex) {
 // spectral
 
 bool Region::setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs,
-        const int nstokes, const int defaultStokes) {
-    return m_profiler->setSpectralRequirements(configs, nstokes, defaultStokes);
+        const int nstokes) {
+    return m_profiler->setSpectralRequirements(configs, nstokes);
 }
 
 size_t Region::numSpectralProfiles() {

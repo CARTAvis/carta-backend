@@ -29,19 +29,18 @@ public:
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
     CARTA::SetHistogramRequirements_HistogramConfig getHistogramConfig(int histogramIndex);
     size_t numHistogramConfigs();
-    void fillHistogram(CARTA::Histogram* histogram, const casacore::Array<float>& histogramArray,
+    void fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
         const size_t chanIndex, const size_t stokesIndex, const int numBins);
 
     // Spatial: pass through to RegionProfiler
-    bool setSpatialRequirements(const std::vector<std::string>& profiles,
-        const int nstokes, const int defaultStokes);
+    bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
     size_t numSpatialProfiles();
     std::pair<int,int> getSpatialProfileReq(int profileIndex);
     std::string getSpatialProfileStr(int profileIndex);
 
     // Spectral: pass through to RegionProfiler
     bool setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles,
-        const int nstokes, const int defaultStokes);
+        const int nstokes);
     size_t numSpectralProfiles();
     bool getSpectralConfigStokes(int& stokes, int profileIndex);
     bool getSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profileIndex);

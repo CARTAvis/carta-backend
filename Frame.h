@@ -7,7 +7,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
-#include <tbb/concurrent_queue.h>
+#include <tbb/queuing_rw_mutex.h>
 
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
@@ -28,13 +28,19 @@ struct ChannelStats {
     int64_t nanCount;
 };
 
+struct CompressionSettings {
+    CARTA::CompressionType type;
+    float quality;
+    int nsubsets;
+};
+
 class Frame {
 
 private:
     // setup
     std::string uuid;
     bool valid;
-    std::mutex mutex;  // only one disk access at a time
+    std::mutex latticeMutex;  // only one disk access at a time
 
     // image loader, shape, stats from image file
     std::string filename;
@@ -47,13 +53,16 @@ private:
     // set image view 
     CARTA::ImageBounds bounds;
     int mip;
+    CompressionSettings compression;
 
     // set image channel
     size_t channelIndex;
     size_t stokesIndex;
 
-    // saved matrix for channelIndex, stokesIndex
-    casacore::Matrix<float> channelCache;
+    // saved matrix for current channelIndex, stokesIndex
+    std::vector<float> channelCache;
+    tbb::queuing_rw_mutex cacheMutex; // allow concurrent reads but lock for write
+    void setChannelCache(size_t channel, size_t stokes);
 
     // Region
     // <region_id, Region>: one Region per ID
@@ -61,11 +70,16 @@ private:
 
     bool loadImageChannelStats(bool loadPercentiles = false);
     void setImageRegion(); // set region for entire image
+    void setDefaultCursor(); // using center point of image
+    bool cursorSet; // by frontend, not internally
+
+    // Data access for 1 axis (vector profile) or 2 (matrix)
     // fill given matrix for given channel and stokes
-    casacore::Slicer getChannelMatrixSlicer(size_t channel, size_t stokes);
     void getChannelMatrix(casacore::Matrix<float>& chanMatrix, size_t channel, size_t stokes);
-    // get image data slicer for axis profile: whichever axis is set to -1
-    void getProfileSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
+    // get slicer for matrix with given channel and stokes
+    casacore::Slicer getChannelMatrixSlicer(size_t channel, size_t stokes);
+    // get lattice slicer for axis profile: full axis if set to -1
+    void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
 
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = 0);
@@ -75,12 +89,14 @@ public:
     int getMaxRegionId();
 
     // image data
-    std::vector<float> getImageData(bool meanFilter = true);
+    std::vector<float> getImageData(CARTA::ImageBounds& bounds, int mip, bool meanFilter = true);
 
     // image view
     bool setBounds(CARTA::ImageBounds imageBounds, int newMip);
+    void setCompression(CompressionSettings& settings);
     CARTA::ImageBounds currentBounds();
     int currentMip();
+    CompressionSettings compressionSettings();
 
     // image channels
     bool setImageChannels(int newChannel, int newStokes, std::string& message);
@@ -94,6 +110,7 @@ public:
         float rotation, std::string& message);
     // setRegion for cursor (defaults for fields not in SET_CURSOR)
     bool setCursorRegion(int regionId, const CARTA::Point& point);
+    inline bool isCursorSet() { return cursorSet; }
     void removeRegion(int regionId);
 
     // set requirements
