@@ -107,26 +107,30 @@ FileListResponse Session::getFileList(string folder) {
             while (!dirIter.pastEnd()) {
                 casacore::File ccfile(dirIter.file());  // casacore File
                 casacore::String fullpath(ccfile.path().absoluteName());
-                casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
-                bool addImage(false);
-                if (ccfile.isDirectory(true)) {
-                    if ((imType==casacore::ImageOpener::AIPSPP) || (imType==casacore::ImageOpener::MIRIAD))
-                        addImage = true;
-                    else if (imType==casacore::ImageOpener::UNKNOWN) {
-                        // Check if it is a directory and the user has permission to access it
-                        casacore::String dirname(ccfile.path().baseName());
-                        string pathNameRelative = (folder.length() && folder != "/") ? folder.append("/" + dirname) : dirname;
-                        if (checkPermissionForDirectory(pathNameRelative))
-                           fileList.add_subdirectories(dirname);
+                try {
+                    casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
+                    bool addImage(false);
+                    if (ccfile.isDirectory(true)) {
+                        if ((imType==casacore::ImageOpener::AIPSPP) || (imType==casacore::ImageOpener::MIRIAD))
+                            addImage = true;
+                        else if (imType==casacore::ImageOpener::UNKNOWN) {
+                            // Check if it is a directory and the user has permission to access it
+                            casacore::String dirname(ccfile.path().baseName());
+                            string pathNameRelative = (folder.length() && folder != "/") ? folder.append("/" + dirname) : dirname;
+                            if (checkPermissionForDirectory(pathNameRelative))
+                               fileList.add_subdirectories(dirname);
+                        }
+                    } else if (ccfile.isRegular(true) &&
+                        ((imType==casacore::ImageOpener::FITS) || (imType==casacore::ImageOpener::HDF5))) {
+                            addImage = true;
                     }
-                } else if (ccfile.isRegular(true) &&
-                    ((imType==casacore::ImageOpener::FITS) || (imType==casacore::ImageOpener::HDF5))) {
-                        addImage = true;
-                }
 
-                if (addImage) { // add image to file list
-                    auto fileInfo = fileList.add_files();
-                    bool ok = fillFileInfo(fileInfo, fullpath);
+                    if (addImage) { // add image to file list
+                        auto fileInfo = fileList.add_files();
+                        bool ok = fillFileInfo(fileInfo, fullpath);
+                    }
+                } catch (casacore::AipsError& err) {  // RegularFileIO error
+                    // skip it
                 }
                 dirIter++;
             }
