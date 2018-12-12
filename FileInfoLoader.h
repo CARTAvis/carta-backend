@@ -34,8 +34,8 @@ private:
         int chanAxis, int stokesAxis);
     void addComputedEntries(CARTA::FileInfoExtended* extInfo, const std::string& xyCoords,
         const std::string& crPixels, const std::string& crCoords, const std::string& crRaDec,
-	const std::string& radeSys, const std::string& specSys, const std::string& bunit,
-	const std::string& axisInc);
+	    const std::string& radeSys, const std::string& specSys, const std::string& bunit,
+	    const std::string& axisInc, const std::string& rsBeam);
 
     // ExtFileInfo helpers
     std::string makeValueStr(const std::string& type, double val, const std::string& unit);

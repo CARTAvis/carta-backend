@@ -424,6 +424,9 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(FileInfoExtended* extendedInfo, string&
         double crval2 = (getDoubleAttribute(val, attributes, "CRVAL2") ? val : 0.0);
         double cdelt1 = (getDoubleAttribute(val, attributes, "CDELT1") ? val : 0.0);
         double cdelt2 = (getDoubleAttribute(val, attributes, "CDELT2") ? val : 0.0);
+        double bmaj = (getDoubleAttribute(val, attributes, "BMAJ") ? val : 0.0);
+        double bmin = (getDoubleAttribute(val, attributes, "BMIN") ? val : 0.0);
+        double bpa = (getDoubleAttribute(val, attributes, "BPA") ? val : 0.0);
 
         // shape, chan, stokes entries first
         int chanAxis, stokesAxis;
@@ -431,7 +434,7 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(FileInfoExtended* extendedInfo, string&
         addShapeEntries(extendedInfo, dataShape, chanAxis, stokesAxis);
 
         // make computed entries strings
-        std::string xyCoords, crPixels, crCoords, crDegStr, cr1, cr2, axisInc;
+        std::string xyCoords, crPixels, crCoords, crDegStr, cr1, cr2, axisInc, rsBeam;
         if (!coordTypeX.empty() && !coordTypeY.empty())
             xyCoords = fmt::format("{}, {}", coordTypeX, coordTypeY);
         if (!crpix1.empty() && !crpix2.empty())
@@ -443,11 +446,13 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(FileInfoExtended* extendedInfo, string&
         crDegStr = fmt::format("[{}, {}]", cr1, cr2);
         if (!(cdelt1 == 0.0 && cdelt2 == 0.0))
             axisInc = fmt::format("{}, {}", unitConversion(cdelt1, cunit1), unitConversion(cdelt2, cunit2));
+        if (!(bmaj == 0.0 && bmin == 0.0 && bpa == 0.0))
+            rsBeam = deg2arcsec(bmaj) + " X " + deg2arcsec(bmin) +  fmt::format(", {:.4f} deg", bpa);
         makeRadesysStr(radeSys, equinox);
 
         // fill computed_entries
         addComputedEntries(extendedInfo, xyCoords, crPixels, crCoords, crDegStr,
-            radeSys, specSys, bunit, axisInc);
+            radeSys, specSys, bunit, axisInc, rsBeam);
     } catch (casacore::AipsError& err) {
         message = "Error opening HDF5 file";
         return false;
@@ -496,7 +501,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
         // if in header, save values for computed entries
         std::string coordTypeX, coordTypeY, coordType3, coordType4, radeSys, equinox, specSys,
             bunit, crpix1, crpix2, cunit1, cunit2;
-        double crval1(0.0), crval2(0.0), cdelt1(0.0), cdelt2(0.0);
+        double crval1(0.0), crval2(0.0), cdelt1(0.0), cdelt2(0.0), bmaj(0.0), bmin(0.0), bpa(0.0);
 
         // set header entries 
         for (casacore::uInt field=0; field < hduEntries.nfields(); ++field) {
@@ -556,6 +561,12 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
                             cdelt1 = numericValue;
                         else if (headerEntry->name() == "CDELT2")
                             cdelt2 = numericValue;
+                        else if (headerEntry->name() == "BMAJ")
+                            bmaj = numericValue;
+                        else if (headerEntry->name() == "BMIN")
+                            bmin = numericValue;
+                        else if (headerEntry->name() == "BPA")
+                            bpa = numericValue;
                         break;
                     }
                     default:
@@ -570,7 +581,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
         addShapeEntries(extendedInfo, dataShape, chanAxis, stokesAxis);
 
         // make strings for computed entries
-        std::string xyCoords, crPixels, crCoords, cr1, cr2, crDegStr, axisInc;
+        std::string xyCoords, crPixels, crCoords, cr1, cr2, crDegStr, axisInc, rsBeam;
         if (!coordTypeX.empty() && !coordTypeY.empty())
             xyCoords = fmt::format("{}, {}", coordTypeX, coordTypeY);
         if (!crpix1.empty() && !crpix2.empty())
@@ -582,11 +593,13 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
         crDegStr = fmt::format("[{}, {}]", cr1, cr2);
         if (!(cdelt1 == 0.0 && cdelt2 == 0.0)) 
             axisInc = fmt::format("{}, {}", unitConversion(cdelt1, cunit1), unitConversion(cdelt2, cunit2));
+        if (!(bmaj == 0.0 && bmin == 0.0 && bpa == 0.0))
+            rsBeam = deg2arcsec(bmaj) + " X " + deg2arcsec(bmin) +  fmt::format(", {:.4f} deg", bpa);
         makeRadesysStr(radeSys, equinox);
 
         // fill computed_entries
         addComputedEntries(extendedInfo, xyCoords, crPixels, crCoords, crDegStr,
-            radeSys, specSys, bunit, axisInc);
+            radeSys, specSys, bunit, axisInc, rsBeam);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
         extInfoOK = false;
@@ -625,7 +638,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
         extendedInfo->add_stokes_vals(""); // not in header
 
         // if in header, save values for computed entries
-        std::string coordTypeX, coordTypeY, coordType3, coordType4, radeSys, specSys, bunit;
+        std::string coordTypeX, coordTypeY, coordType3, coordType4, radeSys, specSys, bunit, rsBeam;
 
         // set dims in header entries
         auto headerEntry = extendedInfo->add_header_entries();
@@ -671,6 +684,13 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             *headerEntry->mutable_value() = fmt::format("{}", bpa);
             headerEntry->set_entry_type(EntryType::FLOAT);
             headerEntry->set_numeric_value(bpa);
+
+            // add to computed entries
+            if (majAx.getValue()<1.0 || minAx.getValue()<1.0) {
+                rsBeam = fmt::format("{} X {}, {:.4f} deg", bmaj, bmin, bpa);
+            } else {
+                rsBeam = deg2arcsec(bmaj) + " X " + deg2arcsec(bmin) +  fmt::format(", {:.4f} deg", bpa);
+            }
         }
         // type
         headerEntry = extendedInfo->add_header_entries();
@@ -803,7 +823,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             axisInc = fmt::format("{}, {}", unitConversion(cdelt0, cunit0), unitConversion(cdelt1, cunit1));
         }
         addComputedEntries(extendedInfo, xyCoords, crPixels, crCoords, crDegStr, radeSys,
-            specSys, bunit, axisInc);
+            specSys, bunit, axisInc, rsBeam);
     } catch (casacore::AipsError& err) {
         if (ccImage != nullptr)
             delete ccImage;
@@ -818,7 +838,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
 void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
     const std::string& xyCoords, const std::string& crPixels, const std::string& crCoords,
     const std::string& crDeg, const std::string& radeSys, const std::string& specSys,
-    const std::string& bunit, const std::string& axisInc) {
+    const std::string& bunit, const std::string& axisInc, const std::string& rsBeam) {
     // add computed_entries to extended info (ensures the proper order in file browser)
     if (!xyCoords.empty()) {
         auto entry = extendedInfo->add_computed_entries();
@@ -873,6 +893,13 @@ void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Pixel increment");
         entry->set_value(axisInc);
+        entry->set_entry_type(EntryType::STRING);
+    }
+
+    if (!rsBeam.empty()) {
+        auto entry = extendedInfo->add_computed_entries();
+        entry->set_name("Restoring beam");
+        entry->set_value(rsBeam);
         entry->set_entry_type(EntryType::STRING);
     }
 }
