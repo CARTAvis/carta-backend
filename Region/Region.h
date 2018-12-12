@@ -16,7 +16,7 @@ class Region {
 
 public:
     Region(const std::string& name, const CARTA::RegionType type);
-    ~Region() {};
+    ~Region();
 
     // set Region parameters
     void setChannels(int minchan, int maxchan, const std::vector<int>& stokes);

@@ -11,6 +11,11 @@ Region::Region(const std::string& name, const CARTA::RegionType type) :
     m_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
 }
 
+Region::~Region() {
+    m_stats.reset();
+    m_profiler.reset();
+}
+
 void Region::setChannels(int minchan, int maxchan, const std::vector<int>& stokes) {
     m_minchan = minchan;
     m_maxchan = maxchan;

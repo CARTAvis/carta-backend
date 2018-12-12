@@ -48,8 +48,8 @@ protected:
 
     // <file_id, Frame>: one frame per image file
     std::unordered_map<int, std::unique_ptr<Frame>> frames;
-    // <file_id, mutex>:  lock frame to create/destroy
-    std::unordered_map<int, std::mutex> frameMutex;
+    // lock frames to create/destroy
+    std::mutex frameMutex;
     // flag to send histogram with data
     bool newFrame;
 

@@ -24,13 +24,11 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, unordered_ma
 }
 
 Session::~Session() {
+    std::unique_lock<std::mutex> lock(frameMutex);
     for (auto& frame : frames) {
-        int fileId(frame.first);
-        auto& frMutex = frameMutex.at(fileId);
-        std::unique_lock<std::mutex> lock(frMutex);
         frame.second.reset();  // delete Frame
-        lock.unlock();
     }
+    frames.clear();
     outgoing->close();
 }
 
@@ -234,7 +232,7 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
         auto frame = unique_ptr<Frame>(new Frame(uuid, filename, hdu));
         if (frame->isValid()) {
             success = true;
-            std::unique_lock<std::mutex> lock(frameMutex[fileId]);  // creates mutex if does not exist
+            std::unique_lock<std::mutex> lock(frameMutex);
             frames[fileId] = move(frame);
             lock.unlock();
             newFrame = true;
@@ -249,19 +247,15 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
 
 void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
     auto fileId = message.file_id();
+    std::unique_lock<std::mutex> lock(frameMutex);
     if (fileId == -1) {
         for (auto& frame : frames) {
-            int fileId(frame.first);
-            std::unique_lock<std::mutex> lock(frameMutex[fileId]);
             frame.second.reset();  // delete Frame
-            frames.erase(fileId);
-            lock.unlock();
         }
+	frames.clear();
     } else if (frames.count(fileId)) {
-        std::unique_lock<std::mutex> lock(frameMutex[fileId]);
         frames[fileId].reset();
         frames.erase(fileId);
-        lock.unlock();
     }
 }
 
