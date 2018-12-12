@@ -66,12 +66,13 @@ void readPermissions(string filename) {
     }
 }
 
-// Called on connection. Creates session object and assigns UUID and API keys to it
+// Called on connection. Creates session objects and assigns UUID and API keys to it
 void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
     std::string uuidstr = fmt::format("{}{}", ++sessionNumber,
         casacore::Int(casacore::HostInfo::secondsFrom1970()));
     ws->setUserData(new std::string(uuidstr));
     auto &uuid = *((std::string*)ws->getUserData());
+
     uS::Async *outgoing = new uS::Async(h.getLoop());
     outgoing->setData(&uuid);
     outgoing->start(
@@ -79,13 +80,11 @@ void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
             auto uuid = *((std::string*)async->getData());
             sessions[uuid]->sendPendingMessages();
         });
+
     sessions[uuid] = new Session(ws, uuid, permissionsMap, usePermissions, baseFolder, outgoing, verbose);
     animationQueues[uuid] = new carta::AnimationQueue(sessions[uuid]);
     msgQueues[uuid] = new tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>;
     fileSettings[uuid] = new carta::FileSettings(sessions[uuid]);
-    time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    string timeString = ctime(&time);
-    timeString = timeString.substr(0, timeString.length() - 1);
 
     log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, sessions.size());
 }
@@ -104,9 +103,6 @@ void onDisconnect(WebSocket<SERVER>* ws, int code, char* message, size_t length)
         delete fileSettings[uuid];
         fileSettings.erase(uuid);
     }
-    time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    string timeString = ctime(&time);
-    timeString = timeString.substr(0, timeString.length() - 1);
     log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
     delete &uuid;
 }
