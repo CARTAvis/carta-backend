@@ -103,32 +103,34 @@ FileListResponse Session::getFileList(string folder) {
             casacore::Directory startDir(fullPath);
             casacore::DirectoryIterator dirIter(startDir);
             while (!dirIter.pastEnd()) {
-                casacore::File ccfile(dirIter.file());  // casacore File
-                casacore::String fullpath(ccfile.path().absoluteName());
-                try {
-                    casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
-                    bool addImage(false);
-                    if (ccfile.isDirectory(true)) {
-                        if ((imType==casacore::ImageOpener::AIPSPP) || (imType==casacore::ImageOpener::MIRIAD))
-                            addImage = true;
-                        else if (imType==casacore::ImageOpener::UNKNOWN) {
-                            // Check if it is a directory and the user has permission to access it
-                            casacore::String dirname(ccfile.path().baseName());
-                            string pathNameRelative = (folder.length() && folder != "/") ? folder.append("/" + dirname) : dirname;
-                            if (checkPermissionForDirectory(pathNameRelative))
-                               fileList.add_subdirectories(dirname);
+                casacore::File ccfile(dirIter.file());  // directory is also a File
+                if (ccfile.path().baseName().firstchar() != '.') {  // ignore hidden files/folders
+                    casacore::String fullpath(ccfile.path().absoluteName());
+                    try {
+                        casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
+                        bool addImage(false);
+                        if (ccfile.isDirectory(true)) {
+                            if ((imType==casacore::ImageOpener::AIPSPP) || (imType==casacore::ImageOpener::MIRIAD))
+                                addImage = true;
+                            else if (imType==casacore::ImageOpener::UNKNOWN) {
+                                // Check if it is a directory and the user has permission to access it
+                                casacore::String dirname(ccfile.path().baseName());
+                                string pathNameRelative = (folder.length() && folder != "/") ? folder.append("/" + dirname) : dirname;
+                                if (checkPermissionForDirectory(pathNameRelative))
+                                   fileList.add_subdirectories(dirname);
+                            }
+                        } else if (ccfile.isRegular(true) &&
+                            ((imType==casacore::ImageOpener::FITS) || (imType==casacore::ImageOpener::HDF5))) {
+                                addImage = true;
                         }
-                    } else if (ccfile.isRegular(true) &&
-                        ((imType==casacore::ImageOpener::FITS) || (imType==casacore::ImageOpener::HDF5))) {
-                            addImage = true;
-                    }
 
-                    if (addImage) { // add image to file list
-                        auto fileInfo = fileList.add_files();
-                        bool ok = fillFileInfo(fileInfo, fullpath);
+                        if (addImage) { // add image to file list
+                            auto fileInfo = fileList.add_files();
+                            bool ok = fillFileInfo(fileInfo, fullpath);
+                        }
+                    } catch (casacore::AipsError& err) {  // RegularFileIO error
+                        // skip it
                     }
-                } catch (casacore::AipsError& err) {  // RegularFileIO error
-                    // skip it
                 }
                 dirIter++;
             }
@@ -252,7 +254,7 @@ void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
         for (auto& frame : frames) {
             frame.second.reset();  // delete Frame
         }
-	frames.clear();
+        frames.clear();
     } else if (frames.count(fileId)) {
         frames[fileId].reset();
         frames.erase(fileId);
