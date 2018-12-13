@@ -534,7 +534,7 @@ void Frame::setChannelCache(size_t channel, size_t stokes) {
         casacore::Array<float> tmp;
         std::lock_guard<std::mutex> guard(latticeMutex);
         loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
-	channelCache = tmp.tovector();
+        channelCache = tmp.tovector();
     }
 }
 
@@ -747,8 +747,9 @@ bool Frame::setRegionHistogramRequirements(int regionId,
         const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histograms) {
     // set channel and num_bins for required histograms
     bool regionOK(false);
-    if (regions.count(regionId)) {
-        auto& region = regions[regionId];
+    int actualRegionId = (regionId == CUBE_REGION_ID ? IMAGE_REGION_ID : regionId);
+    if (regions.count(actualRegionId)) {
+        auto& region = regions[actualRegionId];
         if (histograms.empty()) {  // default to current channel, auto bin size for image region
             std::vector<CARTA::SetHistogramRequirements_HistogramConfig> defaultConfigs;
             CARTA::SetHistogramRequirements_HistogramConfig config;
@@ -808,10 +809,12 @@ bool Frame::setRegionStatsRequirements(int regionId, const std::vector<int> stat
 
 bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData) {
     bool histogramOK(false);
-    if (regions.count(regionId)) {
-        auto& region = regions[regionId];
+    int actualRegionId = (regionId == CUBE_REGION_ID ? IMAGE_REGION_ID : regionId);
+    if (regions.count(actualRegionId)) {
+        auto& region = regions[actualRegionId];
         int currStokes(currentStokes());
         histogramData->set_stokes(currStokes);
+        histogramData->set_progress(1.0); // TBD: implement partial data
         int defaultNumBins = int(max(sqrt(imageShape(0) * imageShape(1)), 2.0));
         for (int i=0; i<region->numHistogramConfigs(); ++i) {
             CARTA::SetHistogramRequirements_HistogramConfig config = region->getHistogramConfig(i);
@@ -841,19 +844,20 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                 bool writeLock(false);
                 tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
                 std::vector<float> data;
-                if (configChannel == -2) { // all channels in region
+                if ((configChannel == -2) || (regionId == CUBE_REGION_ID)) { // all channels in region
                     getLatticeSlicer(latticeSlicer, -1, -1, -1, currStokes);
                     std::unique_lock<std::mutex> guard(latticeMutex);
-		    casacore::Array<float> tmp;
+                    casacore::Array<float> tmp;
                     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, latticeSlicer, true);
-		    data = tmp.tovector();
+                    guard.unlock();
+                    data = tmp.tovector();
                 } else { // requested channel (current or specified)
                     if (config.channel() == -1) {
                         data = channelCache;
                     } else {
                         casacore::Matrix<float> chanMatrix;
                         getChannelMatrix(chanMatrix, configChannel, currStokes);
-		        data = chanMatrix.tovector();
+                        data = chanMatrix.tovector();
                     }
                 }
                 if (configNumBins < 0) configNumBins = defaultNumBins;
