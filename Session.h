@@ -100,9 +100,9 @@ protected:
 
     // ICD: Send data streams
     // raster image data, optionally with histogram
-    void sendRasterImageData(CARTA::RasterImageData& rasterData, uint32_t requestId,
-        std::vector<float>& imageData, CompressionSettings& compression,
-	CARTA::ImageBounds& bounds, int mip);
+    void sendRasterImageData(int fileId, CARTA::RasterImageData& rasterData,
+        std::vector<float>& imageData, CARTA::ImageBounds& bounds, int mip,
+        CompressionSettings& compression);
     CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId=-1);
     // profile data
     void sendSpatialProfileData(int fileId, int regionId);
@@ -111,7 +111,8 @@ protected:
 
     // Send protobuf messages
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
-    void sendFileEvent(int fileId, std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
+    void sendFileEvent(int fileId, std::string eventName, u_int64_t eventId,
+        google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
 

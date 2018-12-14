@@ -269,30 +269,31 @@ void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
             int mip(message.mip());
             if (frames.at(fileId)->setBounds(bounds, mip)) {
                 std::vector<float> imageData = frames.at(fileId)->getImageData(bounds, mip);
-                CompressionSettings csettings;
-                csettings.type = message.compression_type();
-                csettings.quality = message.compression_quality();
-                csettings.nsubsets = message.num_subsets();
-                frames.at(fileId)->setCompression(csettings);
-                // RESPONSE
-                RasterImageData rasterImageData;
-                rasterImageData.set_file_id(fileId);
-                rasterImageData.set_stokes(frames.at(fileId)->currentStokes());
-                rasterImageData.set_channel(frames.at(fileId)->currentChannel());
-                rasterImageData.set_mip(mip);
-                rasterImageData.mutable_image_bounds()->set_x_min(bounds.x_min());
-                rasterImageData.mutable_image_bounds()->set_x_max(bounds.x_max());
-                rasterImageData.mutable_image_bounds()->set_y_min(bounds.y_min());
-                rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
-                if (newFrame) {
-                    RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
-                    rasterImageData.set_allocated_channel_histogram_data(histogramData);
-                    newFrame = false;
+                if (!imageData.empty()) {
+                    CompressionSettings csettings;
+                    csettings.type = message.compression_type();
+                    csettings.quality = message.compression_quality();
+                    csettings.nsubsets = message.num_subsets();
+                    frames.at(fileId)->setCompression(csettings);
+                    // RESPONSE: raster/histogram data
+                    RasterImageData rasterImageData;
+                    rasterImageData.set_stokes(frames.at(fileId)->currentStokes());
+                    rasterImageData.set_channel(frames.at(fileId)->currentChannel());
+                    if (newFrame) {
+                        RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+                        rasterImageData.set_allocated_channel_histogram_data(histogramData);
+                        newFrame = false;
+                    }
+                    sendRasterImageData(fileId, rasterImageData, imageData, bounds, mip, csettings);
+                } else {
+                    string error = "Raster image data failed to load";
+                    sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
                 }
-                sendRasterImageData(rasterImageData, requestId, imageData, csettings, bounds, mip);
+            } else {
+                sendLogEvent("Image view out of bounds", {"view"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {   // unordered_map.at() exception
-            string error = fmt::format("File id {} closed", fileId);
+            std::string error = fmt::format("File id {} closed", fileId);
             sendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
@@ -313,24 +314,22 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
                 auto bounds = frames.at(fileId)->currentBounds();
                 auto mip = frames.at(fileId)->currentMip();
                 std::vector<float> imageData = frames.at(fileId)->getImageData(bounds, mip);
-                CompressionSettings csettings = frames.at(fileId)->compressionSettings();
-                // RESPONSE: updated histogram, spatial profile, spectral profile
-                // Histogram included in the raster image data message
-                RasterImageData rasterImageData;
-                rasterImageData.set_file_id(fileId);
-                rasterImageData.set_stokes(stokes);
-                rasterImageData.set_channel(channel);
-                rasterImageData.set_mip(mip);
-                rasterImageData.mutable_image_bounds()->set_x_min(bounds.x_min());
-                rasterImageData.mutable_image_bounds()->set_x_max(bounds.x_max());
-                rasterImageData.mutable_image_bounds()->set_y_min(bounds.y_min());
-                rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
-                RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
-                rasterImageData.set_allocated_channel_histogram_data(histogramData);
-                sendRasterImageData(rasterImageData, requestId, imageData, csettings, bounds, mip);
-                sendSpatialProfileData(fileId, CURSOR_REGION_ID);
-                if (stokesChanged)
-                    sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                if (!imageData.empty()) {
+                    CompressionSettings csettings = frames.at(fileId)->compressionSettings();
+                    RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+                    // RESPONSE: updated raster/histogram, spatial profile, spectral profile
+                    RasterImageData rasterImageData;
+                    rasterImageData.set_stokes(stokes);
+                    rasterImageData.set_channel(channel);
+                    rasterImageData.set_allocated_channel_histogram_data(histogramData);
+                    sendRasterImageData(fileId, rasterImageData, imageData, bounds, mip, csettings);
+                    sendSpatialProfileData(fileId, CURSOR_REGION_ID);
+                    if (stokesChanged)
+                        sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                } else {
+                    string error = "Raster image data failed to load";
+                    sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
+                }
             } else {
                 sendLogEvent(errMessage, {"channels"}, CARTA::ErrorSeverity::ERROR);
             }
@@ -533,18 +532,24 @@ CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId
 }
 
 
-void Session::sendRasterImageData(CARTA::RasterImageData& rasterImageData,
-    uint32_t requestId, std::vector<float>& imageData, CompressionSettings& compression,
-    CARTA::ImageBounds& bounds, int mip) {
-    auto fileId = rasterImageData.file_id();
+void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImageData,
+    std::vector<float>& imageData, CARTA::ImageBounds& bounds, int mip, CompressionSettings& compression) {
     if (frames.count(fileId)) {
         try {
             if (!imageData.empty()) {
+                rasterImageData.set_file_id(fileId);
+                rasterImageData.mutable_image_bounds()->set_x_min(bounds.x_min());
+                rasterImageData.mutable_image_bounds()->set_x_max(bounds.x_max());
+                rasterImageData.mutable_image_bounds()->set_y_min(bounds.y_min());
+                rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
+                rasterImageData.set_mip(mip);
                 auto compressionType = compression.type;
                 if (compressionType == CompressionType::NONE) {
                     rasterImageData.set_compression_type(CompressionType::NONE);
                     rasterImageData.set_compression_quality(0);
                     rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
+                    // Send completed event to client
+                    sendFileEvent(fileId, "RASTER_IMAGE_DATA", 0, rasterImageData);
                 } else if (compressionType == CompressionType::ZFP) {
                     int precision = lround(compression.quality);
                     rasterImageData.set_compression_type(CompressionType::ZFP);
