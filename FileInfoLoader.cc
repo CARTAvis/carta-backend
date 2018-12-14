@@ -659,13 +659,9 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             casacore::GaussianBeam rbeam(imInfo.restoringBeam());
             casacore::Quantity majAx(rbeam.getMajor()), minAx(rbeam.getMinor()),
                 pa(rbeam.getPA(true));
-            majAx.convert("deg");
-            minAx.convert("deg");
+            majAx.convert("rad");
+            minAx.convert("rad");
             pa.convert("deg");
-            if (majAx.getValue()<1.0 || minAx.getValue()<1.0) {
-                majAx.convert(casacore::Unit("arcsec"));
-                minAx.convert(casacore::Unit("arcsec"));
-            }
             // add to header entries
             casacore::Double bmaj(majAx.getValue()), bmin(minAx.getValue());
             casacore::Float bpa(pa.getValue());
@@ -686,11 +682,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             headerEntry->set_numeric_value(bpa);
 
             // add to computed entries
-            if (majAx.getValue()<1.0 || minAx.getValue()<1.0) {
-                rsBeam = fmt::format("{} X {}, {:.4f} deg", bmaj, bmin, bpa);
-            } else {
-                rsBeam = deg2arcsec(bmaj) + " X " + deg2arcsec(bmin) +  fmt::format(", {:.4f} deg", bpa);
-            }
+            rsBeam = fmt::format("{} rad X {} rad, {:.4f} deg", bmaj, bmin, bpa);
         }
         // type
         headerEntry = extendedInfo->add_header_entries();
