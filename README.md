@@ -42,4 +42,5 @@ The server build depends on the following libraries:
 
 [![Build Status](https://travis-ci.org/CARTAvis/nrao-carta-backend.svg?branch=master)](https://travis-ci.org/CARTAvis/nrao-carta-backend)
 
-[![CircleCI](https://circleci.com/gh/ajm-asiaa/circleci-test.svg?style=svg)](https://circleci.com/gh/ajm-asiaa/circleci-test)
+[![CircleCI](https://circleci.com/gh/CARTAvis/nrao-carta-backend.svg?style=svg)](https://circleci.com/gh/CARTAvis/nrao-carta-backend)
+

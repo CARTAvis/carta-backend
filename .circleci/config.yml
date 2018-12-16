@@ -8,7 +8,6 @@ jobs:
       - run:
           name: "submodules"
           command: |
-            git submodule add https://github.com/idia-astro/carta-protobuf
             git submodule init
             git submodule update
       - run:
@@ -22,7 +21,6 @@ jobs:
       - run:
           name: "submodules"
           command: |
-            git submodule add https://github.com/idia-astro/carta-protobuf
             git submodule init
             git submodule update
       - run:
