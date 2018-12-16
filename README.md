@@ -39,3 +39,7 @@ The server build depends on the following libraries:
 * [tbb](https://www.threadingbuildingblocks.org/download) Threading Building Blocks for task parallelization.
 
 [![Build Status](http://acdc0.asiaa.sinica.edu.tw:47565/job/nrao-carta-backend/badge/icon)](http://acdc0.asiaa.sinica.edu.tw:47565/job/nrao-carta-backend) 
+
+[![Build Status](https://travis-ci.org/CARTAvis/nrao-carta-backend.svg?branch=master)](https://travis-ci.org/CARTAvis/nrao-carta-backend)
+
+[![CircleCI](https://circleci.com/gh/ajm-asiaa/circleci-test.svg?style=svg)](https://circleci.com/gh/ajm-asiaa/circleci-test)
