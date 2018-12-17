@@ -682,7 +682,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             headerEntry->set_numeric_value(bpa);
 
             // add to computed entries
-            rsBeam = fmt::format("{} rad X {} rad, {:.4f} deg", bmaj, bmin, bpa);
+            rsBeam = fmt::format("{} X {}, {:.4f} deg", deg2arcsec(rad2deg(bmaj)), deg2arcsec(rad2deg(bmin)), bpa);
         }
         // type
         headerEntry = extendedInfo->add_header_entries();
@@ -897,7 +897,9 @@ void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
 }
 
 std::string FileInfoLoader::unitConversion(const double value, const std::string& unit) {
-    if (std::regex_match(unit, std::regex("deg", std::regex::icase))) {
+    if (std::regex_match(unit, std::regex("rad", std::regex::icase))) {
+        return deg2arcsec(rad2deg(value));
+    } else if (std::regex_match(unit, std::regex("deg", std::regex::icase))) {
         return deg2arcsec(value);
     } else if (std::regex_match(unit, std::regex("hz", std::regex::icase))) {
         return convertHz(value);
@@ -910,6 +912,11 @@ std::string FileInfoLoader::unitConversion(const double value, const std::string
         snprintf(buf, sizeof(buf), "%.3f", value);
         return std::string(buf) + " " + unit;
     }
+}
+
+// Unit conversion: convert radians to degree
+double FileInfoLoader::rad2deg(const double rad) {
+    return 57.29577951 * rad;
 }
 
 // Unit conversion: convert degree to arcsec
