@@ -88,7 +88,7 @@ bool FileInfoLoader::getHduList(FileInfo* fileInfo, const std::string& filename)
             fileInfo->add_hdu_list(casacore::String::toString(hdu));
         }
         hduOK = (fileInfo->hdu_list_size() > 0);
-    } else {
+    }  else {
         fileInfo->add_hdu_list("");
     }
     return hduOK;
@@ -168,7 +168,7 @@ void FileInfoLoader::findChanStokesAxis(const casacore::IPosition& dataShape, co
         stokesAxis = 1;
     else if (cType3 == "STOKES")
         stokesAxis = 2;
-    else if (cType4 == "STOKES")
+     else if (cType4 == "STOKES")
         stokesAxis = 3;
     else 
         stokesAxis = -1;
@@ -193,7 +193,7 @@ void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, cons
     } else { // shape is 4
         if (chanAxis < 2) { // not found or is xy
             if (stokesAxis < 2) {  // not found or is xy, use defaults
-                extendedInfo->set_depth(shape(2));
+                 extendedInfo->set_depth(shape(2));
                 extendedInfo->set_stokes(shape(3));
             } else { // stokes found, set depth to other one
                 extendedInfo->set_stokes(shape(stokesAxis));
@@ -218,7 +218,7 @@ void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, cons
             shapeString = fmt::format("[{}, {}, {}]", shape(0), shape(1), shape(2));
             break;
         case 4:
-            shapeString = fmt::format("[{}, {}, {}, {}]", shape(0), shape(1), shape(2), shape(3));
+             shapeString = fmt::format("[{}, {}, {}, {}]", shape(0), shape(1), shape(2), shape(3));
             break;
     }
     auto entry = extendedInfo->add_computed_entries();
@@ -238,7 +238,7 @@ void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, cons
         entry->set_value(casacore::String::toString(nchan));
         entry->set_entry_type(EntryType::INT);
         entry->set_numeric_value(nchan);
-    }
+     }
     // set number of stokes if stokes axis exists or has 4th axis
     if ((stokesAxis >= 0) || (ndim > 3)) {
         int nstokes;
@@ -268,7 +268,7 @@ void FileInfoLoader::makeRadesysStr(std::string& radeSys, const std::string& equ
 std::string FileInfoLoader::makeValueStr(const std::string& type, double val, const std::string& unit) {
     // make coordinate angle string for RA, DEC, GLON, GLAT; else just return "{val} {unit}"
     std::string valStr;
-    if (unit.empty()) {
+     if (unit.empty()) {
         valStr = fmt::format("{} {}", val, unit);
     } else {
         // convert to uppercase for string comparisons
@@ -307,6 +307,41 @@ bool FileInfoLoader::fillFileExtInfo(FileInfoExtended* extInfo, string& hdu, str
         extInfoOK = fillCASAExtFileInfo(extInfo, message);
         break;
     case casacore::ImageOpener::FITS:
+	{
+	// Adding information from the HDU header
+        // to be displayed on the CARTA front end file browser
+        entry = extInfo->add_computed_entries();
+	entry->set_name("HDU Description");
+        // Get the information about the HDUs from the FITS table
+	casacore::String ccHdu(hdu);
+        casacore::uInt hdunum;
+        ccHdu.fromString(hdunum, true);
+        hdunum+=1;
+	casacore::FITSTable fitsTable(m_file, hdunum, true);
+        casacore::Record hduEntries(fitsTable.primaryKeywords().toRecord());
+        casacore::uInt descIndex;
+        casacore::uInt typeIndex;
+	// Look through the HDU fields and find the index numbers that match 
+	// the fields DESC and TYPE
+	for (casacore::uInt field=0; field < hduEntries.nfields(); ++field) {
+            casacore::String name = hduEntries.name(field);
+            if (name=="DESC") {
+		descIndex = field;
+	    }
+            if (name=="TYPE") {
+		typeIndex = field;
+	    }
+        }
+        // Add the DESC and TYPE information to the FileInfoExtended object
+	// to be displayed in the file browser on the CARTA front end
+	casacore::String desc =hduEntries.asString(descIndex);
+        entry->set_value(desc);
+	entry->set_entry_type(EntryType::STRING);
+	entry = extInfo->add_computed_entries();
+	entry->set_name("HDU Type");
+	casacore::String type = hduEntries.asString(typeIndex);
+	entry->set_value(type);
+	}
         extInfoOK = fillFITSExtFileInfo(extInfo, hdu, message);
         break;
     case casacore::ImageOpener::HDF5:
@@ -487,6 +522,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
                 message = "No image at specified HDU.";
             return false;
         }
+	
         extendedInfo->set_dimensions(ndim);
 
         // use FITSTable to get Record of hdu entries
@@ -682,7 +718,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             headerEntry->set_numeric_value(bpa);
 
             // add to computed entries
-            rsBeam = fmt::format("{} X {}, {:.4f} deg", deg2arcsec(rad2deg(bmaj)), deg2arcsec(rad2deg(bmin)), bpa);
+            rsBeam = fmt::format("{} rad X {} rad, {:.4f} deg", bmaj, bmin, bpa);
         }
         // type
         headerEntry = extendedInfo->add_header_entries();
@@ -897,9 +933,7 @@ void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
 }
 
 std::string FileInfoLoader::unitConversion(const double value, const std::string& unit) {
-    if (std::regex_match(unit, std::regex("rad", std::regex::icase))) {
-        return deg2arcsec(rad2deg(value));
-    } else if (std::regex_match(unit, std::regex("deg", std::regex::icase))) {
+    if (std::regex_match(unit, std::regex("deg", std::regex::icase))) {
         return deg2arcsec(value);
     } else if (std::regex_match(unit, std::regex("hz", std::regex::icase))) {
         return convertHz(value);
@@ -912,11 +946,6 @@ std::string FileInfoLoader::unitConversion(const double value, const std::string
         snprintf(buf, sizeof(buf), "%.3f", value);
         return std::string(buf) + " " + unit;
     }
-}
-
-// Unit conversion: convert radians to degree
-double FileInfoLoader::rad2deg(const double rad) {
-    return 57.29577951 * rad;
 }
 
 // Unit conversion: convert degree to arcsec
