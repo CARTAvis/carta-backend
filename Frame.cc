@@ -1,8 +1,8 @@
 #include "Frame.h"
 #include "util.h"
 
-#include <memory>
-#include <tbb/tbb.h>
+#include <tbb/blocked_range2d.h>
+#include <tbb/parallel_for.h>
 
 using namespace carta;
 using namespace std;
@@ -13,6 +13,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
       cursorSet(false),
       filename(filename),
       loader(FileLoader::getLoader(filename)),
+      nchan(1),
       channelIndex(-1), stokesIndex(-1), spectralAxis(-1), stokesAxis(-1) {
     try {
         if (loader==nullptr) {
@@ -24,7 +25,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         auto &dataSet = loader->loadData(FileInfo::Data::XYZW);
 
         imageShape = dataSet.shape();
-        ndims = imageShape.size();
+        size_t ndims = imageShape.size();
         if (ndims < 2 || ndims > 4) {
             log(uuid, "Problem loading file {}: Image must be 2D, 3D or 4D.", filename);
             valid = false;
@@ -39,6 +40,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         } else if (ndims == 4) {  // find spectral and stokes axes
             loader->findCoords(spectralAxis, stokesAxis);
         } 
+        nchan = (spectralAxis>=0 ? imageShape(spectralAxis) : 1);
 
         // set current channel, stokes, channelCache
         std::string errMessage;
@@ -166,6 +168,15 @@ std::vector<float> Frame::getImageData(CARTA::ImageBounds& bounds, int mip, bool
     return regionData;
 }
 
+std::vector<float> Frame::getImageChanData(size_t chan) {
+    // get data for given chan, current stokes
+    std::vector<float> data;
+    casacore::Matrix<float> chanMatrix;
+    getChannelMatrix(chanMatrix, chan, currentStokes());
+    data = chanMatrix.tovector();
+    return data;
+}
+
 bool Frame::loadImageChannelStats(bool loadPercentiles) {
     // load channel stats for entire image (all channels and stokes) from header
     // channelStats[stokes][chan]
@@ -174,12 +185,13 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
         return false;
     }
 
-    size_t depth(spectralAxis>=0 ? imageShape(spectralAxis) : 1);
+    size_t depth(nchannels());
     size_t nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
     channelStats.resize(nstokes);
     for (auto i = 0; i < nstokes; i++) {
         channelStats[i].resize(depth);
     }
+    size_t ndims = imageShape.size();
 
     //TODO: Support multiple HDUs
     if (loader->hasData(FileInfo::Data::Stats) && loader->hasData(FileInfo::Data::Stats2D)) {
@@ -500,8 +512,7 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
         log(uuid, message);
         return false;
     } else {
-        size_t depth(spectralAxis>=0 ? imageShape(spectralAxis) : 1);
-        if (newChannel < 0 || newChannel >= depth) {
+        if (newChannel < 0 || newChannel >= nchannels()) {
             message = fmt::format("Channel {} is invalid in file {}", newChannel, filename);
             log(uuid, message);
             return false; // invalid channel
@@ -598,6 +609,10 @@ void Frame::getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int 
     latticeSlicer = section;
 }
 
+size_t Frame::nchannels() {
+    return nchan;
+}
+
 int Frame::currentChannel() {
     return channelIndex;
 }
@@ -614,7 +629,7 @@ bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type, in
         float rotation, std::string& message) {
     // Create or update Region
     // check channel bounds and stokes
-    int nchan(spectralAxis>=0 ? imageShape(spectralAxis) : 1);
+    int nchan(nchannels());
     if ((minchan < 0 || minchan >= nchan) || (maxchan < 0 || maxchan>=nchan)) {
         message = "min/max region channel bounds out of range";
         return false;
@@ -661,7 +676,7 @@ void Frame::setImageRegion() {
     // create a Region for the entire image, regionId = -1
     // set image region channels: all channels, all stokes
     int minchan(0);
-    int maxchan = (spectralAxis>0 ? imageShape(spectralAxis)-1 : 0);
+    int maxchan(nchannels()-1);
     std::vector<int> allStokes;
     if (stokesAxis > 0) {
         for (int i=0; i<imageShape(stokesAxis); ++i)
@@ -753,8 +768,8 @@ bool Frame::setRegionHistogramRequirements(int regionId,
         if (histograms.empty()) {  // default to current channel, auto bin size for image region
             std::vector<CARTA::SetHistogramRequirements_HistogramConfig> defaultConfigs;
             CARTA::SetHistogramRequirements_HistogramConfig config;
-            config.set_channel(-1);
-            config.set_num_bins(-1);
+            config.set_channel(CURRENT_CHANNEL);
+            config.set_num_bins(AUTO_BIN_SIZE);
             defaultConfigs.push_back(config);
             regionOK = region->setHistogramRequirements(defaultConfigs);
         } else {
@@ -807,19 +822,19 @@ bool Frame::setRegionStatsRequirements(int regionId, const std::vector<int> stat
 
 // ***** region data *****
 
+// ***** histograms *****
+
 bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData) {
     bool histogramOK(false);
-    int actualRegionId = (regionId == CUBE_REGION_ID ? IMAGE_REGION_ID : regionId);
-    if (regions.count(actualRegionId)) {
-        auto& region = regions[actualRegionId];
+    if (regions.count(regionId)) {
+        auto& region = regions[regionId];
         int currStokes(currentStokes());
         histogramData->set_stokes(currStokes);
-        histogramData->set_progress(1.0); // TBD: implement partial data
-        int defaultNumBins = int(max(sqrt(imageShape(0) * imageShape(1)), 2.0));
+        histogramData->set_progress(1.0); // send entire histogram
         for (int i=0; i<region->numHistogramConfigs(); ++i) {
             CARTA::SetHistogramRequirements_HistogramConfig config = region->getHistogramConfig(i);
             int configChannel(config.channel()), configNumBins(config.num_bins());
-            if (configChannel == -1) configChannel = currentChannel();
+            if (configChannel == CURRENT_CHANNEL) configChannel = currentChannel();
             // fill Histograms
             auto newHistogram = histogramData->add_histograms();
             newHistogram->set_channel(configChannel);
@@ -829,22 +844,21 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                 auto& currentStats = channelStats[currStokes][configChannel];
                 if (!channelStats[currStokes][configChannel].histogramBins.empty()) {
                     int nbins(currentStats.histogramBins.size());
-                    if ((configNumBins < 0) || (configNumBins == nbins)) {
+                    if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
                         newHistogram->set_num_bins(nbins);
                         newHistogram->set_bin_width((currentStats.maxVal - currentStats.minVal) / nbins);
                         newHistogram->set_first_bin_center(currentStats.minVal + (newHistogram->bin_width()/2.0));
-                        *newHistogram->mutable_bins() = {currentStats.histogramBins.begin(), currentStats.histogramBins.end()};
+                        *newHistogram->mutable_bins() = {currentStats.histogramBins.begin(),
+                            currentStats.histogramBins.end()};
                         haveHistogram = true;
                     }
                 }
             }
             if (!haveHistogram) { 
                 // get histogram from Region
-                casacore::Slicer latticeSlicer;
-                bool writeLock(false);
-                tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
                 std::vector<float> data;
-                if ((configChannel == -2) || (regionId == CUBE_REGION_ID)) { // all channels in region
+                if (configChannel == ALL_CHANNELS ) { // all channels in region: cube!
+                    casacore::Slicer latticeSlicer;
                     getLatticeSlicer(latticeSlicer, -1, -1, -1, currStokes);
                     std::unique_lock<std::mutex> guard(latticeMutex);
                     casacore::Array<float> tmp;
@@ -852,7 +866,9 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                     guard.unlock();
                     data = tmp.tovector();
                 } else { // requested channel (current or specified)
-                    if (config.channel() == -1) {
+                    if (configChannel == currentChannel()) {  // use channel cache
+                        bool writeLock(false);
+                        tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
                         data = channelCache;
                     } else {
                         casacore::Matrix<float> chanMatrix;
@@ -860,14 +876,55 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                         data = chanMatrix.tovector();
                     }
                 }
-                if (configNumBins < 0) configNumBins = defaultNumBins;
-                region->fillHistogram(newHistogram, data, configChannel, currStokes, configNumBins);
+                configNumBins = (configNumBins==AUTO_BIN_SIZE ? calcNumBins(configChannel) : configNumBins);
+                float minval, maxval;
+                region->getMinMax(minval, maxval, data);
+                region->fillHistogram(newHistogram, data, configChannel, currStokes, configNumBins, minval, maxval);
             }
         }
         histogramOK = true;
     } 
     return histogramOK;
 }
+
+bool Frame::getChannelHistogramData(CARTA::RegionHistogramData* histogramData, int chan, int stokes, int numbins) {
+    // get existing channel histogram for given channel and stokes; return false if does not exist
+    numbins = (numbins == AUTO_BIN_SIZE ? calcNumBins(chan) : numbins);
+    auto newHistogram = histogramData->mutable_histograms(0);
+    return regions[IMAGE_REGION_ID]->getChannelHistogram(newHistogram, chan, stokes, numbins);
+}
+
+bool Frame::fillChannelHistogramData(CARTA::RegionHistogramData* histogramData, std::vector<float>& data,
+        size_t channel, int numBins, float minval, float maxval) {
+    // Frame completes message with CARTA::Histogram
+    int numbins = (numBins == AUTO_BIN_SIZE ? calcNumBins(ALL_CHANNELS) : numBins);
+    auto newHistogram = histogramData->add_histograms();
+    auto& region = regions[IMAGE_REGION_ID];
+    region->fillHistogram(newHistogram, data, channel, currentStokes(), numbins, minval, maxval);
+    return true;
+}
+
+void Frame::getMinMax(float& minval, float& maxval, std::vector<float>& data) {
+    // determine min and max value in data
+    auto& region = regions[IMAGE_REGION_ID];
+    region->getMinMax(minval, maxval, data);
+}
+
+int Frame::calcNumBins(int chan) {
+    // automatic bin size for histogram when num_bins = -1
+    // chan can be ALL_CHANNELS, CURRENT_CHANNEL, or channel number
+    int numBins(0);
+    if (chan > ALL_CHANNELS) { // current or specified channel
+        numBins = int(max(sqrt(imageShape(0) * imageShape(1)), 2.0));
+    } else if (nchan > 1) {  // all channels with spectral axis
+        numBins = int(max(cbrt(imageShape(0) * imageShape(1) * nchan), 3.0));
+    } else {  // all channels but no spectral axis
+        numBins = int(max(sqrt(imageShape(0) * imageShape(1)), 2.0));
+    }
+    return numBins;
+}
+
+// ***** profiles *****
 
 bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData) {
     bool profileOK(false);
@@ -976,6 +1033,8 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
     }
     return profileOK;
 }
+
+// ***** stats *****
 
 bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData) {
     bool statsOK(false);

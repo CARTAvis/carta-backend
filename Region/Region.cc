@@ -52,9 +52,17 @@ size_t Region::numHistogramConfigs() {
     return m_stats->numHistogramConfigs();
 }
 
+void Region::getMinMax(float& minVal, float& maxVal, const std::vector<float>& data) {
+    m_stats->getMinMax(minVal, maxVal, data);
+}
+
 void Region::fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
-        const size_t chanIndex, const size_t stokesIndex, const int numBins) {
-    return m_stats->fillHistogram(histogram, data, chanIndex, stokesIndex, numBins);
+        const size_t chanIndex, const size_t stokesIndex, const int numBins, const float minVal, const float maxVal) {
+    return m_stats->fillHistogram(histogram, data, chanIndex, stokesIndex, numBins, minVal, maxVal);
+}
+
+bool Region::getChannelHistogram(CARTA::Histogram* histogram, int channel, int stokes, int numBins) {
+    return m_stats->getChannelHistogram(histogram, channel, stokes, numBins);
 }
 
 // stats
