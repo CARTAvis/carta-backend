@@ -13,11 +13,10 @@
 #include <limits>
 #include <valarray>
 
-using namespace std;
-using namespace CARTA;
-
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, unordered_map<string, vector<string>>& permissionsMap, bool enforcePermissions, string folder, uS::Async *outgoing, bool verbose)
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unordered_map<string, 
+    std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string folder,
+    uS::Async *outgoing, bool verbose)
     : uuid(std::move(uuid)),
       socket(ws),
       permissionsMap(permissionsMap),
@@ -90,10 +89,10 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
 // ********************************************************************************
 // File browser
 
-FileListResponse Session::getFileList(string folder) {
+CARTA::FileListResponse Session::getFileList(string folder) {
     // fill FileListResponse
     casacore::Path fullPath(baseFolder);
-    FileListResponse fileList;
+    CARTA::FileListResponse fileList;
     if (folder.length() && folder != "/") {
         fullPath.append(folder);
         fileList.set_directory(folder);
@@ -155,15 +154,15 @@ FileListResponse Session::getFileList(string folder) {
     return fileList;
 }
 
-bool Session::fillFileInfo(FileInfo* fileInfo, const string& filename) {
+bool Session::fillFileInfo(CARTA::FileInfo* fileInfo, const string& filename) {
     // fill FileInfo submessage
     FileInfoLoader infoLoader(filename);
     return infoLoader.fillFileInfo(fileInfo);
 }
 
-bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fileInfo, 
+bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, 
         const string folder, const string filename, string hdu, string& message) {
-    // fill FileInfoResponse submessages FileInfo and FileInfoExtended
+    // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool extFileInfoOK(true);
     casacore::Path ccpath(baseFolder);
     ccpath.append(folder);
@@ -193,15 +192,15 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
 // *********************************************************************************
 // CARTA ICD implementation
 
-void Session::onRegisterViewer(const RegisterViewer& message, uint32_t requestId) {
+void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId) {
     apiKey = message.api_key();
-    RegisterViewerAck ackMessage;
+    CARTA::RegisterViewerAck ackMessage;
     ackMessage.set_success(true);
     ackMessage.set_session_id(uuid);
     sendEvent("REGISTER_VIEWER_ACK", requestId, ackMessage);
 }
 
-void Session::onFileListRequest(const FileListRequest& request, uint32_t requestId) {
+void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId) {
     string folder = request.directory();
     // strip baseFolder from folder
     string basePath(baseFolder);
@@ -210,12 +209,12 @@ void Session::onFileListRequest(const FileListRequest& request, uint32_t request
         folder.replace(0, basePath.length(), "");
         if (folder.front()=='/') folder.replace(0,1,""); // remove leading '/'
     }
-    FileListResponse response = getFileList(folder);
+    CARTA::FileListResponse response = getFileList(folder);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
 }
 
-void Session::onFileInfoRequest(const FileInfoRequest& request, uint32_t requestId) {
-    FileInfoResponse response;
+void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t requestId) {
+    CARTA::FileInfoResponse response;
     auto fileInfo = response.mutable_file_info();
     auto fileInfoExtended = response.mutable_file_info_extended();
     string message;
@@ -225,9 +224,9 @@ void Session::onFileInfoRequest(const FileInfoRequest& request, uint32_t request
     sendEvent("FILE_INFO_RESPONSE", requestId, response);
 }
 
-void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
+void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     auto fileId(message.file_id());
-    OpenFileAck ack;
+    CARTA::OpenFileAck ack;
     ack.set_file_id(fileId);
     auto fileInfo = ack.mutable_file_info();
     auto fileInfoExtended = ack.mutable_file_info_extended();
@@ -242,7 +241,7 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
         string filename(path.absoluteName());
         // create Frame for open file
         string hdu = fileInfo->hdu_list(0);
-        auto frame = unique_ptr<Frame>(new Frame(uuid, filename, hdu));
+        auto frame = std::unique_ptr<Frame>(new Frame(uuid, filename, hdu));
         if (frame->isValid()) {
             success = true;
             std::unique_lock<std::mutex> lock(frameMutex);
@@ -258,7 +257,7 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
     sendEvent("OPEN_FILE_ACK", requestId, ack);
 }
 
-void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
+void Session::onCloseFile(const CARTA::CloseFile& message, uint32_t requestId) {
     auto fileId = message.file_id();
     std::unique_lock<std::mutex> lock(frameMutex);
     if (fileId == -1) {
@@ -272,7 +271,7 @@ void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
     }
 }
 
-void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
+void Session::onSetImageView(const CARTA::SetImageView& message, uint32_t requestId) {
     auto fileId = message.file_id();
     if (frames.count(fileId)) {
         try {
@@ -287,11 +286,11 @@ void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
                     csettings.nsubsets = message.num_subsets();
                     frames.at(fileId)->setCompression(csettings);
                     // RESPONSE: raster/histogram data
-                    RasterImageData rasterImageData;
+                    CARTA::RasterImageData rasterImageData;
                     rasterImageData.set_stokes(frames.at(fileId)->currentStokes());
                     rasterImageData.set_channel(frames.at(fileId)->currentChannel());
                     if (newFrame) {
-                        RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+                        CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
                         rasterImageData.set_allocated_channel_histogram_data(histogramData);
                         newFrame = false;
                     }
@@ -327,9 +326,9 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
                 std::vector<float> imageData = frames.at(fileId)->getImageData(bounds, mip);
                 if (!imageData.empty()) {
                     CompressionSettings csettings = frames.at(fileId)->compressionSettings();
-                    RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+                    CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
                     // RESPONSE: updated raster/histogram, spatial profile, spectral profile
-                    RasterImageData rasterImageData;
+                    CARTA::RasterImageData rasterImageData;
                     rasterImageData.set_stokes(stokes);
                     rasterImageData.set_channel(channel);
                     rasterImageData.set_allocated_channel_histogram_data(histogramData);
@@ -408,7 +407,7 @@ void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
         errMessage = fmt::format("File id {} not found", fileId);
     }
     // RESPONSE
-    SetRegionAck ack;
+    CARTA::SetRegionAck ack;
     ack.set_region_id(regionId);
     ack.set_success(success);
     ack.set_message(errMessage);
@@ -456,7 +455,7 @@ void Session::onSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
             } else if (frames.at(fileId)->setRegionHistogramRequirements(regionId,
                 vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(),
                 message.histograms().end()))) {
-                RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
+                CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
                 if (histogramData != nullptr) {
                     // RESPONSE
                     sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", 0, *histogramData);
@@ -529,7 +528,7 @@ void Session::onSetStatsRequirements(const CARTA::SetStatsRequirements& message,
 
 // Histogram message; sent separately or within RasterImageData
 CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId, const int32_t regionId) {
-    RegionHistogramData* histogramMessage(nullptr);
+    CARTA::RegionHistogramData* histogramMessage(nullptr);
     if (frames.count(fileId)) {
         try {
             histogramMessage = new CARTA::RegionHistogramData();
@@ -689,15 +688,15 @@ void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImag
                 rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
                 rasterImageData.set_mip(mip);
                 auto compressionType = compression.type;
-                if (compressionType == CompressionType::NONE) {
-                    rasterImageData.set_compression_type(CompressionType::NONE);
+                if (compressionType == CARTA::CompressionType::NONE) {
+                    rasterImageData.set_compression_type(CARTA::CompressionType::NONE);
                     rasterImageData.set_compression_quality(0);
                     rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
                     // Send completed event to client
                     sendFileEvent(fileId, "RASTER_IMAGE_DATA", 0, rasterImageData);
-                } else if (compressionType == CompressionType::ZFP) {
+                } else if (compressionType == CARTA::CompressionType::ZFP) {
                     int precision = lround(compression.quality);
-                    rasterImageData.set_compression_type(CompressionType::ZFP);
+                    rasterImageData.set_compression_type(CARTA::CompressionType::ZFP);
                     rasterImageData.set_compression_quality(precision);
 
                     auto rowLength = (bounds.x_max() - bounds.x_min()) / mip;
@@ -708,7 +707,7 @@ void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImag
                     vector<size_t> compressedSizes(numSubsets);
                     vector<vector<int32_t>> nanEncodings(numSubsets);
 
-                    auto N = min(numSubsets, MAX_SUBSETS);
+                    auto N = std::min(numSubsets, MAX_SUBSETS);
                     auto range = tbb::blocked_range<int>(0, N);
                     auto loop = [&](const tbb::blocked_range<int> &r) {
                         for(int i = r.begin(); i != r.end(); ++i) {
@@ -725,10 +724,10 @@ void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImag
                                 rowLength, subsetRowEnd - subsetRowStart, precision);
                         }
                     };
-                    auto tStartCompress = chrono::high_resolution_clock::now();
+                    auto tStartCompress = std::chrono::high_resolution_clock::now();
                     tbb::parallel_for(range, loop);
-                    auto tEndCompress = chrono::high_resolution_clock::now();
-                    auto dtCompress = chrono::duration_cast<chrono::microseconds>(tEndCompress - tStartCompress).count();
+                    auto tEndCompress = std::chrono::high_resolution_clock::now();
+                    auto dtCompress = std::chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
 
                     // Complete message
                     for (auto i = 0; i < numSubsets; i++) {
@@ -848,7 +847,7 @@ void Session::sendEvent(string eventName, u_int64_t eventId, google::protobuf::M
     int messageLength = message.ByteSize();
     size_t requiredSize = eventNameLength + 8 + messageLength;
     std::vector<char> msg(requiredSize, 0);
-    std::copy_n(eventName.begin(), min(eventName.length(), eventNameLength), msg.begin());
+    std::copy_n(eventName.begin(), std::min(eventName.length(), eventNameLength), msg.begin());
     memcpy(msg.data() + eventNameLength, &eventId, 4);
     message.SerializeToArray(msg.data() + eventNameLength + 8, messageLength);
     out_msgs.push(msg);
