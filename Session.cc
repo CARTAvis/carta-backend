@@ -104,7 +104,7 @@ FileListResponse Session::getFileList(string folder) {
             casacore::DirectoryIterator dirIter(startDir);
             while (!dirIter.pastEnd()) {
                 casacore::File ccfile(dirIter.file());  // directory is also a File
-                if (ccfile.path().baseName().firstchar() != '.') {  // ignore hidden files/folders
+                if (ccfile.exists() && ccfile.path().baseName().firstchar() != '.') {  // ignore hidden files/folders
                     casacore::String fullpath(ccfile.path().absoluteName());
                     try {
                         casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
@@ -164,17 +164,23 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
     ccpath.append(folder);
     ccpath.append(filename);
     casacore::File ccfile(ccpath);
-    casacore::String fullname(ccfile.path().absoluteName());
-    try {
-        FileInfoLoader infoLoader(fullname);
-        if (!infoLoader.fillFileInfo(fileInfo)) {
-             return false;
+    if (ccfile.exists()) {
+        casacore::String fullname(ccfile.path().absoluteName());
+        try {
+            FileInfoLoader infoLoader(fullname);
+            if (!infoLoader.fillFileInfo(fileInfo)) {
+                return false;
+            }
+            extFileInfoOK = infoLoader.fillFileExtInfo(extendedInfo, hdu, message);
+        } catch (casacore::AipsError& ex) {
+            message = ex.getMesg();
+            extFileInfoOK = false;
         }
-        extFileInfoOK = infoLoader.fillFileExtInfo(extendedInfo, hdu, message);
-    } catch (casacore::AipsError& ex) {
-        message = ex.getMesg();
+    } else {
+        message = "File " + filename + " does not exist.";
         extFileInfoOK = false;
     }
+
     return extFileInfoOK;
 }
 
