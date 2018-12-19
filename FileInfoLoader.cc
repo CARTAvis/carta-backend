@@ -21,13 +21,10 @@
 #include <casacore/images/Images/PagedImage.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
-using namespace std;
-using namespace CARTA;
-
 //#################################################################################
 // FILE INFO LOADER
 
-FileInfoLoader::FileInfoLoader(const string& filename) :
+FileInfoLoader::FileInfoLoader(const std::string& filename) :
     m_file(filename) {
     m_type = fileType(filename);
 }
@@ -40,7 +37,7 @@ FileInfoLoader::fileType(const std::string &file) {
 //#################################################################################
 // FILE INFO
 
-bool FileInfoLoader::fillFileInfo(FileInfo* fileInfo) {
+bool FileInfoLoader::fillFileInfo(CARTA::FileInfo* fileInfo) {
     casacore::File ccfile(m_file);
     if (!ccfile.exists()) {
         return false;
@@ -48,14 +45,19 @@ bool FileInfoLoader::fillFileInfo(FileInfo* fileInfo) {
 
     // fill FileInfo submessage
     int64_t fileInfoSize(ccfile.size());
-    if (ccfile.isDirectory()) {
+    if (ccfile.isDirectory()) { // symlinked dirs are dirs
         casacore::Directory ccdir(ccfile);
         fileInfoSize = ccdir.size();
+    } else if (ccfile.isSymLink()) {  // gets size of link not file
+        casacore::String resolvedFileName(ccfile.path().resolvedName());
+        casacore::File linkedfile(resolvedFileName);
+        fileInfoSize = linkedfile.size();
     }
+
     fileInfo->set_size(fileInfoSize);
     fileInfo->set_name(ccfile.path().baseName());
-    casacore::String absFileName(ccfile.path().absoluteName());
     fileInfo->set_type(convertFileType(m_type));
+    casacore::String absFileName(ccfile.path().absoluteName());
     return getHduList(fileInfo, absFileName);
 }
 
@@ -63,22 +65,22 @@ CARTA::FileType FileInfoLoader::convertFileType(int ccImageType) {
     // convert casacore ImageType to protobuf FileType
     switch (ccImageType) {
         case casacore::ImageOpener::FITS:
-            return FileType::FITS;
+            return CARTA::FileType::FITS;
         case casacore::ImageOpener::AIPSPP:
-            return FileType::CASA;
+            return CARTA::FileType::CASA;
         case casacore::ImageOpener::HDF5:
-            return FileType::HDF5;
+            return CARTA::FileType::HDF5;
         case casacore::ImageOpener::MIRIAD:
-            return FileType::MIRIAD;
+            return CARTA::FileType::MIRIAD;
         default:
-            return FileType::UNKNOWN;
+            return CARTA::FileType::UNKNOWN;
     }
 }
 
-bool FileInfoLoader::getHduList(FileInfo* fileInfo, const std::string& filename) {
+bool FileInfoLoader::getHduList(CARTA::FileInfo* fileInfo, const std::string& filename) {
     // fill FileInfo hdu list
     bool hduOK(true);
-    if (fileInfo->type()==CARTA::HDF5) {
+    if (fileInfo->type()==CARTA::FileType::HDF5) {
         casacore::HDF5File hdfFile(filename);
         std::vector<casacore::String> hdus(casacore::HDF5Group::linkNames(hdfFile));
         for (auto groupName : hdus) {
@@ -103,7 +105,8 @@ bool FileInfoLoader::getHduList(FileInfo* fileInfo, const std::string& filename)
 
 // ***** Helper functions *****
 // get int value
-bool FileInfoLoader::getIntAttribute(casacore::Int64& val, const casacore::Record& rec, const casacore::String& field) {
+bool FileInfoLoader::getIntAttribute(casacore::Int64& val, const casacore::Record& rec,
+        const casacore::String& field) {
     bool getOK(true);
     if (rec.isDefined(field)) {
         try {
@@ -213,7 +216,7 @@ void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, cons
     }
 
     // shape entry
-    string shapeString;
+    std::string shapeString;
     switch (ndim) {
         case 2:
             shapeString = fmt::format("[{}, {}]", shape(0), shape(1));
@@ -228,7 +231,7 @@ void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, cons
     auto entry = extendedInfo->add_computed_entries();
     entry->set_name("Shape");
     entry->set_value(shapeString);
-    entry->set_entry_type(EntryType::STRING);
+    entry->set_entry_type(CARTA::EntryType::STRING);
 
     // nchan, nstokes computed entries
     // set number of channels if chan axis exists or has 3rd axis
@@ -240,7 +243,7 @@ void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, cons
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Number of channels");
         entry->set_value(casacore::String::toString(nchan));
-        entry->set_entry_type(EntryType::INT);
+        entry->set_entry_type(CARTA::EntryType::INT);
         entry->set_numeric_value(nchan);
     }
     // set number of stokes if stokes axis exists or has 4th axis
@@ -252,7 +255,7 @@ void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, cons
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Number of stokes");
         entry->set_value(casacore::String::toString(nstokes));
-        entry->set_entry_type(EntryType::INT);
+        entry->set_entry_type(CARTA::EntryType::INT);
         entry->set_numeric_value(nstokes);
     }
 }
@@ -261,7 +264,7 @@ void FileInfoLoader::makeRadesysStr(std::string& radeSys, const std::string& equ
     // append equinox to radesys
     if (!radeSys.empty()) {
         if (!equinox.empty()) {
-            string prefix;
+            std::string prefix;
             if (radeSys.compare("FK4")==0) prefix="B";
             else if (radeSys.compare("FK5")==0) prefix="J";
             radeSys.append(", " + prefix + equinox);
@@ -295,18 +298,18 @@ std::string FileInfoLoader::makeValueStr(const std::string& type, double val, co
 }
 
 // ***** Public function *****
-bool FileInfoLoader::fillFileExtInfo(FileInfoExtended* extInfo, string& hdu, string& message) {
+bool FileInfoLoader::fillFileExtInfo(CARTA::FileInfoExtended* extInfo, std::string& hdu, std::string& message) {
     casacore::File ccfile(m_file);
     if (!ccfile.exists()) {
         return false;
     }
 
     bool extInfoOK(false);
-    string name(ccfile.path().baseName());
+    std::string name(ccfile.path().baseName());
     auto entry = extInfo->add_computed_entries();
     entry->set_name("Name");
     entry->set_value(name);
-    entry->set_entry_type(EntryType::STRING);
+    entry->set_entry_type(CARTA::EntryType::STRING);
 
     // fill FileExtInfo depending on image type
     switch(m_type) {
@@ -328,7 +331,7 @@ bool FileInfoLoader::fillFileExtInfo(FileInfoExtended* extInfo, string& hdu, str
     return extInfoOK;
 }
 
-bool FileInfoLoader::fillHdf5ExtFileInfo(FileInfoExtended* extendedInfo, string& hdu, string& message) {
+bool FileInfoLoader::fillHdf5ExtFileInfo(CARTA::FileInfoExtended* extendedInfo, std::string& hdu, std::string& message) {
     // Add extended info for HDF5 file
     try {
         // read attributes into casacore Record
@@ -373,20 +376,20 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(FileInfoExtended* extendedInfo, string&
             switch (attributes.type(field)) {
                 case casacore::TpString: {
                     *headerEntry->mutable_value() = attributes.asString(field);
-                    headerEntry->set_entry_type(EntryType::STRING);
+                    headerEntry->set_entry_type(CARTA::EntryType::STRING);
                     }
                     break;
                 case casacore::TpInt64: {
                     casacore::Int64 valueInt = attributes.asInt64(field);
                     *headerEntry->mutable_value() = fmt::format("{}", valueInt);
-                    headerEntry->set_entry_type(EntryType::INT);
+                    headerEntry->set_entry_type(CARTA::EntryType::INT);
                     headerEntry->set_numeric_value(valueInt);
                     }
                     break;
                 case casacore::TpDouble: {
                     casacore::Double numericVal = attributes.asDouble(field);
                     *headerEntry->mutable_value() = fmt::format("{}", numericVal);
-                    headerEntry->set_entry_type(EntryType::FLOAT);
+                    headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
                     headerEntry->set_numeric_value(numericVal);
                     }
                     break;
@@ -467,7 +470,7 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(FileInfoExtended* extendedInfo, string&
     return true;
 }
 
-bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string& hdu, string& message) {
+bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, string& hdu, string& message) {
     bool extInfoOK(true);
     try {
         // convert string hdu to unsigned int
@@ -520,7 +523,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
                 switch (dtype) {
                     case casacore::TpString: {
                         *headerEntry->mutable_value() = hduEntries.asString(field);
-                        headerEntry->set_entry_type(EntryType::STRING);
+                        headerEntry->set_entry_type(CARTA::EntryType::STRING);
                         if (headerEntry->name() == "CTYPE1") 
                             coordTypeX = headerEntry->value();
                         else if (headerEntry->name() == "CTYPE2")
@@ -544,7 +547,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
                     case casacore::TpInt: {
                         int64_t valueInt(hduEntries.asInt(field));
                         *headerEntry->mutable_value() = fmt::format("{}", valueInt);
-                        headerEntry->set_entry_type(EntryType::INT);
+                        headerEntry->set_entry_type(CARTA::EntryType::INT);
                         headerEntry->set_numeric_value(valueInt);
                         break;
                     }
@@ -552,7 +555,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
                     case casacore::TpDouble: {
                         double numericValue(hduEntries.asDouble(field));
                         *headerEntry->mutable_value() = fmt::format("{}", numericValue);
-                        headerEntry->set_entry_type(EntryType::FLOAT);
+                        headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
                         headerEntry->set_numeric_value(numericValue);
                         if (headerEntry->name() == "EQUINOX")
                             equinox = std::to_string(static_cast<int>(numericValue));
@@ -614,7 +617,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(FileInfoExtended* extendedInfo, string&
     return extInfoOK;
 }
 
-bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string& message) {
+bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, std::string& message) {
     bool extInfoOK(true);
     casacore::ImageInterface<casacore::Float>* ccImage(nullptr);
     try {
@@ -651,13 +654,13 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
         auto headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("NAXIS");
         *headerEntry->mutable_value() = fmt::format("{}", ndim);
-        headerEntry->set_entry_type(EntryType::INT);
+        headerEntry->set_entry_type(CARTA::EntryType::INT);
         headerEntry->set_numeric_value(ndim);
         for (casacore::Int i=0; i<ndim; ++i) {
             auto headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("NAXIS"+ casacore::String::toString(i+1));
             *headerEntry->mutable_value() = fmt::format("{}", dataShape(i));
-            headerEntry->set_entry_type(EntryType::INT);
+            headerEntry->set_entry_type(CARTA::EntryType::INT);
             headerEntry->set_numeric_value(dataShape(i));
         }
         // BMAJ, BMIN, BPA
@@ -675,17 +678,17 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("BMAJ");
             *headerEntry->mutable_value() = fmt::format("{}", bmaj);
-            headerEntry->set_entry_type(EntryType::FLOAT);
+            headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
             headerEntry->set_numeric_value(bmaj);
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("BMIN");
             *headerEntry->mutable_value() = fmt::format("{}", bmin);
-            headerEntry->set_entry_type(EntryType::FLOAT);
+            headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
             headerEntry->set_numeric_value(bmin);
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("BPA");
             *headerEntry->mutable_value() = fmt::format("{}", bpa);
-            headerEntry->set_entry_type(EntryType::FLOAT);
+            headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
             headerEntry->set_numeric_value(bpa);
 
             // add to computed entries
@@ -695,18 +698,18 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
         headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("BTYPE");
         *headerEntry->mutable_value() = casacore::ImageInfo::imageType(imInfo.imageType());
-        headerEntry->set_entry_type(EntryType::STRING);
+        headerEntry->set_entry_type(CARTA::EntryType::STRING);
         // object
         headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("OBJECT");
         *headerEntry->mutable_value() = imInfo.objectName();
-        headerEntry->set_entry_type(EntryType::STRING);
+        headerEntry->set_entry_type(CARTA::EntryType::STRING);
         // units
         headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("BUNIT");
         bunit = imSummary.units().getName();
         *headerEntry->mutable_value() = bunit;
-        headerEntry->set_entry_type(EntryType::STRING);
+        headerEntry->set_entry_type(CARTA::EntryType::STRING);
         // axes values
         casacore::Vector<casacore::String> axNames(imSummary.axisNames());
         casacore::Vector<casacore::Double> axRefPix(imSummary.referencePixels());
@@ -719,7 +722,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             // name = CTYPE
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("CTYPE"+ suffix);
-            headerEntry->set_entry_type(EntryType::STRING);
+            headerEntry->set_entry_type(CARTA::EntryType::STRING);
             casacore::String axisName = axNames(i);
             if (axisName == "Right Ascension") axisName = "RA";
             if (axisName == "Declination") axisName = "DEC";
@@ -736,25 +739,25 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("CRVAL"+ suffix);
             *headerEntry->mutable_value() = fmt::format("{}", axRefVal(i));
-            headerEntry->set_entry_type(EntryType::FLOAT);
+            headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
             headerEntry->set_numeric_value(axRefVal(i));
             // increment = CDELT
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("CDELT"+ suffix);
             *headerEntry->mutable_value() = fmt::format("{}", axInc(i));
-            headerEntry->set_entry_type(EntryType::FLOAT);
+            headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
             headerEntry->set_numeric_value(axInc(i));
             // ref pix = CRPIX
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("CRPIX"+ suffix);
             *headerEntry->mutable_value() = fmt::format("{}", axRefPix(i));
-            headerEntry->set_entry_type(EntryType::FLOAT);
+            headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
             headerEntry->set_numeric_value(axRefPix(i));
             // units = CUNIT
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("CUNIT"+ suffix);
             *headerEntry->mutable_value() = axUnits(i);
-            headerEntry->set_entry_type(EntryType::STRING);
+            headerEntry->set_entry_type(CARTA::EntryType::STRING);
         }
 
 
@@ -767,7 +770,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             headerEntry->set_name("RESTFRQ");
             casacore::Double restFreqVal(restFreq.getValue());
             *headerEntry->mutable_value() = returnStr;
-            headerEntry->set_entry_type(EntryType::FLOAT);
+            headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
             headerEntry->set_numeric_value(restFreqVal);
         }
         // SPECSYS
@@ -777,25 +780,25 @@ bool FileInfoLoader::fillCASAExtFileInfo(FileInfoExtended* extendedInfo, string&
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("SPECSYS");
             *headerEntry->mutable_value() = returnStr;
-            headerEntry->set_entry_type(EntryType::STRING);
+            headerEntry->set_entry_type(CARTA::EntryType::STRING);
             specSys = returnStr;
         }
         // telescope
         headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("TELESCOP");
         *headerEntry->mutable_value() = imSummary.telescope();
-        headerEntry->set_entry_type(EntryType::STRING);
+        headerEntry->set_entry_type(CARTA::EntryType::STRING);
         // observer
         headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("OBSERVER");
         *headerEntry->mutable_value() = imSummary.observer();
-        headerEntry->set_entry_type(EntryType::STRING);
+        headerEntry->set_entry_type(CARTA::EntryType::STRING);
         // obs date
         casacore::MEpoch epoch;
         headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("DATE");
         *headerEntry->mutable_value() = imSummary.obsDate(epoch);
-        headerEntry->set_entry_type(EntryType::STRING);
+        headerEntry->set_entry_type(CARTA::EntryType::STRING);
 
         // shape, chan, stokes entries first
         int chanAxis, stokesAxis;
@@ -843,63 +846,63 @@ void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Coordinate type");
         entry->set_value(xyCoords);
-        entry->set_entry_type(EntryType::STRING);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!crPixels.empty()) {
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Image reference pixels");
         entry->set_value(crPixels);
-        entry->set_entry_type(EntryType::STRING);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!crCoords.empty()) {
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Image reference coordinates");
         entry->set_value(crCoords);
-        entry->set_entry_type(EntryType::STRING);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!crDeg.empty()) {
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Image ref coords (coord type)");
         entry->set_value(crDeg);
-        entry->set_entry_type(EntryType::STRING);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!radeSys.empty()) {
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Celestial frame");
         entry->set_value(radeSys);
-        entry->set_entry_type(EntryType::STRING);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!specSys.empty()) {
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Spectral frame");
         entry->set_value(specSys);
-        entry->set_entry_type(EntryType::STRING);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!bunit.empty()) {
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Pixel unit");
         entry->set_value(bunit);
-        entry->set_entry_type(EntryType::STRING);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!axisInc.empty()) {
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Pixel increment");
         entry->set_value(axisInc);
-        entry->set_entry_type(EntryType::STRING);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!rsBeam.empty()) {
         auto entry = extendedInfo->add_computed_entries();
         entry->set_name("Restoring beam");
         entry->set_value(rsBeam);
-        entry->set_entry_type(EntryType::STRING);
+        entry->set_entry_type(CARTA::EntryType::STRING);
     }
 }
 
