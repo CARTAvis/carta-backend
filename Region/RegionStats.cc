@@ -36,20 +36,23 @@ CARTA::SetHistogramRequirements_HistogramConfig RegionStats::getHistogramConfig(
     return config;
 }
 
+void RegionStats::getMinMax(float& minVal, float& maxVal, const std::vector<float>& data) {
+    // get min and max values in data
+    tbb::blocked_range<size_t> range(0, data.size());
+    MinMax<float> mm(data);
+    tbb::parallel_reduce(range, mm);
+    std::tie(minVal, maxVal) = mm.getMinMax();
+}
+
 void RegionStats::fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
-        const size_t chanIndex, const size_t stokesIndex, const int nBins) {
+        const size_t chanIndex, const size_t stokesIndex, const int nBins, const float minVal,
+        const float maxVal) {
     // stored?
     if (m_channelHistograms.count(chanIndex) && m_stokes==stokesIndex && m_bins==nBins) {
         *histogram = m_channelHistograms[chanIndex];
     } else {
-        tbb::blocked_range<size_t> range(0, data.size());
-        // find min, max for input array
-        MinMax<float> mm(data);
-        tbb::parallel_reduce(range, mm);
-        float minVal, maxVal;
-        std::tie(minVal, maxVal) = mm.getMinMax();
-
         // find histogram for input array
+        tbb::blocked_range<size_t> range(0, data.size());
         Histogram hist(nBins, minVal, maxVal, data);
         tbb::parallel_reduce(range, hist);
         std::vector<int> histogramBins = hist.getHistogram();
@@ -67,6 +70,17 @@ void RegionStats::fillHistogram(CARTA::Histogram* histogram, const std::vector<f
         m_stokes = stokesIndex;
         m_bins = nBins;
     }
+}
+
+bool RegionStats::getChannelHistogram(CARTA::Histogram* histogram, int channel, int stokes, int numBins) {
+    bool haveHistogram(false);
+    if (m_channelHistograms.count(channel) && m_stokes==stokes && m_bins==numBins) {
+        *histogram = m_channelHistograms[channel];
+        haveHistogram = true;
+    } else {
+        histogram = nullptr;
+    }
+    return haveHistogram;
 }
 
 // ***** Statistics *****

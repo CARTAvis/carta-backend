@@ -11,6 +11,7 @@
 #include <casacore/casa/OS/File.h>
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/atomic.h>
 #include <uWS/uWS.h>
 
 #include <carta-protobuf/close_file.pb.h>
@@ -29,6 +30,8 @@
 #include "Frame.h"
 
 #define MAX_SUBSETS 8
+#define HISTOGRAM_COMPLETE 1.0
+#define HISTOGRAM_CANCEL -1.0
 
 class Session {
 public:
@@ -52,6 +55,11 @@ protected:
     std::mutex frameMutex;
     // flag to send histogram with data
     bool newFrame;
+
+    // cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
+    tbb::atomic<float> histogramProgress;
+    // basic message to update progress
+    CARTA::RegionHistogramData* createCubeHistogramMessage(int fileId, int stokes, float progress);
 
     // Notification mechanism when outgoing messages are ready
     uS::Async *outgoing;
@@ -103,7 +111,8 @@ protected:
     void sendRasterImageData(int fileId, CARTA::RasterImageData& rasterData,
         std::vector<float>& imageData, CARTA::ImageBounds& bounds, int mip,
         CompressionSettings& compression);
-    CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId=-1);
+    CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId);
+    void sendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
     // profile data
     void sendSpatialProfileData(int fileId, int regionId);
     void sendSpectralProfileData(int fileId, int regionId);

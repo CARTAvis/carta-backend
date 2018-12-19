@@ -6,13 +6,17 @@
 
 #include <casacore/casa/OS/Path.h>
 #include <casacore/casa/OS/DirectoryIterator.h>
-#include <tbb/tbb.h>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
 
-using namespace std;
-using namespace CARTA;
+#include <chrono>
+#include <limits>
+#include <valarray>
 
 // Default constructor. Associates a websocket with a UUID and sets the base folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, unordered_map<string, vector<string>>& permissionsMap, bool enforcePermissions, string folder, uS::Async *outgoing, bool verbose)
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unordered_map<string, 
+    std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string folder,
+    uS::Async *outgoing, bool verbose)
     : uuid(std::move(uuid)),
       socket(ws),
       permissionsMap(permissionsMap),
@@ -85,10 +89,10 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
 // ********************************************************************************
 // File browser
 
-FileListResponse Session::getFileList(string folder) {
+CARTA::FileListResponse Session::getFileList(string folder) {
     // fill FileListResponse
     casacore::Path fullPath(baseFolder);
-    FileListResponse fileList;
+    CARTA::FileListResponse fileList;
     if (folder.length() && folder != "/") {
         fullPath.append(folder);
         fileList.set_directory(folder);
@@ -104,7 +108,7 @@ FileListResponse Session::getFileList(string folder) {
             casacore::DirectoryIterator dirIter(startDir);
             while (!dirIter.pastEnd()) {
                 casacore::File ccfile(dirIter.file());  // directory is also a File
-                if (ccfile.path().baseName().firstchar() != '.') {  // ignore hidden files/folders
+                if (ccfile.exists() && ccfile.path().baseName().firstchar() != '.') {  // ignore hidden files/folders
                     casacore::String fullpath(ccfile.path().absoluteName());
                     try {
                         casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
@@ -150,31 +154,37 @@ FileListResponse Session::getFileList(string folder) {
     return fileList;
 }
 
-bool Session::fillFileInfo(FileInfo* fileInfo, const string& filename) {
+bool Session::fillFileInfo(CARTA::FileInfo* fileInfo, const string& filename) {
     // fill FileInfo submessage
     FileInfoLoader infoLoader(filename);
     return infoLoader.fillFileInfo(fileInfo);
 }
 
-bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fileInfo, 
+bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, 
         const string folder, const string filename, string hdu, string& message) {
-    // fill FileInfoResponse submessages FileInfo and FileInfoExtended
+    // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool extFileInfoOK(true);
     casacore::Path ccpath(baseFolder);
     ccpath.append(folder);
     ccpath.append(filename);
     casacore::File ccfile(ccpath);
-    casacore::String fullname(ccfile.path().absoluteName());
-    try {
-        FileInfoLoader infoLoader(fullname);
-        if (!infoLoader.fillFileInfo(fileInfo)) {
-             return false;
+    if (ccfile.exists()) {
+        casacore::String fullname(ccfile.path().absoluteName());
+        try {
+            FileInfoLoader infoLoader(fullname);
+            if (!infoLoader.fillFileInfo(fileInfo)) {
+                return false;
+            }
+            extFileInfoOK = infoLoader.fillFileExtInfo(extendedInfo, hdu, message);
+        } catch (casacore::AipsError& ex) {
+            message = ex.getMesg();
+            extFileInfoOK = false;
         }
-        extFileInfoOK = infoLoader.fillFileExtInfo(extendedInfo, hdu, message);
-    } catch (casacore::AipsError& ex) {
-        message = ex.getMesg();
+    } else {
+        message = "File " + filename + " does not exist.";
         extFileInfoOK = false;
     }
+
     return extFileInfoOK;
 }
 
@@ -182,15 +192,15 @@ bool Session::fillExtendedFileInfo(FileInfoExtended* extendedInfo, FileInfo* fil
 // *********************************************************************************
 // CARTA ICD implementation
 
-void Session::onRegisterViewer(const RegisterViewer& message, uint32_t requestId) {
+void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId) {
     apiKey = message.api_key();
-    RegisterViewerAck ackMessage;
+    CARTA::RegisterViewerAck ackMessage;
     ackMessage.set_success(true);
     ackMessage.set_session_id(uuid);
     sendEvent("REGISTER_VIEWER_ACK", requestId, ackMessage);
 }
 
-void Session::onFileListRequest(const FileListRequest& request, uint32_t requestId) {
+void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId) {
     string folder = request.directory();
     // strip baseFolder from folder
     string basePath(baseFolder);
@@ -199,12 +209,12 @@ void Session::onFileListRequest(const FileListRequest& request, uint32_t request
         folder.replace(0, basePath.length(), "");
         if (folder.front()=='/') folder.replace(0,1,""); // remove leading '/'
     }
-    FileListResponse response = getFileList(folder);
+    CARTA::FileListResponse response = getFileList(folder);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
 }
 
-void Session::onFileInfoRequest(const FileInfoRequest& request, uint32_t requestId) {
-    FileInfoResponse response;
+void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t requestId) {
+    CARTA::FileInfoResponse response;
     auto fileInfo = response.mutable_file_info();
     auto fileInfoExtended = response.mutable_file_info_extended();
     string message;
@@ -214,9 +224,9 @@ void Session::onFileInfoRequest(const FileInfoRequest& request, uint32_t request
     sendEvent("FILE_INFO_RESPONSE", requestId, response);
 }
 
-void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
+void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     auto fileId(message.file_id());
-    OpenFileAck ack;
+    CARTA::OpenFileAck ack;
     ack.set_file_id(fileId);
     auto fileInfo = ack.mutable_file_info();
     auto fileInfoExtended = ack.mutable_file_info_extended();
@@ -231,7 +241,7 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
         string filename(path.absoluteName());
         // create Frame for open file
         string hdu = fileInfo->hdu_list(0);
-        auto frame = unique_ptr<Frame>(new Frame(uuid, filename, hdu));
+        auto frame = std::unique_ptr<Frame>(new Frame(uuid, filename, hdu));
         if (frame->isValid()) {
             success = true;
             std::unique_lock<std::mutex> lock(frameMutex);
@@ -247,7 +257,7 @@ void Session::onOpenFile(const OpenFile& message, uint32_t requestId) {
     sendEvent("OPEN_FILE_ACK", requestId, ack);
 }
 
-void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
+void Session::onCloseFile(const CARTA::CloseFile& message, uint32_t requestId) {
     auto fileId = message.file_id();
     std::unique_lock<std::mutex> lock(frameMutex);
     if (fileId == -1) {
@@ -261,7 +271,7 @@ void Session::onCloseFile(const CloseFile& message, uint32_t requestId) {
     }
 }
 
-void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
+void Session::onSetImageView(const CARTA::SetImageView& message, uint32_t requestId) {
     auto fileId = message.file_id();
     if (frames.count(fileId)) {
         try {
@@ -276,11 +286,11 @@ void Session::onSetImageView(const SetImageView& message, uint32_t requestId) {
                     csettings.nsubsets = message.num_subsets();
                     frames.at(fileId)->setCompression(csettings);
                     // RESPONSE: raster/histogram data
-                    RasterImageData rasterImageData;
+                    CARTA::RasterImageData rasterImageData;
                     rasterImageData.set_stokes(frames.at(fileId)->currentStokes());
                     rasterImageData.set_channel(frames.at(fileId)->currentChannel());
                     if (newFrame) {
-                        RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+                        CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
                         rasterImageData.set_allocated_channel_histogram_data(histogramData);
                         newFrame = false;
                     }
@@ -316,9 +326,9 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
                 std::vector<float> imageData = frames.at(fileId)->getImageData(bounds, mip);
                 if (!imageData.empty()) {
                     CompressionSettings csettings = frames.at(fileId)->compressionSettings();
-                    RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+                    CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
                     // RESPONSE: updated raster/histogram, spatial profile, spectral profile
-                    RasterImageData rasterImageData;
+                    CARTA::RasterImageData rasterImageData;
                     rasterImageData.set_stokes(stokes);
                     rasterImageData.set_channel(channel);
                     rasterImageData.set_allocated_channel_histogram_data(histogramData);
@@ -397,7 +407,7 @@ void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
         errMessage = fmt::format("File id {} not found", fileId);
     }
     // RESPONSE
-    SetRegionAck ack;
+    CARTA::SetRegionAck ack;
     ack.set_region_id(regionId);
     ack.set_success(success);
     ack.set_message(errMessage);
@@ -417,7 +427,7 @@ void Session::onSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
         try {
             auto regionId = message.region_id();
             if (frames.at(fileId)->setRegionSpatialRequirements(regionId,
-                vector<string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
+                std::vector<std::string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
                 // RESPONSE
                 sendSpatialProfileData(fileId, regionId);
             } else {
@@ -439,10 +449,15 @@ void Session::onSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
     if (frames.count(fileId)) {
         try {
             auto regionId = message.region_id();
-            if (frames.at(fileId)->setRegionHistogramRequirements(regionId, vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(), message.histograms().end()))) {
+            if (regionId == CUBE_REGION_ID) {
                 // RESPONSE
-                RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
+                sendCubeHistogramData(message, requestId);
+            } else if (frames.at(fileId)->setRegionHistogramRequirements(regionId,
+                std::vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(),
+                message.histograms().end()))) {
+                CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
                 if (histogramData != nullptr) {
+                    // RESPONSE
                     sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", 0, *histogramData);
                 } else {
                     string error = "Failed to load histogram data";
@@ -468,7 +483,7 @@ void Session::onSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
         try {
             auto regionId = message.region_id();
             if (frames.at(fileId)->setRegionSpectralRequirements(regionId,
-                vector<CARTA::SetSpectralRequirements_SpectralConfig>(message.spectral_profiles().begin(),
+                std::vector<CARTA::SetSpectralRequirements_SpectralConfig>(message.spectral_profiles().begin(),
                 message.spectral_profiles().end()))) {
                 // RESPONSE
                 sendSpectralProfileData(fileId, regionId);
@@ -491,7 +506,7 @@ void Session::onSetStatsRequirements(const CARTA::SetStatsRequirements& message,
     if (frames.count(fileId)) {
         try {
             auto regionId = message.region_id();
-            if (frames.at(fileId)->setRegionStatsRequirements(regionId, vector<int>(message.stats().begin(),
+            if (frames.at(fileId)->setRegionStatsRequirements(regionId, std::vector<int>(message.stats().begin(),
                 message.stats().end()))) {
                 // RESPONSE
                 sendRegionStatsData(fileId, regionId);
@@ -513,10 +528,10 @@ void Session::onSetStatsRequirements(const CARTA::SetStatsRequirements& message,
 
 // Histogram message; sent separately or within RasterImageData
 CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId, const int32_t regionId) {
-    RegionHistogramData* histogramMessage(nullptr);
+    CARTA::RegionHistogramData* histogramMessage(nullptr);
     if (frames.count(fileId)) {
         try {
-            histogramMessage = new RegionHistogramData();
+            histogramMessage = new CARTA::RegionHistogramData();
             histogramMessage->set_file_id(fileId);
             histogramMessage->set_region_id(regionId);
             frames.at(fileId)->fillRegionHistogramData(regionId, histogramMessage);
@@ -531,6 +546,135 @@ CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId
     return histogramMessage;
 }
 
+void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& message,
+        uint32_t requestId) {
+    auto fileId = message.file_id();
+    if (frames.count(fileId)) {
+        try {
+            if (message.histograms_size() == 0) { // cancel!
+                histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
+                sendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
+                return;
+            } else {
+                int numbins(message.histograms(0).num_bins());
+                numbins = (numbins == AUTO_BIN_SIZE ? frames.at(fileId)->calcNumBins(ALL_CHANNELS) : numbins);
+                int stokes(frames.at(fileId)->currentStokes());
+                size_t nchan(frames.at(fileId)->nchannels());
+                bool histogramSent(false);
+                if (nchan == 1) {  // use per-channel histogram for channel 0
+                    int channum(0);
+                    CARTA::RegionHistogramData* histogramMessage = createCubeHistogramMessage(fileId, stokes, 1.0);
+                    if (frames.at(fileId)->getChannelHistogramData(histogramMessage, channum, stokes, numbins)) {
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramMessage);
+                        histogramSent = true;
+                    }
+                }
+                if (!histogramSent) {  // compute cube histogram
+                    histogramProgress.fetch_and_store(0.0);  // start at 0
+                    auto tStart = std::chrono::high_resolution_clock::now();
+                    // determine min and max values
+                    float minval(FLT_MAX), maxval(FLT_MIN);
+                    for (size_t chan=0; chan < nchan; ++chan) {
+                        float chanmin, chanmax;
+                        std::vector<float> data = frames.at(fileId)->getImageChanData(chan);
+                        frames.at(fileId)->getMinMax(chanmin, chanmax, data);
+                        minval = std::min(minval, chanmin);
+                        maxval = std::max(maxval, chanmax);
+
+                        // check for cancel
+                        if (histogramProgress == HISTOGRAM_CANCEL)
+                            break;
+
+                        // check for progress update
+                        auto tEnd = std::chrono::high_resolution_clock::now();
+                        auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
+                        if ((dt/1e3) > 2.0) {  // send progress
+                            float thischan(chan), allchans(nchan * 2); // go through chans twice
+                            float progress = thischan / allchans;
+                            CARTA::RegionHistogramData* histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
+                            sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
+                            tStart = tEnd;
+                        }
+                    }
+                    if (histogramProgress > HISTOGRAM_CANCEL) {
+                        // send message in case min/max took < 2s; progress is half done
+                        float progress = 0.50;
+                        CARTA::RegionHistogramData* histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
+
+                        // get histogram bins for each channel
+                        std::valarray<int> cubeBins(0, numbins);  // accumulate bin counts
+                        // create message for each channel histogram (not sent)
+                        CARTA::RegionHistogramData* chanHistogramMessage = createCubeHistogramMessage(fileId, stokes, progress);
+                        for (size_t chan=0; chan < nchan; ++chan) {
+                            // get CARTA::Histogram for this channel
+                            chanHistogramMessage->clear_histograms();
+                            std::vector<float> data = frames.at(fileId)->getImageChanData(chan);
+                            frames.at(fileId)->fillChannelHistogramData(chanHistogramMessage, data, chan, numbins, minval, maxval);
+                            auto histogram = chanHistogramMessage->histograms(0);
+
+                            // add channel bins to cube bins
+                            std::vector<int> channelBins = {histogram.bins().begin(), histogram.bins().end()};
+                            std::valarray<int> channelVals(channelBins.data(), channelBins.size());
+                            cubeBins += channelVals;
+
+                            // check for cancel
+                            if (histogramProgress == HISTOGRAM_CANCEL)
+                                break;
+
+                            // check for progress update
+                            auto tEnd = std::chrono::high_resolution_clock::now();
+                            auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
+                            if ((dt/1e3) > 2.0) { // send progress
+                                float thischan(chan), allchans(nchan * 2); // go through chans twice
+                                progress = 0.5 + (thischan / allchans);
+                                histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
+                                sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
+                                tStart = tEnd;
+                            }
+                        }
+                        if (histogramProgress > HISTOGRAM_CANCEL) {
+                            // send completed cube histogram
+                            progress = HISTOGRAM_COMPLETE;
+                            CARTA::RegionHistogramData* finalHistogramMessage = createCubeHistogramMessage(fileId, stokes, progress);
+                            auto cubeHistogram = finalHistogramMessage->mutable_histograms(0);
+                            // fill histogram fields from channel histogram
+                            auto lastChanHistogram = chanHistogramMessage->histograms(0);
+                            cubeHistogram->set_channel(ALL_CHANNELS);
+                            cubeHistogram->set_num_bins(lastChanHistogram.num_bins());
+                            cubeHistogram->set_bin_width(lastChanHistogram.bin_width());
+                            cubeHistogram->set_first_bin_center(lastChanHistogram.first_bin_center());
+                            // set cube histogram bins
+                            *cubeHistogram->mutable_bins() = {std::begin(cubeBins), std::end(cubeBins)};
+                            sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *finalHistogramMessage);
+                        }
+                    }
+                }
+            }
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+CARTA::RegionHistogramData* Session::createCubeHistogramMessage(int fileId, int stokes, float progress) {
+    // check for cancel then update progress and make new message
+    CARTA::RegionHistogramData* message(nullptr);
+    if (histogramProgress != HISTOGRAM_CANCEL) {
+        histogramProgress.fetch_and_store(progress);
+        message = new CARTA::RegionHistogramData();
+        message->set_file_id(fileId);
+        message->set_region_id(CUBE_REGION_ID);
+        message->set_stokes(stokes);
+        message->set_progress(progress);
+        auto newHistogram = message->add_histograms();
+    }
+    return message;
+}
 
 void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImageData,
     std::vector<float>& imageData, CARTA::ImageBounds& bounds, int mip, CompressionSettings& compression) {
@@ -544,26 +688,26 @@ void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImag
                 rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
                 rasterImageData.set_mip(mip);
                 auto compressionType = compression.type;
-                if (compressionType == CompressionType::NONE) {
-                    rasterImageData.set_compression_type(CompressionType::NONE);
+                if (compressionType == CARTA::CompressionType::NONE) {
+                    rasterImageData.set_compression_type(CARTA::CompressionType::NONE);
                     rasterImageData.set_compression_quality(0);
                     rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
                     // Send completed event to client
                     sendFileEvent(fileId, "RASTER_IMAGE_DATA", 0, rasterImageData);
-                } else if (compressionType == CompressionType::ZFP) {
+                } else if (compressionType == CARTA::CompressionType::ZFP) {
                     int precision = lround(compression.quality);
-                    rasterImageData.set_compression_type(CompressionType::ZFP);
+                    rasterImageData.set_compression_type(CARTA::CompressionType::ZFP);
                     rasterImageData.set_compression_quality(precision);
 
                     auto rowLength = (bounds.x_max() - bounds.x_min()) / mip;
                     auto numRows = (bounds.y_max() - bounds.y_min()) / mip;
                     auto numSubsets = compression.nsubsets;
 
-                    vector<vector<char>> compressionBuffers(numSubsets);
-                    vector<size_t> compressedSizes(numSubsets);
-                    vector<vector<int32_t>> nanEncodings(numSubsets);
+                    std::vector<std::vector<char>> compressionBuffers(numSubsets);
+                    std::vector<size_t> compressedSizes(numSubsets);
+                    std::vector<std::vector<int32_t>> nanEncodings(numSubsets);
 
-                    auto N = min(numSubsets, MAX_SUBSETS);
+                    auto N = std::min(numSubsets, MAX_SUBSETS);
                     auto range = tbb::blocked_range<int>(0, N);
                     auto loop = [&](const tbb::blocked_range<int> &r) {
                         for(int i = r.begin(); i != r.end(); ++i) {
@@ -580,22 +724,23 @@ void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImag
                                 rowLength, subsetRowEnd - subsetRowStart, precision);
                         }
                     };
-                    auto tStartCompress = chrono::high_resolution_clock::now();
+                    auto tStartCompress = std::chrono::high_resolution_clock::now();
                     tbb::parallel_for(range, loop);
-                    auto tEndCompress = chrono::high_resolution_clock::now();
-                    auto dtCompress = chrono::duration_cast<chrono::microseconds>(tEndCompress - tStartCompress).count();
+                    auto tEndCompress = std::chrono::high_resolution_clock::now();
+                    auto dtCompress = std::chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
 
                     // Complete message
                     for (auto i = 0; i < numSubsets; i++) {
                         rasterImageData.add_image_data(compressionBuffers[i].data(), compressedSizes[i]);
-                        rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(), nanEncodings[i].size() * sizeof(int));
+                        rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(),
+                            nanEncodings[i].size() * sizeof(int));
                     }
 
                     if (verboseLogging) {
                         string compressionInfo = fmt::format(
                             "Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s",
                             numRows * rowLength * sizeof(float) / 1e3,
-                            accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
+                            std::accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
                             1e-3 * dtCompress,
                             (float) (numRows * rowLength) / dtCompress);
                         log(uuid, compressionInfo);
@@ -702,7 +847,7 @@ void Session::sendEvent(string eventName, u_int64_t eventId, google::protobuf::M
     int messageLength = message.ByteSize();
     size_t requiredSize = eventNameLength + 8 + messageLength;
     std::vector<char> msg(requiredSize, 0);
-    std::copy_n(eventName.begin(), min(eventName.length(), eventNameLength), msg.begin());
+    std::copy_n(eventName.begin(), std::min(eventName.length(), eventNameLength), msg.begin());
     memcpy(msg.data() + eventNameLength, &eventId, 4);
     message.SerializeToArray(msg.data() + eventNameLength + 8, messageLength);
     out_msgs.push(msg);
