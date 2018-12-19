@@ -427,7 +427,7 @@ void Session::onSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
         try {
             auto regionId = message.region_id();
             if (frames.at(fileId)->setRegionSpatialRequirements(regionId,
-                vector<string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
+                std::vector<std::string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
                 // RESPONSE
                 sendSpatialProfileData(fileId, regionId);
             } else {
@@ -453,7 +453,7 @@ void Session::onSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
                 // RESPONSE
                 sendCubeHistogramData(message, requestId);
             } else if (frames.at(fileId)->setRegionHistogramRequirements(regionId,
-                vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(),
+                std::vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(),
                 message.histograms().end()))) {
                 CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
                 if (histogramData != nullptr) {
@@ -483,7 +483,7 @@ void Session::onSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
         try {
             auto regionId = message.region_id();
             if (frames.at(fileId)->setRegionSpectralRequirements(regionId,
-                vector<CARTA::SetSpectralRequirements_SpectralConfig>(message.spectral_profiles().begin(),
+                std::vector<CARTA::SetSpectralRequirements_SpectralConfig>(message.spectral_profiles().begin(),
                 message.spectral_profiles().end()))) {
                 // RESPONSE
                 sendSpectralProfileData(fileId, regionId);
@@ -506,7 +506,7 @@ void Session::onSetStatsRequirements(const CARTA::SetStatsRequirements& message,
     if (frames.count(fileId)) {
         try {
             auto regionId = message.region_id();
-            if (frames.at(fileId)->setRegionStatsRequirements(regionId, vector<int>(message.stats().begin(),
+            if (frames.at(fileId)->setRegionStatsRequirements(regionId, std::vector<int>(message.stats().begin(),
                 message.stats().end()))) {
                 // RESPONSE
                 sendRegionStatsData(fileId, regionId);
@@ -703,9 +703,9 @@ void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImag
                     auto numRows = (bounds.y_max() - bounds.y_min()) / mip;
                     auto numSubsets = compression.nsubsets;
 
-                    vector<vector<char>> compressionBuffers(numSubsets);
-                    vector<size_t> compressedSizes(numSubsets);
-                    vector<vector<int32_t>> nanEncodings(numSubsets);
+                    std::vector<std::vector<char>> compressionBuffers(numSubsets);
+                    std::vector<size_t> compressedSizes(numSubsets);
+                    std::vector<std::vector<int32_t>> nanEncodings(numSubsets);
 
                     auto N = std::min(numSubsets, MAX_SUBSETS);
                     auto range = tbb::blocked_range<int>(0, N);
@@ -740,7 +740,7 @@ void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImag
                         string compressionInfo = fmt::format(
                             "Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s",
                             numRows * rowLength * sizeof(float) / 1e3,
-                            accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
+                            std::accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
                             1e-3 * dtCompress,
                             (float) (numRows * rowLength) / dtCompress);
                         log(uuid, compressionInfo);
