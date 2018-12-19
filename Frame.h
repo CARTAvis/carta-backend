@@ -18,6 +18,9 @@
 #define CUBE_REGION_ID -2
 #define IMAGE_REGION_ID -1
 #define CURSOR_REGION_ID 0
+#define CURRENT_CHANNEL -1
+#define ALL_CHANNELS -2
+#define AUTO_BIN_SIZE -1
 
 struct ChannelStats {
     float minVal;
@@ -47,8 +50,8 @@ private:
     std::string filename;
     std::unique_ptr<carta::FileLoader> loader;
     casacore::IPosition imageShape; // (width, height, depth, stokes)
-    size_t ndims;
     int spectralAxis, stokesAxis;  // axis index for each in 4D image
+    size_t nchan;
     std::vector<std::vector<ChannelStats>> channelStats;
 
     // set image view 
@@ -82,6 +85,7 @@ private:
     // get lattice slicer for axis profile: full axis if set to -1
     void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
 
+
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = 0);
     ~Frame();
@@ -90,7 +94,10 @@ public:
     int getMaxRegionId();
 
     // image data
+    // matrix for current channel and stokes
     std::vector<float> getImageData(CARTA::ImageBounds& bounds, int mip, bool meanFilter = true);
+    // cube for current stokes
+    std::vector<float> getImageChanData(size_t chan);
 
     // image view
     bool setBounds(CARTA::ImageBounds imageBounds, int newMip);
@@ -101,6 +108,7 @@ public:
 
     // image channels
     bool setImageChannels(int newChannel, int newStokes, std::string& message);
+    size_t nchannels();
     int currentStokes();
     int currentChannel();
 
@@ -122,8 +130,16 @@ public:
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
     bool setRegionStatsRequirements(int regionId, const std::vector<int> statsTypes);
 
-    // get region histograms, profiles, stats
+    // get region histograms
     bool fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData);
+    bool getChannelHistogramData(CARTA::RegionHistogramData* histogramData, int chan, int stokes,
+        int numbins);  // get existing channel histogram
+    bool fillChannelHistogramData(CARTA::RegionHistogramData* histogramData, std::vector<float>& data,
+        size_t channel, int numBins, float minval, float maxval);  // make new channel histogram
+    int calcNumBins(int chan); // calculate automatic bin size for histogram; chan can be ALL_CHANNELS
+    void getMinMax(float& minval, float& maxval, std::vector<float>& data);
+
+    // get profiles, stats
     bool fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData);
     bool fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData);
     bool fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData);

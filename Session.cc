@@ -6,7 +6,12 @@
 
 #include <casacore/casa/OS/Path.h>
 #include <casacore/casa/OS/DirectoryIterator.h>
-#include <tbb/tbb.h>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
+
+#include <chrono>
+#include <limits>
+#include <valarray>
 
 using namespace std;
 using namespace CARTA;
@@ -445,10 +450,15 @@ void Session::onSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
     if (frames.count(fileId)) {
         try {
             auto regionId = message.region_id();
-            if (frames.at(fileId)->setRegionHistogramRequirements(regionId, vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(), message.histograms().end()))) {
+            if (regionId == CUBE_REGION_ID) {
                 // RESPONSE
+                sendCubeHistogramData(message, requestId);
+            } else if (frames.at(fileId)->setRegionHistogramRequirements(regionId,
+                vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(),
+                message.histograms().end()))) {
                 RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
                 if (histogramData != nullptr) {
+                    // RESPONSE
                     sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", 0, *histogramData);
                 } else {
                     string error = "Failed to load histogram data";
@@ -522,7 +532,7 @@ CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId
     RegionHistogramData* histogramMessage(nullptr);
     if (frames.count(fileId)) {
         try {
-            histogramMessage = new RegionHistogramData();
+            histogramMessage = new CARTA::RegionHistogramData();
             histogramMessage->set_file_id(fileId);
             histogramMessage->set_region_id(regionId);
             frames.at(fileId)->fillRegionHistogramData(regionId, histogramMessage);
@@ -537,6 +547,135 @@ CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId
     return histogramMessage;
 }
 
+void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& message,
+        uint32_t requestId) {
+    auto fileId = message.file_id();
+    if (frames.count(fileId)) {
+        try {
+            if (message.histograms_size() == 0) { // cancel!
+                histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
+                sendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
+                return;
+            } else {
+                int numbins(message.histograms(0).num_bins());
+                numbins = (numbins == AUTO_BIN_SIZE ? frames.at(fileId)->calcNumBins(ALL_CHANNELS) : numbins);
+                int stokes(frames.at(fileId)->currentStokes());
+                size_t nchan(frames.at(fileId)->nchannels());
+                bool histogramSent(false);
+                if (nchan == 1) {  // use per-channel histogram for channel 0
+                    int channum(0);
+                    CARTA::RegionHistogramData* histogramMessage = createCubeHistogramMessage(fileId, stokes, 1.0);
+                    if (frames.at(fileId)->getChannelHistogramData(histogramMessage, channum, stokes, numbins)) {
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramMessage);
+                        histogramSent = true;
+                    }
+                }
+                if (!histogramSent) {  // compute cube histogram
+                    histogramProgress.fetch_and_store(0.0);  // start at 0
+                    auto tStart = std::chrono::high_resolution_clock::now();
+                    // determine min and max values
+                    float minval(FLT_MAX), maxval(FLT_MIN);
+                    for (size_t chan=0; chan < nchan; ++chan) {
+                        float chanmin, chanmax;
+                        std::vector<float> data = frames.at(fileId)->getImageChanData(chan);
+                        frames.at(fileId)->getMinMax(chanmin, chanmax, data);
+                        minval = std::min(minval, chanmin);
+                        maxval = std::max(maxval, chanmax);
+
+                        // check for cancel
+                        if (histogramProgress == HISTOGRAM_CANCEL)
+                            break;
+
+                        // check for progress update
+                        auto tEnd = std::chrono::high_resolution_clock::now();
+                        auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
+                        if ((dt/1e3) > 2.0) {  // send progress
+                            float thischan(chan), allchans(nchan * 2); // go through chans twice
+                            float progress = thischan / allchans;
+                            CARTA::RegionHistogramData* histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
+                            sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
+                            tStart = tEnd;
+                        }
+                    }
+                    if (histogramProgress > HISTOGRAM_CANCEL) {
+                        // send message in case min/max took < 2s; progress is half done
+                        float progress = 0.50;
+                        CARTA::RegionHistogramData* histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
+
+                        // get histogram bins for each channel
+                        std::valarray<int> cubeBins(0, numbins);  // accumulate bin counts
+                        // create message for each channel histogram (not sent)
+                        CARTA::RegionHistogramData* chanHistogramMessage = createCubeHistogramMessage(fileId, stokes, progress);
+                        for (size_t chan=0; chan < nchan; ++chan) {
+                            // get CARTA::Histogram for this channel
+                            chanHistogramMessage->clear_histograms();
+                            std::vector<float> data = frames.at(fileId)->getImageChanData(chan);
+                            frames.at(fileId)->fillChannelHistogramData(chanHistogramMessage, data, chan, numbins, minval, maxval);
+                            auto histogram = chanHistogramMessage->histograms(0);
+
+                            // add channel bins to cube bins
+                            std::vector<int> channelBins = {histogram.bins().begin(), histogram.bins().end()};
+                            std::valarray<int> channelVals(channelBins.data(), channelBins.size());
+                            cubeBins += channelVals;
+
+                            // check for cancel
+                            if (histogramProgress == HISTOGRAM_CANCEL)
+                                break;
+
+                            // check for progress update
+                            auto tEnd = std::chrono::high_resolution_clock::now();
+                            auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count();
+                            if ((dt/1e3) > 2.0) { // send progress
+                                float thischan(chan), allchans(nchan * 2); // go through chans twice
+                                progress = 0.5 + (thischan / allchans);
+                                histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
+                                sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
+                                tStart = tEnd;
+                            }
+                        }
+                        if (histogramProgress > HISTOGRAM_CANCEL) {
+                            // send completed cube histogram
+                            progress = HISTOGRAM_COMPLETE;
+                            CARTA::RegionHistogramData* finalHistogramMessage = createCubeHistogramMessage(fileId, stokes, progress);
+                            auto cubeHistogram = finalHistogramMessage->mutable_histograms(0);
+                            // fill histogram fields from channel histogram
+                            auto lastChanHistogram = chanHistogramMessage->histograms(0);
+                            cubeHistogram->set_channel(ALL_CHANNELS);
+                            cubeHistogram->set_num_bins(lastChanHistogram.num_bins());
+                            cubeHistogram->set_bin_width(lastChanHistogram.bin_width());
+                            cubeHistogram->set_first_bin_center(lastChanHistogram.first_bin_center());
+                            // set cube histogram bins
+                            *cubeHistogram->mutable_bins() = {std::begin(cubeBins), std::end(cubeBins)};
+                            sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *finalHistogramMessage);
+                        }
+                    }
+                }
+            }
+        } catch (std::out_of_range& rangeError) {
+            string error = fmt::format("File id {} closed", fileId);
+            sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", fileId);
+        sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+CARTA::RegionHistogramData* Session::createCubeHistogramMessage(int fileId, int stokes, float progress) {
+    // check for cancel then update progress and make new message
+    CARTA::RegionHistogramData* message(nullptr);
+    if (histogramProgress != HISTOGRAM_CANCEL) {
+        histogramProgress.fetch_and_store(progress);
+        message = new CARTA::RegionHistogramData();
+        message->set_file_id(fileId);
+        message->set_region_id(CUBE_REGION_ID);
+        message->set_stokes(stokes);
+        message->set_progress(progress);
+        auto newHistogram = message->add_histograms();
+    }
+    return message;
+}
 
 void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImageData,
     std::vector<float>& imageData, CARTA::ImageBounds& bounds, int mip, CompressionSettings& compression) {
@@ -594,7 +733,8 @@ void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImag
                     // Complete message
                     for (auto i = 0; i < numSubsets; i++) {
                         rasterImageData.add_image_data(compressionBuffers[i].data(), compressedSizes[i]);
-                        rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(), nanEncodings[i].size() * sizeof(int));
+                        rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(),
+                            nanEncodings[i].size() * sizeof(int));
                     }
 
                     if (verboseLogging) {
