@@ -41,8 +41,12 @@ FileInfoLoader::fileType(const std::string &file) {
 // FILE INFO
 
 bool FileInfoLoader::fillFileInfo(FileInfo* fileInfo) {
-    // fill FileInfo submessage
     casacore::File ccfile(m_file);
+    if (!ccfile.exists()) {
+        return false;
+    }
+
+    // fill FileInfo submessage
     int64_t fileInfoSize(ccfile.size());
     if (ccfile.isDirectory()) {
         casacore::Directory ccdir(ccfile);
@@ -292,9 +296,12 @@ std::string FileInfoLoader::makeValueStr(const std::string& type, double val, co
 
 // ***** Public function *****
 bool FileInfoLoader::fillFileExtInfo(FileInfoExtended* extInfo, string& hdu, string& message) {
-    bool extInfoOK(false);
-    // name
     casacore::File ccfile(m_file);
+    if (!ccfile.exists()) {
+        return false;
+    }
+
+    bool extInfoOK(false);
     string name(ccfile.path().baseName());
     auto entry = extInfo->add_computed_entries();
     entry->set_name("Name");
