@@ -158,16 +158,30 @@ void FileInfoLoader::findChanStokesAxis(const casacore::IPosition& dataShape, co
     cType4.upcase();
 
     // find spectral axis
-    if ((cType1.startsWith("FREQ") || cType1.startsWith("VRAD") || cType1.startsWith("VELO")))
+    if (!cType1.empty() &&
+        (cType1.contains("FELO") || cType1.contains("FREQ") || cType1.contains("VELO") ||
+         cType1.contains("VOPT") || cType1.contains("VRAD") || cType1.contains("WAVE") ||
+         cType1.contains("AWAV")) ) {
         chanAxis = 0;
-    else if ((cType2.startsWith("FREQ") || cType2.startsWith("VRAD") || cType2.startsWith("VELO")))
+    } else if (!cType2.empty() &&
+        (cType2.contains("FELO") || cType2.contains("FREQ") || cType2.contains("VELO") ||
+         cType2.contains("VOPT") || cType2.contains("VRAD") || cType2.contains("WAVE") ||
+         cType2.contains("AWAV")) ) {
         chanAxis = 1;
-    else if ((cType3.startsWith("FREQ") || cType3.startsWith("VRAD") || cType3.startsWith("VELO")))
+    } else if (!cType3.empty() &&
+        (cType3.contains("FELO") || cType3.contains("FREQ") || cType3.contains("VELO") ||
+         cType3.contains("VOPT") || cType3.contains("VRAD") || cType3.contains("WAVE") ||
+         cType3.contains("AWAV")) ) {
         chanAxis = 2;
-    else if ((cType4.startsWith("FREQ") || cType4.startsWith("VRAD") || cType4.startsWith("VELO")))
+    } else if (!cType4.empty() &&
+        (cType4.contains("FELO") || cType4.contains("FREQ") || cType4.contains("VELO") ||
+         cType4.contains("VOPT") || cType4.contains("VRAD") || cType4.contains("WAVE") ||
+         cType4.contains("AWAV"))) {
         chanAxis = 3;
-    else
+    } else {
         chanAxis = -1;
+    }
+
     // find stokes axis
     if (cType1 == "STOKES")
         stokesAxis = 0;
@@ -295,6 +309,44 @@ std::string FileInfoLoader::makeValueStr(const std::string& type, double val, co
         }
     }
     return valStr;
+}
+
+bool FileInfoLoader::convertSpecsysToFITS(std::string& specsys, casacore::MFrequency::Types type) {
+    // use labels in FITS headers
+    bool result(true);
+    switch (type) {
+        case casacore::MFrequency::LSRK:
+            specsys = "LSRK";
+            break;
+        case casacore::MFrequency::BARY:
+            specsys = "BARYCENT";
+            break;
+        case casacore::MFrequency::LSRD:
+            specsys = "LSRD";
+            break;
+        case casacore::MFrequency::GEO:
+            specsys = "GEOCENTR";
+            break;
+        case casacore::MFrequency::REST:
+            specsys = "SOURCE";
+            break;
+        case casacore::MFrequency::GALACTO:
+            specsys = "GALACTOC";
+            break;
+        case casacore::MFrequency::LGROUP:
+            specsys = "LOCALGRP";
+            break;
+        case casacore::MFrequency::CMB:
+            specsys = "CMBDIPOL";
+            break;
+        case casacore::MFrequency::TOPO:
+            specsys = "TOPOCENT";
+            break;
+        default:
+            specsys = "";
+            result = false;
+    }
+    return result;
 }
 
 // ***** Public function *****
@@ -798,26 +850,34 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
 
 
         // RESTFRQ
-        casacore::String returnStr;
+        casacore::String restfreqStr;
         casacore::Quantum<casacore::Double> restFreq;
-        casacore::Bool ok = imSummary.restFrequency(returnStr, restFreq);
+        casacore::Bool ok = imSummary.restFrequency(restfreqStr, restFreq);
         if (ok) {
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("RESTFRQ");
             casacore::Double restFreqVal(restFreq.getValue());
-            *headerEntry->mutable_value() = returnStr;
+            *headerEntry->mutable_value() = restfreqStr;
             headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
             headerEntry->set_numeric_value(restFreqVal);
         }
         // SPECSYS
-        casacore::MFrequency::Types freqTypes;
-        ok = imSummary.frequencySystem(returnStr, freqTypes);
-        if (ok) {
-            headerEntry = extendedInfo->add_header_entries();
-            headerEntry->set_name("SPECSYS");
-            *headerEntry->mutable_value() = returnStr;
-            headerEntry->set_entry_type(CARTA::EntryType::STRING);
-            specSys = returnStr;
+        casacore::CoordinateSystem coordsys(ccImage->coordinates());
+        casacore::Int iSpecCoord = coordsys.findCoordinate(casacore::Coordinate::SPECTRAL);
+        if (iSpecCoord >= 0) {
+            const casacore::SpectralCoordinate& spCoord = coordsys.spectralCoordinate(casacore::uInt(iSpecCoord));
+            casacore::MFrequency::Types conversionType;
+            casacore::MEpoch epoch;
+            casacore::MDirection direction;
+            casacore::MPosition position;
+            spCoord.getReferenceConversion(conversionType, epoch, position, direction);
+            bool haveSpecsys = convertSpecsysToFITS(specSys, conversionType);
+            if (haveSpecsys) {
+                headerEntry = extendedInfo->add_header_entries();
+                headerEntry->set_name("SPECSYS");
+                *headerEntry->mutable_value() = specSys;
+                headerEntry->set_entry_type(CARTA::EntryType::STRING);
+            }
         }
         // telescope
         headerEntry = extendedInfo->add_header_entries();
