@@ -449,19 +449,21 @@ void Session::onSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
     if (frames.count(fileId)) {
         try {
             auto regionId = message.region_id();
-            if (regionId == CUBE_REGION_ID) {
-                // RESPONSE
-                sendCubeHistogramData(message, requestId);
-            } else if (frames.at(fileId)->setRegionHistogramRequirements(regionId,
+            if (frames.at(fileId)->setRegionHistogramRequirements(regionId,
                 std::vector<CARTA::SetHistogramRequirements_HistogramConfig>(message.histograms().begin(),
                 message.histograms().end()))) {
-                CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
-                if (histogramData != nullptr) {
+                if (regionId == CUBE_REGION_ID) {
                     // RESPONSE
-                    sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", 0, *histogramData);
+                    sendCubeHistogramData(message, requestId);
                 } else {
-                    string error = "Failed to load histogram data";
-                    sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
+                    CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
+                    if (histogramData != nullptr) {
+                        // RESPONSE
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", 0, *histogramData);
+                    } else {
+                        string error = "Failed to load histogram data";
+                        sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
+                    }
                 }
             } else {
                 string error = fmt::format("Histogram requirements for region id {} failed to validate ", regionId);
@@ -557,7 +559,7 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                 return;
             } else {
                 int numbins(message.histograms(0).num_bins());
-                numbins = (numbins == AUTO_BIN_SIZE ? frames.at(fileId)->calcNumBins(ALL_CHANNELS) : numbins);
+                numbins = (numbins == AUTO_BIN_SIZE ? frames.at(fileId)->calcAutoNumBins() : numbins);
                 int stokes(frames.at(fileId)->currentStokes());
                 size_t nchan(frames.at(fileId)->nchannels());
                 bool histogramSent(false);
