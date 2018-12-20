@@ -398,7 +398,7 @@ bool FileInfoLoader::fillFileExtInfo(CARTA::FileInfoExtended* extInfo, std::stri
 	// to be displayed in the file browser on the CARTA front end
 	casacore::String desc =hduEntries.asString(descIndex);
         entry->set_value(desc);
-	entry->set_entry_type(EntryType::STRING);
+	entry->set_entry_type(CARTA::EntryType::STRING);
 	entry = extInfo->add_computed_entries();
 	entry->set_name("HDU Type");
 	casacore::String type = hduEntries.asString(typeIndex);
