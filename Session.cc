@@ -613,10 +613,10 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             chanHistogramMessage->clear_histograms();
                             std::vector<float> data = frames.at(fileId)->getImageChanData(chan);
                             frames.at(fileId)->fillChannelHistogramData(chanHistogramMessage, data, chan, numbins, minval, maxval);
-                            auto histogram = chanHistogramMessage->histograms(0);
+                            auto chanHistogram = chanHistogramMessage->histograms(0);
 
                             // add channel bins to cube bins
-                            std::vector<int> channelBins = {histogram.bins().begin(), histogram.bins().end()};
+                            std::vector<int> channelBins = {chanHistogram.bins().begin(), chanHistogram.bins().end()};
                             std::valarray<int> channelVals(channelBins.data(), channelBins.size());
                             cubeBins += channelVals;
 
@@ -631,6 +631,12 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                                 float thischan(chan), allchans(nchan * 2); // go through chans twice
                                 progress = 0.5 + (thischan / allchans);
                                 histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
+                                auto cubeHistogram = histogramProgressMsg->mutable_histograms(0);
+                                cubeHistogram->set_channel(ALL_CHANNELS);
+                                cubeHistogram->set_num_bins(chanHistogram.num_bins());
+                                cubeHistogram->set_bin_width(chanHistogram.bin_width());
+                                cubeHistogram->set_first_bin_center(chanHistogram.first_bin_center());
+                                *cubeHistogram->mutable_bins() = {std::begin(cubeBins), std::end(cubeBins)};
                                 sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
                                 tStart = tEnd;
                             }
