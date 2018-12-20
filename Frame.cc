@@ -47,7 +47,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         setImageChannels(defaultChannel, 0, errMessage);
 
         // make Region for entire image (after current channel/stokes set)
-        setImageRegion();
+        setImageRegion(IMAGE_REGION_ID);
         loadImageChannelStats(false); // from image file if exists
 
         // Swizzled data loaded if it exists. Used for Z-profiles and region stats
@@ -672,8 +672,12 @@ bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type, in
 }
 
 // special cases of setRegion for image and cursor
-void Frame::setImageRegion() {
-    // create a Region for the entire image, regionId = -1
+void Frame::setImageRegion(int regionId) {
+    // Create a Region for the entire image plane (default)
+    // regionId must be IMAGE_REGION_ID or CUBE_REGION_ID.
+    if ((regionId != IMAGE_REGION_ID) && (regionId != CUBE_REGION_ID))
+        return;
+
     // set image region channels: all channels, all stokes
     int minchan(0);
     int maxchan(nchannels()-1);
@@ -695,17 +699,18 @@ void Frame::setImageRegion() {
     float rotation(0.0);
 
     // create new region
+    std::string name = (regionId == IMAGE_REGION_ID ? "image" : "cube");
     std::string message;
-    setRegion(IMAGE_REGION_ID, "image", CARTA::RECTANGLE, minchan, maxchan, allStokes, points,
+    setRegion(regionId, name, CARTA::RECTANGLE, minchan, maxchan, allStokes, points,
         rotation, message);
-
-    // histogram requirements: use current channel, for now
-    std::vector<CARTA::SetHistogramRequirements_HistogramConfig> configs;
-    setRegionHistogramRequirements(IMAGE_REGION_ID, configs);
-
-    // frontend sets region requirements for cursor before cursor set
-    setDefaultCursor();
-    cursorSet = false;  // only true if set by frontend
+    if (regionId == IMAGE_REGION_ID) { 
+        // histogram requirements: use current channel, for now
+        std::vector<CARTA::SetHistogramRequirements_HistogramConfig> configs;
+        setRegionHistogramRequirements(IMAGE_REGION_ID, configs);
+        // frontend sets region requirements for cursor before cursor set
+        setDefaultCursor();
+        cursorSet = false;  // only true if set by frontend
+    } 
 }
 
 bool Frame::setCursorRegion(int regionId, const CARTA::Point& point) {
@@ -762,9 +767,10 @@ bool Frame::setRegionHistogramRequirements(int regionId,
         const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histograms) {
     // set channel and num_bins for required histograms
     bool regionOK(false);
-    int actualRegionId = (regionId == CUBE_REGION_ID ? IMAGE_REGION_ID : regionId);
-    if (regions.count(actualRegionId)) {
-        auto& region = regions[actualRegionId];
+    if ((regionId == CUBE_REGION_ID) && (!regions.count(regionId)))
+        setImageRegion(CUBE_REGION_ID); // create this region
+    if (regions.count(regionId)) {
+        auto& region = regions[regionId];
         if (histograms.empty()) {  // default to current channel, auto bin size for image region
             std::vector<CARTA::SetHistogramRequirements_HistogramConfig> defaultConfigs;
             CARTA::SetHistogramRequirements_HistogramConfig config;
@@ -876,7 +882,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                         data = chanMatrix.tovector();
                     }
                 }
-                configNumBins = (configNumBins==AUTO_BIN_SIZE ? calcNumBins(configChannel) : configNumBins);
+                configNumBins = (configNumBins==AUTO_BIN_SIZE ? calcAutoNumBins() : configNumBins);
                 float minval, maxval;
                 region->getMinMax(minval, maxval, data);
                 region->fillHistogram(newHistogram, data, configChannel, currStokes, configNumBins, minval, maxval);
@@ -888,8 +894,9 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
 }
 
 bool Frame::getChannelHistogramData(CARTA::RegionHistogramData* histogramData, int chan, int stokes, int numbins) {
-    // get existing channel histogram for given channel and stokes; return false if does not exist
-    numbins = (numbins == AUTO_BIN_SIZE ? calcNumBins(chan) : numbins);
+    // Get existing channel histogram for given channel and stokes; return false if does not exist.
+    // Note: probably no longer needed as frontend hides cube histogram for 2d images
+    numbins = (numbins == AUTO_BIN_SIZE ? calcAutoNumBins() : numbins);
     auto newHistogram = histogramData->mutable_histograms(0);
     return regions[IMAGE_REGION_ID]->getChannelHistogram(newHistogram, chan, stokes, numbins);
 }
@@ -897,31 +904,26 @@ bool Frame::getChannelHistogramData(CARTA::RegionHistogramData* histogramData, i
 bool Frame::fillChannelHistogramData(CARTA::RegionHistogramData* histogramData, std::vector<float>& data,
         size_t channel, int numBins, float minval, float maxval) {
     // Frame completes message with CARTA::Histogram
-    int numbins = (numBins == AUTO_BIN_SIZE ? calcNumBins(ALL_CHANNELS) : numBins);
+    int numbins = (numBins == AUTO_BIN_SIZE ? calcAutoNumBins() : numBins);
     auto newHistogram = histogramData->add_histograms();
-    auto& region = regions[IMAGE_REGION_ID];
+    if (!regions.count(CUBE_REGION_ID))
+        setImageRegion(CUBE_REGION_ID);
+    auto& region = regions[CUBE_REGION_ID];
     region->fillHistogram(newHistogram, data, channel, currentStokes(), numbins, minval, maxval);
     return true;
 }
 
 void Frame::getMinMax(float& minval, float& maxval, std::vector<float>& data) {
-    // determine min and max value in data
-    auto& region = regions[IMAGE_REGION_ID];
+    // determine min and max value in cube data
+    if (!regions.count(CUBE_REGION_ID))
+        setImageRegion(CUBE_REGION_ID);
+    auto& region = regions[CUBE_REGION_ID];
     region->getMinMax(minval, maxval, data);
 }
 
-int Frame::calcNumBins(int chan) {
+int Frame::calcAutoNumBins() {
     // automatic bin size for histogram when num_bins = -1
-    // chan can be ALL_CHANNELS, CURRENT_CHANNEL, or channel number
-    int numBins(0);
-    if (chan > ALL_CHANNELS) { // current or specified channel
-        numBins = int(max(sqrt(imageShape(0) * imageShape(1)), 2.0));
-    } else if (nchan > 1) {  // all channels with spectral axis
-        numBins = int(max(cbrt(imageShape(0) * imageShape(1) * nchan), 3.0));
-    } else {  // all channels but no spectral axis
-        numBins = int(max(sqrt(imageShape(0) * imageShape(1)), 2.0));
-    }
-    return numBins;
+    return int(max(sqrt(imageShape(0) * imageShape(1)), 2.0));
 }
 
 // ***** profiles *****

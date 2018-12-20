@@ -18,8 +18,10 @@
 #define CUBE_REGION_ID -2
 #define IMAGE_REGION_ID -1
 #define CURSOR_REGION_ID 0
+
 #define CURRENT_CHANNEL -1
 #define ALL_CHANNELS -2
+
 #define AUTO_BIN_SIZE -1
 
 struct ChannelStats {
@@ -73,7 +75,7 @@ private:
     std::unordered_map<int, std::unique_ptr<carta::Region>> regions;
 
     bool loadImageChannelStats(bool loadPercentiles = false);
-    void setImageRegion(); // set region for entire image
+    void setImageRegion(int regionId); // set region for entire plane image or cube
     void setDefaultCursor(); // using center point of image
     bool cursorSet; // by frontend, not internally
 
@@ -136,7 +138,7 @@ public:
         int numbins);  // get existing channel histogram
     bool fillChannelHistogramData(CARTA::RegionHistogramData* histogramData, std::vector<float>& data,
         size_t channel, int numBins, float minval, float maxval);  // make new channel histogram
-    int calcNumBins(int chan); // calculate automatic bin size for histogram; chan can be ALL_CHANNELS
+    int calcAutoNumBins(); // calculate automatic bin size for histogram
     void getMinMax(float& minval, float& maxval, std::vector<float>& data);
 
     // get profiles, stats
