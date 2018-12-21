@@ -59,7 +59,7 @@ protected:
     // cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
     tbb::atomic<float> histogramProgress;
     // basic message to update progress
-    CARTA::RegionHistogramData* createCubeHistogramMessage(int fileId, int stokes, float progress);
+    void createCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fileId, int stokes, float progress);
 
     // Notification mechanism when outgoing messages are ready
     uS::Async *outgoing;

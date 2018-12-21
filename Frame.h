@@ -134,9 +134,9 @@ public:
 
     // get region histograms
     bool fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData);
-    bool getChannelHistogramData(CARTA::RegionHistogramData* histogramData, int chan, int stokes,
+    bool getChannelHistogramData(CARTA::RegionHistogramData& histogramData, int chan, int stokes,
         int numbins);  // get existing channel histogram
-    bool fillChannelHistogramData(CARTA::RegionHistogramData* histogramData, std::vector<float>& data,
+    bool fillChannelHistogramData(CARTA::RegionHistogramData& histogramData, std::vector<float>& data,
         size_t channel, int numBins, float minval, float maxval);  // make new channel histogram
     int calcAutoNumBins(); // calculate automatic bin size for histogram
     void getMinMax(float& minval, float& maxval, std::vector<float>& data);

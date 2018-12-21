@@ -565,9 +565,10 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                 bool histogramSent(false);
                 if (nchan == 1) {  // use per-channel histogram for channel 0
                     int channum(0);
-                    CARTA::RegionHistogramData* histogramMessage = createCubeHistogramMessage(fileId, stokes, 1.0);
+                    CARTA::RegionHistogramData histogramMessage;
+                    createCubeHistogramMessage(histogramMessage, fileId, stokes, 1.0);
                     if (frames.at(fileId)->getChannelHistogramData(histogramMessage, channum, stokes, numbins)) {
-                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramMessage);
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
                         histogramSent = true;
                     }
                 }
@@ -593,27 +594,30 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         if ((dt/1e3) > 2.0) {  // send progress
                             float thischan(chan), allchans(nchan * 2); // go through chans twice
                             float progress = thischan / allchans;
-                            CARTA::RegionHistogramData* histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
-                            sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
+                            CARTA::RegionHistogramData histogramProgressMsg;
+                            createCubeHistogramMessage(histogramProgressMsg, fileId, stokes, progress);
+                            sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramProgressMsg);
                             tStart = tEnd;
                         }
                     }
                     if (histogramProgress > HISTOGRAM_CANCEL) {
                         // send message in case min/max took < 2s; progress is half done
                         float progress = 0.50;
-                        CARTA::RegionHistogramData* histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
-                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
+                        CARTA::RegionHistogramData halfProgressMsg;
+                        createCubeHistogramMessage(halfProgressMsg, fileId, stokes, progress);
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, halfProgressMsg);
 
                         // get histogram bins for each channel
                         std::valarray<int> cubeBins(0, numbins);  // accumulate bin counts
                         // create message for each channel histogram (not sent)
-                        CARTA::RegionHistogramData* chanHistogramMessage = createCubeHistogramMessage(fileId, stokes, progress);
+                        CARTA::RegionHistogramData chanHistogramMessage;
+                        createCubeHistogramMessage(chanHistogramMessage, fileId, stokes, progress);
                         for (size_t chan=0; chan < nchan; ++chan) {
                             // get CARTA::Histogram for this channel
-                            chanHistogramMessage->clear_histograms();
+                            chanHistogramMessage.clear_histograms();
                             std::vector<float> data = frames.at(fileId)->getImageChanData(chan);
                             frames.at(fileId)->fillChannelHistogramData(chanHistogramMessage, data, chan, numbins, minval, maxval);
-                            auto chanHistogram = chanHistogramMessage->histograms(0);
+                            auto chanHistogram = chanHistogramMessage.histograms(0);
 
                             // add channel bins to cube bins
                             std::vector<int> channelBins = {chanHistogram.bins().begin(), chanHistogram.bins().end()};
@@ -630,31 +634,33 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             if ((dt/1e3) > 2.0) { // send progress
                                 float thischan(chan), allchans(nchan * 2); // go through chans twice
                                 progress = 0.5 + (thischan / allchans);
-                                histogramProgressMsg = createCubeHistogramMessage(fileId, stokes, progress);
-                                auto cubeHistogram = histogramProgressMsg->mutable_histograms(0);
+                                CARTA::RegionHistogramData histogramProgressMsg;
+                                createCubeHistogramMessage(histogramProgressMsg, fileId, stokes, progress);
+                                auto cubeHistogram = histogramProgressMsg.mutable_histograms(0);
                                 cubeHistogram->set_channel(ALL_CHANNELS);
                                 cubeHistogram->set_num_bins(chanHistogram.num_bins());
                                 cubeHistogram->set_bin_width(chanHistogram.bin_width());
                                 cubeHistogram->set_first_bin_center(chanHistogram.first_bin_center());
                                 *cubeHistogram->mutable_bins() = {std::begin(cubeBins), std::end(cubeBins)};
-                                sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *histogramProgressMsg);
+                                sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramProgressMsg);
                                 tStart = tEnd;
                             }
                         }
                         if (histogramProgress > HISTOGRAM_CANCEL) {
                             // send completed cube histogram
                             progress = HISTOGRAM_COMPLETE;
-                            CARTA::RegionHistogramData* finalHistogramMessage = createCubeHistogramMessage(fileId, stokes, progress);
-                            auto cubeHistogram = finalHistogramMessage->mutable_histograms(0);
+                            CARTA::RegionHistogramData finalHistogramMessage;
+                            createCubeHistogramMessage(finalHistogramMessage, fileId, stokes, progress);
+                            auto cubeHistogram = finalHistogramMessage.mutable_histograms(0);
                             // fill histogram fields from channel histogram
-                            auto lastChanHistogram = chanHistogramMessage->histograms(0);
+                            auto lastChanHistogram = chanHistogramMessage.histograms(0);
                             cubeHistogram->set_channel(ALL_CHANNELS);
                             cubeHistogram->set_num_bins(lastChanHistogram.num_bins());
                             cubeHistogram->set_bin_width(lastChanHistogram.bin_width());
                             cubeHistogram->set_first_bin_center(lastChanHistogram.first_bin_center());
                             // set cube histogram bins
                             *cubeHistogram->mutable_bins() = {std::begin(cubeBins), std::end(cubeBins)};
-                            sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, *finalHistogramMessage);
+                            sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, finalHistogramMessage);
                         }
                     }
                 }
@@ -669,19 +675,16 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
     }
 }
 
-CARTA::RegionHistogramData* Session::createCubeHistogramMessage(int fileId, int stokes, float progress) {
+void Session::createCubeHistogramMessage(CARTA::RegionHistogramData& message, int fileId, int stokes, float progress) {
     // check for cancel then update progress and make new message
-    CARTA::RegionHistogramData* message(nullptr);
     if (histogramProgress != HISTOGRAM_CANCEL) {
         histogramProgress.fetch_and_store(progress);
-        message = new CARTA::RegionHistogramData();
-        message->set_file_id(fileId);
-        message->set_region_id(CUBE_REGION_ID);
-        message->set_stokes(stokes);
-        message->set_progress(progress);
-        auto newHistogram = message->add_histograms();
+        message.set_file_id(fileId);
+        message.set_region_id(CUBE_REGION_ID);
+        message.set_stokes(stokes);
+        message.set_progress(progress);
+        auto newHistogram = message.add_histograms();
     }
-    return message;
 }
 
 void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImageData,
