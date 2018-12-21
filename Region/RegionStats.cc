@@ -48,8 +48,8 @@ void RegionStats::fillHistogram(CARTA::Histogram* histogram, const std::vector<f
         const size_t chanIndex, const size_t stokesIndex, const int nBins, const float minVal,
         const float maxVal) {
     // stored?
-    if (m_channelHistograms.count(chanIndex) && m_stokes==stokesIndex && m_bins==nBins) {
-        *histogram = m_channelHistograms[chanIndex];
+    if (m_channel==chanIndex && m_stokes==stokesIndex && m_bins==nBins) {
+        histogram = m_channelHistogram;
     } else {
         // find histogram for input array
         tbb::blocked_range<size_t> range(0, data.size());
@@ -65,8 +65,9 @@ void RegionStats::fillHistogram(CARTA::Histogram* histogram, const std::vector<f
         histogram->set_first_bin_center(minVal + (binWidth / 2.0));
         *histogram->mutable_bins() = {histogramBins.begin(), histogramBins.end()};
 
-        // save for next time
-        m_channelHistograms[chanIndex] = *histogram;
+        // cache this histogram and its params
+        m_channelHistogram = histogram;
+        m_channel = chanIndex;
         m_stokes = stokesIndex;
         m_bins = nBins;
     }
@@ -74,8 +75,8 @@ void RegionStats::fillHistogram(CARTA::Histogram* histogram, const std::vector<f
 
 bool RegionStats::getChannelHistogram(CARTA::Histogram* histogram, int channel, int stokes, int numBins) {
     bool haveHistogram(false);
-    if (m_channelHistograms.count(channel) && m_stokes==stokes && m_bins==numBins) {
-        *histogram = m_channelHistograms[channel];
+    if (m_channel==channel && m_stokes==stokes && m_bins==numBins) {
+        histogram = m_channelHistogram;
         haveHistogram = true;
     } else {
         histogram = nullptr;

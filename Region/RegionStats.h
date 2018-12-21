@@ -36,9 +36,10 @@ public:
 
 private:
     // Histograms
-    size_t m_stokes, m_bins;
-    std::unordered_map<int, CARTA::Histogram> m_channelHistograms;
     std::vector<CARTA::SetHistogramRequirements_HistogramConfig> m_configs;
+    // cache latest histogram only
+    size_t m_channel, m_stokes, m_bins;
+    CARTA::Histogram* m_channelHistogram;
 
     // Statistics
     std::vector<int> m_regionStats; // CARTA::StatsType requirements
