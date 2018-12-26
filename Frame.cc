@@ -893,19 +893,19 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
     return histogramOK;
 }
 
-bool Frame::getChannelHistogramData(CARTA::RegionHistogramData* histogramData, int chan, int stokes, int numbins) {
+bool Frame::getChannelHistogramData(CARTA::RegionHistogramData& histogramData, int chan, int stokes, int numbins) {
     // Get existing channel histogram for given channel and stokes; return false if does not exist.
     // Note: probably no longer needed as frontend hides cube histogram for 2d images
     numbins = (numbins == AUTO_BIN_SIZE ? calcAutoNumBins() : numbins);
-    auto newHistogram = histogramData->mutable_histograms(0);
+    auto newHistogram = histogramData.mutable_histograms(0);
     return regions[IMAGE_REGION_ID]->getChannelHistogram(newHistogram, chan, stokes, numbins);
 }
 
-bool Frame::fillChannelHistogramData(CARTA::RegionHistogramData* histogramData, std::vector<float>& data,
+bool Frame::fillChannelHistogramData(CARTA::RegionHistogramData& histogramData, std::vector<float>& data,
         size_t channel, int numBins, float minval, float maxval) {
     // Frame completes message with CARTA::Histogram
     int numbins = (numBins == AUTO_BIN_SIZE ? calcAutoNumBins() : numBins);
-    auto newHistogram = histogramData->add_histograms();
+    auto newHistogram = histogramData.add_histograms();
     if (!regions.count(CUBE_REGION_ID))
         setImageRegion(CUBE_REGION_ID);
     auto& region = regions[CUBE_REGION_ID];
