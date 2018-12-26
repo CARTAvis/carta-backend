@@ -19,6 +19,7 @@
 #include <casacore/images/Images/FITSImage.h>
 #include <casacore/images/Images/MIRIADImage.h>
 #include <casacore/images/Images/PagedImage.h>
+#include <casacore/mirlib/miriad.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 //#################################################################################
@@ -679,6 +680,25 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
                 break;
             }
             case casacore::ImageOpener::MIRIAD: {
+                // no way to catch error, use casacore miriad lib directly
+                int thandle, ihandle, iostat, ndim;
+                hopen_c(&thandle, m_file.c_str(), "old", &iostat);
+                if (iostat != 0) {
+                    message = "Could not open MIRIAD file";
+                    return false;
+                }
+                haccess_c(thandle, &ihandle, "image", "read", &iostat);
+                if (iostat != 0) {
+                    message = "Could not open MIRIAD file";
+                    return false;
+                }
+                rdhdi_c(thandle, "naxis", &ndim, 0);  // read "naxis" value into ndim, default 0
+                hclose_c(thandle);
+                if (ndim < 2 || ndim > 4) {
+                    message = "Image must be 2D, 3D or 4D.";
+                    return false;
+                }
+                // hopefully okay to open now as casacore Image
                 ccImage = new casacore::MIRIADImage(m_file);
                 break;
             }
