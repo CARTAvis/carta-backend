@@ -17,6 +17,7 @@
 #include <regex>
 #include <tuple>
 #include <vector>
+#include <signal.h>
 
 #define MAX_THREADS 4
 
@@ -147,17 +148,43 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
     }
 };
 
+void exit_backend(int s) {
+    // destroy objects cleanly
+    std::cout << "Exiting backend." << std::endl;
+    for (auto& session : sessions) {
+        auto uuid = session.first;
+        delete session.second;
+        delete animationQueues[uuid];
+        delete msgQueues[uuid];
+        delete fileSettings[uuid];
+    }
+    sessions.clear();
+    animationQueues.clear();
+    msgQueues.clear();
+    fileSettings.clear();
+
+    exit(0);
+}
+
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
+        // set up interrupt signal handler
+        struct sigaction sigHandler;
+        sigHandler.sa_handler = exit_backend;
+        sigemptyset(&sigHandler.sa_mask);
+        sigHandler.sa_flags = 0;
+        sigaction(SIGINT, &sigHandler, nullptr);
+
         // define and get input arguments
+        int port(3002);
+        int threadCount(tbb::task_scheduler_init::default_num_threads());
+	{ // get values then let Input go out of scope
         casacore::Input inp;
         inp.version(version_id);
         inp.create("verbose", "False", "display verbose logging", "Bool");
         inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
-        int port(3002);
         inp.create("port", std::to_string(port), "set server port", "Int");
-        int threadCount(tbb::task_scheduler_init::default_num_threads());
         inp.create("threads", std::to_string(threadCount), "set thread pool count", "Int");
         inp.create("folder", baseFolder, "set folder for data files", "String");
         inp.readArguments(argc, argv);
@@ -167,6 +194,7 @@ int main(int argc, const char* argv[]) {
         port = inp.getInt("port");
         threadCount = inp.getInt("threads");
         baseFolder = inp.getString("folder");
+	}
 
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
