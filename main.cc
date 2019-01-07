@@ -22,10 +22,9 @@
 #define MAX_THREADS 4
 
 using namespace std;
-using namespace uWS;
 
 // key is uuid:
-using key_type = std::string;
+using key_type = string;
 unordered_map<key_type, Session*> sessions;
 unordered_map<key_type, carta::AnimationQueue*> animationQueues;
 unordered_map<key_type, carta::FileSettings*> fileSettings;
@@ -36,9 +35,9 @@ unordered_map<key_type, tbb::concurrent_queue<tuple<string,uint32_t,vector<char>
 unordered_map<string, vector<string>> permissionsMap;
 
 int sessionNumber;
-Hub h;
+uWS::Hub wsHub;
 
-std::string baseFolder("./"), version_id("1.0");
+string baseFolder("./"), version_id("1.0");
 bool verbose, usePermissions;
 
 // Reads a permissions file to determine which API keys are required to access various subdirectories
@@ -68,17 +67,17 @@ void readPermissions(string filename) {
 }
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
-void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
-    std::string uuidstr = fmt::format("{}{}", ++sessionNumber,
+void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
+    string uuidstr = fmt::format("{}{}", ++sessionNumber,
         casacore::Int(casacore::HostInfo::secondsFrom1970()));
-    ws->setUserData(new std::string(uuidstr));
-    auto &uuid = *((std::string*)ws->getUserData());
+    ws->setUserData(new string(uuidstr));
+    auto &uuid = *((string*)ws->getUserData());
 
-    uS::Async *outgoing = new uS::Async(h.getLoop());
+    uS::Async *outgoing = new uS::Async(wsHub.getLoop());
     outgoing->setData(&uuid);
     outgoing->start(
         [](uS::Async *async) -> void {
-            auto uuid = *((std::string*)async->getData());
+            auto uuid = *((string*)async->getData());
             sessions[uuid]->sendPendingMessages();
         });
 
@@ -91,8 +90,8 @@ void onConnect(WebSocket<SERVER>* ws, HttpRequest httpRequest) {
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
-void onDisconnect(WebSocket<SERVER>* ws, int code, char* message, size_t length) {
-    auto &uuid = *((std::string*)ws->getUserData());
+void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
+    auto &uuid = *((string*)ws->getUserData());
     auto session = sessions[uuid];
     if (session) {
         delete session;
@@ -109,8 +108,8 @@ void onDisconnect(WebSocket<SERVER>* ws, int code, char* message, size_t length)
 }
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
-void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode opCode) {
-    auto uuid = *((std::string*)ws->getUserData());
+void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length, uWS::OpCode opCode) {
+    auto uuid = *((string*)ws->getUserData());
     auto session = sessions[uuid];
 
     if (!session) {
@@ -118,13 +117,13 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
         return;
     }
 
-    if (opCode == OpCode::BINARY) {
+    if (opCode == uWS::OpCode::BINARY) {
         if (length > 36) {
             static const size_t max_len = 32;
-            std::string eventName(rawMessage, std::min(std::strlen(rawMessage), max_len));
+            string eventName(rawMessage, min(strlen(rawMessage), max_len));
             uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
-            std::vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
-            msgQueues[uuid]->push(std::make_tuple(eventName, requestId, eventPayload));
+            vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
+            msgQueues[uuid]->push(make_tuple(eventName, requestId, eventPayload));
             OnMessageTask *omt = new(tbb::task::allocate_root()) OnMessageTask(
                 uuid, session, msgQueues[uuid], animationQueues[uuid], fileSettings[uuid]);
             if(eventName == "SET_IMAGE_CHANNELS") {
@@ -150,7 +149,7 @@ void onMessage(WebSocket<SERVER>* ws, char* rawMessage, size_t length, OpCode op
 
 void exit_backend(int s) {
     // destroy objects cleanly
-    std::cout << "Exiting backend." << std::endl;
+    cout << "Exiting backend." << endl;
     for (auto& session : sessions) {
         auto uuid = session.first;
         delete session.second;
@@ -184,8 +183,8 @@ int main(int argc, const char* argv[]) {
         inp.version(version_id);
         inp.create("verbose", "False", "display verbose logging", "Bool");
         inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
-        inp.create("port", std::to_string(port), "set server port", "Int");
-        inp.create("threads", std::to_string(threadCount), "set thread pool count", "Int");
+        inp.create("port", to_string(port), "set server port", "Int");
+        inp.create("threads", to_string(threadCount), "set thread pool count", "Int");
         inp.create("folder", baseFolder, "set folder for data files", "String");
         inp.readArguments(argc, argv);
 
@@ -204,13 +203,13 @@ int main(int argc, const char* argv[]) {
 
         sessionNumber = 0;
 
-        h.onMessage(&onMessage);
-        h.onConnection(&onConnect);
-        h.onDisconnection(&onDisconnect);
-        if (h.listen(port)) {
-            h.getDefaultGroup<uWS::SERVER>().startAutoPing(5000);
+        wsHub.onMessage(&onMessage);
+        wsHub.onConnection(&onConnect);
+        wsHub.onDisconnection(&onDisconnect);
+        if (wsHub.listen(port)) {
+            wsHub.getDefaultGroup<uWS::SERVER>().startAutoPing(5000);
             fmt::print("Listening on port {} with data folder {} and {} threads in thread pool\n", port, baseFolder, threadCount);
-            h.run();
+            wsHub.run();
         } else {
             fmt::print("Error listening on port {}\n", port);
             return 1;
