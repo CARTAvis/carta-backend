@@ -994,13 +994,9 @@ std::string FileInfoLoader::unitConversion(const double value, const std::string
     } else if (std::regex_match(unit, std::regex("hz", std::regex::icase))) {
         return convertHz(value);
     } else if (std::regex_match(unit, std::regex("arcsec", std::regex::icase))) {
-        char buf[512];
-        snprintf(buf, sizeof(buf), "%.3f\"", value);
-        return std::string(buf);
+        return fmt::format("{:.3f}\"", value);
     } else { // unknown
-        char buf[512];
-        snprintf(buf, sizeof(buf), "%.3f", value);
-        return std::string(buf) + " " + unit;
+        return fmt::format("{:.3f} {}", value, unit);
     }
 }
 
@@ -1015,31 +1011,24 @@ std::string FileInfoLoader::deg2arcsec(const double degree) {
     double arcs = fabs(degree * 3600);
 
     // customized format of arcsec
-    char buf[512];
     if (arcs >= 60.0){ // arcs >= 60, convert to arcmin
-        snprintf(buf, sizeof(buf), "%.2f\'", degree < 0 ? -1*arcs/60 : arcs/60);
+        return fmt::format("{:.2f}\'", degree < 0 ? -1*arcs/60 : arcs/60);
     } else if (arcs < 60.0 && arcs > 0.1) { // 0.1 < arcs < 60
-        snprintf(buf, sizeof(buf), "%.2f\"", degree < 0 ? -1*arcs : arcs);
+        return fmt::format("{:.2f}\"", degree < 0 ? -1*arcs : arcs);
     } else if (arcs <= 0.1 && arcs > 0.01) { // 0.01 < arcs <= 0.1
-        snprintf(buf, sizeof(buf), "%.3f\"", degree < 0 ? -1*arcs : arcs);
+        return fmt::format("{:.3f}\"", degree < 0 ? -1*arcs : arcs);
     } else { // arcs <= 0.01
-        snprintf(buf, sizeof(buf), "%.4f\"", degree < 0 ? -1*arcs : arcs);
+        return fmt::format("{:.4f}\"", degree < 0 ? -1*arcs : arcs);
     }
-
-    return std::string(buf);
 }
 
 // Unit conversion: convert Hz to MHz or GHz
 std::string FileInfoLoader::convertHz(const double hz) {
-    char buf[512];
-
     if (hz >= 1.0e9) {
-        snprintf(buf, sizeof(buf), "%.4f GHz", hz/1.0e9);
+        return fmt::format("{:.4f} GHz", hz/1.0e9);
     } else if (hz < 1.0e9 && hz >= 1.0e6) {
-        snprintf(buf, sizeof(buf), "%.4f MHz", hz/1.0e6);
+        return fmt::format("{:.4f} MHz", hz/1.0e6);
     } else {
-        snprintf(buf, sizeof(buf), "%.4f Hz", hz);
+        return fmt::format("{:.4f} Hz", hz);
     }
-
-    return std::string(buf);
 }
