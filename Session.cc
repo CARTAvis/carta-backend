@@ -22,6 +22,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unorder
       permissionsMap(permissionsMap),
       permissionsEnabled(enforcePermissions),
       baseFolder(folder),
+      filelistFolder("nofolder"),
       verboseLogging(verbose),
       outgoing(outgoing),
       newFrame(false) {
@@ -111,9 +112,9 @@ CARTA::FileListResponse Session::getFileList(string folder) {
                 if (ccfile.exists() && ccfile.path().baseName().firstchar() != '.') {  // ignore hidden files/folders
                     casacore::String fullpath(ccfile.path().absoluteName());
                     try {
-                        casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
                         bool addImage(false);
-                        if (ccfile.isDirectory(true)) {
+                        if (ccfile.isDirectory(true) && ccfile.isExecutable() && ccfile.isReadable()) {
+                            casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
                             if ((imType==casacore::ImageOpener::AIPSPP) || (imType==casacore::ImageOpener::MIRIAD))
                                 addImage = true;
                             else if (imType==casacore::ImageOpener::UNKNOWN) {
@@ -122,9 +123,14 @@ CARTA::FileListResponse Session::getFileList(string folder) {
                                 string pathNameRelative = (folder.length() && folder != "/") ? folder.append("/" + dirname) : dirname;
                                 if (checkPermissionForDirectory(pathNameRelative))
                                    fileList.add_subdirectories(dirname);
+                            } else {
+                                std::string imageTypeMsg = fmt::format("{}: image type {} not supported", ccfile.path().baseName(), getType(imType));
+                                sendLogEvent(imageTypeMsg, {"file_list"}, CARTA::ErrorSeverity::DEBUG);
+				log(uuid, imageTypeMsg);
                             }
-                        } else if (ccfile.isRegular(true) &&
-                            ((imType==casacore::ImageOpener::FITS) || (imType==casacore::ImageOpener::HDF5))) {
+                        } else if (ccfile.isRegular(true) && ccfile.isReadable()) {
+                            casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
+                            if ((imType==casacore::ImageOpener::FITS) || (imType==casacore::ImageOpener::HDF5))
                                 addImage = true;
                         }
 
@@ -152,6 +158,34 @@ CARTA::FileListResponse Session::getFileList(string folder) {
     }
     fileList.set_success(true);
     return fileList;
+}
+
+std::string Session::getType(casacore::ImageOpener::ImageTypes type) { // convert enum to string
+    std::string typeStr;
+    switch(type) {
+        case casacore::ImageOpener::GIPSY:
+            typeStr = "Gipsy";
+            break;
+        case casacore::ImageOpener::CAIPS:
+            typeStr = "Classic AIPS";
+            break;
+        case casacore::ImageOpener::NEWSTAR:
+            typeStr = "Newstar";
+            break;
+        case casacore::ImageOpener::IMAGECONCAT:
+            typeStr = "ImageConcat";
+            break;
+        case casacore::ImageOpener::IMAGEEXPR:
+            typeStr = "ImageExpr";
+            break;
+        case casacore::ImageOpener::COMPLISTIMAGE:
+            typeStr = "ComponentListImage";
+            break;
+        default:
+            typeStr = "Unknown";
+            break;
+    }
+    return typeStr;
 }
 
 bool Session::fillFileInfo(CARTA::FileInfo* fileInfo, const string& filename) {
@@ -201,7 +235,13 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t re
 }
 
 void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId) {
+    // initial folder is "" (use base directory)
     string folder = request.directory();
+    if (folder == filelistFolder) // do not process same directory simultaneously
+        return;
+    else
+        filelistFolder = folder;
+
     // strip baseFolder from folder
     string basePath(baseFolder);
     if (basePath.back()=='/') basePath.pop_back();
@@ -211,6 +251,7 @@ void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t 
     }
     CARTA::FileListResponse response = getFileList(folder);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
+    filelistFolder = "nofolder";  // ready for next file list request
 }
 
 void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t requestId) {

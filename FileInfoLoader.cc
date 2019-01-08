@@ -351,6 +351,7 @@ bool FileInfoLoader::convertSpecsysToFITS(std::string& specsys, casacore::MFrequ
 }
 
 // ***** Public function *****
+
 bool FileInfoLoader::fillFileExtInfo(CARTA::FileInfoExtended* extInfo, std::string& hdu, std::string& message) {
     casacore::File ccfile(m_file);
     if (!ccfile.exists()) {
@@ -705,6 +706,11 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             default:
                 break;
         }
+	if (ccImage == nullptr) {
+            message = "Unable to open image.";
+            return false;
+        }
+
         casacore::ImageInfo imInfo(ccImage->imageInfo());
         casacore::ImageSummary<casacore::Float> imSummary(*ccImage);
         // set dim
