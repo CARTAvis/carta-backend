@@ -46,7 +46,7 @@ protected:
     bool permissionsEnabled;
     std::string apiKey;
 
-    std::string baseFolder;
+    std::string baseFolder, filelistFolder;
     bool verboseLogging;
 
     // <file_id, Frame>: one frame per image file
@@ -58,8 +58,6 @@ protected:
 
     // cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
     tbb::atomic<float> histogramProgress;
-    // basic message to update progress
-    void createCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fileId, int stokes, float progress);
 
     // Notification mechanism when outgoing messages are ready
     uS::Async *outgoing;
@@ -100,6 +98,7 @@ protected:
     CARTA::FileListResponse getFileList(std::string folder);
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
+    std::string getType(casacore::ImageOpener::ImageTypes type); // convert enum to string
 
     // ICD: File info response
     bool fillFileInfo(CARTA::FileInfo* fileInfo, const std::string& filename);
@@ -113,6 +112,9 @@ protected:
         CompressionSettings& compression);
     CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId);
     void sendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
+    // basic message to update progress
+    void createCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fileId, int stokes, float progress);
+
     // profile data
     void sendSpatialProfileData(int fileId, int regionId);
     void sendSpectralProfileData(int fileId, int regionId);
