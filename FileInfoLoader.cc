@@ -90,11 +90,16 @@ bool FileInfoLoader::getHduList(CARTA::FileInfo* fileInfo, const std::string& fi
         hduOK = (fileInfo->hdu_list_size() > 0);
     } else if (fileInfo->type()==CARTA::FITS) {
         casacore::FitsInput fInput(filename.c_str(), casacore::FITS::Disk);
-        int numHdu(fInput.getnumhdu());
-        for (int hdu=0; hdu<numHdu; ++hdu) {
-            fileInfo->add_hdu_list(casacore::String::toString(hdu));
+        if (fInput.err() == casacore::FitsIO::OK) { // check for cfitsio error
+            int numHdu(fInput.getnumhdu());
+            hduOK = (numHdu > 0);
+            if (hduOK) {
+                for (int hdu=0; hdu<numHdu; ++hdu)
+                    fileInfo->add_hdu_list(casacore::String::toString(hdu));
+            }
+        } else {
+            hduOK = false;
         }
-        hduOK = (fileInfo->hdu_list_size() > 0);
     } else {
         fileInfo->add_hdu_list("");
     }
@@ -706,7 +711,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             default:
                 break;
         }
-	if (ccImage == nullptr) {
+        if (ccImage == nullptr) {
             message = "Unable to open image.";
             return false;
         }
