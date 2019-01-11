@@ -104,254 +104,6 @@ bool FileInfoLoader::getHduList(CARTA::FileInfo* fileInfo, const std::string& fi
 //#################################################################################
 // FILE INFO EXTENDED
 
-// ***** Helper functions *****
-// get int value
-bool FileInfoLoader::getIntAttribute(casacore::Int64& val, const casacore::Record& rec,
-        const casacore::String& field) {
-    bool getOK(true);
-    if (rec.isDefined(field)) {
-        try {
-            val = rec.asInt64(field);
-        } catch (casacore::AipsError& err) {
-            try {
-                val = casacore::String::toInt(rec.asString(field));
-            } catch (casacore::AipsError& err) {
-                getOK = false;
-            }
-        }
-    } else {
-        getOK = false;
-    }
-    return getOK;
-}
-
-// get double value
-bool FileInfoLoader::getDoubleAttribute(casacore::Double& val, const casacore::Record& rec,
-        const casacore::String& field) {
-    bool getOK(true);
-    if (rec.isDefined(field)) {
-        try {
-            val = rec.asDouble(field);
-        } catch (casacore::AipsError& err) {
-            try {
-                val = casacore::String::toDouble(rec.asString(field));
-            } catch (casacore::AipsError& err) {
-                getOK = false;
-            }
-        }
-    } else {
-        getOK = false;
-    }
-    return getOK;
-}
-
-// For 4D image, determine spectral and stokes axes
-void FileInfoLoader::findChanStokesAxis(const casacore::IPosition& dataShape, const casacore::String& axisType1,
-    const casacore::String& axisType2, const casacore::String& axisType3, const casacore::String& axisType4,
-    int& chanAxis, int& stokesAxis) {
-    // Use CTYPE values to find axes and set nchan, nstokes
-    // Note header axes are 1-based but shape is 0-based
-    casacore::String cType1(axisType1), cType2(axisType2), cType3(axisType3), cType4(axisType4);
-    // uppercase for string comparisons
-    cType1.upcase();
-    cType2.upcase();
-    cType3.upcase();
-    cType4.upcase();
-
-    // find spectral axis
-    if (!cType1.empty() &&
-        (cType1.contains("FELO") || cType1.contains("FREQ") || cType1.contains("VELO") ||
-         cType1.contains("VOPT") || cType1.contains("VRAD") || cType1.contains("WAVE") ||
-         cType1.contains("AWAV")) ) {
-        chanAxis = 0;
-    } else if (!cType2.empty() &&
-        (cType2.contains("FELO") || cType2.contains("FREQ") || cType2.contains("VELO") ||
-         cType2.contains("VOPT") || cType2.contains("VRAD") || cType2.contains("WAVE") ||
-         cType2.contains("AWAV")) ) {
-        chanAxis = 1;
-    } else if (!cType3.empty() &&
-        (cType3.contains("FELO") || cType3.contains("FREQ") || cType3.contains("VELO") ||
-         cType3.contains("VOPT") || cType3.contains("VRAD") || cType3.contains("WAVE") ||
-         cType3.contains("AWAV")) ) {
-        chanAxis = 2;
-    } else if (!cType4.empty() &&
-        (cType4.contains("FELO") || cType4.contains("FREQ") || cType4.contains("VELO") ||
-         cType4.contains("VOPT") || cType4.contains("VRAD") || cType4.contains("WAVE") ||
-         cType4.contains("AWAV"))) {
-        chanAxis = 3;
-    } else {
-        chanAxis = -1;
-    }
-
-    // find stokes axis
-    if (cType1 == "STOKES")
-        stokesAxis = 0;
-    else if (cType2 == "STOKES")
-        stokesAxis = 1;
-    else if (cType3 == "STOKES")
-        stokesAxis = 2;
-    else if (cType4 == "STOKES")
-        stokesAxis = 3;
-    else 
-        stokesAxis = -1;
-}
-
-// add computed entries: shape, radesys
-void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, const casacore::IPosition& shape,
-     int chanAxis, int stokesAxis) {
-    // Set fields/header entries for shape
- 
-    // dim, width, height, depth, stokes fields
-    int ndim(shape.size());
-    extendedInfo->set_dimensions(ndim);
-    extendedInfo->set_width(shape(0));
-    extendedInfo->set_height(shape(1));
-    if (shape.size() == 2) { 
-        extendedInfo->set_depth(1);
-        extendedInfo->set_stokes(1);
-    } else if (shape.size() == 3) {
-        extendedInfo->set_depth(shape(2));
-        extendedInfo->set_stokes(1);
-    } else { // shape is 4
-        if (chanAxis < 2) { // not found or is xy
-            if (stokesAxis < 2) {  // not found or is xy, use defaults
-                extendedInfo->set_depth(shape(2));
-                extendedInfo->set_stokes(shape(3));
-            } else { // stokes found, set depth to other one
-                extendedInfo->set_stokes(shape(stokesAxis));
-                if (stokesAxis==2) extendedInfo->set_depth(shape(3));
-                else extendedInfo->set_depth(shape(2));
-            }
-        } else if (chanAxis >= 2) {  // chan found, set stokes to other one
-            extendedInfo->set_depth(shape(chanAxis));
-            // stokes axis is the other one
-            if (chanAxis == 2) extendedInfo->set_stokes(shape(3));
-            else extendedInfo->set_stokes(shape(2));
-        }
-    }
-
-    // shape entry
-    std::string shapeString;
-    switch (ndim) {
-        case 2:
-            shapeString = fmt::format("[{}, {}]", shape(0), shape(1));
-            break;
-        case 3:
-            shapeString = fmt::format("[{}, {}, {}]", shape(0), shape(1), shape(2));
-            break;
-        case 4:
-            shapeString = fmt::format("[{}, {}, {}, {}]", shape(0), shape(1), shape(2), shape(3));
-            break;
-    }
-    auto entry = extendedInfo->add_computed_entries();
-    entry->set_name("Shape");
-    entry->set_value(shapeString);
-    entry->set_entry_type(CARTA::EntryType::STRING);
-
-    // nchan, nstokes computed entries
-    // set number of channels if chan axis exists or has 3rd axis
-    if ((chanAxis >= 0) || (ndim >= 3)) {
-        int nchan;
-        if (chanAxis >= 0) nchan = shape(chanAxis);
-        else nchan = extendedInfo->depth();
-        // header entry for number of chan
-        auto entry = extendedInfo->add_computed_entries();
-        entry->set_name("Number of channels");
-        entry->set_value(casacore::String::toString(nchan));
-        entry->set_entry_type(CARTA::EntryType::INT);
-        entry->set_numeric_value(nchan);
-    }
-    // set number of stokes if stokes axis exists or has 4th axis
-    if ((stokesAxis >= 0) || (ndim > 3)) {
-        int nstokes;
-        if (stokesAxis >= 0) nstokes = shape(stokesAxis);
-        else nstokes = extendedInfo->stokes();
-        // header entry for number of stokes
-        auto entry = extendedInfo->add_computed_entries();
-        entry->set_name("Number of stokes");
-        entry->set_value(casacore::String::toString(nstokes));
-        entry->set_entry_type(CARTA::EntryType::INT);
-        entry->set_numeric_value(nstokes);
-    }
-}
-
-void FileInfoLoader::makeRadesysStr(std::string& radeSys, const std::string& equinox) {
-    // append equinox to radesys
-    if (!radeSys.empty()) {
-        if (!equinox.empty()) {
-            std::string prefix;
-            if (radeSys.compare("FK4")==0) prefix="B";
-            else if (radeSys.compare("FK5")==0) prefix="J";
-            radeSys.append(", " + prefix + equinox);
-        }
-    }
-}
-
-std::string FileInfoLoader::makeValueStr(const std::string& type, double val, const std::string& unit) {
-    // make coordinate angle string for RA, DEC, GLON, GLAT; else just return "{val} {unit}"
-    std::string valStr;
-    if (unit.empty()) {
-        valStr = fmt::format("{} {}", val, unit);
-    } else {
-        // convert to uppercase for string comparisons
-        std::string upperType(type);
-        transform(upperType.begin(), upperType.end(), upperType.begin(), ::toupper);
-        bool isRA(upperType.find("RA") != std::string::npos);
-        bool isAngle((upperType.find("DEC") != std::string::npos) ||
-            (upperType.find("GLON") != std::string::npos) || (upperType.find("GLAT") != std::string::npos));
-        if (isRA || isAngle) {
-            casacore::MVAngle::formatTypes format(casacore::MVAngle::ANGLE);
-            if (isRA) format = casacore::MVAngle::TIME;
-            casacore::Quantity quant1(val, unit);
-            casacore::MVAngle mva(quant1);
-            valStr = mva.string(format, 10);
-        } else {
-            valStr = fmt::format("{} {}", val, unit);
-        }
-    }
-    return valStr;
-}
-
-bool FileInfoLoader::convertSpecsysToFITS(std::string& specsys, casacore::MFrequency::Types type) {
-    // use labels in FITS headers
-    bool result(true);
-    switch (type) {
-        case casacore::MFrequency::LSRK:
-            specsys = "LSRK";
-            break;
-        case casacore::MFrequency::BARY:
-            specsys = "BARYCENT";
-            break;
-        case casacore::MFrequency::LSRD:
-            specsys = "LSRD";
-            break;
-        case casacore::MFrequency::GEO:
-            specsys = "GEOCENTR";
-            break;
-        case casacore::MFrequency::REST:
-            specsys = "SOURCE";
-            break;
-        case casacore::MFrequency::GALACTO:
-            specsys = "GALACTOC";
-            break;
-        case casacore::MFrequency::LGROUP:
-            specsys = "LOCALGRP";
-            break;
-        case casacore::MFrequency::CMB:
-            specsys = "CMBDIPOL";
-            break;
-        case casacore::MFrequency::TOPO:
-            specsys = "TOPOCENT";
-            break;
-        default:
-            specsys = "";
-            result = false;
-    }
-    return result;
-}
-
-// ***** Public function *****
-
 bool FileInfoLoader::fillFileExtInfo(CARTA::FileInfoExtended* extInfo, std::string& hdu, std::string& message) {
     casacore::File ccfile(m_file);
     if (!ccfile.exists()) {
@@ -385,6 +137,7 @@ bool FileInfoLoader::fillFileExtInfo(CARTA::FileInfoExtended* extInfo, std::stri
     return extInfoOK;
 }
 
+// HDF5
 bool FileInfoLoader::fillHdf5ExtFileInfo(CARTA::FileInfoExtended* extendedInfo, std::string& hdu, std::string& message) {
     // Add extended info for HDF5 file
     try {
@@ -524,6 +277,7 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
     return true;
 }
 
+// FITS
 bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, string& hdu, string& message) {
     bool extInfoOK(true);
     try {
@@ -671,6 +425,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
     return extInfoOK;
 }
 
+// CASA, MIRIAD
 bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, std::string& message) {
     bool extInfoOK(true);
     casacore::ImageInterface<casacore::Float>* ccImage(nullptr);
@@ -706,14 +461,16 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             default:
                 break;
         }
-	if (ccImage == nullptr) {
+        if (ccImage == nullptr) {
             message = "Unable to open image.";
             return false;
         }
-
+        // objects to retrieve header information
         casacore::ImageInfo imInfo(ccImage->imageInfo());
         casacore::ImageSummary<casacore::Float> imSummary(*ccImage);
-        // set dim
+        casacore::CoordinateSystem coordsys(ccImage->coordinates());
+
+        // ndim, shape
         casacore::Int ndim(imSummary.ndim());
         extendedInfo->set_dimensions(ndim);
         if (ndim < 2 || ndim > 4) {
@@ -724,10 +481,6 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         extendedInfo->set_width(dataShape(0));
         extendedInfo->set_height(dataShape(1));
         extendedInfo->add_stokes_vals(""); // not in header
-
-        // if in header, save values for computed entries
-        std::string coordTypeX, coordTypeY, coordType3, coordType4, radeSys, specSys, bunit, rsBeam;
-
         // set dims in header entries
         auto headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("NAXIS");
@@ -741,6 +494,11 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             headerEntry->set_entry_type(CARTA::EntryType::INT);
             headerEntry->set_numeric_value(dataShape(i));
         }
+
+        // if in header, save values for computed entries
+        std::string rsBeam, bunit, projection, equinox, radeSys, 
+            coordTypeX, coordTypeY, coordType3, coordType4, specSys;
+
         // BMAJ, BMIN, BPA
         if (imInfo.hasBeam() && imInfo.hasSingleBeam()) {
             // get values
@@ -750,6 +508,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             majAx.convert("rad");
             minAx.convert("rad");
             pa.convert("deg");
+
             // add to header entries
             casacore::Double bmaj(majAx.getValue()), bmin(minAx.getValue());
             casacore::Float bpa(pa.getValue());
@@ -772,6 +531,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             // add to computed entries
             rsBeam = fmt::format("{} X {}, {:.4f} deg", deg2arcsec(rad2deg(bmaj)), deg2arcsec(rad2deg(bmin)), bpa);
         }
+
         // type
         headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("BTYPE");
@@ -788,7 +548,24 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         bunit = imSummary.units().getName();
         *headerEntry->mutable_value() = bunit;
         headerEntry->set_entry_type(CARTA::EntryType::STRING);
-        // axes values
+
+        // Direction axes: projection, equinox, radesys
+        casacore::Vector<casacore::String> dirAxisNames;  // axis names to append projection
+        casacore::MDirection::Types dirType;
+        casacore::Int iDirCoord(coordsys.findCoordinate(casacore::Coordinate::DIRECTION));
+        if (iDirCoord >= 0) {
+            const casacore::DirectionCoordinate& dirCoord = coordsys.directionCoordinate(casacore::uInt(iDirCoord));
+            // direction axes
+            projection = dirCoord.projection().name();
+            dirAxisNames = dirCoord.worldAxisNames();
+            // equinox, radesys
+            dirCoord.getReferenceConversion(dirType);
+            equinox = casacore::MDirection::showType(dirType);
+            getRadesysFromEquinox(radeSys, equinox);
+
+        }
+
+        // get imSummary axes values: name, reference pixel and value, pixel increment, units
         casacore::Vector<casacore::String> axNames(imSummary.axisNames());
         casacore::Vector<casacore::Double> axRefPix(imSummary.referencePixels());
         casacore::Vector<casacore::Double> axRefVal(imSummary.referenceValues());
@@ -796,15 +573,29 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         casacore::Vector<casacore::String> axUnits(imSummary.axisUnits());
         size_t axisSize(axNames.size());
         for (casacore::uInt i=0; i<axisSize; ++i) {
-            casacore::String suffix(casacore::String::toString(i+1));
+            casacore::String suffix(casacore::String::toString(i+1)); // append to keyword name
+            casacore::String axisName = axNames(i);
+            // modify direction axes, if any
+            if ((iDirCoord >= 0) && anyEQ(dirAxisNames, axisName)) {
+                convertAxisName(axisName, projection, dirType);  // FITS name with projection
+                if (axUnits(i)=="rad") { // convert ref value and increment to deg
+                    casacore::Quantity refvalQuant(axRefVal(i), axUnits(i));
+                    refvalQuant.convert("deg");
+                    casacore::Quantity incQuant(axInc(i), axUnits(i));
+                    incQuant.convert("deg");
+                    // update values to use later for computed entries
+                    axRefVal(i) = refvalQuant.getValue();
+                    axInc(i) = incQuant.getValue();
+                    axUnits(i) = incQuant.getUnit();
+                }
+            }
             // name = CTYPE
+            // add header entry
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("CTYPE"+ suffix);
             headerEntry->set_entry_type(CARTA::EntryType::STRING);
-            casacore::String axisName = axNames(i);
-            if (axisName == "Right Ascension") axisName = "RA";
-            if (axisName == "Declination") axisName = "DEC";
             *headerEntry->mutable_value() = axisName;
+            // computed entries
             if (suffix=="1")
                 coordTypeX = axisName;
             else if (suffix=="2")
@@ -813,6 +604,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
                 coordType3 = axisName;
             else if (suffix=="4")
                 coordType4 = axisName;
+
             // ref val = CRVAL
             headerEntry = extendedInfo->add_header_entries();
             headerEntry->set_name("CRVAL"+ suffix);
@@ -838,7 +630,6 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             headerEntry->set_entry_type(CARTA::EntryType::STRING);
         }
 
-
         // RESTFRQ
         casacore::String restfreqStr;
         casacore::Quantum<casacore::Double> restFreq;
@@ -851,24 +642,42 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             headerEntry->set_entry_type(CARTA::EntryType::FLOAT);
             headerEntry->set_numeric_value(restFreqVal);
         }
+
         // SPECSYS
-        casacore::CoordinateSystem coordsys(ccImage->coordinates());
-        casacore::Int iSpecCoord = coordsys.findCoordinate(casacore::Coordinate::SPECTRAL);
+        casacore::Int iSpecCoord(coordsys.findCoordinate(casacore::Coordinate::SPECTRAL));
         if (iSpecCoord >= 0) {
             const casacore::SpectralCoordinate& spCoord = coordsys.spectralCoordinate(casacore::uInt(iSpecCoord));
-            casacore::MFrequency::Types conversionType;
+            casacore::MFrequency::Types freqType;
             casacore::MEpoch epoch;
-            casacore::MDirection direction;
             casacore::MPosition position;
-            spCoord.getReferenceConversion(conversionType, epoch, position, direction);
-            bool haveSpecsys = convertSpecsysToFITS(specSys, conversionType);
-            if (haveSpecsys) {
+            casacore::MDirection direction;
+            spCoord.getReferenceConversion(freqType, epoch, position, direction);
+            bool haveSpecSys = convertSpecsysToFITS(specSys, freqType);
+            if (haveSpecSys) {
                 headerEntry = extendedInfo->add_header_entries();
                 headerEntry->set_name("SPECSYS");
                 *headerEntry->mutable_value() = specSys;
                 headerEntry->set_entry_type(CARTA::EntryType::STRING);
             }
         }
+
+        // RADESYS, EQUINOX
+        if (!radeSys.empty()) {
+            headerEntry = extendedInfo->add_header_entries();
+            headerEntry->set_name("RADESYS");
+            *headerEntry->mutable_value() = radeSys;
+            headerEntry->set_entry_type(CARTA::EntryType::STRING);
+        }
+        if (!equinox.empty()) {
+            headerEntry = extendedInfo->add_header_entries();
+            headerEntry->set_name("EQUINOX");
+            *headerEntry->mutable_value() = equinox;
+            headerEntry->set_entry_type(CARTA::EntryType::STRING);
+        }
+        // computed entries
+        makeRadesysStr(radeSys, equinox);
+
+        // Other summary items
         // telescope
         headerEntry = extendedInfo->add_header_entries();
         headerEntry->set_name("TELESCOP");
@@ -892,23 +701,34 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         addShapeEntries(extendedInfo, dataShape, chanAxis, stokesAxis);
 
         // computed_entries
-        // xy, cr coords
         std::string xyCoords, crPixels, crCoords, crDegStr, axisInc;
-        if (!coordTypeX.empty() && !coordTypeY.empty())
-            xyCoords = fmt::format("{}, {}", coordTypeX, coordTypeY);
-        if (axisSize > 1) {
-            std::string crpix0(std::to_string(static_cast<int>(axRefPix(0)))),
-                        crpix1(std::to_string(static_cast<int>(axRefPix(1)))),
-                        cunit0(axUnits(0)), cunit1(axUnits(1)),
-                        cr0, cr1;
-            double crval0(axRefVal(0)), cdelt0(axInc(0)),
-                   crval1(axRefVal(1)), cdelt1(axInc(1));
-            crPixels = fmt::format("[{}, {}]", crpix0, crpix1);
-            crCoords = fmt::format("[{:.4f} {}, {:.4f} {}]", crval0, cunit0, crval1, cunit1);
-            cr0 = makeValueStr(coordTypeX, crval0, cunit0);
-            cr1 = makeValueStr(coordTypeY, crval1, cunit1);
-            crDegStr = fmt::format("[{} {}]", cr0, cr1);
-            axisInc = fmt::format("{}, {}", unitConversion(cdelt0, cunit0), unitConversion(cdelt1, cunit1));
+        int crpix0, crpix1;
+        std::string cunit0, cr0, cunit1, cr1;
+        double crval0, crval1, cdelt0, cdelt1;
+        if (axisSize >= 1) {   // pv images only have first axis values
+            crpix0 = static_cast<int>(axRefPix(0));
+            cunit0 = axUnits(0);
+            crval0 = axRefVal(0);
+            cdelt0 = axInc(0);
+            cr0 = makeValueStr(coordTypeX, crval0, cunit0);  // for angle format
+            if (axisSize > 1) {
+                crpix1 = static_cast<int>(axRefPix(1));
+                cunit1 = axUnits(1);
+                crval1 = axRefVal(1);
+                cdelt1 = axInc(1);
+                cr1 = makeValueStr(coordTypeY, crval1, cunit1);  // for angle format
+                xyCoords = fmt::format("{}, {}", coordTypeX, coordTypeY);
+                crPixels = fmt::format("[{}, {}]", crpix0, crpix1);
+                crCoords = fmt::format("[{:.3f} {}, {:.3f} {}]", crval0, cunit0, crval1, cunit1);
+                crDegStr = fmt::format("[{} {}]", cr0, cr1);
+                axisInc = fmt::format("{}, {}", unitConversion(cdelt0, cunit0), unitConversion(cdelt1, cunit1));
+            } else {
+                xyCoords = fmt::format("{}", coordTypeX);
+                crPixels = fmt::format("[{}]", crpix0);
+                crCoords = fmt::format("[{:.3f} {}]", crval0, cunit0);
+                crDegStr = fmt::format("[{}]", cr0);
+                axisInc = fmt::format("{}", unitConversion(cdelt0, cunit0));
+            }
         }
         addComputedEntries(extendedInfo, xyCoords, crPixels, crCoords, crDegStr, radeSys,
             specSys, bunit, axisInc, rsBeam);
@@ -922,6 +742,9 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         delete ccImage;
     return extInfoOK;
 }
+
+
+// ***** Computed entries *****
 
 void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
     const std::string& xyCoords, const std::string& crPixels, const std::string& crCoords,
@@ -991,6 +814,315 @@ void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 }
+
+// shape, nchan, nstokes
+void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, const casacore::IPosition& shape,
+     int chanAxis, int stokesAxis) {
+    // Set fields/header entries for shape
+ 
+    // dim, width, height, depth, stokes fields
+    int ndim(shape.size());
+    extendedInfo->set_dimensions(ndim);
+    extendedInfo->set_width(shape(0));
+    extendedInfo->set_height(shape(1));
+    if (shape.size() == 2) { 
+        extendedInfo->set_depth(1);
+        extendedInfo->set_stokes(1);
+    } else if (shape.size() == 3) {
+        extendedInfo->set_depth(shape(2));
+        extendedInfo->set_stokes(1);
+    } else { // shape is 4
+        if (chanAxis < 2) { // not found or is xy
+            if (stokesAxis < 2) {  // not found or is xy, use defaults
+                extendedInfo->set_depth(shape(2));
+                extendedInfo->set_stokes(shape(3));
+            } else { // stokes found, set depth to other one
+                extendedInfo->set_stokes(shape(stokesAxis));
+                if (stokesAxis==2) extendedInfo->set_depth(shape(3));
+                else extendedInfo->set_depth(shape(2));
+            }
+        } else if (chanAxis >= 2) {  // chan found, set stokes to other one
+            extendedInfo->set_depth(shape(chanAxis));
+            // stokes axis is the other one
+            if (chanAxis == 2) extendedInfo->set_stokes(shape(3));
+            else extendedInfo->set_stokes(shape(2));
+        }
+    }
+
+    // shape entry
+    std::string shapeString;
+    switch (ndim) {
+        case 2:
+            shapeString = fmt::format("[{}, {}]", shape(0), shape(1));
+            break;
+        case 3:
+            shapeString = fmt::format("[{}, {}, {}]", shape(0), shape(1), shape(2));
+            break;
+        case 4:
+            shapeString = fmt::format("[{}, {}, {}, {}]", shape(0), shape(1), shape(2), shape(3));
+            break;
+    }
+    auto entry = extendedInfo->add_computed_entries();
+    entry->set_name("Shape");
+    entry->set_value(shapeString);
+    entry->set_entry_type(CARTA::EntryType::STRING);
+
+    // nchan, nstokes computed entries
+    // set number of channels if chan axis exists or has 3rd axis
+    if ((chanAxis >= 0) || (ndim >= 3)) {
+        int nchan;
+        if (chanAxis >= 0) nchan = shape(chanAxis);
+        else nchan = extendedInfo->depth();
+        // header entry for number of chan
+        auto entry = extendedInfo->add_computed_entries();
+        entry->set_name("Number of channels");
+        entry->set_value(casacore::String::toString(nchan));
+        entry->set_entry_type(CARTA::EntryType::INT);
+        entry->set_numeric_value(nchan);
+    }
+    // set number of stokes if stokes axis exists or has 4th axis
+    if ((stokesAxis >= 0) || (ndim > 3)) {
+        int nstokes;
+        if (stokesAxis >= 0) nstokes = shape(stokesAxis);
+        else nstokes = extendedInfo->stokes();
+        // header entry for number of stokes
+        auto entry = extendedInfo->add_computed_entries();
+        entry->set_name("Number of stokes");
+        entry->set_value(casacore::String::toString(nstokes));
+        entry->set_entry_type(CARTA::EntryType::INT);
+        entry->set_numeric_value(nstokes);
+    }
+}
+
+// For shape entries, determine spectral and stokes axes
+void FileInfoLoader::findChanStokesAxis(const casacore::IPosition& dataShape, const casacore::String& axisType1,
+    const casacore::String& axisType2, const casacore::String& axisType3, const casacore::String& axisType4,
+    int& chanAxis, int& stokesAxis) {
+    // Use CTYPE values to find axes and set nchan, nstokes
+    // Note header axes are 1-based but shape is 0-based
+    casacore::String cType1(axisType1), cType2(axisType2), cType3(axisType3), cType4(axisType4);
+    // uppercase for string comparisons
+    cType1.upcase();
+    cType2.upcase();
+    cType3.upcase();
+    cType4.upcase();
+
+    // find spectral axis
+    if (!cType1.empty() &&
+        (cType1.contains("FELO") || cType1.contains("FREQ") || cType1.contains("VELO") ||
+         cType1.contains("VOPT") || cType1.contains("VRAD") || cType1.contains("WAVE") ||
+         cType1.contains("AWAV")) ) {
+        chanAxis = 0;
+    } else if (!cType2.empty() &&
+        (cType2.contains("FELO") || cType2.contains("FREQ") || cType2.contains("VELO") ||
+         cType2.contains("VOPT") || cType2.contains("VRAD") || cType2.contains("WAVE") ||
+         cType2.contains("AWAV")) ) {
+        chanAxis = 1;
+    } else if (!cType3.empty() &&
+        (cType3.contains("FELO") || cType3.contains("FREQ") || cType3.contains("VELO") ||
+         cType3.contains("VOPT") || cType3.contains("VRAD") || cType3.contains("WAVE") ||
+         cType3.contains("AWAV")) ) {
+        chanAxis = 2;
+    } else if (!cType4.empty() &&
+        (cType4.contains("FELO") || cType4.contains("FREQ") || cType4.contains("VELO") ||
+         cType4.contains("VOPT") || cType4.contains("VRAD") || cType4.contains("WAVE") ||
+         cType4.contains("AWAV"))) {
+        chanAxis = 3;
+    } else {
+        chanAxis = -1;
+    }
+
+    // find stokes axis
+    if (cType1 == "STOKES")
+        stokesAxis = 0;
+    else if (cType2 == "STOKES")
+        stokesAxis = 1;
+    else if (cType3 == "STOKES")
+        stokesAxis = 2;
+    else if (cType4 == "STOKES")
+        stokesAxis = 3;
+    else 
+        stokesAxis = -1;
+}
+
+
+// ***** casacore::Record attributes *****
+
+// get int value
+bool FileInfoLoader::getIntAttribute(casacore::Int64& val, const casacore::Record& rec,
+        const casacore::String& field) {
+    bool getOK(true);
+    if (rec.isDefined(field)) {
+        try {
+            val = rec.asInt64(field);
+        } catch (casacore::AipsError& err) {
+            try {
+                val = casacore::String::toInt(rec.asString(field));
+            } catch (casacore::AipsError& err) {
+                getOK = false;
+            }
+        }
+    } else {
+        getOK = false;
+    }
+    return getOK;
+}
+
+// get double value
+bool FileInfoLoader::getDoubleAttribute(casacore::Double& val, const casacore::Record& rec,
+        const casacore::String& field) {
+    bool getOK(true);
+    if (rec.isDefined(field)) {
+        try {
+            val = rec.asDouble(field);
+        } catch (casacore::AipsError& err) {
+            try {
+                val = casacore::String::toDouble(rec.asString(field));
+            } catch (casacore::AipsError& err) {
+                getOK = false;
+            }
+        }
+    } else {
+        getOK = false;
+    }
+    return getOK;
+}
+
+
+// ***** FITS keyword conversion *****
+
+void FileInfoLoader::convertAxisName(std::string& axisName, std::string& projection, casacore::MDirection::Types type) {
+    // Convert direction axis name to FITS name and append projection
+    if ((axisName == "Right Ascension") || (axisName == "Hour Angle")) {
+        axisName = (projection.empty() ? "RA" : "RA---" + projection);
+    } else if (axisName == "Declination") {
+        axisName = (projection.empty() ? "DEC" : "DEC--" + projection);
+    } else if (axisName == "Longitude") {
+        switch(type) {
+            case casacore::MDirection::GALACTIC: 
+                axisName = (projection.empty() ? "GLON" : "GLON-" + projection);
+                break;
+            case casacore::MDirection::SUPERGAL: 
+                axisName = (projection.empty() ? "SLON" : "SLON-" + projection);
+                break;
+            case casacore::MDirection::ECLIPTIC: 
+            case casacore::MDirection::MECLIPTIC: 
+            case casacore::MDirection::TECLIPTIC: 
+                axisName = (projection.empty() ? "ELON" : "ELON-" + projection);
+                break;
+            default:
+                break;
+        }
+    } else if (axisName == "Latitude") {
+        switch(type) {
+            case casacore::MDirection::GALACTIC: 
+                axisName = (projection.empty() ? "GLAT" : "GLAT-" + projection);
+                break;
+            case casacore::MDirection::SUPERGAL: 
+                axisName = (projection.empty() ? "SLAT" : "SLAT-" + projection);
+                break;
+            case casacore::MDirection::ECLIPTIC: 
+            case casacore::MDirection::MECLIPTIC: 
+            case casacore::MDirection::TECLIPTIC: 
+                axisName = (projection.empty() ? "ELAT" : "ELAT-" + projection);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void FileInfoLoader::makeRadesysStr(std::string& radeSys, const std::string& equinox) {
+    // append equinox to radesys
+    std::string prefix;
+    if (!equinox.empty()) {
+        if ((radeSys.compare("FK4")==0) && (equinox[0]!='B'))
+            prefix = "B";
+        else if ((radeSys.compare("FK5")==0) && (equinox[0]!='J'))
+            prefix = "J";
+    }
+    if (!radeSys.empty() && !equinox.empty())
+        radeSys.append(", ");
+    radeSys.append(prefix + equinox);
+}
+
+void FileInfoLoader::getRadesysFromEquinox(std::string& radeSys, std::string& equinox) {
+    // according to casacore::FITSCoordinateUtil::toFITSHeader
+    if (equinox.find("ICRS") != std::string::npos) {
+        radeSys = "ICRS";
+        equinox = "2000";
+    } else if (equinox.find("2000") != std::string::npos) {
+        radeSys = "FK5";
+    } else if (equinox.find("B1950") != std::string::npos) {
+        radeSys = "FK4";
+    }
+}
+        
+std::string FileInfoLoader::makeValueStr(const std::string& type, double val, const std::string& unit) {
+    // make coordinate angle string for RA, DEC, GLON, GLAT; else just return "{val} {unit}"
+    std::string valStr;
+    if (unit.empty()) {
+        valStr = fmt::format("{} {}", val, unit);
+    } else {
+        // convert to uppercase for string comparisons
+        std::string upperType(type);
+        transform(upperType.begin(), upperType.end(), upperType.begin(), ::toupper);
+        bool isRA(upperType.find("RA") != std::string::npos);
+        bool isAngle((upperType.find("DEC") != std::string::npos) ||
+            (upperType.find("LON") != std::string::npos) || (upperType.find("LAT") != std::string::npos));
+        if (isRA || isAngle) {
+            casacore::MVAngle::formatTypes format(casacore::MVAngle::ANGLE);
+            if (isRA) format = casacore::MVAngle::TIME;
+            casacore::Quantity quant1(val, unit);
+            casacore::MVAngle mva(quant1);
+            valStr = mva.string(format, 10);
+        } else {
+            valStr = fmt::format("{} {}", val, unit);
+        }
+    }
+    return valStr;
+}
+
+bool FileInfoLoader::convertSpecsysToFITS(std::string& specsys, casacore::MFrequency::Types type) {
+    // use labels in FITS headers
+    bool result(true);
+    switch (type) {
+        case casacore::MFrequency::LSRK:
+            specsys = "LSRK";
+            break;
+        case casacore::MFrequency::BARY:
+            specsys = "BARYCENT";
+            break;
+        case casacore::MFrequency::LSRD:
+            specsys = "LSRD";
+            break;
+        case casacore::MFrequency::GEO:
+            specsys = "GEOCENTR";
+            break;
+        case casacore::MFrequency::REST:
+            specsys = "SOURCE";
+            break;
+        case casacore::MFrequency::GALACTO:
+            specsys = "GALACTOC";
+            break;
+        case casacore::MFrequency::LGROUP:
+            specsys = "LOCALGRP";
+            break;
+        case casacore::MFrequency::CMB:
+            specsys = "CMBDIPOL";
+            break;
+        case casacore::MFrequency::TOPO:
+            specsys = "TOPOCENT";
+            break;
+        default:
+            specsys = "";
+            result = false;
+    }
+    return result;
+}
+
+
+// ***** Unit conversion *****
 
 std::string FileInfoLoader::unitConversion(const double value, const std::string& unit) {
     if (std::regex_match(unit, std::regex("rad", std::regex::icase))) {
