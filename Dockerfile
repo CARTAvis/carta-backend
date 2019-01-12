@@ -59,7 +59,7 @@ RUN \
   cd /root && rm -rf zfp
 
 # Copy nrao-carta-backend into image (must be in Dockerfile directory)
-COPY nrao-carta-backend /root/nrao-carta-backend
+COPY carta-backend /root/carta-backend
 
 # Forward port so that the webapp can properly access it
 # from outside of the container

@@ -38,9 +38,9 @@ The server build depends on the following libraries:
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.
 * [tbb](https://www.threadingbuildingblocks.org/download) Threading Building Blocks for task parallelization.
 
-[![Build Status](http://acdc0.asiaa.sinica.edu.tw:47565/job/nrao-carta-backend/badge/icon)](http://acdc0.asiaa.sinica.edu.tw:47565/job/nrao-carta-backend) 
+[![Build Status](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend/badge/icon)](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend) 
 
-[![Build Status](https://travis-ci.org/CARTAvis/nrao-carta-backend.svg?branch=master)](https://travis-ci.org/CARTAvis/nrao-carta-backend)
+[![Build Status](https://travis-ci.org/CARTAvis/carta-backend.svg?branch=master)](https://travis-ci.org/CARTAvis/carta-backend)
 
-[![CircleCI](https://circleci.com/gh/CARTAvis/nrao-carta-backend.svg?style=svg)](https://circleci.com/gh/CARTAvis/nrao-carta-backend)
+[![CircleCI](https://circleci.com/gh/CARTAvis/carta-backend.svg?style=svg)](https://circleci.com/gh/CARTAvis/carta-backend)
 
