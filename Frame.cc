@@ -137,7 +137,6 @@ std::vector<float> Frame::getImageData(CARTA::ImageBounds& bounds, int mip, bool
                         for (auto pixelY = 0; pixelY < mip; pixelY++) {
                             auto imageRow = y + j * mip + pixelY;
                             auto imageCol = x + i * mip + pixelX;
-                            //float pixVal = channelCache(imageCol, imageRow);
                             float pixVal = channelCache[(imageRow * nImgCol) + imageCol];
                             if (!isnan(pixVal) && !isinf(pixVal)) {
                                 pixelCount++;
@@ -158,7 +157,6 @@ std::vector<float> Frame::getImageData(CARTA::ImageBounds& bounds, int mip, bool
                 for (auto i = 0; i < rowLengthRegion; i++) {
                     auto imageRow = y + j * mip;
                     auto imageCol = x + i * mip;
-                    //regionData[j * rowLengthRegion + i] = channelCache(imageCol, imageRow);
                     regionData[j * rowLengthRegion + i] = channelCache[(imageRow * nImgCol) + imageCol];
                 }
             }
@@ -936,7 +934,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
         std::vector<CARTA::Point> ctrlPts = region->getControlPoints();
         int x(ctrlPts[0].x()), y(ctrlPts[0].y());
         int chan(currentChannel()), stokes(currentStokes());
-        casacore::uInt nImageCol(imageShape(0)), nImageRow(imageShape(1));
+        ssize_t nImageCol(imageShape(0)), nImageRow(imageShape(1));
         bool writeLock(false);
         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
         float value = channelCache[(y*nImageCol) + x];
@@ -961,6 +959,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
                         auto xStart = y * nImageCol;
                         for (unsigned int i=0; i<imageShape(0); ++i) {
+                            auto idx = xStart + i;
                             profile.push_back(channelCache[xStart + i]);
                         }
                         cacheLock.release();
@@ -970,7 +969,8 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     case 1: { // y
                         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
                         for (unsigned int i=0; i<imageShape(1); ++i) {
-                            profile.push_back(channelCache[(i * nImageCol) + x]);
+                            auto idx = (i * nImageCol) + x;
+                            profile.push_back(channelCache[idx]);
                         }
                         cacheLock.release();
                         end = imageShape(1);
