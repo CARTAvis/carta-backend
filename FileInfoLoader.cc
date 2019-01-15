@@ -510,8 +510,8 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             casacore::GaussianBeam rbeam(imInfo.restoringBeam());
             casacore::Quantity majAx(rbeam.getMajor()), minAx(rbeam.getMinor()),
                 pa(rbeam.getPA(true));
-            majAx.convert("rad");
-            minAx.convert("rad");
+            majAx.convert("deg");
+            minAx.convert("deg");
             pa.convert("deg");
 
             // add to header entries
