@@ -107,12 +107,17 @@ std::vector<float> Frame::getImageData(CARTA::ImageBounds& bounds, int mip, bool
 
     const int x = bounds.x_min();
     const int y = bounds.y_min();
-    const int reqHeight = bounds.y_max() - bounds.y_min();
-    const int reqWidth = bounds.x_max() - bounds.x_min();
+    const int reqHeight = bounds.y_max() - y;
+    const int reqWidth = bounds.x_max() - x;
 
-    if (imageShape(1) < y + reqHeight || imageShape(0) < x + reqWidth) {
+    // check bounds
+    if ((reqHeight < 0) || (reqWidth < 0))
         return std::vector<float>();
-    }
+    if (imageShape(1) < y + reqHeight || imageShape(0) < x + reqWidth)
+        return std::vector<float>();
+    // check mip
+    if (mip < 0)
+        return std::vector<float>();
 
     // size returned vector
     size_t numRowsRegion = reqHeight / mip;
@@ -474,9 +479,11 @@ bool Frame::setBounds(CARTA::ImageBounds imageBounds, int newMip) {
     const int reqHeight = ymax - ymin;
     const int reqWidth = xmax - xmin;
 
-    if ((imageShape(1) < ymin + reqHeight) || (imageShape(0) < xmin + reqWidth)) {
-        return false; // out of bounds
-    }
+    // out of bounds check
+    if ((reqHeight < 0) || (reqWidth < 0))
+        return false;
+    if ((imageShape(1) < ymin + reqHeight) || (imageShape(0) < xmin + reqWidth))
+        return false;
 
     bounds = imageBounds;
     mip = newMip;
