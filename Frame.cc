@@ -960,7 +960,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                         auto xStart = y * nImageCol;
                         for (unsigned int i=0; i<imageShape(0); ++i) {
                             auto idx = xStart + i;
-                            profile.push_back(channelCache[xStart + i]);
+                            profile.push_back(channelCache[idx]);
                         }
                         cacheLock.release();
                         end = imageShape(0);
