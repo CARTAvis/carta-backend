@@ -1,7 +1,6 @@
 #include "OnMessageTask.h"
 #include "util.h"
 #include <algorithm>
-#include <chrono>
 #include <cstring>
 #include <fmt/format.h>
 
@@ -23,14 +22,12 @@ OnMessageTask::OnMessageTask(std::string uuid_, Session *session_,
 
 tbb::task* OnMessageTask::execute() {
     //CARTA ICD
-    auto tStart = std::chrono::high_resolution_clock::now();
     std::tuple<std::string,uint32_t,std::vector<char>> msg;
     mqueue->try_pop(msg);
     std::string eventName;
     uint32_t requestId;
     std::vector<char> eventPayload;
     std::tie(eventName, requestId, eventPayload) = msg;
-    log(uuid, "Processing operation {}", eventName);
     if (eventName == "REGISTER_VIEWER") {
         CARTA::RegisterViewer message;
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
@@ -102,11 +99,6 @@ tbb::task* OnMessageTask::execute() {
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
             session->onRemoveRegion(message, requestId);
         }
-    } else {
-        log(uuid, "Unknown event type {}", eventName);
     }
-    auto tEnd = std::chrono::high_resolution_clock::now();
-    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(tEnd - tStart).count();
-    log(uuid, "Operation {} took {}ms", eventName, dt/1e3);
     return nullptr;
 }
