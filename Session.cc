@@ -24,6 +24,8 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unorder
       baseFolder(folder),
       filelistFolder("nofolder"),
       verboseLogging(verbose),
+      selectedFileInfo(nullptr),
+      selectedFileInfoExtended(nullptr),
       outgoing(outgoing),
       newFrame(false) {
 }
@@ -260,28 +262,41 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto fileInfoExtended = response.mutable_file_info_extended();
     string message;
     bool success = fillExtendedFileInfo(fileInfoExtended, fileInfo, request.directory(), request.file(), request.hdu(), message);
+    if (success) {
+        if (selectedFileInfo==nullptr)
+            selectedFileInfo = new CARTA::FileInfo();
+        if (selectedFileInfoExtended==nullptr)
+            selectedFileInfoExtended = new CARTA::FileInfoExtended();
+        // copy
+        *selectedFileInfo = response.file_info();
+        *selectedFileInfoExtended = response.file_info_extended();
+    }
     response.set_success(success);
     response.set_message(message);
     sendEvent("FILE_INFO_RESPONSE", requestId, response);
 }
 
 void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
-    auto fileId(message.file_id());
-    CARTA::OpenFileAck ack;
-    ack.set_file_id(fileId);
-    auto fileInfo = ack.mutable_file_info();
-    auto fileInfoExtended = ack.mutable_file_info_extended();
     string errMessage;
-    bool success(false);
-    if (fillExtendedFileInfo(fileInfoExtended, fileInfo, message.directory(), message.file(),
-        message.hdu(), errMessage)) {
+    CARTA::OpenFileAck ack;
+    auto fileId(message.file_id());
+    ack.set_file_id(fileId);
+    bool success(false), haveFileInfo((selectedFileInfo != nullptr) && (selectedFileInfoExtended != nullptr));
+    if (!haveFileInfo) {
+        haveFileInfo = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, message.directory(), message.file(),
+            message.hdu(), errMessage);
+    }
+    if (haveFileInfo) {
+        // copy
+        *ack.mutable_file_info() = *selectedFileInfo;
+        *ack.mutable_file_info_extended() = *selectedFileInfoExtended;
         // form filename with path
         casacore::Path path(baseFolder);
         path.append(message.directory());
         path.append(message.file());
         string filename(path.absoluteName());
         // create Frame for open file
-        string hdu = fileInfo->hdu_list(0);
+        string hdu = selectedFileInfo->hdu_list(0);
         auto frame = std::unique_ptr<Frame>(new Frame(uuid, filename, hdu));
         if (frame->isValid()) {
             success = true;
@@ -292,7 +307,7 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         } else {
             errMessage = "Could not load image";
         }
-    } 
+    }
     ack.set_success(success);
     ack.set_message(errMessage);
     sendEvent("OPEN_FILE_ACK", requestId, ack);

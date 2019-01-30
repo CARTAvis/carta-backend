@@ -49,6 +49,10 @@ protected:
     std::string baseFolder, filelistFolder;
     bool verboseLogging;
 
+    // load for file browser, reuse when open file
+    CARTA::FileInfo* selectedFileInfo;
+    CARTA::FileInfoExtended* selectedFileInfoExtended;
+
     // <file_id, Frame>: one frame per image file
     std::unordered_map<int, std::unique_ptr<Frame>> frames;
     // lock frames to create/destroy
