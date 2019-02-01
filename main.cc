@@ -142,8 +142,6 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length,
             }
             tbb::task::enqueue(*omt);
         }
-    } else {
-        log(uuid, "Invalid event type");
     }
 };
 
