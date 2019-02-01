@@ -4,12 +4,18 @@
 
 #include <carta-protobuf/file_info.pb.h>
 #include <casacore/casa/Arrays/IPosition.h>
+#include <casacore/fits/FITS/FITSError.h>
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/measures/Measures/MDirection.h>
 #include <string>
 
 // #####################################################################
+
+inline void fileInfoFitsErrHandler(const char *errMessage, casacore::FITSError::ErrorLevel severity) {
+    if (severity > casacore::FITSError::WARN)
+        std::cout << errMessage << std::endl;
+}
 
 class FileInfoLoader {
 
