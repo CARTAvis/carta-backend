@@ -534,7 +534,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             headerEntry->set_numeric_value(bpa);
 
             // add to computed entries
-            rsBeam = fmt::format("{} X {}, {:.4f} deg", deg2arcsec(rad2deg(bmaj)), deg2arcsec(rad2deg(bmin)), bpa);
+            rsBeam = fmt::format("{} X {}, {:.4f} deg", deg2arcsec(bmaj), deg2arcsec(bmin), bpa);
         }
 
         // type
