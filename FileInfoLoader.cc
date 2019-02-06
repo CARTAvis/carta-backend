@@ -89,7 +89,7 @@ bool FileInfoLoader::getHduList(CARTA::FileInfo* fileInfo, const std::string& fi
         }
         hduOK = (fileInfo->hdu_list_size() > 0);
     } else if (fileInfo->type()==CARTA::FITS) {
-        casacore::FitsInput fInput(filename.c_str(), casacore::FITS::Disk);
+        casacore::FitsInput fInput(filename.c_str(), casacore::FITS::Disk, 10, fileInfoFitsErrHandler);
         if (fInput.err() == casacore::FitsIO::OK) { // check for cfitsio error
             int numHdu(fInput.getnumhdu());
             hduOK = (numHdu > 0);
@@ -105,6 +105,7 @@ bool FileInfoLoader::getHduList(CARTA::FileInfo* fileInfo, const std::string& fi
     }
     return hduOK;
 }
+
 
 //#################################################################################
 // FILE INFO EXTENDED
@@ -454,6 +455,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
                     return false;
                 }
                 rdhdi_c(thandle, "naxis", &ndim, 0);  // read "naxis" value into ndim, default 0
+                hdaccess_c(ihandle, &iostat);
                 hclose_c(thandle);
                 if (ndim < 2 || ndim > 4) {
                     message = "Image must be 2D, 3D or 4D.";
@@ -534,7 +536,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             headerEntry->set_numeric_value(bpa);
 
             // add to computed entries
-            rsBeam = fmt::format("{} X {}, {:.4f} deg", deg2arcsec(rad2deg(bmaj)), deg2arcsec(rad2deg(bmin)), bpa);
+            rsBeam = fmt::format("{} X {}, {:.4f} deg", deg2arcsec(bmaj), deg2arcsec(bmin), bpa);
         }
 
         // type
@@ -738,13 +740,15 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         addComputedEntries(extendedInfo, xyCoords, crPixels, crCoords, crDegStr, radeSys,
             specSys, bunit, axisInc, rsBeam);
     } catch (casacore::AipsError& err) {
-        if (ccImage != nullptr)
+        if (ccImage != nullptr) {
             delete ccImage;
+        }
         message = err.getMesg().c_str();
         extInfoOK = false;
     }
-    if (ccImage != nullptr)
+    if (ccImage != nullptr) {
         delete ccImage;
+    }
     return extInfoOK;
 }
 

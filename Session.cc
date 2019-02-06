@@ -128,7 +128,6 @@ CARTA::FileListResponse Session::getFileList(string folder) {
                             } else {
                                 std::string imageTypeMsg = fmt::format("{}: image type {} not supported", ccfile.path().baseName(), getType(imType));
                                 sendLogEvent(imageTypeMsg, {"file_list"}, CARTA::ErrorSeverity::DEBUG);
-				log(uuid, imageTypeMsg);
                             }
                         } else if (ccfile.isRegular(true) && ccfile.isReadable()) {
                             casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
@@ -152,7 +151,6 @@ CARTA::FileListResponse Session::getFileList(string folder) {
             return fileList;
         }
     } catch (casacore::AipsError& err) {
-        log(uuid, "Error: {}", err.getMesg().c_str());
         sendLogEvent(err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR);
         fileList.set_success(false);
         fileList.set_message(err.getMesg());
@@ -372,7 +370,7 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
     auto fileId(message.file_id());
     if (frames.count(fileId)) {
         try {
-            string errMessage;
+            std::string errMessage;
             auto channel = message.channel();
             auto stokes = message.stokes();
             bool stokesChanged(stokes != frames.at(fileId)->currentStokes());
@@ -397,7 +395,8 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
                     sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
                 }
             } else {
-                sendLogEvent(errMessage, {"channels"}, CARTA::ErrorSeverity::ERROR);
+                if (!errMessage.empty())
+                    sendLogEvent(errMessage, {"channels"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);
@@ -513,8 +512,7 @@ void Session::onSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
                     sendCubeHistogramData(message, requestId);
                 } else {
                     CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, regionId);
-                    if (histogramData != nullptr) {
-                        // RESPONSE
+                    if (histogramData != nullptr) {  // RESPONSE
                         sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", 0, *histogramData);
                     } else {
                         string error = "Failed to load histogram data";
@@ -810,7 +808,6 @@ void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImag
                             std::accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
                             1e-3 * dtCompress,
                             (float) (numRows * rowLength) / dtCompress);
-                        log(uuid, compressionInfo);
                         sendLogEvent(compressionInfo, {"zfp"}, CARTA::ErrorSeverity::DEBUG);
                     }
                     // Send completed event to client
@@ -944,4 +941,6 @@ void Session::sendLogEvent(std::string message, std::vector<std::string> tags, C
     errorData.set_severity(severity);
     *errorData.mutable_tags() = {tags.begin(), tags.end()};
     sendEvent("ERROR_DATA", 0, errorData);
+    if ((severity > CARTA::ErrorSeverity::DEBUG) || verboseLogging)
+        log(uuid, message);
 }

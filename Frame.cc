@@ -27,11 +27,9 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         imageShape = dataSet.shape();
         size_t ndims = imageShape.size();
         if (ndims < 2 || ndims > 4) {
-            log(uuid, "Problem loading file {}: Image must be 2D, 3D or 4D.", filename);
             valid = false;
             return;
         }
-        log(uuid, "Opening image with dimensions: {}", imageShape);
 
         // determine axis order (0-based)
         if (ndims == 3) { // use defaults
@@ -49,32 +47,8 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         // make Region for entire image (after current channel/stokes set)
         setImageRegion(IMAGE_REGION_ID);
         loadImageChannelStats(false); // from image file if exists
-
-        // Swizzled data loaded if it exists. Used for Z-profiles and region stats
-        if (ndims == 3 && loader->hasData(FileInfo::Data::ZYX)) {
-            auto &dataSetSwizzled = loader->loadData(FileInfo::Data::ZYX);
-            casacore::IPosition swizzledDims = dataSetSwizzled.shape();
-            if (swizzledDims.size() != 3 || swizzledDims[0] != imageShape(2)) {
-                log(uuid, "Invalid swizzled data set in file {}, ignoring.", filename);
-            } else {
-                log(uuid, "Found valid swizzled data set in file {}.", filename);
-            }
-        } else if (ndims == 4 && loader->hasData(FileInfo::Data::ZYXW)) {
-            auto &dataSetSwizzled = loader->loadData(FileInfo::Data::ZYXW);
-            casacore::IPosition swizzledDims = dataSetSwizzled.shape();
-            if (swizzledDims.size() != 4 || swizzledDims[1] != imageShape(3)) {
-                log(uuid, "Invalid swizzled data set in file {}, ignoring.", filename);
-            } else {
-                log(uuid, "Found valid swizzled data set in file {}.", filename);
-            }
-        } else {
-            log(uuid, "File {} missing optional swizzled data set, using fallback calculation.", filename);
-        }
-    }
-    //TBD: figure out what exceptions need to caught, if any
-    catch (casacore::AipsError& err) {
-        log(uuid, "Problem loading file {}", filename);
-        log(uuid, err.getMesg());
+    } catch (casacore::AipsError& err) {
+        log(uuid, "Problem loading file {}: {}", filename, err.getMesg());
         valid = false;
     }
 }
@@ -184,7 +158,6 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
     // load channel stats for entire image (all channels and stokes) from header
     // channelStats[stokes][chan]
     if (!valid) {
-        log(uuid, "No file loaded");
         return false;
     }
 
@@ -227,14 +200,7 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                         channelStats[i][j].maxVal = *it++;
                     }
                 }
-            } else {
-                log(uuid, "Invalid MaxVals statistics");
-                return false;
             }
-
-        } else {
-            log(uuid, "Missing MaxVals statistics");
-            return false;
         }
 
         if (loader->hasData(FileInfo::Data::S2DMin)) {
@@ -266,14 +232,7 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                         channelStats[i][j].maxVal = *it++;
                     }
                 }
-            } else {
-                log(uuid, "Invalid MinVals statistics");
-                return false;
             }
-
-        } else {
-            log(uuid, "Missing MinVals statistics");
-            return false;
         }
 
         if (loader->hasData(FileInfo::Data::S2DMean)) {
@@ -305,13 +264,7 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                         channelStats[i][j].maxVal = *it++;
                     }
                 }
-            } else {
-                log(uuid, "Invalid Means statistics");
-                return false;
             }
-        } else {
-            log(uuid, "Missing Means statistics");
-            return false;
         }
 
         if (loader->hasData(FileInfo::Data::S2DNans)) {
@@ -343,13 +296,7 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                         channelStats[i][j].maxVal = *it++;
                     }
                 }
-            } else {
-                log(uuid, "Invalid NaNCounts statistics");
-                return false;
             }
-        } else {
-            log(uuid, "Missing NaNCounts statistics");
-            return false;
         }
 
         if (loader->hasData(FileInfo::Data::S2DHist)) {
@@ -390,14 +337,7 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                         }
                     }
                 }
-            } else {
-                log(uuid, "Invalid histogram statistics");
-                return false;
             }
-
-        } else {
-            log(uuid, "Missing Histograms group");
-            return false;
         }
 
         if (loadPercentiles) {
@@ -449,17 +389,10 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                             ranks.tovector(stats.percentileRanks);
                         }
                     }
-                } else {
-                    log(uuid, "Missing Percentiles datasets");
-                    return false;
                 }
-            } else {
-                log(uuid, "Missing Percentiles group");
-                return false;
             }
         }
     } else {
-        log(uuid, "Missing Statistics group");
         return false;
     }
     return true;
@@ -514,18 +447,15 @@ CompressionSettings Frame::compressionSettings() {
 bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message) {
     if (!valid) {
         message = "No file loaded";
-        log(uuid, message);
         return false;
     } else {
         if (newChannel < 0 || newChannel >= nchannels()) {
             message = fmt::format("Channel {} is invalid in file {}", newChannel, filename);
-            log(uuid, message);
             return false; // invalid channel
         }
         size_t nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
         if (newStokes < 0 || newStokes >= nstokes) {
             message = fmt::format("Stokes {} is invalid in file {}", newStokes, filename);
-            log(uuid, message);
             return false; // invalid stokes
         }
     }
