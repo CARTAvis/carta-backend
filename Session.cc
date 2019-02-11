@@ -222,6 +222,19 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
     return extFileInfoOK;
 }
 
+void Session::resetFileInfo(bool create) {
+    // delete old file info pointers
+    if (selectedFileInfo != nullptr) delete selectedFileInfo;
+    if (selectedFileInfoExtended != nullptr) delete selectedFileInfoExtended;
+    // optionally create new ones
+    if (create) {
+        selectedFileInfo = new CARTA::FileInfo();
+        selectedFileInfoExtended = new CARTA::FileInfoExtended();
+    } else {
+        selectedFileInfo = nullptr;
+	selectedFileInfoExtended = nullptr;
+    }
+}
 
 // *********************************************************************************
 // CARTA ICD implementation
@@ -260,12 +273,8 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto fileInfoExtended = response.mutable_file_info_extended();
     string message;
     bool success = fillExtendedFileInfo(fileInfoExtended, fileInfo, request.directory(), request.file(), request.hdu(), message);
-    if (success) {
-        if (selectedFileInfo==nullptr)
-            selectedFileInfo = new CARTA::FileInfo();
-        if (selectedFileInfoExtended==nullptr)
-            selectedFileInfoExtended = new CARTA::FileInfoExtended();
-        // copy
+    if (success) { // save a copy
+        resetFileInfo(true);
         *selectedFileInfo = response.file_info();
         *selectedFileInfoExtended = response.file_info_extended();
     }
@@ -275,18 +284,23 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 }
 
 void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
-    string errMessage;
-    CARTA::OpenFileAck ack;
     auto fileId(message.file_id());
-    ack.set_file_id(fileId);
     auto filename(message.file());
-    bool success(false), haveFileInfo((selectedFileInfo != nullptr) && (selectedFileInfoExtended != nullptr) && 
-        (selectedFileInfo->name()==filename));
-    if (!haveFileInfo) {  // no file info or different file info
-        haveFileInfo = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, message.directory(),
-		message.file(), message.hdu(), errMessage);
+    string errMessage;
+    bool infoLoaded((selectedFileInfo != nullptr) && (selectedFileInfo->name() == filename) &&
+        (selectedFileInfoExtended != nullptr)); // correct file loaded
+    if (!infoLoaded) { // load from image file
+        resetFileInfo(true);
+        infoLoaded = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, message.directory(),
+            message.file(), message.hdu(), errMessage);
     }
-    if (haveFileInfo) {
+    // response message:
+    CARTA::OpenFileAck ack;
+    ack.set_file_id(fileId);
+    bool success(false);
+    if (!infoLoaded) {
+        resetFileInfo(); // clean up
+    } else {
         // copy
         *ack.mutable_file_info() = *selectedFileInfo;
         *ack.mutable_file_info_extended() = *selectedFileInfoExtended;
