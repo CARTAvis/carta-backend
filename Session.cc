@@ -279,10 +279,12 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     CARTA::OpenFileAck ack;
     auto fileId(message.file_id());
     ack.set_file_id(fileId);
-    bool success(false), haveFileInfo((selectedFileInfo != nullptr) && (selectedFileInfoExtended != nullptr));
-    if (!haveFileInfo) {
-        haveFileInfo = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, message.directory(), message.file(),
-            message.hdu(), errMessage);
+    auto filename(message.file());
+    bool success(false), haveFileInfo((selectedFileInfo != nullptr) && (selectedFileInfoExtended != nullptr) && 
+        (selectedFileInfo->name()==filename));
+    if (!haveFileInfo) {  // no file info or different file info
+        haveFileInfo = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, message.directory(),
+		message.file(), message.hdu(), errMessage);
     }
     if (haveFileInfo) {
         // copy
@@ -291,11 +293,11 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         // form filename with path
         casacore::Path path(baseFolder);
         path.append(message.directory());
-        path.append(message.file());
-        string filename(path.absoluteName());
+        path.append(filename);
+        string filenamePath(path.absoluteName());
         // create Frame for open file
         string hdu = selectedFileInfo->hdu_list(0);
-        auto frame = std::unique_ptr<Frame>(new Frame(uuid, filename, hdu));
+        auto frame = std::unique_ptr<Frame>(new Frame(uuid, filenamePath, hdu));
         if (frame->isValid()) {
             success = true;
             std::unique_lock<std::mutex> lock(frameMutex);
