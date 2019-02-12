@@ -478,7 +478,7 @@ void Frame::setChannelCache(size_t channel, size_t stokes) {
         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
         casacore::Slicer section = getChannelMatrixSlicer(channel, stokes);
         std::lock_guard<std::mutex> guard(latticeMutex);
-        channelCache = getData(loader->loadData(FileInfo::Data::XYZW), section);
+        channelCache = getData<float>(loader->loadData(FileInfo::Data::XYZW), section);
     }
 }
 
@@ -800,7 +800,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                     casacore::Slicer latticeSlicer;
                     getLatticeSlicer(latticeSlicer, -1, -1, -1, currStokes);
                     std::unique_lock<std::mutex> guard(latticeMutex);
-                    data = getData(loader->loadData(FileInfo::Data::XYZW), latticeSlicer);
+                    data = getData<float>(loader->loadData(FileInfo::Data::XYZW), latticeSlicer);
                     guard.unlock();
                 } else { // requested channel (current or specified)
                     if (configChannel == currentChannel()) {  // use channel cache
@@ -926,7 +926,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     }
                 }
                 std::unique_lock<std::mutex> guard(latticeMutex);
-                profile = getData(loader->loadData(FileInfo::Data::XYZW), section);
+                profile = getData<float>(loader->loadData(FileInfo::Data::XYZW), section);
             }
             newProfile->set_coordinate(region->getSpatialProfileStr(i));
             newProfile->set_start(0);
@@ -989,7 +989,8 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
 }
 
 // get lattice data by RO_LatticeIterator
-std::vector<float> Frame::getData(const casacore::Lattice<float>& lattice, const casacore::Slicer& section) {
+template<typename T>
+std::vector<T> Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer& section) {
     auto imgDims = lattice.ndim();
     auto imageShape = lattice.shape();
     auto shapeVec = imageShape.asVector();
@@ -1006,6 +1007,6 @@ std::vector<float> Frame::getData(const casacore::Lattice<float>& lattice, const
     }
     casacore::LatticeStepper stepper(imageShape, cursorShape, casacore::LatticeStepper::RESIZE);
     stepper.subSection(section.start(), section.end(), section.stride());
-    casacore::RO_LatticeIterator<float> iter(lattice, stepper);
-    return iter.cursor().tovector();
+    casacore::RO_LatticeIterator<T> iter(lattice, stepper);
+    return iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
 }

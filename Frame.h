@@ -147,5 +147,6 @@ public:
     bool fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData);
 
     // get lattice data by RO_LatticeIterator
-    std::vector<float> getData(const casacore::Lattice<float>&, const casacore::Slicer& section);
+    template<typename T>
+    std::vector<T> getData(const casacore::Lattice<T>& lattice, const casacore::Slicer& section);
 };
