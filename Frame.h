@@ -56,7 +56,7 @@ private:
     size_t nchan;
     std::vector<std::vector<ChannelStats>> channelStats;
 
-    // set image view 
+    // set image view
     CARTA::ImageBounds bounds;
     int mip;
     CompressionSettings compression;
@@ -145,4 +145,7 @@ public:
     bool fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData);
     bool fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData);
     bool fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData);
+
+    // get lattice data by RO_LatticeIterator
+    std::vector<float> getData(const casacore::Lattice<float>&, const casacore::Slicer& section);
 };
