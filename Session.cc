@@ -24,6 +24,8 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unorder
       baseFolder(folder),
       filelistFolder("nofolder"),
       verboseLogging(verbose),
+      selectedFileInfo(nullptr),
+      selectedFileInfoExtended(nullptr),
       outgoing(outgoing),
       newFrame(false) {
 }
@@ -220,6 +222,19 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
     return extFileInfoOK;
 }
 
+void Session::resetFileInfo(bool create) {
+    // delete old file info pointers
+    if (selectedFileInfo != nullptr) delete selectedFileInfo;
+    if (selectedFileInfoExtended != nullptr) delete selectedFileInfoExtended;
+    // optionally create new ones
+    if (create) {
+        selectedFileInfo = new CARTA::FileInfo();
+        selectedFileInfoExtended = new CARTA::FileInfoExtended();
+    } else {
+        selectedFileInfo = nullptr;
+	selectedFileInfoExtended = nullptr;
+    }
+}
 
 // *********************************************************************************
 // CARTA ICD implementation
@@ -258,6 +273,11 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto fileInfoExtended = response.mutable_file_info_extended();
     string message;
     bool success = fillExtendedFileInfo(fileInfoExtended, fileInfo, request.directory(), request.file(), request.hdu(), message);
+    if (success) { // save a copy
+        resetFileInfo(true);
+        *selectedFileInfo = response.file_info();
+        *selectedFileInfoExtended = response.file_info_extended();
+    }
     response.set_success(success);
     response.set_message(message);
     sendEvent("FILE_INFO_RESPONSE", requestId, response);
@@ -265,22 +285,33 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 
 void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     auto fileId(message.file_id());
+    auto filename(message.file());
+    string errMessage;
+    bool infoLoaded((selectedFileInfo != nullptr) && (selectedFileInfo->name() == filename) &&
+        (selectedFileInfoExtended != nullptr)); // correct file loaded
+    if (!infoLoaded) { // load from image file
+        resetFileInfo(true);
+        infoLoaded = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, message.directory(),
+            message.file(), message.hdu(), errMessage);
+    }
+    // response message:
     CARTA::OpenFileAck ack;
     ack.set_file_id(fileId);
-    auto fileInfo = ack.mutable_file_info();
-    auto fileInfoExtended = ack.mutable_file_info_extended();
-    string errMessage;
     bool success(false);
-    if (fillExtendedFileInfo(fileInfoExtended, fileInfo, message.directory(), message.file(),
-        message.hdu(), errMessage)) {
+    if (!infoLoaded) {
+        resetFileInfo(); // clean up
+    } else {
+        // copy
+        *ack.mutable_file_info() = *selectedFileInfo;
+        *ack.mutable_file_info_extended() = *selectedFileInfoExtended;
         // form filename with path
         casacore::Path path(baseFolder);
         path.append(message.directory());
-        path.append(message.file());
-        string filename(path.absoluteName());
+        path.append(filename);
+        string filenamePath(path.absoluteName());
         // create Frame for open file
-        string hdu = fileInfo->hdu_list(0);
-        auto frame = std::unique_ptr<Frame>(new Frame(uuid, filename, hdu));
+        string hdu = selectedFileInfo->hdu_list(0);
+        auto frame = std::unique_ptr<Frame>(new Frame(uuid, filenamePath, hdu));
         if (frame->isValid()) {
             success = true;
             std::unique_lock<std::mutex> lock(frameMutex);
@@ -290,7 +321,7 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         } else {
             errMessage = "Could not load image";
         }
-    } 
+    }
     ack.set_success(success);
     ack.set_message(errMessage);
     sendEvent("OPEN_FILE_ACK", requestId, ack);
