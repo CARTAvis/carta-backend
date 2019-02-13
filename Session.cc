@@ -13,15 +13,16 @@
 #include <limits>
 #include <valarray>
 
-// Default constructor. Associates a websocket with a UUID and sets the base folder for all files
+// Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unordered_map<string, 
-    std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string folder,
-    uS::Async *outgoing, bool verbose)
+    std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string root,
+    std::string base, uS::Async *outgoing, bool verbose)
     : uuid(std::move(uuid)),
       socket(ws),
       permissionsMap(permissionsMap),
       permissionsEnabled(enforcePermissions),
-      baseFolder(folder),
+      rootFolder(root),
+      baseFolder(base),
       filelistFolder("nofolder"),
       verboseLogging(verbose),
       selectedFileInfo(nullptr),
@@ -92,22 +93,41 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
 // ********************************************************************************
 // File browser
 
+void Session::getRelativePath(std::string& folder) {
+    // Remove root folder path from given folder string
+    if (folder.find(rootFolder)==0) {
+        folder.replace(0, rootFolder.length(), ""); // remove root folder path
+        if (folder.front()=='/') folder.replace(0,1,""); // remove leading '/'
+    }
+}
+
 CARTA::FileListResponse Session::getFileList(string folder) {
     // fill FileListResponse
-    casacore::Path fullPath(baseFolder);
+    // folder must be relative to root folder
+    std::string requestedFolder = (folder.empty() ? rootFolder : folder);
+
     CARTA::FileListResponse fileList;
-    if (folder.length() && folder != "/") {
-        fullPath.append(folder);
+    if (requestedFolder == rootFolder) {
+        fileList.set_directory(".");
+    } else {
+        // append folder to root folder
+        casacore::Path requestedPath(rootFolder);
+        requestedPath.append(folder);
+        requestedFolder = requestedPath.resolvedName();
+        std::string parentFolder(requestedPath.dirName());
+        getRelativePath(parentFolder);
+        if (parentFolder.empty()) parentFolder=".";
+        // set relative paths for directory, parent
         fileList.set_directory(folder);
-        fileList.set_parent(fullPath.dirName());
+        fileList.set_parent(parentFolder);
     }
 
-    casacore::File folderPath(fullPath);
+    casacore::File folderPath(requestedFolder);
     string message;
 
     try {
         if (checkPermissionForDirectory(folder) && folderPath.exists() && folderPath.isDirectory()) {
-            casacore::Directory startDir(fullPath);
+            casacore::Directory startDir(folderPath);
             casacore::DirectoryIterator dirIter(startDir);
             while (!dirIter.pastEnd()) {
                 casacore::File ccfile(dirIter.file());  // directory is also a File
@@ -198,7 +218,7 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
         const string folder, const string filename, string hdu, string& message) {
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool extFileInfoOK(true);
-    casacore::Path ccpath(baseFolder);
+    casacore::Path ccpath(rootFolder);
     ccpath.append(folder);
     ccpath.append(filename);
     casacore::File ccfile(ccpath);
@@ -232,7 +252,7 @@ void Session::resetFileInfo(bool create) {
         selectedFileInfoExtended = new CARTA::FileInfoExtended();
     } else {
         selectedFileInfo = nullptr;
-	selectedFileInfoExtended = nullptr;
+        selectedFileInfoExtended = nullptr;
     }
 }
 
@@ -248,20 +268,27 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t re
 }
 
 void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId) {
-    // initial folder is "" (use base directory)
     string folder = request.directory();
-    if (folder == filelistFolder) // do not process same directory simultaneously
+    // do not process same directory simultaneously (e.g. double-click folder in browser)
+    if (folder == filelistFolder) {
         return;
-    else
+    } else {
         filelistFolder = folder;
-
-    // strip baseFolder from folder
-    string basePath(baseFolder);
-    if (basePath.back()=='/') basePath.pop_back();
-    if (folder.find(basePath)==0) {
-        folder.replace(0, basePath.length(), "");
-        if (folder.front()=='/') folder.replace(0,1,""); // remove leading '/'
     }
+
+    // resolve empty folder string or current dir "."
+    if (folder.empty() || folder.compare(".")==0)
+        folder = rootFolder;
+    // resolve $BASE keyword in folder string
+    if (folder.find("$BASE") != std::string::npos) {
+        casacore::String folderString(folder);
+        folderString.gsub("$BASE", baseFolder);
+        folder = folderString;
+    }
+    // strip rootFolder from folder
+    getRelativePath(folder);
+    
+    // fill and send response message
     CARTA::FileListResponse response = getFileList(folder);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
     filelistFolder = "nofolder";  // ready for next file list request
@@ -286,13 +313,14 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     auto fileId(message.file_id());
     auto filename(message.file());
+    auto directory(message.directory());
     string errMessage;
     bool infoLoaded((selectedFileInfo != nullptr) && (selectedFileInfo->name() == filename) &&
         (selectedFileInfoExtended != nullptr)); // correct file loaded
     if (!infoLoaded) { // load from image file
         resetFileInfo(true);
-        infoLoaded = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, message.directory(),
-            message.file(), message.hdu(), errMessage);
+        infoLoaded = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, directory,
+            filename, message.hdu(), errMessage);
     }
     // response message:
     CARTA::OpenFileAck ack;
@@ -304,14 +332,14 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         // copy
         *ack.mutable_file_info() = *selectedFileInfo;
         *ack.mutable_file_info_extended() = *selectedFileInfoExtended;
-        // form filename with path
-        casacore::Path path(baseFolder);
-        path.append(message.directory());
-        path.append(filename);
-        string filenamePath(path.absoluteName());
+        // form path with filename
+        casacore::Path rootPath(rootFolder);
+        rootPath.append(directory);
+        rootPath.append(filename);
+        string absFilename(rootPath.resolvedName());
         // create Frame for open file
         string hdu = selectedFileInfo->hdu_list(0);
-        auto frame = std::unique_ptr<Frame>(new Frame(uuid, filenamePath, hdu));
+        auto frame = std::unique_ptr<Frame>(new Frame(uuid, absFilename, hdu));
         if (frame->isValid()) {
             success = true;
             std::unique_lock<std::mutex> lock(frameMutex);

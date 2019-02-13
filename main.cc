@@ -47,7 +47,6 @@ bool checkRootBaseFolders(std::string& root, std::string& base) {
         fmt::print("Exiting carta.\n");
         return false;
     }
-
     if (root=="base") root = base;
     if (base=="root") base = root;
 
@@ -79,20 +78,20 @@ bool checkRootBaseFolders(std::string& root, std::string& base) {
     if (base != root) {
         bool isSubdirectory(false);
         casacore::Path basePath(base);
-	casacore::String parentString(basePath.dirName()), rootString(root);
+        casacore::String parentString(basePath.dirName()), rootString(root);
         while (parentString != rootString) {  // navigate up directory tree
             basePath = casacore::Path(parentString);
-	    parentString = basePath.dirName();
-	    if (parentString == rootString) {
+            parentString = basePath.dirName();
+            if (parentString == rootString) {
                 isSubdirectory = true;
-		break;
+                break;
             } else if (parentString == "/") {
                 break;
             }
         }
-	if (!isSubdirectory) {
-            fmt::print("ERROR: Base must be a subdirectory of root. Exiting carta.\n");
-	    return false;
+        if (!isSubdirectory) {
+            fmt::print("ERROR: Base {} must be a subdirectory of root {}. Exiting carta.\n", base, root);
+            return false;
         }
     }
     return true;
@@ -205,7 +204,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length,
 
 void exit_backend(int s) {
     // destroy objects cleanly
-    cout << "Exiting backend." << endl;
+    fmt::print("Exiting backend.\n");
     for (auto& session : sessions) {
         auto uuid = session.first;
         delete session.second;
@@ -234,7 +233,7 @@ int main(int argc, const char* argv[]) {
         // define and get input arguments
         int port(3002);
         int threadCount(tbb::task_scheduler_init::default_num_threads());
-	{ // get values then let Input go out of scope
+        { // get values then let Input go out of scope
         casacore::Input inp;
         inp.version(version_id);
         inp.create("verbose", "False", "display verbose logging", "Bool");
@@ -251,11 +250,11 @@ int main(int argc, const char* argv[]) {
         threadCount = inp.getInt("threads");
         baseFolder = inp.getString("base");
         rootFolder = inp.getString("root");
-	}
+        }
 
-	if (!checkRootBaseFolders(rootFolder, baseFolder)) {
-	    return 1;
-	}
+        if (!checkRootBaseFolders(rootFolder, baseFolder)) {
+            return 1;
+        }
 
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
