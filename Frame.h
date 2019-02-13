@@ -149,4 +149,6 @@ public:
     // get lattice data by RO_LatticeIterator
     template<typename T>
     std::vector<T> getData(const casacore::Lattice<T>& lattice, const casacore::Slicer& section);
+
+    void printoutIPosition(std::string message, const casacore::IPosition& iPosition);
 };

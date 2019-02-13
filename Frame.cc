@@ -988,25 +988,25 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
     return statsOK;
 }
 
-// get lattice data by RO_LatticeIterator
 template<typename T>
 std::vector<T> Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer& section) {
     auto imgDims = lattice.ndim();
     auto imageShape = lattice.shape();
-    auto shapeVec = imageShape.asVector();
-    // set the cursor shape to load partial image data
-    casacore::IPosition cursorShape(imgDims);
-    for(auto i = 0; i < imgDims; i++) {
-        if ( i == 0 || i == 1 ) {
-            // the first two dimensions are for image plane, take all of them.
-            cursorShape(i) = shapeVec(i);
-        } else {
-            // set cursor shapes in the other dimensions are 1
-            cursorShape(i) = 1;
-        }
-    }
+
+    // set the cursor shape which is equal to the section to load partial image data
+    casacore::IPosition cursorShape(imgDims, 0), offset(imgDims, 1);
+    cursorShape = section.end() - section.start() + offset;
+
     casacore::LatticeStepper stepper(imageShape, cursorShape, casacore::LatticeStepper::RESIZE);
     stepper.subSection(section.start(), section.end(), section.stride());
     casacore::RO_LatticeIterator<T> iter(lattice, stepper);
     return iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
+}
+
+void Frame::printoutIPosition(std::string message, const casacore::IPosition& iPosition) {
+    auto iPositionAsVector = iPosition.asStdVector();
+    fmt::print("casacore::IPosition {} = [", message);
+    for (int i = 0; i < iPositionAsVector.size() - 1; i++)
+        fmt::print("{}, ", iPositionAsVector[i]);
+    fmt::print("{}]\n", iPositionAsVector[iPositionAsVector.size() - 1]);
 }
