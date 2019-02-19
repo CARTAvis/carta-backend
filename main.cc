@@ -38,7 +38,7 @@ int sessionNumber;
 uWS::Hub wsHub;
 
 // command-line arguments
-string rootFolder("/"), baseFolder("./"), version_id("1.0.1");
+string rootFolder("/"), baseFolder("."), version_id("1.0.1");
 bool verbose, usePermissions;
 
 bool checkRootBaseFolders(std::string& root, std::string& base) {
@@ -58,9 +58,16 @@ bool checkRootBaseFolders(std::string& root, std::string& base) {
         fmt::print("Exiting carta.\n");
         return false;
     }
-    if (root.compare("/") != 0) {
-        // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-        root = rootFolder.path().resolvedName();
+    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
+    try {
+        root = rootFolder.path().resolvedName(); // fails on root folder /
+    } catch (casacore::AipsError& err) {
+        try {
+            root = rootFolder.path().absoluteName();
+        } catch (casacore::AipsError& err) {
+            fmt::print(err.getMesg());
+        }
+        if (root.empty()) root = "/";
     }
     // check base
     casacore::File baseFolder(base);
@@ -70,22 +77,30 @@ bool checkRootBaseFolders(std::string& root, std::string& base) {
         fmt::print("Exiting carta.\n");
         return false;
     }
-    if (base.compare("/") != 0) {
-        // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-        base = baseFolder.path().resolvedName();
+    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
+    try {
+        base = baseFolder.path().resolvedName(); // fails on root folder /
+    } catch (casacore::AipsError& err) {
+        try {
+            base = baseFolder.path().absoluteName();
+        } catch (casacore::AipsError& err) {
+            fmt::print(err.getMesg());
+        }
+        if (base.empty()) base = "/";
     }
     // check if base is same as or subdir of root
     if (base != root) {
         bool isSubdirectory(false);
         casacore::Path basePath(base);
         casacore::String parentString(basePath.dirName()), rootString(root);
-        while (parentString != rootString) {  // navigate up directory tree
+	if (parentString == rootString)
+            isSubdirectory = true;
+        while (!isSubdirectory && (parentString != rootString)) {  // navigate up directory tree
             basePath = casacore::Path(parentString);
             parentString = basePath.dirName();
             if (parentString == rootString) {
                 isSubdirectory = true;
-                break;
-            } else if (parentString == "/") {
+	    } else if (parentString == "/") {
                 break;
             }
         }
