@@ -812,6 +812,8 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                     region->fillHistogram(newHistogram, data, configChannel, currStokes, configNumBins, minval, maxval);
                 } else { // requested channel (current or specified)
                     if (configChannel == currentChannel()) {  // use channel cache
+                        bool writeLock(false);
+                        tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
                         region->getMinMax(minval, maxval, channelCache);
                         region->fillHistogram(newHistogram, channelCache, configChannel, currStokes, configNumBins, minval, maxval);
                     } else {
