@@ -103,30 +103,38 @@ void Session::getRelativePath(std::string& folder) {
 
 CARTA::FileListResponse Session::getFileList(string folder) {
     // fill FileListResponse
-    // folder must be relative to root folder
     std::string requestedFolder = (folder.empty() ? rootFolder : folder);
-
     CARTA::FileListResponse fileList;
+    casacore::Path requestedPath(rootFolder);
     if (requestedFolder == rootFolder) {
-        fileList.set_directory(".");
-    } else {
-        // append folder to root folder
+	// set directory in response; parent is null
+        fileList.set_directory("");
+    } else  { // append folder to root folder
         casacore::Path requestedPath(rootFolder);
         requestedPath.append(folder);
-        requestedFolder = requestedPath.resolvedName();
-        std::string parentFolder(requestedPath.dirName());
-        getRelativePath(parentFolder);
-        if (parentFolder.empty()) parentFolder=".";
-        // set relative paths for directory, parent
-        fileList.set_directory(folder);
-        fileList.set_parent(parentFolder);
+	try {
+            requestedFolder = requestedPath.resolvedName();
+        } catch (casacore::AipsError& err) {
+            try {
+                requestedFolder = requestedPath.absoluteName();
+            } catch (casacore::AipsError& err) {
+                fileList.set_success(false);
+                fileList.set_message("Cannot resolve directory path.");
+                return fileList;
+            }
+        }
+	// set directory and parent in response
+        fileList.set_directory(requestedPath.baseName());
+        std::string dirname(requestedPath.dirName());
+        getRelativePath(dirname);
+        fileList.set_parent(dirname);
     }
-
     casacore::File folderPath(requestedFolder);
     string message;
 
     try {
-        if (checkPermissionForDirectory(folder) && folderPath.exists() && folderPath.isDirectory()) {
+        if (folderPath.exists() && folderPath.isDirectory() && checkPermissionForDirectory(folder)) {
+	    // Iterate through directory to generate file list
             casacore::Directory startDir(folderPath);
             casacore::DirectoryIterator dirIter(startDir);
             while (!dirIter.pastEnd()) {
@@ -287,8 +295,7 @@ void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t 
     }
     // strip rootFolder from folder
     getRelativePath(folder);
-    
-    // fill and send response message
+
     CARTA::FileListResponse response = getFileList(folder);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
     filelistFolder = "nofolder";  // ready for next file list request
