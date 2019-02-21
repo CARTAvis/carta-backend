@@ -232,7 +232,7 @@ void Session::resetFileInfo(bool create) {
         selectedFileInfoExtended = new CARTA::FileInfoExtended();
     } else {
         selectedFileInfo = nullptr;
-	selectedFileInfoExtended = nullptr;
+        selectedFileInfoExtended = nullptr;
     }
 }
 
@@ -240,10 +240,17 @@ void Session::resetFileInfo(bool create) {
 // CARTA ICD implementation
 
 void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId) {
-    apiKey = message.api_key();
     CARTA::RegisterViewerAck ackMessage;
-    ackMessage.set_success(true);
     ackMessage.set_session_id(uuid);
+    auto sessionId = message.session_id();
+    if (!sessionId.empty() && (sessionId.compare(uuid) != 0)) {
+        ackMessage.set_success(false);
+        ackMessage.set_message("Invalid session ID, cannot resume");
+	ackMessage.set_session_type(CARTA::SessionType::RESUMED);
+    } else {
+        ackMessage.set_success(true);
+	ackMessage.set_session_type(CARTA::SessionType::NEW);
+    }
     sendEvent("REGISTER_VIEWER_ACK", requestId, ackMessage);
 }
 
