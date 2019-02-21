@@ -100,7 +100,7 @@ public:
 protected:
     // ICD: File list response
     void getRelativePath(std::string& folder);
-    CARTA::FileListResponse getFileList(std::string folder);
+    void getFileList(CARTA::FileListResponse& fileList, std::string folder);
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
     std::string getType(casacore::ImageOpener::ImageTypes type); // convert enum to string

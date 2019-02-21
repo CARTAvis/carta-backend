@@ -101,18 +101,17 @@ void Session::getRelativePath(std::string& folder) {
     }
 }
 
-CARTA::FileListResponse Session::getFileList(string folder) {
+void Session::getFileList(CARTA::FileListResponse& fileList, string folder) {
     // fill FileListResponse
     std::string requestedFolder = (folder.empty() ? rootFolder : folder);
-    CARTA::FileListResponse fileList;
     casacore::Path requestedPath(rootFolder);
     if (requestedFolder == rootFolder) {
-	// set directory in response; parent is null
-        fileList.set_directory("");
+        // set directory in response; parent is null
+        fileList.set_directory(".");
     } else  { // append folder to root folder
         casacore::Path requestedPath(rootFolder);
         requestedPath.append(folder);
-	try {
+        try {
             requestedFolder = requestedPath.resolvedName();
         } catch (casacore::AipsError& err) {
             try {
@@ -120,13 +119,14 @@ CARTA::FileListResponse Session::getFileList(string folder) {
             } catch (casacore::AipsError& err) {
                 fileList.set_success(false);
                 fileList.set_message("Cannot resolve directory path.");
-                return fileList;
+                return;
             }
         }
-	// set directory and parent in response
+        // set directory and parent in response
         fileList.set_directory(requestedPath.baseName());
         std::string dirname(requestedPath.dirName());
         getRelativePath(dirname);
+        if (dirname.empty()) dirname = ".";
         fileList.set_parent(dirname);
     }
     casacore::File folderPath(requestedFolder);
@@ -134,7 +134,7 @@ CARTA::FileListResponse Session::getFileList(string folder) {
 
     try {
         if (folderPath.exists() && folderPath.isDirectory() && checkPermissionForDirectory(folder)) {
-	    // Iterate through directory to generate file list
+            // Iterate through directory to generate file list
             casacore::Directory startDir(folderPath);
             casacore::DirectoryIterator dirIter(startDir);
             while (!dirIter.pastEnd()) {
@@ -176,16 +176,15 @@ CARTA::FileListResponse Session::getFileList(string folder) {
         } else {
             fileList.set_success(false);
             fileList.set_message("Cannot read directory; check name and permissions.");
-            return fileList;
+            return;
         }
     } catch (casacore::AipsError& err) {
         sendLogEvent(err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR);
         fileList.set_success(false);
         fileList.set_message(err.getMesg());
-        return fileList;
+        return;
     }
     fileList.set_success(true);
-    return fileList;
 }
 
 std::string Session::getType(casacore::ImageOpener::ImageTypes type) { // convert enum to string
@@ -296,7 +295,8 @@ void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t 
     // strip rootFolder from folder
     getRelativePath(folder);
 
-    CARTA::FileListResponse response = getFileList(folder);
+    CARTA::FileListResponse response;
+    getFileList(response, folder);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
     filelistFolder = "nofolder";  // ready for next file list request
 }
