@@ -99,6 +99,7 @@ public:
 
 protected:
     // ICD: File list response
+    void getRelativePath(std::string& folder);
     CARTA::FileListResponse getFileList(std::string folder);
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
