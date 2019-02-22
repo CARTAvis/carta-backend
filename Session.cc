@@ -306,11 +306,20 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto fileInfo = response.mutable_file_info();
     auto fileInfoExtended = response.mutable_file_info_extended();
     string message;
-    bool success = fillExtendedFileInfo(fileInfoExtended, fileInfo, request.directory(), request.file(), request.hdu(), message);
-    if (success) { // save a copy
-        resetFileInfo(true);
-        *selectedFileInfo = response.file_info();
-        *selectedFileInfoExtended = response.file_info_extended();
+    bool success(false);
+    casacore::Path rootpath(rootFolder);
+    rootpath.append(request.directory());
+    std::string dirname;
+    try {
+        dirname = rootpath.resolvedName();
+        success = fillExtendedFileInfo(fileInfoExtended, fileInfo, dirname, request.file(), request.hdu(), message);
+        if (success) { // save a copy
+            resetFileInfo(true);
+            *selectedFileInfo = response.file_info();
+            *selectedFileInfoExtended = response.file_info_extended();
+        }
+    } catch (casacore::AipsError& err) {
+	message = err.getMesg();
     }
     response.set_success(success);
     response.set_message(message);
