@@ -225,27 +225,31 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
         const string folder, const string filename, string hdu, string& message) {
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool extFileInfoOK(true);
-    casacore::Path ccpath(rootFolder);
-    ccpath.append(folder);
-    ccpath.append(filename);
-    casacore::File ccfile(ccpath);
-    if (ccfile.exists()) {
-        casacore::String fullname(ccfile.path().absoluteName());
-        try {
-            FileInfoLoader infoLoader(fullname);
-            if (!infoLoader.fillFileInfo(fileInfo)) {
-                return false;
+    try {
+        casacore::Path rootpath(rootFolder);
+        rootpath.append(folder);
+        rootpath.append(filename);
+        casacore::File ccfile(rootpath);
+        if (ccfile.exists()) {
+            casacore::String fullname(ccfile.path().resolvedName());
+            try {
+                FileInfoLoader infoLoader(fullname);
+                if (!infoLoader.fillFileInfo(fileInfo)) {
+                    return false;
+                }
+                extFileInfoOK = infoLoader.fillFileExtInfo(extendedInfo, hdu, message);
+            } catch (casacore::AipsError& ex) {
+                message = ex.getMesg();
+                extFileInfoOK = false;
             }
-            extFileInfoOK = infoLoader.fillFileExtInfo(extendedInfo, hdu, message);
-        } catch (casacore::AipsError& ex) {
-            message = ex.getMesg();
+        } else {
+            message = "File " + filename + " does not exist.";
             extFileInfoOK = false;
         }
-    } else {
-        message = "File " + filename + " does not exist.";
+    } catch (casacore::AipsError& err) {
+        message = err.getMesg();
         extFileInfoOK = false;
     }
-
     return extFileInfoOK;
 }
 
@@ -306,20 +310,11 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto fileInfo = response.mutable_file_info();
     auto fileInfoExtended = response.mutable_file_info_extended();
     string message;
-    bool success(false);
-    casacore::Path rootpath(rootFolder);
-    rootpath.append(request.directory());
-    std::string dirname;
-    try {
-        dirname = rootpath.resolvedName();
-        success = fillExtendedFileInfo(fileInfoExtended, fileInfo, dirname, request.file(), request.hdu(), message);
-        if (success) { // save a copy
-            resetFileInfo(true);
-            *selectedFileInfo = response.file_info();
-            *selectedFileInfoExtended = response.file_info_extended();
-        }
-    } catch (casacore::AipsError& err) {
-	message = err.getMesg();
+    bool success = fillExtendedFileInfo(fileInfoExtended, fileInfo, request.directory(), request.file(), request.hdu(), message);
+    if (success) { // save a copy
+        resetFileInfo(true);
+        *selectedFileInfo = response.file_info();
+        *selectedFileInfoExtended = response.file_info_extended();
     }
     response.set_success(success);
     response.set_message(message);
