@@ -55,6 +55,7 @@ private:
     int spectralAxis, stokesAxis;  // axis index for each in 4D image
     size_t nchan;
     std::vector<std::vector<ChannelStats>> channelStats;
+    std::vector<ChannelStats> cubeStats;
 
     // set image view 
     CARTA::ImageBounds bounds;
@@ -74,7 +75,7 @@ private:
     // <region_id, Region>: one Region per ID
     std::unordered_map<int, std::unique_ptr<carta::Region>> regions;
 
-    bool loadImageChannelStats(bool loadPercentiles = false);
+    bool loadImageStats(bool loadPercentiles = false);
     void setImageRegion(int regionId); // set region for entire plane image or cube
     void setDefaultCursor(); // using center point of image
     bool cursorSet; // by frontend, not internally

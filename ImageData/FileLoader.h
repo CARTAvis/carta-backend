@@ -17,6 +17,7 @@ enum class Data : uint32_t
     YX, ZYX, ZYXW,
     // Statistics tables
     Stats, Stats2D, S2DMin, S2DMax, S2DMean, S2DNans, S2DHist, S2DPercent, Ranks,
+    Stats3D, S3DMin, S3DMax, S3DMean, S3DNans, S3DHist, S3DPercent,
 };
 
 inline casacore::ImageOpener::ImageTypes fileType(const std::string &file) {

@@ -97,6 +97,13 @@ std::string HDF5Loader::dataSetToString(FileInfo::Data ds) {
         { FileInfo::Data::S2DNans,    "Statistics/XY/NAN_COUNT" },
         { FileInfo::Data::S2DHist,    "Statistics/XY/HISTOGRAM" },
         { FileInfo::Data::S2DPercent, "Statistics/XY/PERCENTILES" },
+        { FileInfo::Data::Stats3D,    "Statistics/XYZ" },
+        { FileInfo::Data::S3DMin,     "Statistics/XYZ/MIN" },
+        { FileInfo::Data::S3DMax,     "Statistics/XYZ/MAX" },
+        { FileInfo::Data::S3DMean,    "Statistics/XYZ/MEAN" },
+        { FileInfo::Data::S3DNans,    "Statistics/XYZ/NAN_COUNT" },
+        { FileInfo::Data::S3DHist,    "Statistics/XYZ/HISTOGRAM" },
+        { FileInfo::Data::S3DPercent, "Statistics/XYZ/PERCENTILES" },
         { FileInfo::Data::Ranks,      "PERCENTILE_RANKS" },
     };
     return (um.find(ds) != um.end()) ? um[ds] : "";

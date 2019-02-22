@@ -46,7 +46,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
 
         // make Region for entire image (after current channel/stokes set)
         setImageRegion(IMAGE_REGION_ID);
-        loadImageChannelStats(false); // from image file if exists
+        loadImageStats(false); // from image file if exists
     } catch (casacore::AipsError& err) {
         log(uuid, "Problem loading file {}: {}", filename, err.getMesg());
         valid = false;
@@ -154,9 +154,10 @@ std::vector<float> Frame::getImageChanData(size_t chan) {
     return data;
 }
 
-bool Frame::loadImageChannelStats(bool loadPercentiles) {
+bool Frame::loadImageStats(bool loadPercentiles) {
     // load channel stats for entire image (all channels and stokes) from header
     // channelStats[stokes][chan]
+    // cubeStats[stokes]
     if (!valid) {
         return false;
     }
@@ -167,10 +168,15 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
     for (auto i = 0; i < nstokes; i++) {
         channelStats[i].resize(depth);
     }
+    cubeStats.resize(nstokes);
     size_t ndims = imageShape.size();
+    
+    bool found_stats(false);
 
     //TODO: Support multiple HDUs
     if (loader->hasData(FileInfo::Data::Stats) && loader->hasData(FileInfo::Data::Stats2D)) {
+        found_stats = true;
+        
         if (loader->hasData(FileInfo::Data::S2DMax)) {
             auto &dataSet = loader->loadData(FileInfo::Data::S2DMax);
             casacore::IPosition statDims = dataSet.shape();
@@ -212,14 +218,14 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
-                channelStats[0][0].maxVal = *it;
+                channelStats[0][0].minVal = *it;
             } // 3D cubes
             else if (ndims == 3 && statDims.size() == 1 && statDims[0] == depth) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < depth; ++i) {
-                    channelStats[0][i].maxVal = *it++;
+                    channelStats[0][i].minVal = *it++;
                 }
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
@@ -229,7 +235,7 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
                     for (auto j = 0; j < depth; j++) {
-                        channelStats[i][j].maxVal = *it++;
+                        channelStats[i][j].minVal = *it++;
                     }
                 }
             }
@@ -244,14 +250,14 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
-                channelStats[0][0].maxVal = *it;
+                channelStats[0][0].mean = *it;
             } // 3D cubes
             else if (ndims == 3 && statDims.size() == 1 && statDims[0] == depth) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < depth; ++i) {
-                    channelStats[0][i].maxVal = *it++;
+                    channelStats[0][i].mean = *it++;
                 }
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
@@ -261,7 +267,7 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
                     for (auto j = 0; j < depth; j++) {
-                        channelStats[i][j].maxVal = *it++;
+                        channelStats[i][j].mean = *it++;
                     }
                 }
             }
@@ -276,14 +282,14 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
-                channelStats[0][0].maxVal = *it;
+                channelStats[0][0].nanCount = *it;
             } // 3D cubes
             else if (ndims == 3 && statDims.size() == 1 && statDims[0] == depth) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < depth; ++i) {
-                    channelStats[0][i].maxVal = *it++;
+                    channelStats[0][i].nanCount = *it++;
                 }
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
@@ -293,7 +299,7 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
                     for (auto j = 0; j < depth; j++) {
-                        channelStats[i][j].maxVal = *it++;
+                        channelStats[i][j].nanCount = *it++;
                     }
                 }
             }
@@ -392,10 +398,162 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
                 }
             }
         }
-    } else {
-        return false;
     }
-    return true;
+    
+    if (loader->hasData(FileInfo::Data::Stats) && loader->hasData(FileInfo::Data::Stats3D)) {
+        found_stats = true;
+        
+        if (loader->hasData(FileInfo::Data::S3DMax)) {
+            auto &dataSet = loader->loadData(FileInfo::Data::S3DMax);
+            casacore::IPosition statDims = dataSet.shape();
+
+            // 3D cubes
+            if (ndims == 3 && statDims.size() == 0) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                cubeStats[0].maxVal = *it;
+            } // 4D cubes
+            else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                for (auto i = 0; i < nstokes; i++) {
+                    cubeStats[i].maxVal = *it++;
+                }
+            }
+        }
+
+        if (loader->hasData(FileInfo::Data::S3DMin)) {
+            auto &dataSet = loader->loadData(FileInfo::Data::S3DMin);
+            casacore::IPosition statDims = dataSet.shape();
+
+            // 3D cubes
+            if (ndims == 3 && statDims.size() == 0) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                cubeStats[0].minVal = *it;
+            } // 4D cubes
+            else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                for (auto i = 0; i < nstokes; i++) {
+                    cubeStats[i].minVal = *it++;
+                }
+            }
+        }
+
+        if (loader->hasData(FileInfo::Data::S3DMean)) {
+            auto &dataSet = loader->loadData(FileInfo::Data::S3DMean);
+            casacore::IPosition statDims = dataSet.shape();
+
+            // 3D cubes
+            if (ndims == 3 && statDims.size() == 0) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                cubeStats[0].mean = *it;
+            } // 4D cubes
+            else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                for (auto i = 0; i < nstokes; i++) {
+                    cubeStats[i].mean = *it++;
+                }
+            }
+        }
+
+        if (loader->hasData(FileInfo::Data::S3DNans)) {
+            auto &dataSet = loader->loadData(FileInfo::Data::S3DNans);
+            casacore::IPosition statDims = dataSet.shape();
+
+            // 3D cubes
+            if (ndims == 3 && statDims.size() == 0) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                cubeStats[0].nanCount = *it;
+            } // 4D cubes
+            else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                for (auto i = 0; i < nstokes; i++) {
+                    cubeStats[i].nanCount = *it++;
+                }
+            }
+        }
+
+        if (loader->hasData(FileInfo::Data::S3DHist)) {
+            auto &dataSet = loader->loadData(FileInfo::Data::S3DHist);
+            casacore::IPosition statDims = dataSet.shape();
+            auto numBins = statDims[2];
+            
+            // 3D cubes
+            if (ndims == 3 && statDims.size() == 0) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                std::copy(data.begin(), data.end(),
+                          std::back_inserter(cubeStats[0].histogramBins));
+            } // 4D cubes
+            else if (ndims == 4 && statDims.size() == 1 &&
+                     statDims[0] == nstokes) {
+                casacore::Array<float> data;
+                dataSet.get(data, true);
+                auto it = data.begin();
+                for (auto i = 0; i < nstokes; i++) {
+                    cubeStats[i].histogramBins.resize(numBins);
+                    for (auto k = 0; k < numBins; k++) {
+                        cubeStats[i].histogramBins[k] = *it++;
+                    }
+                }
+            }
+        }
+
+        if (loadPercentiles) {
+            if (loader->hasData(FileInfo::Data::S3DPercent) &&
+                loader->hasData(FileInfo::Data::Ranks)) {
+                auto &dataSetPercentiles = loader->loadData(FileInfo::Data::S3DPercent);
+                auto &dataSetPercentilesRank = loader->loadData(FileInfo::Data::Ranks);
+
+                casacore::IPosition dimsPercentiles = dataSetPercentiles.shape();
+                casacore::IPosition dimsRanks = dataSetPercentilesRank.shape();
+
+                auto numRanks = dimsRanks[0];
+                casacore::Vector<float> ranks(numRanks);
+                dataSetPercentilesRank.get(ranks, false);
+            
+                // 3D cubes
+                if (ndims == 3 && dimsPercentiles.size() == 1 && dimsPercentiles[0] == numRanks) {
+                    casacore::Vector<float> vals(numRanks);
+                    dataSetPercentiles.get(vals, true);
+                    vals.tovector(cubeStats[0].percentiles);
+                    ranks.tovector(cubeStats[0].percentileRanks);
+                }
+                // 4D cubes
+                else if (ndims == 4 && dimsPercentiles.size() == 2 && dimsPercentiles[0] == nstokes && 
+                         dimsPercentiles[1] == numRanks) {
+                    
+                    casacore::Matrix<float> vals(stokes, numRanks);
+                    dataSetPercentiles.get(vals, false);
+
+                    for (auto i = 0; i < nstokes; i++) {
+                        ranks.tovector(cubeStats[i].percentileRanks);
+                        cubeStats[i].percentiles.resize(numRanks);
+                        for (auto j = 0; j < numRanks; j++) {
+                            cubeStats[i].percentiles[j] = vals(i,j);
+                        }
+                    }                    
+                }
+            }
+        }
+    }
+    
+    return found_stats;
 }
 
 // ********************************************************************
