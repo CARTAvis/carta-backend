@@ -992,15 +992,21 @@ template<typename T>
 std::vector<T> Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer& section) {
     auto imgDims = lattice.ndim();
     auto imageShape = lattice.shape();
-
     // set the cursor shape which is equal to the section to load partial image data
     casacore::IPosition cursorShape(imgDims, 0), offset(imgDims, 1);
     cursorShape = section.end() - section.start() + offset;
-
+    // set LatticeStepper wihich the cusdor shape should not be smaller than the image shape
     casacore::LatticeStepper stepper(imageShape, cursorShape, casacore::LatticeStepper::RESIZE);
-    stepper.subSection(section.start(), section.end(), section.stride());
+    // subsection the stepper so it only iterates through the range [section.start(), section.end()]
+    stepper.subSection(section.start(), section.end(), section.stride()); // image shape >= subsection shape >= cursor shape
     casacore::RO_LatticeIterator<T> iter(lattice, stepper);
-    return iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
+    std::vector<T> result;
+    // increment the cursor shape to the end of subsection (sub-lattice)
+    for (iter.reset(); !iter.atEnd(); iter++) {
+        std::vector<T> tmp = iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
+        result.insert(std::end(result), std::begin(tmp), std::end(tmp));
+    }
+    return result;
 }
 
 void Frame::printoutIPosition(std::string message, const casacore::IPosition& iPosition) {
