@@ -105,11 +105,13 @@ CARTA::FileListResponse Session::getFileList(string folder) {
     // fill FileListResponse
     casacore::Path fullPath(baseFolder);
     CARTA::FileListResponse fileList;
-    if (folder.length() && folder != "/") {
+    if (folder.empty() || (folder.compare(".")==0)) {
+        fileList.set_directory("."); // no parent
+    } else {
         fullPath.append(folder);
-        fileList.set_directory(folder);
         std::string parentDir(fullPath.dirName());
         getRelativePath(parentDir);
+        fileList.set_directory(folder);
         fileList.set_parent(parentDir);
     }
 
