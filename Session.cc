@@ -95,15 +95,18 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
 
 void Session::getRelativePath(std::string& folder) {
     // Remove root folder path from given folder string
-    if (folder.find(rootFolder)==0) {
+    if (folder.find("./")==0) {
+        folder.replace(0, 2, ""); // remove leading "./"
+    } else if (folder.find(rootFolder)==0) {
         folder.replace(0, rootFolder.length(), ""); // remove root folder path
         if (folder.front()=='/') folder.replace(0,1,""); // remove leading '/'
     }
+    if (folder.empty()) folder=".";
 }
 
 void Session::getFileList(CARTA::FileListResponse& fileList, string folder) {
     // fill FileListResponse
-    std::string requestedFolder = (folder.empty() ? rootFolder : folder);
+    std::string requestedFolder = ((folder.compare(".")==0) ? rootFolder : folder);
     casacore::Path requestedPath(rootFolder);
     if (requestedFolder == rootFolder) {
         // set directory in response; parent is null
@@ -111,6 +114,11 @@ void Session::getFileList(CARTA::FileListResponse& fileList, string folder) {
     } else  { // append folder to root folder
         casacore::Path requestedPath(rootFolder);
         requestedPath.append(folder);
+        // set directory and parent in response
+        std::string parentDir(requestedPath.dirName());
+        getRelativePath(parentDir);
+        fileList.set_directory(folder);
+        fileList.set_parent(parentDir);
         try {
             requestedFolder = requestedPath.resolvedName();
         } catch (casacore::AipsError& err) {
@@ -122,12 +130,6 @@ void Session::getFileList(CARTA::FileListResponse& fileList, string folder) {
                 return;
             }
         }
-        // set directory and parent in response
-        fileList.set_directory(requestedPath.baseName());
-        std::string dirname(requestedPath.dirName());
-        getRelativePath(dirname);
-        if (dirname.empty()) dirname = ".";
-        fileList.set_parent(dirname);
     }
     casacore::File folderPath(requestedFolder);
     string message;
