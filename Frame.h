@@ -50,6 +50,7 @@ private:
 
     // image loader, shape, stats from image file
     std::string filename;
+    casacore::ImageOpener::ImageTypes fileType;
     std::unique_ptr<carta::FileLoader> loader;
     casacore::IPosition imageShape; // (width, height, depth, stokes)
     int spectralAxis, stokesAxis;  // axis index for each in 4D image

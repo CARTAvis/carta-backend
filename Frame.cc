@@ -23,6 +23,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         }
         loader->openFile(filename, hdu);
         auto &dataSet = loader->loadData(FileInfo::Data::XYZW);
+        fileType = casacore::ImageOpener::imageType(filename);
 
         imageShape = dataSet.shape();
         size_t ndims = imageShape.size();
