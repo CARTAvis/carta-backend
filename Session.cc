@@ -92,6 +92,15 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
 // ********************************************************************************
 // File browser
 
+void Session::getRelativePath(std::string& folder) {
+    // Remove root folder path from given folder string
+    if (folder.find(baseFolder)==0) {
+        folder.replace(0, baseFolder.length(), ""); // remove root folder path
+        if (folder.front()=='/') folder.replace(0,1,""); // remove leading '/'
+        if (folder.empty()) folder=".";
+    }
+}
+
 CARTA::FileListResponse Session::getFileList(string folder) {
     // fill FileListResponse
     casacore::Path fullPath(baseFolder);
@@ -99,7 +108,9 @@ CARTA::FileListResponse Session::getFileList(string folder) {
     if (folder.length() && folder != "/") {
         fullPath.append(folder);
         fileList.set_directory(folder);
-        fileList.set_parent(fullPath.dirName());
+        std::string parentDir(fullPath.dirName());
+        getRelativePath(parentDir);
+        fileList.set_parent(parentDir);
     }
 
     casacore::File folderPath(fullPath);
@@ -232,7 +243,7 @@ void Session::resetFileInfo(bool create) {
         selectedFileInfoExtended = new CARTA::FileInfoExtended();
     } else {
         selectedFileInfo = nullptr;
-	selectedFileInfoExtended = nullptr;
+        selectedFileInfoExtended = nullptr;
     }
 }
 
@@ -240,10 +251,28 @@ void Session::resetFileInfo(bool create) {
 // CARTA ICD implementation
 
 void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId) {
-    apiKey = message.api_key();
+    auto sessionId = message.session_id();
+    bool success(false);
+    std::string error;
+    CARTA::SessionType type(CARTA::SessionType::NEW);
+    // check session id
+    if (sessionId.empty()) {
+        sessionId = uuid;
+        success = true;
+    } else {
+        type = CARTA::SessionType::RESUMED;
+        if (sessionId.compare(uuid) != 0) {  // invalid session id
+            error = "Cannot resume session id " + sessionId;
+        } else {
+            success = true;
+        }
+    }
+    // response
     CARTA::RegisterViewerAck ackMessage;
-    ackMessage.set_success(true);
-    ackMessage.set_session_id(uuid);
+    ackMessage.set_session_id(sessionId);
+    ackMessage.set_success(success);
+    ackMessage.set_message(error);
+    ackMessage.set_session_type(type);
     sendEvent("REGISTER_VIEWER_ACK", requestId, ackMessage);
 }
 
