@@ -999,7 +999,7 @@ void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer&
     casacore::IPosition tileShape = lattice.niceCursorShape();
     // set lattice stepper with the tile shape
     casacore::LatticeStepper stepper(imageShape, tileShape, casacore::LatticeStepper::RESIZE);
-    // subsection the stepper so it only iterates through the 2-D range, which is defined in [section.start(), section.end()]
+    // subsection the stepper so it only iterates through the range we select
     stepper.subSection(section.start(), section.end(), section.stride());
     // get lattice iterator
     casacore::RO_LatticeIterator<T> iter(lattice, stepper);
