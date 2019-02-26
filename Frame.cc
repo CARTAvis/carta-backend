@@ -1003,11 +1003,9 @@ void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer&
     stepper.subSection(section.start(), section.end(), section.stride());
     // get lattice iterator
     casacore::RO_LatticeIterator<T> iter(lattice, stepper);
-    // reset (reuse) the data cache
-    data.clear();
-    // resize (pre-allocate) the memory size of data cache
+    // reset (reuse) the data cache by resizing (pre-allocate) the memory size of data cache
     data.resize(sectionShape.product());
-    // increment the tile shape to the end of 2-D image plane
+    // increment the tile shape to the end of section
     std::vector<T> tmp;
     // the data reading orders are different between CASA and non-CASA images, so we handle them separately
     if (fileType == casacore::ImageOpener::AIPSPP) { // for CASA image files
