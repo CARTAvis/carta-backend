@@ -317,13 +317,14 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     auto fileId(message.file_id());
     auto filename(message.file());
+    auto hdu(message.hdu());
     string errMessage;
     bool infoLoaded((selectedFileInfo != nullptr) && (selectedFileInfo->name() == filename) &&
         (selectedFileInfoExtended != nullptr)); // correct file loaded
     if (!infoLoaded) { // load from image file
         resetFileInfo(true);
         infoLoaded = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, message.directory(),
-            message.file(), message.hdu(), errMessage);
+            message.file(), hdu, errMessage);
     }
     // response message:
     CARTA::OpenFileAck ack;
@@ -341,7 +342,8 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         path.append(filename);
         string filenamePath(path.absoluteName());
         // create Frame for open file
-        string hdu = selectedFileInfo->hdu_list(0);
+        if (hdu.empty())  // use first
+            hdu = selectedFileInfo->hdu_list(0);
         auto frame = std::unique_ptr<Frame>(new Frame(uuid, filenamePath, hdu));
         if (frame->isValid()) {
             success = true;

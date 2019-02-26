@@ -149,6 +149,9 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
     try {
         // read attributes into casacore Record
         casacore::HDF5File hdfFile(m_file);
+        if (hdu.empty()) { // use first
+            hdu = casacore::HDF5Group::linkNames(hdfFile)[0];
+        }
         casacore::HDF5Group hdfGroup(hdfFile, hdu, true);
         casacore::Record attributes;
         try {
@@ -322,6 +325,26 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         extendedInfo->set_height(dataShape(1));
         extendedInfo->add_stokes_vals(""); // not in header
 
+        // set missing dims in header entries
+        if (!hduEntries.isDefined("NAXIS")) {
+            auto headerEntry = extendedInfo->add_header_entries();
+            headerEntry->set_name("NAXIS");
+            *headerEntry->mutable_value() = fmt::format("{}", ndim);
+            headerEntry->set_entry_type(CARTA::EntryType::INT);
+            headerEntry->set_numeric_value(ndim);
+        }
+        for (int i=0; i<ndim; ++i) {
+            casacore::String axisName("NAXIS" + casacore::String::toString(i + 1));
+            if (!hduEntries.isDefined(axisName)) {
+                int naxisI(dataShape(i));
+                auto headerEntry = extendedInfo->add_header_entries();
+                headerEntry->set_name(axisName);
+                *headerEntry->mutable_value() = fmt::format("{}", naxisI);
+                headerEntry->set_entry_type(CARTA::EntryType::INT);
+                headerEntry->set_numeric_value(naxisI);
+            }
+        }
+
         // if in header, save values for computed entries
         std::string coordTypeX, coordTypeY, coordType3, coordType4, radeSys, equinox, specSys,
             bunit, crpix1, crpix2, cunit1, cunit2;
@@ -360,6 +383,8 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
                     }
                     case casacore::TpInt: {
                         int64_t valueInt(hduEntries.asInt(field));
+                        if ((name=="NAXIS") && (valueInt==0))
+                            valueInt = ndim;
                         *headerEntry->mutable_value() = fmt::format("{}", valueInt);
                         headerEntry->set_entry_type(CARTA::EntryType::INT);
                         headerEntry->set_numeric_value(valueInt);
