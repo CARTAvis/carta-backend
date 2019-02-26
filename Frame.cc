@@ -993,24 +993,52 @@ template<typename T>
 void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer& section, std::vector<T>& data) {
     auto imgDims = lattice.ndim();
     auto imageShape = lattice.shape();
-    // set the cursor shape which is equal to the section to load partial image data
-    casacore::IPosition cursorShape(imgDims, 0), offset(imgDims, 1), subSectionStride(imgDims, 1);
-    cursorShape = section.end() - section.start() + offset;
-    // set LatticeStepper wihich the cusdor shape should not be smaller than the image shape
-    casacore::LatticeStepper stepper(imageShape, cursorShape, casacore::LatticeStepper::RESIZE);
-    // subsection the stepper so it only iterates through the range [section.start(), section.end()]
-    stepper.subSection(section.start(), section.end(), subSectionStride); // image shape >= subsection shape >= cursor shape
+    // set the section shape to load partial image data
+    casacore::IPosition sectionShape(imgDims, 0), offset(imgDims, 1);
+    sectionShape = section.end() - section.start() + offset;
+    // get tile shape
+    casacore::IPosition tileShape = lattice.niceCursorShape();
+    // set lattice stepper with the tile shape
+    casacore::LatticeStepper stepper(imageShape, tileShape, casacore::LatticeStepper::RESIZE);
+    // subsection the stepper so it only iterates through the 2-D range, which is defined in [section.start(), section.end()]
+    stepper.subSection(section.start(), section.end(), section.stride());
+    // get lattice iterator
     casacore::RO_LatticeIterator<T> iter(lattice, stepper);
     // reset (reuse) the data cache
     data.clear();
     // resize (pre-allocate) the memory size of data cache
-    data.resize(cursorShape.product());
-    // increment the cursor shape to the end of subsection (sub-lattice)
+    data.resize(sectionShape.product());
+    // increment the tile shape to the end of 2-D image plane
     size_t begin = 0;
-    for (iter.reset(); !iter.atEnd(); iter++) {
-        std::vector<T> tmp = iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
-        memcpy(&data[begin], &tmp[0], tmp.size()*sizeof(T));
-        begin += tmp.size();
+    std::vector<T> tmp;
+    // the data reading orders are different between CASA and non-CASA images, so we handle them separately
+    if (fileType == casacore::ImageOpener::AIPSPP) { // for CASA image files
+        auto tileRowLength = tileShape(0);
+        auto tileColLength = tileShape(1);
+        auto tileRowSize = imageShape(0) / tileRowLength;
+        auto tileColSize = imageShape(1) / tileColLength;
+        size_t tileNo = 0; // tile No.
+        size_t tileRowNo; // tile row No.
+        size_t tileColNo; // tile column No.
+        size_t dataCord; // data (global) coordinate
+        size_t tileCord; // tile (local) coordinate
+        for (iter.reset(); !iter.atEnd(); iter++) {
+            tileRowNo = tileNo % tileRowSize;
+            tileColNo = tileNo / tileRowSize;
+            tmp = iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
+            for (size_t i = 0; i < tileColLength; i++) {
+                tileCord = i * tileRowLength;
+                dataCord = (tileRowLength * tileRowSize) * (tileColLength * tileColNo + i) + (tileRowNo * tileRowLength);
+                memcpy(&data[dataCord], &tmp[tileCord], tileRowLength * sizeof(T));
+            }
+            tileNo++;
+        }
+    } else { // for non-CASA image files
+      for (iter.reset(); !iter.atEnd(); iter++) {
+          tmp = iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
+          memcpy(&data[begin], &tmp[0], tmp.size() * sizeof(T));
+          begin += tmp.size();
+      }
     }
 }
 
