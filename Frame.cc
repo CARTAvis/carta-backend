@@ -12,6 +12,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
       valid(true),
       cursorSet(false),
       filename(filename),
+      fileType(casacore::ImageOpener::imageType(filename)),
       loader(FileLoader::getLoader(filename)),
       nchan(1),
       channelIndex(-1), stokesIndex(-1), spectralAxis(-1), stokesAxis(-1) {
@@ -23,7 +24,6 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         }
         loader->openFile(filename, hdu);
         auto &dataSet = loader->loadData(FileInfo::Data::XYZW);
-        fileType = casacore::ImageOpener::imageType(filename);
 
         imageShape = dataSet.shape();
         size_t ndims = imageShape.size();
@@ -992,7 +992,6 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
 template<typename T>
 void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer& section, std::vector<T>& data) {
     auto imgDims = lattice.ndim();
-    auto imageShape = lattice.shape();
     // set the section shape to load partial image data
     casacore::IPosition sectionShape(imgDims, 0), offset(imgDims, 1);
     sectionShape = section.end() - section.start() + offset;
@@ -1009,7 +1008,6 @@ void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer&
     // resize (pre-allocate) the memory size of data cache
     data.resize(sectionShape.product());
     // increment the tile shape to the end of 2-D image plane
-    size_t begin = 0;
     std::vector<T> tmp;
     // the data reading orders are different between CASA and non-CASA images, so we handle them separately
     if (fileType == casacore::ImageOpener::AIPSPP) { // for CASA image files
@@ -1034,11 +1032,12 @@ void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer&
             tileNo++;
         }
     } else { // for non-CASA image files
-      for (iter.reset(); !iter.atEnd(); iter++) {
-          tmp = iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
-          memcpy(&data[begin], &tmp[0], tmp.size() * sizeof(T));
-          begin += tmp.size();
-      }
+        size_t begin = 0;
+        for (iter.reset(); !iter.atEnd(); iter++) {
+            tmp = iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
+            memcpy(&data[begin], &tmp[0], tmp.size() * sizeof(T));
+            begin += tmp.size();
+        }
     }
 }
 
