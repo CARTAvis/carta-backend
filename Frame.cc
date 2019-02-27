@@ -1043,11 +1043,3 @@ void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer&
         }
     }
 }
-
-void Frame::printoutIPosition(std::string message, const casacore::IPosition& iPosition) {
-    auto iPositionAsVector = iPosition.asStdVector();
-    fmt::print("casacore::IPosition {} = [", message);
-    for (int i = 0; i < iPositionAsVector.size() - 1; i++)
-        fmt::print("{}, ", iPositionAsVector[i]);
-    fmt::print("{}]\n", iPositionAsVector[iPositionAsVector.size() - 1]);
-}
