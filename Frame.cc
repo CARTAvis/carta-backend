@@ -538,7 +538,7 @@ bool Frame::loadImageStats(bool loadPercentiles) {
                 else if (ndims == 4 && dimsPercentiles.size() == 2 && dimsPercentiles[0] == nstokes && 
                          dimsPercentiles[1] == numRanks) {
                     
-                    casacore::Matrix<float> vals(stokes, numRanks);
+                    casacore::Matrix<float> vals(nstokes, numRanks);
                     dataSetPercentiles.get(vals, false);
 
                     for (auto i = 0; i < nstokes; i++) {
@@ -938,10 +938,10 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             auto newHistogram = histogramData->add_histograms();
             newHistogram->set_channel(configChannel);
             bool haveHistogram(false);
-            if (configChannel >= 0) {
+            if (configChannel >= 0 || configChannel == ALL_CHANNELS) {
                 // use histogram from image file if correct channel, stokes, and numBins
-                auto& currentStats = channelStats[currStokes][configChannel];
-                if (!channelStats[currStokes][configChannel].histogramBins.empty()) {
+                auto& currentStats = configChannel >= 0 ? channelStats[currStokes][configChannel] : cubeStats[currStokes];
+                if (!currentStats.histogramBins.empty()) {
                     int nbins(currentStats.histogramBins.size());
                     if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
                         newHistogram->set_num_bins(nbins);
