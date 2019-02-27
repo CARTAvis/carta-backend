@@ -1016,17 +1016,22 @@ void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer&
         size_t tileNo = 0; // tile No.
         size_t tileRowNo; // tile row No.
         size_t tileColNo; // tile column No.
-        size_t dataCord; // data (global) coordinate
-        size_t tileCord; // tile (local) coordinate
         for (iter.reset(); !iter.atEnd(); iter++) {
             tileRowNo = tileNo % tileRowSize;
             tileColNo = tileNo / tileRowSize;
             tmp = iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
-            for (size_t i = 0; i < tileColLength; i++) {
-                tileCord = i * tileRowLength;
-                dataCord = (tileRowLength * tileRowSize) * (tileColLength * tileColNo + i) + (tileRowNo * tileRowLength);
-                memcpy(&data[dataCord], &tmp[tileCord], tileRowLength * sizeof(T));
-            }
+            // parallelize the copy of tile data to a data cache
+            auto range = tbb::blocked_range<size_t>(0, tileColLength);
+            auto loop = [&](const tbb::blocked_range<size_t> &r) {
+                for(size_t i = r.begin(); i != r.end(); ++i) {
+                    // calculate the tile (local) coordinate
+                    size_t tileCord = i * tileRowLength;
+                    // calculate the data (global) coordinate
+                    size_t dataCord = (tileRowLength * tileRowSize) * (tileColLength * tileColNo + i) + (tileRowNo * tileRowLength);
+                    memcpy(&data[dataCord], &tmp[tileCord], tileRowLength * sizeof(T));
+                }
+            };
+            tbb::parallel_for(range, loop);
             tileNo++;
         }
     } else { // for non-CASA image files
