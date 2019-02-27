@@ -291,9 +291,14 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
     bool extInfoOK(true);
     try {
         // convert string hdu to unsigned int
-        casacore::String ccHdu(hdu);
         casacore::uInt hdunum;
-        ccHdu.fromString(hdunum, true);
+        try {
+            casacore::String ccHdu(hdu);
+            ccHdu.fromString(hdunum, true);
+        } catch (casacore::AipsError& err) {
+            message = "Invalid hdu for FITS image.";
+	    return false;
+        }
 
         // check shape
         casacore::Int ndim(0);
