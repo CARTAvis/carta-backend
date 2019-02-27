@@ -1019,7 +1019,8 @@ void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer&
         for (iter.reset(); !iter.atEnd(); iter++) {
             tileRowNo = tileNo % tileRowSize;
             tileColNo = tileNo / tileRowSize;
-            tmp = iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
+            // ".cursor()" converts to casacore::Array<T>, ".tovector()" converts to std::vector<T>, and we assign it to std::vector<T> tmp
+            iter.cursor().tovector(tmp);
             // parallelize the copy of tile data to a data cache
             auto range = tbb::blocked_range<size_t>(0, tileColLength);
             auto loop = [&](const tbb::blocked_range<size_t> &r) {
@@ -1037,7 +1038,8 @@ void Frame::getData(const casacore::Lattice<T>& lattice, const casacore::Slicer&
     } else { // for non-CASA image files
         size_t begin = 0;
         for (iter.reset(); !iter.atEnd(); iter++) {
-            tmp = iter.cursor().tovector(); // ".cursor()" converts to casacore::Array<T> and ".tovector()" converts to std::vector<T>
+            // ".cursor()" converts to casacore::Array<T>, ".tovector()" converts to std::vector<T>, and we assign it to std::vector<T> tmp
+            iter.cursor().tovector(tmp);
             memcpy(&data[begin], &tmp[0], tmp.size() * sizeof(T));
             begin += tmp.size();
         }
