@@ -222,6 +222,8 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
             if (!infoLoader.fillFileInfo(fileInfo)) {
                 return false;
             }
+            if (hdu.empty())  // use first when required
+                hdu = fileInfo->hdu_list(0);
             extFileInfoOK = infoLoader.fillFileExtInfo(extendedInfo, hdu, message);
         } catch (casacore::AipsError& ex) {
             message = ex.getMesg();
