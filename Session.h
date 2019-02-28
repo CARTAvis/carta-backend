@@ -46,7 +46,7 @@ protected:
     bool permissionsEnabled;
     std::string apiKey;
 
-    std::string baseFolder, filelistFolder;
+    std::string rootFolder, baseFolder, filelistFolder;
     bool verboseLogging;
 
     // load for file browser, reuse when open file
@@ -74,7 +74,7 @@ public:
             std::string uuid,
             std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
             bool enforcePermissions,
-            std::string folder,
+            std::string root, std::string base,
             uS::Async *outgoing,
             bool verbose = false);
     ~Session();
@@ -100,7 +100,7 @@ public:
 protected:
     // ICD: File list response
     void getRelativePath(std::string& folder);
-    CARTA::FileListResponse getFileList(std::string folder);
+    void getFileList(CARTA::FileListResponse& fileList, std::string folder);
     bool checkPermissionForDirectory(std:: string prefix);
     bool checkPermissionForEntry(std::string entry);
     std::string getType(casacore::ImageOpener::ImageTypes type); // convert enum to string
