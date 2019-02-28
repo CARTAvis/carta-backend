@@ -239,6 +239,8 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
                 if (!infoLoader.fillFileInfo(fileInfo)) {
                     return false;
                 }
+                if (hdu.empty())  // use first when required
+                    hdu = fileInfo->hdu_list(0);
                 extFileInfoOK = infoLoader.fillFileExtInfo(extendedInfo, hdu, message);
             } catch (casacore::AipsError& ex) {
                 message = ex.getMesg();
@@ -273,10 +275,28 @@ void Session::resetFileInfo(bool create) {
 // CARTA ICD implementation
 
 void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId) {
-    apiKey = message.api_key();
+    auto sessionId = message.session_id();
+    bool success(false);
+    std::string error;
+    CARTA::SessionType type(CARTA::SessionType::NEW);
+    // check session id
+    if (sessionId.empty()) {
+        sessionId = uuid;
+        success = true;
+    } else {
+        type = CARTA::SessionType::RESUMED;
+        if (sessionId.compare(uuid) != 0) {  // invalid session id
+            error = "Cannot resume session id " + sessionId;
+        } else {
+            success = true;
+        }
+    }
+    // response
     CARTA::RegisterViewerAck ackMessage;
-    ackMessage.set_success(true);
-    ackMessage.set_session_id(uuid);
+    ackMessage.set_session_id(sessionId);
+    ackMessage.set_success(success);
+    ackMessage.set_message(error);
+    ackMessage.set_session_type(type);
     sendEvent("REGISTER_VIEWER_ACK", requestId, ackMessage);
 }
 
@@ -324,41 +344,51 @@ void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
 }
 
 void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
-    auto fileId(message.file_id());
-    auto filename(message.file());
+    // Create Frame and send reponse message
     auto directory(message.directory());
-    string errMessage;
-    bool infoLoaded((selectedFileInfo != nullptr) && (selectedFileInfo->name() == filename) &&
-        (selectedFileInfoExtended != nullptr)); // correct file loaded
-    if (!infoLoaded) { // load from image file
-        resetFileInfo(true);
-        infoLoaded = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, directory,
-            filename, message.hdu(), errMessage);
-    }
+    auto filename(message.file());
+    auto hdu(message.hdu());
+    auto fileId(message.file_id());
     // response message:
     CARTA::OpenFileAck ack;
     ack.set_file_id(fileId);
+    string errMessage;
+    bool infoLoaded((selectedFileInfo != nullptr) && 
+        (selectedFileInfoExtended != nullptr) && 
+        (selectedFileInfo->name() == filename)); // correct file loaded
+    if (!infoLoaded) { // load from image file
+        resetFileInfo(true);
+        infoLoaded = fillExtendedFileInfo(selectedFileInfoExtended, selectedFileInfo, message.directory(),
+            message.file(), hdu, errMessage);
+    }
     bool success(false);
     if (!infoLoaded) {
         resetFileInfo(); // clean up
     } else {
-        // copy
-        *ack.mutable_file_info() = *selectedFileInfo;
-        *ack.mutable_file_info_extended() = *selectedFileInfoExtended;
+        // Set hdu if empty
+        if (hdu.empty())  // use first
+            hdu = selectedFileInfo->hdu_list(0);
         // form path with filename
         casacore::Path rootPath(rootFolder);
         rootPath.append(directory);
         rootPath.append(filename);
         string absFilename(rootPath.resolvedName());
         // create Frame for open file
-        string hdu = selectedFileInfo->hdu_list(0);
         auto frame = std::unique_ptr<Frame>(new Frame(uuid, absFilename, hdu));
         if (frame->isValid()) {
-            success = true;
-            std::unique_lock<std::mutex> lock(frameMutex);
+            std::unique_lock<std::mutex> lock(frameMutex); // open/close lock
             frames[fileId] = move(frame);
             lock.unlock();
             newFrame = true;
+            // copy file info, extended file info
+	    CARTA::FileInfo* responseFileInfo = new CARTA::FileInfo();
+	    responseFileInfo->set_name(selectedFileInfo->name());
+	    responseFileInfo->set_type(selectedFileInfo->type());
+	    responseFileInfo->set_size(selectedFileInfo->size());
+	    responseFileInfo->add_hdu_list(hdu); // loaded hdu only 
+            *ack.mutable_file_info() = *responseFileInfo;
+            *ack.mutable_file_info_extended() = *selectedFileInfoExtended;
+            success = true;
         } else {
             errMessage = "Could not load image";
         }
