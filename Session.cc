@@ -141,7 +141,8 @@ void Session::getFileList(CARTA::FileListResponse& fileList, string folder) {
             casacore::DirectoryIterator dirIter(startDir);
             while (!dirIter.pastEnd()) {
                 casacore::File ccfile(dirIter.file());  // directory is also a File
-                if (ccfile.exists() && ccfile.path().baseName().firstchar() != '.') {  // ignore hidden files/folders
+                casacore::String name(ccfile.path().baseName()); // in case it is a link
+                if (ccfile.exists() && name.firstchar() != '.') {  // ignore hidden files/folders
                     casacore::String fullpath(ccfile.path().absoluteName());
                     try {
                         bool addImage(false);
@@ -167,6 +168,7 @@ void Session::getFileList(CARTA::FileListResponse& fileList, string folder) {
 
                         if (addImage) { // add image to file list
                             auto fileInfo = fileList.add_files();
+                            fileInfo->set_name(name);
                             bool ok = fillFileInfo(fileInfo, fullpath);
                         }
                     } catch (casacore::AipsError& err) {  // RegularFileIO error
@@ -228,6 +230,7 @@ bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA:
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool extFileInfoOK(true);
     try {
+        fileInfo->set_name(filename); // in case filename is a link
         casacore::Path rootpath(rootFolder);
         rootpath.append(folder);
         rootpath.append(filename);
@@ -381,11 +384,11 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
             lock.unlock();
             newFrame = true;
             // copy file info, extended file info
-	    CARTA::FileInfo* responseFileInfo = new CARTA::FileInfo();
-	    responseFileInfo->set_name(selectedFileInfo->name());
-	    responseFileInfo->set_type(selectedFileInfo->type());
-	    responseFileInfo->set_size(selectedFileInfo->size());
-	    responseFileInfo->add_hdu_list(hdu); // loaded hdu only 
+            CARTA::FileInfo* responseFileInfo = new CARTA::FileInfo();
+            responseFileInfo->set_name(selectedFileInfo->name());
+            responseFileInfo->set_type(selectedFileInfo->type());
+            responseFileInfo->set_size(selectedFileInfo->size());
+            responseFileInfo->add_hdu_list(hdu); // loaded hdu only
             *ack.mutable_file_info() = *responseFileInfo;
             *ack.mutable_file_info_extended() = *selectedFileInfoExtended;
             success = true;
