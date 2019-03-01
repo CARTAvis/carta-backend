@@ -702,31 +702,44 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                 sendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
                 return;
             } else {
-                int numbins(message.histograms(0).num_bins());
-                numbins = (numbins == AUTO_BIN_SIZE ? frames.at(fileId)->calcAutoNumBins() : numbins);
+                auto regionId = message.region_id(); // CUBE_REGION_ID
+                auto channel = message.histograms(0).channel();
+                auto numbins = message.histograms(0).num_bins();
                 int stokes(frames.at(fileId)->currentStokes());
-                size_t nchan(frames.at(fileId)->nchannels());
-                bool histogramSent(false);
-                if (nchan == 1) {  // use per-channel histogram for channel 0
+                CARTA::RegionHistogramData histogramMessage;
+                createCubeHistogramMessage(histogramMessage, fileId, stokes, 1.0);
+                CARTA::Histogram* histogram = histogramMessage.add_histograms();
+                if (frames.at(fileId)->getRegionHistogram(regionId, channel, stokes, numbins, *histogram)) {
+                    // use stored cube histogram
+                    sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
+                } else if (frames.at(fileId)->nchannels() == 1) { 
+                    // use per-channel histogram for channel 0
                     int channum(0);
-                    CARTA::RegionHistogramData histogramMessage;
-                    createCubeHistogramMessage(histogramMessage, fileId, stokes, 1.0);
-                    if (frames.at(fileId)->getChannelHistogramData(histogramMessage, channum, stokes, numbins)) {
+                    if (frames.at(fileId)->getRegionHistogram(IMAGE_REGION_ID, channum, stokes, numbins,
+                            *histogram)) { // use stored channel 0 histogram
                         sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
-                        histogramSent = true;
+                    } else { // calculate channel 0 histogram
+                        float minval, maxval;
+                        if (!frames.at(fileId)->getRegionMinMax(IMAGE_REGION_ID, channum, stokes, minval, maxval))
+                            frames.at(fileId)->calcRegionMinMax(IMAGE_REGION_ID, channum, stokes, minval, maxval);
+                        frames.at(fileId)->calcRegionHistogram(IMAGE_REGION_ID, channum, stokes, numbins, minval,
+                            maxval, *histogram);
+                        // send completed histogram
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
                     }
-                }
-                if (!histogramSent) {  // compute cube histogram
+                } else { // calculate cube histogram
                     histogramProgress.fetch_and_store(0.0);  // start at 0
                     auto tStart = std::chrono::high_resolution_clock::now();
-                    // determine min and max values
-                    float minval(FLT_MAX), maxval(FLT_MIN);
+                    // determine cube min and max values
+                    float cubemin(FLT_MAX), cubemax(FLT_MIN);
+                    size_t nchan(frames.at(fileId)->nchannels());
                     for (size_t chan=0; chan < nchan; ++chan) {
+                        // minmax for this channel
                         float chanmin, chanmax;
-                        std::vector<float> data = frames.at(fileId)->getImageChanData(chan);
-                        frames.at(fileId)->getMinMax(chanmin, chanmax, data);
-                        minval = std::min(minval, chanmin);
-                        maxval = std::max(maxval, chanmax);
+                        if (!frames.at(fileId)->getRegionMinMax(IMAGE_REGION_ID, chan, stokes, chanmin, chanmax))
+                            frames.at(fileId)->calcRegionMinMax(IMAGE_REGION_ID, chan, stokes, chanmin, chanmax);
+                        cubemin = std::min(cubemin, chanmin);
+                        cubemax = std::max(cubemax, chanmax);
 
                         // check for cancel
                         if (histogramProgress == HISTOGRAM_CANCEL)
@@ -740,33 +753,36 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             float progress = thischan / allchans;
                             CARTA::RegionHistogramData histogramProgressMsg;
                             createCubeHistogramMessage(histogramProgressMsg, fileId, stokes, progress);
+                            CARTA::Histogram* histogram = histogramMessage.add_histograms();  // blank
                             sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramProgressMsg);
                             tStart = tEnd;
                         }
                     }
+                    // save min,max in cube region
+                    if (histogramProgress > HISTOGRAM_CANCEL)
+                        frames.at(fileId)->setRegionMinMax(regionId, channel, stokes, cubemin, cubemax);
+
+                    // check cancel and proceed
                     if (histogramProgress > HISTOGRAM_CANCEL) {
-                        // send message in case min/max took < 2s; progress is half done
+                        // send progress message: half done
                         float progress = 0.50;
-                        CARTA::RegionHistogramData halfProgressMsg;
-                        createCubeHistogramMessage(halfProgressMsg, fileId, stokes, progress);
-                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, halfProgressMsg);
+                        histogramMessage.set_progress(progress);
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
 
-                        // get histogram bins for each channel
-                        std::valarray<int> cubeBins(0, numbins);  // accumulate bin counts
-                        // create message for each channel histogram (not sent)
-                        CARTA::RegionHistogramData chanHistogramMessage;
-                        createCubeHistogramMessage(chanHistogramMessage, fileId, stokes, progress);
-                        for (size_t chan=0; chan < nchan; ++chan) {
-                            // get CARTA::Histogram for this channel
-                            chanHistogramMessage.clear_histograms();
-                            std::vector<float> data = frames.at(fileId)->getImageChanData(chan);
-                            frames.at(fileId)->fillChannelHistogramData(chanHistogramMessage, data, chan, numbins, minval, maxval);
-                            auto chanHistogram = chanHistogramMessage.histograms(0);
-
+                        // get histogram bins for each channel and accumulate bin counts
+                        std::vector<int> cubeBins;
+                        CARTA::Histogram chanHistogram;  // histogram for each channel
+                        for (size_t chan=0; chan < nchan; ++chan) { 
+                            frames.at(fileId)->calcRegionHistogram(regionId, chan, stokes, numbins, cubemin,
+                                cubemax, chanHistogram);
                             // add channel bins to cube bins
                             std::vector<int> channelBins = {chanHistogram.bins().begin(), chanHistogram.bins().end()};
-                            std::valarray<int> channelVals(channelBins.data(), channelBins.size());
-                            cubeBins += channelVals;
+                            if (chan==0) {
+                                cubeBins = channelBins;
+                            } else {
+                                for (std::size_t i=0; i < channelBins.size(); ++i)
+                                    cubeBins[i] += channelBins[i];
+                            }
 
                             // check for cancel
                             if (histogramProgress == HISTOGRAM_CANCEL)
@@ -780,12 +796,12 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                                 progress = 0.5 + (thischan / allchans);
                                 CARTA::RegionHistogramData histogramProgressMsg;
                                 createCubeHistogramMessage(histogramProgressMsg, fileId, stokes, progress);
-                                auto cubeHistogram = histogramProgressMsg.mutable_histograms(0);
+                                auto cubeHistogram = histogramProgressMsg.add_histograms();
                                 cubeHistogram->set_channel(ALL_CHANNELS);
                                 cubeHistogram->set_num_bins(chanHistogram.num_bins());
                                 cubeHistogram->set_bin_width(chanHistogram.bin_width());
                                 cubeHistogram->set_first_bin_center(chanHistogram.first_bin_center());
-                                *cubeHistogram->mutable_bins() = {std::begin(cubeBins), std::end(cubeBins)};
+                                *cubeHistogram->mutable_bins() = {cubeBins.begin(), cubeBins.end()};
                                 sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramProgressMsg);
                                 tStart = tEnd;
                             }
@@ -795,15 +811,17 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             progress = HISTOGRAM_COMPLETE;
                             CARTA::RegionHistogramData finalHistogramMessage;
                             createCubeHistogramMessage(finalHistogramMessage, fileId, stokes, progress);
-                            auto cubeHistogram = finalHistogramMessage.mutable_histograms(0);
-                            // fill histogram fields from channel histogram
-                            auto lastChanHistogram = chanHistogramMessage.histograms(0);
+                            auto cubeHistogram = finalHistogramMessage.add_histograms();
+                            // fill histogram fields from last channel histogram
                             cubeHistogram->set_channel(ALL_CHANNELS);
-                            cubeHistogram->set_num_bins(lastChanHistogram.num_bins());
-                            cubeHistogram->set_bin_width(lastChanHistogram.bin_width());
-                            cubeHistogram->set_first_bin_center(lastChanHistogram.first_bin_center());
-                            // set cube histogram bins
-                            *cubeHistogram->mutable_bins() = {std::begin(cubeBins), std::end(cubeBins)};
+                            cubeHistogram->set_num_bins(chanHistogram.num_bins());
+                            cubeHistogram->set_bin_width(chanHistogram.bin_width());
+                            cubeHistogram->set_first_bin_center(chanHistogram.first_bin_center());
+                            *cubeHistogram->mutable_bins() = {cubeBins.begin(), cubeBins.end()};
+
+                            // save cube histogram
+                            frames.at(fileId)->setRegionHistogram(regionId, channel, stokes, *cubeHistogram);
+                            // send completed histogram message
                             sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, finalHistogramMessage);
                         }
                     }
@@ -827,7 +845,6 @@ void Session::createCubeHistogramMessage(CARTA::RegionHistogramData& message, in
         message.set_region_id(CUBE_REGION_ID);
         message.set_stokes(stokes);
         message.set_progress(progress);
-        auto newHistogram = message.add_histograms();
     }
 }
 
