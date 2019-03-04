@@ -87,7 +87,7 @@ jobs:
         - echo "Building carta-backend" 
         - cd $TRAVIS_BUILD_DIR
         - git submodule init && git submodule update
-        - sed -i '' 's/target_link_libraries(carta_backend/target_link_libraries(carta_backend uv/g' CMakeLists.txt # fix to find uv
+#        - sed -i '' 's/target_link_libraries(carta_backend/target_link_libraries(carta_backend uv/g' CMakeLists.txt # fix to find uv
         - mkdir build && cd build
         - cmake -DCMAKE_CXX_FLAGS="-I /usr/local/opt/openssl/include" -DCMAKE_CXX_STANDARD_LIBRARIES="-L /usr/local/Cellar/fmt/5.1.0/lib -L /usr/local/Cellar/hdf5/1.10.4/lib -L /usr/local/lib -L /usr/local/opt/openssl/lib" ..
         - make
