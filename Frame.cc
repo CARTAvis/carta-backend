@@ -888,6 +888,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
             // get <axis, stokes> for slicing image data
             std::pair<int,int> axisStokes = region->getSpatialProfileReq(i);
             std::vector<float> profile;
+            profile.reserve(imageShape(0));
             int end;
             if ((axisStokes.second == -1) || (axisStokes.second == stokes)) {
                 // use stored channel cache 
