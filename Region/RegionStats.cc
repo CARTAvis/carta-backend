@@ -179,6 +179,7 @@ bool RegionStats::getStatsValues(std::vector<std::vector<float>>& statsValues,
                         result = (blc + maxPos).asStdVector();
                     }
                 }
+                values.reserve(result.size());
                 for (unsigned int i=0; i<result.size(); ++i)  // convert to float
                     values.push_back(static_cast<float>(result[i]));
                 }
@@ -192,6 +193,7 @@ bool RegionStats::getStatsValues(std::vector<std::vector<float>>& statsValues,
             latticeStats.getStatistic(result, lattStatsType);
             if (!result.empty()) {
                 std::vector<double> dblResult(result.tovector());
+                values.reserve(dblResult.size());
                 for (unsigned int i=0; i<dblResult.size(); ++i)  // convert to float
                     values.push_back(static_cast<float>(dblResult[i]));
             }
