@@ -848,10 +848,8 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             // get histogram requirements for this index
             CARTA::SetHistogramRequirements_HistogramConfig config = region->getHistogramConfig(i);
             int configChannel(config.channel()), configNumBins(config.num_bins());
-            bool useCurrentChannel(false);
             if (configChannel == CURRENT_CHANNEL) {
                 configChannel = currentChannel();
-                useCurrentChannel = true;
             }
             auto newHistogram = histogramData->add_histograms();
             newHistogram->set_channel(configChannel);
