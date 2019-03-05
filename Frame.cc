@@ -906,6 +906,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     case 0: { // x
                         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
                         auto xStart = y * nImageCol;
+                        profile.reserve(imageShape(0));
                         for (unsigned int i=0; i<imageShape(0); ++i) {
                             auto idx = xStart + i;
                             profile.push_back(channelCache[idx]);
@@ -916,6 +917,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     }
                     case 1: { // y
                         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+                        profile.reserve(imageShape(1));
                         for (unsigned int i=0; i<imageShape(1); ++i) {
                             auto idx = (i * nImageCol) + x;
                             profile.push_back(channelCache[idx]);
