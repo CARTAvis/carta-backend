@@ -869,7 +869,8 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
         auto& region = regions[regionId];
         // set profile parameters
         std::vector<CARTA::Point> ctrlPts = region->getControlPoints();
-        int x(ctrlPts[0].x()), y(ctrlPts[0].y());
+        int x(static_cast<int>(std::round(ctrlPts[0].x()))),
+            y(static_cast<int>(std::round(ctrlPts[0].y())));
         int chan(currentChannel()), stokes(currentStokes());
         ssize_t nImageCol(imageShape(0)), nImageRow(imageShape(1));
         bool writeLock(false);
