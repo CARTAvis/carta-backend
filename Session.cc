@@ -678,9 +678,13 @@ CARTA::RegionHistogramData* Session::getRegionHistogramData(const int32_t fileId
     if (frames.count(fileId)) {
         try {
             histogramMessage = new CARTA::RegionHistogramData();
-            histogramMessage->set_file_id(fileId);
-            histogramMessage->set_region_id(regionId);
-            frames.at(fileId)->fillRegionHistogramData(regionId, histogramMessage);
+            if (frames.at(fileId)->fillRegionHistogramData(regionId, histogramMessage)) {
+                histogramMessage->set_file_id(fileId);
+                histogramMessage->set_region_id(regionId);
+            } else {
+                delete histogramMessage;
+                histogramMessage = nullptr;
+            }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);
             sendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
@@ -931,9 +935,6 @@ void Session::sendSpatialProfileData(int fileId, int regionId) {
                 spatialProfileData.set_file_id(fileId);
                 spatialProfileData.set_region_id(regionId);
                 sendFileEvent(fileId, "SPATIAL_PROFILE_DATA", 0, spatialProfileData);
-            } else {
-                string error = "Spatial profile data failed to load";
-                sendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);
@@ -956,9 +957,6 @@ void Session::sendSpectralProfileData(int fileId, int regionId) {
                 spectralProfileData.set_file_id(fileId);
                 spectralProfileData.set_region_id(regionId);
                 sendFileEvent(fileId, "SPECTRAL_PROFILE_DATA", 0, spectralProfileData);
-            } else {
-                string error = "Spectral profile data failed to load";
-                sendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);
@@ -978,9 +976,6 @@ void Session::sendRegionStatsData(int fileId, int regionId) {
                 regionStatsData.set_file_id(fileId);
                 regionStatsData.set_region_id(regionId);
                 sendFileEvent(fileId, "REGION_STATS_DATA", 0, regionStatsData);
-            } else {
-                string error = "Region stats data failed to load";
-                sendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);

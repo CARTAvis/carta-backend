@@ -776,10 +776,14 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
     bool histogramOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
+        size_t numHistograms(region->numHistogramConfigs());
+        if (numHistograms==0)
+            return false; // not requested
+
         int currStokes(currentStokes());
         histogramData->set_stokes(currStokes);
         histogramData->set_progress(1.0); // send entire histogram
-        for (int i=0; i<region->numHistogramConfigs(); ++i) {
+        for (size_t i=0; i<numHistograms; ++i) {
             CARTA::SetHistogramRequirements_HistogramConfig config = region->getHistogramConfig(i);
             int configChannel(config.channel()), configNumBins(config.num_bins());
             if (configChannel == CURRENT_CHANNEL) configChannel = currentChannel();
@@ -877,6 +881,10 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
     bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
+        size_t numProfiles(region->numSpatialProfiles());
+        if (numProfiles==0)
+            return false; // not requested
+
         // set profile parameters
         std::vector<CARTA::Point> ctrlPts = region->getControlPoints();
         int x(static_cast<int>(std::round(ctrlPts[0].x()))),
@@ -893,7 +901,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
         profileData.set_stokes(stokes);
         profileData.set_value(value);
         // set profiles
-        for (size_t i=0; i<region->numSpatialProfiles(); ++i) {
+        for (size_t i=0; i<numProfiles; ++i) {
             // SpatialProfile
             auto newProfile = profileData.add_profiles();
             // get <axis, stokes> for slicing image data
@@ -961,6 +969,10 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
     bool profileOK(false);
     if (regions.count(regionId)) {  // for cursor only, currently
         auto& region = regions[regionId];
+        size_t numProfiles(region->numSpectralProfiles());
+        if (numProfiles==0)
+            return false; // not requested
+
         // set profile parameters
         int currStokes(currentStokes());
         profileData.set_stokes(currStokes);
@@ -969,7 +981,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
         std::vector<CARTA::Point> ctrlPts = region->getControlPoints();
         int x(ctrlPts[0].x()), y(ctrlPts[0].y());
         // set stats profiles
-        for (size_t i=0; i<region->numSpectralProfiles(); ++i) {
+        for (size_t i=0; i<numProfiles; ++i) {
             // get sublattice for stokes requested in profile
             int profileStokes;
             if (region->getSpectralConfigStokes(profileStokes, i)) {
