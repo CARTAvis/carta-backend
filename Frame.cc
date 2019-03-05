@@ -565,6 +565,13 @@ bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type, in
     // Create or update Region
     // check channel bounds and stokes
     int nchan(nchannels());
+    if (minchan < 0) {
+        minchan = 0;
+    }
+    if (maxchan < 0) {
+        maxchan = nchan -1;
+    }
+
     if ((minchan < 0 || minchan >= nchan) || (maxchan < 0 || maxchan>=nchan)) {
         message = "min/max region channel bounds out of range";
         return false;
