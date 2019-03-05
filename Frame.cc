@@ -797,27 +797,30 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             if (!haveHistogram) {
                 // get histogram from Region
                 std::vector<float> data;
+                configNumBins = (configNumBins==AUTO_BIN_SIZE ? calcAutoNumBins() : configNumBins);
+                float minval, maxval;
                 if (configChannel == ALL_CHANNELS ) { // all channels in region: cube!
                     casacore::Slicer latticeSlicer;
                     getLatticeSlicer(latticeSlicer, -1, -1, -1, currStokes);
                     std::unique_lock<std::mutex> guard(latticeMutex);
                     getData<float>(loader->loadData(FileInfo::Data::XYZW), latticeSlicer, data);
                     guard.unlock();
+                    region->getMinMax(minval, maxval, data);
+                    region->fillHistogram(newHistogram, data, configChannel, currStokes, configNumBins, minval, maxval);
                 } else { // requested channel (current or specified)
                     if (configChannel == currentChannel()) {  // use channel cache
                         bool writeLock(false);
                         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-                        data = channelCache;
+                        region->getMinMax(minval, maxval, channelCache);
+                        region->fillHistogram(newHistogram, channelCache, configChannel, currStokes, configNumBins, minval, maxval);
                     } else {
                         casacore::Matrix<float> chanMatrix;
                         getChannelMatrix(chanMatrix, configChannel, currStokes);
                         data = chanMatrix.tovector();
+                        region->getMinMax(minval, maxval, data);
+                        region->fillHistogram(newHistogram, data, configChannel, currStokes, configNumBins, minval, maxval);
                     }
                 }
-                configNumBins = (configNumBins==AUTO_BIN_SIZE ? calcAutoNumBins() : configNumBins);
-                float minval, maxval;
-                region->getMinMax(minval, maxval, data);
-                region->fillHistogram(newHistogram, data, configChannel, currStokes, configNumBins, minval, maxval);
             }
         }
         histogramOK = true;
