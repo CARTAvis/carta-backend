@@ -19,8 +19,6 @@
 #include <vector>
 #include <signal.h>
 
-#define MAX_THREADS 4
-
 using namespace std;
 
 // key is uuid:

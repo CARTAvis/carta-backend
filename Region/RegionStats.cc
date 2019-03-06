@@ -1,6 +1,7 @@
 //# RegionStats.cc: implementation of class for calculating region statistics and histograms
 
 #include "RegionStats.h"
+#include "../InterfaceConstants.h"
 #include "Histogram.h"
 #include "MinMax.h"
 
@@ -54,7 +55,7 @@ bool RegionStats::getMinMax(int channel, int stokes, float& minVal, float& maxVa
 
 void RegionStats::setMinMax(int channel, int stokes, minmax_t minmaxVals) {
     // Save min, max for given channel and stokes
-    if (channel == -2) { // all channels (cube); don't save intermediate channel min/max
+    if (channel == ALL_CHANNELS) { // all channels (cube); don't save intermediate channel min/max
         m_minmax[stokes].clear();
     }
     m_minmax[stokes][channel] = minmaxVals;
@@ -88,7 +89,7 @@ bool RegionStats::getHistogram(int channel, int stokes, int nbins, CARTA::Histog
 
 void RegionStats::setHistogram(int channel, int stokes, CARTA::Histogram& histogram) {
     // Store histogram for given channel and stokes
-    if (channel == -2) { // all channels(cube); don't save intermediate channel histograms
+    if (channel == ALL_CHANNELS) { // all channels(cube); don't save intermediate channel histograms
         m_histograms[stokes].clear();
     }
     m_histograms[stokes][channel] = histogram;

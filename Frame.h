@@ -12,17 +12,9 @@
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
+#include "InterfaceConstants.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
-
-#define CUBE_REGION_ID -2
-#define IMAGE_REGION_ID -1
-#define CURSOR_REGION_ID 0
-
-#define CURRENT_CHANNEL -1
-#define ALL_CHANNELS -2
-
-#define AUTO_BIN_SIZE -1
 
 struct ChannelStats {
     float minVal;

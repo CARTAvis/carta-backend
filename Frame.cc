@@ -489,7 +489,7 @@ void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, siz
     // slice image data
     std::unique_lock<std::mutex> guard(latticeMutex);
     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
-    chanMatrix = tmp.tovector();
+    tmp.tovector(chanMatrix);
 }
 
 casacore::Slicer Frame::getChannelMatrixSlicer(size_t channel, size_t stokes) {

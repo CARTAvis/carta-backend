@@ -1,4 +1,5 @@
 #include "Session.h"
+#include "InterfaceConstants.h"
 #include "FileInfoLoader.h"
 #include "compression.h"
 #include "util.h"
@@ -780,12 +781,11 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             frames.at(fileId)->calcRegionHistogram(regionId, chan, stokes, numbins, cubemin,
                                 cubemax, chanHistogram);
                             // add channel bins to cube bins
-                            std::vector<int> channelBins = {chanHistogram.bins().begin(), chanHistogram.bins().end()};
                             if (chan==0) {
-                                cubeBins = channelBins;
-                            } else {
-                                for (std::size_t i=0; i < channelBins.size(); ++i)
-                                    cubeBins[i] += channelBins[i];
+                                cubeBins = {chanHistogram.bins().begin(), chanHistogram.bins().end()};
+                            } else { // add chan histogram bins to cube histogram bins
+                                std::transform(chanHistogram.bins().begin(), chanHistogram.bins().end(), cubeBins.begin(),
+                                    cubeBins.begin(), std::plus<int>());
                             }
 
                             // check for cancel
