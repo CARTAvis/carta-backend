@@ -54,11 +54,20 @@ void HDF5Attributes::readScalar (hid_t attrId, hid_t dtid, const casacore::Strin
             }
             break;
         case H5T_STRING: {
-            casacore::String value;
-            value.resize(sz+1);
-            casacore::HDF5DataType dtype(value);
-            H5Aread(attrId, dtype.getHidMem(), const_cast<char*>(value.c_str()));
-            value.resize(sz);
+            std::cout << "ATTR NAME: " << name << " ATTR SIZE: " << sz << "\n" << "PADDING TYPE: " << H5Tget_strpad(dtid) << "\n";
+            char * buf;
+            if (H5Tget_strpad(dtid) == 0) { // null-terminated
+                buf = new char[sz];
+                H5Aread(attrId, H5Tget_native_type(dtid, H5T_DIR_ASCEND), buf);
+            } else { // zero-padded (1) or space-padded (2)
+                buf = new char[sz + 1];
+                H5Aread(attrId, H5Tget_native_type(dtid, H5T_DIR_ASCEND), buf);
+                buf[sz] = '\0';
+            }
+            std::cout << "BUF IS: " << buf << "\n";
+            casacore::String value(buf);
+            delete [] buf;
+            std::cout << "MY VALUE IS: " << value << "\n";
             rec.define(name, value);
             }
             break;
