@@ -758,7 +758,7 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             float progress = thischan / allchans;
                             CARTA::RegionHistogramData histogramProgressMsg;
                             createCubeHistogramMessage(histogramProgressMsg, fileId, stokes, progress);
-                            CARTA::Histogram* histogram = histogramMessage.add_histograms();  // blank
+                            CARTA::Histogram* histogram = histogramProgressMsg.add_histograms();  // blank
                             sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramProgressMsg);
                             tStart = tEnd;
                         }
