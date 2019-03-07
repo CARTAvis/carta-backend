@@ -17,15 +17,23 @@ namespace carta {
 
 class RegionStats {
 
+
 public:
     // Histograms
+    // config
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
     size_t numHistogramConfigs();
     CARTA::SetHistogramRequirements_HistogramConfig getHistogramConfig(int histogramIndex);
-    void getMinMax(float& minVal, float& maxVal, const std::vector<float>& data);
-    void fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
-        const size_t chanIndex, const size_t stokesIndex, const int nBins, const float minVal, const float maxVal);
-    bool getChannelHistogram(CARTA::Histogram* histogram, int channel, int stokes, int numBins);
+    // min max
+    using minmax_t = std::pair<float, float>; // <min, max>
+    bool getMinMax(int channel, int stokes, float& minVal, float& maxVal);
+    void setMinMax(int channel, int stokes, minmax_t minmaxVals);
+    void calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minVal, float& maxVal);
+    // CARTA::Histogram
+    bool getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram);
+    void setHistogram(int channel, int stokes, CARTA::Histogram& histogram);
+    void calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
+        const std::vector<float>& data, CARTA::Histogram& histogramMsg);
 
     // Stats
     void setStatsRequirements(const std::vector<int>& statsTypes);
@@ -35,13 +43,16 @@ public:
         const std::vector<int>& requestedStats, const casacore::SubLattice<float>& lattice);
 
 private:
-    // Histograms
-    size_t m_stokes, m_bins;
-    std::unordered_map<int, CARTA::Histogram> m_channelHistograms;
+    // Histogram config
     std::vector<CARTA::SetHistogramRequirements_HistogramConfig> m_configs;
 
-    // Statistics
-    std::vector<int> m_regionStats; // CARTA::StatsType requirements
+    // MinMax, histogram maps
+    // first key is stokes, second is channel number (-2 all channels for cube)
+    std::unordered_map<int, std::unordered_map<int, minmax_t>> m_minmax;
+    std::unordered_map<int, std::unordered_map<int, CARTA::Histogram>> m_histograms;
+
+    // Statistics config
+    std::vector<int> m_regionStats; // CARTA::StatsType requirements for this region
 };
 
 }
