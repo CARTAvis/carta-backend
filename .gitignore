@@ -67,3 +67,4 @@ fabric.properties
 permissions.txt
 
 build
+cmake-build-release
