@@ -1,5 +1,5 @@
 //# HDF5Attributes.cc: get HDF5 header attributes in casacore::Record
-
+#include <cstring>
 #include "HDF5Attributes.h"
 
 #include <casacore/casa/HDF5/HDF5DataType.h>
@@ -58,7 +58,7 @@ void HDF5Attributes::readScalar (hid_t attrId, hid_t dtid, const casacore::Strin
             value.resize(sz+1);
             casacore::HDF5DataType dtype(value);
             H5Aread(attrId, dtype.getHidMem(), const_cast<char*>(value.c_str()));
-            value.resize(sz);
+            value.resize(std::strlen(value.c_str()));
             rec.define(name, value);
             }
             break;
