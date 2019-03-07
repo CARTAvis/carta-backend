@@ -476,11 +476,11 @@ void Frame::setChannelCache(size_t channel, size_t stokes) {
     if (channel != currentChannel() || stokes != currentStokes()) {
         bool writeLock(true);
         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+        channelCache.resize(imageShape(0) * imageShape(1));
         casacore::Slicer section = getChannelMatrixSlicer(channel, stokes);
-        casacore::Array<float> tmp;
+        casacore::Array<float>tmp(section.length(), channelCache.data(), casacore::StorageInitPolicy::SHARE);
         std::lock_guard<std::mutex> guard(latticeMutex);
         loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
-        channelCache = tmp.tovector();
     }
 }
 
