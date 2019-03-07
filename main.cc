@@ -37,8 +37,80 @@ unordered_map<string, vector<string>> permissionsMap;
 int sessionNumber;
 uWS::Hub wsHub;
 
-string baseFolder("./"), version_id("1.0");
+// command-line arguments
+string rootFolder("/"), baseFolder("."), version_id("1.0.1");
 bool verbose, usePermissions;
+
+bool checkRootBaseFolders(std::string& root, std::string& base) {
+    if (root=="base" && base == "root") {
+        fmt::print("ERROR: Must set root or base directory.\n");
+        fmt::print("Exiting carta.\n");
+        return false;
+    }
+    if (root=="base") root = base;
+    if (base=="root") base = root;
+
+    // check root
+    casacore::File rootFolder(root);
+    if (!(rootFolder.exists() && rootFolder.isDirectory(true) && 
+          rootFolder.isReadable() && rootFolder.isExecutable())) {
+        fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
+        fmt::print("Exiting carta.\n");
+        return false;
+    }
+    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
+    try {
+        root = rootFolder.path().resolvedName(); // fails on root folder /
+    } catch (casacore::AipsError& err) {
+        try {
+            root = rootFolder.path().absoluteName();
+        } catch (casacore::AipsError& err) {
+            fmt::print(err.getMesg());
+        }
+        if (root.empty()) root = "/";
+    }
+    // check base
+    casacore::File baseFolder(base);
+    if (!(baseFolder.exists() && baseFolder.isDirectory(true) && 
+          baseFolder.isReadable() && baseFolder.isExecutable())) {
+        fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
+        fmt::print("Exiting carta.\n");
+        return false;
+    }
+    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
+    try {
+        base = baseFolder.path().resolvedName(); // fails on root folder /
+    } catch (casacore::AipsError& err) {
+        try {
+            base = baseFolder.path().absoluteName();
+        } catch (casacore::AipsError& err) {
+            fmt::print(err.getMesg());
+        }
+        if (base.empty()) base = "/";
+    }
+    // check if base is same as or subdir of root
+    if (base != root) {
+        bool isSubdirectory(false);
+        casacore::Path basePath(base);
+        casacore::String parentString(basePath.dirName()), rootString(root);
+	if (parentString == rootString)
+            isSubdirectory = true;
+        while (!isSubdirectory && (parentString != rootString)) {  // navigate up directory tree
+            basePath = casacore::Path(parentString);
+            parentString = basePath.dirName();
+            if (parentString == rootString) {
+                isSubdirectory = true;
+	    } else if (parentString == "/") {
+                break;
+            }
+        }
+        if (!isSubdirectory) {
+            fmt::print("ERROR: Base {} must be a subdirectory of root {}. Exiting carta.\n", base, root);
+            return false;
+        }
+    }
+    return true;
+}
 
 // Reads a permissions file to determine which API keys are required to access various subdirectories
 void readPermissions(string filename) {
@@ -81,7 +153,7 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
             sessions[uuid]->sendPendingMessages();
         });
 
-    sessions[uuid] = new Session(ws, uuid, permissionsMap, usePermissions, baseFolder, outgoing, verbose);
+    sessions[uuid] = new Session(ws, uuid, permissionsMap, usePermissions, rootFolder, baseFolder, outgoing, verbose);
     animationQueues[uuid] = new carta::AnimationQueue(sessions[uuid]);
     msgQueues[uuid] = new tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>;
     fileSettings[uuid] = new carta::FileSettings(sessions[uuid]);
@@ -147,7 +219,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length,
 
 void exit_backend(int s) {
     // destroy objects cleanly
-    cout << "Exiting backend." << endl;
+    fmt::print("Exiting backend.\n");
     for (auto& session : sessions) {
         auto uuid = session.first;
         delete session.second;
@@ -176,22 +248,28 @@ int main(int argc, const char* argv[]) {
         // define and get input arguments
         int port(3002);
         int threadCount(tbb::task_scheduler_init::default_num_threads());
-	{ // get values then let Input go out of scope
+        { // get values then let Input go out of scope
         casacore::Input inp;
         inp.version(version_id);
         inp.create("verbose", "False", "display verbose logging", "Bool");
         inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
         inp.create("port", to_string(port), "set server port", "Int");
         inp.create("threads", to_string(threadCount), "set thread pool count", "Int");
-        inp.create("folder", baseFolder, "set folder for data files", "String");
+        inp.create("base", baseFolder, "set folder for data files", "String");
+        inp.create("root", rootFolder, "set top-level folder for data files", "String");
         inp.readArguments(argc, argv);
 
         verbose = inp.getBool("verbose");
         usePermissions = inp.getBool("permissions");
         port = inp.getInt("port");
         threadCount = inp.getInt("threads");
-        baseFolder = inp.getString("folder");
-	}
+        baseFolder = inp.getString("base");
+        rootFolder = inp.getString("root");
+        }
+
+        if (!checkRootBaseFolders(rootFolder, baseFolder)) {
+            return 1;
+        }
 
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
@@ -206,7 +284,7 @@ int main(int argc, const char* argv[]) {
         wsHub.onDisconnection(&onDisconnect);
         if (wsHub.listen(port)) {
             wsHub.getDefaultGroup<uWS::SERVER>().startAutoPing(5000);
-            fmt::print("Listening on port {} with data folder {} and {} threads in thread pool\n", port, baseFolder, threadCount);
+            fmt::print("Listening on port {} with root folder {}, base folder {}, and {} threads in thread pool\n", port, rootFolder, baseFolder, threadCount);
             wsHub.run();
         } else {
             fmt::print("Error listening on port {}\n", port);
