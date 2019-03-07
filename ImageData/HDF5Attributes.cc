@@ -56,24 +56,28 @@ void HDF5Attributes::readScalar (hid_t attrId, hid_t dtid, const casacore::Strin
         case H5T_STRING: {
             casacore::String value;
             char * buf;
+            hid_t nativeType = H5Tget_native_type(dtid, H5T_DIR_ASCEND);
             
             if (H5Tis_variable_str(dtid)) { // variable-length string
-                if (H5Aread(attrId, dtid, &buf) >= 0) {
+                if (H5Aread(attrId, nativeType, &buf) >= 0) {
                     value = buf;
-                     H5free_memory(buf); // only free if the read didn't fail.
+                    H5free_memory(buf); // only free if the read didn't fail.
                 }
             } else { // fixed-length string
                 if (H5Tget_strpad(dtid) == 0) { // null-terminated
                     buf = new char[sz];
-                    H5Aread(attrId, dtid, buf);
+                    H5Aread(attrId, nativeType, buf);
                 } else { // zero-padded (1) or space-padded (2)
                     buf = new char[sz + 1];
-                    H5Aread(attrId, dtid, buf);
+                    H5Aread(attrId, nativeType, buf);
                     buf[sz] = '\0';
                 }
                 value = buf;
                 delete [] buf; // always delete, because we always allocate
             }
+            
+            H5Tclose(nativeType);
+            
             rec.define(name, value);
             }
             break;
