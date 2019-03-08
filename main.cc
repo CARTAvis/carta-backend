@@ -212,6 +212,10 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length,
             }
             tbb::task::enqueue(*omt);
         }
+    } else if (opCode == uWS::OpCode::TEXT) {
+        if (std::strncmp(rawMessage, "PING", 4) == 0) {
+            ws->send("PONG");
+        }
     }
 };
 
@@ -281,7 +285,6 @@ int main(int argc, const char* argv[]) {
         wsHub.onConnection(&onConnect);
         wsHub.onDisconnection(&onDisconnect);
         if (wsHub.listen(port)) {
-            wsHub.getDefaultGroup<uWS::SERVER>().startAutoPing(5000);
             fmt::print("Listening on port {} with root folder {}, base folder {}, and {} threads in thread pool\n", port, rootFolder, baseFolder, threadCount);
             wsHub.run();
         } else {
