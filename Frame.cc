@@ -277,13 +277,13 @@ bool Frame::loadImageStats(bool loadPercentiles) {
 
             // 2D cubes
             if (ndims == 2 && statDims.size() == 0) {
-                casacore::Array<float> data;
+                casacore::Array<int64_t> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 channelStats[0][0].nanCount = *it;
             } // 3D cubes
             else if (ndims == 3 && statDims.size() == 1 && statDims[0] == depth) {
-                casacore::Array<float> data;
+                casacore::Array<int64_t> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < depth; ++i) {
@@ -292,7 +292,7 @@ bool Frame::loadImageStats(bool loadPercentiles) {
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
                      statDims[0] == nstokes && statDims[1] == depth) {
-                casacore::Array<float> data;
+                casacore::Array<int64_t> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
@@ -470,13 +470,13 @@ bool Frame::loadImageStats(bool loadPercentiles) {
 
             // 3D cubes
             if (ndims == 3 && statDims.size() == 0) {
-                casacore::Array<float> data;
+                casacore::Array<int64_t> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 cubeStats[0].nanCount = *it;
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
-                casacore::Array<float> data;
+                casacore::Array<int64_t> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
