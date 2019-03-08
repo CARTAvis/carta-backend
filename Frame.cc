@@ -485,8 +485,8 @@ void Frame::setChannelCache(size_t channel, size_t stokes) {
 void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes) {
     // fill matrix for given channel and stokes
     casacore::Slicer section = getChannelMatrixSlicer(channel, stokes);
-	chanMatrix.resize(imageShape(0) * imageShape(1));
-	casacore::Array<float> tmp(section.length(), chanMatrix.data(), casacore::StorageInitPolicy::SHARE);
+    chanMatrix.resize(imageShape(0) * imageShape(1));
+    casacore::Array<float> tmp(section.length(), chanMatrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
     std::unique_lock<std::mutex> guard(latticeMutex);
     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
