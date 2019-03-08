@@ -632,22 +632,22 @@ void Frame::setChannelCache(size_t channel, size_t stokes) {
     if (channel != currentChannel() || stokes != currentStokes()) {
         bool writeLock(true);
         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+        channelCache.resize(imageShape(0) * imageShape(1));
         casacore::Slicer section = getChannelMatrixSlicer(channel, stokes);
-        casacore::Array<float> tmp;
+        casacore::Array<float> tmp(section.length(), channelCache.data(), casacore::StorageInitPolicy::SHARE);
         std::lock_guard<std::mutex> guard(latticeMutex);
         loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
-        channelCache = tmp.tovector();
     }
 }
 
 void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes) {
     // fill matrix for given channel and stokes
     casacore::Slicer section = getChannelMatrixSlicer(channel, stokes);
-    casacore::Array<float> tmp;
+    chanMatrix.resize(imageShape(0) * imageShape(1));
+    casacore::Array<float> tmp(section.length(), chanMatrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
     std::unique_lock<std::mutex> guard(latticeMutex);
     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
-    tmp.tovector(chanMatrix);
 }
 
 casacore::Slicer Frame::getChannelMatrixSlicer(size_t channel, size_t stokes) {
@@ -1147,10 +1147,10 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                         break;
                     }
                 }
-                casacore::Array<float> tmp;
+                profile.resize(end);
+                casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
                 std::unique_lock<std::mutex> guard(latticeMutex);
                 loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
-                tmp.tovector(profile);
             }
             newProfile->set_coordinate(region->getSpatialProfileStr(i));
             newProfile->set_start(0);
