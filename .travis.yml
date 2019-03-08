@@ -179,18 +179,19 @@ jobs:
         - ./build_proto.sh
 # prepare tests
         - cd $HOME
-        - cd package
-        - ls -sort
-        - cd bin
-        - wget http://alma.asiaa.sinica.edu.tw/_downloads/QA.tar.gz
-        - tar -xvf QA.tar.gz
-        - cp -r QA/HD163296_CO_2_1_mom0_zoom.image .
-        - ls -sort
+        - wget http://alma.asiaa.sinica.edu.tw/_downloads/carta-backend-ICD-test-travis.tar.gz
+        - tar -xvf carta-backend-ICD-test-travis.tar.gz
+        - cd $HOME/package/bin
+        - sed -i '' 's/carta_backend/carta_backend base=$HOME\/carta-backend-ICD-test-travis/g' run.sh
         - ./run.sh & # run carta_backend in the background
-        - cd $HOME/carta-frontend/src
-        - rm -rf test # temporarily remove advanced jest tests
-        - rm ICD.test.ts
-        - cp $HOME/package/bin/QA/ICD.test.ts . # temporarily copy simple jest test
-        - npm run test < $TRAVIS_BUILD_DIR/scripts/q.txt
+        - cd $HOME/carta-backend-ICD-test-travis
+        - cd protobuf
+        - git submodule init
+        - git submodule update
+        - git checkout master
+        - npm install
+        - ./build_proto.sh
+        - cd ..
+        - ls src/test/
+        - CI=true npm run test
         - echo "Finished !!"
-

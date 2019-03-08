@@ -29,10 +29,13 @@ public:
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
     CARTA::SetHistogramRequirements_HistogramConfig getHistogramConfig(int histogramIndex);
     size_t numHistogramConfigs();
-    void getMinMax(float& minVal, float& maxVal, const std::vector<float>& data);
-    void fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data, const size_t chanIndex,
-        const size_t stokesIndex, const int numBins, const float minVal, const float maxVal);
-    bool getChannelHistogram(CARTA::Histogram* histogram, int channel, int stokes, int numBins);
+    bool getMinMax(int channel, int stokes, float& minVal, float& maxVal);
+    void setMinMax(int channel, int stokes, float minVal, float maxVal);
+    void calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minVal, float& maxVal);
+    bool getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram);
+    void setHistogram(int channel, int stokes, CARTA::Histogram& histogram);
+    void calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
+        const std::vector<float>& data, CARTA::Histogram& histogramMsg);
 
     // Spatial: pass through to RegionProfiler
     bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
