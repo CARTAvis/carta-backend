@@ -52,17 +52,30 @@ size_t Region::numHistogramConfigs() {
     return m_stats->numHistogramConfigs();
 }
 
-void Region::getMinMax(float& minVal, float& maxVal, const std::vector<float>& data) {
-    m_stats->getMinMax(minVal, maxVal, data);
+bool Region::getMinMax(int channel, int stokes, float& minVal, float& maxVal) {
+    return m_stats->getMinMax(channel, stokes, minVal, maxVal);
 }
 
-void Region::fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
-        const size_t chanIndex, const size_t stokesIndex, const int numBins, const float minVal, const float maxVal) {
-    return m_stats->fillHistogram(histogram, data, chanIndex, stokesIndex, numBins, minVal, maxVal);
+void Region::setMinMax(int channel, int stokes, float minVal, float maxVal) {
+    std::pair<float, float> vals = std::make_pair(minVal, maxVal);
+    m_stats->setMinMax(channel, stokes, vals);
 }
 
-bool Region::getChannelHistogram(CARTA::Histogram* histogram, int channel, int stokes, int numBins) {
-    return m_stats->getChannelHistogram(histogram, channel, stokes, numBins);
+void Region::calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minVal, float& maxVal) {
+    m_stats->calcMinMax(channel, stokes, data, minVal, maxVal);
+}
+
+bool Region::getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram) {
+    return m_stats->getHistogram(channel, stokes, nbins, histogram);
+}
+
+void Region::setHistogram(int channel, int stokes, CARTA::Histogram& histogram) {
+    m_stats->setHistogram(channel, stokes, histogram);
+}
+
+void Region::calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
+        const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
+    m_stats->calcHistogram(channel, stokes, nBins, minVal, maxVal, data, histogramMsg);
 }
 
 // stats

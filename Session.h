@@ -29,10 +29,6 @@
 #include "compression.h"
 #include "Frame.h"
 
-#define MAX_SUBSETS 8
-#define HISTOGRAM_COMPLETE 1.0
-#define HISTOGRAM_CANCEL -1.0
-
 class Session {
 public:
     std::string uuid;

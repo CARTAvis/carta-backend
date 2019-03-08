@@ -1,6 +1,7 @@
 //# RegionStats.cc: implementation of class for calculating region statistics and histograms
 
 #include "RegionStats.h"
+#include "../InterfaceConstants.h"
 #include "Histogram.h"
 #include "MinMax.h"
 
@@ -20,6 +21,7 @@ using namespace std;
 
 // ***** Histograms *****
 
+// config
 bool RegionStats::setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs) {
     m_configs = histogramReqs;
     return true;
@@ -36,51 +38,81 @@ CARTA::SetHistogramRequirements_HistogramConfig RegionStats::getHistogramConfig(
     return config;
 }
 
-void RegionStats::getMinMax(float& minVal, float& maxVal, const std::vector<float>& data) {
-    // get min and max values in data
+// min max
+bool RegionStats::getMinMax(int channel, int stokes, float& minVal, float& maxVal) {
+    // Get stored min,max for given channel and stokes; return value indicates status
+    bool haveMinMax(false);
+    try {
+        minmax_t vals = m_minmax.at(stokes).at(channel);
+        minVal = vals.first;
+        maxVal = vals.second;
+        haveMinMax = true;
+    } catch (std::out_of_range) {
+        // not stored
+    }
+    return haveMinMax;
+}
+
+void RegionStats::setMinMax(int channel, int stokes, minmax_t minmaxVals) {
+    // Save min, max for given channel and stokes
+    if (channel == ALL_CHANNELS) { // all channels (cube); don't save intermediate channel min/max
+        m_minmax[stokes].clear();
+    }
+    m_minmax[stokes][channel] = minmaxVals;
+}
+
+void RegionStats::calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minval, float& maxval) {
+    // Calculate and store min, max values in data; return minval and maxval
     tbb::blocked_range<size_t> range(0, data.size());
     MinMax<float> mm(data);
     tbb::parallel_reduce(range, mm);
-    std::tie(minVal, maxVal) = mm.getMinMax();
+    minmax_t minmaxVals(mm.getMinMax());
+    setMinMax(channel, stokes, minmaxVals);
+    minval = minmaxVals.first;
+    maxval = minmaxVals.second;
 }
 
-void RegionStats::fillHistogram(CARTA::Histogram* histogram, const std::vector<float>& data,
-        const size_t chanIndex, const size_t stokesIndex, const int nBins, const float minVal,
-        const float maxVal) {
-    // stored?
-    if (m_channelHistograms.count(chanIndex) && m_stokes==stokesIndex && m_bins==nBins) {
-        *histogram = m_channelHistograms[chanIndex];
-    } else {
-        // find histogram for input array
-        tbb::blocked_range<size_t> range(0, data.size());
-        Histogram hist(nBins, minVal, maxVal, data);
-        tbb::parallel_reduce(range, hist);
-        std::vector<int> histogramBins = hist.getHistogram();
-        float binWidth = hist.getBinWidth();
-
-        // fill histogram
-        histogram->set_channel(chanIndex);
-        histogram->set_num_bins(nBins);
-        histogram->set_bin_width(binWidth);
-        histogram->set_first_bin_center(minVal + (binWidth / 2.0));
-        *histogram->mutable_bins() = {histogramBins.begin(), histogramBins.end()};
-
-        // save for next time
-        m_channelHistograms[chanIndex] = *histogram;
-        m_stokes = stokesIndex;
-        m_bins = nBins;
-    }
-}
-
-bool RegionStats::getChannelHistogram(CARTA::Histogram* histogram, int channel, int stokes, int numBins) {
+bool RegionStats::getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram) {
+    // Get stored histogram for given channel and stokes; return value indicates status
     bool haveHistogram(false);
-    if (m_channelHistograms.count(channel) && m_stokes==stokes && m_bins==numBins) {
-        *histogram = m_channelHistograms[channel];
-        haveHistogram = true;
-    } else {
-        histogram = nullptr;
+    try {
+        CARTA::Histogram storedHistogram = m_histograms.at(stokes).at(channel);
+        if (storedHistogram.num_bins() == nbins) {
+            histogram = storedHistogram;
+            haveHistogram = true;
+        }
+    } catch (std::out_of_range) {
+        // not stored
     }
     return haveHistogram;
+}
+
+void RegionStats::setHistogram(int channel, int stokes, CARTA::Histogram& histogram) {
+    // Store histogram for given channel and stokes
+    if (channel == ALL_CHANNELS) { // all channels(cube); don't save intermediate channel histograms
+        m_histograms[stokes].clear();
+    }
+    m_histograms[stokes][channel] = histogram;
+}
+
+void RegionStats::calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
+        const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
+    // Calculate and store histogram for given channel, stokes, nbins; return histogram
+    tbb::blocked_range<size_t> range(0, data.size());
+    Histogram hist(nBins, minVal, maxVal, data);
+    tbb::parallel_reduce(range, hist);
+    std::vector<int> histogramBins(hist.getHistogram());
+    float binWidth(hist.getBinWidth());
+
+    // fill histogram message
+    histogramMsg.set_channel(channel);
+    histogramMsg.set_num_bins(nBins);
+    histogramMsg.set_bin_width(binWidth);
+    histogramMsg.set_first_bin_center(minVal + (binWidth / 2.0));
+    *histogramMsg.mutable_bins() = {histogramBins.begin(), histogramBins.end()};
+
+    // save for next time
+    setHistogram(channel, stokes, histogramMsg);
 }
 
 // ***** Statistics *****
