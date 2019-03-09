@@ -107,21 +107,23 @@ std::vector<float> Frame::getImageData(CARTA::ImageBounds& bounds, int mip, bool
     if (meanFilter) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
         auto range = tbb::blocked_range2d<size_t>(0, numRowsRegion, 0, rowLengthRegion);
-        auto loop = [&](const tbb::blocked_range2d<size_t> &r) {
-            for(size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
-                for(size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
+        auto loop = [&](const tbb::blocked_range2d<size_t>& r) {
+            for (size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
+                for (size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
                     float pixelSum = 0;
                     int pixelCount = 0;
-                    for (auto pixelX = 0; pixelX < mip; pixelX++) {
-                        for (auto pixelY = 0; pixelY < mip; pixelY++) {
-                            auto imageRow = y + j * mip + pixelY;
-                            auto imageCol = x + i * mip + pixelX;
+                    size_t imageRow = y + j * mip;
+                    for (size_t pixelY = 0; pixelY < mip; pixelY++) {
+                        size_t imageCol = x + i * mip;
+                        for (size_t pixelX = 0; pixelX < mip; pixelX++) {
                             float pixVal = channelCache[(imageRow * nImgCol) + imageCol];
-                            if (!isnan(pixVal) && !isinf(pixVal)) {
+                            if (isfinite(pixVal)) {
                                 pixelCount++;
                                 pixelSum += pixVal;
                             }
+                            imageCol++;
                         }
+                        imageRow++;
                     }
                     regionData[j * rowLengthRegion + i] = pixelCount ? pixelSum / pixelCount : NAN;
                 }
