@@ -1,16 +1,23 @@
 //# Session.h: representation of a client connected to a server; processes requests from frontend
 
-#pragma once
+#ifndef __CARTA_SESSION_H__
+#define __CARTA_SESSION_H__
+
+#include "FileSettings.h"
+#include "util.h"
 
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
 #include <unordered_map>
+#include <tuple>
+#include <vector>
 
 #include <casacore/casa/aips.h>
 #include <casacore/casa/OS/File.h>
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/concurrent_unordered_map.h>
 #include <tbb/atomic.h>
 #include <uWS/uWS.h>
 
@@ -29,9 +36,14 @@
 #include "compression.h"
 #include "Frame.h"
 
+
 class Session {
 public:
     std::string uuid;
+    carta::FileSettings fsettings;
+    tbb::concurrent_queue<std::tuple<string,uint32_t,std::vector<char>>> evtq;
+    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> aniq;
+    
 protected:
     // communication
     uWS::WebSocket<uWS::SERVER>* socket;
@@ -56,6 +68,10 @@ protected:
     // flag to send histogram with data
     bool newFrame;
 
+
+    std::mutex _image_channel_mutex;
+    bool _image_channel_task_active;
+
     // cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
     tbb::atomic<float> histogramProgress;
 
@@ -70,11 +86,35 @@ public:
             std::string uuid,
             std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
             bool enforcePermissions,
-            std::string root, std::string base,
+            std::string root,
+	    std::string base,
             uS::Async *outgoing,
             bool verbose = false);
     ~Session();
 
+    void addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId);
+    void executeOneAniEvt(void);
+    
+    inline void addViewSetting(CARTA::SetImageView message, uint32_t requestId) {
+      fsettings.addViewSetting(message, requestId);
+    }
+    inline void addCursorSetting(CARTA::SetCursor message, uint32_t requestId) {
+      fsettings.addCursorSetting(message, requestId);
+    }
+    void image_channel_lock() { _image_channel_mutex.lock(); }
+    void image_channel_unlock() { _image_channel_mutex.unlock(); }
+    inline bool image_channel_task_test_and_set() {
+      if( _image_channel_task_active ) return true;
+      else {
+	_image_channel_task_active= true;
+	return false;
+      }
+    }
+    inline void image_channal_task_set_idle() {
+      _image_channel_task_active= false;
+    }
+
+    
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
     void onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId);
@@ -129,3 +169,4 @@ protected:
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
 
+#endif 

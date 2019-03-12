@@ -14,6 +14,8 @@
 #include <limits>
 #include <valarray>
 
+using namespace std;
+
 // Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unordered_map<string, 
     std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string root,
@@ -29,7 +31,9 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unorder
       selectedFileInfo(nullptr),
       selectedFileInfoExtended(nullptr),
       outgoing(outgoing),
-      newFrame(false) {
+      newFrame(false),
+      fsettings(this)
+{
 }
 
 Session::~Session() {
@@ -357,6 +361,7 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     CARTA::OpenFileAck ack;
     ack.set_file_id(fileId);
     string errMessage;
+    
     bool infoLoaded((selectedFileInfo != nullptr) && 
         (selectedFileInfoExtended != nullptr) && 
         (selectedFileInfo->name() == filename)); // correct file loaded
@@ -377,7 +382,8 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         rootPath.append(directory);
         rootPath.append(filename);
         string absFilename(rootPath.resolvedName());
-        // create Frame for open file
+
+	// create Frame for open file
         auto frame = std::unique_ptr<Frame>(new Frame(uuid, absFilename, hdu));
         if (frame->isValid()) {
             std::unique_lock<std::mutex> lock(frameMutex); // open/close lock
@@ -851,6 +857,25 @@ void Session::createCubeHistogramMessage(CARTA::RegionHistogramData& message, in
         message.set_progress(progress);
     }
 }
+
+
+void Session::addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId) {
+  //  cerr << "Session::addToAniQueue : " << this << "\n";
+
+  aniq.push(make_pair(message, requestId));
+}
+
+
+void Session::executeOneAniEvt()
+{
+  std::pair<CARTA::SetImageChannels,uint32_t> req;
+  //  cerr << " Session::executeOneAniEvt : " << this << "\n";
+						     
+  aniq.try_pop(req);
+  onSetImageChannels(req.first, req.second);
+}
+
+
 
 void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImageData,
     std::vector<float>& imageData, CARTA::ImageBounds& bounds, int mip, CompressionSettings& compression) {
