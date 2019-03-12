@@ -1,6 +1,7 @@
 #include "FileSettings.h"
 #include "OnMessageTask.h"
 #include "Session.h"
+#include "EventMappings.h"
 #include "util.h"
 #include <unordered_map>
 
@@ -22,8 +23,6 @@
 #include <thread>
 #include <mutex>
 
-// Still work in progress.
-#define __EVENT_MAP 1
 
 using namespace std;
 
@@ -36,9 +35,11 @@ unordered_map<std::string, vector<string>> permissionsMap;
 int sessionNumber;
 uWS::Hub wsHub;
 
+// Number of active sessions
 int _num_sessions= 0;
 
-uint32_t get_event_id_by_string(std::string&);
+// Map from string uuids to 32 bit ints.
+unordered_map<std::string,uint32_t> _event_name_map;
 
 // command-line arguments
 string rootFolder("/"), baseFolder("."), version_id("1.0.1");
@@ -141,6 +142,20 @@ void readPermissions(string filename) {
     }
 }
 
+
+inline uint32_t get_event_id_by_string(std::string& strname)
+{
+  int32_t  ret= _event_name_map[ strname ];
+  if( ! ret ) {
+    std::cerr << "Name lookup failure in  get_event_no_by_string : "
+	      << strname << endl;
+    exit(1);
+  }
+  return ret;
+}
+
+
+
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
     string uuidstr = fmt::format("{}{}", ++sessionNumber,
@@ -175,10 +190,7 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
   Session * session= (Session*)ws->getUserData();
-  
-  if (session) {
-    delete session;
-  }
+  if (session) delete session;
   --_num_sessions;
 }
 
@@ -188,83 +200,63 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
 void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
 	       size_t length, uWS::OpCode opCode) {
   Session * session= (Session*) ws->getUserData();
-
   if (!session) {
     fmt::print("Missing session!\n");
     return;
   }
 
-  if (opCode == uWS::OpCode::BINARY) {
-    if (length > 36) {
-      static const size_t max_len = 32;
-      string eventName(rawMessage, min(strlen(rawMessage), max_len));
-      uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
-      vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
+  if ((opCode == uWS::OpCode::BINARY) && (length > 36)) {
+    static const size_t max_len = 32;
+    string eventName(rawMessage, min(strlen(rawMessage), max_len));
+    uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
+    vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
+    
+    OnMessageTask * tsk= nullptr;
+    uint32_t event_id= get_event_id_by_string( eventName );
 
-      OnMessageTask * tsk= nullptr;
-
-#if __EVENT_MAP // In progress...
-      uint32_t event_id= get_event_id_by_string( eventName );
-#endif
-      
-      if(eventName == "SET_IMAGE_CHANNELS") {
-	// has its own queue to keep channels in order during animation
-	CARTA::SetImageChannels message;
-	
-	session->image_channel_lock();
-	if( ! session->image_channel_task_test_and_set() ) {
-	  tsk= new (tbb::task::allocate_root())
-	    SetImageChannelsTask( session );
-	}
-	      
-	message.ParseFromArray(eventPayload.data(), eventPayload.size());
-	session->addToAniQueue(message, requestId);
-	
-	session->image_channel_unlock();
-	
-	session->evtq.push(make_tuple(eventName, requestId, eventPayload));
-	if( tsk ) tsk->print_session_addr();
-	
-      } else if(eventName == "SET_IMAGE_VIEW") {
-	CARTA::SetImageView message;
-	
-	tsk= new (tbb::task::allocate_root())
-	  SetImageViewTask( session );
-	message.ParseFromArray(eventPayload.data(), eventPayload.size());
-	
-	session->addViewSetting(message, requestId);
-	
-	session->evtq.push(make_tuple(eventName, requestId, eventPayload));
-	
-      } else if(eventName == "SET_CURSOR") {
-	CARTA::SetCursor message;
-	
-	tsk= new (tbb::task::allocate_root())
-	  SetCursorTask( session );
-	
-	session->evtq.push(make_tuple(eventName, requestId, eventPayload));
-	
-	message.ParseFromArray(eventPayload.data(), eventPayload.size());
-	
-	session->addCursorSetting(message, requestId);
-      }
-      else {
-	session->evtq.push(make_tuple(eventName, requestId, eventPayload));
-	
-	tsk= new (tbb::task::allocate_root())
-	  OnMessageTask( session );
-      }
-
-      if( tsk ) tbb::task::enqueue(*tsk);
-	    
-#ifdef __SEQUENTIAL__
-      std::cerr << " before lock\n";
-      sequentialiser.lock();
-      std::cerr << " out of lock\n";
-#endif
+    switch(event_id) {
+    case SET_IMAGE_CHANNELS_ID: {
+      CARTA::SetImageChannels message;
+      session->image_channel_lock();
+      if( ! session->image_channel_task_test_and_set() ) 
+	tsk= new (tbb::task::allocate_root()) SetImageChannelsTask( session );
+      message.ParseFromArray(eventPayload.data(), eventPayload.size());
+      // has its own queue to keep channels in order during animation
+      session->addToAniQueue(message, requestId);
+      session->image_channel_unlock();
+      session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+      break;
     }
+    case SET_IMAGE_VIEW_ID: {
+      CARTA::SetImageView message;
+      tsk= new (tbb::task::allocate_root()) SetImageViewTask( session );
+      message.ParseFromArray(eventPayload.data(), eventPayload.size());
+      session->addViewSetting(message, requestId);
+      session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+      break;
+    }	
+    case SET_CURSOR_ID: {
+      CARTA::SetCursor message;
+      tsk= new (tbb::task::allocate_root()) SetCursorTask( session );
+      session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+      message.ParseFromArray(eventPayload.data(), eventPayload.size());
+      session->addCursorSetting(message, requestId);
+      break;
+    }
+    default: {
+      session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+      tsk= new (tbb::task::allocate_root()) OnMessageTask( session );
+    }
+    }
+    if( tsk ) tbb::task::enqueue(*tsk);
+    
+#ifdef __SEQUENTIAL__
+    std::cerr << " before lock\n";
+    sequentialiser.lock();
+    std::cerr << " out of lock\n";
+#endif
   }
-};
+}
 
 
 
@@ -279,47 +271,29 @@ void exit_backend(int s) {
     exit(0);
 }
 
-unordered_map<std::string,uint32_t> _event_name_map;
 
 
 
-// NOTe: this is still under construction.
+
+// Note : this is still under construction.
 void populate_event_name_map(void)
 {
-
-#if __EVENT_MAP
-  _event_name_map["REGISTER_VIEWER"]= 1;
-  _event_name_map["FILE_LIST_REQUEST"]= 2;
-  _event_name_map["FILE_INFO_REQUEST"]= 3;
-  _event_name_map["OPEN_FILE"]= 4;
-  _event_name_map["CLOSE_FILE"]= 5;
-  _event_name_map["SET_IMAGE_VIEW"]= 6;
-  _event_name_map["SET_IMAGE_CHANNELS"]= 7;
-  _event_name_map["SET_CURSOR"]= 8;
-  _event_name_map["SET_SPATIAL_REQUIREMENTS"]= 9;
-  _event_name_map["SET_HISTOGRAM_REQUIREMENTS"]= 10;		    
-  _event_name_map["SET_SPECTRAL_REQUIREMENTS"]= 11;
-  _event_name_map["SET_STATS_REQUIREMENTS"]= 12;
-  _event_name_map["SET_REGION"]= 13;
-  _event_name_map["REMOVE_REGION"]= 14;
-#endif
+  _event_name_map["REGISTER_VIEWER"]= REGISTER_VIEWER_ID;
+  _event_name_map["FILE_LIST_REQUEST"]= FILE_LIST_REQUEST_ID;
+  _event_name_map["FILE_INFO_REQUEST"]= FILE_INFO_REQUEST_ID;;
+  _event_name_map["OPEN_FILE"]= OPEN_FILE_ID;
+  _event_name_map["CLOSE_FILE"]= CLOSE_FILE_ID;
+  _event_name_map["SET_IMAGE_VIEW"]= SET_IMAGE_VIEW_ID;
+  _event_name_map["SET_IMAGE_CHANNELS"]= SET_IMAGE_CHANNELS_ID;
+  _event_name_map["SET_CURSOR"]= SET_CURSOR_ID;
+  _event_name_map["SET_SPATIAL_REQUIREMENTS"]= SET_SPATIAL_REQUIREMENTS_ID;
+  _event_name_map["SET_HISTOGRAM_REQUIREMENTS"]= SET_HISTOGRAM_REQUIREMENTS_ID;
+  _event_name_map["SET_STATS_REQUIREMENTS"]= SET_STATS_REQUIREMENTS_ID;
+  _event_name_map["SET_REGION"]= SET_REGION_ID;
+  _event_name_map["REMOVE_REGION"]= REMOVE_REGION_ID;
 }
 
 
-uint32_t get_event_id_by_string(std::string& strname)
-{
-  int32_t ret= 0;
-
-#if __EVENT_MAP
-  ret= _event_name_map[ strname ];
-  if( ! ret ) {
-    std::cerr << "Name lookup failure in  get_event_no_by_string : "
-	      << strname << endl;
-    exit(1);
-  }
-#endif
-  return ret;
-}
   
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
