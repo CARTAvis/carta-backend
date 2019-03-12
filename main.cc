@@ -1,8 +1,8 @@
-#include "AnimationQueue.h"
 #include "FileSettings.h"
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "util.h"
+#include <unordered_map>
 
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/casa/Inputs/Input.h>
@@ -19,21 +19,26 @@
 #include <vector>
 #include <signal.h>
 
+#include <thread>
+#include <mutex>
+
+// Still work in progress.
+#define __EVENT_MAP 1
+
 using namespace std;
 
 // key is uuid:
 using key_type = string;
-unordered_map<key_type, Session*> sessions;
-unordered_map<key_type, carta::AnimationQueue*> animationQueues;
-unordered_map<key_type, carta::FileSettings*> fileSettings;
-// msgQueue holds eventName, requestId, message
-unordered_map<key_type, tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>*> msgQueues;
 
 // key is current folder
-unordered_map<string, vector<string>> permissionsMap;
+unordered_map<std::string, vector<string>> permissionsMap;
 
 int sessionNumber;
 uWS::Hub wsHub;
+
+int _num_sessions= 0;
+
+uint32_t get_event_id_by_string(std::string&);
 
 // command-line arguments
 string rootFolder("/"), baseFolder("."), version_id("1.0.1");
@@ -140,103 +145,182 @@ void readPermissions(string filename) {
 void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
     string uuidstr = fmt::format("{}{}", ++sessionNumber,
         casacore::Int(casacore::HostInfo::secondsFrom1970()));
-    ws->setUserData(new string(uuidstr));
-    auto &uuid = *((string*)ws->getUserData());
+
+    auto &uuid= *((string *)new string(uuidstr));
 
     uS::Async *outgoing = new uS::Async(wsHub.getLoop());
-    outgoing->setData(&uuid);
+
+    Session *session;
+
+    ws->setUserData(session);
+    outgoing->setData(session);
+    
     outgoing->start(
         [](uS::Async *async) -> void {
-            auto uuid = *((string*)async->getData());
-            sessions[uuid]->sendPendingMessages();
+	  Session * sess = ((Session*)async->getData());
+	  sess->sendPendingMessages();
         });
 
-    sessions[uuid] = new Session(ws, uuid, permissionsMap, usePermissions, rootFolder, baseFolder, outgoing, verbose);
-    animationQueues[uuid] = new carta::AnimationQueue(sessions[uuid]);
-    msgQueues[uuid] = new tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>;
-    fileSettings[uuid] = new carta::FileSettings(sessions[uuid]);
+    session= new Session(ws, uuid, permissionsMap, usePermissions,
+			 rootFolder, baseFolder, outgoing, verbose);
 
-    log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, sessions.size());
+    ws->setUserData(session);
+    outgoing->setData(session);
+
+    log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, ++_num_sessions);
 }
+
+
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
-    auto &uuid = *((string*)ws->getUserData());
-    auto session = sessions[uuid];
-    if (session) {
-        delete session;
-        sessions.erase(uuid);
-        delete animationQueues[uuid];
-        animationQueues.erase(uuid);
-        delete msgQueues[uuid];
-        msgQueues.erase(uuid);
-        delete fileSettings[uuid];
-        fileSettings.erase(uuid);
-    }
-    log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
-    delete &uuid;
+  Session * session= (Session*)ws->getUserData();
+  
+  if (session) {
+    delete session;
+  }
+  --_num_sessions;
 }
 
+
+    
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
-void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length, uWS::OpCode opCode) {
-    auto uuid = *((string*)ws->getUserData());
-    auto session = sessions[uuid];
+void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
+	       size_t length, uWS::OpCode opCode) {
+  Session * session= (Session*) ws->getUserData();
 
-    if (!session) {
-        fmt::print("Missing session!\n");
-        return;
-    }
+  if (!session) {
+    fmt::print("Missing session!\n");
+    return;
+  }
 
-    if (opCode == uWS::OpCode::BINARY) {
-        if (length > 36) {
-            static const size_t max_len = 32;
-            string eventName(rawMessage, min(strlen(rawMessage), max_len));
-            uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
-            vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
-            msgQueues[uuid]->push(make_tuple(eventName, requestId, eventPayload));
-            OnMessageTask *omt = new(tbb::task::allocate_root()) OnMessageTask(
-                uuid, session, msgQueues[uuid], animationQueues[uuid], fileSettings[uuid]);
-            if(eventName == "SET_IMAGE_CHANNELS") {
-                // has its own queue to keep channels in order during animation
-                CARTA::SetImageChannels message;
-                message.ParseFromArray(eventPayload.data(), eventPayload.size());
-                animationQueues[uuid]->addRequest(message, requestId);
-            } else if(eventName == "SET_IMAGE_VIEW") {
-                CARTA::SetImageView message;
-                message.ParseFromArray(eventPayload.data(), eventPayload.size());
-                fileSettings[uuid]->addViewSetting(message, requestId);
-            } else if(eventName == "SET_CURSOR") {
-                CARTA::SetCursor message;
-                message.ParseFromArray(eventPayload.data(), eventPayload.size());
-                fileSettings[uuid]->addCursorSetting(message, requestId);
-            }
-            tbb::task::enqueue(*omt);
-        }
-    } else if (opCode == uWS::OpCode::TEXT) {
-        if (std::strncmp(rawMessage, "PING", 4) == 0) {
-            ws->send("PONG");
-        }
+  if (opCode == uWS::OpCode::BINARY) {
+    if (length > 36) {
+      static const size_t max_len = 32;
+      string eventName(rawMessage, min(strlen(rawMessage), max_len));
+      uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
+      vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
+
+      OnMessageTask * tsk= nullptr;
+
+#if __EVENT_MAP // In progress...
+      uint32_t event_id= get_event_id_by_string( eventName );
+#endif
+      
+      if(eventName == "SET_IMAGE_CHANNELS") {
+	// has its own queue to keep channels in order during animation
+	CARTA::SetImageChannels message;
+	
+	session->image_channel_lock();
+	if( ! session->image_channel_task_test_and_set() ) {
+	  tsk= new (tbb::task::allocate_root())
+	    SetImageChannelsTask( session );
+	}
+	      
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	session->addToAniQueue(message, requestId);
+	
+	session->image_channel_unlock();
+	
+	session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+	if( tsk ) tsk->print_session_addr();
+	
+      } else if(eventName == "SET_IMAGE_VIEW") {
+	CARTA::SetImageView message;
+	
+	tsk= new (tbb::task::allocate_root())
+	  SetImageViewTask( session );
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	
+	session->addViewSetting(message, requestId);
+	
+	session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+	
+      } else if(eventName == "SET_CURSOR") {
+	CARTA::SetCursor message;
+	
+	tsk= new (tbb::task::allocate_root())
+	  SetCursorTask( session );
+	
+	session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+	
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	
+	session->addCursorSetting(message, requestId);
+      }
+      else {
+	session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+	
+	tsk= new (tbb::task::allocate_root())
+	  OnMessageTask( session );
+      }
+
+      if( tsk ) tbb::task::enqueue(*tsk);
+	    
+#ifdef __SEQUENTIAL__
+      std::cerr << " before lock\n";
+      sequentialiser.lock();
+      std::cerr << " out of lock\n";
+#endif
     }
+  }
 };
+
+
 
 void exit_backend(int s) {
     // destroy objects cleanly
     fmt::print("Exiting backend.\n");
-    for (auto& session : sessions) {
-        auto uuid = session.first;
-        delete session.second;
-        delete animationQueues[uuid];
-        delete msgQueues[uuid];
-        delete fileSettings[uuid];
-    }
-    sessions.clear();
-    animationQueues.clear();
-    msgQueues.clear();
-    fileSettings.clear();
+    //    for (auto& session : sessions) {
+      //        auto uuid = session.first;
+      //        delete session.second;
+    //    }
 
     exit(0);
 }
 
+unordered_map<std::string,uint32_t> _event_name_map;
+
+
+
+// NOTe: this is still under construction.
+void populate_event_name_map(void)
+{
+
+#if __EVENT_MAP
+  _event_name_map["REGISTER_VIEWER"]= 1;
+  _event_name_map["FILE_LIST_REQUEST"]= 2;
+  _event_name_map["FILE_INFO_REQUEST"]= 3;
+  _event_name_map["OPEN_FILE"]= 4;
+  _event_name_map["CLOSE_FILE"]= 5;
+  _event_name_map["SET_IMAGE_VIEW"]= 6;
+  _event_name_map["SET_IMAGE_CHANNELS"]= 7;
+  _event_name_map["SET_CURSOR"]= 8;
+  _event_name_map["SET_SPATIAL_REQUIREMENTS"]= 9;
+  _event_name_map["SET_HISTOGRAM_REQUIREMENTS"]= 10;		    
+  _event_name_map["SET_SPECTRAL_REQUIREMENTS"]= 11;
+  _event_name_map["SET_STATS_REQUIREMENTS"]= 12;
+  _event_name_map["SET_REGION"]= 13;
+  _event_name_map["REMOVE_REGION"]= 14;
+#endif
+}
+
+
+uint32_t get_event_id_by_string(std::string& strname)
+{
+  int32_t ret= 0;
+
+#if __EVENT_MAP
+  ret= _event_name_map[ strname ];
+  if( ! ret ) {
+    std::cerr << "Name lookup failure in  get_event_no_by_string : "
+	      << strname << endl;
+    exit(1);
+  }
+#endif
+  return ret;
+}
+  
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
@@ -267,6 +351,8 @@ int main(int argc, const char* argv[]) {
         threadCount = inp.getInt("threads");
         baseFolder = inp.getString("base");
         rootFolder = inp.getString("root");
+
+	populate_event_name_map();
         }
 
         if (!checkRootBaseFolders(rootFolder, baseFolder)) {
