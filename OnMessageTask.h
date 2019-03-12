@@ -12,18 +12,50 @@
 #include <tuple>
 #include <vector>
 
+
+//#define __SEQUENTIAL__
+
+using namespace std;
+
+
 class OnMessageTask : public tbb::task {
-    std::string uuid;
-    Session *session;
-
-    tbb::concurrent_queue<std::tuple<std::string,uint32_t,std::vector<char>>> *mqueue;
-    carta::AnimationQueue *aqueue;
-    carta::FileSettings *fsettings;
-
-    tbb::task* execute();
-
+ protected:
+  Session *session;
+  
+  tbb::task* execute();  
 public:
-    OnMessageTask(std::string uuid_, Session *session_,
-        tbb::concurrent_queue<std::tuple<std::string,uint32_t,std::vector<char>>> *mq,
-        carta::AnimationQueue *aq = nullptr, carta::FileSettings *fs = nullptr);
+  OnMessageTask(Session *session_ ) {
+    session= session_;
+    //    cerr << "OMT constructer(" << this << "),session(" << session << ")\n";
+  }
+  ~OnMessageTask() {
+    //    cerr << " ~OMT\n";
+  }
+  void print_session_addr() {
+    //    cerr << " PRINT OM : " << this << " sess : " << session << "\n";
+  }
 };
+
+class SetImageChannelsTask : public OnMessageTask {
+  tbb::task* execute();
+public:
+  SetImageChannelsTask(Session *session_ ) : OnMessageTask( session_ ) {}
+  ~SetImageChannelsTask() {}
+};
+
+
+class SetImageViewTask : public OnMessageTask {
+  tbb::task* execute();
+ public:
+  SetImageViewTask(Session *session_ ) : OnMessageTask( session_ ) {}
+  ~SetImageViewTask() {}
+};
+
+
+class SetCursorTask : public OnMessageTask {
+    tbb::task* execute();
+public:
+    SetCursorTask(Session *session_ ) :OnMessageTask( session_ ) {}
+    ~SetCursorTask() {}
+};
+

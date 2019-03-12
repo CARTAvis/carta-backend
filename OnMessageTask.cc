@@ -10,28 +10,32 @@ std::string getEventName(char* rawMessage) {
     return std::string(rawMessage, std::min(std::strlen(rawMessage), max_len));
 }
 
-OnMessageTask::OnMessageTask(std::string uuid_, Session *session_,
-        tbb::concurrent_queue<std::tuple<std::string,uint32_t,std::vector<char>>> *mqueue_,
-        carta::AnimationQueue *aqueue_, carta::FileSettings *fsettings_)
-    : uuid(uuid_),
-      session(session_),
-      mqueue(mqueue_),
-      aqueue(aqueue_),
-      fsettings(fsettings_)
-{}
+unsigned int __num_on_message_tasks= 0;
+unsigned int __on_message_tasks_created= 0;
 
-tbb::task* OnMessageTask::execute() {
+
+#include <mutex>          // std::mutex
+
+
+extern std::mutex sequentialiser;
+
+
+
+tbb::task*
+OnMessageTask::execute()
+{
     //CARTA ICD
     std::tuple<std::string,uint32_t,std::vector<char>> msg;
-    mqueue->try_pop(msg);
+    session->evtq.try_pop(msg);
     std::string eventName;
     uint32_t requestId;
     std::vector<char> eventPayload;
     std::tie(eventName, requestId, eventPayload) = msg;
+
     if (eventName == "REGISTER_VIEWER") {
         CARTA::RegisterViewer message;
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onRegisterViewer(message, requestId);
+	    session->onRegisterViewer(message, requestId);
         }
     } else if (eventName == "FILE_LIST_REQUEST") {
         CARTA::FileListRequest message;
@@ -45,30 +49,17 @@ tbb::task* OnMessageTask::execute() {
         }
     } else if (eventName == "OPEN_FILE") {
         CARTA::OpenFile message;
+
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
             session->onOpenFile(message, requestId);
-        }
+        }	
     } else if (eventName == "CLOSE_FILE") {
         CARTA::CloseFile message;
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            fsettings->clearSettings(message.file_id());
+            session->fsettings.clearSettings(message.file_id());
             session->onCloseFile(message, requestId);
         }
-    } else if (eventName == "SET_IMAGE_VIEW") {
-        CARTA::SetImageView message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            fsettings->executeOne("SET_IMAGE_VIEW", message.file_id());
-        }
-    } else if (eventName == "SET_IMAGE_CHANNELS") {
-        CARTA::SetImageChannels message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            aqueue->executeOne();
-        }
-    } else if (eventName == "SET_CURSOR") {
-        CARTA::SetCursor message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            fsettings->executeOne("SET_CURSOR", message.file_id());
-        }
+  
     } else if (eventName == "SET_SPATIAL_REQUIREMENTS") {
         CARTA::SetSpatialRequirements message;
         if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
@@ -100,5 +91,105 @@ tbb::task* OnMessageTask::execute() {
             session->onRemoveRegion(message, requestId);
         }
     }
+    
+#ifdef __SEQUENTIAL__
+    sequentialiser.unlock();
+    std::cerr << " in message - out OMT4\n";
+#endif
+
+    return nullptr;
+}
+
+tbb::task*
+SetImageChannelsTask::execute()
+{
+  std::tuple<std::string,uint32_t,std::vector<char>> msg;
+  bool tester;
+
+  //  cerr << "\n SetImageChannelsTask exec : " << this <<
+  //    " : " << session << "\n\n";
+
+  if( ! session ) {
+    cerr << " SetImageChannelsTask : No Session pointer : " << this << "\n";
+    exit(1);
+  }
+ 
+  session->evtq.try_pop(msg);
+
+  do {
+    std::string eventName;
+    uint32_t requestId;
+    std::vector<char> eventPayload;
+
+    std::tie(eventName, requestId, eventPayload) = msg;
+  
+    CARTA::SetImageChannels message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->executeOneAniEvt();
+    }
+   
+    session->image_channel_lock();
+    tester= session->evtq.try_pop(msg);
+    if( ! tester ) session->image_channal_task_set_idle();
+    session->image_channel_unlock();
+    //    std::cerr << " OSICT Exec tester=" << tester << endl;
+  } while( tester );
+  
+#ifdef __SEQUENTIAL__
+  sequentialiser.unlock();
+  std::cerr << " in message - out \n";
+#endif
+
+  return nullptr;
+}
+
+
+tbb::task*
+SetImageViewTask::execute()
+{
+  std::tuple<std::string,uint32_t,std::vector<char>> msg;
+  session->evtq.try_pop(msg);
+  std::string eventName;
+  uint32_t requestId;
+  std::vector<char> eventPayload;
+  std::tie(eventName, requestId, eventPayload) = msg;
+
+  //  cerr << " OMT2 exec " << session << "\n";
+  CARTA::SetImageView message;
+
+  if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+    session->fsettings.executeOne("SET_IMAGE_VIEW", message.file_id());
+  }
+    
+#ifdef __SEQUENTIAL__
+    sequentialiser.unlock();
+    std::cerr << " in message - out OMT2\n";
+#endif
+
+    return nullptr;
+}
+
+tbb::task*
+SetCursorTask::execute()
+{
+
+  //  cerr << " OMT5 exec " << session << "\n";
+   std::tuple<std::string,uint32_t,std::vector<char>> msg;
+   session->evtq.try_pop(msg);
+   std::string eventName;
+   uint32_t requestId;
+   std::vector<char> eventPayload;
+   std::tie(eventName, requestId, eventPayload) = msg;
+
+   CARTA::SetCursor message;
+   if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+     session->fsettings.executeOne("SET_CURSOR", message.file_id());
+   }
+
+#ifdef __SEQUENTIAL__
+    sequentialiser.unlock();
+    std::cerr << " in message - out \n";
+#endif
+
     return nullptr;
 }
