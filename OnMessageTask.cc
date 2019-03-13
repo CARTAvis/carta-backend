@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstring>
 #include <fmt/format.h>
+#include "EventMappings.h"
 
 // Looks for null termination in a char array to determine event names from message payloads
 std::string getEventName(char* rawMessage) {
@@ -25,73 +26,99 @@ tbb::task*
 MultiMessageTask::execute()
 {
     //CARTA ICD
-    std::tuple<std::string,uint32_t,std::vector<char>> msg;
+    std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
     session->evtq.try_pop(msg);
     std::string eventName;
+    uint32_t event_type;
     uint32_t requestId;
     std::vector<char> eventPayload;
-    std::tie(eventName, requestId, eventPayload) = msg;
+    std::tie(event_type, requestId, eventPayload) = msg;
 
-    if (eventName == "REGISTER_VIEWER") {
-        CARTA::RegisterViewer message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	    session->onRegisterViewer(message, requestId);
-        }
-    } else if (eventName == "FILE_LIST_REQUEST") {
-        CARTA::FileListRequest message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onFileListRequest(message, requestId);
-        }
-    } else if (eventName == "FILE_INFO_REQUEST") {
-        CARTA::FileInfoRequest message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onFileInfoRequest(message, requestId);
-        }
-    } else if (eventName == "OPEN_FILE") {
-        CARTA::OpenFile message;
-
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onOpenFile(message, requestId);
-        }	
-    } else if (eventName == "CLOSE_FILE") {
-        CARTA::CloseFile message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->fsettings.clearSettings(message.file_id());
-            session->onCloseFile(message, requestId);
-        }
-  
-    } else if (eventName == "SET_SPATIAL_REQUIREMENTS") {
-        CARTA::SetSpatialRequirements message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onSetSpatialRequirements(message, requestId);
-        }
-    } else if (eventName == "SET_HISTOGRAM_REQUIREMENTS") {
-        CARTA::SetHistogramRequirements message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onSetHistogramRequirements(message, requestId);
-        }
-    } else if (eventName == "SET_SPECTRAL_REQUIREMENTS") {
-        CARTA::SetSpectralRequirements message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onSetSpectralRequirements(message, requestId);
-        }
-    } else if (eventName == "SET_STATS_REQUIREMENTS") {
-        CARTA::SetStatsRequirements message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onSetStatsRequirements(message, requestId);
-        }
-    } else if (eventName == "SET_REGION") {
-        CARTA::SetRegion message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onSetRegion(message, requestId);
-        }
-    } else if (eventName == "REMOVE_REGION") {
-        CARTA::RemoveRegion message;
-        if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onRemoveRegion(message, requestId);
-        }
+    switch( event_type ) {
+    case REGISTER_VIEWER_ID: {
+      CARTA::RegisterViewer message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->onRegisterViewer(message, requestId);
+      }
+      break;
     }
-    
+    case FILE_LIST_REQUEST_ID: {
+      CARTA::FileListRequest message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->onFileListRequest(message, requestId);
+      }
+      break;
+    }
+    case FILE_INFO_REQUEST_ID: {
+      CARTA::FileInfoRequest message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->onFileInfoRequest(message, requestId);
+      }
+      break;
+    }
+    case OPEN_FILE_ID: {
+      CARTA::OpenFile message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+            session->onOpenFile(message, requestId);
+      }
+      break;
+    }
+    case CLOSE_FILE_ID: {
+      CARTA::CloseFile message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->fsettings.clearSettings(message.file_id());
+	session->onCloseFile(message, requestId);
+      }
+  
+    }
+    case SET_SPATIAL_REQUIREMENTS_ID: {
+      CARTA::SetSpatialRequirements message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->onSetSpatialRequirements(message, requestId);
+      }
+      break;
+    }
+    case SET_HISTOGRAM_REQUIREMENTS_ID: {
+      CARTA::SetHistogramRequirements message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->onSetHistogramRequirements(message, requestId);
+      }
+      break;
+    }
+    case SET_SPECTRAL_REQUIREMENTS_ID: {
+      CARTA::SetSpectralRequirements message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->onSetSpectralRequirements(message, requestId);
+      }
+      break;
+    }
+    case SET_STATS_REQUIREMENTS_ID: {
+      CARTA::SetStatsRequirements message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->onSetStatsRequirements(message, requestId);
+      }
+      break;
+    }
+    case SET_REGION_ID: {
+      CARTA::SetRegion message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->onSetRegion(message, requestId);
+      }
+      break;
+    }
+    case REMOVE_REGION_ID: {
+      CARTA::RemoveRegion message;
+      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+	session->onRemoveRegion(message, requestId);
+      }
+      break;
+    }
+    default: {
+      std::cerr << " Bad event type in MultiMessageType:execute : "
+		<< event_type << endl;
+      exit(1);
+    }
+    }
 #ifdef __SEQUENTIAL__
     sequentialiser.unlock();
     std::cerr << " in message - out OMT4\n";
@@ -103,7 +130,8 @@ MultiMessageTask::execute()
 tbb::task*
 SetImageChannelsTask::execute()
 {
-  std::tuple<std::string,uint32_t,std::vector<char>> msg;
+
+  std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
   bool tester;
 
   if( ! session ) {
@@ -114,11 +142,11 @@ SetImageChannelsTask::execute()
   session->evtq.try_pop(msg);
 
   do {
-    std::string eventName;
+    std::string event_type;
     uint32_t requestId;
     std::vector<char> eventPayload;
 
-    std::tie(eventName, requestId, eventPayload) = msg;
+    std::tie(event_type, requestId, eventPayload) = msg;
   
     CARTA::SetImageChannels message;
     if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
@@ -144,12 +172,13 @@ SetImageChannelsTask::execute()
 tbb::task*
 SetImageViewTask::execute()
 {
-  std::tuple<std::string,uint32_t,std::vector<char>> msg;
+  std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
   session->evtq.try_pop(msg);
   std::string eventName;
+  uint32_t event_type;
   uint32_t requestId;
   std::vector<char> eventPayload;
-  std::tie(eventName, requestId, eventPayload) = msg;
+  std::tie(event_type, requestId, eventPayload) = msg;
 
   //  cerr << " OMT2 exec " << session << "\n";
   CARTA::SetImageView message;
@@ -171,12 +200,13 @@ SetCursorTask::execute()
 {
 
   //  cerr << " OMT5 exec " << session << "\n";
-   std::tuple<std::string,uint32_t,std::vector<char>> msg;
+   std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
    session->evtq.try_pop(msg);
    std::string eventName;
+   uint32_t event_type;
    uint32_t requestId;
    std::vector<char> eventPayload;
-   std::tie(eventName, requestId, eventPayload) = msg;
+   std::tie(event_type, requestId, eventPayload) = msg;
 
    CARTA::SetCursor message;
    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
