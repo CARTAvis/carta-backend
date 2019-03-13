@@ -248,12 +248,6 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
     }
     }
     if( tsk ) tbb::task::enqueue(*tsk);
-    
-#ifdef __SEQUENTIAL__
-    std::cerr << " before lock\n";
-    sequentialiser.lock();
-    std::cerr << " out of lock\n";
-#endif
   }
 }
 

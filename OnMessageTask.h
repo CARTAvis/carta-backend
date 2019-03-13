@@ -13,7 +13,6 @@
 #include <vector>
 
 
-//#define __SEQUENTIAL__
 
 using namespace std;
 

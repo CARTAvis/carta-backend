@@ -15,13 +15,6 @@ unsigned int __num_on_message_tasks= 0;
 unsigned int __on_message_tasks_created= 0;
 
 
-#include <mutex>          // std::mutex
-
-
-extern std::mutex sequentialiser;
-
-
-
 tbb::task*
 MultiMessageTask::execute()
 {
@@ -118,10 +111,6 @@ MultiMessageTask::execute()
     exit(1);
   }
   }
-#ifdef __SEQUENTIAL__
-  sequentialiser.unlock();
-  std::cerr << " in message - out OMT4\n";
-#endif
 
   return nullptr;
 }
@@ -139,11 +128,6 @@ SetImageChannelsTask::execute()
     session->image_channel_unlock();
   } while( tester );
   
-#ifdef __SEQUENTIAL__
-  sequentialiser.unlock();
-  std::cerr << " in message - out \n";
-#endif
-
   return nullptr;
 }
 
@@ -164,12 +148,8 @@ SetImageViewTask::execute()
     session->fsettings.executeOne("SET_IMAGE_VIEW", message.file_id());
   }
     
-#ifdef __SEQUENTIAL__
-    sequentialiser.unlock();
-    std::cerr << " in message - out OMT2\n";
-#endif
 
-    return nullptr;
+  return nullptr;
 }
 
 tbb::task*
@@ -187,10 +167,5 @@ SetCursorTask::execute()
      session->fsettings.executeOne("SET_CURSOR", message.file_id());
    }
 
-#ifdef __SEQUENTIAL__
-    sequentialiser.unlock();
-    std::cerr << " in message - out \n";
-#endif
-
-    return nullptr;
+   return nullptr;
 }
