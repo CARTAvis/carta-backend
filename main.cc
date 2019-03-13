@@ -224,7 +224,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
       // has its own queue to keep channels in order during animation
       session->addToAniQueue(message, requestId);
       session->image_channel_unlock();
-      session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+      session->evtq.push(make_tuple(event_id, requestId, eventPayload));
       break;
     }
     case SET_IMAGE_VIEW_ID: {
@@ -232,19 +232,19 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
       tsk= new (tbb::task::allocate_root()) SetImageViewTask( session );
       message.ParseFromArray(eventPayload.data(), eventPayload.size());
       session->addViewSetting(message, requestId);
-      session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+      session->evtq.push(make_tuple(event_id, requestId, eventPayload));
       break;
     }	
     case SET_CURSOR_ID: {
       CARTA::SetCursor message;
       tsk= new (tbb::task::allocate_root()) SetCursorTask( session );
-      session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+      session->evtq.push(make_tuple(event_id, requestId, eventPayload));
       message.ParseFromArray(eventPayload.data(), eventPayload.size());
       session->addCursorSetting(message, requestId);
       break;
     }
     default: {
-      session->evtq.push(make_tuple(eventName, requestId, eventPayload));
+      session->evtq.push(make_tuple(event_id, requestId, eventPayload));
       tsk= new (tbb::task::allocate_root()) MultiMessageTask( session );
     }
     }
