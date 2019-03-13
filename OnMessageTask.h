@@ -14,15 +14,12 @@
 
 
 
-using namespace std;
-
-
 class OnMessageTask : public tbb::task {
  protected:
   Session *session;
   
   tbb::task* execute() {
-    cerr << " Error : Called base OnMessageTask execute.\n";
+    std::cerr << " Error : Called base OnMessageTask execute.\n";
   }
 public:
   OnMessageTask(Session *session_ ) {

@@ -107,7 +107,7 @@ MultiMessageTask::execute()
   }
   default: {
     std::cerr << " Bad event type in MultiMessageType:execute : "
-	      << event_type << endl;
+	      << event_type << std::endl;
     exit(1);
   }
   }
