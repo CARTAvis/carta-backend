@@ -28,11 +28,7 @@ public:
   OnMessageTask(Session *session_ ) {
     session= session_;
   }
-  ~OnMessageTask() {
-  }
-  void print_session_addr() {
-    //    cerr << " PRINT OM : " << this << " sess : " << session << "\n";
-  }
+  ~OnMessageTask() {}
 };
 
 class MultiMessageTask : public OnMessageTask {
