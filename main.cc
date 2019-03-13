@@ -39,7 +39,7 @@ uWS::Hub wsHub;
 int _num_sessions= 0;
 
 // Map from string uuids to 32 bit ints.
-unordered_map<std::string,uint32_t> _event_name_map;
+unordered_map<std::string,uint8_t> _event_name_map;
 
 // command-line arguments
 string rootFolder("/"), baseFolder("."), version_id("1.0.1");
@@ -143,9 +143,9 @@ void readPermissions(string filename) {
 }
 
 
-inline uint32_t get_event_id_by_string(std::string& strname)
+inline uint8_t get_event_id_by_string(std::string& strname)
 {
-  int32_t  ret= _event_name_map[ strname ];
+  int8_t  ret= _event_name_map[ strname ];
   if( ! ret ) {
     std::cerr << "Name lookup failure in  get_event_no_by_string : "
 	      << strname << endl;
@@ -212,7 +212,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
     vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
     
     OnMessageTask * tsk= nullptr;
-    uint32_t event_id= get_event_id_by_string( eventName );
+    uint8_t event_id= get_event_id_by_string( eventName );
 
     switch(event_id) {
     case SET_IMAGE_CHANNELS_ID: {

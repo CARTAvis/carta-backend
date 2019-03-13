@@ -19,9 +19,9 @@ tbb::task*
 MultiMessageTask::execute()
 {
   //CARTA ICD
-  std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
+  std::tuple<uint8_t,uint32_t,std::vector<char>> msg;
   session->evtq.try_pop(msg);
-  uint32_t event_type;
+  uint8_t event_type;
   uint32_t requestId;
   std::vector<char> eventPayload;
   std::tie(event_type, requestId, eventPayload) = msg;
@@ -135,9 +135,9 @@ SetImageChannelsTask::execute()
 tbb::task*
 SetImageViewTask::execute()
 {
-  std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
+  std::tuple<uint8_t,uint32_t,std::vector<char>> msg;
   session->evtq.try_pop(msg);
-  uint32_t event_type;
+  uint8_t event_type;
   uint32_t requestId;
   std::vector<char> eventPayload;
   std::tie(event_type, requestId, eventPayload) = msg;
@@ -155,9 +155,9 @@ SetImageViewTask::execute()
 tbb::task*
 SetCursorTask::execute()
 {
-   std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
+   std::tuple<uint8_t,uint32_t,std::vector<char>> msg;
    session->evtq.try_pop(msg);
-   uint32_t event_type;
+   uint8_t event_type;
    uint32_t requestId;
    std::vector<char> eventPayload;
    std::tie(event_type, requestId, eventPayload) = msg;
