@@ -13,3 +13,4 @@ const uint32_t SET_STATS_REQUIREMENTS_ID= 10;
 const uint32_t SET_REGION_ID= 11;
 const uint32_t REMOVE_REGION_ID= 12;
 const uint32_t CLOSE_FILE_ID= 13;
+const uint32_t SET_SPECTRAL_REQUIREMENTS_ID= 14;
