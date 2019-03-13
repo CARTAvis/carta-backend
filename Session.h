@@ -14,19 +14,16 @@
 #include <tbb/atomic.h>
 #include <uWS/uWS.h>
 
-#include <carta-protobuf/close_file.pb.h>
-#include <carta-protobuf/file_info.pb.h>
-#include <carta-protobuf/file_list.pb.h>
-#include <carta-protobuf/open_file.pb.h>
-#include <carta-protobuf/raster_image.pb.h>
-#include <carta-protobuf/region.pb.h>
-#include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
-#include <carta-protobuf/set_image_channels.pb.h>
+#include <carta-protobuf/file_list.pb.h>
+#include <carta-protobuf/file_info.pb.h>
+#include <carta-protobuf/open_file.pb.h>
+#include <carta-protobuf/close_file.pb.h>
+#include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
+#include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 
-#include "compression.h"
 #include "Frame.h"
 
 class Session {
@@ -51,10 +48,8 @@ protected:
 
     // <file_id, Frame>: one frame per image file
     std::unordered_map<int, std::unique_ptr<Frame>> frames;
-    // lock frames to create/destroy
-    std::mutex frameMutex;
-    // flag to send histogram with data
-    bool newFrame;
+    std::mutex frameMutex; // lock frames to create/destroy
+    bool newFrame;         // flag to send histogram with data
 
     // cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
     tbb::atomic<float> histogramProgress;
@@ -107,17 +102,14 @@ protected:
     bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo,
         const std::string folder, const std::string filename, std::string hdu, std::string& message);
 
-    // ICD: Send data streams
-    // raster image data, optionally with histogram
-    void sendRasterImageData(int fileId, CARTA::RasterImageData& rasterData,
-        std::vector<float>& imageData, CARTA::ImageBounds& bounds, int mip,
-        CompressionSettings& compression);
+    // Histogram
     CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId);
     void sendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
     // basic message to update progress
     void createCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fileId, int stokes, float progress);
 
-    // profile data
+    // send data streams
+    void sendRasterImageData(int fileId, bool sendHistogram=false);
     void sendSpatialProfileData(int fileId, int regionId);
     void sendSpectralProfileData(int fileId, int regionId);
     void sendRegionStatsData(int fileId, int regionId);

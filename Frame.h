@@ -9,12 +9,14 @@
 #include <mutex>
 #include <tbb/queuing_rw_mutex.h>
 
+#include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include "InterfaceConstants.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
+#include "compression.h"
 
 struct ChannelStats {
     float minVal;
@@ -26,52 +28,51 @@ struct ChannelStats {
     int64_t nanCount;
 };
 
-struct CompressionSettings {
-    CARTA::CompressionType type;
-    float quality;
-    int nsubsets;
-};
-
 class Frame {
 
 private:
     // setup
     std::string uuid;
     bool valid;
-    std::mutex latticeMutex;  // only one disk access at a time
 
-    // image loader, shape, stats from image file
+    // image loader, stats from image file
     std::string filename;
     std::unique_ptr<carta::FileLoader> loader;
-    casacore::IPosition imageShape; // (width, height, depth, stokes)
-    int spectralAxis, stokesAxis;  // axis index for each in 4D image
-    size_t nchan;
     std::vector<std::vector<ChannelStats>> channelStats;
 
-    // set image view 
+    // shape
+    casacore::IPosition imageShape; // (width, height, depth, stokes)
+    int spectralAxis, stokesAxis;   // axis index for each in 4D image
+    int channelIndex, stokesIndex;  // current channel, stokes for image
+    size_t nchan;
+
+    // Image settings
+    // view and compression
     CARTA::ImageBounds bounds;
-    int mip;
-    CompressionSettings compression;
+    int mip, nsubsets;
+    CARTA::CompressionType compType;
+    float quality;
+    // channel and stokes
 
-    // set image channel
-    size_t channelIndex;
-    size_t stokesIndex;
-
-    // saved vector for current channelIndex, stokesIndex
-    std::vector<float> channelCache;
+    std::vector<float> channelCache;  // image data for current channelIndex, stokesIndex
     tbb::queuing_rw_mutex cacheMutex; // allow concurrent reads but lock for write
+    std::mutex latticeMutex;          // only one disk access at a time
+    bool cacheLoaded;                 // channel cache is set
 
     // Region
-    // <region_id, Region>: one Region per ID
-    std::unordered_map<int, std::unique_ptr<carta::Region>> regions;
+    std::unordered_map<int, std::unique_ptr<carta::Region>> regions;  // key is region ID
     bool cursorSet; // cursor region set by frontend, not internally
 
+    // Stats stored in image file
     bool loadImageChannelStats(bool loadPercentiles = false);
+
+    // Internal regions: image, cursor
     void setImageRegion(int regionId); // set region for entire plane image or cube
     void setDefaultCursor(); // using center point of image
 
-    // Data access and slicers
-    void setChannelCache(size_t channel, size_t stokes);
+    // Image data and slicers
+    void setChannelCache();
+    bool getImageData(std::vector<float>& imageData, bool meanFilter = true); // downsampled
     // fill vector for given channel and stokes
     void getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes);
     // get slicer for xy matrix with given channel and stokes
@@ -79,43 +80,31 @@ private:
     // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
     void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
 
+    // histogram helpers
+    int calcAutoNumBins(); // calculate automatic bin size
+
 
 public:
-    Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = 0);
+    Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = DEFAULT_CHANNEL);
     ~Frame();
 
+    // frame info
     bool isValid();
     int getMaxRegionId();
-
-    // image data
-    // matrix for current channel and stokes
-    std::vector<float> getImageData(CARTA::ImageBounds& bounds, int mip, bool meanFilter = true);
-    // matrix for given channel, current stokes
-    std::vector<float> getImageChanData(size_t chan);
-
-    // image view
-    bool setBounds(CARTA::ImageBounds imageBounds, int newMip);
-    void setCompression(CompressionSettings& settings);
-    CARTA::ImageBounds currentBounds();
-    int currentMip();
-    CompressionSettings compressionSettings();
-
-    // image channels
-    bool setImageChannels(int newChannel, int newStokes, std::string& message);
-    size_t nchannels();
+    size_t nchannels(); // if no channel axis, nchan=1
     int currentStokes();
-    int currentChannel();
 
-    // region data: pass through to Region
+    // Create and remove regions
     bool setRegion(int regionId, std::string name, CARTA::RegionType type, int minchan,
-        int maxchan, std::vector<int>& stokes, std::vector<CARTA::Point>& points,
-        float rotation, std::string& message);
-    // setRegion for cursor (defaults for fields not in SET_CURSOR)
+        int maxchan, std::vector<CARTA::Point>& points, float rotation, std::string& message);
     bool setCursorRegion(int regionId, const CARTA::Point& point);
-    // cursor region set by frontend, not default cursor position
-    inline bool isCursorSet() { return cursorSet; }
-    // remove region (region or frame closed)
+    inline bool isCursorSet() { return cursorSet; } // set by frontend, not default
     void removeRegion(int regionId);
+
+    // image view, channels
+    bool setImageView(const CARTA::ImageBounds& imageBounds, int newMip,
+        CARTA::CompressionType compression, float quality, int nsubsets);
+    bool setImageChannels(int newChannel, int newStokes, std::string& message);
 
     // set requirements
     bool setRegionHistogramRequirements(int regionId,
@@ -125,21 +114,20 @@ public:
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
     bool setRegionStatsRequirements(int regionId, const std::vector<int> statsTypes);
 
-    // histogram helpers
-    int calcAutoNumBins(); // calculate automatic bin size
-    bool getRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval); // if stored
-    bool calcRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval);
-    bool getRegionHistogram(int regionId, int channel, int stokes, int nbins, CARTA::Histogram& histogram);
-    bool calcRegionHistogram(int regionId, int channel, int stokes, int nbins, float minval, float maxval,
-        CARTA::Histogram& histogram);
-
-    // get/set cube calculations:
-    void setRegionMinMax(int regionId, int channel, int stokes, float minval, float maxval);
-    void setRegionHistogram(int regionId, int channel, int stokes, CARTA::Histogram& histogram);
-
-    // get profiles, stats
+    // fill data, profiles, stats messages
+    bool fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::string& message);
     bool fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData);
     bool fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData);
     bool fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData);
     bool fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData);
+
+    // histogram only (not full data message) : get if stored, else can calculate
+    bool getRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval);
+    bool calcRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval);
+    bool getRegionHistogram(int regionId, int channel, int stokes, int nbins,
+        CARTA::Histogram& histogram);
+    bool calcRegionHistogram(int regionId, int channel, int stokes, int nbins, float minval,
+        float maxval, CARTA::Histogram& histogram);
+    void setRegionMinMax(int regionId, int channel, int stokes, float minval, float maxval);
+    void setRegionHistogram(int regionId, int channel, int stokes, CARTA::Histogram& histogram);
 };

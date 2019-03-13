@@ -1,7 +1,6 @@
 #include "Session.h"
 #include "InterfaceConstants.h"
 #include "FileInfoLoader.h"
-#include "compression.h"
 #include "util.h"
 #include <carta-protobuf/error.pb.h>
 
@@ -12,7 +11,6 @@
 
 #include <chrono>
 #include <limits>
-#include <valarray>
 
 // Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unordered_map<string, 
@@ -420,34 +418,14 @@ void Session::onSetImageView(const CARTA::SetImageView& message, uint32_t reques
     auto fileId = message.file_id();
     if (frames.count(fileId)) {
         try {
-            CARTA::ImageBounds bounds(message.image_bounds());
-            int mip(message.mip());
-            if (frames.at(fileId)->setBounds(bounds, mip)) {
-                std::vector<float> imageData = frames.at(fileId)->getImageData(bounds, mip);
-                if (!imageData.empty()) {
-                    CompressionSettings csettings;
-                    csettings.type = message.compression_type();
-                    csettings.quality = message.compression_quality();
-                    csettings.nsubsets = message.num_subsets();
-                    frames.at(fileId)->setCompression(csettings);
-                    // RESPONSE: raster/histogram data
-                    CARTA::RasterImageData rasterImageData;
-                    rasterImageData.set_stokes(frames.at(fileId)->currentStokes());
-                    rasterImageData.set_channel(frames.at(fileId)->currentChannel());
-                    if (newFrame) {
-                        CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
-                        rasterImageData.set_allocated_channel_histogram_data(histogramData);
-                        newFrame = false;
-                    }
-                    sendRasterImageData(fileId, rasterImageData, imageData, bounds, mip, csettings);
-                } else {
-                    string error = "Raster image data failed to load";
-                    sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
-                }
+           if (frames.at(fileId)->setImageView(message.image_bounds(), message.mip(), message.compression_type(),
+                message.compression_quality(), message.num_subsets())) {
+                sendRasterImageData(fileId, newFrame); // send histogram only if new frame
+                newFrame = false;
             } else {
                 sendLogEvent("Image view out of bounds", {"view"}, CARTA::ErrorSeverity::ERROR);
             }
-        } catch (std::out_of_range& rangeError) {   // unordered_map.at() exception
+        } catch (std::out_of_range& rangeError) {
             std::string error = fmt::format("File id {} closed", fileId);
             sendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
         }
@@ -466,28 +444,13 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
             auto stokes = message.stokes();
             bool stokesChanged(stokes != frames.at(fileId)->currentStokes());
             if (frames.at(fileId)->setImageChannels(channel, stokes, errMessage)) {
-                auto bounds = frames.at(fileId)->currentBounds();
-                auto mip = frames.at(fileId)->currentMip();
-                std::vector<float> imageData = frames.at(fileId)->getImageData(bounds, mip);
-                if (!imageData.empty()) {
-                    CompressionSettings csettings = frames.at(fileId)->compressionSettings();
-                    CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
-                    // RESPONSE: updated raster/histogram, spatial profile, spectral profile
-                    CARTA::RasterImageData rasterImageData;
-                    rasterImageData.set_stokes(stokes);
-                    rasterImageData.set_channel(channel);
-                    rasterImageData.set_allocated_channel_histogram_data(histogramData);
-                    sendRasterImageData(fileId, rasterImageData, imageData, bounds, mip, csettings);
-                    sendSpatialProfileData(fileId, CURSOR_REGION_ID);
-                    if (stokesChanged)
-                        sendSpectralProfileData(fileId, CURSOR_REGION_ID);
-                } else {
-                    string error = "Raster image data failed to load";
-                    sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
-                }
+                // RESPONSE: updated raster/histogram, spatial profile, spectral profile
+                sendRasterImageData(fileId, true); // send histogram
+                sendSpatialProfileData(fileId, CURSOR_REGION_ID);
+                if (stokesChanged)
+                    sendSpectralProfileData(fileId, CURSOR_REGION_ID);
             } else {
-                if (!errMessage.empty())
-                    sendLogEvent(errMessage, {"channels"}, CARTA::ErrorSeverity::ERROR);
+                sendLogEvent(errMessage, {"channels"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);
@@ -545,7 +508,7 @@ void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
             std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
             auto& frame = frames[fileId];  // use frame in SetRegion message
             success = frames.at(fileId)->setRegion(regionId, message.region_name(), message.region_type(),
-                message.channel_min(), message.channel_max(), stokes, points, message.rotation(), errMessage);
+                message.channel_min(), message.channel_max(), points, message.rotation(), errMessage);
         } catch (std::out_of_range& rangeError) {
             errMessage = fmt::format("File id {} closed", fileId);
         }
@@ -852,92 +815,28 @@ void Session::createCubeHistogramMessage(CARTA::RegionHistogramData& message, in
     }
 }
 
-void Session::sendRasterImageData(int fileId, CARTA::RasterImageData& rasterImageData,
-    std::vector<float>& imageData, CARTA::ImageBounds& bounds, int mip, CompressionSettings& compression) {
+void Session::sendRasterImageData(int fileId, bool sendHistogram) {
     if (frames.count(fileId)) {
         try {
-            if (!imageData.empty()) {
-                rasterImageData.set_file_id(fileId);
-                rasterImageData.mutable_image_bounds()->set_x_min(bounds.x_min());
-                rasterImageData.mutable_image_bounds()->set_x_max(bounds.x_max());
-                rasterImageData.mutable_image_bounds()->set_y_min(bounds.y_min());
-                rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
-                rasterImageData.set_mip(mip);
-                auto compressionType = compression.type;
-                if (compressionType == CARTA::CompressionType::NONE) {
-                    rasterImageData.set_compression_type(CARTA::CompressionType::NONE);
-                    rasterImageData.set_compression_quality(0);
-                    rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
-                    // Send completed event to client
-                    sendFileEvent(fileId, "RASTER_IMAGE_DATA", 0, rasterImageData);
-                } else if (compressionType == CARTA::CompressionType::ZFP) {
-                    int precision = lround(compression.quality);
-                    rasterImageData.set_compression_type(CARTA::CompressionType::ZFP);
-                    rasterImageData.set_compression_quality(precision);
-
-                    auto rowLength = (bounds.x_max() - bounds.x_min()) / mip;
-                    auto numRows = (bounds.y_max() - bounds.y_min()) / mip;
-                    auto numSubsets = compression.nsubsets;
-
-                    std::vector<std::vector<char>> compressionBuffers(numSubsets);
-                    std::vector<size_t> compressedSizes(numSubsets);
-                    std::vector<std::vector<int32_t>> nanEncodings(numSubsets);
-
-                    auto N = std::min(numSubsets, MAX_SUBSETS);
-                    auto range = tbb::blocked_range<int>(0, N);
-                    auto loop = [&](const tbb::blocked_range<int> &r) {
-                        for(int i = r.begin(); i != r.end(); ++i) {
-                            int subsetRowStart = i * (numRows / N);
-                            int subsetRowEnd = (i + 1) * (numRows / N);
-                            if (i == N - 1) {
-                                subsetRowEnd = numRows;
-                            }
-                            int subsetElementStart = subsetRowStart * rowLength;
-                            int subsetElementEnd = subsetRowEnd * rowLength;
-                            nanEncodings[i] = getNanEncodingsBlock(imageData, subsetElementStart, rowLength,
-                                subsetRowEnd - subsetRowStart);
-                            compress(imageData, subsetElementStart, compressionBuffers[i], compressedSizes[i],
-                                rowLength, subsetRowEnd - subsetRowStart, precision);
-                        }
-                    };
-                    auto tStartCompress = std::chrono::high_resolution_clock::now();
-                    tbb::parallel_for(range, loop);
-                    auto tEndCompress = std::chrono::high_resolution_clock::now();
-                    auto dtCompress = std::chrono::duration_cast<std::chrono::microseconds>(tEndCompress - tStartCompress).count();
-
-                    // Complete message
-                    for (auto i = 0; i < numSubsets; i++) {
-                        rasterImageData.add_image_data(compressionBuffers[i].data(), compressedSizes[i]);
-                        rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(),
-                            nanEncodings[i].size() * sizeof(int));
-                    }
-
-                    if (verboseLogging) {
-                        string compressionInfo = fmt::format(
-                            "Image data of size {:.1f} kB compressed to {:.1f} kB in {} ms at {:.2f} MPix/s",
-                            numRows * rowLength * sizeof(float) / 1e3,
-                            std::accumulate(compressedSizes.begin(), compressedSizes.end(), 0) * 1e-3,
-                            1e-3 * dtCompress,
-                            (float) (numRows * rowLength) / dtCompress);
-                        sendLogEvent(compressionInfo, {"zfp"}, CARTA::ErrorSeverity::DEBUG);
-                    }
-                    // Send completed event to client
-                    sendFileEvent(fileId, "RASTER_IMAGE_DATA", 0, rasterImageData);
-                } else {
-                    string error = "SZ compression not implemented";
-                    sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
+            CARTA::RasterImageData rasterData;
+            rasterData.set_file_id(fileId);
+            std::string message;
+            if (frames.at(fileId)->fillRasterImageData(rasterData, message)) {
+                if (sendHistogram) {
+                    CARTA::RegionHistogramData* histogramData = getRegionHistogramData(fileId, IMAGE_REGION_ID);
+                    rasterData.set_allocated_channel_histogram_data(histogramData);
                 }
+                sendFileEvent(fileId, "RASTER_IMAGE_DATA", 0, rasterData);
             } else {
-                string error = "Raster image data failed to load";
-                sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::ERROR);
+                sendLogEvent(message, {"raster"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);
-            sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::DEBUG);
+            sendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", fileId);
-        sendLogEvent(error, {"raster"}, CARTA::ErrorSeverity::DEBUG);
+        sendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
     }
 }
 

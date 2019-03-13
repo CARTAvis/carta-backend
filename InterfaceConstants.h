@@ -5,9 +5,11 @@
 #define IMAGE_REGION_ID -1
 #define CURSOR_REGION_ID 0
 
-// channels
+// channels, stokes
 #define CURRENT_CHANNEL -1
 #define ALL_CHANNELS -2
+#define DEFAULT_CHANNEL 0
+#define DEFAULT_STOKES 0
 
 // raster image data
 #define MAX_SUBSETS 8
