@@ -68,17 +68,12 @@ public:
 
 private:
 
-    // create/update Region with current xy parameters
-    bool setRegion(const std::vector<CARTA::Point>&points, float rotation);
-    bool makePointRegion(const CARTA::Point& point);
-    bool makeRectangleRegion(const std::vector<CARTA::Point>&points, float rotation);
-    //bool makeEllipseRegion(const std::vector<CARTA::Point>&points, float rotation);
-    //bool makePolygonRegion(const std::vector<CARTA::Point>&points);
-
     // bounds checking for Region parameters
+    bool checkPoints(const std::vector<CARTA::Point>& point);
     bool checkPixelPoint(const CARTA::Point& point);
     bool checkWidthHeight(const CARTA::Point& point);
     bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
+    // not const, convert -1 to defaults:
     bool checkChannelRange(int& minchan, int& maxchan);
     bool checkStokes(int& stokes);
     
@@ -96,9 +91,6 @@ private:
     // image shape info
     casacore::IPosition m_latticeShape;
     int m_spectralAxis, m_stokesAxis;
-
-    // Lattice-Coordinate Regions
-    std::unique_ptr<casacore::LCRegion> m_region;
 
     // classes for requirements, calculations
     std::unique_ptr<carta::RegionStats> m_stats;

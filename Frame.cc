@@ -459,24 +459,25 @@ bool Frame::setImageView(const CARTA::ImageBounds& newBounds, int newMip,
 }
 
 bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message) {
+    bool updated(false);
     if (!valid || (regions.count(IMAGE_REGION_ID)==0)) {
         message = "No file loaded";
-        return false;
     } else {
-        bool changed((newChannel != channelIndex) || (newStokes != stokesIndex));
-        auto& region = regions[IMAGE_REGION_ID];
-        bool chanOK(region->setChannelRange(newChannel, newChannel));
-        bool stokesOK(region->setStokes(newStokes));
-        if (changed && chanOK && stokesOK) {
-            channelIndex = newChannel;
-            stokesIndex = newStokes;
-            setChannelCache();
-            return true;
-        } else {
-            message = fmt::format("Channel {} or Stokes {} is invalid in file {}", newChannel, newStokes, filename);
-            return false;
+        if ((newChannel != channelIndex) || (newStokes != stokesIndex)) {
+            auto& region = regions[IMAGE_REGION_ID];
+            bool chanOK(region->setChannelRange(newChannel, newChannel));
+            bool stokesOK(region->setStokes(newStokes));
+            if (chanOK && stokesOK) {
+                setChannelCache();
+                channelIndex = newChannel;
+                stokesIndex = newStokes;
+                updated = true;
+            } else {
+                message = fmt::format("Channel {} or Stokes {} is invalid in file {}", newChannel, newStokes, filename);
+            }
         }
     }
+    return updated;
 }
 
 void Frame::setChannelCache() {

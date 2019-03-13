@@ -25,7 +25,6 @@ Region::Region(const std::string& name, const CARTA::RegionType type, int mincha
 }
 
 Region::~Region() {
-    m_region.reset();
     m_stats.reset();
     m_profiler.reset();
 }
@@ -33,84 +32,18 @@ Region::~Region() {
 bool Region::updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>&points,
     float rotation) {
     // change region parameters and set flags
+
     bool regionChanged(pointsChanged(points) || (rotation != m_rotation));
-    if (regionChanged && setRegion(points, rotation))  // change xy region
+    if (regionChanged && checkPoints(points)) {  // change xy region
+        m_ctrlpoints = points;
+        m_rotation = rotation;
         m_regionChanged = true;
+    }
+
     bool spectralChanged((minchan != m_minchan) || (maxchan != m_maxchan));
     if (spectralChanged && setChannelRange(minchan, maxchan)) // change spectral axis
         m_spectralChanged = true;
     return m_regionChanged || m_spectralChanged;
-}
-
-// *************************************************************************
-// Region xy settings
-
-bool Region::setRegion(const std::vector<CARTA::Point>&points, float rotation) {
-    // create 2D casacore::LCRegion for type
-    bool regionUpdated(false);
-    try {
-        switch(m_type) {
-            case CARTA::RegionType::POINT: {
-                regionUpdated = makePointRegion(points[0]);
-                break;
-            }
-            case CARTA::RegionType::RECTANGLE: {
-                regionUpdated = makeRectangleRegion(points, rotation);
-                break;
-            }
-        /*
-            case CARTA::RegionType::ELLIPSE: {
-                regionUpdated = makeEllipseRegion(points, rotation);
-                break;
-            }
-            case CARTA::RegionType::POLYGON: {
-                regionUpdated = makePolygonRegion(points);
-                break;
-            }
-       */
-            default:
-                break;
-        }
-    } catch (casacore::AipsError& err) {
-        // lattice region failed 
-    }
-    if (regionUpdated) {
-        m_ctrlpoints = points;
-        m_rotation = rotation;
-    }
-    return regionUpdated;
-}
-
-bool Region::makePointRegion(const CARTA::Point& point) {
-    // 1 x 1 LCBox
-    bool pointOK(checkPixelPoint(point));
-    if (pointOK) {
-        auto x = point.x();
-        auto y = point.y();
-        casacore::IPosition blc(2, x, y), trc(2, x, y);
-        casacore::IPosition boxShape(m_latticeShape.keepAxes(casacore::IPosition(2, 0, 1)));
-        m_region = std::unique_ptr<casacore::LCBox>(new casacore::LCBox(blc, trc, boxShape));
-    }
-    return pointOK;
-}
-
-bool Region::makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation) {
-    // width x height LCBox
-    bool rectangleOK(false);
-    if (rotation == 0.0) { // TODO support rotation
-        rectangleOK = ((points.size()==2) && checkPixelPoint(points[0]) && checkWidthHeight(points[1]));
-        if (rectangleOK) {
-            float cx(points[0].x()), cy(points[0].y());
-            float width(points[1].x()), height(points[1].y());
-            casacore::IPosition start(2), count(2, width, height);
-            start(0) = cx - std::round(width/2.0);
-            start(1) = cy - std::round(width/2.0);
-            casacore::Slicer slicer(start, count);
-            casacore::IPosition boxShape(m_latticeShape.keepAxes(casacore::IPosition(2, 0, 1)));
-            m_region = std::unique_ptr<casacore::LCBox>(new casacore::LCBox(slicer, boxShape));
-        }
-    }
-    return rectangleOK;
 }
 
 // *************************************************************************
@@ -139,6 +72,26 @@ bool Region::setStokes(int stokes) {
 
 // *************************************************************************
 // Parameter checking
+
+bool Region::checkPoints(const std::vector<CARTA::Point>& points) {
+    // check point values
+    bool pointsOK(false);
+    switch (m_type) {
+        case CARTA::POINT: {
+            if (points.size() == 1)
+                pointsOK = checkPixelPoint(points[0]);
+            break;
+            }
+        case CARTA::RECTANGLE: {
+            if (points.size() == 2)
+                pointsOK = (checkPixelPoint(points[0]) && checkWidthHeight(points[1]));
+            break;
+            }
+        default:
+            break;
+    }
+    return pointsOK;
+}
 
 bool Region::checkPixelPoint(const CARTA::Point& point) {
     // in xy axis range
@@ -183,7 +136,8 @@ bool Region::checkChannelRange(int& minchan, int& maxchan) {
 }
 
 bool Region::checkStokes(int& stokes) {
-    return ((stokes >= 0) && (stokes < m_latticeShape(m_stokesAxis)));
+    size_t nstokes(m_stokesAxis >= 0 ? m_latticeShape(m_stokesAxis) : 1);
+    return ((stokes >= 0) && (stokes < nstokes));
 }
 
 // ***********************************

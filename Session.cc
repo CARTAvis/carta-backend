@@ -450,7 +450,8 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
                 if (stokesChanged)
                     sendSpectralProfileData(fileId, CURSOR_REGION_ID);
             } else {
-                sendLogEvent(errMessage, {"channels"}, CARTA::ErrorSeverity::ERROR);
+                if (!errMessage.empty())
+                    sendLogEvent(errMessage, {"channels"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);
