@@ -22,7 +22,7 @@ extern std::mutex sequentialiser;
 
 
 tbb::task*
-OnMessageTask::execute()
+MultiMessageTask::execute()
 {
     //CARTA ICD
     std::tuple<std::string,uint32_t,std::vector<char>> msg;
@@ -105,9 +105,6 @@ SetImageChannelsTask::execute()
 {
   std::tuple<std::string,uint32_t,std::vector<char>> msg;
   bool tester;
-
-  //  cerr << "\n SetImageChannelsTask exec : " << this <<
-  //    " : " << session << "\n\n";
 
   if( ! session ) {
     cerr << " SetImageChannelsTask : No Session pointer : " << this << "\n";

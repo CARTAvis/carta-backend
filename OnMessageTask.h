@@ -22,18 +22,25 @@ class OnMessageTask : public tbb::task {
  protected:
   Session *session;
   
-  tbb::task* execute();  
+  tbb::task* execute() {
+    cerr << " Error : Called base OnMessageTask execute.\n";
+  }
 public:
   OnMessageTask(Session *session_ ) {
     session= session_;
-    //    cerr << "OMT constructer(" << this << "),session(" << session << ")\n";
   }
   ~OnMessageTask() {
-    //    cerr << " ~OMT\n";
   }
   void print_session_addr() {
     //    cerr << " PRINT OM : " << this << " sess : " << session << "\n";
   }
+};
+
+class MultiMessageTask : public OnMessageTask {
+  tbb::task* execute();
+public:
+  MultiMessageTask(Session *session_ ) : OnMessageTask( session_ ) {}
+  ~MultiMessageTask() {}
 };
 
 class SetImageChannelsTask : public OnMessageTask {

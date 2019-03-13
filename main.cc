@@ -245,7 +245,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
     }
     default: {
       session->evtq.push(make_tuple(eventName, requestId, eventPayload));
-      tsk= new (tbb::task::allocate_root()) OnMessageTask( session );
+      tsk= new (tbb::task::allocate_root()) MultiMessageTask( session );
     }
     }
     if( tsk ) tbb::task::enqueue(*tsk);
@@ -261,13 +261,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
 
 
 void exit_backend(int s) {
-    // destroy objects cleanly
     fmt::print("Exiting backend.\n");
-    //    for (auto& session : sessions) {
-      //        auto uuid = session.first;
-      //        delete session.second;
-    //    }
-
     exit(0);
 }
 
