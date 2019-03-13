@@ -25,106 +25,105 @@ extern std::mutex sequentialiser;
 tbb::task*
 MultiMessageTask::execute()
 {
-    //CARTA ICD
-    std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
-    session->evtq.try_pop(msg);
-    std::string eventName;
-    uint32_t event_type;
-    uint32_t requestId;
-    std::vector<char> eventPayload;
-    std::tie(event_type, requestId, eventPayload) = msg;
-
-    switch( event_type ) {
-    case REGISTER_VIEWER_ID: {
-      CARTA::RegisterViewer message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->onRegisterViewer(message, requestId);
-      }
-      break;
-    }
-    case FILE_LIST_REQUEST_ID: {
-      CARTA::FileListRequest message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->onFileListRequest(message, requestId);
-      }
-      break;
-    }
-    case FILE_INFO_REQUEST_ID: {
-      CARTA::FileInfoRequest message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->onFileInfoRequest(message, requestId);
-      }
-      break;
-    }
-    case OPEN_FILE_ID: {
-      CARTA::OpenFile message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-            session->onOpenFile(message, requestId);
-      }
-      break;
-    }
-    case CLOSE_FILE_ID: {
-      CARTA::CloseFile message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->fsettings.clearSettings(message.file_id());
-	session->onCloseFile(message, requestId);
-      }
+  //CARTA ICD
+  std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
+  session->evtq.try_pop(msg);
+  uint32_t event_type;
+  uint32_t requestId;
+  std::vector<char> eventPayload;
+  std::tie(event_type, requestId, eventPayload) = msg;
   
+  switch( event_type ) {
+  case REGISTER_VIEWER_ID: {
+    CARTA::RegisterViewer message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onRegisterViewer(message, requestId);
     }
-    case SET_SPATIAL_REQUIREMENTS_ID: {
-      CARTA::SetSpatialRequirements message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->onSetSpatialRequirements(message, requestId);
-      }
-      break;
+    break;
+  }
+  case FILE_LIST_REQUEST_ID: {
+    CARTA::FileListRequest message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onFileListRequest(message, requestId);
     }
-    case SET_HISTOGRAM_REQUIREMENTS_ID: {
-      CARTA::SetHistogramRequirements message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->onSetHistogramRequirements(message, requestId);
-      }
-      break;
+    break;
+  }
+  case FILE_INFO_REQUEST_ID: {
+    CARTA::FileInfoRequest message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onFileInfoRequest(message, requestId);
     }
-    case SET_SPECTRAL_REQUIREMENTS_ID: {
-      CARTA::SetSpectralRequirements message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->onSetSpectralRequirements(message, requestId);
-      }
-      break;
+    break;
+  }
+  case OPEN_FILE_ID: {
+    CARTA::OpenFile message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onOpenFile(message, requestId);
     }
-    case SET_STATS_REQUIREMENTS_ID: {
-      CARTA::SetStatsRequirements message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->onSetStatsRequirements(message, requestId);
-      }
-      break;
+    break;
+  }
+  case CLOSE_FILE_ID: {
+    CARTA::CloseFile message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->fsettings.clearSettings(message.file_id());
+      session->onCloseFile(message, requestId);
     }
-    case SET_REGION_ID: {
-      CARTA::SetRegion message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->onSetRegion(message, requestId);
-      }
-      break;
+    break;
+  }
+  case SET_SPATIAL_REQUIREMENTS_ID: {
+    CARTA::SetSpatialRequirements message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onSetSpatialRequirements(message, requestId);
     }
-    case REMOVE_REGION_ID: {
-      CARTA::RemoveRegion message;
-      if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-	session->onRemoveRegion(message, requestId);
-      }
-      break;
+    break;
+  }
+  case SET_HISTOGRAM_REQUIREMENTS_ID: {
+    CARTA::SetHistogramRequirements message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onSetHistogramRequirements(message, requestId);
     }
-    default: {
-      std::cerr << " Bad event type in MultiMessageType:execute : "
-		<< event_type << endl;
-      exit(1);
+    break;
+  }
+  case SET_SPECTRAL_REQUIREMENTS_ID: {
+    CARTA::SetSpectralRequirements message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onSetSpectralRequirements(message, requestId);
     }
+    break;
+  }
+  case SET_STATS_REQUIREMENTS_ID: {
+    CARTA::SetStatsRequirements message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onSetStatsRequirements(message, requestId);
     }
+    break;
+  }
+  case SET_REGION_ID: {
+    CARTA::SetRegion message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onSetRegion(message, requestId);
+    }
+    break;
+  }
+  case REMOVE_REGION_ID: {
+    CARTA::RemoveRegion message;
+    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
+      session->onRemoveRegion(message, requestId);
+    }
+    break;
+  }
+  default: {
+    std::cerr << " Bad event type in MultiMessageType:execute : "
+	      << event_type << endl;
+    exit(1);
+  }
+  }
 #ifdef __SEQUENTIAL__
-    sequentialiser.unlock();
-    std::cerr << " in message - out OMT4\n";
+  sequentialiser.unlock();
+  std::cerr << " in message - out OMT4\n";
 #endif
 
-    return nullptr;
+  return nullptr;
 }
 
 tbb::task*
@@ -134,11 +133,6 @@ SetImageChannelsTask::execute()
   std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
   bool tester;
 
-  if( ! session ) {
-    cerr << " SetImageChannelsTask : No Session pointer : " << this << "\n";
-    exit(1);
-  }
- 
   session->evtq.try_pop(msg);
 
   do {
@@ -157,7 +151,6 @@ SetImageChannelsTask::execute()
     tester= session->evtq.try_pop(msg);
     if( ! tester ) session->image_channal_task_set_idle();
     session->image_channel_unlock();
-    //    std::cerr << " OSICT Exec tester=" << tester << endl;
   } while( tester );
   
 #ifdef __SEQUENTIAL__
@@ -174,13 +167,11 @@ SetImageViewTask::execute()
 {
   std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
   session->evtq.try_pop(msg);
-  std::string eventName;
   uint32_t event_type;
   uint32_t requestId;
   std::vector<char> eventPayload;
   std::tie(event_type, requestId, eventPayload) = msg;
 
-  //  cerr << " OMT2 exec " << session << "\n";
   CARTA::SetImageView message;
 
   if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
@@ -198,11 +189,8 @@ SetImageViewTask::execute()
 tbb::task*
 SetCursorTask::execute()
 {
-
-  //  cerr << " OMT5 exec " << session << "\n";
    std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
    session->evtq.try_pop(msg);
-   std::string eventName;
    uint32_t event_type;
    uint32_t requestId;
    std::vector<char> eventPayload;
