@@ -41,7 +41,7 @@ class Session {
 public:
     std::string uuid;
     carta::FileSettings fsettings;
-    tbb::concurrent_queue<std::tuple<string,uint32_t,std::vector<char>>> evtq;
+    tbb::concurrent_queue<std::tuple<uint32_t,uint32_t,std::vector<char>>> evtq;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> aniq;
     
 protected:
