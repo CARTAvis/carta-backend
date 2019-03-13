@@ -224,7 +224,6 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
       // has its own queue to keep channels in order during animation
       session->addToAniQueue(message, requestId);
       session->image_channel_unlock();
-      session->evtq.push(make_tuple(event_id, requestId, eventPayload));
       break;
     }
     case SET_IMAGE_VIEW_ID: {

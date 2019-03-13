@@ -129,26 +129,12 @@ MultiMessageTask::execute()
 tbb::task*
 SetImageChannelsTask::execute()
 {
-
-  std::tuple<uint32_t,uint32_t,std::vector<char>> msg;
-  bool tester;
-
-  session->evtq.try_pop(msg);
+  int tester;
 
   do {
-    std::string event_type;
-    uint32_t requestId;
-    std::vector<char> eventPayload;
-
-    std::tie(event_type, requestId, eventPayload) = msg;
-  
-    CARTA::SetImageChannels message;
-    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-      session->executeOneAniEvt();
-    }
-   
+    session->executeOneAniEvt();
     session->image_channel_lock();
-    tester= session->evtq.try_pop(msg);
+    tester = session->aniq.unsafe_size();
     if( ! tester ) session->image_channal_task_set_idle();
     session->image_channel_unlock();
   } while( tester );
