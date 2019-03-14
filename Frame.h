@@ -71,7 +71,7 @@ private:
     void setDefaultCursor(); // using center point of image
 
     // Image data and slicers
-    void setChannelCache();
+    void setImageCache();
     bool getImageData(std::vector<float>& imageData, bool meanFilter = true); // downsampled
     // fill vector for given channel and stokes
     void getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes);

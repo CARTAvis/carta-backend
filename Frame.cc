@@ -49,7 +49,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         // set current channel, stokes, imageCache
         channelIndex = defaultChannel;
         stokesIndex = DEFAULT_STOKES;
-        setChannelCache();
+        setImageCache();
 
         loadImageChannelStats(false); // from image file if exists
     } catch (casacore::AipsError& err) {
@@ -468,9 +468,9 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
             bool chanOK(region->setChannelRange(newChannel, newChannel));
             bool stokesOK(region->setStokes(newStokes));
             if (chanOK && stokesOK) {
-                setChannelCache();
                 channelIndex = newChannel;
                 stokesIndex = newStokes;
+                setImageCache();
                 updated = true;
             } else {
                 message = fmt::format("Channel {} or Stokes {} is invalid in file {}", newChannel, newStokes, filename);
@@ -480,7 +480,7 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
     return updated;
 }
 
-void Frame::setChannelCache() {
+void Frame::setImageCache() {
     // get image data for channel, stokes
     bool writeLock(true);
     tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
@@ -630,6 +630,8 @@ bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::st
         rasterImageData.mutable_image_bounds()->set_x_max(bounds.x_max());
         rasterImageData.mutable_image_bounds()->set_y_min(bounds.y_min());
         rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
+        rasterImageData.set_channel(channelIndex);
+        rasterImageData.set_stokes(stokesIndex);
         rasterImageData.set_mip(mip);
         if (compType == CARTA::CompressionType::NONE) {
             rasterImageData.set_compression_type(CARTA::CompressionType::NONE);
