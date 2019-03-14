@@ -54,7 +54,7 @@ private:
     float quality;
     // channel and stokes
 
-    std::vector<float> channelCache;  // image data for current channelIndex, stokesIndex
+    std::vector<float> imageCache;  // image data for current channelIndex, stokesIndex
     tbb::queuing_rw_mutex cacheMutex; // allow concurrent reads but lock for write
     std::mutex latticeMutex;          // only one disk access at a time
     bool cacheLoaded;                 // channel cache is set

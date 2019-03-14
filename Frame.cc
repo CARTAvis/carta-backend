@@ -46,7 +46,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         setImageRegion(IMAGE_REGION_ID);
         valid = true;
 
-        // set current channel, stokes, channelCache
+        // set current channel, stokes, imageCache
         channelIndex = defaultChannel;
         stokesIndex = DEFAULT_STOKES;
         setChannelCache();
@@ -484,9 +484,9 @@ void Frame::setChannelCache() {
     // get image data for channel, stokes
     bool writeLock(true);
     tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-    channelCache.resize(imageShape(0) * imageShape(1));
+    imageCache.resize(imageShape(0) * imageShape(1));
     casacore::Slicer section = getChannelMatrixSlicer(channelIndex, stokesIndex);
-    casacore::Array<float> tmp(section.length(), channelCache.data(), casacore::StorageInitPolicy::SHARE);
+    casacore::Array<float> tmp(section.length(), imageCache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(latticeMutex);
     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
 }
@@ -634,7 +634,7 @@ bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::st
         if (compType == CARTA::CompressionType::NONE) {
             rasterImageData.set_compression_type(CARTA::CompressionType::NONE);
             rasterImageData.set_compression_quality(0);
-            rasterImageData.add_image_data(channelCache.data(), channelCache.size() * sizeof(float));
+            rasterImageData.add_image_data(imageCache.data(), imageCache.size() * sizeof(float));
             rasterDataOK = true;
         } else if (compType == CARTA::CompressionType::ZFP) {
             rasterImageData.set_compression_type(CARTA::CompressionType::ZFP);
@@ -684,7 +684,7 @@ bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::st
 
 bool Frame::getImageData(std::vector<float>& imageData, bool meanFilter) {
     // apply bounds and downsample channel cache
-    if (!valid || channelCache.empty()) {
+    if (!valid || imageCache.empty()) {
         return false;
     }
 
@@ -708,7 +708,7 @@ bool Frame::getImageData(std::vector<float>& imageData, bool meanFilter) {
     imageData.resize(numRowsRegion * rowLengthRegion);
     int nImgCol = imageShape(0);
 
-    // read lock channelCache
+    // read lock imageCache
     bool writeLock(false);
     tbb::queuing_rw_mutex::scoped_lock lock(cacheMutex, writeLock);
 
@@ -724,7 +724,7 @@ bool Frame::getImageData(std::vector<float>& imageData, bool meanFilter) {
                     for (size_t pixelY = 0; pixelY < mip; pixelY++) {
                         size_t imageCol = x + i * mip;
                         for (size_t pixelX = 0; pixelX < mip; pixelX++) {
-                            float pixVal = channelCache[(imageRow * nImgCol) + imageCol];
+                            float pixVal = imageCache[(imageRow * nImgCol) + imageCol];
                             if (isfinite(pixVal)) {
                                 pixelCount++;
                                 pixelSum += pixVal;
@@ -746,7 +746,7 @@ bool Frame::getImageData(std::vector<float>& imageData, bool meanFilter) {
                 for (auto i = 0; i < rowLengthRegion; i++) {
                     auto imageRow = y + j * mip;
                     auto imageCol = x + i * mip;
-                    imageData[j * rowLengthRegion + i] = channelCache[(imageRow * nImgCol) + imageCol];
+                    imageData[j * rowLengthRegion + i] = imageCache[(imageRow * nImgCol) + imageCol];
                 }
             }
         };
@@ -826,7 +826,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
         ssize_t nImageCol(imageShape(0)), nImageRow(imageShape(1));
         bool writeLock(false);
         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-        float value = channelCache[(y*nImageCol) + x];
+        float value = imageCache[(y*nImageCol) + x];
         cacheLock.release();
         profileData.set_x(x);
         profileData.set_y(y);
@@ -850,7 +850,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                         profile.reserve(imageShape(0));
                         for (unsigned int i=0; i<imageShape(0); ++i) {
                             auto idx = xStart + i;
-                            profile.push_back(channelCache[idx]);
+                            profile.push_back(imageCache[idx]);
                         }
                         cacheLock.release();
                         end = imageShape(0);
@@ -861,7 +861,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                         profile.reserve(imageShape(1));
                         for (unsigned int i=0; i<imageShape(1); ++i) {
                             auto idx = (i * nImageCol) + x;
-                            profile.push_back(channelCache[idx]);
+                            profile.push_back(imageCache[idx]);
                         }
                         cacheLock.release();
                         end = imageShape(1);
@@ -976,7 +976,7 @@ bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minva
         if (channel == channelIndex) {  // use channel cache
             bool writeLock(false);
             tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-            region->calcMinMax(channel, stokes, channelCache, minval, maxval);
+            region->calcMinMax(channel, stokes, imageCache, minval, maxval);
         } else {
             std::vector<float> data;
             getChannelMatrix(data, channel, stokes);
@@ -1009,7 +1009,7 @@ bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins
         if (channel == channelIndex) {  // use channel cache
             bool writeLock(false);
             tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-            region->calcHistogram(channel, stokes, nbins, minval, maxval, channelCache, histogram);
+            region->calcHistogram(channel, stokes, nbins, minval, maxval, imageCache, histogram);
         } else {
             std::vector<float> data;
             getChannelMatrix(data, channel, stokes);
