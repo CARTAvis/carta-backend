@@ -634,7 +634,7 @@ bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::st
         if (compType == CARTA::CompressionType::NONE) {
             rasterImageData.set_compression_type(CARTA::CompressionType::NONE);
             rasterImageData.set_compression_quality(0);
-            rasterImageData.add_image_data(imageCache.data(), imageCache.size() * sizeof(float));
+            rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
             rasterDataOK = true;
         } else if (compType == CARTA::CompressionType::ZFP) {
             rasterImageData.set_compression_type(CARTA::CompressionType::ZFP);
