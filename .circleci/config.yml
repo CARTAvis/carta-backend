@@ -31,7 +31,7 @@ jobs:
             cd /root/project/build && wget http://alma.asiaa.sinica.edu.tw/_downloads/carta-backend-ICD-test-travis.tar.gz && tar -xvf carta-backend-ICD-test-travis.tar.gz
             cd /root/project/build/package/bin && ./run.sh /root/project/build/carta-backend-ICD-test-travis &
             cd /root/project/build/carta-backend-ICD-test-travis/protobuf && git submodule init && git submodule update && git checkout master && npm install && ./build_proto.sh && cd ..
-            npm run test
+            ./run-circle.sh
             echo "Finished !!!"
   "centos6":
     docker:
@@ -69,7 +69,7 @@ jobs:
             cd /root/project/build && wget http://alma.asiaa.sinica.edu.tw/_downloads/carta-backend-ICD-test-travis.tar.gz && tar -xvf carta-backend-ICD-test-travis.tar.gz
             cd /root/project/build/package/bin && ./run.sh /root/project/build/carta-backend-ICD-test-travis &
             cd /root/project/build/carta-backend-ICD-test-travis/protobuf && git submodule init && git submodule update && git checkout master && npm install && ./build_proto.sh && cd ..
-            npm run test
+            ./run-circle.sh
             echo "Finished !!!"
 workflows:
   version: 2
