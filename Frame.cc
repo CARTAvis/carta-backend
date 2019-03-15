@@ -84,6 +84,11 @@ int Frame::currentStokes() {
     return stokesIndex;
 }
 
+bool Frame::checkStokesIndex(int stokes) {
+    size_t nstokes(stokesAxis >= 0 ? imageShape(stokesAxis) : 1);
+    return ((stokes >= 0) && (stokes < nstokes));
+}
+
 // ********************************************************************
 // Image stats
 
@@ -466,7 +471,7 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
         if ((newChannel != channelIndex) || (newStokes != stokesIndex)) {
             auto& region = regions[IMAGE_REGION_ID];
             bool chanOK(region->setChannelRange(newChannel, newChannel));
-            bool stokesOK(region->setStokes(newStokes));
+            bool stokesOK(checkStokesIndex(newStokes));
             if (chanOK && stokesOK) {
                 channelIndex = newChannel;
                 stokesIndex = newStokes;
@@ -491,6 +496,22 @@ void Frame::setImageCache() {
     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
 }
 
+bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes) {
+    // apply lattice region to lattice and return SubLattice
+    bool sublatticeOK(false);
+    if (checkStokesIndex(stokes) && (regions.count(regionId))) {
+        auto& region = regions[regionId];
+        if (region->isValid()) {
+            casacore::LatticeRegion lattRegion;
+            if (region->getRegion(lattRegion, stokes)) {
+                sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::XYZW), lattRegion);
+                sublatticeOK = true;
+            }
+        }
+    }
+    return sublatticeOK;
+}
+    
 void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes) {
     // fill matrix for given channel and stokes
     casacore::Slicer section = getChannelMatrixSlicer(channel, stokes);

@@ -1,6 +1,7 @@
 //# Region.cc: implementation of class for managing a region
 
 #include "Region.h"
+#include <casacore/lattices/LRegions/LCExtension.h>
 
 using namespace carta;
 
@@ -9,14 +10,18 @@ Region::Region(const std::string& name, const CARTA::RegionType type, int mincha
         const casacore::IPosition imageShape, int spectralAxis, int stokesAxis) :
         m_name(name),
         m_type(type),
+        m_rotation(0.0),
         m_minchan(-1),
         m_maxchan(-1),
         m_valid(false),
-        m_regionChanged(false),
+        m_xyRegionChanged(false),
         m_spectralChanged(false),
         m_latticeShape(imageShape),
         m_spectralAxis(spectralAxis),
-        m_stokesAxis(stokesAxis) {
+        m_stokesAxis(stokesAxis),
+        m_xyAxes(casacore::IPosition(2, 0, 1)),
+        m_xyRegion(nullptr) {
+    // validate and set region parameters
     if (updateRegionParameters(minchan, maxchan, points, rotation)) {
         m_valid = true;
         m_stats = std::unique_ptr<RegionStats>(new RegionStats());
@@ -25,6 +30,8 @@ Region::Region(const std::string& name, const CARTA::RegionType type, int mincha
 }
 
 Region::~Region() {
+    if (m_xyRegion)
+        delete m_xyRegion;
     m_stats.reset();
     m_profiler.reset();
 }
@@ -32,18 +39,19 @@ Region::~Region() {
 bool Region::updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>&points,
     float rotation) {
     // change region parameters and set flags
-
     bool regionChanged(pointsChanged(points) || (rotation != m_rotation));
     if (regionChanged && checkPoints(points)) {  // change xy region
-        m_ctrlpoints = points;
-        m_rotation = rotation;
-        m_regionChanged = true;
+        m_xyRegionChanged = makeXYRegion(points, rotation);
+        if (m_xyRegionChanged) {
+            m_ctrlpoints = points;
+            m_rotation = rotation;
+        }
     }
-
     bool spectralChanged((minchan != m_minchan) || (maxchan != m_maxchan));
-    if (spectralChanged && setChannelRange(minchan, maxchan)) // change spectral axis
+    if (spectralChanged && setChannelRange(minchan, maxchan)) { // change spectral axis
         m_spectralChanged = true;
-    return m_regionChanged || m_spectralChanged;
+    }
+    return m_xyRegionChanged || m_spectralChanged;
 }
 
 // *************************************************************************
@@ -58,16 +66,6 @@ bool Region::setChannelRange(int minchan, int maxchan) {
         channelsUpdated = true;
     }
     return channelsUpdated;
-}
-
-bool Region::setStokes(int stokes) {
-    // check and set stokes axis
-    bool stokesUpdated(false);
-    if (checkStokes(stokes)) {
-        m_stokes = stokes;
-        stokesUpdated = true;
-    }
-    return stokesUpdated;
 }
 
 // *************************************************************************
@@ -145,10 +143,150 @@ bool Region::checkChannelRange(int& minchan, int& maxchan) {
     return channelRangeOK;
 }
 
-bool Region::checkStokes(int& stokes) {
-    size_t nstokes(m_stokesAxis >= 0 ? m_latticeShape(m_stokesAxis) : 1);
-    return ((stokes >= 0) && (stokes < nstokes));
+
+// ***********************************
+// Lattice Region with parameters applied
+
+bool Region::getRegion(casacore::LatticeRegion& region, int stokes) {
+    // Return LatticeRegion for given stokes and region parameters.
+    // if stokes = -1, used stored stokes (image region only)
+    bool regionOK(false);
+    if (stokes < 0)
+        return regionOK;
+
+    if (m_latticeShape.size()==2) {
+        region = casacore::LatticeRegion(*m_xyRegion);
+        regionOK = true;
+    } else {  // extend 2D region by chan range, stokes
+        casacore::LCRegion* lcregion = makeExtendedRegion(stokes);
+        if (lcregion) {
+            region = casacore::LatticeRegion(lcregion);
+            regionOK = true;
+        }
+    }
+    return regionOK;
 }
+
+casacore::LCRegion* Region::makeExtendedRegion(int stokes) {
+    // Return 2D lattice region extended by chan range, stokes
+    // Returns nullptr if 2D image
+    size_t ndim(m_latticeShape.size());
+    casacore::LCRegion* region(nullptr);
+    if (!isValid() || (ndim==2) || !m_xyRegion)
+        return region;
+
+    // create extension box for channel/stokes
+    casacore::LCBox extBox;
+    if (!makeExtensionBox(extBox, stokes))
+        return region;  // no need for extension
+
+    // specify 0-based extension axes, either 2 (3D image) or 2 and 3 (4D image)
+    casacore::IPosition extAxes = (ndim == 3 ? casacore::IPosition(1, 2) : casacore::IPosition(2, 2, 3));
+    // apply extension box to extension axes with xy region
+    region = new casacore::LCExtension(*m_xyRegion, extAxes, extBox); 
+    return region;
+}
+
+bool Region::makeXYRegion(const std::vector<CARTA::Point>& points, float rotation) {
+    // create 2D casacore::LCRegion for type using stored control points and rotation
+    bool xyRegionOK(false);
+    casacore::LCRegion* region(nullptr);
+    try {
+        switch(m_type) {
+            case CARTA::RegionType::POINT: {
+                region = makePointRegion(points);
+                break;
+            }
+            case CARTA::RegionType::RECTANGLE: {
+                region = makeRectangleRegion(points, rotation);
+                    break;
+                }
+        /*
+            case CARTA::RegionType::ELLIPSE: {
+                regionUpdated = makeEllipseRegion(points, rotation);
+                break;
+            }
+            case CARTA::RegionType::POLYGON: {
+                regionUpdated = makePolygonRegion(points);
+                break;
+            }
+        */
+            default:
+                break;
+        }
+    } catch (casacore::AipsError& err) { // lattice region failed
+        return false;
+    }
+    if (region) {
+        // the xy region does not change unless region params updated
+        if (m_xyRegion)
+            delete m_xyRegion;
+        m_xyRegion = region;
+        xyRegionOK = true;
+    }
+    return xyRegionOK;
+}
+
+casacore::LCRegion* Region::makePointRegion(const std::vector<CARTA::Point>& points) {
+    // 1 x 1 LCBox
+    casacore::LCBox* box(nullptr);
+    if (points.size()==1) {
+        auto x = points[0].x();
+        auto y = points[0].y();
+        try {
+            casacore::IPosition blc(2, x, y), trc(2, x, y);
+            box = new casacore::LCBox(blc, trc, m_latticeShape.keepAxes(m_xyAxes));
+        } catch (casacore::AipsError& err) {
+            // LC box failed
+        }
+    }
+    return box;
+}
+
+casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation) {
+    // width x height LCBox
+    casacore::LCBox* box(nullptr);
+    if ((points.size()==2) && (rotation == 0.0)) { // TODO support rotation
+        float cx(points[0].x()), cy(points[0].y());
+        float width(points[1].x()), height(points[1].y());
+        try {
+            casacore::IPosition start(2), count(2, width, height);
+            start(0) = cx - std::round(width/2.0);
+            start(1) = cy - std::round(height/2.0);
+            casacore::Slicer slicer(start, count);
+            box = new casacore::LCBox(slicer, m_latticeShape.keepAxes(m_xyAxes));
+        } catch (casacore::AipsError& err) {
+            // LCBox failed
+        }
+    }
+    return box;
+}
+
+bool Region::makeExtensionBox(casacore::LCBox& extendBox, int stokes) {
+    // Create extension box for stored channel range and given stokes.
+    // This can change for different profile/histogram/stats requirements so not stored 
+    if (m_latticeShape.size() < 3)
+        return false; // not needed
+
+    casacore::IPosition start(m_latticeShape), count(m_latticeShape), boxShape(m_latticeShape);
+    if (m_spectralAxis > 0) {
+        start(m_spectralAxis) = m_minchan;
+        count(m_spectralAxis) = (m_maxchan - m_minchan) + 1;
+    }
+    if (m_stokesAxis > 0) {
+        start(m_stokesAxis) = stokes;
+        count(m_stokesAxis) = 1;
+    }
+    // remove x,y axes from IPositions
+    casacore::IPosition extBoxStart = start.removeAxes(m_xyAxes);
+    casacore::IPosition extBoxCount= count.removeAxes(m_xyAxes);
+    casacore::IPosition extBoxShape = boxShape.removeAxes(m_xyAxes);
+    // make extension box from slicer
+    casacore::Slicer extSlicer(extBoxStart, extBoxCount);
+    extendBox = casacore::LCBox(extSlicer, extBoxShape);
+    return true;
+}
+
 
 // ***********************************
 // RegionStats

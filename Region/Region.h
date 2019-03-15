@@ -25,14 +25,16 @@ public:
     // to determine if data needs to be updated
     inline bool isValid() { return m_valid; };
     inline bool isPoint() { return (m_type==CARTA::POINT); };
-    inline bool regionChanged() { return m_regionChanged; };
+    inline bool regionChanged() { return m_xyRegionChanged; };
     inline bool spectralChanged() { return m_spectralChanged; };
 
     // set/get Region parameters
     bool updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>& points, float rotation);
     bool setChannelRange(int minchan, int maxchan);
-    bool setStokes(int stokes);
     inline std::vector<CARTA::Point> getControlPoints() { return m_ctrlpoints; };
+
+    // get region for requested stokes
+    bool getRegion(casacore::LatticeRegion& region, int stokes);
 
     // Histogram: pass through to RegionStats
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
@@ -75,22 +77,33 @@ private:
 
     bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
     bool checkChannelRange(int& minchan, int& maxchan);
-    bool checkStokes(int& stokes);
     
+ 
+    // Create regions
+    bool makeXYRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
+    casacore::LCRegion* makePointRegion(const std::vector<CARTA::Point>& points);
+    casacore::LCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
+    casacore::LCRegion* makeExtendedRegion(int stokes);  // xy region extended to chans, stokes
+    bool makeExtensionBox(casacore::LCBox& extendBox, int stokes); // for extended region
+
     // region definition (ICD SET_REGION parameters)
     std::string m_name;
     CARTA::RegionType m_type;
     std::vector<CARTA::Point> m_ctrlpoints;
-    int m_minchan, m_maxchan, m_stokes;
     float m_rotation;
+    int m_minchan, m_maxchan;
 
     // region flags
     bool m_valid;
-    bool m_regionChanged, m_spectralChanged;  // indicates which data to update
+    bool m_xyRegionChanged, m_spectralChanged;  // indicates which data to update
 
     // image shape info
     casacore::IPosition m_latticeShape;
+    casacore::IPosition m_xyAxes; // first two axes of lattice, to keep or remove
     int m_spectralAxis, m_stokesAxis;
+
+    // stored 2D region
+    casacore::LCRegion* m_xyRegion;
 
     // classes for requirements, calculations
     std::unique_ptr<carta::RegionStats> m_stats;
