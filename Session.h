@@ -53,6 +53,8 @@ protected:
     std::unordered_map<int, std::unique_ptr<Frame>> frames;
     // lock frames to create/destroy
     std::mutex frameMutex;
+    // lock file list request process
+    std::mutex fileListMutex;
     // flag to send histogram with data
     bool newFrame;
 
@@ -128,4 +130,3 @@ protected:
         google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
-

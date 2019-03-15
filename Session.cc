@@ -15,7 +15,7 @@
 #include <valarray>
 
 // Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unordered_map<string, 
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unordered_map<string,
     std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string root,
     std::string base, uS::Async *outgoing, bool verbose)
     : uuid(std::move(uuid)),
@@ -226,7 +226,7 @@ bool Session::fillFileInfo(CARTA::FileInfo* fileInfo, const string& filename) {
     return infoLoader.fillFileInfo(fileInfo);
 }
 
-bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, 
+bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo,
         const string folder, const string filename, string hdu, string& message) {
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool extFileInfoOK(true);
@@ -305,6 +305,7 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t re
 }
 
 void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId) {
+    std::lock_guard<std::mutex> guard(fileListMutex);
     string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == filelistFolder) {
@@ -357,8 +358,8 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     CARTA::OpenFileAck ack;
     ack.set_file_id(fileId);
     string errMessage;
-    bool infoLoaded((selectedFileInfo != nullptr) && 
-        (selectedFileInfoExtended != nullptr) && 
+    bool infoLoaded((selectedFileInfo != nullptr) &&
+        (selectedFileInfoExtended != nullptr) &&
         (selectedFileInfo->name() == filename)); // correct file loaded
     if (!infoLoaded) { // load from image file
         resetFileInfo(true);
@@ -717,7 +718,7 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                 if (frames.at(fileId)->getRegionHistogram(regionId, channel, stokes, numbins, *histogram)) {
                     // use stored cube histogram
                     sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
-                } else if (frames.at(fileId)->nchannels() == 1) { 
+                } else if (frames.at(fileId)->nchannels() == 1) {
                     // use per-channel histogram for channel 0
                     int channum(0);
                     if (frames.at(fileId)->getRegionHistogram(IMAGE_REGION_ID, channum, stokes, numbins,
@@ -777,7 +778,7 @@ void Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         // get histogram bins for each channel and accumulate bin counts
                         std::vector<int> cubeBins;
                         CARTA::Histogram chanHistogram;  // histogram for each channel
-                        for (size_t chan=0; chan < nchan; ++chan) { 
+                        for (size_t chan=0; chan < nchan; ++chan) {
                             frames.at(fileId)->calcRegionHistogram(regionId, chan, stokes, numbins, cubemin,
                                 cubemax, chanHistogram);
                             // add channel bins to cube bins
