@@ -69,11 +69,11 @@ public:
 private:
 
     // bounds checking for Region parameters
-    bool checkPoints(const std::vector<CARTA::Point>& point);
-    bool checkPixelPoint(const CARTA::Point& point);
-    bool checkWidthHeight(const CARTA::Point& point);
+    bool checkPoints(const std::vector<CARTA::Point>& points);
+    bool checkPixelPoint(const std::vector<CARTA::Point>& points);
+    bool checkRectanglePoints(const std::vector<CARTA::Point>& points);
+
     bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
-    // not const, convert -1 to defaults:
     bool checkChannelRange(int& minchan, int& maxchan);
     bool checkStokes(int& stokes);
     
@@ -86,7 +86,7 @@ private:
 
     // region flags
     bool m_valid;
-    bool m_regionChanged, m_spectralChanged;
+    bool m_regionChanged, m_spectralChanged;  // indicates which data to update
 
     // image shape info
     casacore::IPosition m_latticeShape;

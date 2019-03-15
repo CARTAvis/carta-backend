@@ -78,13 +78,11 @@ bool Region::checkPoints(const std::vector<CARTA::Point>& points) {
     bool pointsOK(false);
     switch (m_type) {
         case CARTA::POINT: {
-            if (points.size() == 1)
-                pointsOK = checkPixelPoint(points[0]);
+            pointsOK = checkPixelPoint(points);
             break;
             }
         case CARTA::RECTANGLE: {
-            if (points.size() == 2)
-                pointsOK = (checkPixelPoint(points[0]) && checkWidthHeight(points[1]));
+            pointsOK = (checkRectanglePoints(points));
             break;
             }
         default:
@@ -93,17 +91,29 @@ bool Region::checkPoints(const std::vector<CARTA::Point>& points) {
     return pointsOK;
 }
 
-bool Region::checkPixelPoint(const CARTA::Point& point) {
+bool Region::checkPixelPoint(const std::vector<CARTA::Point>& points) {
     // in xy axis range
-    float x(point.x()), y(point.y());
-    return ((x >= 0) && (x < m_latticeShape(0)) && (y >= 0) && (y < m_latticeShape(1)));
+    bool pointsOK(false);
+    if (points.size() == 1) { // (x, y)
+        float x(points[0].x()), y(points[0].y());
+        pointsOK = ((x >= 0) && (x < m_latticeShape(0)) && (y >= 0) && (y < m_latticeShape(1)));
+    }
+    return pointsOK;
 }
 
-bool Region::checkWidthHeight(const CARTA::Point& point) {
+bool Region::checkRectanglePoints(const std::vector<CARTA::Point>& points) {
     // in xy axis range
-    float width(point.x()), height(point.y());
-    return ((width > 0) && (width <= m_latticeShape(0)) && 
-            (height > 0) && (height <= m_latticeShape(1)));
+    bool pointsOK(false);
+    if (points.size() == 2) { // [(cx,cy), (width,height)]
+        size_t max_x(m_latticeShape(0)), max_y(m_latticeShape(1));
+        float cx(points[0].x()), cy(points[0].y()), width(points[1].x()), height(points[1].y());
+        float xmin(cx - std::round(width/2.0)), xmax(cx + std::round(width/2.0)),
+              ymin(cy - std::round(height/2.0)), ymax(cy + std::round(height/2.0));
+        bool outside = (((xmin < 0) && (xmax < 0)) || ((xmin > max_x) && (xmax > max_x)) ||
+                    ((ymin < 0) && (ymax < 0)) || ((ymin > max_y) && (ymax > max_y)));
+        pointsOK = !outside;
+    }
+    return pointsOK;
 }
 
 bool Region::pointsChanged(const std::vector<CARTA::Point>& newpoints) {
