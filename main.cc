@@ -149,7 +149,6 @@ inline uint8_t get_event_id_by_string(std::string& strname)
   if( ! ret ) {
     std::cerr << "Name lookup failure in  get_event_no_by_string : "
 	      << strname << endl;
-    exit(1);
   }
   return ret;
 }
@@ -215,6 +214,10 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
     uint8_t event_id= get_event_id_by_string( eventName );
 
     switch(event_id) {
+    case 0: {
+      // Do nothing if event type is not known.
+      break;
+    }
     case SET_IMAGE_CHANNELS_ID: {
       CARTA::SetImageChannels message;
       session->image_channel_lock();
