@@ -204,53 +204,60 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
     return;
   }
 
-  if ((opCode == uWS::OpCode::BINARY) && (length > 36)) {
-    static const size_t max_len = 32;
-    string eventName(rawMessage, min(strlen(rawMessage), max_len));
-    uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
-    vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
-    
-    OnMessageTask * tsk= nullptr;
-    uint8_t event_id= get_event_id_by_string( eventName );
-
-    switch(event_id) {
-    case 0: {
-      // Do nothing if event type is not known.
-      break;
+  if (opCode == uWS::OpCode::BINARY) {
+    if (length > 36) {
+      static const size_t max_len = 32;
+      string eventName(rawMessage, min(strlen(rawMessage), max_len));
+      uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
+      vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
+      
+      OnMessageTask * tsk= nullptr;
+      uint8_t event_id= get_event_id_by_string( eventName );
+      
+      switch(event_id) {
+      case 0: {
+	// Do nothing if event type is not known.
+	break;
+      }
+      case SET_IMAGE_CHANNELS_ID: {
+	CARTA::SetImageChannels message;
+	session->image_channel_lock();
+	if( ! session->image_channel_task_test_and_set() ) 
+	  tsk= new (tbb::task::allocate_root()) SetImageChannelsTask( session );
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	// has its own queue to keep channels in order during animation
+	session->addToAniQueue(message, requestId);
+	session->image_channel_unlock();
+	break;
+      }
+      case SET_IMAGE_VIEW_ID: {
+	CARTA::SetImageView message;
+	tsk= new (tbb::task::allocate_root()) SetImageViewTask( session );
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	session->addViewSetting(message, requestId);
+	session->evtq.push(make_tuple(event_id, requestId, eventPayload));
+	break;
+      }	
+      case SET_CURSOR_ID: {
+	CARTA::SetCursor message;
+	tsk= new (tbb::task::allocate_root()) SetCursorTask( session );
+	session->evtq.push(make_tuple(event_id, requestId, eventPayload));
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	session->addCursorSetting(message, requestId);
+	break;
+      }
+      default: {
+	session->evtq.push(make_tuple(event_id, requestId, eventPayload));
+	tsk= new (tbb::task::allocate_root()) MultiMessageTask( session );
+      }
+      }
+      if( tsk ) tbb::task::enqueue(*tsk);
     }
-    case SET_IMAGE_CHANNELS_ID: {
-      CARTA::SetImageChannels message;
-      session->image_channel_lock();
-      if( ! session->image_channel_task_test_and_set() ) 
-	tsk= new (tbb::task::allocate_root()) SetImageChannelsTask( session );
-      message.ParseFromArray(eventPayload.data(), eventPayload.size());
-      // has its own queue to keep channels in order during animation
-      session->addToAniQueue(message, requestId);
-      session->image_channel_unlock();
-      break;
+  }
+  else if (opCode == uWS::OpCode::TEXT) {
+    if (std::strncmp(rawMessage, "PING", 4) == 0) {
+      ws->send("PONG");
     }
-    case SET_IMAGE_VIEW_ID: {
-      CARTA::SetImageView message;
-      tsk= new (tbb::task::allocate_root()) SetImageViewTask( session );
-      message.ParseFromArray(eventPayload.data(), eventPayload.size());
-      session->addViewSetting(message, requestId);
-      session->evtq.push(make_tuple(event_id, requestId, eventPayload));
-      break;
-    }	
-    case SET_CURSOR_ID: {
-      CARTA::SetCursor message;
-      tsk= new (tbb::task::allocate_root()) SetCursorTask( session );
-      session->evtq.push(make_tuple(event_id, requestId, eventPayload));
-      message.ParseFromArray(eventPayload.data(), eventPayload.size());
-      session->addCursorSetting(message, requestId);
-      break;
-    }
-    default: {
-      session->evtq.push(make_tuple(event_id, requestId, eventPayload));
-      tsk= new (tbb::task::allocate_root()) MultiMessageTask( session );
-    }
-    }
-    if( tsk ) tbb::task::enqueue(*tsk);
   }
 }
 
