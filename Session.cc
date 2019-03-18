@@ -305,7 +305,6 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t re
 }
 
 void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId) {
-    std::lock_guard<std::mutex> guard(fileListMutex);
     string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == filelistFolder) {
