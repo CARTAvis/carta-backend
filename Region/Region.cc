@@ -2,6 +2,8 @@
 
 #include "Region.h"
 #include <casacore/lattices/LRegions/LCExtension.h>
+#include <algorithm> // max
+#include <cmath>  // round
 
 using namespace carta;
 
@@ -251,8 +253,8 @@ casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>&
         float width(points[1].x()), height(points[1].y());
         try {
             casacore::IPosition start(2), count(2, width, height);
-            start(0) = cx - std::round(width/2.0);
-            start(1) = cy - std::round(height/2.0);
+            start(0) = std::max(0.0, cx - std::round(width/2.0));
+            start(1) = std::max(0.0, cy - std::round(height/2.0));
             casacore::Slicer slicer(start, count);
             box = new casacore::LCBox(slicer, m_latticeShape.keepAxes(m_xyAxes));
         } catch (casacore::AipsError& err) {

@@ -73,13 +73,14 @@ private:
     // Image data and slicers
     // make sublattice from Region of Lattice with given stokes
     bool checkStokesIndex(int stokes);
-    bool getSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes);
     // save Image region data for current channel, stokes
     void setImageCache();
     // downsampled data from image cache
     bool getImageData(std::vector<float>& imageData, bool meanFilter = true);
+    // Region data: apply region to Lattice to get SubLattice
+    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes);
+    bool getRegionData(int regionId, std::vector<float>& data, int stokes);
 
-    // TODO: remove slicers?
     // fill vector for given channel and stokes
     void getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes);
     // get slicer for xy matrix with given channel and stokes

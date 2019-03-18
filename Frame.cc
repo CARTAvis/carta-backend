@@ -50,7 +50,6 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         channelIndex = defaultChannel;
         stokesIndex = DEFAULT_STOKES;
         setImageCache();
-
         loadImageChannelStats(false); // from image file if exists
     } catch (casacore::AipsError& err) {
         log(uuid, "Problem loading file {}: {}", filename, err.getMesg());
@@ -107,7 +106,6 @@ bool Frame::loadImageChannelStats(bool loadPercentiles) {
     }
     size_t ndims = imageShape.size();
 
-    //TODO: Support multiple HDUs
     if (loader->hasData(FileInfo::Data::Stats) && loader->hasData(FileInfo::Data::Stats2D)) {
         if (loader->hasData(FileInfo::Data::S2DMax)) {
             auto &dataSet = loader->loadData(FileInfo::Data::S2DMax);
@@ -485,8 +483,11 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
     return updated;
 }
 
+// ********************************************************************
+// Region data
+
 void Frame::setImageCache() {
-    // get image data for channel, stokes
+    // cache Image region data for channel, stokes
     bool writeLock(true);
     tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
     imageCache.resize(imageShape(0) * imageShape(1));
@@ -511,7 +512,25 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
     }
     return sublatticeOK;
 }
-    
+
+bool Frame::getRegionData(int regionId, std::vector<float>& data, int stokes) {
+    // fill data vector using region SubLattice
+    bool dataOK(false);
+    bool writeLock(true);
+    casacore::SubLattice<float> sublattice;
+    if (getRegionSubLattice(regionId, sublattice, stokes)) {
+        casacore::IPosition sublattShape = sublattice.shape();
+        data.resize(sublattShape.product());
+        casacore::Array<float> tmp2(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
+        std::lock_guard<std::mutex> guard(latticeMutex);
+        sublattice.doGetSlice(tmp2, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
+        dataOK = true;
+    } else {
+        data.resize(0);
+    }
+    return dataOK;
+}
+
 void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes) {
     // fill matrix for given channel and stokes
     casacore::Slicer section = getChannelMatrixSlicer(channel, stokes);
@@ -835,22 +854,28 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
 }
 
 bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData) {
+    // spatial profile is for point regions only
     bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
+        if (!region->isPoint())
+            return profileOK;
         size_t numProfiles(region->numSpatialProfiles());
         if (numProfiles==0)
-            return false; // not requested
+            return profileOK; // not requested
 
         // set profile parameters
         std::vector<CARTA::Point> ctrlPts = region->getControlPoints();
         int x(static_cast<int>(std::round(ctrlPts[0].x()))),
             y(static_cast<int>(std::round(ctrlPts[0].y())));
         ssize_t nImageCol(imageShape(0)), nImageRow(imageShape(1));
-        bool writeLock(false);
-        tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-        float value = imageCache[(y*nImageCol) + x];
-        cacheLock.release();
+        float value(0.0);
+        if (!imageCache.empty()) {
+            bool writeLock(false);
+            tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+            value = imageCache[(y*nImageCol) + x];
+            cacheLock.release();
+        }
         profileData.set_x(x);
         profileData.set_y(y);
         profileData.set_channel(channelIndex);
@@ -862,10 +887,12 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
             auto newProfile = profileData.add_profiles();
             // get <axis, stokes> for slicing image data
             std::pair<int,int> axisStokes = region->getSpatialProfileReq(i);
+            int profileStokes = (axisStokes.second < 0 ? stokesIndex : axisStokes.second);
             std::vector<float> profile;
-            int end;
-            if ((axisStokes.second == -1) || (axisStokes.second == stokesIndex)) {
+            int end(0);
+            if ((profileStokes == stokesIndex) && !imageCache.empty()) {
                 // use stored channel cache
+                bool writeLock(false);
                 switch (axisStokes.first) {
                     case 0: { // x
                         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
@@ -896,12 +923,12 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                 casacore::Slicer section;
                 switch (axisStokes.first) {
                     case 0: {  // x
-                        getLatticeSlicer(section, -1, y, channelIndex, axisStokes.second);
+                        getLatticeSlicer(section, -1, y, channelIndex, profileStokes);
                         end = imageShape(0);
                         break;
                     }
                     case 1: { // y
-                        getLatticeSlicer(section, x, -1, channelIndex, axisStokes.second);
+                        getLatticeSlicer(section, x, -1, channelIndex, profileStokes);
                         end = imageShape(1);
                         break;
                     }
