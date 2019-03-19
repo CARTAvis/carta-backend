@@ -28,6 +28,7 @@
 
 #include "compression.h"
 #include "Frame.h"
+#include "FileListHandler.h"
 
 class Session {
 public:
@@ -65,6 +66,9 @@ protected:
     // Return message queue
     tbb::concurrent_queue<std::vector<char>> out_msgs;
 
+    // file list handler
+    FileListHandler *fileListHandler;
+
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
             std::string uuid,
@@ -72,6 +76,7 @@ public:
             bool enforcePermissions,
             std::string root, std::string base,
             uS::Async *outgoing,
+            FileListHandler *fileListHandler,
             bool verbose = false);
     ~Session();
 

@@ -3,6 +3,7 @@
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "util.h"
+#include "FileListHandler.h"
 
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/casa/Inputs/Input.h>
@@ -32,6 +33,9 @@ unordered_map<key_type, tbb::concurrent_queue<tuple<string,uint32_t,vector<char>
 // key is current folder
 unordered_map<string, vector<string>> permissionsMap;
 
+// file browser handler
+FileListHandler* fileListHandler;
+
 int sessionNumber;
 uWS::Hub wsHub;
 
@@ -50,7 +54,7 @@ bool checkRootBaseFolders(std::string& root, std::string& base) {
 
     // check root
     casacore::File rootFolder(root);
-    if (!(rootFolder.exists() && rootFolder.isDirectory(true) && 
+    if (!(rootFolder.exists() && rootFolder.isDirectory(true) &&
           rootFolder.isReadable() && rootFolder.isExecutable())) {
         fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
         fmt::print("Exiting carta.\n");
@@ -69,7 +73,7 @@ bool checkRootBaseFolders(std::string& root, std::string& base) {
     }
     // check base
     casacore::File baseFolder(base);
-    if (!(baseFolder.exists() && baseFolder.isDirectory(true) && 
+    if (!(baseFolder.exists() && baseFolder.isDirectory(true) &&
           baseFolder.isReadable() && baseFolder.isExecutable())) {
         fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
         fmt::print("Exiting carta.\n");
@@ -151,7 +155,11 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
             sessions[uuid]->sendPendingMessages();
         });
 
-    sessions[uuid] = new Session(ws, uuid, permissionsMap, usePermissions, rootFolder, baseFolder, outgoing, verbose);
+    // there is only one fileListHandler which handles all users file list browsing
+    if (!fileListHandler) {
+        fileListHandler = new FileListHandler(permissionsMap, usePermissions, rootFolder, baseFolder);
+    }
+    sessions[uuid] = new Session(ws, uuid, permissionsMap, usePermissions, rootFolder, baseFolder, outgoing, fileListHandler, verbose);
     animationQueues[uuid] = new carta::AnimationQueue(sessions[uuid]);
     msgQueues[uuid] = new tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>;
     fileSettings[uuid] = new carta::FileSettings(sessions[uuid]);
@@ -174,6 +182,10 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
         fileSettings.erase(uuid);
     }
     log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
+    if (sessions.size() == 0) { // if there is no user connection, delete the fileListHandler
+        delete fileListHandler;
+        fileListHandler = nullptr;
+    }
     delete &uuid;
 }
 

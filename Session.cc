@@ -17,7 +17,7 @@
 // Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unordered_map<string,
     std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string root,
-    std::string base, uS::Async *outgoing, bool verbose)
+    std::string base, uS::Async *outgoing, FileListHandler *fileListHandler, bool verbose)
     : uuid(std::move(uuid)),
       socket(ws),
       permissionsMap(permissionsMap),
@@ -29,6 +29,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unorder
       selectedFileInfo(nullptr),
       selectedFileInfoExtended(nullptr),
       outgoing(outgoing),
+      fileListHandler(fileListHandler),
       newFrame(false) {
 }
 
@@ -305,30 +306,13 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t re
 }
 
 void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId) {
-    string folder = request.directory();
-    // do not process same directory simultaneously (e.g. double-click folder in browser)
-    if (folder == filelistFolder) {
-        return;
-    } else {
-        filelistFolder = folder;
-    }
-
-    // resolve empty folder string or current dir "."
-    if (folder.empty() || folder.compare(".")==0)
-        folder = rootFolder;
-    // resolve $BASE keyword in folder string
-    if (folder.find("$BASE") != std::string::npos) {
-        casacore::String folderString(folder);
-        folderString.gsub("$BASE", baseFolder);
-        folder = folderString;
-    }
-    // strip rootFolder from folder
-    getRelativePath(folder);
-
     CARTA::FileListResponse response;
-    getFileList(response, folder);
+    FileListHandler::ResultMsg resultMsg;
+    fileListHandler->onFileListRequest(request, requestId, response, resultMsg);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
-    filelistFolder = "nofolder";  // ready for next file list request
+    if (!resultMsg.message.empty()) {
+        sendLogEvent(resultMsg.message, resultMsg.tags, resultMsg.severity);
+    }
 }
 
 void Session::onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t requestId) {
