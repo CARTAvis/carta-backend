@@ -12,7 +12,7 @@ Region::Region(const std::string& name, const CARTA::RegionType type, int mincha
         m_minchan(-1),
         m_maxchan(-1),
         m_valid(false),
-        m_regionChanged(false),
+        m_xyRegionChanged(false),
         m_spectralChanged(false),
         m_latticeShape(imageShape),
         m_spectralAxis(spectralAxis),
@@ -31,23 +31,36 @@ Region::~Region() {
 
 bool Region::updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>&points,
     float rotation) {
-    // change region parameters and set flags
+    // Set region parameters and flags for what changed
+    bool xyParamsChanged((pointsChanged(points) || (rotation != m_rotation)));
+    bool spectralParamsChanged((minchan != m_minchan) || (maxchan != m_maxchan));
 
-    bool regionChanged(pointsChanged(points) || (rotation != m_rotation));
-    if (regionChanged && checkPoints(points)) {  // change xy region
-        m_ctrlpoints = points;
-        m_rotation = rotation;
-        m_regionChanged = true;
-    }
+    // validate and set params
+    bool pointsSet(setPoints(points));
+    bool chansSet(setChannelRange(minchan, maxchan));
+    m_rotation = rotation;
 
-    bool spectralChanged((minchan != m_minchan) || (maxchan != m_maxchan));
-    if (spectralChanged && setChannelRange(minchan, maxchan)) // change spectral axis
-        m_spectralChanged = true;
-    return m_regionChanged || m_spectralChanged;
+    // region changed if xy params changed and validated
+    m_xyRegionChanged = xyParamsChanged && pointsSet;
+
+    // spectral changed if chan params changed and validated
+    m_spectralChanged = spectralParamsChanged && chansSet;
+
+    return pointsSet && chansSet;
 }
 
 // *************************************************************************
-// Region spectral/stokes settings
+// Region settings
+
+bool Region::setPoints(const std::vector<CARTA::Point>& points) {
+    // check and set control points 
+    bool pointsUpdated(false);
+    if (checkPoints(points)) {
+        m_ctrlpoints = points;
+        pointsUpdated = true;
+    }
+    return pointsUpdated;
+}
 
 bool Region::setChannelRange(int minchan, int maxchan) {
     // check and set spectral axis range
@@ -92,28 +105,24 @@ bool Region::checkPoints(const std::vector<CARTA::Point>& points) {
 }
 
 bool Region::checkPixelPoint(const std::vector<CARTA::Point>& points) {
-    // in xy axis range
+    // check if NaN or inf points
     bool pointsOK(false);
     if (points.size() == 1) { // (x, y)
         float x(points[0].x()), y(points[0].y());
-        pointsOK = ((x >= 0) && (x < m_latticeShape(0)) && (y >= 0) && (y < m_latticeShape(1)));
+        pointsOK = (std::isfinite(x) && std::isfinite(y));
     }
-    return pointsOK;
+    return pointsOK; 
 }
 
 bool Region::checkRectanglePoints(const std::vector<CARTA::Point>& points) {
-    // in xy axis range
+    // check if NaN or inf points, width/height less than 0
     bool pointsOK(false);
     if (points.size() == 2) { // [(cx,cy), (width,height)]
-        size_t max_x(m_latticeShape(0)), max_y(m_latticeShape(1));
         float cx(points[0].x()), cy(points[0].y()), width(points[1].x()), height(points[1].y());
-        float xmin(cx - std::round(width/2.0)), xmax(cx + std::round(width/2.0)),
-              ymin(cy - std::round(height/2.0)), ymax(cy + std::round(height/2.0));
-        bool outside = (((xmin < 0) && (xmax < 0)) || ((xmin > max_x) && (xmax > max_x)) ||
-                    ((ymin < 0) && (ymax < 0)) || ((ymin > max_y) && (ymax > max_y)));
-        pointsOK = !outside;
+        bool pointsExist = (std::isfinite(cx) && std::isfinite(cy) && std::isfinite(width) && std::isfinite(height));
+        pointsOK = (pointsExist && (width > 0) && (height > 0));
     }
-    return pointsOK;
+    return pointsOK; 
 }
 
 bool Region::pointsChanged(const std::vector<CARTA::Point>& newpoints) {

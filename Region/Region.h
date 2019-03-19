@@ -25,11 +25,12 @@ public:
     // to determine if data needs to be updated
     inline bool isValid() { return m_valid; };
     inline bool isPoint() { return (m_type==CARTA::POINT); };
-    inline bool regionChanged() { return m_regionChanged; };
+    inline bool regionChanged() { return m_xyRegionChanged; };
     inline bool spectralChanged() { return m_spectralChanged; };
 
     // set/get Region parameters
     bool updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>& points, float rotation);
+    // For image region, chan/stokes can be set separately
     bool setChannelRange(int minchan, int maxchan);
     bool setStokes(int stokes);
     inline std::vector<CARTA::Point> getControlPoints() { return m_ctrlpoints; };
@@ -69,10 +70,10 @@ public:
 private:
 
     // bounds checking for Region parameters
+    bool setPoints(const std::vector<CARTA::Point>& points);
     bool checkPoints(const std::vector<CARTA::Point>& points);
     bool checkPixelPoint(const std::vector<CARTA::Point>& points);
     bool checkRectanglePoints(const std::vector<CARTA::Point>& points);
-
     bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
     bool checkChannelRange(int& minchan, int& maxchan);
     bool checkStokes(int& stokes);
@@ -86,7 +87,7 @@ private:
 
     // region flags
     bool m_valid;
-    bool m_regionChanged, m_spectralChanged;  // indicates which data to update
+    bool m_xyRegionChanged, m_spectralChanged;  // indicates which data to update
 
     // image shape info
     casacore::IPosition m_latticeShape;
