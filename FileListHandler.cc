@@ -30,6 +30,7 @@ FileListHandler::~FileListHandler() {
 
 void FileListHandler::onFileListRequest(const CARTA::FileListRequest& request,
     uint32_t requestId, CARTA::FileListResponse &response, ResultMsg& resultMsg) {
+    // use tbb scoped lock so that it only processes the file list a time for one user 
     tbb::mutex::scoped_lock lock(fileListMutex);
     string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)

@@ -39,7 +39,7 @@ public:
 private:
     // lock on file list handler
     tbb::mutex fileListMutex;
-    // CARTA ICD
+    // ICD: File list response
     void getRelativePath(std::string& folder);
     void getFileList(CARTA::FileListResponse& fileList, std::string folder, ResultMsg& resultMsg);
     bool checkPermissionForDirectory(std:: string prefix);
