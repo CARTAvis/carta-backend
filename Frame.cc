@@ -381,12 +381,12 @@ void Frame::setImageRegion(int regionId) {
     // control points: center pt [cx, cy], [width, height]
     std::vector<CARTA::Point> points(2);
     CARTA::Point point;
-    point.set_x(std::round(imageShape(0)/2));
-    point.set_y(std::round(imageShape(1)/2));
-    points[0] = point;
-    point.set_x(imageShape(0)); // entire width
-    point.set_y(imageShape(1)); // entire height
-    points[1] = point;
+    point.set_x(imageShape(0)/2.0);
+    point.set_y(imageShape(1)/2.0);
+    points[0] = point; // center point
+    point.set_x(imageShape(0));
+    point.set_y(imageShape(1));
+    points[1] = point;  // image width, height
     // rotation
     float rotation(0.0);
 

@@ -1,7 +1,10 @@
 //# Region.cc: implementation of class for managing a region
 
 #include "Region.h"
+#include "../InterfaceConstants.h"
 #include <casacore/lattices/LRegions/LCExtension.h>
+#include <casacore/lattices/LRegions/LCEllipsoid.h>
+#include <casacore/lattices/LRegions/LCPolygon.h>
 #include <algorithm> // max
 #include <cmath>  // round
 
@@ -13,8 +16,8 @@ Region::Region(const std::string& name, const CARTA::RegionType type, int mincha
         m_name(name),
         m_type(type),
         m_rotation(0.0),
-        m_minchan(-1),
-        m_maxchan(-1),
+        m_minchan(CHANNEL_NOT_SET),
+        m_maxchan(CHANNEL_NOT_SET),
         m_valid(false),
         m_xyRegionChanged(false),
         m_spectralChanged(false),
@@ -25,7 +28,7 @@ Region::Region(const std::string& name, const CARTA::RegionType type, int mincha
         m_xyRegion(nullptr) {
     // validate and set region parameters
     if (updateRegionParameters(minchan, maxchan, points, rotation)) {
-        m_valid = true;
+        m_valid = m_xyRegionChanged && m_spectralChanged; // params validated and xy region set
         m_stats = std::unique_ptr<RegionStats>(new RegionStats());
         m_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
     }
@@ -49,8 +52,8 @@ bool Region::updateRegionParameters(int minchan, int maxchan, const std::vector<
     bool chansSet(setChannelRange(minchan, maxchan));
     m_rotation = rotation;
 
-    // region changed if xy params changed and validated
-    m_xyRegionChanged = xyParamsChanged && pointsSet;
+    // region changed if xy params changed and validated, and xyregion made
+    m_xyRegionChanged = xyParamsChanged && pointsSet && setXYRegion(points, rotation);
 
     // spectral changed if chan params changed and validated
     m_spectralChanged = spectralParamsChanged && chansSet;
@@ -73,13 +76,10 @@ bool Region::setPoints(const std::vector<CARTA::Point>& points) {
 
 bool Region::setChannelRange(int minchan, int maxchan) {
     // check and set spectral axis range
-    bool channelsUpdated(false);
-    if (checkChannelRange(minchan, maxchan)) {
-        m_minchan = minchan;
-        m_maxchan = maxchan;
-        channelsUpdated = true;
-    }
-    return channelsUpdated;
+    bool channelsOK(checkChannelRange(minchan, maxchan));
+    m_minchan = minchan;
+    m_maxchan = maxchan;
+    return channelsOK;
 }
 
 // *************************************************************************
@@ -94,7 +94,15 @@ bool Region::checkPoints(const std::vector<CARTA::Point>& points) {
             break;
             }
         case CARTA::RECTANGLE: {
-            pointsOK = (checkRectanglePoints(points));
+            pointsOK = checkRectanglePoints(points);
+            break;
+            }
+        case CARTA::ELLIPSE: {
+            pointsOK = checkEllipsePoints(points);
+            break;
+            }
+        case CARTA::POLYGON: {
+            pointsOK = checkPolygonPoints(points);
             break;
             }
         default:
@@ -121,6 +129,24 @@ bool Region::checkRectanglePoints(const std::vector<CARTA::Point>& points) {
         bool pointsExist = (std::isfinite(cx) && std::isfinite(cy) && std::isfinite(width) && std::isfinite(height));
         pointsOK = (pointsExist && (width > 0) && (height > 0));
     }
+    return pointsOK; 
+}
+
+bool Region::checkEllipsePoints(const std::vector<CARTA::Point>& points) {
+    // check if NaN or inf points
+    bool pointsOK(false);
+    if (points.size() == 2) { // [(cx,cy), (width,height)]
+        float cx(points[0].x()), cy(points[0].y()), bmaj(points[1].x()), bmin(points[1].y());
+        pointsOK = (std::isfinite(cx) && std::isfinite(cy) && std::isfinite(bmaj) && std::isfinite(bmin));
+    }
+    return pointsOK; 
+}
+
+bool Region::checkPolygonPoints(const std::vector<CARTA::Point>& points) {
+    // check if NaN or inf points
+    bool pointsOK(true);
+    for (auto& point : points)
+        pointsOK &= (std::isfinite(point.x()) && std::isfinite(point.y()));
     return pointsOK; 
 }
 
@@ -177,27 +203,7 @@ bool Region::getRegion(casacore::LatticeRegion& region, int stokes) {
     return regionOK;
 }
 
-casacore::LCRegion* Region::makeExtendedRegion(int stokes) {
-    // Return 2D lattice region extended by chan range, stokes
-    // Returns nullptr if 2D image
-    size_t ndim(m_latticeShape.size());
-    casacore::LCRegion* region(nullptr);
-    if (!isValid() || (ndim==2) || !m_xyRegion)
-        return region;
-
-    // create extension box for channel/stokes
-    casacore::LCBox extBox;
-    if (!makeExtensionBox(extBox, stokes))
-        return region;  // no need for extension
-
-    // specify 0-based extension axes, either 2 (3D image) or 2 and 3 (4D image)
-    casacore::IPosition extAxes = (ndim == 3 ? casacore::IPosition(1, 2) : casacore::IPosition(2, 2, 3));
-    // apply extension box to extension axes with xy region
-    region = new casacore::LCExtension(*m_xyRegion, extAxes, extBox); 
-    return region;
-}
-
-bool Region::makeXYRegion(const std::vector<CARTA::Point>& points, float rotation) {
+bool Region::setXYRegion(const std::vector<CARTA::Point>& points, float rotation) {
     // create 2D casacore::LCRegion for type using stored control points and rotation
     bool xyRegionOK(false);
     casacore::LCRegion* region(nullptr);
@@ -211,16 +217,14 @@ bool Region::makeXYRegion(const std::vector<CARTA::Point>& points, float rotatio
                 region = makeRectangleRegion(points, rotation);
                     break;
                 }
-        /*
             case CARTA::RegionType::ELLIPSE: {
-                regionUpdated = makeEllipseRegion(points, rotation);
+                region = makeEllipseRegion(points, rotation);
                 break;
             }
             case CARTA::RegionType::POLYGON: {
-                regionUpdated = makePolygonRegion(points);
+                region = makePolygonRegion(points);
                 break;
             }
-        */
             default:
                 break;
         }
@@ -243,12 +247,8 @@ casacore::LCRegion* Region::makePointRegion(const std::vector<CARTA::Point>& poi
     if (points.size()==1) {
         auto x = points[0].x();
         auto y = points[0].y();
-        try {
-            casacore::IPosition blc(2, x, y), trc(2, x, y);
-            box = new casacore::LCBox(blc, trc, m_latticeShape.keepAxes(m_xyAxes));
-        } catch (casacore::AipsError& err) {
-            // LC box failed
-        }
+        casacore::IPosition blc(2, x, y), trc(2, x, y);
+        box = new casacore::LCBox(blc, trc, m_latticeShape.keepAxes(m_xyAxes));
     }
     return box;
 }
@@ -258,18 +258,41 @@ casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>&
     casacore::LCBox* box(nullptr);
     if ((points.size()==2) && (rotation == 0.0)) { // TODO support rotation
         float cx(points[0].x()), cy(points[0].y());
+        // delta is width/2, height/2
         float width(points[1].x()), height(points[1].y());
-        try {
-            casacore::IPosition start(2), count(2, width, height);
-            start(0) = std::max(0.0, cx - std::round(width/2.0));
-            start(1) = std::max(0.0, cy - std::round(height/2.0));
-            casacore::Slicer slicer(start, count);
-            box = new casacore::LCBox(slicer, m_latticeShape.keepAxes(m_xyAxes));
-        } catch (casacore::AipsError& err) {
-            // LCBox failed
-        }
+	float blcx(cx - (width/2.0)), blcy(cy - (height/2.0)), trcx(blcx + width-1), trcy(blcy + height-1);
+        casacore::Vector<casacore::Float> blc(2), trc(2);
+	blc(0) = blcx;
+	blc(1) = blcy;
+	trc(0) = trcx;
+	trc(1) = trcy;
+        box = new casacore::LCBox(blc, trc, m_latticeShape.keepAxes(m_xyAxes));
     }
     return box;
+}
+
+casacore::LCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation) {
+    // LCEllipse from center x,y, bmaj, bmin, rotation
+    casacore::LCEllipsoid* ellipse(nullptr);
+    if (points.size()==2) {
+        float cx(points[0].x()), cy(points[0].y());
+        float bmaj(points[1].x()), bmin(points[1].y());
+	ellipse = new casacore::LCEllipsoid(cx, cy, bmaj, bmin, rotation, m_latticeShape.keepAxes(m_xyAxes));
+    }
+    return ellipse;
+}
+
+casacore::LCRegion* Region::makePolygonRegion(const std::vector<CARTA::Point>& points) {
+    // npoints region
+    casacore::LCPolygon* polygon(nullptr);
+    size_t npoints(points.size());
+    casacore::Vector<float> x(npoints), y(npoints);
+    for (size_t i=0; i<npoints; ++i) {
+        x(i) = points[i].x();
+	y(i) = points[i].y();
+    }
+    polygon = new casacore::LCPolygon(x, y, m_latticeShape.keepAxes(m_xyAxes));
+    return polygon;
 }
 
 bool Region::makeExtensionBox(casacore::LCBox& extendBox, int stokes) {
@@ -295,6 +318,47 @@ bool Region::makeExtensionBox(casacore::LCBox& extendBox, int stokes) {
     casacore::Slicer extSlicer(extBoxStart, extBoxCount);
     extendBox = casacore::LCBox(extSlicer, extBoxShape);
     return true;
+}
+
+casacore::LCRegion* Region::makeExtendedRegion(int stokes) {
+    // Return 2D lattice region extended by chan range, stokes
+    // Returns nullptr if 2D image
+    size_t ndim(m_latticeShape.size());
+    casacore::LCRegion* region(nullptr);
+    if (!isValid() || (ndim==2) || !m_xyRegion)
+        return region;
+
+    // create extension box for channel/stokes
+    try {
+        casacore::LCBox extBox;
+        if (!makeExtensionBox(extBox, stokes))
+            return region;  // no need for extension
+
+        // specify 0-based extension axes, either axis 2 (3D image) or 2 and 3 (4D image)
+        casacore::IPosition extAxes = (ndim == 3 ? casacore::IPosition(1, 2) : casacore::IPosition(2, 2, 3));
+        // apply extension box to extension axes with xy region
+        region = new casacore::LCExtension(*m_xyRegion, extAxes, extBox);
+    } catch (casacore::AipsError& err) {
+	// region failed, return nullptr
+    }
+    return region;
+}
+
+// ***********************************
+// Region data
+
+bool Region::getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice) {
+    // fill data vector using region SubLattice
+    bool dataOK(false);
+    casacore::IPosition sublattShape = sublattice.shape();
+    data.resize(sublattShape.product());
+    casacore::Array<float> tmp(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
+    try {
+        sublattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
+	dataOK = true;
+    } catch (casacore::AipsError& err) {
+    }
+    return dataOK;
 }
 
 
@@ -372,8 +436,8 @@ std::pair<int,int> Region::getSpatialProfileReq(int profileIndex) {
     return m_profiler->getSpatialProfileReq(profileIndex);
 }
 
-std::string Region::getSpatialProfileStr(int profileIndex) {
-    return m_profiler->getSpatialProfileStr(profileIndex);
+std::string Region::getSpatialCoordinate(int profileIndex) {
+    return m_profiler->getSpatialCoordinate(profileIndex);
 }
 
 // spectral
@@ -391,40 +455,36 @@ bool Region::getSpectralConfigStokes(int& stokes, int profileIndex) {
     return m_profiler->getSpectralConfigStokes(stokes, profileIndex);
 }
 
-void Region::fillProfileStats(int profileIndex, CARTA::SpectralProfileData& profileData,
-    casacore::SubLattice<float>& lattice) {
-    // Fill SpectralProfileData with statistics values according to config stored in RegionProfiler;
+std::string Region::getSpectralCoordinate(int profileIndex) {
+    return m_profiler->getSpectralCoordinate(profileIndex);
+}
+
+void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex,
+    casacore::SubLattice<float>& sublattice) {
+    // Fill SpectralProfile with statistics values according to config stored in RegionProfiler;
     // RegionStats does calculations
     CARTA::SetSpectralRequirements_SpectralConfig config;
     if (m_profiler->getSpectralConfig(config, profileIndex)) {
-        std::string coordinate(config.coordinate());
-        casacore::IPosition lattShape(lattice.shape());
-        if (lattShape(0)==1 && lattShape(1)==1) { // cursor region, no stats computed
+        std::string profileCoord(config.coordinate());
+        if (isPoint()) { // for point region, no stats just values
             auto newProfile = profileData.add_profiles();
-            newProfile->set_coordinate(coordinate);
+            newProfile->set_coordinate(profileCoord);
             newProfile->set_stats_type(CARTA::StatsType::None);
-            // get subLattice spectral axis
-            casacore::IPosition start(lattShape.size(), 0);
-            casacore::IPosition count(lattShape);
-            casacore::Slicer slicer(start, count);
-            casacore::Array<float> buffer;
-            lattice.doGetSlice(buffer, slicer);
-            std::vector<float> svalues = buffer.tovector();
-            *newProfile->mutable_vals() = {svalues.begin(), svalues.end()};
-        } else {
-            // get values from RegionStats
+	    std::vector<float> profile;
+	    if (getData(profile, sublattice))
+                *newProfile->mutable_vals() = {profile.begin(), profile.end()};
+        } else { // get values from RegionStats
             const std::vector<int> requestedStats(config.stats_types().begin(), config.stats_types().end());
             size_t nstats = requestedStats.size();
             std::vector<std::vector<float>> statsValues; // a float vector for each stats type
-            if (m_stats->getStatsValues(statsValues, requestedStats, lattice)) {
+            if (m_stats->getStatsValues(statsValues, requestedStats, sublattice)) {
                 for (size_t i=0; i<nstats; ++i) {
+                    auto statType = static_cast<CARTA::StatsType>(requestedStats[i]);
                     // one SpectralProfile per stats type
                     auto newProfile = profileData.add_profiles();
-                    newProfile->set_coordinate(coordinate);
-                    auto statType = static_cast<CARTA::StatsType>(requestedStats[i]);
+                    newProfile->set_coordinate(profileCoord);
                     newProfile->set_stats_type(statType);
-                    std::vector<float> svalues(statsValues[i]);
-                    *newProfile->mutable_vals() = {svalues.begin(), svalues.end()};
+                    *newProfile->mutable_vals() = {statsValues[i].begin(), statsValues[i].end()};
                 }
             }
         }
