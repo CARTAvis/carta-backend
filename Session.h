@@ -99,12 +99,6 @@ public:
     void sendPendingMessages();
 
 protected:
-    // ICD: File list response
-    void getRelativePath(std::string& folder);
-    void getFileList(CARTA::FileListResponse& fileList, std::string folder);
-    bool checkPermissionForDirectory(std:: string prefix);
-    bool checkPermissionForEntry(std::string entry);
-    std::string getType(casacore::ImageOpener::ImageTypes type); // convert enum to string
 
     // ICD: File info response
     void resetFileInfo(bool create=false); // delete existing file info ptrs, optionally create new ones
