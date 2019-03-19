@@ -77,9 +77,6 @@ private:
     void setImageCache();
     // downsampled data from image cache
     bool getImageData(std::vector<float>& imageData, bool meanFilter = true);
-    // Region data: apply region to Lattice to get SubLattice
-    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes);
-    bool getRegionData(int regionId, std::vector<float>& data, int stokes);
 
     // fill vector for given channel and stokes
     void getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes);
@@ -87,6 +84,8 @@ private:
     casacore::Slicer getChannelMatrixSlicer(size_t channel, size_t stokes);
     // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
     void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
+    // Region data: apply region to Lattice to get SubLattice
+    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes);
 
     // histogram helpers
     int calcAutoNumBins(); // calculate automatic bin size

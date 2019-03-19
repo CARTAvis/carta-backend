@@ -155,8 +155,18 @@ bool RegionStats::getStatsValues(std::vector<std::vector<float>>& statsValues,
     // use LatticeStatistics to fill statistics values according to type
     casacore::LatticeStatistics<float> latticeStats = casacore::LatticeStatistics<float>(subLattice,
             /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
+    casacore::Vector<int> cursorAxes(2);
+    cursorAxes(0) = 0;
+    cursorAxes(1) = 1;
+    if (!latticeStats.setAxes(cursorAxes))
+        return false;
+    // use LatticeRegion for positional stats
+    const casacore::LatticeRegion* lregion = subLattice.getRegionPtr();
+    casacore::Slicer lrSlicer = lregion->slicer();
 
-    for (size_t i=0; i<requestedStats.size(); ++i) {
+    size_t nstats(requestedStats.size());
+    statsValues.resize(nstats);
+    for (size_t i=0; i<nstats; ++i) {
         // get requested statistics values
         std::vector<float> values;
         casacore::LatticeStatsBase::StatisticsTypes lattStatsType(casacore::LatticeStatsBase::NSTATS);
@@ -194,8 +204,6 @@ bool RegionStats::getStatsValues(std::vector<std::vector<float>>& statsValues,
             case CARTA::StatsType::MinPos:
             case CARTA::StatsType::MaxPos: {
                 // use LatticeRegion for positional stats
-                const casacore::LatticeRegion* lregion = subLattice.getRegionPtr();
-                casacore::Slicer lrSlicer = lregion->slicer();
                 std::vector<int> result;
                 if (statType==CARTA::StatsType::Blc) {
                     result = lrSlicer.start().asStdVector();
@@ -226,11 +234,12 @@ bool RegionStats::getStatsValues(std::vector<std::vector<float>>& statsValues,
             if (!result.empty()) {
                 std::vector<double> dblResult(result.tovector());
                 values.reserve(dblResult.size());
-                for (unsigned int i=0; i<dblResult.size(); ++i)  // convert to float
+                for (unsigned int i=0; i<dblResult.size(); ++i) {  // convert to float
                     values.push_back(static_cast<float>(dblResult[i]));
+                }
             }
         }
-        statsValues.push_back(values);
+        statsValues[i] = values;
     }
     return true;
 }
