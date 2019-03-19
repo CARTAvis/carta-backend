@@ -30,6 +30,7 @@ public:
 
     // set/get Region parameters
     bool updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>& points, float rotation);
+    // For image region, chan/stokes can be set separately
     bool setChannelRange(int minchan, int maxchan);
     inline std::vector<CARTA::Point> getControlPoints() { return m_ctrlpoints; };
 
@@ -71,10 +72,10 @@ public:
 private:
 
     // bounds checking for Region parameters
+    bool setPoints(const std::vector<CARTA::Point>& points);
     bool checkPoints(const std::vector<CARTA::Point>& points);
     bool checkPixelPoint(const std::vector<CARTA::Point>& points);
     bool checkRectanglePoints(const std::vector<CARTA::Point>& points);
-
     bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
     bool checkChannelRange(int& minchan, int& maxchan);
     
