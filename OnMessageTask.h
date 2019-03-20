@@ -25,13 +25,20 @@ public:
   OnMessageTask(Session *session_ ) {
     session= session_;
   }
-  ~OnMessageTask() {}
+  ~OnMessageTask() {
+    session= 0;
+  }
 };
 
 class MultiMessageTask : public OnMessageTask {
+  std::tuple<uint8_t,uint32_t,std::vector<char>> _msg;
   tbb::task* execute();
 public:
-  MultiMessageTask(Session *session_ ) : OnMessageTask( session_ ) {}
+ MultiMessageTask(Session *session_,
+		  std::tuple<uint8_t,uint32_t,std::vector<char>> msg)
+   : OnMessageTask( session_ ) {
+    _msg= msg;
+  }
   ~MultiMessageTask() {}
 };
 
@@ -44,17 +51,38 @@ public:
 
 
 class SetImageViewTask : public OnMessageTask {
+  int _file_id;
   tbb::task* execute();
  public:
-  SetImageViewTask(Session *session_ ) : OnMessageTask( session_ ) {}
+ SetImageViewTask(Session *session_, int fd ) : OnMessageTask( session_ ) {
+    _file_id= fd;
+  }
   ~SetImageViewTask() {}
 };
 
 
 class SetCursorTask : public OnMessageTask {
-    tbb::task* execute();
+  int _file_id;
+  tbb::task* execute();
 public:
-    SetCursorTask(Session *session_ ) :OnMessageTask( session_ ) {}
-    ~SetCursorTask() {}
+ SetCursorTask(Session *session_ , int fd ) : OnMessageTask( session_ ) {
+    _file_id= fd;
+  }
+  ~SetCursorTask() {}
+};
+
+
+class SetHistogramReqsTask : public OnMessageTask {
+  std::tuple<uint8_t,uint32_t,std::vector<char>> _msg;
+  tbb::task* execute();
+  
+public:
+ SetHistogramReqsTask(Session *session_,
+		      std::tuple<uint8_t,uint32_t,std::vector<char>> msg )
+   : OnMessageTask( session_ ) {
+    _msg= msg;
+  }
+  ~SetHistogramReqsTask() {
+  }
 };
 

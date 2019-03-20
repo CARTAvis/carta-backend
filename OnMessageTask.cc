@@ -19,12 +19,10 @@ tbb::task*
 MultiMessageTask::execute()
 {
   //CARTA ICD
-  std::tuple<uint8_t,uint32_t,std::vector<char>> msg;
-  session->evtq.try_pop(msg);
   uint8_t event_type;
   uint32_t requestId;
   std::vector<char> eventPayload;
-  std::tie(event_type, requestId, eventPayload) = msg;
+  std::tie(event_type, requestId, eventPayload)= _msg;
   
   switch( event_type ) {
   case REGISTER_VIEWER_ID: {
@@ -70,13 +68,6 @@ MultiMessageTask::execute()
     }
     break;
   }
-  case SET_HISTOGRAM_REQUIREMENTS_ID: {
-    CARTA::SetHistogramRequirements message;
-    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-      session->onSetHistogramRequirements(message, requestId);
-    }
-    break;
-  }
   case SET_SPECTRAL_REQUIREMENTS_ID: {
     CARTA::SetSpectralRequirements message;
     if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
@@ -106,14 +97,16 @@ MultiMessageTask::execute()
     break;
   }
   default: {
-    std::cerr << " Bad event type in MultiMessageType:execute : "
-	      << event_type << std::endl;
+    std::cerr << " Bad event type in MultiMessageType:execute : ("
+	      << this << ") ";
+    fprintf(stderr,"(%u)\n", event_type);
     exit(1);
   }
   }
 
   return nullptr;
 }
+
 
 tbb::task*
 SetImageChannelsTask::execute()
@@ -123,8 +116,8 @@ SetImageChannelsTask::execute()
   do {
     session->executeOneAniEvt();
     session->image_channel_lock();
-    tester = session->aniq.unsafe_size();
-    if( ! tester ) session->image_channal_task_set_idle();
+    tester= session->aniq.unsafe_size();
+    if( !tester ) session->image_channal_task_set_idle();
     session->image_channel_unlock();
   } while( tester );
   
@@ -135,36 +128,29 @@ SetImageChannelsTask::execute()
 tbb::task*
 SetImageViewTask::execute()
 {
-  std::tuple<uint8_t,uint32_t,std::vector<char>> msg;
-  session->evtq.try_pop(msg);
-  uint8_t event_type;
-  uint32_t requestId;
-  std::vector<char> eventPayload;
-  std::tie(event_type, requestId, eventPayload) = msg;
-
-  CARTA::SetImageView message;
-
-  if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-    session->fsettings.executeOne("SET_IMAGE_VIEW", message.file_id());
-  }
-    
-
+  session->fsettings.executeOne("SET_IMAGE_VIEW", _file_id);
   return nullptr;
 }
 
 tbb::task*
 SetCursorTask::execute()
 {
-   std::tuple<uint8_t,uint32_t,std::vector<char>> msg;
-   session->evtq.try_pop(msg);
+  session->fsettings.executeOne("SET_CURSOR", _file_id );
+  return nullptr;
+}
+
+
+tbb::task*
+SetHistogramReqsTask::execute()
+{
    uint8_t event_type;
    uint32_t requestId;
    std::vector<char> eventPayload;
-   std::tie(event_type, requestId, eventPayload) = msg;
+   std::tie(event_type, requestId, eventPayload)= _msg;
 
-   CARTA::SetCursor message;
+   CARTA::SetHistogramRequirements message;
    if (message.ParseFromArray(eventPayload.data(), eventPayload.size())) {
-     session->fsettings.executeOne("SET_CURSOR", message.file_id());
+     session->onSetHistogramRequirements(message, requestId);
    }
 
    return nullptr;
