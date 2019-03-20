@@ -784,6 +784,7 @@ bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::st
 // Region histograms, profiles, stats
 
 bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData) {
+    // fill histogram message with histograms for requested channel/num bins
     bool histogramOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
@@ -837,7 +838,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
 }
 
 bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData) {
-    // spatial profile is for point regions only
+    // fill spatial profile message with requested x/y profiles (for a point region)
     bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
@@ -937,13 +938,14 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
 }
 
 bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData) {
+    // fill spectral profile message with requested statistics (or values for a point region)
     bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         if (!region->isValid())
             return false;
         size_t numProfiles(region->numSpectralProfiles());
-        if (numProfiles==0)
+        if (numProfiles == 0)
             return false; // not requested
 
         // set profile parameters
@@ -971,18 +973,21 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
 }
 
 bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData) {
-    // TODO:: this needs work
+    // fill stats data message with requested statistics for the entire region
     bool statsOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
-        if (region->numStats() > 0) {
-            statsData.set_channel(channelIndex);
-            statsData.set_stokes(stokesIndex);
-            casacore::Slicer lattSlicer;
-            lattSlicer = getChannelMatrixSlicer(channelIndex, stokesIndex);  // for entire 2D image, for now
-            casacore::SubLattice<float> subLattice(loader->loadData(FileInfo::Data::XYZW), lattSlicer);
-            std::unique_lock<std::mutex> guard(latticeMutex);
-            region->fillStatsData(statsData, subLattice);
+        if (!region->isValid())
+            return false;
+        if (region->numStats() == 0)
+            return false; // not requested
+
+        statsData.set_channel(channelIndex);
+        statsData.set_stokes(stokesIndex);
+        casacore::SubLattice<float> sublattice;
+        std::unique_lock<std::mutex> guard(latticeMutex);
+        if (getRegionSubLattice(regionId, sublattice, stokesIndex)) {
+            region->fillStatsData(statsData, sublattice);
             statsOK = true;
         }
     }
@@ -990,7 +995,7 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
 }
 
 // ****************************************************
-// Region histograms only (not full data message
+// Region histograms only (not full data message)
 
 int Frame::calcAutoNumBins() {
     // automatic bin size for histogram when num_bins = -1

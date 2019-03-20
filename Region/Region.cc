@@ -260,7 +260,7 @@ casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>&
         float cx(points[0].x()), cy(points[0].y());
         // delta is width/2, height/2
         float width(points[1].x()), height(points[1].y());
-	float blcx(cx - (width/2.0)), blcy(cy - (height/2.0)), trcx(blcx + width-1), trcy(blcy + height-1);
+	float blcx(cx - (width/2.0)), blcy(cy - (height/2.0)), trcx(blcx + width), trcy(blcy + height);
         casacore::Vector<casacore::Float> blc(2), trc(2);
 	blc(0) = blcx;
 	blc(1) = blcy;
