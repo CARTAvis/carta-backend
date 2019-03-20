@@ -145,7 +145,7 @@ void readPermissions(string filename) {
 
 inline uint8_t get_event_id_by_string(std::string& strname)
 {
-  int8_t  ret= _event_name_map[ strname ];
+  int8_t ret= _event_name_map[ strname ];
   if( ! ret ) {
     std::cerr << "Name lookup failure in  get_event_no_by_string : "
 	      << strname << endl;
@@ -190,6 +190,7 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
 void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
   Session * session= (Session*)ws->getUserData();
   if (session) delete session;
+  ws->setUserData(0); //Avoid having destructor called twice.
   --_num_sessions;
 }
 
@@ -213,7 +214,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
       
       OnMessageTask * tsk= nullptr;
       uint8_t event_id= get_event_id_by_string( eventName );
-      
+
       switch(event_id) {
       case 0: {
 	// Do nothing if event type is not known.
@@ -231,24 +232,41 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
 	break;
       }
       case SET_IMAGE_VIEW_ID: {
-	CARTA::SetImageView message;
-	tsk= new (tbb::task::allocate_root()) SetImageViewTask( session );
-	message.ParseFromArray(eventPayload.data(), eventPayload.size());
-	session->addViewSetting(message, requestId);
-	session->evtq.push(make_tuple(event_id, requestId, eventPayload));
+        CARTA::SetImageView message;
+        message.ParseFromArray(eventPayload.data(), eventPayload.size());
+        session->addViewSetting(message, requestId);
+        tsk= new (tbb::task::allocate_root())
+	  SetImageViewTask(session, message.file_id());
 	break;
       }	
       case SET_CURSOR_ID: {
 	CARTA::SetCursor message;
-	tsk= new (tbb::task::allocate_root()) SetCursorTask( session );
-	session->evtq.push(make_tuple(event_id, requestId, eventPayload));
-	message.ParseFromArray(eventPayload.data(), eventPayload.size());
-	session->addCursorSetting(message, requestId);
+        message.ParseFromArray(eventPayload.data(), eventPayload.size());
+        session->addCursorSetting(message, requestId);
+        tsk= new (tbb::task::allocate_root()) SetCursorTask(session, message.file_id());
+	break;
+      }
+      case SET_HISTOGRAM_REQUIREMENTS_ID: {
+        CARTA::SetHistogramRequirements message;
+        message.ParseFromArray(eventPayload.data(), eventPayload.size());
+        if(message.histograms_size() == 0) {
+          session->cancel_SetHistReqs();
+        }
+        else {
+          tsk= new (tbb::task::allocate_root())
+	    SetHistogramReqsTask(session,
+				 make_tuple(event_id,
+					    requestId,
+					    eventPayload));
+        }
 	break;
       }
       default: {
-	session->evtq.push(make_tuple(event_id, requestId, eventPayload));
-	tsk= new (tbb::task::allocate_root()) MultiMessageTask( session );
+	tsk= new (tbb::task::allocate_root())
+	  MultiMessageTask(session,
+			   make_tuple(event_id,
+				      requestId,
+				      eventPayload) );
       }
       }
       if( tsk ) tbb::task::enqueue(*tsk);
