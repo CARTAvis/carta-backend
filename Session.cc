@@ -65,6 +65,11 @@ bool Session::checkPermissionForDirectory(std::string prefix) {
     if (!permissionsEnabled) {
         return true;
     }
+
+    // trim leading dot
+    if (prefix.length() && prefix[0] == '.') {
+        prefix.erase(0, 1);
+    }
     // Check for root folder permissions
     if (!prefix.length() || prefix == "/") {
         if (permissionsMap.count("/")) {
@@ -158,7 +163,7 @@ void Session::getFileList(CARTA::FileListResponse& fileList, string folder) {
                             else if (imType==casacore::ImageOpener::UNKNOWN) {
                                 // Check if it is a directory and the user has permission to access it
                                 casacore::String dirname(ccfile.path().baseName());
-                                string pathNameRelative = (folder.length() && folder != "/") ? folder.append("/" + dirname) : dirname;
+                                string pathNameRelative = (folder.length() && folder != "/") ? folder + "/" + string(dirname): dirname;
                                 if (checkPermissionForDirectory(pathNameRelative))
                                    fileList.add_subdirectories(dirname);
                             } else {
@@ -299,6 +304,7 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t re
             success = true;
         }
     }
+    apiKey = message.api_key();
     // response
     CARTA::RegisterViewerAck ackMessage;
     ackMessage.set_session_id(sessionId);
