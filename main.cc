@@ -33,7 +33,7 @@ unordered_map<key_type, tbb::concurrent_queue<tuple<string,uint32_t,vector<char>
 // key is current folder
 unordered_map<string, vector<string>> permissionsMap;
 
-// file browser handler
+// file list handler for the file browser
 FileListHandler* fileListHandler;
 
 int sessionNumber;
