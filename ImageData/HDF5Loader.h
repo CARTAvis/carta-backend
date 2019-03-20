@@ -22,8 +22,6 @@ public:
         std::vector<FileInfo::ImageStats>& cubeStats,
         bool loadPercentiles=false
     ) override;
-    // TODO: this is a temporary fix to get integer statistics to work. Ideally we should not require the main dataset to be floating point either, so loadData should be redesigned.
-    casacore::Lattice<int>& loadIntegerData(FileInfo::Data ds);
 
 private:
     static std::string dataSetToString(FileInfo::Data ds);
@@ -63,9 +61,8 @@ bool HDF5Loader::hasData(FileInfo::Data ds) const {
         if(it == dataSets.end()) return false;
         return it->second.shape().size() >= ndims;
     default:
-        // TODO this is definitely broken. And we probably can't use this for datasets.
-        // TODO should we attempt to open the dataset and catch a possible error?
-        return casacore::HDF5Group::exists(*group_ptr, dataSetToString(ds)); // TODO: where to get top-level group pointer?
+        // TODO this is definitely broken.
+        return casacore::HDF5Group::exists(*group_ptr, dataSetToString(ds)); // TODO: how to get HID from hdu group name?
     }
 }
 
@@ -124,15 +121,6 @@ const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
     const casacore::LELImageCoord* lelImCoords =
         dynamic_cast<const casacore::LELImageCoord*>(&(loadData(FileInfo::Data::XYZW).lelCoordinates().coordinates()));
     return lelImCoords->coordinates();
-}
-
-// TODO: this is a temporary workaround!
-casacore::Lattice<int>& HDF5Loader::loadIntegerData(FileInfo::Data ds) {
-    std::string data = dataSetToString(ds);
-    if(dataSets.find(data) == dataSets.end()) {
-        dataSets.emplace(data, casacore::HDF5Lattice<int>(file, data, hdf5Hdu));
-    }
-    return dataSets[data];
 }
 
 // TODO: NEEDS MAJOR SURGERY
@@ -259,7 +247,9 @@ void HDF5Loader::loadImageStats(
         }
 
         if (hasData(FileInfo::Data::S2DNans)) {
-            auto &dataSet = loadIntegerData(FileInfo::Data::S2DNans);
+            // TODO: a temporary workaround, because the datasets are assumed to be floats
+            // TODO: we should either do this for all the stats and leave them out of the map, or see if we can make the map polymorphic
+            auto dataSet = casacore::HDF5Lattice<int>(file, dataSetToString(FileInfo::Data::S2DNans), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
             // 2D cubes
@@ -450,7 +440,9 @@ void HDF5Loader::loadImageStats(
         }
 
         if (hasData(FileInfo::Data::S3DNans)) {
-            auto &dataSet = loadIntegerData(FileInfo::Data::S3DNans);
+            // TODO: a temporary workaround, because the datasets are assumed to be floats
+            // TODO: we should either do this for all the stats and leave them out of the map, or see if we can make the map polymorphic
+            auto dataSet = casacore::HDF5Lattice<int>(file, dataSetToString(FileInfo::Data::S3DNans), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
             // 3D cubes
