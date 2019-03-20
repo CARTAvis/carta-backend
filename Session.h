@@ -39,7 +39,7 @@
 
 class Session {
 public:
-    std::string uuid;\
+    std::string uuid;
     carta::FileSettings fsettings;
     tbb::concurrent_queue<std::tuple<uint8_t,uint32_t,std::vector<char>>> evtq;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> aniq;
@@ -94,11 +94,15 @@ public:
 
     void addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId);
     void executeOneAniEvt(void);
-    
-    inline void addViewSetting(CARTA::SetImageView message, uint32_t requestId) {
+    void cancel_SetHistReqs() {
+      histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
+      sendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
+    }
+
+    void addViewSetting(CARTA::SetImageView message, uint32_t requestId) {
       fsettings.addViewSetting(message, requestId);
     }
-    inline void addCursorSetting(CARTA::SetCursor message, uint32_t requestId) {
+    void addCursorSetting(CARTA::SetCursor message, uint32_t requestId) {
       fsettings.addCursorSetting(message, requestId);
     }
     void image_channel_lock() { _image_channel_mutex.lock(); }
