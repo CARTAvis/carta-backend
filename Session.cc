@@ -865,9 +865,8 @@ void Session::createCubeHistogramMessage(CARTA::RegionHistogramData& message, in
 }
 
 
-void Session::addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId) {
-  //  cerr << "Session::addToAniQueue : " << this << "\n";
-
+void Session::addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId)
+{
   aniq.push(make_pair(message, requestId));
 }
 
@@ -875,7 +874,6 @@ void Session::addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId)
 void Session::executeOneAniEvt()
 {
   std::pair<CARTA::SetImageChannels,uint32_t> req;
-  //  cerr << " Session::executeOneAniEvt : " << this << "\n";
 						     
   aniq.try_pop(req);
   onSetImageChannels(req.first, req.second);
