@@ -16,16 +16,6 @@
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
 
-struct ChannelStats {
-    float minVal;
-    float maxVal;
-    float mean;
-    std::vector<float> percentiles;
-    std::vector<float> percentileRanks;
-    std::vector<int> histogramBins;
-    int64_t nanCount;
-};
-
 struct CompressionSettings {
     CARTA::CompressionType type;
     float quality;
@@ -46,8 +36,8 @@ private:
     casacore::IPosition imageShape; // (width, height, depth, stokes)
     int spectralAxis, stokesAxis;  // axis index for each in 4D image
     size_t nchan;
-    std::vector<std::vector<ChannelStats>> channelStats;
-    std::vector<ChannelStats> cubeStats;
+    std::vector<std::vector<FileInfo::ImageStats>> channelStats;
+    std::vector<FileInfo::ImageStats> cubeStats;
 
     // set image view 
     CARTA::ImageBounds bounds;
@@ -67,7 +57,6 @@ private:
     std::unordered_map<int, std::unique_ptr<carta::Region>> regions;
     bool cursorSet; // cursor region set by frontend, not internally
 
-    bool loadImageStats(bool loadPercentiles = false);
     void setImageRegion(int regionId); // set region for entire plane image or cube
     void setDefaultCursor(); // using center point of image
 

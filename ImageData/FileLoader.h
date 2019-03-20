@@ -9,6 +9,16 @@ namespace carta {
 
 namespace FileInfo {
 
+struct ImageStats {
+    float minVal;
+    float maxVal;
+    float mean;
+    std::vector<float> percentiles;
+    std::vector<float> percentileRanks;
+    std::vector<int> histogramBins;
+    int64_t nanCount;
+};
+
 enum class Data : uint32_t
 {
      // Standard layouts
@@ -44,6 +54,12 @@ public:
     static FileLoader* getLoader(const std::string &file);
     // return coordinates for axis types
     virtual void findCoords(int& spectralAxis, int& stokesAxis);
+    // Load image statistics, if they exist, from the file into the data structures provided
+    virtual void loadImageStats(
+        std::vector<std::vector<FileInfo::ImageStats>>& channelStats,
+        std::vector<FileInfo::ImageStats>& cubeStats,
+        bool loadPercentiles=false
+    );
 
     // Do anything required to open the file (set up cache size, etc)
     virtual void openFile(const std::string &file, const std::string &hdu) = 0;
