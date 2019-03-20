@@ -39,11 +39,9 @@ protected:
     std::vector<char> binaryPayloadCache;
 
     // permissions
-    std::unordered_map<std::string, std::vector<std::string> >& permissionsMap;
-    bool permissionsEnabled;
     std::string apiKey;
 
-    std::string rootFolder, baseFolder, filelistFolder;
+    std::string rootFolder;
     bool verboseLogging;
 
     // load for file browser, reuse when open file
@@ -72,9 +70,7 @@ protected:
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
             std::string uuid,
-            std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
-            bool enforcePermissions,
-            std::string root, std::string base,
+            std::string root,
             uS::Async *outgoing,
             FileListHandler *fileListHandler,
             bool verbose = false);

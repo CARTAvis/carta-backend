@@ -159,7 +159,7 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
     if (!fileListHandler) {
         fileListHandler = new FileListHandler(permissionsMap, usePermissions, rootFolder, baseFolder);
     }
-    sessions[uuid] = new Session(ws, uuid, permissionsMap, usePermissions, rootFolder, baseFolder, outgoing, fileListHandler, verbose);
+    sessions[uuid] = new Session(ws, uuid, rootFolder, outgoing, fileListHandler, verbose);
     animationQueues[uuid] = new carta::AnimationQueue(sessions[uuid]);
     msgQueues[uuid] = new tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>;
     fileSettings[uuid] = new carta::FileSettings(sessions[uuid]);
