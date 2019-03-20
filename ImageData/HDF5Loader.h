@@ -41,28 +41,20 @@ void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
 }
 
 bool HDF5Loader::hasData(FileInfo::Data ds) const {
+    auto it = dataSets.find("DATA");
+    if(it == dataSets.end()) return false;
+
     switch(ds) {
     case FileInfo::Data::XY:
+        return it->second.shape().size() >= 2;
     case FileInfo::Data::XYZ:
+        return it->second.shape().size() >= 3;
     case FileInfo::Data::XYZW:
-        int ndims;
-        switch(ds) {
-        case FileInfo::Data::XY:
-            ndims = 2;
-            break;
-        case FileInfo::Data::XYZ:
-            ndims = 3;
-            break;
-        case FileInfo::Data::XYZW:
-            ndims = 4;
-            break;
-        }
-        auto it = dataSets.find("DATA");
-        if(it == dataSets.end()) return false;
-        return it->second.shape().size() >= ndims;
+        return it->second.shape().size() >= 4;
     default:
-        // TODO this is definitely broken.
-        return casacore::HDF5Group::exists(*group_ptr, dataSetToString(ds)); // TODO: how to get HID from hdu group name?
+        auto group_ptr = it->second.group();
+        std::string data = dataSetToString(ds);
+        return casacore::HDF5Group::exists(*group_ptr, data);
     }
 }
 
