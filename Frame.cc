@@ -557,6 +557,15 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
             casacore::LatticeRegion lattRegion;
             if (region->getRegion(lattRegion, stokes)) {
                 sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::XYZW), lattRegion);
+		if (!sublattice.hasPixelMask()) { // apply lattice mask if possible
+                    if (loader->hasData(FileInfo::Data::Mask)) {
+                        // apply region slicer to lattice pixel mask - same shape as sublattice
+                        casacore::Array<bool> maskArray;
+                        loader->getPixelMaskSlice(maskArray, lattRegion.slicer());
+                        casacore::ArrayLattice<bool> pixelMask(maskArray);
+                        sublattice.setPixelMask(pixelMask, false);
+                    }
+                }
                 sublatticeOK = true;
             }
         }

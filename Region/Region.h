@@ -36,8 +36,6 @@ public:
 
     // get lattice region for requested stokes
     bool getRegion(casacore::LatticeRegion& region, int stokes);
-    // get data from sublattice
-    bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);
 
     // Histogram: pass through to RegionStats
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
@@ -84,7 +82,6 @@ private:
     bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
     bool checkChannelRange(int& minchan, int& maxchan);
     
- 
     // Create regions
     bool setXYRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
     casacore::LCRegion* makePointRegion(const std::vector<CARTA::Point>& points);
@@ -93,6 +90,9 @@ private:
     casacore::LCRegion* makePolygonRegion(const std::vector<CARTA::Point>& points);
     bool makeExtensionBox(casacore::LCBox& extendBox, int stokes); // for extended region
     casacore::LCRegion* makeExtendedRegion(int stokes);  // xy region extended to chans, stokes
+
+    // get data from sublattice
+    bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);
 
     // region definition (ICD SET_REGION parameters)
     std::string m_name;

@@ -173,6 +173,14 @@ bool RegionStats::getStatsValues(std::vector<std::vector<float>>& statsValues,
     const casacore::LatticeRegion* lregion = subLattice.getRegionPtr();
     casacore::Slicer lrSlicer = lregion->slicer();
 
+    // Print region info
+    casacore::IPosition blc(lrSlicer.start()), trc(lrSlicer.end());
+    casacore::Array<casacore::Double> npts; 
+    if (latticeStats.getStatistic(npts, casacore::LatticeStatsBase::NPTS)) {
+        std::cout << "Computing statistics for region from " << blc <<  " to " << trc << std::endl;
+	std::cout << "Number of points (npts) = " << npts(casacore::IPosition(1,0)) << std::endl;
+    }
+
     size_t nstats(requestedStats.size());
     statsValues.resize(nstats);
     for (size_t i=0; i<nstats; ++i) {
@@ -210,15 +218,14 @@ bool RegionStats::getStatsValues(std::vector<std::vector<float>>& statsValues,
                 lattStatsType = casacore::LatticeStatsBase::MAX;
                 break;
             case CARTA::StatsType::Blc:
-                intResult = lrSlicer.start().asStdVector();
+                intResult = blc.asStdVector();
                 break;
             case CARTA::StatsType::Trc:
-                intResult = lrSlicer.end().asStdVector();
+                intResult = trc.asStdVector();
                 break;
             case CARTA::StatsType::MinPos:
             case CARTA::StatsType::MaxPos: {
                 if (!perChannel) { // only works when no display axes
-                    casacore::IPosition blc = lrSlicer.start();
                     casacore::IPosition minPos, maxPos;
                     latticeStats.getMinMaxPos(minPos, maxPos);
                     if (statType==CARTA::StatsType::MinPos)
@@ -233,8 +240,9 @@ bool RegionStats::getStatsValues(std::vector<std::vector<float>>& statsValues,
         }
         if (lattStatsType < casacore::LatticeStatsBase::NSTATS) { // get lattice statistic
             casacore::Array<casacore::Double> result; // must be double
-            latticeStats.getStatistic(result, lattStatsType);
-            result.tovector(dblResult);
+            if (latticeStats.getStatistic(result, lattStatsType)) {
+                result.tovector(dblResult);
+            }
         }
 
         std::vector<float> values;

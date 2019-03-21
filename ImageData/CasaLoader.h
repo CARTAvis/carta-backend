@@ -13,6 +13,7 @@ public:
     void openFile(const std::string &file, const std::string &hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
+    bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     const casacore::CoordinateSystem& getCoordSystem() override;
 
 private:
@@ -38,14 +39,20 @@ bool CasaLoader::hasData(FileInfo::Data dl) const {
         return image.shape().size() >= 3;
     case FileInfo::Data::XYZW:
         return image.shape().size() >= 4;
+    case FileInfo::Data::Mask:
+        return image.hasPixelMask();
     default:
         break;
     }
     return false;
 }
 
-typename CasaLoader::image_ref CasaLoader::loadData(FileInfo::Data) {
+typename CasaLoader::image_ref CasaLoader::loadData(FileInfo::Data ds) {
     return image;
+}
+
+bool CasaLoader::getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
+    return image.getMaskSlice(mask, slicer);
 }
 
 const casacore::CoordinateSystem& CasaLoader::getCoordSystem() {

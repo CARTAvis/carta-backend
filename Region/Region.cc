@@ -260,12 +260,12 @@ casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>&
         float cx(points[0].x()), cy(points[0].y());
         // delta is width/2, height/2
         float width(points[1].x()), height(points[1].y());
-	float blcx(cx - (width/2.0)), blcy(cy - (height/2.0)), trcx(blcx + width), trcy(blcy + height);
+        float blcx(cx - (width/2.0)), blcy(cy - (height/2.0)), trcx(blcx + width), trcy(blcy + height);
         casacore::Vector<casacore::Float> blc(2), trc(2);
-	blc(0) = blcx;
-	blc(1) = blcy;
-	trc(0) = trcx;
-	trc(1) = trcy;
+        blc(0) = blcx;
+        blc(1) = blcy;
+        trc(0) = trcx;
+        trc(1) = trcy;
         box = new casacore::LCBox(blc, trc, m_latticeShape.keepAxes(m_xyAxes));
     }
     return box;
@@ -277,7 +277,7 @@ casacore::LCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& p
     if (points.size()==2) {
         float cx(points[0].x()), cy(points[0].y());
         float bmaj(points[1].x()), bmin(points[1].y());
-	ellipse = new casacore::LCEllipsoid(cx, cy, bmaj, bmin, rotation, m_latticeShape.keepAxes(m_xyAxes));
+        ellipse = new casacore::LCEllipsoid(cx, cy, bmaj, bmin, rotation, m_latticeShape.keepAxes(m_xyAxes));
     }
     return ellipse;
 }
@@ -289,7 +289,7 @@ casacore::LCRegion* Region::makePolygonRegion(const std::vector<CARTA::Point>& p
     casacore::Vector<float> x(npoints), y(npoints);
     for (size_t i=0; i<npoints; ++i) {
         x(i) = points[i].x();
-	y(i) = points[i].y();
+        y(i) = points[i].y();
     }
     polygon = new casacore::LCPolygon(x, y, m_latticeShape.keepAxes(m_xyAxes));
     return polygon;
@@ -339,7 +339,7 @@ casacore::LCRegion* Region::makeExtendedRegion(int stokes) {
         // apply extension box to extension axes with xy region
         region = new casacore::LCExtension(*m_xyRegion, extAxes, extBox);
     } catch (casacore::AipsError& err) {
-	// region failed, return nullptr
+        // region failed, return nullptr
     }
     return region;
 }
@@ -355,12 +355,11 @@ bool Region::getData(std::vector<float>& data, casacore::SubLattice<float>& subl
     casacore::Array<float> tmp(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
     try {
         sublattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
-	dataOK = true;
+        dataOK = true;
     } catch (casacore::AipsError& err) {
     }
     return dataOK;
 }
-
 
 // ***********************************
 // RegionStats
@@ -470,9 +469,10 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
             auto newProfile = profileData.add_profiles();
             newProfile->set_coordinate(profileCoord);
             newProfile->set_stats_type(CARTA::StatsType::None);
-	    std::vector<float> profile;
-	    if (getData(profile, sublattice))
+            std::vector<float> profile;
+            if (getData(profile, sublattice)) {
                 *newProfile->mutable_vals() = {profile.begin(), profile.end()};
+            }
         } else { // get values from RegionStats
             const std::vector<int> requestedStats(config.stats_types().begin(), config.stats_types().end());
             size_t nstats = requestedStats.size();
