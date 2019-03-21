@@ -42,7 +42,7 @@ int _num_sessions= 0;
 unordered_map<std::string,uint8_t> _event_name_map;
 
 // command-line arguments
-string rootFolder("/"), baseFolder("."), version_id("1.0.1");
+string rootFolder("/"), baseFolder("."), version_id("1.1");
 bool verbose, usePermissions;
 
 bool checkRootBaseFolders(std::string& root, std::string& base) {
