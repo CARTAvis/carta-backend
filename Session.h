@@ -76,6 +76,9 @@ protected:
     // Return message queue
     tbb::concurrent_queue<std::vector<char>> out_msgs;
 
+    // Reference counter
+    int _ref_count;
+    
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
             std::string uuid,
@@ -102,17 +105,22 @@ public:
     }
     void image_channel_lock() { _image_channel_mutex.lock(); }
     void image_channel_unlock() { _image_channel_mutex.unlock(); }
-    inline bool image_channel_task_test_and_set() {
+    bool image_channel_task_test_and_set() {
       if( _image_channel_task_active ) return true;
       else {
 	_image_channel_task_active= true;
 	return false;
       }
     }
-    inline void image_channal_task_set_idle() {
+    void image_channal_task_set_idle() {
       _image_channel_task_active= false;
     }
-
+    int increase_ref_count() {
+      return ++_ref_count;
+    }
+    int decrease_ref_count() {
+      return --_ref_count;
+    }
     
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);

@@ -14,6 +14,8 @@
 
 using namespace std;
 
+
+int __num_sessions= 0;
 // Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unordered_map<string, 
     std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string root,
@@ -32,6 +34,9 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::unorder
       newFrame(false),
       fsettings(this)
 {
+  _ref_count= 0;
+
+  ++__num_sessions;
 }
 
 Session::~Session() {
@@ -41,6 +46,7 @@ Session::~Session() {
     }
     frames.clear();
     outgoing->close();
+    --__num_sessions;
 }
 
 bool Session::checkPermissionForEntry(string entry) {
