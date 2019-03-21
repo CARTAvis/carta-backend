@@ -182,7 +182,7 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
         fileSettings.erase(uuid);
     }
     log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
-    if (sessions.size() == 0) { // if there is no user connection, delete the fileListHandler
+    if (sessions.size() == 0 && fileListHandler) { // if there is no user connection, delete the fileListHandler
         delete fileListHandler;
         fileListHandler = nullptr;
     }
