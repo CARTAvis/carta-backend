@@ -17,15 +17,16 @@
 class OnMessageTask : public tbb::task {
  protected:
   Session *session;
-  
-  tbb::task* execute() {
-    std::cerr << " Error : Called base OnMessageTask execute.\n";
-  }
+  virtual tbb::task* execute() = 0;
 public:
-  OnMessageTask(Session *session_ ) {
+  OnMessageTask( Session *session_ ) {
     session= session_;
+    session->increase_ref_count();
   }
   ~OnMessageTask() {
+    if( ! session->decrease_ref_count() ) {
+      delete session;
+    }
     session= 0;
   }
 };

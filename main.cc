@@ -166,9 +166,6 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
 
     Session *session;
 
-    ws->setUserData(session);
-    outgoing->setData(session);
-    
     outgoing->start(
         [](uS::Async *async) -> void {
 	  Session * sess = ((Session*)async->getData());
@@ -179,7 +176,9 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
 			 rootFolder, baseFolder, outgoing, verbose);
 
     ws->setUserData(session);
+    session->increase_ref_count();
     outgoing->setData(session);
+    //    session->increase_ref_count();
 
     log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, ++_num_sessions);
 }
@@ -189,7 +188,9 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
   Session * session= (Session*)ws->getUserData();
-  if (session) delete session;
+  if ( ! session->decrease_ref_count() ) {
+    delete session;
+  }
   ws->setUserData(0); //Avoid having destructor called twice.
   --_num_sessions;
 }
