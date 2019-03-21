@@ -6,6 +6,7 @@
 #include "FileSettings.h"
 #include "util.h"
 
+#include <utility>
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
@@ -40,8 +41,7 @@ public:
     carta::FileSettings fsettings;
     tbb::concurrent_queue<std::tuple<uint8_t,uint32_t,std::vector<char>>> evtq;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> aniq;
-    
-protected:
+    protected:
     // communication
     uWS::WebSocket<uWS::SERVER>* socket;
     std::vector<char> binaryPayloadCache;
@@ -90,8 +90,12 @@ public:
             bool verbose = false);
     ~Session();
 
-    void addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId);
-    void executeOneAniEvt(void);
+    void addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId) {
+      aniq.push(std::make_pair(message, requestId));
+    }
+    void executeAniEvt(std::pair<CARTA::SetImageChannels,uint32_t> req) {
+      onSetImageChannels(req.first, req.second);
+    }
     void cancel_SetHistReqs() {
       histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
       sendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);

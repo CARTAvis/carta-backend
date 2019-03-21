@@ -835,22 +835,6 @@ void Session::createCubeHistogramMessage(CARTA::RegionHistogramData& message, in
 }
 
 
-void Session::addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId)
-{
-  aniq.push(make_pair(message, requestId));
-}
-
-
-void Session::executeOneAniEvt()
-{
-  std::pair<CARTA::SetImageChannels,uint32_t> req;
-						     
-  aniq.try_pop(req);
-  onSetImageChannels(req.first, req.second);
-}
-
-
-
 void Session::sendRasterImageData(int fileId, bool sendHistogram) {
     if (frames.count(fileId)) {
         try {
