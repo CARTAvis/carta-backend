@@ -223,12 +223,16 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
       }
       case SET_IMAGE_CHANNELS_ID: {
 	CARTA::SetImageChannels message;
-	session->image_channel_lock();
-	if( ! session->image_channel_task_test_and_set() ) 
-	  tsk= new (tbb::task::allocate_root()) SetImageChannelsTask( session );
 	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	session->image_channel_lock();
+	if( ! session->image_channel_task_test_and_set() ) {
+	  tsk= new (tbb::task::allocate_root())
+	    SetImageChannelsTask(session, make_pair(message, requestId));
+	}
+	else {
 	// has its own queue to keep channels in order during animation
-	session->addToAniQueue(message, requestId);
+	  session->addToAniQueue(message, requestId);
+	}
 	session->image_channel_unlock();
 	break;
       }

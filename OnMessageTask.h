@@ -24,9 +24,8 @@ public:
     session->increase_ref_count();
   }
   ~OnMessageTask() {
-    if( ! session->decrease_ref_count() ) {
+    if( ! session->decrease_ref_count() )
       delete session;
-    }
     session= 0;
   }
 };
@@ -44,9 +43,14 @@ public:
 };
 
 class SetImageChannelsTask : public OnMessageTask {
+  std::pair<CARTA::SetImageChannels,uint32_t> _req;
   tbb::task* execute();
 public:
-  SetImageChannelsTask(Session *session_ ) : OnMessageTask( session_ ) {}
+ SetImageChannelsTask(Session *session_,
+		      std::pair<CARTA::SetImageChannels,uint32_t> req_ )
+       : OnMessageTask( session_ ) {
+    _req= req_;
+  }
   ~SetImageChannelsTask() {}
 };
 

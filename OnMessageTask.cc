@@ -111,16 +111,17 @@ MultiMessageTask::execute()
 tbb::task*
 SetImageChannelsTask::execute()
 {
-  int tester;
+  bool tester;
 
-  do {
-    session->executeOneAniEvt();
-    session->image_channel_lock();
-    tester= session->aniq.unsafe_size();
-    if( !tester ) session->image_channal_task_set_idle();
-    session->image_channel_unlock();
-  } while( tester );
-  
+  session->executeAniEvt(_req);
+
+  session->image_channel_lock();
+  if( ! (tester= session->aniq.try_pop(_req)) )
+    session->image_channal_task_set_idle();
+  session->image_channel_unlock();
+
+  if( tester ) tbb::task::enqueue((tbb::task &)*this);
+
   return nullptr;
 }
 
