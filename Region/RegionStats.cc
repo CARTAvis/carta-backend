@@ -196,8 +196,8 @@ bool RegionStats::getStatsValues(std::vector<std::vector<float>>& statsValues,
             case CARTA::StatsType::Sum:
                 lattStatsType = casacore::LatticeStatsBase::SUM;
                 break;
-            case CARTA::StatsType::FluxDensity:
-                lattStatsType = casacore::LatticeStatsBase::FLUX;
+            case CARTA::StatsType::FluxDensity:  // not supported for lattice statistics
+                //lattStatsType = casacore::LatticeStatsBase::FLUX;
                 break;
             case CARTA::StatsType::Mean:
                 lattStatsType = casacore::LatticeStatsBase::MEAN;
