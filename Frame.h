@@ -92,7 +92,8 @@ private:
 
 
 public:
-    Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = DEFAULT_CHANNEL);
+    Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu,
+        int defaultChannel = DEFAULT_CHANNEL);
     ~Frame();
 
     // frame info

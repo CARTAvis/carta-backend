@@ -1,4 +1,5 @@
 //# InterfaceConstants.h: definitions used in the Interface Control Document
+//* Others added for implementation
 
 // region ids
 #define CUBE_REGION_ID -2

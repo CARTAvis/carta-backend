@@ -28,7 +28,7 @@ Region::Region(const std::string& name, const CARTA::RegionType type, int mincha
         m_xyRegion(nullptr) {
     // validate and set region parameters
     if (updateRegionParameters(minchan, maxchan, points, rotation)) {
-        m_valid = m_xyRegionChanged && m_spectralChanged; // params validated and xy region set
+        m_valid = true;
         m_stats = std::unique_ptr<RegionStats>(new RegionStats());
         m_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
     }
@@ -76,10 +76,13 @@ bool Region::setPoints(const std::vector<CARTA::Point>& points) {
 
 bool Region::setChannelRange(int minchan, int maxchan) {
     // check and set spectral axis range
-    bool channelsOK(checkChannelRange(minchan, maxchan));
-    m_minchan = minchan;
-    m_maxchan = maxchan;
-    return channelsOK;
+    bool channelsUpdated(false);
+    if (checkChannelRange(minchan, maxchan)) {
+        m_minchan = minchan;
+        m_maxchan = maxchan;
+        channelsUpdated = true;
+    }
+    return channelsUpdated;
 }
 
 // *************************************************************************

@@ -107,7 +107,7 @@ private:
 
     // image shape info
     casacore::IPosition m_latticeShape;
-    casacore::IPosition m_xyAxes; // first two axes of lattice, to keep or remove
+    casacore::IPosition m_xyAxes; // first two axes of lattice shape, to keep or remove
     int m_spectralAxis, m_stokesAxis;
 
     // stored 2D region
