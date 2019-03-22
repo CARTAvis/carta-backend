@@ -121,6 +121,7 @@ const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
 // TODO: NEEDS MAJOR SURGERY
 // TODO: we need to consider how much of this should be generic code in the top-level loader
 // TODO: but first the boilerplate needs to be refactored.
+// TODO we need to use the C API to read scalar datasets for now, but we should patch casacore to handle them correctly
 void HDF5Loader::loadImageStats(
     std::vector<std::vector<FileInfo::ImageStats>>& channelStats,
     std::vector<FileInfo::ImageStats>& cubeStats,
@@ -143,7 +144,7 @@ void HDF5Loader::loadImageStats(
     if (hasData(FileInfo::Data::Stats) && hasData(FileInfo::Data::Stats2D)) {
         
         if (hasData(FileInfo::Data::S2DMax)) {
-            auto &dataSet = loadData(FileInfo::Data::S2DMax);
+            auto dataSet = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S2DMax), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
             // 2D cubes
@@ -175,7 +176,7 @@ void HDF5Loader::loadImageStats(
         }
 
         if (hasData(FileInfo::Data::S2DMin)) {
-            auto &dataSet = loadData(FileInfo::Data::S2DMin);
+            auto dataSet = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S2DMin), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
             // 2D cubes
@@ -207,7 +208,7 @@ void HDF5Loader::loadImageStats(
         }
 
         if (hasData(FileInfo::Data::S2DMean)) {
-            auto &dataSet = loadData(FileInfo::Data::S2DMean);
+            auto dataSet = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S2DMean), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
             // 2D cubes
@@ -239,8 +240,6 @@ void HDF5Loader::loadImageStats(
         }
 
         if (hasData(FileInfo::Data::S2DNans)) {
-            // TODO: a temporary workaround, because the datasets are assumed to be floats
-            // TODO: we should either do this for all the stats and leave them out of the map, or see if we can make the map polymorphic
             auto dataSet = casacore::HDF5Lattice<casacore::Int64>(file, dataSetToString(FileInfo::Data::S2DNans), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
@@ -316,9 +315,9 @@ void HDF5Loader::loadImageStats(
         if (loadPercentiles) {
             if (hasData(FileInfo::Data::S2DPercent) &&
                 hasData(FileInfo::Data::Ranks)) {
-                auto &dataSetPercentiles = loadData(FileInfo::Data::S2DPercent);
-                auto &dataSetPercentilesRank = loadData(FileInfo::Data::Ranks);
-
+                auto dataSetPercentiles = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S2DPercent), hdf5Hdu);
+                auto dataSetPercentilesRank = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::Ranks), hdf5Hdu);
+            
                 casacore::IPosition dimsPercentiles = dataSetPercentiles.shape();
                 casacore::IPosition dimsRanks = dataSetPercentilesRank.shape();
 
@@ -369,15 +368,17 @@ void HDF5Loader::loadImageStats(
     
     if (hasData(FileInfo::Data::Stats) && hasData(FileInfo::Data::Stats3D)) {        
         if (hasData(FileInfo::Data::S3DMax)) {
-            auto &dataSet = loadData(FileInfo::Data::S3DMax);
+            auto dataSet = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S3DMax), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
-
+            
             // 3D cubes
             if (ndims == 3 && statDims.size() == 0) {
-                casacore::Array<float> data;
-                dataSet.get(data, true);
-                auto it = data.begin();
-                cubeStats[0].maxVal = *it;
+                auto dSet = dataSet.array();
+                casacore::Double value;
+                casacore::HDF5DataType dtype((casacore::Double*)0);
+                
+                H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+                cubeStats[0].maxVal = value;
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
                 casacore::Array<float> data;
@@ -390,7 +391,7 @@ void HDF5Loader::loadImageStats(
         }
 
         if (hasData(FileInfo::Data::S3DMin)) {
-            auto &dataSet = loadData(FileInfo::Data::S3DMin);
+            auto dataSet = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S3DMin), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
             // 3D cubes
@@ -411,7 +412,7 @@ void HDF5Loader::loadImageStats(
         }
 
         if (hasData(FileInfo::Data::S3DMean)) {
-            auto &dataSet = loadData(FileInfo::Data::S3DMean);
+            auto dataSet = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S3DMean), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
             // 3D cubes
@@ -484,8 +485,8 @@ void HDF5Loader::loadImageStats(
         if (loadPercentiles) {
             if (hasData(FileInfo::Data::S3DPercent) &&
                 hasData(FileInfo::Data::Ranks)) {
-                auto &dataSetPercentiles = loadData(FileInfo::Data::S3DPercent);
-                auto &dataSetPercentilesRank = loadData(FileInfo::Data::Ranks);
+                auto dataSetPercentiles = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S3DPercent), hdf5Hdu);
+                auto dataSetPercentilesRank = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::Ranks), hdf5Hdu);
 
                 casacore::IPosition dimsPercentiles = dataSetPercentiles.shape();
                 casacore::IPosition dimsRanks = dataSetPercentilesRank.shape();
