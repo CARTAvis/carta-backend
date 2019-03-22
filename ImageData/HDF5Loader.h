@@ -273,20 +273,20 @@ void HDF5Loader::loadImageStats(
         }
 
         if (hasData(FileInfo::Data::S2DHist)) {
-            auto &dataSet = loadData(FileInfo::Data::S2DHist);
+            auto dataSet = casacore::HDF5Lattice<casacore::Int64>(file, dataSetToString(FileInfo::Data::S2DHist), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
             auto numBins = statDims[2];
 
             // 2D cubes
             if (ndims == 2 && statDims.size() == 0) {
-                casacore::Array<float> data;
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 std::copy(data.begin(), data.end(),
                           std::back_inserter(channelStats[0][0].histogramBins));
             } // 3D cubes
             else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
-                casacore::Array<float> data;
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nchannels; ++i) {
@@ -298,7 +298,7 @@ void HDF5Loader::loadImageStats(
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
                      statDims[0] == nstokes && statDims[1] == nchannels) {
-                casacore::Array<float> data;
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
@@ -455,13 +455,13 @@ void HDF5Loader::loadImageStats(
         }
 
         if (hasData(FileInfo::Data::S3DHist)) {
-            auto &dataSet = loadData(FileInfo::Data::S3DHist);
+            auto dataSet = casacore::HDF5Lattice<casacore::Int64>(file, dataSetToString(FileInfo::Data::S3DHist), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
             auto numBins = statDims[2];
             
             // 3D cubes
             if (ndims == 3 && statDims.size() == 0) {
-                casacore::Array<float> data;
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 std::copy(data.begin(), data.end(),
@@ -469,7 +469,7 @@ void HDF5Loader::loadImageStats(
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 1 &&
                      statDims[0] == nstokes) {
-                casacore::Array<float> data;
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
