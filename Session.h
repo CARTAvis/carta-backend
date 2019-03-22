@@ -103,16 +103,19 @@ protected:
         const std::string folder, const std::string filename, std::string hdu, std::string& message);
 
     // Histogram
-    CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId);
-    void sendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
+    CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId,
+        bool checkCurrentChannel=false);
+    bool sendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
     // basic message to update progress
     void createCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fileId, int stokes, float progress);
 
     // send data streams
-    void sendRasterImageData(int fileId, bool sendHistogram=false);
-    void sendSpatialProfileData(int fileId, int regionId);
-    void sendSpectralProfileData(int fileId, int regionId);
-    void sendRegionStatsData(int fileId, int regionId);
+    bool sendRasterImageData(int fileId, bool sendHistogram=false);
+    bool sendSpatialProfileData(int fileId, int regionId, bool checkCurrentStokes=false);
+    bool sendSpectralProfileData(int fileId, int regionId, bool checkCurrentStokes=false);
+    bool sendRegionHistogramData(int fileId, int regionId, bool checkCurrentChannel=false);
+    bool sendRegionStatsData(int fileId, int regionId);
+    void updateRegionData(int fileId, bool channelChanged, bool stokesChanged);
 
     // Send protobuf messages
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);

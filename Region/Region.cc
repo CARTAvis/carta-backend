@@ -188,9 +188,8 @@ bool Region::checkChannelRange(int& minchan, int& maxchan) {
 
 bool Region::getRegion(casacore::LatticeRegion& region, int stokes) {
     // Return LatticeRegion for given stokes and region parameters.
-    // if stokes = -1, used stored stokes (image region only)
     bool regionOK(false);
-    if (stokes < 0)
+    if (stokes < 0) // invalid
         return regionOK;
 
     if (m_latticeShape.size()==2) {
@@ -232,15 +231,14 @@ bool Region::setXYRegion(const std::vector<CARTA::Point>& points, float rotation
                 break;
         }
     } catch (casacore::AipsError& err) { // lattice region failed
-        return false;
-    }
-    if (region) {
-        // the xy region does not change unless region params updated
         if (m_xyRegion)
             delete m_xyRegion;
         m_xyRegion = region;
-        xyRegionOK = true;
+        return false;
     }
+    if (m_xyRegion) delete m_xyRegion;
+    m_xyRegion = region;
+    if (region) xyRegionOK = true;
     return xyRegionOK;
 }
 
@@ -345,6 +343,14 @@ casacore::LCRegion* Region::makeExtendedRegion(int stokes) {
         // region failed, return nullptr
     }
     return region;
+}
+
+casacore::IPosition Region::xyShape() {
+    // returns bounding box shape of xy region
+    casacore::IPosition xyshape;
+    if (m_xyRegion)
+        xyshape = m_xyRegion->shape();
+    return xyshape;
 }
 
 // ***********************************

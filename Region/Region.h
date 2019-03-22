@@ -33,9 +33,11 @@ public:
     // For image region, chan/stokes can be set separately
     bool setChannelRange(int minchan, int maxchan);
     inline std::vector<CARTA::Point> getControlPoints() { return m_ctrlpoints; };
+    casacore::IPosition xyShape();
 
     // get lattice region for requested stokes
     bool getRegion(casacore::LatticeRegion& region, int stokes);
+    inline bool xyRegionValid() { return (m_xyRegion != nullptr); };
 
     // Histogram: pass through to RegionStats
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);

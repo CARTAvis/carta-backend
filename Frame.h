@@ -44,7 +44,7 @@ private:
     casacore::IPosition imageShape; // (width, height, depth, stokes)
     int spectralAxis, stokesAxis;   // axis index for each in 4D image
     int channelIndex, stokesIndex;  // current channel, stokes for image
-    size_t nchan;
+    size_t numchan, numstokes;
 
     // Image settings
     // view and compression
@@ -85,10 +85,11 @@ private:
     // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
     void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
     // Region data: apply region to Lattice to get SubLattice
+    bool xyRegionValid(int regionId);
     bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes);
 
     // histogram helpers
-    int calcAutoNumBins(); // calculate automatic bin size
+    int calcAutoNumBins(int regionId); // calculate automatic bin size for region
 
 
 public:
@@ -99,8 +100,11 @@ public:
     // frame info
     bool isValid();
     int getMaxRegionId();
-    size_t nchannels(); // if no channel axis, nchan=1
-    int currentStokes();
+    inline size_t nChannels() { return numchan; }; // if no channel axis, nchan=1
+    inline size_t nStokes() { return numstokes; }; // if no stokes axis, nstokes=1
+    inline int currentChannel() { return channelIndex; };
+    inline int currentStokes() { return stokesIndex; };
+
 
     // Create and remove regions
     bool setRegion(int regionId, std::string name, CARTA::RegionType type, int minchan,
@@ -108,6 +112,11 @@ public:
     bool setCursorRegion(int regionId, const CARTA::Point& point);
     inline bool isCursorSet() { return cursorSet; } // set by frontend, not default
     void removeRegion(int regionId);
+    std::vector<int> getRegionIds();
+
+    // Changes from setRegion, to determine data to update
+    bool regionXYChanged(int regionId);
+    bool regionSpectralChanged(int regionId);
 
     // image view, channels
     bool setImageView(const CARTA::ImageBounds& imageBounds, int newMip,
@@ -123,10 +132,14 @@ public:
     bool setRegionStatsRequirements(int regionId, const std::vector<int> statsTypes);
 
     // fill data, profiles, stats messages
+    // For some messages, only fill if requirements are for current channel/stokes
     bool fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::string& message);
-    bool fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData);
-    bool fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData);
-    bool fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData);
+    bool fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData,
+        bool checkCurrentStokes=false);
+    bool fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData,
+        bool checkCurrentStokes=false);
+    bool fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData,
+        bool checkCurrentChan=false);
     bool fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData);
 
     // histogram only (not full data message) : get if stored, else can calculate
