@@ -149,10 +149,11 @@ void HDF5Loader::loadImageStats(
 
             // 2D cubes
             if (ndims == 2 && statDims.size() == 0) {
-                casacore::Array<float> data;
-                dataSet.get(data, true);
-                auto it = data.begin();
-                channelStats[0][0].maxVal = *it;
+                auto dSet = dataSet.array();
+                casacore::Double value;
+                casacore::HDF5DataType dtype((casacore::Double*)0);
+                H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+                channelStats[0][0].maxVal = value;
             } // 3D cubes
             else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
                 casacore::Array<float> data;
@@ -181,10 +182,11 @@ void HDF5Loader::loadImageStats(
 
             // 2D cubes
             if (ndims == 2 && statDims.size() == 0) {
-                casacore::Array<float> data;
-                dataSet.get(data, true);
-                auto it = data.begin();
-                channelStats[0][0].minVal = *it;
+                auto dSet = dataSet.array();
+                casacore::Double value;
+                casacore::HDF5DataType dtype((casacore::Double*)0);
+                H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+                channelStats[0][0].minVal = value;
             } // 3D cubes
             else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
                 casacore::Array<float> data;
@@ -213,10 +215,11 @@ void HDF5Loader::loadImageStats(
 
             // 2D cubes
             if (ndims == 2 && statDims.size() == 0) {
-                casacore::Array<float> data;
-                dataSet.get(data, true);
-                auto it = data.begin();
-                channelStats[0][0].mean = *it;
+                auto dSet = dataSet.array();
+                casacore::Double value;
+                casacore::HDF5DataType dtype((casacore::Double*)0);
+                H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+                channelStats[0][0].mean = value;
             } // 3D cubes
             else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
                 casacore::Array<float> data;
@@ -245,10 +248,11 @@ void HDF5Loader::loadImageStats(
 
             // 2D cubes
             if (ndims == 2 && statDims.size() == 0) {
-                casacore::Array<casacore::Int64> data;
-                dataSet.get(data, true);
-                auto it = data.begin();
-                channelStats[0][0].nanCount = *it;
+                auto dSet = dataSet.array();
+                casacore::Int64 value;
+                casacore::HDF5DataType dtype((casacore::Int64*)0);
+                H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+                channelStats[0][0].nanCount = value;
             } // 3D cubes
             else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
                 casacore::Array<casacore::Int64> data;
@@ -376,7 +380,6 @@ void HDF5Loader::loadImageStats(
                 auto dSet = dataSet.array();
                 casacore::Double value;
                 casacore::HDF5DataType dtype((casacore::Double*)0);
-                
                 H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
                 cubeStats[0].maxVal = value;
             } // 4D cubes
@@ -396,10 +399,11 @@ void HDF5Loader::loadImageStats(
 
             // 3D cubes
             if (ndims == 3 && statDims.size() == 0) {
-                casacore::Array<float> data;
-                dataSet.get(data, true);
-                auto it = data.begin();
-                cubeStats[0].minVal = *it;
+                auto dSet = dataSet.array();
+                casacore::Double value;
+                casacore::HDF5DataType dtype((casacore::Double*)0);
+                H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+                cubeStats[0].minVal = value;
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
                 casacore::Array<float> data;
@@ -417,10 +421,11 @@ void HDF5Loader::loadImageStats(
 
             // 3D cubes
             if (ndims == 3 && statDims.size() == 0) {
-                casacore::Array<float> data;
-                dataSet.get(data, true);
-                auto it = data.begin();
-                cubeStats[0].mean = *it;
+                auto dSet = dataSet.array();
+                casacore::Double value;
+                casacore::HDF5DataType dtype((casacore::Double*)0);
+                H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+                cubeStats[0].mean = value;
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
                 casacore::Array<float> data;
@@ -440,10 +445,11 @@ void HDF5Loader::loadImageStats(
 
             // 3D cubes
             if (ndims == 3 && statDims.size() == 0) {
-                casacore::Array<casacore::Int64> data;
-                dataSet.get(data, true);
-                auto it = data.begin();
-                cubeStats[0].nanCount = *it;
+                auto dSet = dataSet.array();
+                casacore::Int64 value;
+                casacore::HDF5DataType dtype((casacore::Int64*)0);
+                H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+                cubeStats[0].nanCount = value;
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
                 casacore::Array<casacore::Int64> data;
