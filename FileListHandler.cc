@@ -1,18 +1,7 @@
 #include "FileListHandler.h"
-#include "InterfaceConstants.h"
 #include "FileInfoLoader.h"
-#include "compression.h"
-#include "util.h"
-#include <carta-protobuf/error.pb.h>
 
-#include <casacore/casa/OS/Path.h>
 #include <casacore/casa/OS/DirectoryIterator.h>
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_for.h>
-
-#include <chrono>
-#include <limits>
-#include <valarray>
 
 // Default constructor
 FileListHandler::FileListHandler(std::unordered_map<std::string,
@@ -30,7 +19,7 @@ FileListHandler::~FileListHandler() {
 
 void FileListHandler::onFileListRequest(const CARTA::FileListRequest& request,
     uint32_t requestId, CARTA::FileListResponse &response, ResultMsg& resultMsg) {
-    // use tbb scoped lock so that it only processes the file list a time for one user 
+    // use tbb scoped lock so that it only processes the file list a time for one user
     tbb::mutex::scoped_lock lock(fileListMutex);
     string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)

@@ -2,18 +2,9 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstdio>
-#include <mutex>
-#include <unordered_map>
-
-#include <casacore/casa/aips.h>
-#include <casacore/casa/OS/File.h>
 #include <fmt/format.h>
-#include <tbb/concurrent_queue.h>
 #include <tbb/mutex.h>
 
-#include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
 
 #include "Frame.h"
