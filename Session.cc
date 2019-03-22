@@ -40,12 +40,6 @@ Session::~Session() {
 // ********************************************************************************
 // File browser
 
-bool Session::fillFileInfo(CARTA::FileInfo* fileInfo, const string& filename) {
-    // fill FileInfo submessage
-    FileInfoLoader infoLoader(filename);
-    return infoLoader.fillFileInfo(fileInfo);
-}
-
 bool Session::fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo,
         const string folder, const string filename, string hdu, string& message) {
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended

@@ -98,7 +98,6 @@ protected:
 
     // ICD: File info response
     void resetFileInfo(bool create=false); // delete existing file info ptrs, optionally create new ones
-    bool fillFileInfo(CARTA::FileInfo* fileInfo, const std::string& filename);
     bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo,
         const std::string folder, const std::string filename, std::string hdu, std::string& message);
 
