@@ -58,6 +58,9 @@ public:
     virtual void loadImageStats(
         std::vector<std::vector<FileInfo::ImageStats>>& channelStats,
         std::vector<FileInfo::ImageStats>& cubeStats,
+        size_t nchannels,
+        size_t nstokes,
+        size_t ndims,
         bool loadPercentiles=false
     );
 

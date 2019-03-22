@@ -20,6 +20,9 @@ public:
     void loadImageStats(
         std::vector<std::vector<FileInfo::ImageStats>>& channelStats,
         std::vector<FileInfo::ImageStats>& cubeStats,
+        size_t nchannels,
+        size_t nstokes,
+        size_t ndims,
         bool loadPercentiles=false
     ) override;
 
@@ -121,23 +124,20 @@ const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
 void HDF5Loader::loadImageStats(
     std::vector<std::vector<FileInfo::ImageStats>>& channelStats,
     std::vector<FileInfo::ImageStats>& cubeStats,
+    size_t nchannels,
+    size_t nstokes,
+    size_t ndims,
     bool loadPercentiles
 ) {
     // load channel stats for entire image (all channels and stokes) from header
     // channelStats[stokes][chan]
     // cubeStats[stokes]
-    if (!valid) {
-        return false;
-    }
 
-    size_t depth(nchannels());
-    size_t nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
     channelStats.resize(nstokes);
     for (auto i = 0; i < nstokes; i++) {
-        channelStats[i].resize(depth);
+        channelStats[i].resize(nchannels);
     }
     cubeStats.resize(nstokes);
-    size_t ndims = imageShape.size();
     
     //TODO: Support multiple HDUs
     if (hasData(FileInfo::Data::Stats) && hasData(FileInfo::Data::Stats2D)) {
@@ -153,21 +153,21 @@ void HDF5Loader::loadImageStats(
                 auto it = data.begin();
                 channelStats[0][0].maxVal = *it;
             } // 3D cubes
-            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == depth) {
+            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
-                for (auto i = 0; i < depth; ++i) {
+                for (auto i = 0; i < nchannels; ++i) {
                     channelStats[0][i].maxVal = *it++;
                 }
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
-                     statDims[0] == nstokes && statDims[1] == depth) {
+                     statDims[0] == nstokes && statDims[1] == nchannels) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
-                    for (auto j = 0; j < depth; j++) {
+                    for (auto j = 0; j < nchannels; j++) {
                         channelStats[i][j].maxVal = *it++;
                     }
                 }
@@ -185,21 +185,21 @@ void HDF5Loader::loadImageStats(
                 auto it = data.begin();
                 channelStats[0][0].minVal = *it;
             } // 3D cubes
-            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == depth) {
+            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
-                for (auto i = 0; i < depth; ++i) {
+                for (auto i = 0; i < nchannels; ++i) {
                     channelStats[0][i].minVal = *it++;
                 }
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
-                     statDims[0] == nstokes && statDims[1] == depth) {
+                     statDims[0] == nstokes && statDims[1] == nchannels) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
-                    for (auto j = 0; j < depth; j++) {
+                    for (auto j = 0; j < nchannels; j++) {
                         channelStats[i][j].minVal = *it++;
                     }
                 }
@@ -217,21 +217,21 @@ void HDF5Loader::loadImageStats(
                 auto it = data.begin();
                 channelStats[0][0].mean = *it;
             } // 3D cubes
-            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == depth) {
+            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
-                for (auto i = 0; i < depth; ++i) {
+                for (auto i = 0; i < nchannels; ++i) {
                     channelStats[0][i].mean = *it++;
                 }
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
-                     statDims[0] == nstokes && statDims[1] == depth) {
+                     statDims[0] == nstokes && statDims[1] == nchannels) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
-                    for (auto j = 0; j < depth; j++) {
+                    for (auto j = 0; j < nchannels; j++) {
                         channelStats[i][j].mean = *it++;
                     }
                 }
@@ -241,31 +241,31 @@ void HDF5Loader::loadImageStats(
         if (hasData(FileInfo::Data::S2DNans)) {
             // TODO: a temporary workaround, because the datasets are assumed to be floats
             // TODO: we should either do this for all the stats and leave them out of the map, or see if we can make the map polymorphic
-            auto dataSet = casacore::HDF5Lattice<int>(file, dataSetToString(FileInfo::Data::S2DNans), hdf5Hdu);
+            auto dataSet = casacore::HDF5Lattice<casacore::Int64>(file, dataSetToString(FileInfo::Data::S2DNans), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
             // 2D cubes
             if (ndims == 2 && statDims.size() == 0) {
-                casacore::Array<int64_t> data;
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 channelStats[0][0].nanCount = *it;
             } // 3D cubes
-            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == depth) {
-                casacore::Array<int64_t> data;
+            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
-                for (auto i = 0; i < depth; ++i) {
+                for (auto i = 0; i < nchannels; ++i) {
                     channelStats[0][i].nanCount = *it++;
                 }
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
-                     statDims[0] == nstokes && statDims[1] == depth) {
-                casacore::Array<int64_t> data;
+                     statDims[0] == nstokes && statDims[1] == nchannels) {
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
-                    for (auto j = 0; j < depth; j++) {
+                    for (auto j = 0; j < nchannels; j++) {
                         channelStats[i][j].nanCount = *it++;
                     }
                 }
@@ -285,11 +285,11 @@ void HDF5Loader::loadImageStats(
                 std::copy(data.begin(), data.end(),
                           std::back_inserter(channelStats[0][0].histogramBins));
             } // 3D cubes
-            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == depth) {
+            else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
-                for (auto i = 0; i < depth; ++i) {
+                for (auto i = 0; i < nchannels; ++i) {
                     channelStats[0][i].histogramBins.resize(numBins);
                     for (auto j = 0; j < numBins; j++) {
                         channelStats[0][i].histogramBins[j] = *it++;
@@ -297,12 +297,12 @@ void HDF5Loader::loadImageStats(
                 }
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 2 &&
-                     statDims[0] == nstokes && statDims[1] == depth) {
+                     statDims[0] == nstokes && statDims[1] == nchannels) {
                 casacore::Array<float> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {
-                    for (auto j = 0; j < depth; j++) {
+                    for (auto j = 0; j < nchannels; j++) {
                         auto& stats = channelStats[i][j];
                         stats.histogramBins.resize(numBins);
                         for (auto k = 0; k < numBins; k++) {
@@ -333,12 +333,12 @@ void HDF5Loader::loadImageStats(
                     ranks.tovector(channelStats[0][0].percentileRanks);
                 }
                     // 3D cubes
-                else if (ndims == 3 && dimsPercentiles.size() == 2 && dimsPercentiles[0] == depth &&
+                else if (ndims == 3 && dimsPercentiles.size() == 2 && dimsPercentiles[0] == nchannels &&
                          dimsPercentiles[1] == numRanks) {
-                    casacore::Matrix<float> vals(depth, numRanks);
+                    casacore::Matrix<float> vals(nchannels, numRanks);
                     dataSetPercentiles.get(vals, false);
 
-                    for (auto i = 0; i < depth; i++) {
+                    for (auto i = 0; i < nchannels; i++) {
                         ranks.tovector(channelStats[0][i].percentileRanks);
                         channelStats[0][i].percentiles.resize(numRanks);
                         for (auto j = 0; j < numRanks; j++) {
@@ -348,12 +348,12 @@ void HDF5Loader::loadImageStats(
                 }
                     // 4D cubes
                 else if (ndims == 4 && dimsPercentiles.size() == 3 && dimsPercentiles[0] == nstokes &&
-                         dimsPercentiles[1] == depth && dimsPercentiles[2] == numRanks) {
-                    casacore::Cube<float> vals(nstokes, depth, numRanks);
+                         dimsPercentiles[1] == nchannels && dimsPercentiles[2] == numRanks) {
+                    casacore::Cube<float> vals(nstokes, nchannels, numRanks);
                     dataSetPercentiles.get(vals, false);
 
                     for (auto i = 0; i < nstokes; i++) {
-                        for (auto j = 0; j < depth; j++) {
+                        for (auto j = 0; j < nchannels; j++) {
                             auto& stats = channelStats[i][j];
                             stats.percentiles.resize(numRanks);
                             for (auto k = 0; k < numRanks; k++) {
@@ -434,18 +434,18 @@ void HDF5Loader::loadImageStats(
         if (hasData(FileInfo::Data::S3DNans)) {
             // TODO: a temporary workaround, because the datasets are assumed to be floats
             // TODO: we should either do this for all the stats and leave them out of the map, or see if we can make the map polymorphic
-            auto dataSet = casacore::HDF5Lattice<int>(file, dataSetToString(FileInfo::Data::S3DNans), hdf5Hdu);
+            auto dataSet = casacore::HDF5Lattice<casacore::Int64>(file, dataSetToString(FileInfo::Data::S3DNans), hdf5Hdu);
             casacore::IPosition statDims = dataSet.shape();
 
             // 3D cubes
             if (ndims == 3 && statDims.size() == 0) {
-                casacore::Array<int64_t> data;
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 cubeStats[0].nanCount = *it;
             } // 4D cubes
             else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
-                casacore::Array<int64_t> data;
+                casacore::Array<casacore::Int64> data;
                 dataSet.get(data, true);
                 auto it = data.begin();
                 for (auto i = 0; i < nstokes; i++) {

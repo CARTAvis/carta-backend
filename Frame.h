@@ -36,8 +36,8 @@ private:
     casacore::IPosition imageShape; // (width, height, depth, stokes)
     int spectralAxis, stokesAxis;  // axis index for each in 4D image
     size_t nchan;
-    std::vector<std::vector<FileInfo::ImageStats>> channelStats;
-    std::vector<FileInfo::ImageStats> cubeStats;
+    std::vector<std::vector<carta::FileInfo::ImageStats>> channelStats;
+    std::vector<carta::FileInfo::ImageStats> cubeStats;
 
     // set image view 
     CARTA::ImageBounds bounds;
@@ -93,6 +93,7 @@ public:
     // image channels
     bool setImageChannels(int newChannel, int newStokes, std::string& message);
     size_t nchannels();
+    size_t nstokes();
     int currentStokes();
     int currentChannel();
 

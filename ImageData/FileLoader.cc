@@ -75,3 +75,19 @@ void FileLoader::findCoords(int& spectralAxis, int& stokesAxis) {
         else stokesAxis = 2;
     }
 }
+
+void FileLoader::loadImageStats(
+    std::vector<std::vector<FileInfo::ImageStats>>& channelStats,
+    std::vector<FileInfo::ImageStats>& cubeStats,
+    size_t nchannels,
+    size_t nstokes,
+    size_t ndims,
+    bool loadPercentiles
+) {
+    // TODO this is here for compatibility and needs to be refactored. Eventually this will be  a generic implementation which includes loading the data, as before. 
+    channelStats.resize(nstokes);
+    for (auto i = 0; i < nstokes; i++) {
+        channelStats[i].resize(nchannels);
+    }
+    cubeStats.resize(nstokes);
+}

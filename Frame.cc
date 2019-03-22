@@ -46,7 +46,9 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
 
         // make Region for entire image (after current channel/stokes set)
         setImageRegion(IMAGE_REGION_ID);
-        loader->loadImageStats(channelStats, cubeStats, false); // from image file if exists
+    
+        // resize stats vectors and load data from image, if the format supports it
+        loader->loadImageStats(channelStats, cubeStats, nchannels(), nstokes(), ndims);
     } catch (casacore::AipsError& err) {
         log(uuid, "Problem loading file {}: {}", filename, err.getMesg());
         valid = false;
@@ -207,7 +209,7 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
             message = fmt::format("Channel {} is invalid in file {}", newChannel, filename);
             return false; // invalid channel
         }
-        size_t nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
+        size_t nstokes(this->nstokes());
         if (newStokes < 0 || newStokes >= nstokes) {
             message = fmt::format("Stokes {} is invalid in file {}", newStokes, filename);
             return false; // invalid stokes
@@ -302,6 +304,10 @@ size_t Frame::nchannels() {
     return nchan;
 }
 
+size_t Frame::nstokes() {
+    return stokesAxis >= 0 ? imageShape(stokesAxis) : 1;
+}
+
 int Frame::currentChannel() {
     return channelIndex;
 }
@@ -333,7 +339,7 @@ bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type, in
     if (stokes.empty()) {
         stokes.push_back(currentStokes());
     } else {
-        int nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
+        int nstokes(this->nstokes());
         for (auto stokeVal : stokes) {
             if (stokeVal < 0 || stokeVal >= nstokes) {
                 message = "region stokes value out of range";
@@ -484,7 +490,7 @@ bool Frame::setRegionHistogramRequirements(int regionId,
 bool Frame::setRegionSpatialRequirements(int regionId, const std::vector<std::string>& profiles) {
     // set requested spatial profiles e.g. ["Qx", "Uy"] or just ["x","y"] to use current stokes
     bool regionOK(false);
-    int nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
+    int nstokes(this->nstokes());
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         regionOK = region->setSpatialRequirements(profiles, nstokes);
@@ -500,7 +506,7 @@ bool Frame::setRegionSpectralRequirements(int regionId,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
     // set requested spectral profiles e.g. ["Qz", "Uz"] or just ["z"] to use current stokes
     bool regionOK(false);
-    int nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
+    int nstokes(this->nstokes());
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         regionOK = region->setSpectralRequirements(profiles, nstokes);
