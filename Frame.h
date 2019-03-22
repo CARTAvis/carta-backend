@@ -86,7 +86,8 @@ private:
     void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
     // Region data: apply region to Lattice to get SubLattice
     bool xyRegionValid(int regionId);
-    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes);
+    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes,
+        int channel=ALL_CHANNELS);  // sublattice for all stokes and channel range in region
 
     // histogram helpers
     int calcAutoNumBins(int regionId); // calculate automatic bin size for region

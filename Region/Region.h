@@ -4,6 +4,7 @@
 
 #include "RegionStats.h"
 #include "RegionProfiler.h"
+#include "../InterfaceConstants.h"
 #include <carta-protobuf/spectral_profile.pb.h>
 
 namespace carta {
@@ -36,7 +37,7 @@ public:
     casacore::IPosition xyShape();
 
     // get lattice region for requested stokes
-    bool getRegion(casacore::LatticeRegion& region, int stokes);
+    bool getRegion(casacore::LatticeRegion& region, int stokes, int channel=ALL_CHANNELS);
     inline bool xyRegionValid() { return (m_xyRegion != nullptr); };
 
     // Histogram: pass through to RegionStats
@@ -90,8 +91,8 @@ private:
     casacore::LCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::LCRegion* makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::LCRegion* makePolygonRegion(const std::vector<CARTA::Point>& points);
-    bool makeExtensionBox(casacore::LCBox& extendBox, int stokes); // for extended region
-    casacore::LCRegion* makeExtendedRegion(int stokes);  // xy region extended to chans, stokes
+    bool makeExtensionBox(casacore::LCBox& extendBox, int stokes, int channel=ALL_CHANNELS); // for extended region
+    casacore::LCRegion* makeExtendedRegion(int stokes, int channel=ALL_CHANNELS);  // x/y region extended chan/stokes
 
     // get data from sublattice
     bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);

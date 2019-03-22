@@ -575,15 +575,18 @@ void Frame::getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int 
     latticeSlicer = section;
 }
 
-bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes) {
-    // Apply lattice region to lattice and return SubLattice.
-    // Returns false if lattice region is invalid and cannot make sublattice
+bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes,
+        int channel) {
+    // Apply lattice region to lattice and return SubLattice. Applies lattice mask to SubLattice.
+    // channel could be ALL_CHANNELS in region channel range (default) or
+    // a given channel (e.g. current channel).
+    // Returns false if lattice region is invalid and cannot make sublattice.
     bool sublatticeOK(false);
     if (checkStokesIndex(stokes) && (regions.count(regionId))) {
         auto& region = regions[regionId];
         if (region->isValid()) {
             casacore::LatticeRegion lattRegion;
-            if (region->getRegion(lattRegion, stokes)) {
+            if (region->getRegion(lattRegion, stokes, channel)) {
                 sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::XYZW), lattRegion);
                 if (!sublattice.hasPixelMask()) { // apply lattice mask if possible
                     if (loader->hasData(FileInfo::Data::Mask)) {
@@ -887,7 +890,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
             for (size_t i=0; i<numProfiles; ++i) {
                 // get <axis, stokes> for slicing image data
                 std::pair<int,int> axisStokes = region->getSpatialProfileReq(i);
-		// only send if using current stokes, which changed
+                // only send if using current stokes, which changed
                 if (checkCurrentStokes && (axisStokes.second != CURRENT_STOKES))
                     return false;
 
@@ -975,7 +978,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
         for (size_t i=0; i<numProfiles; ++i) {
             int profileStokes;
             if (region->getSpectralConfigStokes(profileStokes, i)) {
-		// only send if using current stokes, which changed
+                // only send if using current stokes, which changed
                 if (checkCurrentStokes && (profileStokes != CURRENT_STOKES))
                     return false;
                 if (profileStokes == CURRENT_STOKES)
@@ -1008,8 +1011,8 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         statsData.set_stokes(stokesIndex);
         casacore::SubLattice<float> sublattice;
         std::unique_lock<std::mutex> guard(latticeMutex);
-        // TODO: current channel only, not channel range
-        if (getRegionSubLattice(regionId, sublattice, stokesIndex)) {
+        // current channel only
+        if (getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex)) {
             region->fillStatsData(statsData, sublattice);
 
             statsOK = true;

@@ -186,7 +186,7 @@ bool Region::checkChannelRange(int& minchan, int& maxchan) {
 // ***********************************
 // Lattice Region with parameters applied
 
-bool Region::getRegion(casacore::LatticeRegion& region, int stokes) {
+bool Region::getRegion(casacore::LatticeRegion& region, int stokes, int channel) {
     // Return LatticeRegion for given stokes and region parameters.
     bool regionOK(false);
     if (stokes < 0) // invalid
@@ -196,12 +196,12 @@ bool Region::getRegion(casacore::LatticeRegion& region, int stokes) {
         region = casacore::LatticeRegion(*m_xyRegion);
         regionOK = true;
     } else {  // extend 2D region by chan range, stokes
-        casacore::LCRegion* lcregion = makeExtendedRegion(stokes);
+        casacore::LCRegion* lcregion = makeExtendedRegion(stokes, channel);
         if (lcregion) {
             region = casacore::LatticeRegion(lcregion);
             regionOK = true;
         }
-    }
+    } 
     return regionOK;
 }
 
@@ -296,7 +296,7 @@ casacore::LCRegion* Region::makePolygonRegion(const std::vector<CARTA::Point>& p
     return polygon;
 }
 
-bool Region::makeExtensionBox(casacore::LCBox& extendBox, int stokes) {
+bool Region::makeExtensionBox(casacore::LCBox& extendBox, int stokes, int channel) {
     // Create extension box for stored channel range and given stokes.
     // This can change for different profile/histogram/stats requirements so not stored 
     if (m_latticeShape.size() < 3)
@@ -304,8 +304,13 @@ bool Region::makeExtensionBox(casacore::LCBox& extendBox, int stokes) {
 
     casacore::IPosition start(m_latticeShape), count(m_latticeShape), boxShape(m_latticeShape);
     if (m_spectralAxis > 0) {
-        start(m_spectralAxis) = m_minchan;
-        count(m_spectralAxis) = (m_maxchan - m_minchan) + 1;
+        if (channel == ALL_CHANNELS) {
+            start(m_spectralAxis) = m_minchan;
+            count(m_spectralAxis) = (m_maxchan - m_minchan) + 1;
+        } else {
+            start(m_spectralAxis) = channel;
+            count(m_spectralAxis) = 1;
+        }
     }
     if (m_stokesAxis > 0) {
         start(m_stokesAxis) = stokes;
@@ -321,7 +326,7 @@ bool Region::makeExtensionBox(casacore::LCBox& extendBox, int stokes) {
     return true;
 }
 
-casacore::LCRegion* Region::makeExtendedRegion(int stokes) {
+casacore::LCRegion* Region::makeExtendedRegion(int stokes, int channel) {
     // Return 2D lattice region extended by chan range, stokes
     // Returns nullptr if 2D image
     size_t ndim(m_latticeShape.size());
@@ -332,7 +337,7 @@ casacore::LCRegion* Region::makeExtendedRegion(int stokes) {
     // create extension box for channel/stokes
     try {
         casacore::LCBox extBox;
-        if (!makeExtensionBox(extBox, stokes))
+        if (!makeExtensionBox(extBox, stokes, channel))
             return region;  // no need for extension
 
         // specify 0-based extension axes, either axis 2 (3D image) or 2 and 3 (4D image)
