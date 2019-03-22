@@ -1,6 +1,7 @@
 #include "FileListHandler.h"
 #include "FileInfoLoader.h"
 
+#include <casacore/casa/OS/Path.h>
 #include <casacore/casa/OS/DirectoryIterator.h>
 
 // Default constructor

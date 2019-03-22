@@ -5,6 +5,9 @@
 #include <fmt/format.h>
 #include <tbb/mutex.h>
 
+#include <casacore/casa/aips.h>
+#include <casacore/casa/OS/File.h>
+
 #include <carta-protobuf/file_list.pb.h>
 
 #include "Frame.h"
