@@ -122,7 +122,7 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t re
 void Session::onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId) {
     CARTA::FileListResponse response;
     FileListHandler::ResultMsg resultMsg;
-    fileListHandler->onFileListRequest(request, requestId, response, resultMsg);
+    fileListHandler->onFileListRequest(apiKey, request, requestId, response, resultMsg);
     sendEvent("FILE_LIST_RESPONSE", requestId, response);
     if (!resultMsg.message.empty()) {
         sendLogEvent(resultMsg.message, resultMsg.tags, resultMsg.severity);

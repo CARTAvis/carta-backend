@@ -17,10 +17,11 @@ FileListHandler::FileListHandler(std::unordered_map<std::string,
 FileListHandler::~FileListHandler() {
 }
 
-void FileListHandler::onFileListRequest(const CARTA::FileListRequest& request,
+void FileListHandler::onFileListRequest(std::string api_key, const CARTA::FileListRequest& request,
     uint32_t requestId, CARTA::FileListResponse &response, ResultMsg& resultMsg) {
     // use tbb scoped lock so that it only processes the file list a time for one user
     tbb::mutex::scoped_lock lock(fileListMutex);
+    apiKey = api_key; // different users may have different api keys, so it is necessary to lock this variable setting to avoid using the wrong key
     string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == filelistFolder) {

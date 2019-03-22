@@ -1,4 +1,4 @@
-// file list handler
+// file list handler for all users' requests
 
 #pragma once
 
@@ -23,7 +23,8 @@ public:
         CARTA::ErrorSeverity severity;
     };
 
-    void onFileListRequest(const CARTA::FileListRequest& request,
+    void onFileListRequest(std::string api_key,
+                           const CARTA::FileListRequest& request,
                            uint32_t requestId,
                            CARTA::FileListResponse &response,
                            ResultMsg& resultMsg);
