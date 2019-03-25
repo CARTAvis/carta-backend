@@ -41,6 +41,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
             loader->findCoords(spectralAxis, stokesAxis);
         }
         nchan = (spectralAxis>=0 ? imageShape(spectralAxis) : 1);
+        nstok = (stokesAxis>=0 ? imageShape(stokesAxis) : 1);
 
         // make Region for entire image (after current channel/stokes set)
         setImageRegion(IMAGE_REGION_ID);
@@ -52,7 +53,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         setImageCache();
 
         // resize stats vectors and load data from image, if the format supports it
-        loader->loadImageStats(channelStats, cubeStats, nchannels(), (stokesAxis>=0 ? imageShape(stokesAxis) : 1), ndims);
+        loader->loadImageStats(channelStats, cubeStats, nchannels(), nstokes(), ndims);
     } catch (casacore::AipsError& err) {
         log(uuid, "Problem loading file {}: {}", filename, err.getMesg());
         valid = false;
@@ -79,6 +80,10 @@ int Frame::getMaxRegionId() {
 
 size_t Frame::nchannels() {
     return nchan;
+}
+
+size_t Frame::nstokes() {
+    return nstok;
 }
 
 int Frame::currentStokes() {
@@ -333,7 +338,7 @@ bool Frame::setRegionHistogramRequirements(int regionId,
 bool Frame::setRegionSpatialRequirements(int regionId, const std::vector<std::string>& profiles) {
     // set requested spatial profiles e.g. ["Qx", "Uy"] or just ["x","y"] to use current stokes
     bool regionOK(false);
-    int nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
+    int nstokes(this->nstokes());
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         regionOK = region->setSpatialRequirements(profiles, nstokes);
@@ -349,7 +354,7 @@ bool Frame::setRegionSpectralRequirements(int regionId,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
     // set requested spectral profiles e.g. ["Qz", "Uz"] or just ["z"] to use current stokes
     bool regionOK(false);
-    int nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
+    int nstokes(this->nstokes());
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         regionOK = region->setSpectralRequirements(profiles, nstokes);

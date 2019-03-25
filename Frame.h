@@ -35,6 +35,7 @@ private:
     int spectralAxis, stokesAxis;   // axis index for each in 4D image
     int channelIndex, stokesIndex;  // current channel, stokes for image
     size_t nchan;
+    size_t nstok;
 
     // Image settings
     // view and compression
@@ -79,6 +80,7 @@ public:
     bool isValid();
     int getMaxRegionId();
     size_t nchannels(); // if no channel axis, nchan=1
+    size_t nstokes();
     int currentStokes();
 
     // Create and remove regions
