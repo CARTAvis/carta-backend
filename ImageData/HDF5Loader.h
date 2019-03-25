@@ -22,7 +22,19 @@ public:
         bool loadPercentiles=false) override;
 
 private:
+    std::string file, hdf5Hdu;
+    casacore::HDF5Lattice<float> image;
+    
     static std::string dataSetToString(FileInfo::Data ds);
+    
+    template <typename T>
+    const casacore::IPosition getStatsDataShape(FileInfo::Data ds);
+    
+    template <typename T>
+    casacore::Array<T> getStatsData(FileInfo::Data ds);
+    
+    template <typename T>
+    T getStatsDataScalar(FileInfo::Data ds);
     
     template <typename T>
     void loadStats2DBasic(FileInfo::Data ds, channel_stats_ref channelStats,
@@ -43,9 +55,6 @@ private:
     
     void loadStats3DPercent(cube_stats_ref cubeStats,
         size_t nchannels, size_t nstokes, size_t ndims);
-    
-    std::string file, hdf5Hdu;
-    std::unordered_map<std::string, casacore::HDF5Lattice<float>> dataSets;
 };
 
 HDF5Loader::HDF5Loader(const std::string &filename)
@@ -56,32 +65,27 @@ HDF5Loader::HDF5Loader(const std::string &filename)
 void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
     file = filename;
     hdf5Hdu = hdu;
+    image = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::XYZW), hdf5Hdu);
 }
 
 bool HDF5Loader::hasData(FileInfo::Data ds) const {
-    auto it = dataSets.find("DATA");
-    if(it == dataSets.end()) return false;
-
     switch(ds) {
     case FileInfo::Data::XY:
-        return it->second.shape().size() >= 2;
+        return image.shape().size() >= 2;
     case FileInfo::Data::XYZ:
-        return it->second.shape().size() >= 3;
+        return image.shape().size() >= 3;
     case FileInfo::Data::XYZW:
-        return it->second.shape().size() >= 4;
+        return image.shape().size() >= 4;
     default:
-        auto group_ptr = it->second.group();
+        auto group_ptr = image.group();
         std::string data = dataSetToString(ds);
         return casacore::HDF5Group::exists(*group_ptr, data);
     }
 }
 
+// TODO: later we can implement swizzled datasets. We don't store stats in the same way as the main dataset(s).
 typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
-    std::string data = dataSetToString(ds);
-    if(dataSets.find(data) == dataSets.end()) {
-        dataSets.emplace(data, casacore::HDF5Lattice<float>(file, data, hdf5Hdu));
-    }
-    return dataSets[data];
+    return image;
 }
 
 // This is necessary on some systems where the compiler
@@ -140,37 +144,54 @@ const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
 // TODO: move main function and helper functions to top-level loader interface once all the HDF5-specific functions have been extracted to other functions.
 
 template <typename T>
-void HDF5Loader::loadStats2DBasic( FileInfo::Data ds, channel_stats_ref channelStats,
+const casacore::IPosition HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
+    auto dataSet = casacore::HDF5Lattice<T>(file, dataSetToString(ds), hdf5Hdu);
+    return dataSet.shape();
+}
+
+template <typename T>
+casacore::Array<T> HDF5Loader::getStatsData(FileInfo::Data ds) {
+    auto dataSet = casacore::HDF5Lattice<T>(file, dataSetToString(ds), hdf5Hdu);
+    casacore::Array<T> data;
+    dataSet.get(data, true);
+    return data;
+}
+
+template <typename T>
+T HDF5Loader::getStatsDataScalar(FileInfo::Data ds) {
+    auto dataSet = casacore::HDF5Lattice<T>(file, dataSetToString(ds), hdf5Hdu);
+    auto dSet = dataSet.array();
+    T value;
+    casacore::HDF5DataType dtype((T*)0);
+    H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+    return value;
+}
+
+template <typename T>
+void HDF5Loader::loadStats2DBasic(FileInfo::Data ds, channel_stats_ref channelStats,
     size_t nchannels, size_t nstokes, size_t ndims) {
     if (hasData(ds)) {
-        auto dataSet = casacore::HDF5Lattice<T>(file, dataSetToString(ds), hdf5Hdu);
-        casacore::IPosition statDims = dataSet.shape();
+        const auto& statDims = getStatsDataShape<T>(ds);
         
         // 2D cubes
         if (ndims == 2 && statDims.size() == 0) {
-            auto dSet = dataSet.array();
-            T value;
-            casacore::HDF5DataType dtype((T*)0);
-            H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-            
             switch(ds) {
             case FileInfo::Data::S2DMax:
-                channelStats[0][0].maxVal = value;
+                channelStats[0][0].maxVal = getStatsDataScalar<T>(ds);
                 break;
             case FileInfo::Data::S2DMin:
-                channelStats[0][0].minVal = value;
+                channelStats[0][0].minVal = getStatsDataScalar<T>(ds);
                 break;
             case FileInfo::Data::S2DMean:
-                channelStats[0][0].mean = value;
+                channelStats[0][0].mean = getStatsDataScalar<T>(ds);
                 break;
             case FileInfo::Data::S2DNans:
-                channelStats[0][0].nanCount = value;
+                channelStats[0][0].nanCount = getStatsDataScalar<T>(ds);
                 break;
             }
         } // 3D cubes
         else if (ndims == 3 && statDims.size() == 1 && statDims[0] == nchannels) {
-            casacore::Array<T> data;
-            dataSet.get(data, true);
+            const auto& data = getStatsData<T>(ds);
             auto it = data.begin();
             
             switch(ds) {
@@ -198,8 +219,7 @@ void HDF5Loader::loadStats2DBasic( FileInfo::Data ds, channel_stats_ref channelS
         } // 4D cubes
         else if (ndims == 4 && statDims.size() == 2 &&
                     statDims[0] == nchannels && statDims[1] == nstokes) {
-            casacore::Array<T> data;
-            dataSet.get(data, true);
+            const auto& data = getStatsData<T>(ds);
             auto it = data.begin();
             
             switch(ds) {
@@ -238,25 +258,21 @@ void HDF5Loader::loadStats2DBasic( FileInfo::Data ds, channel_stats_ref channelS
 
 void HDF5Loader::loadStats2DHist(channel_stats_ref channelStats,
     size_t nchannels, size_t nstokes, size_t ndims) {
-    if (hasData(FileInfo::Data::S2DHist)) {
-        auto dataSet = casacore::HDF5Lattice<casacore::Int64>(file, dataSetToString(FileInfo::Data::S2DHist), hdf5Hdu);
-        casacore::IPosition statDims = dataSet.shape();
+    FileInfo::Data ds = FileInfo::Data::S2DHist;
+    if (hasData(ds)) {
+        const auto& statDims = getStatsDataShape<casacore::Int64>(ds);
         
         auto nbins = statDims[0];
 
         // 2D cubes
         if (ndims == 2 && statDims.size() == 1) {
-            casacore::Array<casacore::Int64> data;
-            dataSet.get(data, true);
-            
+            const auto& data = getStatsData<casacore::Int64>(ds);
             std::copy(data.begin(), data.end(), std::back_inserter(channelStats[0][0].histogramBins));
         } // 3D cubes
         else if (ndims == 3 && statDims.size() == 2 && statDims[1] == nchannels) {
-            casacore::Array<casacore::Int64> data;
-            dataSet.get(data, true);
-            
+            const auto& data = getStatsData<casacore::Int64>(ds);
             auto it = data.begin();
-                                            
+            
             for (auto c = 0; c < nchannels; c++) {
                 channelStats[0][c].histogramBins.resize(nbins);
                 for (auto b = 0; b < nbins; b++) {
@@ -266,9 +282,7 @@ void HDF5Loader::loadStats2DHist(channel_stats_ref channelStats,
         } // 4D cubes
         else if (ndims == 4 && statDims.size() == 3 &&
                     statDims[1] == nchannels && statDims[2] == nstokes) {
-            casacore::Array<casacore::Int64> data;
-            dataSet.get(data, true);
-            
+            const auto& data = getStatsData<casacore::Int64>(ds);
             auto it = data.begin();
         
             for (auto s = 0; s < nstokes; s++) {
@@ -283,54 +297,52 @@ void HDF5Loader::loadStats2DHist(channel_stats_ref channelStats,
     }
 }
 
-// TODO: untested; need to check if dimension order for matrix and cube is correct
-// TODO: why not use the same method as other stats?
+// TODO: untested
 
 void HDF5Loader::loadStats2DPercent(channel_stats_ref channelStats,
-    size_t nchannels, size_t nstokes, size_t ndims) {
-    if (hasData(FileInfo::Data::S2DPercent) &&
-        hasData(FileInfo::Data::Ranks)) {
-        auto dataSetVals = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S2DPercent), hdf5Hdu);
-        auto dataSetRanks = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::Ranks), hdf5Hdu);
+    size_t nchannels, size_t nstokes, size_t ndims) { 
     
-        casacore::IPosition dimsVals = dataSetVals.shape();
-        casacore::IPosition dimsRanks = dataSetRanks.shape();
+    FileInfo::Data dsr = FileInfo::Data::Ranks;
+    FileInfo::Data dsp = FileInfo::Data::S2DPercent;
+    
+    if (hasData(dsp) && hasData(dsr)) {
+        const auto& dimsVals = getStatsDataShape<casacore::Float>(dsp);
+        const auto& dimsRanks = getStatsDataShape<casacore::Float>(dsr);
 
         auto nranks = dimsRanks[0];
-        casacore::Vector<float> ranks(nranks);
-        dataSetRanks.get(ranks, false);
+        const auto& ranks = getStatsData<casacore::Float>(dsr);
     
         if (dimsVals[0] == nranks) {
             if (ndims == 2 && dimsVals.size() == 1) {
-                casacore::Vector<float> vals(nranks);
-                dataSetVals.get(vals, true);
-                vals.tovector(channelStats[0][0].percentiles);
-                ranks.tovector(channelStats[0][0].percentileRanks);
+                const auto& data = getStatsData<casacore::Float>(dsp);
+                
+                std::copy(ranks.begin(), ranks.end(), std::back_inserter(channelStats[0][0].percentileRanks));
+                std::copy(data.begin(), data.end(), std::back_inserter(channelStats[0][0].percentiles));
             }
                 // 3D cubes
             else if (ndims == 3 && dimsVals.size() == 2 && dimsVals[1] == nchannels) {
-                casacore::Matrix<float> vals(nranks, nchannels);
-                dataSetVals.get(vals, false);
+                const auto& data = getStatsData<casacore::Float>(dsp);
+                auto it = data.begin();
 
                 for (auto c = 0; c < nchannels; c++) {
                     ranks.tovector(channelStats[0][c].percentileRanks);
                     channelStats[0][c].percentiles.resize(nranks);
                     for (auto r = 0; r < nranks; r++) {
-                        channelStats[0][c].percentiles[r] = vals(r, c);
+                        channelStats[0][c].percentiles[r] = *it++;
                     }
                 }
             }
                 // 4D cubes
             else if (ndims == 4 && dimsVals.size() == 3 && dimsVals[1] == nchannels && dimsVals[2] == nstokes) {
-                casacore::Cube<float> vals(nranks, nchannels, nstokes);
-                dataSetVals.get(vals, false);
+                const auto& data = getStatsData<casacore::Float>(dsp);
+                auto it = data.begin();
 
                 for (auto s = 0; s < nstokes; s++) {
                     for (auto c = 0; c < nchannels; c++) {
-                        channelStats[s][c].percentiles.resize(nranks);
                         ranks.tovector(channelStats[s][c].percentileRanks);
+                        channelStats[s][c].percentiles.resize(nranks);
                         for (auto r = 0; r < nranks; r++) {
-                            channelStats[s][c].percentiles[r] = vals(r, c, s);
+                            channelStats[s][c].percentiles[r] = *it++;
                         }
                     }
                 }
@@ -343,34 +355,27 @@ template <typename T>
 void HDF5Loader::loadStats3DBasic(FileInfo::Data ds, cube_stats_ref cubeStats,
     size_t nchannels, size_t nstokes, size_t ndims) {
     if (hasData(ds)) {
-        auto dataSet = casacore::HDF5Lattice<T>(file, dataSetToString(ds), hdf5Hdu);
-        casacore::IPosition statDims = dataSet.shape();
+        const auto& statDims = getStatsDataShape<T>(ds);
                     
         // 3D cubes
         if (ndims == 3 && statDims.size() == 0) {
-            auto dSet = dataSet.array();
-            T value;
-            casacore::HDF5DataType dtype((T*)0);
-            H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-            
             switch(ds) {
             case FileInfo::Data::S3DMax:
-                cubeStats[0].maxVal = value;
+                cubeStats[0].maxVal = getStatsDataScalar<T>(ds);
                 break;
             case FileInfo::Data::S3DMin:
-                cubeStats[0].minVal = value;
+                cubeStats[0].minVal = getStatsDataScalar<T>(ds);
                 break;
             case FileInfo::Data::S3DMean:
-                cubeStats[0].mean = value;
+                cubeStats[0].mean = getStatsDataScalar<T>(ds);
                 break;
             case FileInfo::Data::S3DNans:
-                cubeStats[0].nanCount = value;
+                cubeStats[0].nanCount = getStatsDataScalar<T>(ds);
                 break;
             }
         } // 4D cubes
         else if (ndims == 4 && statDims.size() == 1 && statDims[0] == nstokes) {
-            casacore::Array<T> data;
-            dataSet.get(data, true);
+            const auto& data = getStatsData<T>(ds);
             auto it = data.begin();
             
             switch(ds) {
@@ -401,21 +406,18 @@ void HDF5Loader::loadStats3DBasic(FileInfo::Data ds, cube_stats_ref cubeStats,
 
 void HDF5Loader::loadStats3DHist(cube_stats_ref cubeStats,
     size_t nchannels, size_t nstokes, size_t ndims) {
-    if (hasData(FileInfo::Data::S3DHist)) {
-        auto dataSet = casacore::HDF5Lattice<casacore::Int64>(file, dataSetToString(FileInfo::Data::S3DHist), hdf5Hdu);
-        casacore::IPosition statDims = dataSet.shape();
+    FileInfo::Data ds = FileInfo::Data::S3DHist;
+    if (hasData(ds)) {
+        const auto& statDims = getStatsDataShape<casacore::Int64>(ds);
         auto nbins = statDims[0];
         
         // 3D cubes
         if (ndims == 3 && statDims.size() == 1) {
-            casacore::Array<casacore::Int64> data;
-            dataSet.get(data, true);
+            const auto& data = getStatsData<casacore::Int64>(ds);
             std::copy(data.begin(), data.end(), std::back_inserter(cubeStats[0].histogramBins));
         } // 4D cubes
         else if (ndims == 4 && statDims.size() == 2 && statDims[1] == nstokes) {
-            casacore::Array<casacore::Int64> data;
-            dataSet.get(data, true);
-                        
+            const auto& data = getStatsData<casacore::Int64>(ds);           
             auto it = data.begin();
             
             for (auto s = 0; s < nstokes; s++) {
@@ -433,36 +435,35 @@ void HDF5Loader::loadStats3DHist(cube_stats_ref cubeStats,
 
 void HDF5Loader::loadStats3DPercent(cube_stats_ref cubeStats,
     size_t nchannels, size_t nstokes, size_t ndims) {
-    if (hasData(FileInfo::Data::S3DPercent) &&
-        hasData(FileInfo::Data::Ranks)) {
-        auto dataSetVals = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::S3DPercent), hdf5Hdu);
-        auto dataSetRanks = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::Ranks), hdf5Hdu);
-
-        casacore::IPosition dimsVals = dataSetVals.shape();
-        casacore::IPosition dimsRanks = dataSetRanks.shape();
+    
+    FileInfo::Data dsr = FileInfo::Data::Ranks;
+    FileInfo::Data dsp = FileInfo::Data::S2DPercent;
+    
+    if (hasData(dsp) && hasData(dsr)) {
+        
+        const auto& dimsVals = getStatsDataShape<casacore::Float>(dsp);
+        const auto& dimsRanks = getStatsDataShape<casacore::Float>(dsr);
 
         auto nranks = dimsRanks[0];
-        casacore::Vector<float> ranks(nranks);
-        dataSetRanks.get(ranks, false);
+        const auto& ranks = getStatsData<casacore::Float>(dsr);
     
         if (dimsVals[0] == nranks) {
             // 3D cubes
             if (ndims == 3 && dimsVals.size() == 1) {
-                casacore::Vector<float> vals(nranks);
-                dataSetVals.get(vals, true);
-                vals.tovector(cubeStats[0].percentiles);
-                ranks.tovector(cubeStats[0].percentileRanks);
+                const auto& data = getStatsData<casacore::Float>(dsp);
+                std::copy(ranks.begin(), ranks.end(), std::back_inserter(cubeStats[0].percentileRanks));
+                std::copy(data.begin(), data.end(), std::back_inserter(cubeStats[0].percentiles));
             }
             // 4D cubes
             else if (ndims == 4 && dimsVals.size() == 2 && dimsVals[1] == nstokes ) {
-                casacore::Matrix<float> vals(nranks, nstokes);
-                dataSetVals.get(vals, false);
+                const auto& data = getStatsData<casacore::Float>(dsp);
+                auto it = data.begin();
 
                 for (auto s = 0; s < nstokes; s++) {
                     cubeStats[s].percentiles.resize(nranks);
                     ranks.tovector(cubeStats[s].percentileRanks);
                     for (auto r = 0; r < nranks; r++) {
-                        cubeStats[s].percentiles[r] = vals(r, s);
+                        cubeStats[s].percentiles[r] = *it++;
                     }
                 }
             }

@@ -16,7 +16,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
       loader(FileLoader::getLoader(filename)),
       spectralAxis(-1), stokesAxis(-1),
       channelIndex(-1), stokesIndex(-1),
-      nchan(1) {
+      nchan(1), nstok(1) {
     try {
         if (loader==nullptr) {
             log(uuid, "Problem loading file {}: loader not implemented", filename);
@@ -338,14 +338,13 @@ bool Frame::setRegionHistogramRequirements(int regionId,
 bool Frame::setRegionSpatialRequirements(int regionId, const std::vector<std::string>& profiles) {
     // set requested spatial profiles e.g. ["Qx", "Uy"] or just ["x","y"] to use current stokes
     bool regionOK(false);
-    int nstokes(this->nstokes());
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
-        regionOK = region->setSpatialRequirements(profiles, nstokes);
+        regionOK = region->setSpatialRequirements(profiles, nstokes());
     } else if (regionId == CURSOR_REGION_ID) {
         setDefaultCursor();
         auto& region = regions[regionId];
-        regionOK = region->setSpatialRequirements(profiles, nstokes);
+        regionOK = region->setSpatialRequirements(profiles, nstokes());
     }
     return regionOK;
 }
@@ -354,14 +353,13 @@ bool Frame::setRegionSpectralRequirements(int regionId,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
     // set requested spectral profiles e.g. ["Qz", "Uz"] or just ["z"] to use current stokes
     bool regionOK(false);
-    int nstokes(this->nstokes());
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
-        regionOK = region->setSpectralRequirements(profiles, nstokes);
+        regionOK = region->setSpectralRequirements(profiles, nstokes());
     } else if (regionId == CURSOR_REGION_ID) {
         setDefaultCursor();
         auto& region = regions[regionId];
-        regionOK = region->setSpectralRequirements(profiles, nstokes);
+        regionOK = region->setSpectralRequirements(profiles, nstokes());
     }
     return regionOK;
 }

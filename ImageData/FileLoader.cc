@@ -76,13 +76,8 @@ void FileLoader::findCoords(int& spectralAxis, int& stokesAxis) {
     }
 }
 
-void FileLoader::loadImageStats(
-    channel_stats_ref channelStats,
-    cube_stats_ref cubeStats,
-    size_t nchannels,
-    size_t nstokes,
-    size_t ndims,
-    bool loadPercentiles
+void FileLoader::loadImageStats(channel_stats_ref channelStats, cube_stats_ref cubeStats,
+    size_t nchannels, size_t nstokes, size_t ndims, bool loadPercentiles
 ) {
     // TODO this is here for compatibility and needs to be refactored. Eventually this will be  a generic implementation which includes loading the data, as before. 
     channelStats.resize(nstokes);
