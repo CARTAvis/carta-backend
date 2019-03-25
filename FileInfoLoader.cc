@@ -79,14 +79,18 @@ CARTA::FileType FileInfoLoader::convertFileType(int ccImageType) {
 
 bool FileInfoLoader::getHduList(CARTA::FileInfo* fileInfo, const std::string& filename) {
     // fill FileInfo hdu list
-    bool hduOK(true);
+    bool hduOK(false);
     if (fileInfo->type()==CARTA::FileType::HDF5) {
         casacore::HDF5File hdfFile(filename);
         std::vector<casacore::String> hdus(casacore::HDF5Group::linkNames(hdfFile));
-        for (auto groupName : hdus) {
-            fileInfo->add_hdu_list(groupName);
+        if (hdus.empty()) {
+            fileInfo->add_hdu_list("");
+            hduOK = true;
+        } else {
+            for (auto groupName : hdus)
+                fileInfo->add_hdu_list(groupName);
+            hduOK = true;
         }
-        hduOK = (fileInfo->hdu_list_size() > 0);
     } else if (fileInfo->type()==CARTA::FITS) {
         casacore::FitsInput fInput(filename.c_str(), casacore::FITS::Disk, 10, fileInfoFitsErrHandler);
         if (fInput.err() == casacore::FitsIO::OK) { // check for cfitsio error
@@ -96,11 +100,10 @@ bool FileInfoLoader::getHduList(CARTA::FileInfo* fileInfo, const std::string& fi
                 for (int hdu=0; hdu<numHdu; ++hdu)
                     fileInfo->add_hdu_list(casacore::String::toString(hdu));
             }
-        } else {
-            hduOK = false;
         }
     } else {
         fileInfo->add_hdu_list("");
+        hduOK = true;
     }
     return hduOK;
 }
@@ -258,6 +261,7 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         int chanAxis, stokesAxis;
         findChanStokesAxis(dataShape, coordTypeX, coordTypeY, coordType3, coordType4, chanAxis, stokesAxis);
         addShapeEntries(extendedInfo, dataShape, chanAxis, stokesAxis);
+        extendedInfo->add_stokes_vals(""); // not in header
 
         // make computed entries strings
         std::string xyCoords, crPixels, crCoords, crDegStr, cr1, cr2, axisInc, rsBeam;
@@ -297,7 +301,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             ccHdu.fromString(hdunum, true);
         } catch (casacore::AipsError& err) {
             message = "Invalid hdu for FITS image.";
-	    return false;
+            return false;
         }
 
         // check shape

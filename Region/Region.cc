@@ -1,14 +1,27 @@
 //# Region.cc: implementation of class for managing a region
 
 #include "Region.h"
-//#include <carta-protobuf/defs.pb.h>
 
 using namespace carta;
 
-Region::Region(const std::string& name, const CARTA::RegionType type) :
-    m_name(name), m_type(type), m_rotation(0.0) {
-    m_stats = std::unique_ptr<RegionStats>(new RegionStats());
-    m_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
+Region::Region(const std::string& name, const CARTA::RegionType type, int minchan, int maxchan,
+        const std::vector<CARTA::Point>& points, const float rotation,
+        const casacore::IPosition imageShape, int spectralAxis, int stokesAxis) :
+        m_name(name),
+        m_type(type),
+        m_minchan(-1),
+        m_maxchan(-1),
+        m_valid(false),
+        m_xyRegionChanged(false),
+        m_spectralChanged(false),
+        m_latticeShape(imageShape),
+        m_spectralAxis(spectralAxis),
+        m_stokesAxis(stokesAxis) {
+    if (updateRegionParameters(minchan, maxchan, points, rotation)) {
+        m_valid = true;
+        m_stats = std::unique_ptr<RegionStats>(new RegionStats());
+        m_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
+    }
 }
 
 Region::~Region() {
@@ -16,22 +29,134 @@ Region::~Region() {
     m_profiler.reset();
 }
 
-void Region::setChannels(int minchan, int maxchan, const std::vector<int>& stokes) {
-    m_minchan = minchan;
-    m_maxchan = maxchan;
-    m_stokes = stokes;
-}
+bool Region::updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>&points,
+    float rotation) {
+    // Set region parameters and flags for what changed
+    bool xyParamsChanged((pointsChanged(points) || (rotation != m_rotation)));
+    bool spectralParamsChanged((minchan != m_minchan) || (maxchan != m_maxchan));
 
-void Region::setControlPoints(const std::vector<CARTA::Point>& points) {
-    m_ctrlpoints = points;
-}
-
-void Region::setRotation(const float rotation) {
+    // validate and set params
+    bool pointsSet(setPoints(points));
+    bool chansSet(setChannelRange(minchan, maxchan));
     m_rotation = rotation;
+
+    // region changed if xy params changed and validated
+    m_xyRegionChanged = xyParamsChanged && pointsSet;
+
+    // spectral changed if chan params changed and validated
+    m_spectralChanged = spectralParamsChanged && chansSet;
+
+    return pointsSet && chansSet;
 }
 
-std::vector<CARTA::Point> Region::getControlPoints() {
-    return m_ctrlpoints;
+// *************************************************************************
+// Region settings
+
+bool Region::setPoints(const std::vector<CARTA::Point>& points) {
+    // check and set control points 
+    bool pointsUpdated(false);
+    if (checkPoints(points)) {
+        m_ctrlpoints = points;
+        pointsUpdated = true;
+    }
+    return pointsUpdated;
+}
+
+bool Region::setChannelRange(int minchan, int maxchan) {
+    // check and set spectral axis range
+    bool channelsUpdated(false);
+    if (checkChannelRange(minchan, maxchan)) {
+        m_minchan = minchan;
+        m_maxchan = maxchan;
+        channelsUpdated = true;
+    }
+    return channelsUpdated;
+}
+
+bool Region::setStokes(int stokes) {
+    // check and set stokes axis
+    bool stokesUpdated(false);
+    if (checkStokes(stokes)) {
+        m_stokes = stokes;
+        stokesUpdated = true;
+    }
+    return stokesUpdated;
+}
+
+// *************************************************************************
+// Parameter checking
+
+bool Region::checkPoints(const std::vector<CARTA::Point>& points) {
+    // check point values
+    bool pointsOK(false);
+    switch (m_type) {
+        case CARTA::POINT: {
+            pointsOK = checkPixelPoint(points);
+            break;
+            }
+        case CARTA::RECTANGLE: {
+            pointsOK = (checkRectanglePoints(points));
+            break;
+            }
+        default:
+            break;
+    }
+    return pointsOK;
+}
+
+bool Region::checkPixelPoint(const std::vector<CARTA::Point>& points) {
+    // check if NaN or inf points
+    bool pointsOK(false);
+    if (points.size() == 1) { // (x, y)
+        float x(points[0].x()), y(points[0].y());
+        pointsOK = (std::isfinite(x) && std::isfinite(y));
+    }
+    return pointsOK; 
+}
+
+bool Region::checkRectanglePoints(const std::vector<CARTA::Point>& points) {
+    // check if NaN or inf points, width/height less than 0
+    bool pointsOK(false);
+    if (points.size() == 2) { // [(cx,cy), (width,height)]
+        float cx(points[0].x()), cy(points[0].y()), width(points[1].x()), height(points[1].y());
+        bool pointsExist = (std::isfinite(cx) && std::isfinite(cy) && std::isfinite(width) && std::isfinite(height));
+        pointsOK = (pointsExist && (width > 0) && (height > 0));
+    }
+    return pointsOK; 
+}
+
+bool Region::pointsChanged(const std::vector<CARTA::Point>& newpoints) {
+    // check equality of points (no operator==)
+    bool changed(newpoints.size() != m_ctrlpoints.size()); // check number of points
+    if (!changed) { // check each point in vectors
+        for (size_t i=0; i<newpoints.size(); ++i) {
+            if ((newpoints[i].x() != m_ctrlpoints[i].x()) || 
+                (newpoints[i].y() != m_ctrlpoints[i].y())) {
+                changed = true;
+                break;
+            }
+        }
+    }
+    return changed;
+}
+
+bool Region::checkChannelRange(int& minchan, int& maxchan) {
+    // check and set min/max channels
+    bool channelRangeOK(false);
+    // less than 0 is full channel range
+    size_t nchan(m_spectralAxis >= 0 ? m_latticeShape(m_spectralAxis) : 1);
+    minchan = (minchan < 0 ? 0 : minchan);
+    maxchan = (maxchan < 0 ? nchan-1 : maxchan);
+    bool minchanOK((minchan >= 0) && (minchan < nchan));
+    bool maxchanOK((maxchan >= 0) && (maxchan < nchan));
+    if (minchanOK && maxchanOK && (minchan <= maxchan))
+        channelRangeOK = true;
+    return channelRangeOK;
+}
+
+bool Region::checkStokes(int& stokes) {
+    size_t nstokes(m_stokesAxis >= 0 ? m_latticeShape(m_stokesAxis) : 1);
+    return ((stokes >= 0) && (stokes < nstokes));
 }
 
 // ***********************************

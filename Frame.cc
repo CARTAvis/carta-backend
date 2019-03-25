@@ -1,4 +1,5 @@
 #include "Frame.h"
+#include "compression.h"
 #include "util.h"
 
 #include <tbb/blocked_range2d.h>
@@ -13,8 +14,9 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
       cursorSet(false),
       filename(filename),
       loader(FileLoader::getLoader(filename)),
-      nchan(1),
-      channelIndex(-1), stokesIndex(-1), spectralAxis(-1), stokesAxis(-1) {
+      spectralAxis(-1), stokesAxis(-1),
+      channelIndex(-1), stokesIndex(-1),
+      nchan(1) {
     try {
         if (loader==nullptr) {
             log(uuid, "Problem loading file {}: loader not implemented", filename);
@@ -40,13 +42,15 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         }
         nchan = (spectralAxis>=0 ? imageShape(spectralAxis) : 1);
 
-        // set current channel, stokes, channelCache
-        std::string errMessage;
-        setImageChannels(defaultChannel, 0, errMessage);
-
         // make Region for entire image (after current channel/stokes set)
         setImageRegion(IMAGE_REGION_ID);
-    
+        valid = true;
+
+        // set current channel, stokes, imageCache
+        channelIndex = defaultChannel;
+        stokesIndex = DEFAULT_STOKES;
+        setImageCache();
+
         // resize stats vectors and load data from image, if the format supports it
         loader->loadImageStats(channelStats, cubeStats, nchannels(), (stokesAxis>=0 ? imageShape(stokesAxis) : 1), ndims);
     } catch (casacore::AipsError& err) {
@@ -73,98 +77,122 @@ int Frame::getMaxRegionId() {
     return maxRegionId;
 }
 
+size_t Frame::nchannels() {
+    return nchan;
+}
+
+int Frame::currentStokes() {
+    return stokesIndex;
+}
+
 // ********************************************************************
-// Image data
+// Region
 
-std::vector<float> Frame::getImageData(CARTA::ImageBounds& bounds, int mip, bool meanFilter) {
-    if (!valid) {
-        return std::vector<float>();
+bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type, int minchan,
+        int maxchan, std::vector<CARTA::Point>& points, float rotation, std::string& message) {
+    // Create or update Region
+    bool regionSet(false);
+
+    // create or update Region
+    if (regions.count(regionId)) { // update Region
+        auto& region = regions[regionId];
+        regionSet = region->updateRegionParameters(minchan, maxchan, points, rotation);
+    }  else { // map new Region to region id
+        auto region = unique_ptr<carta::Region>(new carta::Region(name, type, minchan, maxchan,
+            points, rotation, imageShape, spectralAxis, stokesAxis));
+        if (region->isValid()) {
+            regions[regionId] = move(region);
+            regionSet = true;
+        }
     }
+    if (!regionSet) {
+        message = fmt::format("Region parameters failed to validate for region id {}", regionId);
+    }
+    return regionSet;
+}
 
-    const int x = bounds.x_min();
-    const int y = bounds.y_min();
-    const int reqHeight = bounds.y_max() - y;
-    const int reqWidth = bounds.x_max() - x;
+// special cases of setRegion for image and cursor
+void Frame::setImageRegion(int regionId) {
+    // Create a Region for the entire image plane: Image or Cube
+    if ((regionId != IMAGE_REGION_ID) && (regionId != CUBE_REGION_ID))
+        return;
 
-    // check bounds
-    if ((reqHeight < 0) || (reqWidth < 0))
-        return std::vector<float>();
-    if (imageShape(1) < y + reqHeight || imageShape(0) < x + reqWidth)
-        return std::vector<float>();
-    // check mip
-    if (mip < 0)
-        return std::vector<float>();
-
-    // size returned vector
-    size_t numRowsRegion = reqHeight / mip;
-    size_t rowLengthRegion = reqWidth / mip;
-    std::vector<float> regionData;
-    regionData.resize(numRowsRegion * rowLengthRegion);
-    int nImgCol = imageShape(0);
-
-    // read lock channelCache
-    bool writeLock(false);
-    tbb::queuing_rw_mutex::scoped_lock lock(cacheMutex, writeLock);
-
-    if (meanFilter) {
-        // Perform down-sampling by calculating the mean for each MIPxMIP block
-        auto range = tbb::blocked_range2d<size_t>(0, numRowsRegion, 0, rowLengthRegion);
-        auto loop = [&](const tbb::blocked_range2d<size_t> &r) {
-            for(size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
-                for(size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
-                    float pixelSum = 0;
-                    int pixelCount = 0;
-                    for (auto pixelX = 0; pixelX < mip; pixelX++) {
-                        for (auto pixelY = 0; pixelY < mip; pixelY++) {
-                            auto imageRow = y + j * mip + pixelY;
-                            auto imageCol = x + i * mip + pixelX;
-                            float pixVal = channelCache[(imageRow * nImgCol) + imageCol];
-                            if (!isnan(pixVal) && !isinf(pixVal)) {
-                                pixelCount++;
-                                pixelSum += pixVal;
-                            }
-                        }
-                    }
-                    regionData[j * rowLengthRegion + i] = pixelCount ? pixelSum / pixelCount : NAN;
-                }
-            }
-        };
-        tbb::parallel_for(range, loop);
+    // default min/max channel
+    std::string name;
+    int minchan, maxchan;
+    if (regionId == IMAGE_REGION_ID) {
+        name = "image";
+        minchan = DEFAULT_CHANNEL;
+        maxchan = DEFAULT_CHANNEL;
     } else {
-        // Nearest neighbour filtering
-        auto range = tbb::blocked_range2d<size_t>(0, numRowsRegion, 0, rowLengthRegion);
-        auto loop = [&](const tbb::blocked_range2d<size_t> &r) {
-            for (auto j = 0; j < numRowsRegion; j++) {
-                for (auto i = 0; i < rowLengthRegion; i++) {
-                    auto imageRow = y + j * mip;
-                    auto imageCol = x + i * mip;
-                    regionData[j * rowLengthRegion + i] = channelCache[(imageRow * nImgCol) + imageCol];
-                }
-            }
-        };
-        tbb::parallel_for(range, loop);
+        name = "cube";
+        minchan = 0;
+        maxchan = nchannels() - 1;
     }
-    return regionData;
+    // control points: center pt [cx, cy], [width, height]
+    std::vector<CARTA::Point> points(2);
+    CARTA::Point point;
+    point.set_x(std::round(imageShape(0)/2));
+    point.set_y(std::round(imageShape(1)/2));
+    points[0] = point;
+    point.set_x(imageShape(0)); // entire width
+    point.set_y(imageShape(1)); // entire height
+    points[1] = point;
+    // rotation
+    float rotation(0.0);
+
+    // create new region
+    std::string message;
+    bool ok = setRegion(regionId, name, CARTA::RECTANGLE, minchan, maxchan, points, rotation, message);
+    if (regionId == IMAGE_REGION_ID) { // set histogram requirements: use current channel
+        std::vector<CARTA::SetHistogramRequirements_HistogramConfig> configs;
+        setRegionHistogramRequirements(IMAGE_REGION_ID, configs);
+        // frontend sets requirements for cursor before cursor set
+        setDefaultCursor();
+        cursorSet = false;  // only true if set by frontend
+    }
 }
 
-std::vector<float> Frame::getImageChanData(size_t chan) {
-    // get data for given chan, current stokes
-    std::vector<float> data;
-    getChannelMatrix(data, chan, currentStokes());
-    return data;
+bool Frame::setCursorRegion(int regionId, const CARTA::Point& point) {
+    // a cursor is a region with one control point
+    std::vector<CARTA::Point> points(1, point);
+    int currentchan = (channelIndex < 0 ? DEFAULT_CHANNEL : channelIndex);
+    float rotation(0.0);
+    std::string message;
+    cursorSet = setRegion(regionId, "cursor", CARTA::POINT, currentchan,
+        currentchan, points, rotation, message);
+    return cursorSet;
 }
+
+void Frame::setDefaultCursor() {
+    CARTA::Point defaultPoint;
+    defaultPoint.set_x(0);
+    defaultPoint.set_y(0);
+    setCursorRegion(CURSOR_REGION_ID, defaultPoint);
+    cursorSet = false;
+}
+
+void Frame::removeRegion(int regionId) {
+    if (regions.count(regionId)) {
+        regions[regionId].reset();
+        regions.erase(regionId);
+    }
+}
+
 
 // ********************************************************************
-// Image view
+// Image region parameters: view, channel/stokes, slicers
 
-bool Frame::setBounds(CARTA::ImageBounds imageBounds, int newMip) {
+bool Frame::setImageView(const CARTA::ImageBounds& newBounds, int newMip,
+        CARTA::CompressionType newCompression, float newQuality, int newSubsets) {
+    // set image bounds and compression settings
     if (!valid) {
         return false;
     }
-    const int xmin = imageBounds.x_min();
-    const int xmax = imageBounds.x_max();
-    const int ymin = imageBounds.y_min();
-    const int ymax = imageBounds.y_max();
+    const int xmin = newBounds.x_min();
+    const int xmax = newBounds.x_max();
+    const int ymin = newBounds.y_min();
+    const int ymax = newBounds.y_max();
     const int reqHeight = ymax - ymin;
     const int reqWidth = xmax - xmin;
 
@@ -173,71 +201,48 @@ bool Frame::setBounds(CARTA::ImageBounds imageBounds, int newMip) {
         return false;
     if ((imageShape(1) < ymin + reqHeight) || (imageShape(0) < xmin + reqWidth))
         return false;
+    if (newMip < 0)
+        return false;
 
-    bounds = imageBounds;
+    bounds = newBounds;
     mip = newMip;
+    compType = newCompression;
+    quality = newQuality;
+    nsubsets = newSubsets;
     return true;
 }
 
-void Frame::setCompression(CompressionSettings& settings) {
-    compression.type = settings.type;
-    compression.quality = settings.quality;
-    compression.nsubsets = settings.nsubsets;
-}
-
-CARTA::ImageBounds Frame::currentBounds() {
-    return bounds;
-}
-
-int Frame::currentMip() {
-    return mip;
-}
-
-CompressionSettings Frame::compressionSettings() {
-    return compression;
-}
-
-// ********************************************************************
-// Image channels
-
 bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message) {
-    if (!valid) {
+    bool updated(false);
+    if (!valid || (regions.count(IMAGE_REGION_ID)==0)) {
         message = "No file loaded";
-        return false;
     } else {
-        if (newChannel < 0 || newChannel >= nchannels()) {
-            message = fmt::format("Channel {} is invalid in file {}", newChannel, filename);
-            return false; // invalid channel
+        if ((newChannel != channelIndex) || (newStokes != stokesIndex)) {
+            auto& region = regions[IMAGE_REGION_ID];
+            bool chanOK(region->setChannelRange(newChannel, newChannel));
+            bool stokesOK(region->setStokes(newStokes));
+            if (chanOK && stokesOK) {
+                channelIndex = newChannel;
+                stokesIndex = newStokes;
+                setImageCache();
+                updated = true;
+            } else {
+                message = fmt::format("Channel {} or Stokes {} is invalid in file {}", newChannel, newStokes, filename);
+            }
         }
-        size_t nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
-        if (newStokes < 0 || newStokes >= nstokes) {
-            message = fmt::format("Stokes {} is invalid in file {}", newStokes, filename);
-            return false; // invalid stokes
-        }
-    }
-
-    bool updated(false);  // no change
-    if ((newChannel != currentChannel()) || newStokes != currentStokes()) {
-        // update channelCache with new chan and stokes
-        setChannelCache(newChannel, newStokes);
-        stokesIndex = newStokes;
-        channelIndex = newChannel;
-        updated = true;
     }
     return updated;
 }
 
-void Frame::setChannelCache(size_t channel, size_t stokes) {
-    // get image data for given channel, stokes
-    if (channel != currentChannel() || stokes != currentStokes()) {
-        bool writeLock(true);
-        tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-        channelCache.resize(imageShape(0) * imageShape(1));
-        casacore::Slicer section = getChannelMatrixSlicer(channel, stokes);
-        casacore::Array<float> tmp(section.length(), channelCache.data(), casacore::StorageInitPolicy::SHARE);
-        std::lock_guard<std::mutex> guard(latticeMutex);
-        loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
-    }
+void Frame::setImageCache() {
+    // get image data for channel, stokes
+    bool writeLock(true);
+    tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+    imageCache.resize(imageShape(0) * imageShape(1));
+    casacore::Slicer section = getChannelMatrixSlicer(channelIndex, stokesIndex);
+    casacore::Array<float> tmp(section.length(), imageCache.data(), casacore::StorageInitPolicy::SHARE);
+    std::lock_guard<std::mutex> guard(latticeMutex);
+    loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
 }
 
 void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes) {
@@ -300,166 +305,9 @@ void Frame::getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int 
     latticeSlicer = section;
 }
 
-size_t Frame::nchannels() {
-    return nchan;
-}
-
-int Frame::currentChannel() {
-    return channelIndex;
-}
-
-int Frame::currentStokes() {
-    return stokesIndex;
-}
-
-// ********************************************************************
-// Region
-
-bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type, int minchan,
-        int maxchan, std::vector<int>& stokes, std::vector<CARTA::Point>& points,
-        float rotation, std::string& message) {
-    // Create or update Region
-    // check channel bounds and stokes
-    int nchan(nchannels());
-    if (minchan < 0) {
-        minchan = 0;
-    }
-    if (maxchan < 0) {
-        maxchan = nchan -1;
-    }
-
-    if ((minchan < 0 || minchan >= nchan) || (maxchan < 0 || maxchan>=nchan)) {
-        message = "min/max region channel bounds out of range";
-        return false;
-    }
-    if (stokes.empty()) {
-        stokes.push_back(currentStokes());
-    } else {
-        int nstokes(stokesAxis>=0 ? imageShape(stokesAxis) : 1);
-        for (auto stokeVal : stokes) {
-            if (stokeVal < 0 || stokeVal >= nstokes) {
-                message = "region stokes value out of range";
-                return false;
-            }
-        }
-    }
-
-    // check region control points
-    for (auto point : points) {
-        if ((point.x() < 0 || point.x() >= imageShape(0)) ||
-            (point.y() < 0 || point.y() >= imageShape(1))) {
-            message = "region control point value out of range";
-            return false;
-        }
-    }
-
-    // create or update Region
-    if (regions.count(regionId)) { // update Region
-        auto& region = regions[regionId];
-        region->setChannels(minchan, maxchan, stokes);
-        region->setControlPoints(points);
-        region->setRotation(rotation);
-    }  else { // map new Region to region id
-        auto region = unique_ptr<carta::Region>(new carta::Region(name, type));
-        region->setChannels(minchan, maxchan, stokes);
-        region->setControlPoints(points);
-        region->setRotation(rotation);
-        regions[regionId] = move(region);
-    }
-    return true;
-}
-
-// special cases of setRegion for image and cursor
-void Frame::setImageRegion(int regionId) {
-    // Create a Region for the entire image plane (default)
-    // regionId must be IMAGE_REGION_ID or CUBE_REGION_ID.
-    if ((regionId != IMAGE_REGION_ID) && (regionId != CUBE_REGION_ID))
-        return;
-
-    // set image region channels: all channels, all stokes
-    int minchan(0);
-    int maxchan(nchannels()-1);
-    std::vector<int> allStokes;
-    if (stokesAxis > 0) {
-        for (int i=0; i<imageShape(stokesAxis); ++i)
-            allStokes.push_back(i);
-    }
-    // control points: rectangle from top left (0,height-1) to bottom right (width-1,0)
-    std::vector<CARTA::Point> points(2);
-    CARTA::Point point;
-    point.set_x(0);
-    point.set_y(imageShape(1)-1); // height
-    points.push_back(point);
-    point.set_x(imageShape(0)-1); // width
-    point.set_y(0);
-    points.push_back(point);
-    // rotation
-    float rotation(0.0);
-
-    // create new region
-    std::string name = (regionId == IMAGE_REGION_ID ? "image" : "cube");
-    std::string message;
-    setRegion(regionId, name, CARTA::RECTANGLE, minchan, maxchan, allStokes, points,
-        rotation, message);
-    if (regionId == IMAGE_REGION_ID) {
-        // histogram requirements: use current channel
-        std::vector<CARTA::SetHistogramRequirements_HistogramConfig> configs;
-        setRegionHistogramRequirements(IMAGE_REGION_ID, configs);
-        // frontend sets region requirements for cursor before cursor set
-        setDefaultCursor();
-        cursorSet = false;  // only true if set by frontend
-    }
-}
-
-bool Frame::setCursorRegion(int regionId, const CARTA::Point& point) {
-    // a cursor is a region with one control point
-    bool cursorOk(true);
-    std::vector<CARTA::Point> points;
-    points.push_back(point);
-    // use current channel and stokes
-    int currChan(currentChannel());
-    std::vector<int> currStokes;
-    currStokes.push_back(currentStokes());
-
-    if (regions.count(regionId)) { // update point region
-        // validate point
-        if ((point.x() < 0 || point.x() >= imageShape(0)) ||
-            (point.y() < 0 || point.y() >= imageShape(1))) {
-            cursorOk = false;
-        } else {
-            auto& region = regions[regionId];
-            region->setControlPoints(points);
-            region->setChannels(currChan, currChan, currStokes);
-        }
-    } else { // create new point region
-        float rotation(0.0);
-        std::string message;
-        cursorOk = setRegion(regionId, "cursor", CARTA::POINT, currChan, currChan, currStokes,
-            points, rotation, message);
-    }
-    if (cursorOk) cursorSet = true;
-    return cursorOk;
-}
-
-void Frame::setDefaultCursor() {
-    CARTA::Point defaultPoint;
-    defaultPoint.set_x(0);
-    defaultPoint.set_y(0);
-    setCursorRegion(CURSOR_REGION_ID, defaultPoint);
-    cursorSet = false;
-}
-
-void Frame::removeRegion(int regionId) {
-    if (regions.count(regionId)) {
-        regions[regionId].reset();
-        regions.erase(regionId);
-    }
-}
 
 // ****************************************************
-// region profiles
-
-// ***** region requirements *****
+// Region requirements
 
 bool Frame::setRegionHistogramRequirements(int regionId,
         const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histograms) {
@@ -470,11 +318,10 @@ bool Frame::setRegionHistogramRequirements(int regionId,
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         if (histograms.empty()) {  // default to current channel, auto bin size for image region
-            std::vector<CARTA::SetHistogramRequirements_HistogramConfig> defaultConfigs;
             CARTA::SetHistogramRequirements_HistogramConfig config;
             config.set_channel(CURRENT_CHANNEL);
             config.set_num_bins(AUTO_BIN_SIZE);
-            defaultConfigs.push_back(config);
+            std::vector<CARTA::SetHistogramRequirements_HistogramConfig> defaultConfigs(1, config);
             regionOK = region->setHistogramRequirements(defaultConfigs);
         } else {
             regionOK = region->setHistogramRequirements(histograms);
@@ -524,76 +371,148 @@ bool Frame::setRegionStatsRequirements(int regionId, const std::vector<int> stat
     return regionOK;
 }
 
-// ***** region data *****
 
-// ***** histograms *****
+// ****************************************************
+// Region data
 
-// helpers
-int Frame::calcAutoNumBins() {
-    // automatic bin size for histogram when num_bins = -1
-    return int(max(sqrt(imageShape(0) * imageShape(1)), 2.0));
-}
+bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::string& message) {
+    // fill data message with compressed channel cache data
+    bool rasterDataOK(false);
+    std::vector<float> imageData;
+    if (getImageData(imageData)) {
+        rasterImageData.mutable_image_bounds()->set_x_min(bounds.x_min());
+        rasterImageData.mutable_image_bounds()->set_x_max(bounds.x_max());
+        rasterImageData.mutable_image_bounds()->set_y_min(bounds.y_min());
+        rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
+        rasterImageData.set_channel(channelIndex);
+        rasterImageData.set_stokes(stokesIndex);
+        rasterImageData.set_mip(mip);
+        if (compType == CARTA::CompressionType::NONE) {
+            rasterImageData.set_compression_type(CARTA::CompressionType::NONE);
+            rasterImageData.set_compression_quality(0);
+            rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
+            rasterDataOK = true;
+        } else if (compType == CARTA::CompressionType::ZFP) {
+            rasterImageData.set_compression_type(CARTA::CompressionType::ZFP);
+            int precision = lround(quality);
+            rasterImageData.set_compression_quality(precision);
 
-bool Frame::getRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval) {
-    // Return stored min and max value; false if not stored
-    bool haveMinMax(false);
-    if (regions.count(regionId)) {
-        auto& region = regions[regionId];
-        haveMinMax = region->getMinMax(channel, stokes, minval, maxval);
-    } 
-    return haveMinMax;
-}
+            auto rowLength = (bounds.x_max() - bounds.x_min()) / mip;
+            auto numRows = (bounds.y_max() - bounds.y_min()) / mip;
+            std::vector<std::vector<char>> compressionBuffers(nsubsets);
+            std::vector<size_t> compressedSizes(nsubsets);
+            std::vector<std::vector<int32_t>> nanEncodings(nsubsets);
 
-bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval) {
-    // Calculate and store min/max for region data
-    bool minmaxOK(false);
-    if (regions.count(regionId)) {
-        auto& region = regions[regionId];
-        if (channel == currentChannel()) {
-            bool writeLock(false);
-            tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-            region->calcMinMax(channel, stokes, channelCache, minval, maxval);
+            auto N = std::min(nsubsets, MAX_SUBSETS);
+            auto range = tbb::blocked_range<int>(0, N);
+            auto loop = [&](const tbb::blocked_range<int> &r) {
+                for(int i = r.begin(); i != r.end(); ++i) {
+                    int subsetRowStart = i * (numRows / N);
+                    int subsetRowEnd = (i + 1) * (numRows / N);
+                    if (i == N - 1) {
+                        subsetRowEnd = numRows;
+                    }
+                    int subsetElementStart = subsetRowStart * rowLength;
+                    int subsetElementEnd = subsetRowEnd * rowLength;
+                    nanEncodings[i] = getNanEncodingsBlock(imageData, subsetElementStart, rowLength,
+                        subsetRowEnd - subsetRowStart);
+                    compress(imageData, subsetElementStart, compressionBuffers[i], compressedSizes[i],
+                        rowLength, subsetRowEnd - subsetRowStart, precision);
+                }
+            };
+            tbb::parallel_for(range, loop);
+
+            // Complete message
+            for (auto i = 0; i < nsubsets; i++) {
+                rasterImageData.add_image_data(compressionBuffers[i].data(), compressedSizes[i]);
+                rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(),
+                    nanEncodings[i].size() * sizeof(int));
+            }
+            rasterDataOK = true;
         } else {
-            std::vector<float> data;
-            getChannelMatrix(data, channel, stokes);
-            region->calcMinMax(channel, stokes, data, minval, maxval);
+            message = "SZ compression not implemented";
         }
-        minmaxOK = true;
+    } else {
+        message = "Raster image data failed to load";
     }
-    return minmaxOK;
-} 
-
-bool Frame::getRegionHistogram(int regionId, int channel, int stokes, int nbins, CARTA::Histogram& histogram) {
-    // Return stored histogram in histogram parameter
-    bool haveHistogram(false);
-    if (regions.count(regionId)) {
-        auto& region = regions[regionId];
-        nbins = (nbins==AUTO_BIN_SIZE ? calcAutoNumBins() : nbins);
-        haveHistogram = region->getHistogram(channel, stokes, nbins, histogram);
-    }
-    return haveHistogram;
+    return rasterDataOK;
 }
 
-bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins, float minval, float maxval,
-    CARTA::Histogram& histogram) {
-    // Return calculated histogram in histogram parameter
-    bool histogramOK(false);
-    if (regions.count(regionId)) {
-        auto& region = regions[regionId];
-        nbins = (nbins==AUTO_BIN_SIZE ? calcAutoNumBins() : nbins);
-        if (channel == currentChannel()) {
-            bool writeLock(false);
-            tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-            region->calcHistogram(channel, stokes, nbins, minval, maxval, channelCache, histogram);
-        } else {
-            std::vector<float> data;
-            getChannelMatrix(data, channel, stokes);
-            region->calcHistogram(channel, stokes, nbins, minval, maxval, data, histogram);
-        }
-        histogramOK = true;
+bool Frame::getImageData(std::vector<float>& imageData, bool meanFilter) {
+    // apply bounds and downsample channel cache
+    if (!valid || imageCache.empty()) {
+        return false;
     }
-    return histogramOK;
+
+    const int x = bounds.x_min();
+    const int y = bounds.y_min();
+    const int reqHeight = bounds.y_max() - y;
+    const int reqWidth = bounds.x_max() - x;
+
+    // check bounds
+    if ((reqHeight < 0) || (reqWidth < 0))
+        return false;
+    if (imageShape(1) < y + reqHeight || imageShape(0) < x + reqWidth)
+        return false;
+    // check mip; cannot divide by zero
+    if (mip < 0)
+        return false;
+
+    // size returned vector
+    size_t numRowsRegion = reqHeight / mip;
+    size_t rowLengthRegion = reqWidth / mip;
+    imageData.resize(numRowsRegion * rowLengthRegion);
+    int nImgCol = imageShape(0);
+
+    // read lock imageCache
+    bool writeLock(false);
+    tbb::queuing_rw_mutex::scoped_lock lock(cacheMutex, writeLock);
+
+    if (meanFilter) {
+        // Perform down-sampling by calculating the mean for each MIPxMIP block
+        auto range = tbb::blocked_range2d<size_t>(0, numRowsRegion, 0, rowLengthRegion);
+        auto loop = [&](const tbb::blocked_range2d<size_t>& r) {
+            for (size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
+                for (size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
+                    float pixelSum = 0;
+                    int pixelCount = 0;
+                    size_t imageRow = y + j * mip;
+                    for (size_t pixelY = 0; pixelY < mip; pixelY++) {
+                        size_t imageCol = x + i * mip;
+                        for (size_t pixelX = 0; pixelX < mip; pixelX++) {
+                            float pixVal = imageCache[(imageRow * nImgCol) + imageCol];
+                            if (isfinite(pixVal)) {
+                                pixelCount++;
+                                pixelSum += pixVal;
+                            }
+                            imageCol++;
+                        }
+                        imageRow++;
+                    }
+                    imageData[j * rowLengthRegion + i] = pixelCount ? pixelSum / pixelCount : NAN;
+                }
+            }
+        };
+        tbb::parallel_for(range, loop);
+    } else {
+        // Nearest neighbour filtering
+        auto range = tbb::blocked_range2d<size_t>(0, numRowsRegion, 0, rowLengthRegion);
+        auto loop = [&](const tbb::blocked_range2d<size_t> &r) {
+            for (auto j = 0; j < numRowsRegion; j++) {
+                for (auto i = 0; i < rowLengthRegion; i++) {
+                    auto imageRow = y + j * mip;
+                    auto imageCol = x + i * mip;
+                    imageData[j * rowLengthRegion + i] = imageCache[(imageRow * nImgCol) + imageCol];
+                }
+            }
+        };
+        tbb::parallel_for(range, loop);
+    }
+    return true;
 }
+
+// ****************************************************
+// Region histograms, profiles, stats
 
 bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData) {
     bool histogramOK(false);
@@ -611,7 +530,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             CARTA::SetHistogramRequirements_HistogramConfig config = region->getHistogramConfig(i);
             int configChannel(config.channel()), configNumBins(config.num_bins());
             if (configChannel == CURRENT_CHANNEL) {
-                configChannel = currentChannel();
+                configChannel = channelIndex;
             }
             auto newHistogram = histogramData->add_histograms();
             newHistogram->set_channel(configChannel);
@@ -649,31 +568,6 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
     return histogramOK;
 }
 
-// store cube histogram calculations
-void Frame::setRegionMinMax(int regionId, int channel, int stokes, float minval, float maxval) {
-    // Store cube min/max calculated in Session
-    if (!regions.count(regionId) && (regionId==CUBE_REGION_ID))
-        setImageRegion(CUBE_REGION_ID);
-
-    if (regions.count(regionId)) {
-        auto& region = regions[regionId];
-        region->setMinMax(channel, stokes, minval, maxval);
-    }
-}
-
-void Frame::setRegionHistogram(int regionId, int channel, int stokes, CARTA::Histogram& histogram) {
-    // Store cube histogram calculated in Session
-    if (!regions.count(regionId) && (regionId==CUBE_REGION_ID))
-        setImageRegion(CUBE_REGION_ID);
-
-    if (regions.count(regionId)) {
-        auto& region = regions[regionId];
-        region->setHistogram(channel, stokes, histogram);
-    }
-}
-    
-// ***** profiles *****
-
 bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData) {
     bool profileOK(false);
     if (regions.count(regionId)) {
@@ -686,16 +580,15 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
         std::vector<CARTA::Point> ctrlPts = region->getControlPoints();
         int x(static_cast<int>(std::round(ctrlPts[0].x()))),
             y(static_cast<int>(std::round(ctrlPts[0].y())));
-        int chan(currentChannel()), stokes(currentStokes());
         ssize_t nImageCol(imageShape(0)), nImageRow(imageShape(1));
         bool writeLock(false);
         tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-        float value = channelCache[(y*nImageCol) + x];
+        float value = imageCache[(y*nImageCol) + x];
         cacheLock.release();
         profileData.set_x(x);
         profileData.set_y(y);
-        profileData.set_channel(chan);
-        profileData.set_stokes(stokes);
+        profileData.set_channel(channelIndex);
+        profileData.set_stokes(stokesIndex);
         profileData.set_value(value);
         // set profiles
         for (size_t i=0; i<numProfiles; ++i) {
@@ -705,7 +598,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
             std::pair<int,int> axisStokes = region->getSpatialProfileReq(i);
             std::vector<float> profile;
             int end;
-            if ((axisStokes.second == -1) || (axisStokes.second == stokes)) {
+            if ((axisStokes.second == -1) || (axisStokes.second == stokesIndex)) {
                 // use stored channel cache
                 switch (axisStokes.first) {
                     case 0: { // x
@@ -714,7 +607,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                         profile.reserve(imageShape(0));
                         for (unsigned int i=0; i<imageShape(0); ++i) {
                             auto idx = xStart + i;
-                            profile.push_back(channelCache[idx]);
+                            profile.push_back(imageCache[idx]);
                         }
                         cacheLock.release();
                         end = imageShape(0);
@@ -725,7 +618,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                         profile.reserve(imageShape(1));
                         for (unsigned int i=0; i<imageShape(1); ++i) {
                             auto idx = (i * nImageCol) + x;
-                            profile.push_back(channelCache[idx]);
+                            profile.push_back(imageCache[idx]);
                         }
                         cacheLock.release();
                         end = imageShape(1);
@@ -737,12 +630,12 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                 casacore::Slicer section;
                 switch (axisStokes.first) {
                     case 0: {  // x
-                        getLatticeSlicer(section, -1, y, chan, axisStokes.second);
+                        getLatticeSlicer(section, -1, y, channelIndex, axisStokes.second);
                         end = imageShape(0);
                         break;
                     }
                     case 1: { // y
-                        getLatticeSlicer(section, x, -1, chan, axisStokes.second);
+                        getLatticeSlicer(section, x, -1, channelIndex, axisStokes.second);
                         end = imageShape(1);
                         break;
                     }
@@ -795,18 +688,16 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
     return profileOK;
 }
 
-// ***** stats *****
-
 bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData) {
+    // TODO:: this needs work
     bool statsOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         if (region->numStats() > 0) {
-            int currChan(currentChannel()), currStokes(currentStokes());
-            statsData.set_channel(currChan);
-            statsData.set_stokes(currStokes);
+            statsData.set_channel(channelIndex);
+            statsData.set_stokes(stokesIndex);
             casacore::Slicer lattSlicer;
-            lattSlicer = getChannelMatrixSlicer(currChan, currStokes);  // for entire 2D image, for now
+            lattSlicer = getChannelMatrixSlicer(channelIndex, stokesIndex);  // for entire 2D image, for now
             casacore::SubLattice<float> subLattice(loader->loadData(FileInfo::Data::XYZW), lattSlicer);
             std::unique_lock<std::mutex> guard(latticeMutex);
             region->fillStatsData(statsData, subLattice);
@@ -814,4 +705,97 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         }
     }
     return statsOK;
+}
+
+// ****************************************************
+// Region histograms only (not full data message
+
+int Frame::calcAutoNumBins() {
+    // automatic bin size for histogram when num_bins = -1
+    return int(max(sqrt(imageShape(0) * imageShape(1)), 2.0));
+}
+
+bool Frame::getRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval) {
+    // Return stored min and max value; false if not stored
+    bool haveMinMax(false);
+    if (regions.count(regionId)) {
+        auto& region = regions[regionId];
+        haveMinMax = region->getMinMax(channel, stokes, minval, maxval);
+    } 
+    return haveMinMax;
+}
+
+bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval) {
+    // Calculate and store min/max for region data
+    bool minmaxOK(false);
+    if (regions.count(regionId)) {
+        auto& region = regions[regionId];
+        if (channel == channelIndex) {  // use channel cache
+            bool writeLock(false);
+            tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+            region->calcMinMax(channel, stokes, imageCache, minval, maxval);
+        } else {
+            std::vector<float> data;
+            getChannelMatrix(data, channel, stokes);
+            region->calcMinMax(channel, stokes, data, minval, maxval);
+        }
+        minmaxOK = true;
+    }
+    return minmaxOK;
+} 
+
+bool Frame::getRegionHistogram(int regionId, int channel, int stokes, int nbins,
+    CARTA::Histogram& histogram) {
+    // Return stored histogram in histogram parameter
+    bool haveHistogram(false);
+    if (regions.count(regionId)) {
+        auto& region = regions[regionId];
+        nbins = (nbins==AUTO_BIN_SIZE ? calcAutoNumBins() : nbins);
+        haveHistogram = region->getHistogram(channel, stokes, nbins, histogram);
+    }
+    return haveHistogram;
+}
+
+bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins, float minval,
+    float maxval, CARTA::Histogram& histogram) {
+    // Return calculated histogram in histogram parameter
+    bool histogramOK(false);
+    if (regions.count(regionId)) {
+        auto& region = regions[regionId];
+        nbins = (nbins==AUTO_BIN_SIZE ? calcAutoNumBins() : nbins);
+        if (channel == channelIndex) {  // use channel cache
+            bool writeLock(false);
+            tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+            region->calcHistogram(channel, stokes, nbins, minval, maxval, imageCache, histogram);
+        } else {
+            std::vector<float> data;
+            getChannelMatrix(data, channel, stokes);
+            region->calcHistogram(channel, stokes, nbins, minval, maxval, data, histogram);
+        }
+        histogramOK = true;
+    }
+    return histogramOK;
+}
+
+// store cube histogram calculations
+void Frame::setRegionMinMax(int regionId, int channel, int stokes, float minval, float maxval) {
+    // Store cube min/max calculated in Session
+    if (!regions.count(regionId) && (regionId==CUBE_REGION_ID))
+        setImageRegion(CUBE_REGION_ID);
+
+    if (regions.count(regionId)) {
+        auto& region = regions[regionId];
+        region->setMinMax(channel, stokes, minval, maxval);
+    }
+}
+
+void Frame::setRegionHistogram(int regionId, int channel, int stokes, CARTA::Histogram& histogram) {
+    // Store cube histogram calculated in Session
+    if (!regions.count(regionId) && (regionId==CUBE_REGION_ID))
+        setImageRegion(CUBE_REGION_ID);
+
+    if (regions.count(regionId)) {
+        auto& region = regions[regionId];
+        region->setHistogram(channel, stokes, histogram);
+    }
 }

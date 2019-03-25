@@ -1,8 +1,4 @@
 //# Region.h: class for managing a region
-// Region could be:
-// * the entire image
-// * a point
-// * a region
 
 #pragma once
 
@@ -14,16 +10,30 @@ namespace carta {
 
 class Region {
 
+// Region could be:
+// * the 3D cube for a given stokes
+// * the 2D image for a given channel, stokes
+// * a 1-pixel cursor (point) for a given x, y, and stokes, and all channels
+// * a CARTA::Region type
+
 public:
-    Region(const std::string& name, const CARTA::RegionType type);
+    Region(const std::string& name, const CARTA::RegionType type, int minchan, int maxchan,
+        const std::vector<CARTA::Point>& points, const float rotation,
+        const casacore::IPosition imageShape, int spectralAxis, int stokesAxis);
     ~Region();
 
-    // set Region parameters
-    void setChannels(int minchan, int maxchan, const std::vector<int>& stokes);
-    void setControlPoints(const std::vector<CARTA::Point>& points);
-    void setRotation(const float rotation);
-    // get Region parameters
-    std::vector<CARTA::Point> getControlPoints();
+    // to determine if data needs to be updated
+    inline bool isValid() { return m_valid; };
+    inline bool isPoint() { return (m_type==CARTA::POINT); };
+    inline bool regionChanged() { return m_xyRegionChanged; };
+    inline bool spectralChanged() { return m_spectralChanged; };
+
+    // set/get Region parameters
+    bool updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>& points, float rotation);
+    // For image region, chan/stokes can be set separately
+    bool setChannelRange(int minchan, int maxchan);
+    bool setStokes(int stokes);
+    inline std::vector<CARTA::Point> getControlPoints() { return m_ctrlpoints; };
 
     // Histogram: pass through to RegionStats
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
@@ -59,14 +69,31 @@ public:
 
 private:
 
-    // region definition (ICD SET_REGION)
+    // bounds checking for Region parameters
+    bool setPoints(const std::vector<CARTA::Point>& points);
+    bool checkPoints(const std::vector<CARTA::Point>& points);
+    bool checkPixelPoint(const std::vector<CARTA::Point>& points);
+    bool checkRectanglePoints(const std::vector<CARTA::Point>& points);
+    bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
+    bool checkChannelRange(int& minchan, int& maxchan);
+    bool checkStokes(int& stokes);
+    
+    // region definition (ICD SET_REGION parameters)
     std::string m_name;
     CARTA::RegionType m_type;
-    int m_minchan, m_maxchan;
-    std::vector<int> m_stokes;
     std::vector<CARTA::Point> m_ctrlpoints;
+    int m_minchan, m_maxchan, m_stokes;
     float m_rotation;
 
+    // region flags
+    bool m_valid;
+    bool m_xyRegionChanged, m_spectralChanged;  // indicates which data to update
+
+    // image shape info
+    casacore::IPosition m_latticeShape;
+    int m_spectralAxis, m_stokesAxis;
+
+    // classes for requirements, calculations
     std::unique_ptr<carta::RegionStats> m_stats;
     std::unique_ptr<carta::RegionProfiler> m_profiler;
 };

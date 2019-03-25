@@ -140,14 +140,14 @@ jobs:
         - echo "Upload the package"
         - cd $HOME
         - ls -sort
-        - cp -r package package_$TRAVIS_JOB_NUMBER
-        - tar -czvf package_$TRAVIS_JOB_NUMBER.tar.gz package_$TRAVIS_JOB_NUMBER
+        - cp -r package MacOS_backend_$TRAVIS_COMMIT
+        - tar -czvf MacOS_backend_$TRAVIS_COMMIT.tar.gz MacOS_backend_$TRAVIS_COMMIT
         - export SSHPASS=$DEPLOY_PASS
 
         - brew install https://raw.githubusercontent.com/kadwanev/bigboybrew/master/Library/Formula/sshpass.rb
 
         - export SSHPASS=$DEPLOY_PASS
-        - sshpass -e scp -o stricthostkeychecking=no -P $DEPLOY_PORT package_$TRAVIS_JOB_NUMBER.tar.gz $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
+        - sshpass -e scp -o stricthostkeychecking=no -P $DEPLOY_PORT MacOS_backend_$TRAVIS_COMMIT.tar.gz $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
 #        - echo "Finished !!"
 
     - stage: run tests
@@ -193,5 +193,5 @@ jobs:
         - ./build_proto.sh
         - cd ..
         - ls src/test/
-        - CI=true npm run test
+        - ./run-travis.sh
         - echo "Finished !!"
