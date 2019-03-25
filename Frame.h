@@ -27,8 +27,7 @@ private:
 
     // image loader, stats from image file
     std::string filename;
-    std::unique_ptr<carta::FileLoader> loader;    std::vector<std::vector<carta::FileInfo::ImageStats>> channelStats;
-    std::vector<carta::FileInfo::ImageStats> cubeStats;
+    std::unique_ptr<carta::FileLoader> loader;
 
     // shape
     casacore::IPosition imageShape; // (width, height, depth, stokes)

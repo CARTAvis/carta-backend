@@ -24,24 +24,12 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
             return;
         }
         loader->openFile(filename, hdu);
-        auto &dataSet = loader->loadData(FileInfo::Data::XYZW);
-
-        imageShape = dataSet.shape();
-        size_t ndims = imageShape.size();
-        if (ndims < 2 || ndims > 4) {
+        
+        // Get shape and axis values from the loader
+        if (!loader->findShape(imageShape, nchan, nstok, spectralAxis, stokesAxis)) {
             valid = false;
             return;
         }
-
-        // determine axis order (0-based)
-        if (ndims == 3) { // use defaults
-            spectralAxis = 2;
-            stokesAxis = -1;
-        } else if (ndims == 4) {  // find spectral and stokes axes
-            loader->findCoords(spectralAxis, stokesAxis);
-        }
-        nchan = (spectralAxis>=0 ? imageShape(spectralAxis) : 1);
-        nstok = (stokesAxis>=0 ? imageShape(stokesAxis) : 1);
 
         // make Region for entire image (after current channel/stokes set)
         setImageRegion(IMAGE_REGION_ID);
@@ -53,7 +41,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         setImageCache();
 
         // resize stats vectors and load data from image, if the format supports it
-        loader->loadImageStats(channelStats, cubeStats, nchannels(), nstokes(), ndims);
+        loader->loadImageStats();
     } catch (casacore::AipsError& err) {
         log(uuid, "Problem loading file {}: {}", filename, err.getMesg());
         valid = false;
@@ -538,7 +526,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             auto newHistogram = histogramData->add_histograms();
             newHistogram->set_channel(configChannel);
             // get stored histograms or fill new histograms
-            auto& currentStats = configChannel >= 0 ? channelStats[currStokes][configChannel] : cubeStats[currStokes];
+            auto& currentStats = loader->getImageStats(currStokes, configChannel);
             bool haveHistogram(false);
 
             // Check if read from image file (HDF5 only)

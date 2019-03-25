@@ -76,13 +76,43 @@ void FileLoader::findCoords(int& spectralAxis, int& stokesAxis) {
     }
 }
 
-void FileLoader::loadImageStats(channel_stats_ref channelStats, cube_stats_ref cubeStats,
-    size_t nchannels, size_t nstokes, size_t ndims, bool loadPercentiles
-) {
+bool FileLoader::findShape(ipos& shape, size_t& nchannels, size_t& nstokes, int& spectralAxis, int& stokesAxis) {
+    auto &image = loadData(FileInfo::Data::XYZW);
+    
+    shape = image.shape();
+    size_t ndims = shape.size();
+    
+    if (ndims < 2 || ndims > 4) {
+        return false;
+    }
+
+    // determine axis order (0-based)
+    if (ndims == 3) { // use defaults
+        spectralAxis = 2;
+        stokesAxis = -1;
+    } else if (ndims == 4) {  // find spectral and stokes axes
+        findCoords(spectralAxis, stokesAxis);
+    }
+    
+    nchannels = (spectralAxis>=0 ? shape(spectralAxis) : 1);
+    nstokes = (stokesAxis>=0 ? shape(stokesAxis) : 1);
+    
+    this->ndims = ndims;
+    this->nchannels = nchannels;
+    this->nstokes = nstokes;
+    
+    return true;
+}
+
+void FileLoader::loadImageStats(bool loadPercentiles) {
     // TODO this is here for compatibility and needs to be refactored. Eventually this will be  a generic implementation which includes loading the data, as before. 
     channelStats.resize(nstokes);
     for (auto i = 0; i < nstokes; i++) {
         channelStats[i].resize(nchannels);
     }
     cubeStats.resize(nstokes);
+}
+
+FileInfo::ImageStats& FileLoader::getImageStats(int stokes, int channel) {
+    return (channel >= 0 ? channelStats[stokes][channel] : cubeStats[stokes]);
 }

@@ -49,8 +49,6 @@ inline casacore::uInt getFITShdu(const std::string &hdu) {
 class FileLoader {
 public:
     using image_ref = casacore::Lattice<float>&;
-    using channel_stats_ref = std::vector<std::vector<FileInfo::ImageStats>>&;
-    using cube_stats_ref = std::vector<FileInfo::ImageStats>&;
     using ipos = casacore::IPosition;
     
     virtual ~FileLoader() = default;
@@ -58,10 +56,14 @@ public:
     static FileLoader* getLoader(const std::string &file);
     // return coordinates for axis types
     virtual void findCoords(int& spectralAxis, int& stokesAxis);
-    // Load image statistics, if they exist, from the file into the data structures provided
-    virtual void loadImageStats(channel_stats_ref channelStats, cube_stats_ref cubeStats,
-        size_t nchannels, size_t nstokes, size_t ndims,
-        bool loadPercentiles=false);
+    
+    // get shape and axis information from image
+    virtual bool findShape(ipos& shape, size_t& nchannels, size_t& nstokes, int& spectralAxis, int& stokesAxis);
+    
+    // Load image statistics, if they exist, from the file
+    virtual void loadImageStats(bool loadPercentiles=false);
+    // Retrieve stats for a particular channel or all channels
+    virtual FileInfo::ImageStats& getImageStats(int currStokes, int channel);
 
     // Do anything required to open the file (set up cache size, etc)
     virtual void openFile(const std::string &file, const std::string &hdu) = 0;
@@ -70,8 +72,12 @@ public:
     // Return a casacore image type representing the data stored in the
     // specified HDU/group/table/etc.
     virtual image_ref loadData(FileInfo::Data ds) = 0;
+    
 protected:
     virtual const casacore::CoordinateSystem& getCoordSystem() = 0;
+    size_t nchannels, nstokes, ndims;
+    std::vector<std::vector<carta::FileInfo::ImageStats>> channelStats;
+    std::vector<carta::FileInfo::ImageStats> cubeStats;
 };
 
 } // namespace carta

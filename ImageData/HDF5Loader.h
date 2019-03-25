@@ -17,9 +17,7 @@ public:
     image_ref loadData(FileInfo::Data ds) override;
     const casacore::CoordinateSystem& getCoordSystem() override;
     void findCoords(int& spectralAxis, int& stokesAxis) override;
-    void loadImageStats(channel_stats_ref channelStats, cube_stats_ref cubeStats,
-        size_t nchannels, size_t nstokes, size_t ndims, 
-        bool loadPercentiles=false) override;
+    void loadImageStats(bool loadPercentiles=false) override;
 
 private:
     std::string file, hdf5Hdu;
@@ -27,31 +25,14 @@ private:
     
     static std::string dataSetToString(FileInfo::Data ds);
     
-    template <typename T>
-    const ipos getStatsDataShape(FileInfo::Data ds);
-    
-    template <typename T>
-    casacore::Array<T> getStatsData(FileInfo::Data ds);
-    
-    template <typename T>
-    void loadStats2DBasic(FileInfo::Data ds, channel_stats_ref channelStats,
-        size_t nchannels, size_t nstokes, size_t ndims);
-    
-    void loadStats2DHist(channel_stats_ref channelStats,
-        size_t nchannels, size_t nstokes, size_t ndims);
-    
-    void loadStats2DPercent(channel_stats_ref channelStats,
-        size_t nchannels, size_t nstokes, size_t ndims);
-    
-    template <typename T>
-    void loadStats3DBasic(FileInfo::Data ds, cube_stats_ref cubeStats,
-        size_t nchannels, size_t nstokes, size_t ndims);
-    
-    void loadStats3DHist(cube_stats_ref cubeStats,
-        size_t nchannels, size_t nstokes, size_t ndims);
-    
-    void loadStats3DPercent(cube_stats_ref cubeStats,
-        size_t nchannels, size_t nstokes, size_t ndims);
+    template <typename T> const ipos getStatsDataShape(FileInfo::Data ds);
+    template <typename T> casacore::Array<T> getStatsData(FileInfo::Data ds);
+    template <typename T> void loadStats2DBasic(FileInfo::Data ds);
+    void loadStats2DHist();
+    void loadStats2DPercent();
+    template <typename T> void loadStats3DBasic(FileInfo::Data ds);
+    void loadStats3DHist();
+    void loadStats3DPercent();
 };
 
 HDF5Loader::HDF5Loader(const std::string &filename)
@@ -163,8 +144,7 @@ casacore::Array<T> HDF5Loader::getStatsData(FileInfo::Data ds) {
 }
 
 template <typename T>
-void HDF5Loader::loadStats2DBasic(FileInfo::Data ds, channel_stats_ref channelStats,
-    size_t nchannels, size_t nstokes, size_t ndims) {
+void HDF5Loader::loadStats2DBasic(FileInfo::Data ds) {
     if (hasData(ds)) {
         const ipos& statDims = getStatsDataShape<T>(ds);
         
@@ -209,9 +189,9 @@ void HDF5Loader::loadStats2DBasic(FileInfo::Data ds, channel_stats_ref channelSt
     }
 }
 
-void HDF5Loader::loadStats2DHist(channel_stats_ref channelStats,
-    size_t nchannels, size_t nstokes, size_t ndims) {
+void HDF5Loader::loadStats2DHist() {
     FileInfo::Data ds = FileInfo::Data::S2DHist;
+    
     if (hasData(ds)) {
         const ipos& statDims = getStatsDataShape<casacore::Int64>(ds);
         
@@ -238,9 +218,7 @@ void HDF5Loader::loadStats2DHist(channel_stats_ref channelStats,
 
 // TODO: untested
 
-void HDF5Loader::loadStats2DPercent(channel_stats_ref channelStats,
-    size_t nchannels, size_t nstokes, size_t ndims) { 
-    
+void HDF5Loader::loadStats2DPercent() {
     FileInfo::Data dsr = FileInfo::Data::Ranks;
     FileInfo::Data dsp = FileInfo::Data::S2DPercent;
     
@@ -273,8 +251,7 @@ void HDF5Loader::loadStats2DPercent(channel_stats_ref channelStats,
 }
 
 template <typename T>
-void HDF5Loader::loadStats3DBasic(FileInfo::Data ds, cube_stats_ref cubeStats,
-    size_t nchannels, size_t nstokes, size_t ndims) {
+void HDF5Loader::loadStats3DBasic(FileInfo::Data ds) {
     if (hasData(ds)) {
         const ipos& statDims = getStatsDataShape<T>(ds);
                     
@@ -310,9 +287,9 @@ void HDF5Loader::loadStats3DBasic(FileInfo::Data ds, cube_stats_ref cubeStats,
     }
 }
 
-void HDF5Loader::loadStats3DHist(cube_stats_ref cubeStats,
-    size_t nchannels, size_t nstokes, size_t ndims) {
+void HDF5Loader::loadStats3DHist() {
     FileInfo::Data ds = FileInfo::Data::S3DHist;
+    
     if (hasData(ds)) {
         const ipos& statDims = getStatsDataShape<casacore::Int64>(ds);
         auto nbins = statDims[0];
@@ -335,9 +312,7 @@ void HDF5Loader::loadStats3DHist(cube_stats_ref cubeStats,
 
 // TODO: untested
 
-void HDF5Loader::loadStats3DPercent(cube_stats_ref cubeStats,
-    size_t nchannels, size_t nstokes, size_t ndims) {
-    
+void HDF5Loader::loadStats3DPercent() {
     FileInfo::Data dsr = FileInfo::Data::Ranks;
     FileInfo::Data dsp = FileInfo::Data::S2DPercent;
     
@@ -368,8 +343,7 @@ void HDF5Loader::loadStats3DPercent(cube_stats_ref cubeStats,
     }
 }
 
-void HDF5Loader::loadImageStats(channel_stats_ref channelStats, cube_stats_ref cubeStats,
-    size_t nchannels, size_t nstokes, size_t ndims, bool loadPercentiles) {
+void HDF5Loader::loadImageStats(bool loadPercentiles) {
     // load channel stats for entire image (all channels and stokes) from header
     // channelStats[stokes][chan]
     // cubeStats[stokes]
@@ -381,30 +355,31 @@ void HDF5Loader::loadImageStats(channel_stats_ref channelStats, cube_stats_ref c
     cubeStats.resize(nstokes);
     
     //TODO: Support multiple HDUs
-    if (hasData(FileInfo::Data::Stats) && hasData(FileInfo::Data::Stats2D)) {
-        
-        loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMax, channelStats, nchannels, nstokes, ndims);
-        loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMin, channelStats, nchannels, nstokes, ndims);
-        loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMean, channelStats, nchannels, nstokes, ndims);
-        loadStats2DBasic<casacore::Int64>(FileInfo::Data::S2DNans, channelStats, nchannels, nstokes, ndims);
+    if (hasData(FileInfo::Data::Stats)) {
+        if (hasData(FileInfo::Data::Stats2D)) {
+            loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMax);
+            loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMin);
+            loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMean);
+            loadStats2DBasic<casacore::Int64>(FileInfo::Data::S2DNans);
 
-        loadStats2DHist(channelStats, nchannels, nstokes, ndims);
-        
-        if (loadPercentiles) {
-            loadStats2DPercent(channelStats, nchannels, nstokes, ndims);
+            loadStats2DHist();
+            
+            if (loadPercentiles) {
+                loadStats2DPercent();
+            }
         }
-    }
-    
-    if (hasData(FileInfo::Data::Stats) && hasData(FileInfo::Data::Stats3D)) {        
-        loadStats3DBasic<casacore::Float>(FileInfo::Data::S3DMax, cubeStats, nchannels, nstokes, ndims);       
-        loadStats3DBasic<casacore::Float>(FileInfo::Data::S3DMin, cubeStats, nchannels, nstokes, ndims);      
-        loadStats3DBasic<casacore::Float>(FileInfo::Data::S3DMean, cubeStats, nchannels, nstokes, ndims);     
-        loadStats3DBasic<casacore::Int64>(FileInfo::Data::S3DNans, cubeStats, nchannels, nstokes, ndims);
-
-        loadStats3DHist(cubeStats, nchannels, nstokes, ndims);
         
-        if (loadPercentiles) {
-            loadStats3DPercent(cubeStats, nchannels, nstokes, ndims);
+        if (hasData(FileInfo::Data::Stats3D)) {        
+            loadStats3DBasic<casacore::Float>(FileInfo::Data::S3DMax);       
+            loadStats3DBasic<casacore::Float>(FileInfo::Data::S3DMin);      
+            loadStats3DBasic<casacore::Float>(FileInfo::Data::S3DMean);     
+            loadStats3DBasic<casacore::Int64>(FileInfo::Data::S3DNans);
+
+            loadStats3DHist();
+            
+            if (loadPercentiles) {
+                loadStats3DPercent();
+            }
         }
     }
 }
