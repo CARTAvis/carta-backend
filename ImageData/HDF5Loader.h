@@ -34,9 +34,6 @@ private:
     casacore::Array<T> getStatsData(FileInfo::Data ds);
     
     template <typename T>
-    T getStatsDataScalar(FileInfo::Data ds);
-    
-    template <typename T>
     void loadStats2DBasic(FileInfo::Data ds, channel_stats_ref channelStats,
         size_t nchannels, size_t nstokes, size_t ndims);
     
@@ -137,34 +134,32 @@ const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
     return lelImCoords->coordinates();
 }
 
-// TODO: instead of creating lattices, create datasets directly
-// TODO: helper function to create dataset and return array
 // TODO: we need to use the C API to read scalar datasets for now, but we should patch casacore to handle them correctly
 // TODO: switches outside loops for now; should profile to see if moving them inside adds significant overhead
-// TODO: move main function and helper functions to top-level loader interface once all the HDF5-specific functions have been extracted to other functions.
+// TODO: we could move the main function and helper functions to top-level loader interface -- but templated members can't be virtual, so we would need to refactor this to be untemplated. We only need to support float and integer datasets.
 
 template <typename T>
 const HDF5Loader::ipos HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
-    auto dataSet = casacore::HDF5Lattice<T>(file, dataSetToString(ds), hdf5Hdu);
+    casacore::HDF5DataSet dataSet(*image.group(), dataSetToString(ds), (const T*)0);
     return dataSet.shape();
 }
 
 template <typename T>
 casacore::Array<T> HDF5Loader::getStatsData(FileInfo::Data ds) {
-    auto dataSet = casacore::HDF5Lattice<T>(file, dataSetToString(ds), hdf5Hdu);
-    casacore::Array<T> data;
-    dataSet.get(data, true);
-    return data;
-}
+    casacore::HDF5DataSet dataSet(*image.group(), dataSetToString(ds), (const T*)0);
 
-template <typename T>
-T HDF5Loader::getStatsDataScalar(FileInfo::Data ds) {
-    auto dataSet = casacore::HDF5Lattice<T>(file, dataSetToString(ds), hdf5Hdu);
-    auto dSet = dataSet.array();
-    T value;
-    casacore::HDF5DataType dtype((T*)0);
-    H5Dread(dSet->getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-    return value;
+    if (dataSet.shape().size() == 0) {
+        // Scalar dataset hackaround
+        T value;
+        casacore::HDF5DataType dtype((T*)0);
+        H5Dread(dataSet.getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+        casacore::Array<T> scalar(ipos(1), value);
+        return scalar;
+    }
+    
+    casacore::Array<T> data;
+    dataSet.get(casacore::Slicer(ipos(dataSet.shape().size(), 0), dataSet.shape()), data);
+    return data;
 }
 
 template <typename T>
@@ -173,24 +168,9 @@ void HDF5Loader::loadStats2DBasic(FileInfo::Data ds, channel_stats_ref channelSt
     if (hasData(ds)) {
         const ipos& statDims = getStatsDataShape<T>(ds);
         
-        // 2D
-        if (ndims == 2 && statDims.size() == 0) {
-            switch(ds) {
-            case FileInfo::Data::S2DMax:
-                channelStats[0][0].maxVal = getStatsDataScalar<T>(ds);
-                break;
-            case FileInfo::Data::S2DMin:
-                channelStats[0][0].minVal = getStatsDataScalar<T>(ds);
-                break;
-            case FileInfo::Data::S2DMean:
-                channelStats[0][0].mean = getStatsDataScalar<T>(ds);
-                break;
-            case FileInfo::Data::S2DNans:
-                channelStats[0][0].nanCount = getStatsDataScalar<T>(ds);
-                break;
-            }
-        } // 3D or 4D
-        else if (ndims == 3 && statDims.isEqual(ipos(1, nchannels))
+        // We can handle 2D, 3D and 4D in the same way
+        if (ndims == 2 && statDims.size() == 0
+            || ndims == 3 && statDims.isEqual(ipos(1, nchannels))
             || ndims == 4 && statDims.isEqual(ipos(2, nchannels, nstokes))) {
             const auto& data = getStatsData<T>(ds);
             auto it = data.begin();
@@ -298,24 +278,9 @@ void HDF5Loader::loadStats3DBasic(FileInfo::Data ds, cube_stats_ref cubeStats,
     if (hasData(ds)) {
         const ipos& statDims = getStatsDataShape<T>(ds);
                     
-        // 3D
-        if (ndims == 3 && statDims.size() == 0) {
-            switch(ds) {
-            case FileInfo::Data::S3DMax:
-                cubeStats[0].maxVal = getStatsDataScalar<T>(ds);
-                break;
-            case FileInfo::Data::S3DMin:
-                cubeStats[0].minVal = getStatsDataScalar<T>(ds);
-                break;
-            case FileInfo::Data::S3DMean:
-                cubeStats[0].mean = getStatsDataScalar<T>(ds);
-                break;
-            case FileInfo::Data::S3DNans:
-                cubeStats[0].nanCount = getStatsDataScalar<T>(ds);
-                break;
-            }
-        } // 4D
-        else if (ndims == 4 && statDims.isEqual(ipos(1, nstokes))) {
+        // We can handle 3D and 4D in the same way
+        if (ndims == 3 && statDims.size() == 0
+            || ndims == 4 && statDims.isEqual(ipos(1, nstokes))) {
             const auto& data = getStatsData<T>(ds);
             auto it = data.begin();
             
@@ -368,8 +333,7 @@ void HDF5Loader::loadStats3DHist(cube_stats_ref cubeStats,
     }
 }
 
-// TODO: untested; need to check if dimension order for matrix and cube is correct
-// TODO: why not use the same method as other stats?
+// TODO: untested
 
 void HDF5Loader::loadStats3DPercent(cube_stats_ref cubeStats,
     size_t nchannels, size_t nstokes, size_t ndims) {
