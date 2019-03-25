@@ -77,8 +77,8 @@ void FileLoader::findCoords(int& spectralAxis, int& stokesAxis) {
 }
 
 void FileLoader::loadImageStats(
-    std::vector<std::vector<FileInfo::ImageStats>>& channelStats,
-    std::vector<FileInfo::ImageStats>& cubeStats,
+    channel_stats_ref channelStats,
+    cube_stats_ref cubeStats,
     size_t nchannels,
     size_t nstokes,
     size_t ndims,

@@ -49,20 +49,18 @@ inline casacore::uInt getFITShdu(const std::string &hdu) {
 class FileLoader {
 public:
     using image_ref = casacore::Lattice<float>&;
+    using channel_stats_ref = std::vector<std::vector<FileInfo::ImageStats>>&;
+    using cube_stats_ref = std::vector<FileInfo::ImageStats>&;
+    
     virtual ~FileLoader() = default;
 
     static FileLoader* getLoader(const std::string &file);
     // return coordinates for axis types
     virtual void findCoords(int& spectralAxis, int& stokesAxis);
     // Load image statistics, if they exist, from the file into the data structures provided
-    virtual void loadImageStats(
-        std::vector<std::vector<FileInfo::ImageStats>>& channelStats,
-        std::vector<FileInfo::ImageStats>& cubeStats,
-        size_t nchannels,
-        size_t nstokes,
-        size_t ndims,
-        bool loadPercentiles=false
-    );
+    virtual void loadImageStats(channel_stats_ref channelStats, cube_stats_ref cubeStats,
+        size_t nchannels, size_t nstokes, size_t ndims,
+        bool loadPercentiles=false);
 
     // Do anything required to open the file (set up cache size, etc)
     virtual void openFile(const std::string &file, const std::string &hdu) = 0;
