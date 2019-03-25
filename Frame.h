@@ -93,7 +93,6 @@ public:
     // image channels
     bool setImageChannels(int newChannel, int newStokes, std::string& message);
     size_t nchannels();
-    size_t nstokes();
     int currentStokes();
     int currentChannel();
 
