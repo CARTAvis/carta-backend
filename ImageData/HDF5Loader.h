@@ -137,7 +137,7 @@ const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
 // TODO: helper function to create dataset and return array
 // TODO: we need to use the C API to read scalar datasets for now, but we should patch casacore to handle them correctly
 // TODO: switches outside loops for now; should profile to see if moving them inside adds significant overhead
-// TODO: move main function to top-level loader interface, and helper functions (unimplemented)
+// TODO: move main function and helper functions to top-level loader interface once all the HDF5-specific functions have been extracted to other functions.
 
 template <typename T>
 void HDF5Loader::loadStats2DBasic( FileInfo::Data ds, channel_stats_ref channelStats,
@@ -486,7 +486,7 @@ void HDF5Loader::loadImageStats(channel_stats_ref channelStats, cube_stats_ref c
     if (hasData(FileInfo::Data::Stats) && hasData(FileInfo::Data::Stats2D)) {
         
         loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMax, channelStats, nchannels, nstokes, ndims);
-        loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMean, channelStats, nchannels, nstokes, ndims);
+        loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMin, channelStats, nchannels, nstokes, ndims);
         loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMean, channelStats, nchannels, nstokes, ndims);
         loadStats2DBasic<casacore::Int64>(FileInfo::Data::S2DNans, channelStats, nchannels, nstokes, ndims);
 
