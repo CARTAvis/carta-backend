@@ -51,6 +51,7 @@ public:
     using image_ref = casacore::Lattice<float>&;
     using channel_stats_ref = std::vector<std::vector<FileInfo::ImageStats>>&;
     using cube_stats_ref = std::vector<FileInfo::ImageStats>&;
+    using ipos = casacore::IPosition;
     
     virtual ~FileLoader() = default;
 
