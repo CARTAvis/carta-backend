@@ -179,8 +179,7 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             dataShape = hdf5Latt.shape();
             ndim = dataShape.size();
         } catch (casacore::AipsError& err) {
-            message = "Cannot open HDF5 DATA dataset: " + err.getMesg();
-            // TODO: how to close the file here?
+            message = "Cannot open HDF5 DATA dataset.";
             return false;
         }
         if (ndim < 2 || ndim > 4) {
