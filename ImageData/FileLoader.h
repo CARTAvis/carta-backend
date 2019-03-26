@@ -83,9 +83,9 @@ protected:
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> channelStats;
     std::vector<carta::FileInfo::ImageStats> cubeStats;
-    // Return the shape of the specified dataset 
+    // Return the shape of the specified stats dataset 
     virtual const ipos getStatsDataShape(FileInfo::Data ds);
-    // Most return casacore::Array of type casacore::Float or casacore::Int64
+    // Return stats data as a casacore::Array of type casacore::Float or casacore::Int64
     virtual casacore::ArrayBase* getStatsData(FileInfo::Data ds);
     // Functions for loading individual types of statistics
     virtual void loadStats2DBasic(FileInfo::Data ds);
