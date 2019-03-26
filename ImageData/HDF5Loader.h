@@ -28,8 +28,8 @@ private:
     template <typename T> const ipos getStatsDataShapeTyped(FileInfo::Data ds);
     template <typename S, typename D> casacore::ArrayBase* getStatsDataTyped(FileInfo::Data ds);
     
-    const ipos getStatsDataShape(FileInfo::Data ds);
-    casacore::ArrayBase* getStatsData(FileInfo::Data ds);
+    const ipos getStatsDataShape(FileInfo::Data ds) override;
+    casacore::ArrayBase* getStatsData(FileInfo::Data ds) override;
 };
 
 HDF5Loader::HDF5Loader(const std::string &filename)
