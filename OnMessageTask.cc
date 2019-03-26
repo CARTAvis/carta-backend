@@ -121,10 +121,10 @@ SetImageChannelsTask::execute()
   session->image_channel_unlock();
   
   if( tester ) {
-    session->increase_ref_count();
+    increment_ref_count();
     recycle_as_safe_continuation();
   }
-
+  
   return nullptr;
 }
 
