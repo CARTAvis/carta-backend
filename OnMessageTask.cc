@@ -113,17 +113,13 @@ SetImageChannelsTask::execute()
 {
   bool tester;
 
-  session->executeAniEvt(_req);
-
-  session->image_channel_lock();
-  if( ! (tester= session->aniq.try_pop(_req)) )
-    session->image_channal_task_set_idle();
-  session->image_channel_unlock();
-  
-  if( tester ) {
-    increment_ref_count();
-    recycle_as_safe_continuation();
-  }
+  do {
+    session->executeAniEvt(_req);
+    session->image_channel_lock();
+    if( ! (tester= session->aniq.try_pop(_req)) )
+      session->image_channal_task_set_idle();
+    session->image_channel_unlock();
+  } while( tester );
   
   return nullptr;
 }
