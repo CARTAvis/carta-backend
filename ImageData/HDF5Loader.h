@@ -25,12 +25,14 @@ private:
     
     static std::string dataSetToString(FileInfo::Data ds);
     
-    template <typename T> const ipos getStatsDataShape(FileInfo::Data ds);
-    template <typename T> casacore::Array<T> getStatsData(FileInfo::Data ds);
-    template <typename T> void loadStats2DBasic(FileInfo::Data ds);
+    const ipos getStatsDataShape(FileInfo::Data ds);
+    template <typename T> const ipos getStatsDataShapeTyped(FileInfo::Data ds);
+    casacore::ArrayBase* getStatsData(FileInfo::Data ds);
+    template <typename S, typename D> casacore::ArrayBase* getStatsDataTyped(FileInfo::Data ds);
+    void loadStats2DBasic(FileInfo::Data ds);
     void loadStats2DHist();
     void loadStats2DPercent();
-    template <typename T> void loadStats3DBasic(FileInfo::Data ds);
+    void loadStats3DBasic(FileInfo::Data ds);
     void loadStats3DHist();
     void loadStats3DPercent();
 };
@@ -115,76 +117,132 @@ const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
     return lelImCoords->coordinates();
 }
 
-// TODO: we need to use the C API to read scalar datasets for now, but we should patch casacore to handle them correctly
-// TODO: switches outside loops for now; should profile to see if moving them inside adds significant overhead
-// TODO: we could move the main function and helper functions to top-level loader interface -- but templated members can't be virtual, so we would need to refactor this to be untemplated. We only need to support float and integer datasets.
+// TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this complicated templating, at least for now.
+const HDF5Loader::ipos HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
+    auto dtype = casacore::HDF5DataSet::getDataType((*image.group()).getHid(), dataSetToString(ds));
+    
+    switch(dtype) {
+        case casacore::TpInt:
+        {
+            return getStatsDataShapeTyped<casacore::Int>(ds);
+        }
+        case casacore::TpInt64:
+        {
+            return getStatsDataShapeTyped<casacore::Int64>(ds);
+        }
+        case casacore::TpFloat:
+        {
+            return getStatsDataShapeTyped<casacore::Float>(ds);
+        }
+        case casacore::TpDouble:
+        {
+            return getStatsDataShapeTyped<casacore::Double>(ds);
+        }
+    }
+}
 
 template <typename T>
-const HDF5Loader::ipos HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
+const HDF5Loader::ipos HDF5Loader::getStatsDataShapeTyped(FileInfo::Data ds) {
     casacore::HDF5DataSet dataSet(*image.group(), dataSetToString(ds), (const T*)0);
     return dataSet.shape();
 }
 
-template <typename T>
-casacore::Array<T> HDF5Loader::getStatsData(FileInfo::Data ds) {
-    casacore::HDF5DataSet dataSet(*image.group(), dataSetToString(ds), (const T*)0);
+// TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this complicated templating, at least for now.
+casacore::ArrayBase* HDF5Loader::getStatsData(FileInfo::Data ds) {
+    auto dtype = casacore::HDF5DataSet::getDataType((*image.group()).getHid(), dataSetToString(ds));
+        
+    switch(dtype) {
+        case casacore::TpInt:
+        {
+            return getStatsDataTyped<casacore::Int, casacore::Int64>(ds);
+        }
+        case casacore::TpInt64:
+        {
+            return getStatsDataTyped<casacore::Int64, casacore::Int64>(ds);
+        }
+        case casacore::TpFloat:
+        {
+            return getStatsDataTyped<casacore::Float, casacore::Float>(ds);
+        }
+        case casacore::TpDouble:
+        {
+            return getStatsDataTyped<casacore::Double, casacore::Float>(ds);
+        }
+    }
+    
+    return nullptr;
+}
+
+// TODO: We need to use the C API to read scalar datasets for now, but we should patch casacore to handle them correctly.
+template <typename S, typename D>
+casacore::ArrayBase* HDF5Loader::getStatsDataTyped(FileInfo::Data ds) {
+    casacore::HDF5DataSet dataSet(*image.group(), dataSetToString(ds), (const S*)0);
 
     if (dataSet.shape().size() == 0) {
         // Scalar dataset hackaround
-        T value;
-        casacore::HDF5DataType dtype((T*)0);
+        D value;
+        casacore::HDF5DataType dtype((D*)0);
         H5Dread(dataSet.getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-        casacore::Array<T> scalar(ipos(1), value);
+        casacore::ArrayBase* scalar = new casacore::Array<D>(ipos(1), value);
         return scalar;
     }
     
-    casacore::Array<T> data;
-    dataSet.get(casacore::Slicer(ipos(dataSet.shape().size(), 0), dataSet.shape()), data);
+    casacore::ArrayBase* data = new casacore::Array<D>();
+    dataSet.get(casacore::Slicer(ipos(dataSet.shape().size(), 0), dataSet.shape()), *data);
     return data;
 }
 
-template <typename T>
 void HDF5Loader::loadStats2DBasic(FileInfo::Data ds) {
     if (hasData(ds)) {
-        const ipos& statDims = getStatsDataShape<T>(ds);
+        const ipos& statDims = getStatsDataShape(ds);
         
         // We can handle 2D, 3D and 4D in the same way
         if (ndims == 2 && statDims.size() == 0
             || ndims == 3 && statDims.isEqual(ipos(1, nchannels))
             || ndims == 4 && statDims.isEqual(ipos(2, nchannels, nstokes))) {
-            const auto& data = getStatsData<T>(ds);
-            auto it = data.begin();
+            
+            auto data = getStatsData(ds);
             
             switch(ds) {
-            case FileInfo::Data::S2DMax:
-                for (auto s = 0; s < nstokes; s++) {
-                    for (auto c = 0; c < nchannels; c++) {
-                        channelStats[s][c].maxVal = *it++;
+                case FileInfo::Data::S2DMax: {
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
+                    for (auto s = 0; s < nstokes; s++) {
+                        for (auto c = 0; c < nchannels; c++) {
+                            channelStats[s][c].maxVal = *it++;
+                        }
                     }
+                    break;
                 }
-                break;
-            case FileInfo::Data::S2DMin:
-                for (auto s = 0; s < nstokes; s++) {
-                    for (auto c = 0; c < nchannels; c++) {
-                        channelStats[s][c].minVal = *it++;
+                case FileInfo::Data::S2DMin: {
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
+                    for (auto s = 0; s < nstokes; s++) {
+                        for (auto c = 0; c < nchannels; c++) {
+                            channelStats[s][c].minVal = *it++;
+                        }
                     }
+                    break;
                 }
-                break;
-            case FileInfo::Data::S2DMean:
-                for (auto s = 0; s < nstokes; s++) {
-                    for (auto c = 0; c < nchannels; c++) {
-                        channelStats[s][c].mean = *it++;
+                case FileInfo::Data::S2DMean: {
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
+                    for (auto s = 0; s < nstokes; s++) {
+                        for (auto c = 0; c < nchannels; c++) {
+                            channelStats[s][c].mean = *it++;
+                        }
                     }
+                    break;
                 }
-                break;
-            case FileInfo::Data::S2DNans:
-                for (auto s = 0; s < nstokes; s++) {
-                    for (auto c = 0; c < nchannels; c++) {
-                        channelStats[s][c].nanCount = *it++;
+                case FileInfo::Data::S2DNans: {
+                    auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
+                    for (auto s = 0; s < nstokes; s++) {
+                        for (auto c = 0; c < nchannels; c++) {
+                            channelStats[s][c].nanCount = *it++;
+                        }
                     }
+                    break;
                 }
-                break;
             }
+            
+            delete data;
         }
     }
 }
@@ -193,7 +251,7 @@ void HDF5Loader::loadStats2DHist() {
     FileInfo::Data ds = FileInfo::Data::S2DHist;
     
     if (hasData(ds)) {
-        const ipos& statDims = getStatsDataShape<casacore::Int64>(ds);
+        const ipos& statDims = getStatsDataShape(ds);
         
         auto nbins = statDims[0];
 
@@ -201,8 +259,8 @@ void HDF5Loader::loadStats2DHist() {
         if (ndims == 2 && statDims.isEqual(ipos(1, nbins))
             || ndims == 3 && statDims.isEqual(ipos(2, nbins, nchannels))
             || ndims == 4 && statDims.isEqual(ipos(3, nbins, nchannels, nstokes))) {
-            const auto& data = getStatsData<casacore::Int64>(ds);
-            auto it = data.begin();
+            auto data = static_cast<casacore::Array<casacore::Int64>*>(getStatsData(ds));
+            auto it = data->begin();
         
             for (auto s = 0; s < nstokes; s++) {
                 for (auto c = 0; c < nchannels; c++) {
@@ -212,6 +270,8 @@ void HDF5Loader::loadStats2DHist() {
                     }
                 }
             }
+            
+            delete data;
         }
     }
 }
@@ -223,8 +283,8 @@ void HDF5Loader::loadStats2DPercent() {
     FileInfo::Data dsp = FileInfo::Data::S2DPercent;
     
     if (hasData(dsp) && hasData(dsr)) {
-        const ipos& dimsVals = getStatsDataShape<casacore::Float>(dsp);
-        const ipos& dimsRanks = getStatsDataShape<casacore::Float>(dsr);
+        const ipos& dimsVals = getStatsDataShape(dsp);
+        const ipos& dimsRanks = getStatsDataShape(dsr);
 
         auto nranks = dimsRanks[0];
     
@@ -233,56 +293,71 @@ void HDF5Loader::loadStats2DPercent() {
             || ndims == 3 && dimsVals.isEqual(ipos(2, nranks, nchannels))
             || ndims == 4 && dimsVals.isEqual(ipos(3, nranks, nchannels, nstokes))) {
             
-            const auto& ranks = getStatsData<casacore::Float>(dsr);
-            const auto& data = getStatsData<casacore::Float>(dsp);
-            auto it = data.begin();
+            auto ranks = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsr));
+            auto data = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsp));
+        
+            auto it = data->begin();
+            auto itr = ranks->begin();
 
             for (auto s = 0; s < nstokes; s++) {
                 for (auto c = 0; c < nchannels; c++) {
-                    ranks.tovector(channelStats[s][c].percentileRanks);
                     channelStats[s][c].percentiles.resize(nranks);
+                    channelStats[s][c].percentileRanks.resize(nranks);
                     for (auto r = 0; r < nranks; r++) {
                         channelStats[s][c].percentiles[r] = *it++;
+                        channelStats[s][c].percentileRanks[r] = *itr++;
                     }
                 }
             }
+            
+            delete ranks;
+            delete data;
         }
     }
 }
 
-template <typename T>
 void HDF5Loader::loadStats3DBasic(FileInfo::Data ds) {
     if (hasData(ds)) {
-        const ipos& statDims = getStatsDataShape<T>(ds);
+        const ipos& statDims = getStatsDataShape(ds);
                     
         // We can handle 3D and 4D in the same way
         if (ndims == 3 && statDims.size() == 0
             || ndims == 4 && statDims.isEqual(ipos(1, nstokes))) {
-            const auto& data = getStatsData<T>(ds);
-            auto it = data.begin();
+            
+            auto data = getStatsData(ds);
             
             switch(ds) {
-            case FileInfo::Data::S3DMax:
-                for (auto s = 0; s < nstokes; s++) {
-                    cubeStats[s].maxVal = *it++;
+                case FileInfo::Data::S3DMax: {
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
+                    for (auto s = 0; s < nstokes; s++) {
+                        cubeStats[s].maxVal = *it++;
+                    }
+                    break;
                 }
-                break;
-            case FileInfo::Data::S3DMin:
-                for (auto s = 0; s < nstokes; s++) {
-                    cubeStats[s].minVal = *it++;
+                case FileInfo::Data::S3DMin: {
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
+                    for (auto s = 0; s < nstokes; s++) {
+                        cubeStats[s].minVal = *it++;
+                    }
+                    break;
                 }
-                break;
-            case FileInfo::Data::S3DMean:
-                for (auto s = 0; s < nstokes; s++) {
-                    cubeStats[s].mean = *it++;
+                case FileInfo::Data::S3DMean: {
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
+                    for (auto s = 0; s < nstokes; s++) {
+                        cubeStats[s].mean = *it++;
+                    }
+                    break;
                 }
-                break;
-            case FileInfo::Data::S3DNans:
-                for (auto s = 0; s < nstokes; s++) {
-                    cubeStats[s].nanCount = *it++;
+                case FileInfo::Data::S3DNans: {
+                    auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
+                    for (auto s = 0; s < nstokes; s++) {
+                        cubeStats[s].nanCount = *it++;
+                    }
+                    break;
                 }
-                break;
             }
+            
+            delete data;
         }
     }
 }
@@ -291,14 +366,14 @@ void HDF5Loader::loadStats3DHist() {
     FileInfo::Data ds = FileInfo::Data::S3DHist;
     
     if (hasData(ds)) {
-        const ipos& statDims = getStatsDataShape<casacore::Int64>(ds);
+        const ipos& statDims = getStatsDataShape(ds);
         auto nbins = statDims[0];
         
         // We can handle 3D and 4D in the same way
         if (ndims == 3 && statDims.isEqual(ipos(1, nbins))
             || ndims == 4 && statDims.isEqual(ipos(2, nbins, nstokes))) {
-            const auto& data = getStatsData<casacore::Int64>(ds);           
-            auto it = data.begin();
+            auto data = static_cast<casacore::Array<casacore::Int64>*>(getStatsData(ds));           
+            auto it = data->begin();
             
             for (auto s = 0; s < nstokes; s++) {
                 cubeStats[s].histogramBins.resize(nbins);
@@ -306,6 +381,8 @@ void HDF5Loader::loadStats3DHist() {
                     cubeStats[s].histogramBins[b] = *it++;
                 }
             }
+            
+            delete data;
         }
     }
 }
@@ -318,8 +395,8 @@ void HDF5Loader::loadStats3DPercent() {
     
     if (hasData(dsp) && hasData(dsr)) {
         
-        const ipos& dimsVals = getStatsDataShape<casacore::Float>(dsp);
-        const ipos& dimsRanks = getStatsDataShape<casacore::Float>(dsr);
+        const ipos& dimsVals = getStatsDataShape(dsp);
+        const ipos& dimsRanks = getStatsDataShape(dsr);
 
         auto nranks = dimsRanks[0];
     
@@ -327,40 +404,40 @@ void HDF5Loader::loadStats3DPercent() {
         if (ndims == 3 && dimsVals.isEqual(ipos(1, nranks))
             || ndims == 4 && dimsVals.isEqual(ipos(2, nranks, nstokes))) {
             
-            const auto& ranks = getStatsData<casacore::Float>(dsr);
-            const auto& data = getStatsData<casacore::Float>(dsp);
+            auto ranks = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsr));
+            auto data = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsp));
             
-            auto it = data.begin();
+            auto it = data->begin();
+            auto itr = ranks->begin();
 
             for (auto s = 0; s < nstokes; s++) {
                 cubeStats[s].percentiles.resize(nranks);
-                ranks.tovector(cubeStats[s].percentileRanks);
+                cubeStats[s].percentileRanks.resize(nranks);
                 for (auto r = 0; r < nranks; r++) {
                     cubeStats[s].percentiles[r] = *it++;
+                    cubeStats[s].percentileRanks[r] = *itr++;
                 }
             }
+            
+            delete ranks;
+            delete data;
         }
     }
 }
 
 void HDF5Loader::loadImageStats(bool loadPercentiles) {
-    // load channel stats for entire image (all channels and stokes) from header
-    // channelStats[stokes][chan]
-    // cubeStats[stokes]
-
     channelStats.resize(nstokes);
     for (auto i = 0; i < nstokes; i++) {
         channelStats[i].resize(nchannels);
     }
     cubeStats.resize(nstokes);
     
-    //TODO: Support multiple HDUs
     if (hasData(FileInfo::Data::Stats)) {
         if (hasData(FileInfo::Data::Stats2D)) {
-            loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMax);
-            loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMin);
-            loadStats2DBasic<casacore::Float>(FileInfo::Data::S2DMean);
-            loadStats2DBasic<casacore::Int64>(FileInfo::Data::S2DNans);
+            loadStats2DBasic(FileInfo::Data::S2DMax);
+            loadStats2DBasic(FileInfo::Data::S2DMin);
+            loadStats2DBasic(FileInfo::Data::S2DMean);
+            loadStats2DBasic(FileInfo::Data::S2DNans);
 
             loadStats2DHist();
             
@@ -370,10 +447,10 @@ void HDF5Loader::loadImageStats(bool loadPercentiles) {
         }
         
         if (hasData(FileInfo::Data::Stats3D)) {        
-            loadStats3DBasic<casacore::Float>(FileInfo::Data::S3DMax);       
-            loadStats3DBasic<casacore::Float>(FileInfo::Data::S3DMin);      
-            loadStats3DBasic<casacore::Float>(FileInfo::Data::S3DMean);     
-            loadStats3DBasic<casacore::Int64>(FileInfo::Data::S3DNans);
+            loadStats3DBasic(FileInfo::Data::S3DMax);       
+            loadStats3DBasic(FileInfo::Data::S3DMin);      
+            loadStats3DBasic(FileInfo::Data::S3DMean);     
+            loadStats3DBasic(FileInfo::Data::S3DNans);
 
             loadStats3DHist();
             
