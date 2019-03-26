@@ -523,11 +523,10 @@ void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
                 ++regionId; // get next available
                 if (regionId == 0) ++regionId; // reserved for cursor
             }
-            std::vector<int> stokes = {message.stokes().begin(), message.stokes().end()};
             std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
             auto& frame = frames[fileId];  // use frame in SetRegion message
             success = frames.at(fileId)->setRegion(regionId, message.region_name(), message.region_type(),
-                message.channel_min(), message.channel_max(), points, message.rotation(), errMessage);
+                -1, -1, points, message.rotation(), errMessage);
         } catch (std::out_of_range& rangeError) {
             errMessage = fmt::format("File id {} closed", fileId);
         }
