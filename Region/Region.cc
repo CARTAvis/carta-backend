@@ -9,25 +9,22 @@
 
 using namespace carta;
 
-Region::Region(const std::string& name, const CARTA::RegionType type, int minchan, int maxchan,
+Region::Region(const std::string& name, const CARTA::RegionType type,
         const std::vector<CARTA::Point>& points, const float rotation,
         const casacore::IPosition imageShape, int spectralAxis, int stokesAxis) :
         m_name(name),
         m_type(type),
         m_rotation(0.0),
-        m_minchan(CHANNEL_NOT_SET),
-        m_maxchan(CHANNEL_NOT_SET),
         m_valid(false),
         m_xyRegionChanged(false),
-        m_spectralChanged(false),
         m_latticeShape(imageShape),
         m_spectralAxis(spectralAxis),
         m_stokesAxis(stokesAxis),
         m_xyAxes(casacore::IPosition(2, 0, 1)),
         m_xyRegion(nullptr) {
     // validate and set region parameters
-    if (updateRegionParameters(minchan, maxchan, points, rotation)) {
-        m_valid = true;
+    m_valid = updateRegionParameters(name, type, points, rotation);
+    if (m_valid) {
         m_stats = std::unique_ptr<RegionStats>(new RegionStats());
         m_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
     }
@@ -40,28 +37,25 @@ Region::~Region() {
     m_profiler.reset();
 }
 
-bool Region::updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>&points,
-    float rotation) {
-    // Set region parameters and flags for what changed
-    bool xyParamsChanged((pointsChanged(points) || (rotation != m_rotation)));
-    bool spectralParamsChanged((minchan != m_minchan) || (maxchan != m_maxchan));
-
-    // validate and set params
-    bool pointsSet(setPoints(points));
-    bool chansSet(setChannelRange(minchan, maxchan));
-    m_rotation = rotation;
-
-    // region changed if xy params changed and validated, and xyregion made
-    m_xyRegionChanged = xyParamsChanged && pointsSet && setXYRegion(points, rotation);
-
-    // spectral changed if chan params changed and validated
-    m_spectralChanged = spectralParamsChanged && chansSet;
-
-    return pointsSet && chansSet;
-}
-
 // *************************************************************************
 // Region settings
+
+bool Region::updateRegionParameters(const std::string name, const CARTA::RegionType type,
+        const std::vector<CARTA::Point>&points, float rotation) {
+    // Set region parameters and flag if xy region changed
+    bool xyParamsChanged((pointsChanged(points) || (rotation != m_rotation)));
+
+    m_name = name;
+    m_type = type;
+    m_rotation = rotation;
+
+    // validate and set points
+    bool pointsSet(setPoints(points));
+    // region changed if xy params changed and validated, and xyregion created
+    m_xyRegionChanged = xyParamsChanged && pointsSet && setXYRegion(points, rotation);
+
+    return pointsSet;
+}
 
 bool Region::setPoints(const std::vector<CARTA::Point>& points) {
     // check and set control points 
@@ -71,17 +65,6 @@ bool Region::setPoints(const std::vector<CARTA::Point>& points) {
         pointsUpdated = true;
     }
     return pointsUpdated;
-}
-
-bool Region::setChannelRange(int minchan, int maxchan) {
-    // check and set spectral axis range
-    bool channelsUpdated(false);
-    if (checkChannelRange(minchan, maxchan)) {
-        m_minchan = minchan;
-        m_maxchan = maxchan;
-        channelsUpdated = true;
-    }
-    return channelsUpdated;
 }
 
 // *************************************************************************
@@ -166,21 +149,6 @@ bool Region::pointsChanged(const std::vector<CARTA::Point>& newpoints) {
     }
     return changed;
 }
-
-bool Region::checkChannelRange(int& minchan, int& maxchan) {
-    // check and set min/max channels
-    bool channelRangeOK(false);
-    // less than 0 is full channel range
-    size_t nchan(m_spectralAxis >= 0 ? m_latticeShape(m_spectralAxis) : 1);
-    minchan = (minchan < 0 ? 0 : minchan);
-    maxchan = (maxchan < 0 ? nchan-1 : maxchan);
-    bool minchanOK((minchan >= 0) && (minchan < nchan));
-    bool maxchanOK((maxchan >= 0) && (maxchan < nchan));
-    if (minchanOK && maxchanOK && (minchan <= maxchan))
-        channelRangeOK = true;
-    return channelRangeOK;
-}
-
 
 // ***********************************
 // Lattice Region with parameters applied
@@ -304,8 +272,8 @@ bool Region::makeExtensionBox(casacore::LCBox& extendBox, int stokes, int channe
     casacore::IPosition start(m_latticeShape), count(m_latticeShape), boxShape(m_latticeShape);
     if (m_spectralAxis > 0) {
         if (channel == ALL_CHANNELS) {
-            start(m_spectralAxis) = m_minchan;
-            count(m_spectralAxis) = (m_maxchan - m_minchan) + 1;
+            start(m_spectralAxis) = 0;
+            count(m_spectralAxis) = m_latticeShape(m_spectralAxis);
         } else {
             start(m_spectralAxis) = channel;
             count(m_spectralAxis) = 1;
@@ -511,7 +479,7 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
         } else { // get values from RegionStats
             const std::vector<int> requestedStats(config.stats_types().begin(), config.stats_types().end());
             size_t nstats = requestedStats.size();
-            std::vector<std::vector<float>> statsValues; // a float vector for each stats type
+            std::vector<std::vector<double>> statsValues;
             if (m_stats->getStatsValues(statsValues, requestedStats, sublattice)) {
                 for (size_t i=0; i<nstats; ++i) {
                     auto statType = static_cast<CARTA::StatsType>(requestedStats[i]);
@@ -519,7 +487,12 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
                     auto newProfile = profileData.add_profiles();
                     newProfile->set_coordinate(profileCoord);
                     newProfile->set_stats_type(statType);
-                    *newProfile->mutable_vals() = {statsValues[i].begin(), statsValues[i].end()};
+                    // convert to float for spectral profile
+                    std::vector<float> values(statsValues[i].size());
+                    for (size_t v=0; v<statsValues[i].size(); ++v) {
+                        values[v] = static_cast<float>(statsValues[i][v]);
+                    }
+                    *newProfile->mutable_vals() = {values.begin(), values.end()};
                 }
             }
         }

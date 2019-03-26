@@ -72,14 +72,25 @@ bool Frame::isValid() {
     return valid;
 }
 
-int Frame::getMaxRegionId() {
-    int maxRegionId(INT_MIN);
-    for (auto it = regions.begin(); it != regions.end(); ++it)
-        maxRegionId = max(maxRegionId, it->first);
-    return maxRegionId;
+std::vector<int> Frame::getRegionIds() {
+    // return list of region ids for this frame
+    std::vector<int> regionIDs;
+    for (auto& region : regions) {
+        regionIDs.push_back(region.first);
+    }
+    return regionIDs;
 }
 
-bool Frame::checkStokesIndex(int stokes) {
+int Frame::getMaxRegionId() {
+    std::vector<int> ids(getRegionIds());
+    return *std::max_element(ids.begin(), ids.end());
+}
+
+bool Frame::checkChannel(int channel) {
+    return ((channel >= 0) && (channel < nChannels()));
+}
+
+bool Frame::checkStokes(int stokes) {
     return ((stokes >= 0) && (stokes < nStokes()));
 }
 
@@ -341,7 +352,7 @@ bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type,
     // create or update Region
     if (regions.count(regionId)) { // update Region
         auto& region = regions[regionId];
-        regionSet = region->updateRegionParameters(points, rotation);
+        regionSet = region->updateRegionParameters(name, type, points, rotation);
     }  else { // map new Region to region id
         auto region = unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation,
             imageShape, spectralAxis, stokesAxis));
@@ -404,20 +415,20 @@ void Frame::setDefaultCursor() {
     cursorSet = false;
 }
 
+bool Frame::regionChanged(int regionId) {
+    bool changed(false);
+    if (regions.count(regionId)) {
+        auto& region = regions[regionId];
+        changed = region->regionChanged();
+    }
+    return changed;
+}
+
 void Frame::removeRegion(int regionId) {
     if (regions.count(regionId)) {
         regions[regionId].reset();
         regions.erase(regionId);
     }
-}
-
-std::vector<int> Frame::getRegionIds() {
-    // return list of region ids for this frame
-    std::vector<int> regionIDs;
-    for (auto& region : regions) {
-        regionIDs.push_back(region.first);
-    }
-    return regionIDs;
 }
 
 // ********************************************************************
@@ -459,8 +470,8 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
     } else {
         if ((newChannel != channelIndex) || (newStokes != stokesIndex)) {
             auto& region = regions[IMAGE_REGION_ID];
-            bool chanOK(region->setChannelRange(newChannel, newChannel));
-            bool stokesOK(checkStokesIndex(newStokes));
+            bool chanOK(checkChannel(newChannel));
+            bool stokesOK(checkStokes(newStokes));
             if (chanOK && stokesOK) {
                 channelIndex = newChannel;
                 stokesIndex = newStokes;
@@ -553,7 +564,7 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
     // a given channel (e.g. current channel).
     // Returns false if lattice region is invalid and cannot make sublattice.
     bool sublatticeOK(false);
-    if (checkStokesIndex(stokes) && (regions.count(regionId))) {
+    if (checkStokes(stokes) && (regions.count(regionId))) {
         auto& region = regions[regionId];
         if (region->isValid()) {
             casacore::LatticeRegion lattRegion;
@@ -961,6 +972,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     // fill SpectralProfiles for this config
                     region->fillSpectralProfileData(profileData, i, sublattice);
                 }
+                guard.unlock();
             }
         }
         profileOK = true;
@@ -969,7 +981,8 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
 }
 
 bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData) {
-    // fill stats data message with requested statistics for the entire region
+    // fill stats data message with requested statistics for the region with
+    // current channel and stokes
     bool statsOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
@@ -1032,7 +1045,7 @@ bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minva
             region->calcMinMax(channel, stokes, imageCache, minval, maxval);
             minmaxOK = true;
         } else {
-            casacore::SubLattice<float>& sublattice;
+            casacore::SubLattice<float> sublattice;
             getRegionSubLattice(regionId, sublattice, stokes, channel);
             minmaxOK = region->calcMinMax(channel, stokes, sublattice, minval, maxval);
         }
@@ -1059,14 +1072,19 @@ bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         nbins = (nbins==AUTO_BIN_SIZE ? calcAutoNumBins(regionId) : nbins);
-        if (((regionId == IMAGE_REGION_ID) || (regionId == CUBE_REGION_ID)) &&
-            (channel == channelIndex)) {  // use channel cache
-            bool writeLock(false);
-            tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-            region->calcHistogram(channel, stokes, nbins, minval, maxval, imageCache, histogram);
+        if (regionId == IMAGE_REGION_ID) {
+            if (channel == channelIndex) {  // use channel cache
+                bool writeLock(false);
+                tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+                region->calcHistogram(channel, stokes, nbins, minval, maxval, imageCache, histogram);
+            } else {
+                std::vector<float> data;
+                getChannelMatrix(data, channel, stokes);
+                region->calcHistogram(channel, stokes, nbins, minval, maxval, data, histogram);
+            }
             histogramOK = true;
         } else {
-            casacore::SubLattice<float>& sublattice;
+            casacore::SubLattice<float> sublattice;
             getRegionSubLattice(regionId, sublattice, stokes, channel);
             histogramOK = region->calcHistogram(channel, stokes, nbins, minval, maxval,
                 sublattice, histogram);

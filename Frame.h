@@ -2,11 +2,10 @@
 //# (profiles, histograms, stats)
 
 #pragma once
-#include <vector>
 #include <unordered_map>
-#include <string>
 #include <memory>
 #include <mutex>
+#include <algorithm>
 #include <tbb/queuing_rw_mutex.h>
 
 #include <carta-protobuf/raster_image.pb.h>
@@ -70,9 +69,12 @@ private:
     void setImageRegion(int regionId); // set region for entire plane image or cube
     void setDefaultCursor(); // using center point of image
 
+    // validate channel, stokes index values
+    bool checkChannel(int channel);
+    bool checkStokes(int stokes);
+
     // Image data and slicers
     // make sublattice from Region of Lattice with given stokes
-    bool checkStokesIndex(int stokes);
     // save Image region data for current channel, stokes
     void setImageCache();
     // downsampled data from image cache
@@ -100,6 +102,7 @@ public:
 
     // frame info
     bool isValid();
+    std::vector<int> getRegionIds();
     int getMaxRegionId();
     inline size_t nChannels() { return numchan; }; // if no channel axis, nchan=1
     inline size_t nStokes() { return numstokes; }; // if no stokes axis, nstokes=1
@@ -108,12 +111,12 @@ public:
 
 
     // Create and remove regions
-    bool setRegion(int regionId, std::string name, CARTA::RegionType type, int minchan,
-        int maxchan, std::vector<CARTA::Point>& points, float rotation, std::string& message);
+    bool setRegion(int regionId, std::string name, CARTA::RegionType type,
+        std::vector<CARTA::Point>& points, float rotation, std::string& message);
     bool setCursorRegion(int regionId, const CARTA::Point& point);
     inline bool isCursorSet() { return cursorSet; } // set by frontend, not default
+    bool regionChanged(int regionId);
     void removeRegion(int regionId);
-    std::vector<int> getRegionIds();
 
     // image view, channels
     bool setImageView(const CARTA::ImageBounds& imageBounds, int newMip,

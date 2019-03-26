@@ -520,10 +520,12 @@ void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
             success = frames.at(fileId)->setRegion(regionId, message.region_name(), message.region_type(),
                 points, message.rotation(), errMessage);
             // send if requirements set
-            sendSpatialProfileData(fileId, regionId);
-            sendSpectralProfileData(fileId, regionId);
-            sendRegionHistogramData(fileId, regionId);
-            sendRegionStatsData(fileId, regionId);
+            if (success && frames.at(fileId)->regionChanged(regionId)) {
+                sendSpatialProfileData(fileId, regionId);
+                sendSpectralProfileData(fileId, regionId);
+                sendRegionHistogramData(fileId, regionId);
+                sendRegionStatsData(fileId, regionId);
+            }
         } catch (std::out_of_range& rangeError) {
             errMessage = fmt::format("File id {} closed", fileId);
         }
@@ -945,12 +947,12 @@ void Session::updateRegionData(int fileId, bool channelChanged, bool stokesChang
     // Send updated data for all regions with requirements
     if (frames.count(fileId)) {
         std::vector<int> regions(frames.at(fileId)->getRegionIds());
-	for (auto regionId : regions) {
+        for (auto regionId : regions) {
             if (channelChanged) {
                 sendSpatialProfileData(fileId, regionId);
                 sendRegionHistogramData(fileId, regionId, channelChanged); // if using current channel
                 sendRegionStatsData(fileId, regionId);
-            }	
+            }
             if (stokesChanged) {
                 sendSpatialProfileData(fileId, regionId, stokesChanged); // if using current stokes
                 sendSpectralProfileData(fileId, regionId, stokesChanged); // if using current stokes

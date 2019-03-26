@@ -39,7 +39,7 @@ public:
     void setStatsRequirements(const std::vector<int>& statsTypes);
     size_t numStats();
     void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice);
-    bool getStatsValues(std::vector<std::vector<float>>& statsValues,
+    bool getStatsValues(std::vector<std::vector<double>>& statsValues,
         const std::vector<int>& requestedStats, const casacore::SubLattice<float>& lattice,
         bool perChannel=true);
 
