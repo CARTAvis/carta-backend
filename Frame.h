@@ -74,7 +74,6 @@ private:
     bool checkStokes(int stokes);
 
     // Image data and slicers
-    // make sublattice from Region of Lattice with given stokes
     // save Image region data for current channel, stokes
     void setImageCache();
     // downsampled data from image cache
@@ -86,10 +85,11 @@ private:
     casacore::Slicer getChannelMatrixSlicer(size_t channel, size_t stokes);
     // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
     void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
-    // Region data: apply region to Lattice to get SubLattice
+    // xy region created (subset of image)
     bool xyRegionValid(int regionId);
+    // make Lattice sublattice from Region given channel and stokes
     bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes,
-        int channel=ALL_CHANNELS);  // sublattice for all stokes and channel range in region
+        int channel=ALL_CHANNELS);
 
     // histogram helpers
     int calcAutoNumBins(int regionId); // calculate automatic bin size for region

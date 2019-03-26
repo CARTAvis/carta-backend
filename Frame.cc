@@ -998,7 +998,6 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         // current channel only
         if (getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex)) {
             region->fillStatsData(statsData, sublattice);
-
             statsOK = true;
         }
     }

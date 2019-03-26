@@ -1,6 +1,7 @@
 //# Region.cc: implementation of class for managing a region
 
 #include "Region.h"
+#include "../InterfaceConstants.h"
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
@@ -306,10 +307,9 @@ casacore::LCRegion* Region::makeExtendedRegion(int stokes, int channel) {
         casacore::LCBox extBox;
         if (!makeExtensionBox(extBox, stokes, channel))
             return region;  // no need for extension
-
         // specify 0-based extension axes, either axis 2 (3D image) or 2 and 3 (4D image)
         casacore::IPosition extAxes = (ndim == 3 ? casacore::IPosition(1, 2) : casacore::IPosition(2, 2, 3));
-        // apply extension box to extension axes with xy region
+        // apply extension box with extension axes to xy region
         region = new casacore::LCExtension(*m_xyRegion, extAxes, extBox);
     } catch (casacore::AipsError& err) {
         // region failed, return nullptr

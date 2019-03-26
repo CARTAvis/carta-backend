@@ -37,6 +37,9 @@ public:
     bool getRegion(casacore::LatticeRegion& region, int stokes, int channel=ALL_CHANNELS);
     inline bool xyRegionValid() { return (m_xyRegion != nullptr); };
 
+    // get lattice region for requested stokes
+    bool getRegion(casacore::LatticeRegion& region, int stokes);
+
     // Histogram: pass through to RegionStats
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
     CARTA::SetHistogramRequirements_HistogramConfig getHistogramConfig(int histogramIndex);
@@ -103,6 +106,7 @@ private:
     CARTA::RegionType m_type;
     std::vector<CARTA::Point> m_ctrlpoints;
     float m_rotation;
+    int m_minchan, m_maxchan;
 
     // region flags
     bool m_valid, m_xyRegionChanged;
