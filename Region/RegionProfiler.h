@@ -18,7 +18,7 @@ public:
     bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
     size_t numSpatialProfiles();
     std::pair<int,int> getSpatialProfileReq(int profileIndex);
-    std::string getSpatialProfileStr(int profileIndex);
+    std::string getSpatialCoordinate(int profileIndex);
 
     // spectral
     bool setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles,
@@ -26,6 +26,7 @@ public:
     size_t numSpectralProfiles();
     // return false if profileIndex out of range:
     bool getSpectralConfigStokes(int& stokes, int profileIndex);
+    std::string getSpectralCoordinate(int profileIndex);
     bool getSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profileIndex);
 
 private:

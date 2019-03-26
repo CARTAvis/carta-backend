@@ -15,6 +15,7 @@ public:
     void openFile(const std::string &file, const std::string &hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
+    bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     const casacore::CoordinateSystem& getCoordSystem() override;
     void findCoords(int& spectralAxis, int& stokesAxis) override;
 
@@ -60,6 +61,11 @@ bool HDF5Loader::hasData(FileInfo::Data ds) const {
 // TODO: later we can implement swizzled datasets. We don't store stats in the same way as the main dataset(s).
 typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
     return image;
+}
+
+bool HDF5Loader::getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
+    // HDF5Lattice is not a masked lattice
+    return false;
 }
 
 // This is necessary on some systems where the compiler

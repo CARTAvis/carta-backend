@@ -32,8 +32,10 @@ public:
     bool updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>& points, float rotation);
     // For image region, chan/stokes can be set separately
     bool setChannelRange(int minchan, int maxchan);
-    bool setStokes(int stokes);
     inline std::vector<CARTA::Point> getControlPoints() { return m_ctrlpoints; };
+
+    // get lattice region for requested stokes
+    bool getRegion(casacore::LatticeRegion& region, int stokes);
 
     // Histogram: pass through to RegionStats
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
@@ -51,16 +53,17 @@ public:
     bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
     size_t numSpatialProfiles();
     std::pair<int,int> getSpatialProfileReq(int profileIndex);
-    std::string getSpatialProfileStr(int profileIndex);
+    std::string getSpatialCoordinate(int profileIndex);
 
     // Spectral: pass through to RegionProfiler
     bool setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles,
         const int nstokes);
     size_t numSpectralProfiles();
     bool getSpectralConfigStokes(int& stokes, int profileIndex);
+    std::string getSpectralCoordinate(int profileIndex);
     bool getSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profileIndex);
-    void fillProfileStats(int profileIndex, CARTA::SpectralProfileData& profileData, 
-        casacore::SubLattice<float>& lattice);
+    void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex,
+        casacore::SubLattice<float>& sublattice);
 
     // Stats: pass through to RegionStats
     void setStatsRequirements(const std::vector<int>& statsTypes);
@@ -74,16 +77,29 @@ private:
     bool checkPoints(const std::vector<CARTA::Point>& points);
     bool checkPixelPoint(const std::vector<CARTA::Point>& points);
     bool checkRectanglePoints(const std::vector<CARTA::Point>& points);
+    bool checkEllipsePoints(const std::vector<CARTA::Point>& points);
+    bool checkPolygonPoints(const std::vector<CARTA::Point>& points);
     bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
     bool checkChannelRange(int& minchan, int& maxchan);
-    bool checkStokes(int& stokes);
     
+    // Create regions
+    bool setXYRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
+    casacore::LCRegion* makePointRegion(const std::vector<CARTA::Point>& points);
+    casacore::LCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
+    casacore::LCRegion* makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
+    casacore::LCRegion* makePolygonRegion(const std::vector<CARTA::Point>& points);
+    bool makeExtensionBox(casacore::LCBox& extendBox, int stokes); // for extended region
+    casacore::LCRegion* makeExtendedRegion(int stokes);  // xy region extended to chans, stokes
+
+    // get data from sublattice
+    bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);
+
     // region definition (ICD SET_REGION parameters)
     std::string m_name;
     CARTA::RegionType m_type;
     std::vector<CARTA::Point> m_ctrlpoints;
-    int m_minchan, m_maxchan, m_stokes;
     float m_rotation;
+    int m_minchan, m_maxchan;
 
     // region flags
     bool m_valid;
@@ -91,7 +107,11 @@ private:
 
     // image shape info
     casacore::IPosition m_latticeShape;
+    casacore::IPosition m_xyAxes; // first two axes of lattice shape, to keep or remove
     int m_spectralAxis, m_stokesAxis;
+
+    // stored 2D region
+    casacore::LCRegion* m_xyRegion;
 
     // classes for requirements, calculations
     std::unique_ptr<carta::RegionStats> m_stats;

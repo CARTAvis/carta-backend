@@ -13,6 +13,7 @@ public:
     void openFile(const std::string &file, const std::string &hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
+    bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     const casacore::CoordinateSystem& getCoordSystem() override;
 
 private:
@@ -46,6 +47,10 @@ bool MIRIADLoader::hasData(FileInfo::Data dl) const {
 
 typename MIRIADLoader::image_ref MIRIADLoader::loadData(FileInfo::Data) {
     return image;
+}
+
+bool MIRIADLoader::getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
+    return image.getMaskSlice(mask, slicer);
 }
 
 const casacore::CoordinateSystem& MIRIADLoader::getCoordSystem() {
