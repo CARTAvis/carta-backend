@@ -41,7 +41,7 @@ Region::~Region() {
 // Region settings
 
 bool Region::updateRegionParameters(const std::string name, const CARTA::RegionType type,
-        const std::vector<CARTA::Point>&points, float rotation) {
+        const std::vector<CARTA::Point>& points, float rotation) {
     // Set region parameters and flag if xy region changed
     bool xyParamsChanged((pointsChanged(points) || (rotation != m_rotation)));
 

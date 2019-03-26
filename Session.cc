@@ -519,13 +519,6 @@ void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
             auto& frame = frames[fileId];  // use frame in SetRegion message
             success = frames.at(fileId)->setRegion(regionId, message.region_name(), message.region_type(),
                 points, message.rotation(), errMessage);
-            // send if requirements set
-            if (success && frames.at(fileId)->regionChanged(regionId)) {
-                sendSpatialProfileData(fileId, regionId);
-                sendSpectralProfileData(fileId, regionId);
-                sendRegionHistogramData(fileId, regionId);
-                sendRegionStatsData(fileId, regionId);
-            }
         } catch (std::out_of_range& rangeError) {
             errMessage = fmt::format("File id {} closed", fileId);
         }
@@ -538,6 +531,13 @@ void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
     ack.set_success(success);
     ack.set_message(errMessage);
     sendEvent("SET_REGION_ACK", requestId, ack);
+    // update data streams if requirements set
+    if (success && frames.at(fileId)->regionChanged(regionId)) {
+        sendSpatialProfileData(fileId, regionId);
+        sendSpectralProfileData(fileId, regionId);
+        sendRegionHistogramData(fileId, regionId);
+        sendRegionStatsData(fileId, regionId);
+    }
 }
 
 void Session::onRemoveRegion(const CARTA::RemoveRegion& message, uint32_t requestId) {
