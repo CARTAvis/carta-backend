@@ -1,7 +1,6 @@
 //# Region.cc: implementation of class for managing a region
 
 #include "Region.h"
-#include "../InterfaceConstants.h"
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
@@ -406,6 +405,17 @@ void Region::calcMinMax(int channel, int stokes, const std::vector<float>& data,
     m_stats->calcMinMax(channel, stokes, data, minVal, maxVal);
 }
 
+bool Region::calcMinMax(int channel, int stokes, casacore::SubLattice<float>& sublattice,
+        float& minVal, float& maxVal) {
+    bool calculated(false);
+    std::vector<float> data;
+    if (getData(data, sublattice)) {
+        m_stats->calcMinMax(channel, stokes, data, minVal, maxVal);
+        calculated = true;
+    }
+    return calculated;
+}
+
 bool Region::getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram) {
     return m_stats->getHistogram(channel, stokes, nbins, histogram);
 }
@@ -417,6 +427,17 @@ void Region::setHistogram(int channel, int stokes, CARTA::Histogram& histogram) 
 void Region::calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
         const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
     m_stats->calcHistogram(channel, stokes, nBins, minVal, maxVal, data, histogramMsg);
+}
+
+bool Region::calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
+        casacore::SubLattice<float>& sublattice, CARTA::Histogram& histogramMsg) {
+    bool calculated(false);
+    std::vector<float> data;
+    if (getData(data, sublattice)) {
+        m_stats->calcHistogram(channel, stokes, nBins, minVal, maxVal, data, histogramMsg);
+        calculated = true;
+    }
+    return calculated;
 }
 
 // stats

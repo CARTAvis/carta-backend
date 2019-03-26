@@ -115,10 +115,6 @@ public:
     void removeRegion(int regionId);
     std::vector<int> getRegionIds();
 
-    // Changes from setRegion, to determine data to update
-    bool regionXYChanged(int regionId);
-    bool regionSpectralChanged(int regionId);
-
     // image view, channels
     bool setImageView(const CARTA::ImageBounds& imageBounds, int newMip,
         CARTA::CompressionType compression, float quality, int nsubsets);

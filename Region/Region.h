@@ -4,7 +4,6 @@
 
 #include "RegionStats.h"
 #include "RegionProfiler.h"
-#include "../InterfaceConstants.h"
 #include <carta-protobuf/spectral_profile.pb.h>
 
 namespace carta {
@@ -47,10 +46,13 @@ public:
     bool getMinMax(int channel, int stokes, float& minVal, float& maxVal);
     void setMinMax(int channel, int stokes, float minVal, float maxVal);
     void calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minVal, float& maxVal);
+    bool calcMinMax(int channel, int stokes, casacore::SubLattice<float>& sublattice, float& minVal, float& maxVal);
     bool getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram);
     void setHistogram(int channel, int stokes, CARTA::Histogram& histogram);
     void calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
         const std::vector<float>& data, CARTA::Histogram& histogramMsg);
+    bool calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
+        casacore::SubLattice<float>& sublattice, CARTA::Histogram& histogramMsg);
 
     // Spatial: pass through to RegionProfiler
     bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
@@ -91,7 +93,7 @@ private:
     casacore::LCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::LCRegion* makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::LCRegion* makePolygonRegion(const std::vector<CARTA::Point>& points);
-    bool makeExtensionBox(casacore::LCBox& extendBox, int stokes, int channel=ALL_CHANNELS); // for extended region
+    bool makeExtensionBox(casacore::LCBox& extendBox, int stokes); // for extended region
     casacore::LCRegion* makeExtendedRegion(int stokes, int channel=ALL_CHANNELS);  // x/y region extended chan/stokes
 
     // get data from sublattice

@@ -518,18 +518,12 @@ void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
             std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
             auto& frame = frames[fileId];  // use frame in SetRegion message
             success = frames.at(fileId)->setRegion(regionId, message.region_name(), message.region_type(),
-                -1, -1, points, message.rotation(), errMessage);
-            if (frames.at(fileId)->regionXYChanged(regionId)) {
-                // send if requirements set
-                sendSpatialProfileData(fileId, regionId);
-                sendSpectralProfileData(fileId, regionId);
-                sendRegionHistogramData(fileId, regionId);
-                sendRegionStatsData(fileId, regionId);
-            }
-            if (frames.at(fileId)->regionSpectralChanged(regionId)) {
-                // send if requirements set
-                sendSpectralProfileData(fileId, regionId);
-            }
+                points, message.rotation(), errMessage);
+            // send if requirements set
+            sendSpatialProfileData(fileId, regionId);
+            sendSpectralProfileData(fileId, regionId);
+            sendRegionHistogramData(fileId, regionId);
+            sendRegionStatsData(fileId, regionId);
         } catch (std::out_of_range& rangeError) {
             errMessage = fmt::format("File id {} closed", fileId);
         }
