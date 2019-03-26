@@ -75,9 +75,23 @@ public:
     
 protected:
     virtual const casacore::CoordinateSystem& getCoordSystem() = 0;
+    
+    // Dimension values used by stats functions
     size_t nchannels, nstokes, ndims;
+    // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> channelStats;
     std::vector<carta::FileInfo::ImageStats> cubeStats;
+    // Return the shape of the specified dataset 
+    virtual const ipos getStatsDataShape(FileInfo::Data ds);
+    // Most return casacore::Array of type casacore::Float or casacore::Int64
+    virtual casacore::ArrayBase* getStatsData(FileInfo::Data ds);
+    // Functions for loading individual types of statistics
+    virtual void loadStats2DBasic(FileInfo::Data ds);
+    virtual void loadStats2DHist();
+    virtual void loadStats2DPercent();
+    virtual void loadStats3DBasic(FileInfo::Data ds);
+    virtual void loadStats3DHist();
+    virtual void loadStats3DPercent();
 };
 
 } // namespace carta
