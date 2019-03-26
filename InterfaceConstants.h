@@ -1,4 +1,5 @@
 //# InterfaceConstants.h: definitions used in the Interface Control Document
+//* Others added for implementation
 
 // region ids
 #define CUBE_REGION_ID -2
@@ -8,6 +9,7 @@
 // channels, stokes
 #define CURRENT_CHANNEL -1
 #define ALL_CHANNELS -2
+#define CHANNEL_NOT_SET -3
 #define DEFAULT_CHANNEL 0
 #define DEFAULT_STOKES 0
 

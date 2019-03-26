@@ -40,7 +40,8 @@ public:
     size_t numStats();
     void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice);
     bool getStatsValues(std::vector<std::vector<float>>& statsValues,
-        const std::vector<int>& requestedStats, const casacore::SubLattice<float>& lattice);
+        const std::vector<int>& requestedStats, const casacore::SubLattice<float>& lattice,
+        bool perChannel=true);
 
 private:
     // Histogram config

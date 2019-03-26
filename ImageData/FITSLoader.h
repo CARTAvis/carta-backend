@@ -15,6 +15,7 @@ public:
     void openFile(const std::string &file, const std::string &hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
+    bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     const casacore::CoordinateSystem& getCoordSystem() override;
 
 private:
@@ -47,6 +48,8 @@ bool FITSLoader::hasData(FileInfo::Data dl) const {
         return image->shape().size() >= 3;
     case FileInfo::Data::XYZW:
         return image->shape().size() >= 4;
+    case FileInfo::Data::Mask:
+        return image->hasPixelMask();
     default:
         break;
     }
@@ -57,6 +60,10 @@ typename FITSLoader::image_ref FITSLoader::loadData(FileInfo::Data) {
     if (image==nullptr)
         openFile(file, fitsHdu);
     return *image;
+}
+
+bool FITSLoader::getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
+    return image->getMaskSlice(mask, slicer);
 }
 
 const casacore::CoordinateSystem& FITSLoader::getCoordSystem() {

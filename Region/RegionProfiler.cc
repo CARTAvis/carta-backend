@@ -56,7 +56,7 @@ std::pair<int,int> RegionProfiler::getSpatialProfileReq(int profileIndex) {
         return std::pair<int,int>();
 }
 
-std::string RegionProfiler::getSpatialProfileStr(int profileIndex) {
+std::string RegionProfiler::getSpatialCoordinate(int profileIndex) {
     if (profileIndex < m_spatialProfiles.size())
         return m_spatialProfiles[profileIndex];
     else
@@ -97,6 +97,13 @@ bool RegionProfiler::getSpectralConfigStokes(int& stokes, int profileIndex) {
         indexOK = true;
     }
     return indexOK;
+}
+
+std::string RegionProfiler::getSpectralCoordinate(int profileIndex) {
+    if (profileIndex < m_spectralConfigs.size())
+        return m_spectralConfigs[profileIndex].coordinate();
+    else
+        return std::string();
 }
 
 bool RegionProfiler::getSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profileIndex) {

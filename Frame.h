@@ -71,21 +71,29 @@ private:
     void setDefaultCursor(); // using center point of image
 
     // Image data and slicers
+    // make sublattice from Region of Lattice with given stokes
+    bool checkStokesIndex(int stokes);
+    // save Image region data for current channel, stokes
     void setImageCache();
-    bool getImageData(std::vector<float>& imageData, bool meanFilter = true); // downsampled
+    // downsampled data from image cache
+    bool getImageData(std::vector<float>& imageData, bool meanFilter = true);
+
     // fill vector for given channel and stokes
     void getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes);
     // get slicer for xy matrix with given channel and stokes
     casacore::Slicer getChannelMatrixSlicer(size_t channel, size_t stokes);
     // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
     void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
+    // Region data: apply region to Lattice to get SubLattice
+    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes);
 
     // histogram helpers
     int calcAutoNumBins(); // calculate automatic bin size
 
 
 public:
-    Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = DEFAULT_CHANNEL);
+    Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu,
+        int defaultChannel = DEFAULT_CHANNEL);
     ~Frame();
 
     // frame info

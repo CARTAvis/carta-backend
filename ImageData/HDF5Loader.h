@@ -15,6 +15,7 @@ public:
     void openFile(const std::string &file, const std::string &hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
+    bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     const casacore::CoordinateSystem& getCoordSystem() override;
     void findCoords(int& spectralAxis, int& stokesAxis) override;
 
@@ -66,6 +67,11 @@ typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
         dataSets.emplace(data, casacore::HDF5Lattice<float>(file, data, hdf5Hdu));
     }
     return dataSets[data];
+}
+
+bool HDF5Loader::getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
+    // HDF5Lattice is not a masked lattice
+    return false;
 }
 
 // This is necessary on some systems where the compiler

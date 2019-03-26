@@ -17,6 +17,8 @@ enum class Data : uint32_t
     YX, ZYX, ZYXW,
     // Statistics tables
     Stats, Stats2D, S2DMin, S2DMax, S2DMean, S2DNans, S2DHist, S2DPercent, Ranks,
+    // Mask
+    Mask
 };
 
 inline casacore::ImageOpener::ImageTypes fileType(const std::string &file) {
@@ -51,6 +53,7 @@ public:
     // Return a casacore image type representing the data stored in the
     // specified HDU/group/table/etc.
     virtual image_ref loadData(FileInfo::Data ds) = 0;
+    virtual bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
 protected:
     virtual const casacore::CoordinateSystem& getCoordSystem() = 0;
 };
