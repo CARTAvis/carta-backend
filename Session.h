@@ -50,6 +50,8 @@ class Session {
     std::string apiKey;
 
     std::string rootFolder;
+    std::string baseFolder;
+    
     bool verboseLogging;
 
     // load for file browser, reuse when open file
