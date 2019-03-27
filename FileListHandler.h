@@ -11,6 +11,7 @@
 #include <carta-protobuf/file_list.pb.h>
 
 #include "Frame.h"
+#include "util.h"
 
 class FileListHandler {
 public:
