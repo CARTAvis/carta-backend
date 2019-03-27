@@ -18,16 +18,6 @@
 #include "Region/Region.h"
 #include "compression.h"
 
-struct ChannelStats {
-    float minVal;
-    float maxVal;
-    float mean;
-    std::vector<float> percentiles;
-    std::vector<float> percentileRanks;
-    std::vector<int> histogramBins;
-    int64_t nanCount;
-};
-
 class Frame {
 
 private:
@@ -38,13 +28,13 @@ private:
     // image loader, stats from image file
     std::string filename;
     std::unique_ptr<carta::FileLoader> loader;
-    std::vector<std::vector<ChannelStats>> channelStats;
 
     // shape
     casacore::IPosition imageShape; // (width, height, depth, stokes)
     int spectralAxis, stokesAxis;   // axis index for each in 4D image
     int channelIndex, stokesIndex;  // current channel, stokes for image
     size_t nchan;
+    size_t nstok;
 
     // Image settings
     // view and compression
@@ -62,9 +52,6 @@ private:
     // Region
     std::unordered_map<int, std::unique_ptr<carta::Region>> regions;  // key is region ID
     bool cursorSet; // cursor region set by frontend, not internally
-
-    // Stats stored in image file
-    bool loadImageChannelStats(bool loadPercentiles = false);
 
     // Internal regions: image, cursor
     void setImageRegion(int regionId); // set region for entire plane image or cube
@@ -100,6 +87,7 @@ public:
     bool isValid();
     int getMaxRegionId();
     size_t nchannels(); // if no channel axis, nchan=1
+    size_t nstokes();
     int currentStokes();
 
     // Create and remove regions
