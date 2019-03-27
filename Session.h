@@ -36,12 +36,11 @@
 
 
 class Session {
-public:
+ public:
     std::string uuid;
     carta::FileSettings fsettings;
-    tbb::concurrent_queue<std::tuple<uint8_t,uint32_t,std::vector<char>>> evtq;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> aniq;
-    protected:
+ protected:
     // communication
     uWS::WebSocket<uWS::SERVER>* socket;
     std::vector<char> binaryPayloadCache;
@@ -119,12 +118,8 @@ public:
     void image_channal_task_set_idle() {
       _image_channel_task_active= false;
     }
-    int increase_ref_count() {
-      return ++_ref_count;
-    }
-    int decrease_ref_count() {
-      return --_ref_count;
-    }
+    int increase_ref_count() { return ++_ref_count; }
+    int decrease_ref_count() { return --_ref_count; }
     
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
