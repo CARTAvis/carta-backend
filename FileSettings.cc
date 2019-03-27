@@ -1,4 +1,5 @@
 #include "FileSettings.h"
+#include "Session.h"
 
 using namespace carta;
 
@@ -12,6 +13,7 @@ void FileSettings::addViewSetting(CARTA::SetImageView message, uint32_t requestI
     bool writeLock(false);  // concurrency okay 
     tbb::queuing_rw_mutex::scoped_lock lock(viewMutex, writeLock);
     FileSettings::view_iter viter = latestView.find(fileId);
+
     if (viter != latestView.end()) {  // replace with new settings
         viter->second = settings;
     } else {
@@ -37,7 +39,8 @@ bool FileSettings::executeOne(const std::string eventName, const uint32_t fileId
         bool writeLock(true);
         tbb::queuing_rw_mutex::scoped_lock lock(viewMutex, writeLock);
         FileSettings::view_iter viter = latestView.find(fileId);
-        if (viter != latestView.end()) {
+
+	if (viter != latestView.end()) {
             auto viewInfo = viter->second;
             CARTA::SetImageView message(viewInfo.first);
             uint32_t requestId(viewInfo.second);

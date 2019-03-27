@@ -1,9 +1,11 @@
 //# FileSettings.h: uses tbb::concurrent_unordered_map to keep latest per-file settings
 //# Used for cursor and view settings
 
-#pragma once
+//#pragma once
+#ifndef __CARTA_FILESETTINGS_H__
+#define __CARTA_FILESETTINGS_H__
 
-#include "Session.h"
+
 #include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 
@@ -12,12 +14,14 @@
 #include <mutex>
 #include <utility>
 
+class Session; // RWJS.
+
 namespace carta {
 
 class FileSettings  {
 public:
     FileSettings(Session *session);
-
+   
     void addViewSetting(CARTA::SetImageView message, uint32_t requestId);
     void addCursorSetting(CARTA::SetCursor message, uint32_t requestId);
     bool executeOne(const std::string eventName, const uint32_t fileId);
@@ -41,3 +45,6 @@ private:
 };
 
 } // namespace carta
+
+
+#endif // __CARTA_FILESETTINGS_H__
