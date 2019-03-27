@@ -18,16 +18,6 @@
 #include "Region/Region.h"
 #include "compression.h"
 
-struct ChannelStats {
-    float minVal;
-    float maxVal;
-    float mean;
-    std::vector<float> percentiles;
-    std::vector<float> percentileRanks;
-    std::vector<int> histogramBins;
-    int64_t nanCount;
-};
-
 class Frame {
 
 private:
@@ -38,13 +28,13 @@ private:
     // image loader, stats from image file
     std::string filename;
     std::unique_ptr<carta::FileLoader> loader;
-    std::vector<std::vector<ChannelStats>> channelStats;
 
     // shape
     casacore::IPosition imageShape; // (width, height, depth, stokes)
     int spectralAxis, stokesAxis;   // axis index for each in 4D image
     int channelIndex, stokesIndex;  // current channel, stokes for image
     size_t nchan;
+    size_t nstok;
 
     // Image settings
     // view and compression
@@ -63,35 +53,41 @@ private:
     std::unordered_map<int, std::unique_ptr<carta::Region>> regions;  // key is region ID
     bool cursorSet; // cursor region set by frontend, not internally
 
-    // Stats stored in image file
-    bool loadImageChannelStats(bool loadPercentiles = false);
-
     // Internal regions: image, cursor
     void setImageRegion(int regionId); // set region for entire plane image or cube
     void setDefaultCursor(); // using center point of image
 
     // Image data and slicers
+    // make sublattice from Region of Lattice with given stokes
+    bool checkStokesIndex(int stokes);
+    // save Image region data for current channel, stokes
     void setImageCache();
-    bool getImageData(std::vector<float>& imageData, bool meanFilter = true); // downsampled
+    // downsampled data from image cache
+    bool getImageData(std::vector<float>& imageData, bool meanFilter = true);
+
     // fill vector for given channel and stokes
     void getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes);
     // get slicer for xy matrix with given channel and stokes
     casacore::Slicer getChannelMatrixSlicer(size_t channel, size_t stokes);
     // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
     void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
+    // Region data: apply region to Lattice to get SubLattice
+    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes);
 
     // histogram helpers
     int calcAutoNumBins(); // calculate automatic bin size
 
 
 public:
-    Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu, int defaultChannel = DEFAULT_CHANNEL);
+    Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu,
+        int defaultChannel = DEFAULT_CHANNEL);
     ~Frame();
 
     // frame info
     bool isValid();
     int getMaxRegionId();
     size_t nchannels(); // if no channel axis, nchan=1
+    size_t nstokes();
     int currentStokes();
 
     // Create and remove regions

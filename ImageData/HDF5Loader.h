@@ -15,14 +15,21 @@ public:
     void openFile(const std::string &file, const std::string &hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
+    bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     const casacore::CoordinateSystem& getCoordSystem() override;
     void findCoords(int& spectralAxis, int& stokesAxis) override;
 
 private:
-    static std::string dataSetToString(FileInfo::Data ds);
-
     std::string file, hdf5Hdu;
-    std::unordered_map<std::string, casacore::HDF5Lattice<float>> dataSets;
+    casacore::HDF5Lattice<float> image;
+    
+    static std::string dataSetToString(FileInfo::Data ds);
+    
+    template <typename T> const ipos getStatsDataShapeTyped(FileInfo::Data ds);
+    template <typename S, typename D> casacore::ArrayBase* getStatsDataTyped(FileInfo::Data ds);
+    
+    const ipos getStatsDataShape(FileInfo::Data ds) override;
+    casacore::ArrayBase* getStatsData(FileInfo::Data ds) override;
 };
 
 HDF5Loader::HDF5Loader(const std::string &filename)
@@ -33,39 +40,32 @@ HDF5Loader::HDF5Loader(const std::string &filename)
 void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
     file = filename;
     hdf5Hdu = hdu;
+    image = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::XYZW), hdf5Hdu);
 }
 
 bool HDF5Loader::hasData(FileInfo::Data ds) const {
-    std::string parent = "main";
-    auto it = dataSets.find(parent);
-    if(it == dataSets.end()) return false;
-
-    std::string data;
     switch(ds) {
     case FileInfo::Data::XY:
-        return it->second.shape().size() >= 2;
+        return image.shape().size() >= 2;
     case FileInfo::Data::XYZ:
-        return it->second.shape().size() >= 3;
+        return image.shape().size() >= 3;
     case FileInfo::Data::XYZW:
-        return it->second.shape().size() >= 4;
-    case FileInfo::Data::YX:
-    case FileInfo::Data::ZYX:
-    case FileInfo::Data::ZYXW:
-        data = dataSetToString(ds);
-        break;
+        return image.shape().size() >= 4;
     default:
-        return false;
+        auto group_ptr = image.group();
+        std::string data = dataSetToString(ds);
+        return casacore::HDF5Group::exists(*group_ptr, data);
     }
-    auto group_ptr = it->second.group();
-    return casacore::HDF5Group::exists(*group_ptr, data);
 }
 
+// TODO: later we can implement swizzled datasets. We don't store stats in the same way as the main dataset(s).
 typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
-    std::string data = dataSetToString(ds);
-    if(dataSets.find(data) == dataSets.end()) {
-        dataSets.emplace(data, casacore::HDF5Lattice<float>(file, data, hdf5Hdu));
-    }
-    return dataSets[data];
+    return image;
+}
+
+bool HDF5Loader::getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
+    // HDF5Lattice is not a masked lattice
+    return false;
 }
 
 // This is necessary on some systems where the compiler
@@ -97,6 +97,13 @@ std::string HDF5Loader::dataSetToString(FileInfo::Data ds) {
         { FileInfo::Data::S2DNans,    "Statistics/XY/NAN_COUNT" },
         { FileInfo::Data::S2DHist,    "Statistics/XY/HISTOGRAM" },
         { FileInfo::Data::S2DPercent, "Statistics/XY/PERCENTILES" },
+        { FileInfo::Data::Stats3D,    "Statistics/XYZ" },
+        { FileInfo::Data::S3DMin,     "Statistics/XYZ/MIN" },
+        { FileInfo::Data::S3DMax,     "Statistics/XYZ/MAX" },
+        { FileInfo::Data::S3DMean,    "Statistics/XYZ/MEAN" },
+        { FileInfo::Data::S3DNans,    "Statistics/XYZ/NAN_COUNT" },
+        { FileInfo::Data::S3DHist,    "Statistics/XYZ/HISTOGRAM" },
+        { FileInfo::Data::S3DPercent, "Statistics/XYZ/PERCENTILES" },
         { FileInfo::Data::Ranks,      "PERCENTILE_RANKS" },
     };
     return (um.find(ds) != um.end()) ? um[ds] : "";
@@ -108,6 +115,81 @@ const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
     const casacore::LELImageCoord* lelImCoords =
         dynamic_cast<const casacore::LELImageCoord*>(&(loadData(FileInfo::Data::XYZW).lelCoordinates().coordinates()));
     return lelImCoords->coordinates();
+}
+
+// TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this complicated templating, at least for now.
+const HDF5Loader::ipos HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
+    auto dtype = casacore::HDF5DataSet::getDataType((*image.group()).getHid(), dataSetToString(ds));
+    
+    switch(dtype) {
+        case casacore::TpInt:
+        {
+            return getStatsDataShapeTyped<casacore::Int>(ds);
+        }
+        case casacore::TpInt64:
+        {
+            return getStatsDataShapeTyped<casacore::Int64>(ds);
+        }
+        case casacore::TpFloat:
+        {
+            return getStatsDataShapeTyped<casacore::Float>(ds);
+        }
+        case casacore::TpDouble:
+        {
+            return getStatsDataShapeTyped<casacore::Double>(ds);
+        }
+    }
+}
+
+template <typename T>
+const HDF5Loader::ipos HDF5Loader::getStatsDataShapeTyped(FileInfo::Data ds) {
+    casacore::HDF5DataSet dataSet(*image.group(), dataSetToString(ds), (const T*)0);
+    return dataSet.shape();
+}
+
+// TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this complicated templating, at least for now.
+casacore::ArrayBase* HDF5Loader::getStatsData(FileInfo::Data ds) {
+    auto dtype = casacore::HDF5DataSet::getDataType((*image.group()).getHid(), dataSetToString(ds));
+        
+    switch(dtype) {
+        case casacore::TpInt:
+        {
+            return getStatsDataTyped<casacore::Int, casacore::Int64>(ds);
+        }
+        case casacore::TpInt64:
+        {
+            return getStatsDataTyped<casacore::Int64, casacore::Int64>(ds);
+        }
+        case casacore::TpFloat:
+        {
+            return getStatsDataTyped<casacore::Float, casacore::Float>(ds);
+        }
+        case casacore::TpDouble:
+        {
+            return getStatsDataTyped<casacore::Double, casacore::Float>(ds);
+        }
+    }
+    
+    return nullptr;
+}
+
+// TODO: We need to use the C API to read scalar datasets for now, but we should patch casacore to handle them correctly.
+template <typename S, typename D>
+casacore::ArrayBase* HDF5Loader::getStatsDataTyped(FileInfo::Data ds) {
+    casacore::HDF5DataSet dataSet(*image.group(), dataSetToString(ds), (const S*)0);
+
+    if (dataSet.shape().size() == 0) {
+        // Scalar dataset hackaround
+        D value;
+        casacore::HDF5DataType dtype((D*)0);
+        H5Dread(dataSet.getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
+        casacore::ArrayBase* scalar = new casacore::Array<D>(ipos(1), value);
+        return scalar;
+    }
+    
+    casacore::ArrayBase* data = new casacore::Array<D>();
+    dataSet.get(casacore::Slicer(ipos(dataSet.shape().size(), 0), dataSet.shape()), *data);
+    return data;
 }
 
 void HDF5Loader::findCoords(int& spectralAxis, int& stokesAxis) {
