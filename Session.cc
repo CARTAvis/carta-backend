@@ -693,7 +693,7 @@ bool Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                 if (frames.at(fileId)->getRegionHistogram(regionId, channel, stokes, numbins, *histogram)) {
                     // use stored cube histogram
                     sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
-                } else if (frames.at(fileId)->nChannels() == 1) { 
+                } else if (frames.at(fileId)->nchannels() == 1) {
                     // use per-channel histogram for channel 0
                     int channum(0);
                     if (frames.at(fileId)->getRegionHistogram(IMAGE_REGION_ID, channum, stokes, numbins,
@@ -715,7 +715,7 @@ bool Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                     auto tStart = std::chrono::high_resolution_clock::now();
                     // determine cube min and max values
                     float cubemin(FLT_MAX), cubemax(FLT_MIN);
-                    size_t nchan(frames.at(fileId)->nChannels());
+                    size_t nchan(frames.at(fileId)->nchannels());
                     for (size_t chan=0; chan < nchan; ++chan) {
                         // minmax for this channel
                         float chanmin, chanmax;

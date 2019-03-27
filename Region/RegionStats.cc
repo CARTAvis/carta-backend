@@ -176,13 +176,11 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
 
     // Print region info
     casacore::IPosition blc(lrSlicer.start()), trc(lrSlicer.end());
-    /*
     casacore::Array<casacore::Double> npts; 
     if (latticeStats.getStatistic(npts, casacore::LatticeStatsBase::NPTS)) {
         std::cout << "Computing statistics for region from " << blc <<  " to " << trc << std::endl;
         std::cout << "Number of points (npts) = " << npts(casacore::IPosition(1,0)) << std::endl;
     }
-    */
 
     size_t nstats(requestedStats.size());
     statsValues.resize(nstats);
