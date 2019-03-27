@@ -25,6 +25,7 @@
 #include <carta-protobuf/set_cursor.pb.h>
 
 #include "Frame.h"
+#include "FileListHandler.h"
 
 class Session {
 public:
@@ -35,11 +36,9 @@ protected:
     std::vector<char> binaryPayloadCache;
 
     // permissions
-    std::unordered_map<std::string, std::vector<std::string> >& permissionsMap;
-    bool permissionsEnabled;
     std::string apiKey;
 
-    std::string rootFolder, baseFolder, filelistFolder;
+    std::string rootFolder;
     bool verboseLogging;
 
     // load for file browser, reuse when open file
@@ -60,13 +59,15 @@ protected:
     // Return message queue
     tbb::concurrent_queue<std::vector<char>> out_msgs;
 
+    // file list handler
+    FileListHandler *fileListHandler;
+
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
             std::string uuid,
-            std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
-            bool enforcePermissions,
-            std::string root, std::string base,
+            std::string root,
             uS::Async *outgoing,
+            FileListHandler *fileListHandler,
             bool verbose = false);
     ~Session();
 
@@ -89,16 +90,9 @@ public:
     void sendPendingMessages();
 
 protected:
-    // ICD: File list response
-    void getRelativePath(std::string& folder);
-    void getFileList(CARTA::FileListResponse& fileList, std::string folder);
-    bool checkPermissionForDirectory(std:: string prefix);
-    bool checkPermissionForEntry(std::string entry);
-    std::string getType(casacore::ImageOpener::ImageTypes type); // convert enum to string
 
     // ICD: File info response
     void resetFileInfo(bool create=false); // delete existing file info ptrs, optionally create new ones
-    bool fillFileInfo(CARTA::FileInfo* fileInfo, const std::string& filename);
     bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo,
         const std::string folder, const std::string filename, std::string hdu, std::string& message);
 
@@ -120,4 +114,3 @@ protected:
         google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
-
