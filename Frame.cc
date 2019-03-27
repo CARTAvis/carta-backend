@@ -24,7 +24,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
             return;
         }
         loader->openFile(filename, hdu);
-        
+
         // Get shape and axis values from the loader
         if (!loader->findShape(imageShape, nchan, nstok, spectralAxis, stokesAxis)) {
             valid = false;
