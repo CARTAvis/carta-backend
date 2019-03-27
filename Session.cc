@@ -12,18 +12,34 @@
 #include <chrono>
 #include <limits>
 
+using namespace std;
+
+
+int __num_sessions= 0;
 // Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, std::string uuid, std::string root,
-    uS::Async *outgoing, FileListHandler *fileListHandler, bool verbose)
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
+		 std::string uuid,
+		 std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
+		 bool enforcePermissions,
+		 std::string root,
+		 std::string base, // is currently ignored ???
+		 uS::Async *outgoing_,
+		 FileListHandler *fileListHandler,
+		 bool verbose)
     : uuid(std::move(uuid)),
       socket(ws),
       rootFolder(root),
+      baseFolder(base),
       verboseLogging(verbose),
       selectedFileInfo(nullptr),
       selectedFileInfoExtended(nullptr),
-      outgoing(outgoing),
+      outgoing(outgoing_),
       fileListHandler(fileListHandler),
-      newFrame(false) {
+      newFrame(false),
+      fsettings(this) {
+  _ref_count= 0;
+
+  ++__num_sessions;
 }
 
 Session::~Session() {
@@ -33,6 +49,7 @@ Session::~Session() {
     }
     frames.clear();
     outgoing->close();
+    --__num_sessions;
 }
 
 // ********************************************************************************
@@ -153,8 +170,9 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     CARTA::OpenFileAck ack;
     ack.set_file_id(fileId);
     string errMessage;
-    bool infoLoaded((selectedFileInfo != nullptr) &&
-        (selectedFileInfoExtended != nullptr) &&
+
+    bool infoLoaded((selectedFileInfo != nullptr) && 
+        (selectedFileInfoExtended != nullptr) && 
         (selectedFileInfo->name() == filename)); // correct file loaded
     if (!infoLoaded) { // load from image file
         resetFileInfo(true);
@@ -173,7 +191,8 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         rootPath.append(directory);
         rootPath.append(filename);
         string absFilename(rootPath.resolvedName());
-        // create Frame for open file
+
+	// create Frame for open file
         auto frame = std::unique_ptr<Frame>(new Frame(uuid, absFilename, hdu));
         if (frame->isValid()) {
             std::unique_lock<std::mutex> lock(frameMutex); // open/close lock
@@ -612,6 +631,7 @@ void Session::createCubeHistogramMessage(CARTA::RegionHistogramData& message, in
         message.set_progress(progress);
     }
 }
+
 
 void Session::sendRasterImageData(int fileId, bool sendHistogram) {
     if (frames.count(fileId)) {

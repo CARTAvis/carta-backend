@@ -32,7 +32,6 @@ set(SOURCE_FILES
   Region/RegionProfiler.cc
   Region/Histogram.cc
   OnMessageTask.cc
-  AnimationQueue.cc
   FileSettings.cc
   util.cc
   FileListHandler.cc)

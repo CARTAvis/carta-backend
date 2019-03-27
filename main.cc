@@ -1,9 +1,13 @@
-#include "AnimationQueue.h"
 #include "FileSettings.h"
 #include "OnMessageTask.h"
 #include "Session.h"
+#include "EventMappings.h"
 #include "util.h"
+
+	//#include <unordered_map>
+
 #include "FileListHandler.h"
+
 
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/casa/Inputs/Input.h>
@@ -20,24 +24,29 @@
 #include <vector>
 #include <signal.h>
 
+#include <thread>
+#include <mutex>
+
+
 using namespace std;
 
 // key is uuid:
 using key_type = string;
-unordered_map<key_type, Session*> sessions;
-unordered_map<key_type, carta::AnimationQueue*> animationQueues;
-unordered_map<key_type, carta::FileSettings*> fileSettings;
-// msgQueue holds eventName, requestId, message
-unordered_map<key_type, tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>*> msgQueues;
 
 // key is current folder
-unordered_map<string, vector<string>> permissionsMap;
+unordered_map<std::string, vector<string>> permissionsMap;
 
 // file list handler for the file browser
 FileListHandler* fileListHandler;
 
 int sessionNumber;
 uWS::Hub wsHub;
+
+// Number of active sessions
+int _num_sessions= 0;
+
+// Map from string uuids to 32 bit ints.
+unordered_map<std::string,uint8_t> _event_name_map;
 
 // command-line arguments
 string rootFolder("/"), baseFolder("."), version_id("1.1");
@@ -140,115 +149,196 @@ void readPermissions(string filename) {
     }
 }
 
+
+inline uint8_t get_event_id_by_string(std::string& strname)
+{
+  int8_t ret= _event_name_map[ strname ];
+  if( ! ret ) {
+    std::cerr << "Name lookup failure in  get_event_no_by_string : "
+	      << strname << endl;
+  }
+  return ret;
+}
+
+
+
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
     string uuidstr = fmt::format("{}{}", ++sessionNumber,
         casacore::Int(casacore::HostInfo::secondsFrom1970()));
-    ws->setUserData(new string(uuidstr));
-    auto &uuid = *((string*)ws->getUserData());
+
+    auto &uuid= *((string *)new string(uuidstr));
 
     uS::Async *outgoing = new uS::Async(wsHub.getLoop());
-    outgoing->setData(&uuid);
+
+    Session *session;
+
     outgoing->start(
         [](uS::Async *async) -> void {
-            auto uuid = *((string*)async->getData());
-            sessions[uuid]->sendPendingMessages();
+	  Session * sess = ((Session*)async->getData());
+	  sess->sendPendingMessages();
         });
 
     // there is only one fileListHandler which handles all users file list browsing
     if (!fileListHandler) {
         fileListHandler = new FileListHandler(permissionsMap, usePermissions, rootFolder, baseFolder);
     }
-    sessions[uuid] = new Session(ws, uuid, rootFolder, outgoing, fileListHandler, verbose);
-    animationQueues[uuid] = new carta::AnimationQueue(sessions[uuid]);
-    msgQueues[uuid] = new tbb::concurrent_queue<tuple<string,uint32_t,vector<char>>>;
-    fileSettings[uuid] = new carta::FileSettings(sessions[uuid]);
 
-    log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, sessions.size());
+    session= new Session(ws, uuid, permissionsMap, usePermissions,
+			 rootFolder, baseFolder, outgoing,
+			 fileListHandler, verbose);
+
+    ws->setUserData(session);
+    session->increase_ref_count();
+    outgoing->setData(session);
+
+
+    log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, ++_num_sessions);
 }
+
+
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
-    auto &uuid = *((string*)ws->getUserData());
-    auto session = sessions[uuid];
-    if (session) {
-        delete session;
-        sessions.erase(uuid);
-        delete animationQueues[uuid];
-        animationQueues.erase(uuid);
-        delete msgQueues[uuid];
-        msgQueues.erase(uuid);
-        delete fileSettings[uuid];
-        fileSettings.erase(uuid);
-    }
-    log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
-    if (sessions.size() == 0 && fileListHandler) { // if there is no user connection, delete the fileListHandler
-        delete fileListHandler;
-        fileListHandler = nullptr;
-    }
-    delete &uuid;
+  Session * session= (Session*)ws->getUserData();
+  if ( ! session->decrease_ref_count() ) {
+    delete session;
+    session= nullptr;
+  }
+  ws->setUserData(nullptr); //Avoid having destructor called twice.
+  --_num_sessions;
+  
+  if ((session == 0) && fileListHandler) { // if there is no user connection, delete the fileListHandler
+    delete fileListHandler;  // This will not get deleted if session ref_count > 0 at this point. Need to look into this...
+    fileListHandler = nullptr;
+  }
+
+  // Commented this out for now since uuid is not declared in scope
+  // with the current merge.
+  //  log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
 }
 
+
+    
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
-void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length, uWS::OpCode opCode) {
-    auto uuid = *((string*)ws->getUserData());
-    auto session = sessions[uuid];
+void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
+	       size_t length, uWS::OpCode opCode) {
+  Session * session= (Session*) ws->getUserData();
+  if (!session) {
+    fmt::print("Missing session!\n");
+    return;
+  }
 
-    if (!session) {
-        fmt::print("Missing session!\n");
-        return;
-    }
+  if (opCode == uWS::OpCode::BINARY) {
+    if (length > 36) {
+      static const size_t max_len = 32;
+      string eventName(rawMessage, min(strlen(rawMessage), max_len));
+      uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
+      vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
+      
+      OnMessageTask * tsk= nullptr;
+      uint8_t event_id= get_event_id_by_string( eventName );
 
-    if (opCode == uWS::OpCode::BINARY) {
-        if (length > 36) {
-            static const size_t max_len = 32;
-            string eventName(rawMessage, min(strlen(rawMessage), max_len));
-            uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
-            vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
-            msgQueues[uuid]->push(make_tuple(eventName, requestId, eventPayload));
-            OnMessageTask *omt = new(tbb::task::allocate_root()) OnMessageTask(
-                uuid, session, msgQueues[uuid], animationQueues[uuid], fileSettings[uuid]);
-            if(eventName == "SET_IMAGE_CHANNELS") {
-                // has its own queue to keep channels in order during animation
-                CARTA::SetImageChannels message;
-                message.ParseFromArray(eventPayload.data(), eventPayload.size());
-                animationQueues[uuid]->addRequest(message, requestId);
-            } else if(eventName == "SET_IMAGE_VIEW") {
-                CARTA::SetImageView message;
-                message.ParseFromArray(eventPayload.data(), eventPayload.size());
-                fileSettings[uuid]->addViewSetting(message, requestId);
-            } else if(eventName == "SET_CURSOR") {
-                CARTA::SetCursor message;
-                message.ParseFromArray(eventPayload.data(), eventPayload.size());
-                fileSettings[uuid]->addCursorSetting(message, requestId);
-            }
-            tbb::task::enqueue(*omt);
+      switch(event_id) {
+      case 0: {
+	// Do nothing if event type is not known.
+	break;
+      }
+      case SET_IMAGE_CHANNELS_ID: {
+	CARTA::SetImageChannels message;
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	session->image_channel_lock();
+	if( ! session->image_channel_task_test_and_set() ) {
+	  tsk= new (tbb::task::allocate_root())
+	    SetImageChannelsTask(session, make_pair(message, requestId));
+	}
+	else {
+	// has its own queue to keep channels in order during animation
+	  session->addToAniQueue(message, requestId);
+	}
+	session->image_channel_unlock();
+	break;
+      }
+      case SET_IMAGE_VIEW_ID: {
+        CARTA::SetImageView message;
+        message.ParseFromArray(eventPayload.data(), eventPayload.size());
+        session->addViewSetting(message, requestId);
+        tsk= new (tbb::task::allocate_root())
+	  SetImageViewTask(session, message.file_id());
+	break;
+      }	
+      case SET_CURSOR_ID: {
+	CARTA::SetCursor message;
+        message.ParseFromArray(eventPayload.data(), eventPayload.size());
+        session->addCursorSetting(message, requestId);
+        tsk= new (tbb::task::allocate_root()) SetCursorTask(session, message.file_id());
+	break;
+      }
+      case SET_HISTOGRAM_REQUIREMENTS_ID: {
+        CARTA::SetHistogramRequirements message;
+        message.ParseFromArray(eventPayload.data(), eventPayload.size());
+        if(message.histograms_size() == 0) {
+          session->cancel_SetHistReqs();
         }
-    } else if (opCode == uWS::OpCode::TEXT) {
-        if (std::strncmp(rawMessage, "PING", 4) == 0) {
-            ws->send("PONG");
+        else {
+          tsk= new (tbb::task::allocate_root())
+	    SetHistogramReqsTask(session,
+				 make_tuple(event_id,
+					    requestId,
+					    eventPayload));
         }
+	break;
+      }
+      default: {
+	tsk= new (tbb::task::allocate_root())
+	  MultiMessageTask(session,
+			   make_tuple(event_id,
+				      requestId,
+				      eventPayload) );
+      }
+      }
+      if( tsk ) tbb::task::enqueue(*tsk);
     }
-};
+  }
+  else if (opCode == uWS::OpCode::TEXT) {
+    if (std::strncmp(rawMessage, "PING", 4) == 0) {
+      ws->send("PONG");
+    }
+  }
+}
+
+
 
 void exit_backend(int s) {
-    // destroy objects cleanly
     fmt::print("Exiting backend.\n");
-    for (auto& session : sessions) {
-        auto uuid = session.first;
-        delete session.second;
-        delete animationQueues[uuid];
-        delete msgQueues[uuid];
-        delete fileSettings[uuid];
-    }
-    sessions.clear();
-    animationQueues.clear();
-    msgQueues.clear();
-    fileSettings.clear();
-
     exit(0);
 }
 
+
+
+
+
+// Note : this is still under construction.
+void populate_event_name_map(void)
+{
+  _event_name_map["REGISTER_VIEWER"]= REGISTER_VIEWER_ID;
+  _event_name_map["FILE_LIST_REQUEST"]= FILE_LIST_REQUEST_ID;
+  _event_name_map["FILE_INFO_REQUEST"]= FILE_INFO_REQUEST_ID;;
+  _event_name_map["OPEN_FILE"]= OPEN_FILE_ID;
+  _event_name_map["CLOSE_FILE"]= CLOSE_FILE_ID;
+  _event_name_map["SET_IMAGE_VIEW"]= SET_IMAGE_VIEW_ID;
+  _event_name_map["SET_IMAGE_CHANNELS"]= SET_IMAGE_CHANNELS_ID;
+  _event_name_map["SET_CURSOR"]= SET_CURSOR_ID;
+  _event_name_map["SET_SPATIAL_REQUIREMENTS"]= SET_SPATIAL_REQUIREMENTS_ID;
+  _event_name_map["SET_SPECTRAL_REQUIREMENTS"]= SET_SPECTRAL_REQUIREMENTS_ID;
+  _event_name_map["SET_HISTOGRAM_REQUIREMENTS"]= SET_HISTOGRAM_REQUIREMENTS_ID;
+  _event_name_map["SET_STATS_REQUIREMENTS"]= SET_STATS_REQUIREMENTS_ID;
+  _event_name_map["SET_REGION"]= SET_REGION_ID;
+  _event_name_map["REMOVE_REGION"]= REMOVE_REGION_ID;
+}
+
+
+  
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
@@ -279,6 +369,8 @@ int main(int argc, const char* argv[]) {
         threadCount = inp.getInt("threads");
         baseFolder = inp.getString("base");
         rootFolder = inp.getString("root");
+
+	populate_event_name_map();
         }
 
         if (!checkRootBaseFolders(rootFolder, baseFolder)) {
