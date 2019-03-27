@@ -136,17 +136,16 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
     }
 
     std::vector<std::vector<double>> results;
-    if (getStatsValues(results, m_regionStats, subLattice, false)) { // entire region, not per channel
-        for (size_t i=0; i<m_regionStats.size(); ++i) {
-            auto statType = static_cast<CARTA::StatsType>(m_regionStats[i]);
-            // add StatisticsValue
-            auto statsValue = statsData.add_statistics();
-            statsValue->set_stats_type(statType);
-            if (!results[i].empty()) {
-                statsValue->set_value(results[i][0]);
-            } else {
-                statsValue->set_value(std::numeric_limits<float>::quiet_NaN());
-            }
+    bool haveStats(getStatsValues(results, m_regionStats, subLattice, false)); // entire region, not per channel
+    for (size_t i=0; i<m_regionStats.size(); ++i) {
+        auto statType = static_cast<CARTA::StatsType>(m_regionStats[i]);
+        // add StatisticsValue
+        auto statsValue = statsData.add_statistics();
+        statsValue->set_stats_type(statType);
+        if (!results[i].empty()) {
+            statsValue->set_value(results[i][0]);
+        } else {
+            statsValue->set_value(std::numeric_limits<float>::quiet_NaN());
         }
     }
 }
@@ -156,6 +155,8 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
     bool perChannel) {
     // Fill statsValues vector for requested stats; one vector<float> per stat if per channel,
     // else one value per stat per region.
+    if (subLattice.shape().empty())
+        return false;
 
     // Use LatticeStatistics to fill statistics values according to type;
     // template type matches sublattice type
@@ -254,5 +255,13 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
         }
     }
     return true;
+}
+
+// ***** Clear calculations *****
+
+void RegionStats::clearStats() {
+    // Clear stored calculations for new region definition
+    m_minmax.clear();
+    m_histograms.clear();
 }
 

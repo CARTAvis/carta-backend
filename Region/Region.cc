@@ -52,8 +52,13 @@ bool Region::updateRegionParameters(const std::string name, const CARTA::RegionT
 
     // validate and set points
     bool pointsSet(setPoints(points));
+    if (pointsSet)
+        setXYRegion(points, rotation);
+
     // region changed if xy params changed and validated, and xyregion created
-    m_xyRegionChanged = xyParamsChanged && pointsSet && setXYRegion(points, rotation);
+    m_xyRegionChanged = xyParamsChanged && pointsSet;
+    if (m_xyRegionChanged && m_stats)
+        m_stats->clearStats(); // recalculate everything
 
     return pointsSet;
 }
@@ -334,12 +339,16 @@ bool Region::getData(std::vector<float>& data, casacore::SubLattice<float>& subl
     // fill data vector using region SubLattice
     bool dataOK(false);
     casacore::IPosition sublattShape = sublattice.shape();
+    if (sublattShape.empty())
+        return dataOK;
+
     data.resize(sublattShape.product());
     casacore::Array<float> tmp(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
     try {
         sublattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
         dataOK = true;
     } catch (casacore::AipsError& err) {
+        data.clear();
     }
     return dataOK;
 }

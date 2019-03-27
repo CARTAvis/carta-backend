@@ -43,17 +43,21 @@ public:
         const std::vector<int>& requestedStats, const casacore::SubLattice<float>& lattice,
         bool perChannel=true);
 
+    // Clear all calculations for new region
+    void clearStats();
+
 private:
     // Histogram config
     std::vector<CARTA::SetHistogramRequirements_HistogramConfig> m_configs;
 
-    // MinMax, histogram maps
+    // Statistics config
+    std::vector<int> m_regionStats; // CARTA::StatsType requirements for this region
+
+    // MinMax, histogram maps to store calculations
     // first key is stokes, second is channel number (-2 all channels for cube)
     std::unordered_map<int, std::unordered_map<int, minmax_t>> m_minmax;
     std::unordered_map<int, std::unordered_map<int, CARTA::Histogram>> m_histograms;
 
-    // Statistics config
-    std::vector<int> m_regionStats; // CARTA::StatsType requirements for this region
 };
 
 }

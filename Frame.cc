@@ -727,10 +727,9 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 // get sublattice for stokes requested in profile
                 casacore::SubLattice<float> sublattice;
                 std::unique_lock<std::mutex> guard(latticeMutex);
-                if (getRegionSubLattice(regionId, sublattice, profileStokes)) {
-                    // fill SpectralProfiles for this config
-                    region->fillSpectralProfileData(profileData, i, sublattice);
-                }
+                getRegionSubLattice(regionId, sublattice, profileStokes);
+                // fill SpectralProfiles for this config
+                region->fillSpectralProfileData(profileData, i, sublattice);
                 guard.unlock();
             }
         }
@@ -755,10 +754,9 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         casacore::SubLattice<float> sublattice;
         std::unique_lock<std::mutex> guard(latticeMutex);
         // current channel only
-        if (getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex)) {
-            region->fillStatsData(statsData, sublattice);
-            statsOK = true;
-        }
+        getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex);
+        region->fillStatsData(statsData, sublattice);
+        statsOK = true;
     }
     return statsOK;
 }
