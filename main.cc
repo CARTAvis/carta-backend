@@ -179,17 +179,19 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
 	  sess->sendPendingMessages();
         });
 
+    // there is only one fileListHandler which handles all users file list browsing
+    if (!fileListHandler) {
+        fileListHandler = new FileListHandler(permissionsMap, usePermissions, rootFolder, baseFolder);
+    }
+
     session= new Session(ws, uuid, permissionsMap, usePermissions,
-			 rootFolder, baseFolder, outgoing, verbose);
+			 rootFolder, baseFolder, outgoing,
+			 fileListHandler, verbose);
 
     ws->setUserData(session);
     session->increase_ref_count();
     outgoing->setData(session);
 
-    // there is only one fileListHandler which handles all users file list browsing
-    if (!fileListHandler) {
-        fileListHandler = new FileListHandler(permissionsMap, usePermissions, rootFolder, baseFolder);
-    }
 
     log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, ++_num_sessions);
 }
@@ -205,12 +207,15 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
   }
   ws->setUserData(nullptr); //Avoid having destructor called twice.
   --_num_sessions;
-  log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
   
   if ((session == 0) && fileListHandler) { // if there is no user connection, delete the fileListHandler
-    delete fileListHandler;  // This might not get deleted. Need to look into this more...
+    delete fileListHandler;  // This will not get deleted if session ref_count > 0 at this point. Need to look into this...
     fileListHandler = nullptr;
   }
+
+  // Commented this out for now since uuid is not declared in scope
+  // with the current merge.
+  //  log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
 }
 
 
