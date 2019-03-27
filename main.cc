@@ -3,7 +3,11 @@
 #include "Session.h"
 #include "EventMappings.h"
 #include "util.h"
-#include <unordered_map>
+
+	//#include <unordered_map>
+
+#include "FileListHandler.h"
+
 
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/casa/Inputs/Input.h>
@@ -32,6 +36,9 @@ using key_type = string;
 // key is current folder
 unordered_map<std::string, vector<string>> permissionsMap;
 
+// file list handler for the file browser
+FileListHandler* fileListHandler;
+
 int sessionNumber;
 uWS::Hub wsHub;
 
@@ -56,7 +63,7 @@ bool checkRootBaseFolders(std::string& root, std::string& base) {
 
     // check root
     casacore::File rootFolder(root);
-    if (!(rootFolder.exists() && rootFolder.isDirectory(true) && 
+    if (!(rootFolder.exists() && rootFolder.isDirectory(true) &&
           rootFolder.isReadable() && rootFolder.isExecutable())) {
         fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
         fmt::print("Exiting carta.\n");
@@ -75,7 +82,7 @@ bool checkRootBaseFolders(std::string& root, std::string& base) {
     }
     // check base
     casacore::File baseFolder(base);
-    if (!(baseFolder.exists() && baseFolder.isDirectory(true) && 
+    if (!(baseFolder.exists() && baseFolder.isDirectory(true) &&
           baseFolder.isReadable() && baseFolder.isExecutable())) {
         fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
         fmt::print("Exiting carta.\n");
@@ -178,7 +185,11 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
     ws->setUserData(session);
     session->increase_ref_count();
     outgoing->setData(session);
-    //    session->increase_ref_count();
+
+    // there is only one fileListHandler which handles all users file list browsing
+    if (!fileListHandler) {
+        fileListHandler = new FileListHandler(permissionsMap, usePermissions, rootFolder, baseFolder);
+    }
 
     log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, ++_num_sessions);
 }
@@ -190,9 +201,16 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
   Session * session= (Session*)ws->getUserData();
   if ( ! session->decrease_ref_count() ) {
     delete session;
+    session= nullptr;
   }
-  ws->setUserData(0); //Avoid having destructor called twice.
+  ws->setUserData(nullptr); //Avoid having destructor called twice.
   --_num_sessions;
+  log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
+  
+  if ((session == 0) && fileListHandler) { // if there is no user connection, delete the fileListHandler
+    delete fileListHandler;  // This might not get deleted. Need to look into this more...
+    fileListHandler = nullptr;
+  }
 }
 
 
