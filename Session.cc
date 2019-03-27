@@ -508,7 +508,7 @@ void Session::onSetRegion(const CARTA::SetRegion& message, uint32_t requestId) {
 
     if (frames.count(fileId)) {
         try {
-            if (message.region_id() <= 0) { // get region id unique across all frames
+            if (message.region_id() < 0) { // get region id unique across all frames
                 for (auto& frame : frames) { // frames = map<fileId, unique_ptr<Frame>>
                     regionId = std::max(regionId, frame.second->getMaxRegionId());
                 }

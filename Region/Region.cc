@@ -184,9 +184,11 @@ bool Region::setXYRegion(const std::vector<CARTA::Point>& points, float rotation
                 break;
             }
             case CARTA::RegionType::RECTANGLE: {
-                region = makeRectangleRegion(points, rotation);
-                    break;
+                if (rotation == 0.0) {
+                    region = makeRectangleRegion(points);
                 }
+                break;
+            }
             case CARTA::RegionType::ELLIPSE: {
                 region = makeEllipseRegion(points, rotation);
                 break;
@@ -222,19 +224,19 @@ casacore::LCRegion* Region::makePointRegion(const std::vector<CARTA::Point>& poi
     return box;
 }
 
-casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation) {
-    // width x height LCBox
+casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>& points) {
+    // LCBox, compute blc and trc from center point, width, height
     casacore::LCBox* box(nullptr);
-    if ((points.size()==2) && (rotation == 0.0)) { // TODO support rotation
+    if ((points.size()==2)) {
         float cx(points[0].x()), cy(points[0].y());
         float width(points[1].x()), height(points[1].y());
         // delta is width/2, height/2
         float blcx(cx - (width/2.0)), blcy(cy - (height/2.0)), trcx(blcx + width), trcy(blcy + height);
         casacore::Vector<casacore::Float> blc(2), trc(2);
-        blc(0) = blcx;
-        blc(1) = blcy;
-        trc(0) = trcx;
-        trc(1) = trcy;
+        blc(0) = std::round(blcx + 0.5);
+        blc(1) = std::round(blcy + 0.5);
+        trc(0) = std::round(trcx - 0.5);
+        trc(1) = std::round(trcy - 0.5);
         box = new casacore::LCBox(blc, trc, m_latticeShape.keepAxes(m_xyAxes));
     }
     return box;

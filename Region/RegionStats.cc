@@ -177,10 +177,6 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
     // Print region info
     casacore::IPosition blc(lrSlicer.start()), trc(lrSlicer.end());
     casacore::Array<casacore::Double> npts; 
-    if (latticeStats.getStatistic(npts, casacore::LatticeStatsBase::NPTS)) {
-        std::cout << "Computing statistics for region from " << blc <<  " to " << trc << std::endl;
-        std::cout << "Number of points (npts) = " << npts(casacore::IPosition(1,0)) << std::endl;
-    }
 
     size_t nstats(requestedStats.size());
     statsValues.resize(nstats);
@@ -247,16 +243,14 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
         }
 
         if (!intResult.empty()) {
-            std::vector<double> values;
-            values.reserve(intResult.size());
-            for (unsigned int i=0; i<intResult.size(); ++i) {  // convert to float
-                values.push_back(static_cast<double>(intResult[i]));
+            dblResult.reserve(intResult.size());
+            for (unsigned int i=0; i<intResult.size(); ++i) {  // convert to double
+                dblResult.push_back(static_cast<double>(intResult[i]));
             }
-            statsValues[i] = std::move(values);
-        } else if (!dblResult.empty()) {
+        }
+
+        if (!dblResult.empty()) {
             statsValues[i] = std::move(dblResult);
-        } else {
-            statsValues[i].push_back(std::numeric_limits<double>::quiet_NaN());
         }
     }
     return true;
