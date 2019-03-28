@@ -190,6 +190,9 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
         switch (statType) {
             case CARTA::StatsType::None:
                 break;
+            case CARTA::StatsType::NumPixels:
+                lattStatsType = casacore::LatticeStatsBase::NPTS;
+                break;
             case CARTA::StatsType::Sum:
                 lattStatsType = casacore::LatticeStatsBase::SUM;
                 break;
