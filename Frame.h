@@ -2,11 +2,10 @@
 //# (profiles, histograms, stats)
 
 #pragma once
-#include <vector>
 #include <unordered_map>
-#include <string>
 #include <memory>
 #include <mutex>
+#include <algorithm>
 #include <tbb/queuing_rw_mutex.h>
 
 #include <carta-protobuf/raster_image.pb.h>
@@ -57,9 +56,11 @@ private:
     void setImageRegion(int regionId); // set region for entire plane image or cube
     void setDefaultCursor(); // using center point of image
 
+    // validate channel, stokes index values
+    bool checkChannel(int channel);
+    bool checkStokes(int stokes);
+
     // Image data and slicers
-    // make sublattice from Region of Lattice with given stokes
-    bool checkStokesIndex(int stokes);
     // save Image region data for current channel, stokes
     void setImageCache();
     // downsampled data from image cache
@@ -71,11 +72,14 @@ private:
     casacore::Slicer getChannelMatrixSlicer(size_t channel, size_t stokes);
     // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
     void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
-    // Region data: apply region to Lattice to get SubLattice
-    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes);
+    // xy region created (subset of image)
+    bool xyRegionValid(int regionId);
+    // make Lattice sublattice from Region given channel and stokes
+    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes,
+        int channel=ALL_CHANNELS);
 
     // histogram helpers
-    int calcAutoNumBins(); // calculate automatic bin size
+    int calcAutoNumBins(int regionId); // calculate automatic bin size for region
 
 
 public:
@@ -85,16 +89,19 @@ public:
 
     // frame info
     bool isValid();
+    std::vector<int> getRegionIds();
     int getMaxRegionId();
     size_t nchannels(); // if no channel axis, nchan=1
     size_t nstokes();
+    int currentChannel();
     int currentStokes();
 
     // Create and remove regions
-    bool setRegion(int regionId, std::string name, CARTA::RegionType type, int minchan,
-        int maxchan, std::vector<CARTA::Point>& points, float rotation, std::string& message);
+    bool setRegion(int regionId, std::string name, CARTA::RegionType type,
+        std::vector<CARTA::Point>& points, float rotation, std::string& message);
     bool setCursorRegion(int regionId, const CARTA::Point& point);
     inline bool isCursorSet() { return cursorSet; } // set by frontend, not default
+    bool regionChanged(int regionId);
     void removeRegion(int regionId);
 
     // image view, channels
@@ -111,10 +118,14 @@ public:
     bool setRegionStatsRequirements(int regionId, const std::vector<int> statsTypes);
 
     // fill data, profiles, stats messages
+    // For some messages, only fill if requirements are for current channel/stokes
     bool fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::string& message);
-    bool fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData);
-    bool fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData);
-    bool fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData);
+    bool fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData,
+        bool checkCurrentStokes=false);
+    bool fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData,
+        bool checkCurrentStokes=false);
+    bool fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData,
+        bool checkCurrentChan=false);
     bool fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData);
 
     // histogram only (not full data message) : get if stored, else can calculate

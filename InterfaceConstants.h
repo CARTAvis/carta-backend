@@ -1,17 +1,23 @@
 //# InterfaceConstants.h: definitions used in the Interface Control Document
 //* Others added for implementation
 
+// file ids
+#define ALL_FILES -1
+
 // region ids
 #define CUBE_REGION_ID -2
 #define IMAGE_REGION_ID -1
 #define CURSOR_REGION_ID 0
 
-// channels, stokes
+// channels
+#define DEFAULT_CHANNEL 0
 #define CURRENT_CHANNEL -1
 #define ALL_CHANNELS -2
 #define CHANNEL_NOT_SET -3
-#define DEFAULT_CHANNEL 0
+
+// stokes
 #define DEFAULT_STOKES 0
+#define CURRENT_STOKES -1
 
 // raster image data
 #define MAX_SUBSETS 8

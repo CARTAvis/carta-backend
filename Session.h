@@ -1,16 +1,24 @@
 //# Session.h: representation of a client connected to a server; processes requests from frontend
 
-#pragma once
+#ifndef __CARTA_SESSION_H__
+#define __CARTA_SESSION_H__
 
+#include "FileSettings.h"
+#include "util.h"
+
+#include <utility>
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
 #include <unordered_map>
+#include <tuple>
+#include <vector>
 
 #include <casacore/casa/aips.h>
 #include <casacore/casa/OS/File.h>
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/concurrent_unordered_map.h>
 #include <tbb/atomic.h>
 #include <uWS/uWS.h>
 
@@ -25,21 +33,25 @@
 #include <carta-protobuf/set_cursor.pb.h>
 
 #include "Frame.h"
+#include "FileListHandler.h"
+
 
 class Session {
-public:
+ public:
     std::string uuid;
-protected:
+    carta::FileSettings fsettings;
+    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> aniq;
+ protected:
     // communication
     uWS::WebSocket<uWS::SERVER>* socket;
     std::vector<char> binaryPayloadCache;
 
     // permissions
-    std::unordered_map<std::string, std::vector<std::string> >& permissionsMap;
-    bool permissionsEnabled;
     std::string apiKey;
 
-    std::string rootFolder, baseFolder, filelistFolder;
+    std::string rootFolder;
+    std::string baseFolder;
+    
     bool verboseLogging;
 
     // load for file browser, reuse when open file
@@ -51,6 +63,10 @@ protected:
     std::mutex frameMutex; // lock frames to create/destroy
     bool newFrame;         // flag to send histogram with data
 
+
+    std::mutex _image_channel_mutex;
+    bool _image_channel_task_active;
+
     // cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
     tbb::atomic<float> histogramProgress;
 
@@ -60,16 +76,56 @@ protected:
     // Return message queue
     tbb::concurrent_queue<std::vector<char>> out_msgs;
 
+    // Reference counter
+    int _ref_count;
+
+    // file list handler
+    FileListHandler *fileListHandler;
+    
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
             std::string uuid,
             std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
             bool enforcePermissions,
-            std::string root, std::string base,
+            std::string root,
+	    std::string base,
             uS::Async *outgoing,
+            FileListHandler *fileListHandler,
             bool verbose = false);
     ~Session();
 
+    void addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId) {
+      aniq.push(std::make_pair(message, requestId));
+    }
+    void executeAniEvt(std::pair<CARTA::SetImageChannels,uint32_t> req) {
+      onSetImageChannels(req.first, req.second);
+    }
+    void cancel_SetHistReqs() {
+      histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
+      sendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
+    }
+
+    void addViewSetting(CARTA::SetImageView message, uint32_t requestId) {
+      fsettings.addViewSetting(message, requestId);
+    }
+    void addCursorSetting(CARTA::SetCursor message, uint32_t requestId) {
+      fsettings.addCursorSetting(message, requestId);
+    }
+    void image_channel_lock() { _image_channel_mutex.lock(); }
+    void image_channel_unlock() { _image_channel_mutex.unlock(); }
+    bool image_channel_task_test_and_set() {
+      if( _image_channel_task_active ) return true;
+      else {
+	_image_channel_task_active= true;
+	return false;
+      }
+    }
+    void image_channal_task_set_idle() {
+      _image_channel_task_active= false;
+    }
+    int increase_ref_count() { return ++_ref_count; }
+    int decrease_ref_count() { return --_ref_count; }
+    
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
     void onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId);
@@ -89,30 +145,26 @@ public:
     void sendPendingMessages();
 
 protected:
-    // ICD: File list response
-    void getRelativePath(std::string& folder);
-    void getFileList(CARTA::FileListResponse& fileList, std::string folder);
-    bool checkPermissionForDirectory(std:: string prefix);
-    bool checkPermissionForEntry(std::string entry);
-    std::string getType(casacore::ImageOpener::ImageTypes type); // convert enum to string
 
     // ICD: File info response
     void resetFileInfo(bool create=false); // delete existing file info ptrs, optionally create new ones
-    bool fillFileInfo(CARTA::FileInfo* fileInfo, const std::string& filename);
     bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo,
         const std::string folder, const std::string filename, std::string hdu, std::string& message);
 
     // Histogram
-    CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId);
-    void sendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
+    CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId,
+        bool checkCurrentChannel=false);
+    bool sendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
     // basic message to update progress
     void createCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fileId, int stokes, float progress);
 
     // send data streams
-    void sendRasterImageData(int fileId, bool sendHistogram=false);
-    void sendSpatialProfileData(int fileId, int regionId);
-    void sendSpectralProfileData(int fileId, int regionId);
-    void sendRegionStatsData(int fileId, int regionId);
+    bool sendRasterImageData(int fileId, bool sendHistogram=false);
+    bool sendSpatialProfileData(int fileId, int regionId, bool checkCurrentStokes=false);
+    bool sendSpectralProfileData(int fileId, int regionId, bool checkCurrentStokes=false);
+    bool sendRegionHistogramData(int fileId, int regionId, bool checkCurrentChannel=false);
+    bool sendRegionStatsData(int fileId, int regionId);
+    void updateRegionData(int fileId, bool channelChanged, bool stokesChanged);
 
     // Send protobuf messages
     void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
@@ -121,3 +173,4 @@ protected:
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
 
+#endif // __SESSION_H__
