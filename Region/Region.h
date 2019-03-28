@@ -4,6 +4,7 @@
 
 #include "RegionStats.h"
 #include "RegionProfiler.h"
+#include "../InterfaceConstants.h"
 #include <carta-protobuf/spectral_profile.pb.h>
 
 namespace carta {
@@ -17,22 +18,24 @@ class Region {
 // * a CARTA::Region type
 
 public:
-    Region(const std::string& name, const CARTA::RegionType type, int minchan, int maxchan,
-        const std::vector<CARTA::Point>& points, const float rotation,
-        const casacore::IPosition imageShape, int spectralAxis, int stokesAxis);
+    Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points,
+        const float rotation, const casacore::IPosition imageShape, int spectralAxis, int stokesAxis);
     ~Region();
 
     // to determine if data needs to be updated
     inline bool isValid() { return m_valid; };
     inline bool isPoint() { return (m_type==CARTA::POINT); };
     inline bool regionChanged() { return m_xyRegionChanged; };
-    inline bool spectralChanged() { return m_spectralChanged; };
 
     // set/get Region parameters
-    bool updateRegionParameters(int minchan, int maxchan, const std::vector<CARTA::Point>& points, float rotation);
-    // For image region, chan/stokes can be set separately
-    bool setChannelRange(int minchan, int maxchan);
+    bool updateRegionParameters(const std::string name, const CARTA::RegionType type,
+        const std::vector<CARTA::Point>& points, float rotation);
     inline std::vector<CARTA::Point> getControlPoints() { return m_ctrlpoints; };
+    casacore::IPosition xyShape();
+
+    // get lattice region for requested stokes and (optionally) single channel
+    bool getRegion(casacore::LatticeRegion& region, int stokes, int channel=ALL_CHANNELS);
+    inline bool xyRegionValid() { return (m_xyRegion != nullptr); };
 
     // get lattice region for requested stokes
     bool getRegion(casacore::LatticeRegion& region, int stokes);
@@ -44,10 +47,13 @@ public:
     bool getMinMax(int channel, int stokes, float& minVal, float& maxVal);
     void setMinMax(int channel, int stokes, float minVal, float maxVal);
     void calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minVal, float& maxVal);
+    bool calcMinMax(int channel, int stokes, casacore::SubLattice<float>& sublattice, float& minVal, float& maxVal);
     bool getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram);
     void setHistogram(int channel, int stokes, CARTA::Histogram& histogram);
     void calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
         const std::vector<float>& data, CARTA::Histogram& histogramMsg);
+    bool calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
+        casacore::SubLattice<float>& sublattice, CARTA::Histogram& histogramMsg);
 
     // Spatial: pass through to RegionProfiler
     bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
@@ -80,18 +86,19 @@ private:
     bool checkEllipsePoints(const std::vector<CARTA::Point>& points);
     bool checkPolygonPoints(const std::vector<CARTA::Point>& points);
     bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
-    bool checkChannelRange(int& minchan, int& maxchan);
-    
-    // Create regions
+
+    // Create xy regions
     bool setXYRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
     casacore::LCRegion* makePointRegion(const std::vector<CARTA::Point>& points);
-    casacore::LCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
+    casacore::LCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points);
     casacore::LCRegion* makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::LCRegion* makePolygonRegion(const std::vector<CARTA::Point>& points);
-    bool makeExtensionBox(casacore::LCBox& extendBox, int stokes); // for extended region
-    casacore::LCRegion* makeExtendedRegion(int stokes);  // xy region extended to chans, stokes
 
-    // get data from sublattice
+    // Extend xy region to make LCRegion
+    bool makeExtensionBox(casacore::LCBox& extendBox, int stokes, int channel=ALL_CHANNELS); // for extended region
+    casacore::LCRegion* makeExtendedRegion(int stokes, int channel=ALL_CHANNELS);  // x/y region extended chan/stokes
+
+    // get data from sublattice (LCRegion applied to Lattice by Frame)
     bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);
 
     // region definition (ICD SET_REGION parameters)
@@ -102,8 +109,7 @@ private:
     int m_minchan, m_maxchan;
 
     // region flags
-    bool m_valid;
-    bool m_xyRegionChanged, m_spectralChanged;  // indicates which data to update
+    bool m_valid, m_xyRegionChanged;
 
     // image shape info
     casacore::IPosition m_latticeShape;
