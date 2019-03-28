@@ -185,9 +185,7 @@ bool Region::setXYRegion(const std::vector<CARTA::Point>& points, float rotation
                 break;
             }
             case CARTA::RegionType::RECTANGLE: {
-                if (rotation == 0.0) {
-                    region = makeRectangleRegion(points);
-                }
+                region = makeRectangleRegion(points, rotation);
                 break;
             }
             case CARTA::RegionType::ELLIPSE: {
@@ -225,7 +223,47 @@ casacore::LCRegion* Region::makePointRegion(const std::vector<CARTA::Point>& poi
     return box;
 }
 
-casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>& points) {
+casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation) {
+    if (rotation != 0.0f) {
+        // Rotated rectangle converted to a polygon region with 4 corner points
+        casacore::LCPolygon* boxPolygon(nullptr);
+        if (points.size()==2) {
+            casacore::Vector<float> x(4), y(4);
+
+            float centerX = points[0].x();
+            float centerY = points[0].y();
+            float width = points[1].x();
+            float height = points[1].y();
+
+            // Apply rotation matrix to get width and height vectors in rotated basis
+            float cosX = cos(rotation * M_PI / 180.0f);
+            float sinX = sin(rotation * M_PI / 180.0f);
+            float widthVectorX = cosX * width;
+            float widthVectorY = sinX * width;
+            float heightVectorX = -sinX * height;
+            float heightVectorY = cosX * height;
+
+            // Bottom left
+            x(0) = centerX + (-widthVectorX - heightVectorX) / 2.0f;
+            y(0) = centerY + (-widthVectorY - heightVectorY) / 2.0f;
+
+            // Bottom right
+            x(1) = centerX + (widthVectorX - heightVectorX) / 2.0f;
+            y(1) = centerY + (widthVectorY - heightVectorY) / 2.0f;
+
+            // Top right
+            x(2) = centerX + (widthVectorX + heightVectorX) / 2.0f;
+            y(2) = centerY + (widthVectorY + heightVectorY) / 2.0f;
+
+            // Top left
+            x(3) = centerX + (-widthVectorX + heightVectorX) / 2.0f;
+            y(3) = centerY + (-widthVectorY + heightVectorY) / 2.0f;
+
+            boxPolygon = new casacore::LCPolygon(x, y, m_latticeShape.keepAxes(m_xyAxes));
+        }
+        return boxPolygon;
+    }
+
     // LCBox, compute blc and trc from center point, width, height
     casacore::LCBox* box(nullptr);
     if ((points.size()==2)) {
