@@ -125,27 +125,31 @@ size_t RegionStats::numStats() {
    return m_regionStats.size();
 }
 
-void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice) {
+void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice,
+    bool hasXYRegion) {
     // fill RegionStatsData with statistics types set in requirements
-
-    if (m_regionStats.empty()) {  // no requirements set
-        // add empty StatisticsValue
+    if (m_regionStats.empty()) {  // no requirements set, add empty StatisticsValue
         auto statsValue = statsData.add_statistics();
         statsValue->set_stats_type(CARTA::StatsType::None);
         return;
-    }
-
-    std::vector<std::vector<double>> results;
-    bool haveStats(getStatsValues(results, m_regionStats, subLattice, false)); // entire region, not per channel
-    for (size_t i=0; i<m_regionStats.size(); ++i) {
-        auto statType = static_cast<CARTA::StatsType>(m_regionStats[i]);
-        // add StatisticsValue
-        auto statsValue = statsData.add_statistics();
-        statsValue->set_stats_type(statType);
-        if (!results[i].empty()) {
-            statsValue->set_value(results[i][0]);
-        } else {
-            statsValue->set_value(std::numeric_limits<float>::quiet_NaN());
+    } else {
+        std::vector<std::vector<double>> results;
+	// stats for entire region, not per channel
+        bool haveStats(getStatsValues(results, m_regionStats, subLattice, false));
+        // update message whether have stats or not
+        for (size_t i=0; i<m_regionStats.size(); ++i) {
+            // add StatisticsValue to message
+            auto statsValue = statsData.add_statistics();
+            auto statType = static_cast<CARTA::StatsType>(m_regionStats[i]);
+            statsValue->set_stats_type(statType);
+            if (haveStats) {
+                statsValue->set_value(results[i][0]);
+            } else {
+                statsValue->set_value(std::numeric_limits<float>::quiet_NaN());
+                if ((statType==CARTA::NumPixels) && !hasXYRegion) { // region is outside image 
+                    statsValue->set_value(0.0);
+                }
+            }
         }
     }
 }
@@ -155,7 +159,7 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
     bool perChannel) {
     // Fill statsValues vector for requested stats; one vector<float> per stat if per channel,
     // else one value per stat per region.
-    if (subLattice.shape().empty())
+    if (subLattice.shape().empty()) // outside image or all masked (NaN)
         return false;
 
     // Use LatticeStatistics to fill statistics values according to type;
@@ -190,6 +194,9 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
         std::vector<int> intResult;    // position stats
         switch (statType) {
             case CARTA::StatsType::None:
+                break;
+            case CARTA::StatsType::NumPixels:
+                lattStatsType = casacore::LatticeStatsBase::NPTS;
                 break;
             case CARTA::StatsType::Sum:
                 lattStatsType = casacore::LatticeStatsBase::SUM;
