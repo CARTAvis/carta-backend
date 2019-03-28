@@ -17,36 +17,45 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
       spectralAxis(-1), stokesAxis(-1),
       channelIndex(-1), stokesIndex(-1),
       nchan(1), nstok(1) {
+    
+    if (loader==nullptr) {
+        log(uuid, "Problem loading file {}: loader not implemented", filename);
+        valid = false;
+        return;
+    }
+    
     try {
-        if (loader==nullptr) {
-            log(uuid, "Problem loading file {}: loader not implemented", filename);
-            valid = false;
-            return;
-        }
         loader->openFile(filename, hdu);
-        
-        // Get shape and axis values from the loader
-        if (!loader->findShape(imageShape, nchan, nstok, spectralAxis, stokesAxis)) {
-            valid = false;
-            return;
-        }
-
-        // make Region for entire image (after current channel/stokes set)
-        setImageRegion(IMAGE_REGION_ID);
-        setDefaultCursor(); // frontend sets requirements for cursor before cursor set
-        cursorSet = false;  // only true if set by frontend
-        valid = true;
-
-        // set current channel, stokes, imageCache
-        channelIndex = defaultChannel;
-        stokesIndex = DEFAULT_STOKES;
-        setImageCache();
-
-        // resize stats vectors and load data from image, if the format supports it
-        loader->loadImageStats();
     } catch (casacore::AipsError& err) {
         log(uuid, "Problem loading file {}: {}", filename, err.getMesg());
         valid = false;
+        return;
+    }
+        
+    // Get shape and axis values from the loader
+    if (!loader->findShape(imageShape, nchan, nstok, spectralAxis, stokesAxis)) {
+        log(uuid, "Problem loading file {}: could not determine image shape", filename);
+        valid = false;
+        return;
+    }
+
+    // make Region for entire image (after current channel/stokes set)
+    setImageRegion(IMAGE_REGION_ID);
+    setDefaultCursor(); // frontend sets requirements for cursor before cursor set
+    cursorSet = false;  // only true if set by frontend
+    valid = true;
+
+    // set current channel, stokes, imageCache
+    channelIndex = defaultChannel;
+    stokesIndex = DEFAULT_STOKES;
+    setImageCache();
+
+    try {
+        // resize stats vectors and load data from image, if the format supports it
+        // A failure here shouldn't invalidate the frame 
+        loader->loadImageStats();
+    } catch (casacore::AipsError& err) {
+        log(uuid, "Problem loading statistics from file {}: {}", filename, err.getMesg());
     }
 }
 

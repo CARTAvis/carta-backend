@@ -105,11 +105,11 @@ bool FileLoader::findShape(ipos& shape, size_t& nchannels, size_t& nstokes, int&
 }
 
 const FileLoader::ipos FileLoader::getStatsDataShape(FileInfo::Data ds) {
-    return ipos();
+    throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }
 
 casacore::ArrayBase* FileLoader::getStatsData(FileInfo::Data ds) {
-    return nullptr;
+    throw casacore::AipsError("getStatsData not implemented in this loader");
 }
 
 void FileLoader::loadStats2DBasic(FileInfo::Data ds) {
@@ -117,17 +117,17 @@ void FileLoader::loadStats2DBasic(FileInfo::Data ds) {
         const ipos& statDims = getStatsDataShape(ds);
         
         // We can handle 2D, 3D and 4D in the same way
-        if (ndims == 2 && statDims.size() == 0
-            || ndims == 3 && statDims.isEqual(ipos(1, nchannels))
-            || ndims == 4 && statDims.isEqual(ipos(2, nchannels, nstokes))) {
+        if ((ndims == 2 && statDims.size() == 0)
+            || (ndims == 3 && statDims.isEqual(ipos(1, nchannels)))
+            || (ndims == 4 && statDims.isEqual(ipos(2, nchannels, nstokes)))) {
             
             auto data = getStatsData(ds);
             
             switch(ds) {
                 case FileInfo::Data::S2DMax: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (auto s = 0; s < nstokes; s++) {
-                        for (auto c = 0; c < nchannels; c++) {
+                    for (size_t s = 0; s < nstokes; s++) {
+                        for (size_t c = 0; c < nchannels; c++) {
                             channelStats[s][c].maxVal = *it++;
                         }
                     }
@@ -135,8 +135,8 @@ void FileLoader::loadStats2DBasic(FileInfo::Data ds) {
                 }
                 case FileInfo::Data::S2DMin: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (auto s = 0; s < nstokes; s++) {
-                        for (auto c = 0; c < nchannels; c++) {
+                    for (size_t s = 0; s < nstokes; s++) {
+                        for (size_t c = 0; c < nchannels; c++) {
                             channelStats[s][c].minVal = *it++;
                         }
                     }
@@ -144,8 +144,8 @@ void FileLoader::loadStats2DBasic(FileInfo::Data ds) {
                 }
                 case FileInfo::Data::S2DMean: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (auto s = 0; s < nstokes; s++) {
-                        for (auto c = 0; c < nchannels; c++) {
+                    for (size_t s = 0; s < nstokes; s++) {
+                        for (size_t c = 0; c < nchannels; c++) {
                             channelStats[s][c].mean = *it++;
                         }
                     }
@@ -153,12 +153,14 @@ void FileLoader::loadStats2DBasic(FileInfo::Data ds) {
                 }
                 case FileInfo::Data::S2DNans: {
                     auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
-                    for (auto s = 0; s < nstokes; s++) {
-                        for (auto c = 0; c < nchannels; c++) {
+                    for (size_t s = 0; s < nstokes; s++) {
+                        for (size_t c = 0; c < nchannels; c++) {
                             channelStats[s][c].nanCount = *it++;
                         }
                     }
                     break;
+                }
+                default: {
                 }
             }
             
@@ -172,20 +174,19 @@ void FileLoader::loadStats2DHist() {
     
     if (hasData(ds)) {
         const ipos& statDims = getStatsDataShape(ds);
-        
-        auto nbins = statDims[0];
+        size_t nbins = statDims[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if (ndims == 2 && statDims.isEqual(ipos(1, nbins))
-            || ndims == 3 && statDims.isEqual(ipos(2, nbins, nchannels))
-            || ndims == 4 && statDims.isEqual(ipos(3, nbins, nchannels, nstokes))) {
+        if ((ndims == 2 && statDims.isEqual(ipos(1, nbins)))
+            || (ndims == 3 && statDims.isEqual(ipos(2, nbins, nchannels)))
+            || (ndims == 4 && statDims.isEqual(ipos(3, nbins, nchannels, nstokes)))) {
             auto data = static_cast<casacore::Array<casacore::Int64>*>(getStatsData(ds));
             auto it = data->begin();
         
-            for (auto s = 0; s < nstokes; s++) {
-                for (auto c = 0; c < nchannels; c++) {
+            for (size_t s = 0; s < nstokes; s++) {
+                for (size_t c = 0; c < nchannels; c++) {
                     channelStats[s][c].histogramBins.resize(nbins);
-                    for (auto b = 0; b < nbins; b++) {
+                    for (size_t b = 0; b < nbins; b++) {
                         channelStats[s][c].histogramBins[b] = *it++;
                     }
                 }
@@ -206,12 +207,12 @@ void FileLoader::loadStats2DPercent() {
         const ipos& dimsVals = getStatsDataShape(dsp);
         const ipos& dimsRanks = getStatsDataShape(dsr);
 
-        auto nranks = dimsRanks[0];
+        size_t nranks = dimsRanks[0];
     
         // We can handle 2D, 3D and 4D in the same way
-        if (ndims == 2 && dimsVals.isEqual(ipos(1, nranks))
-            || ndims == 3 && dimsVals.isEqual(ipos(2, nranks, nchannels))
-            || ndims == 4 && dimsVals.isEqual(ipos(3, nranks, nchannels, nstokes))) {
+        if ((ndims == 2 && dimsVals.isEqual(ipos(1, nranks)))
+            || (ndims == 3 && dimsVals.isEqual(ipos(2, nranks, nchannels)))
+            || (ndims == 4 && dimsVals.isEqual(ipos(3, nranks, nchannels, nstokes)))) {
             
             auto ranks = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsr));
             auto data = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsp));
@@ -219,11 +220,11 @@ void FileLoader::loadStats2DPercent() {
             auto it = data->begin();
             auto itr = ranks->begin();
 
-            for (auto s = 0; s < nstokes; s++) {
-                for (auto c = 0; c < nchannels; c++) {
+            for (size_t s = 0; s < nstokes; s++) {
+                for (size_t c = 0; c < nchannels; c++) {
                     channelStats[s][c].percentiles.resize(nranks);
                     channelStats[s][c].percentileRanks.resize(nranks);
-                    for (auto r = 0; r < nranks; r++) {
+                    for (size_t r = 0; r < nranks; r++) {
                         channelStats[s][c].percentiles[r] = *it++;
                         channelStats[s][c].percentileRanks[r] = *itr++;
                     }
@@ -241,39 +242,41 @@ void FileLoader::loadStats3DBasic(FileInfo::Data ds) {
         const ipos& statDims = getStatsDataShape(ds);
                     
         // We can handle 3D and 4D in the same way
-        if (ndims == 3 && statDims.size() == 0
-            || ndims == 4 && statDims.isEqual(ipos(1, nstokes))) {
+        if ((ndims == 3 && statDims.size() == 0)
+            || (ndims == 4 && statDims.isEqual(ipos(1, nstokes)))) {
             
             auto data = getStatsData(ds);
             
             switch(ds) {
                 case FileInfo::Data::S3DMax: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (auto s = 0; s < nstokes; s++) {
+                    for (size_t s = 0; s < nstokes; s++) {
                         cubeStats[s].maxVal = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::S3DMin: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (auto s = 0; s < nstokes; s++) {
+                    for (size_t s = 0; s < nstokes; s++) {
                         cubeStats[s].minVal = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::S3DMean: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (auto s = 0; s < nstokes; s++) {
+                    for (size_t s = 0; s < nstokes; s++) {
                         cubeStats[s].mean = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::S3DNans: {
                     auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
-                    for (auto s = 0; s < nstokes; s++) {
+                    for (size_t s = 0; s < nstokes; s++) {
                         cubeStats[s].nanCount = *it++;
                     }
                     break;
+                }
+                default: {
                 }
             }
             
@@ -287,17 +290,17 @@ void FileLoader::loadStats3DHist() {
     
     if (hasData(ds)) {
         const ipos& statDims = getStatsDataShape(ds);
-        auto nbins = statDims[0];
+        size_t nbins = statDims[0];
         
         // We can handle 3D and 4D in the same way
-        if (ndims == 3 && statDims.isEqual(ipos(1, nbins))
-            || ndims == 4 && statDims.isEqual(ipos(2, nbins, nstokes))) {
+        if ((ndims == 3 && statDims.isEqual(ipos(1, nbins)))
+            || (ndims == 4 && statDims.isEqual(ipos(2, nbins, nstokes)))) {
             auto data = static_cast<casacore::Array<casacore::Int64>*>(getStatsData(ds));           
             auto it = data->begin();
             
-            for (auto s = 0; s < nstokes; s++) {
+            for (size_t s = 0; s < nstokes; s++) {
                 cubeStats[s].histogramBins.resize(nbins);
-                for (auto b = 0; b < nbins; b++) {
+                for (size_t b = 0; b < nbins; b++) {
                     cubeStats[s].histogramBins[b] = *it++;
                 }
             }
@@ -318,11 +321,11 @@ void FileLoader::loadStats3DPercent() {
         const ipos& dimsVals = getStatsDataShape(dsp);
         const ipos& dimsRanks = getStatsDataShape(dsr);
 
-        auto nranks = dimsRanks[0];
+        size_t nranks = dimsRanks[0];
     
         // We can handle 3D and 4D in the same way
-        if (ndims == 3 && dimsVals.isEqual(ipos(1, nranks))
-            || ndims == 4 && dimsVals.isEqual(ipos(2, nranks, nstokes))) {
+        if ((ndims == 3 && dimsVals.isEqual(ipos(1, nranks)))
+            || (ndims == 4 && dimsVals.isEqual(ipos(2, nranks, nstokes)))) {
             
             auto ranks = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsr));
             auto data = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsp));
@@ -330,10 +333,10 @@ void FileLoader::loadStats3DPercent() {
             auto it = data->begin();
             auto itr = ranks->begin();
 
-            for (auto s = 0; s < nstokes; s++) {
+            for (size_t s = 0; s < nstokes; s++) {
                 cubeStats[s].percentiles.resize(nranks);
                 cubeStats[s].percentileRanks.resize(nranks);
-                for (auto r = 0; r < nranks; r++) {
+                for (size_t r = 0; r < nranks; r++) {
                     cubeStats[s].percentiles[r] = *it++;
                     cubeStats[s].percentileRanks[r] = *itr++;
                 }
@@ -347,7 +350,7 @@ void FileLoader::loadStats3DPercent() {
 
 void FileLoader::loadImageStats(bool loadPercentiles) {
     channelStats.resize(nstokes);
-    for (auto i = 0; i < nstokes; i++) {
+    for (size_t i = 0; i < nstokes; i++) {
         channelStats[i].resize(nchannels);
     }
     cubeStats.resize(nstokes);
