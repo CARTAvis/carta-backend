@@ -286,7 +286,10 @@ casacore::LCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& p
     if (points.size()==2) {
         float cx(points[0].x()), cy(points[0].y());
         float bmaj(points[1].x()), bmin(points[1].y());
-        ellipse = new casacore::LCEllipsoid(cx, cy, bmaj, bmin, rotation, m_latticeShape.keepAxes(m_xyAxes));
+        // rotation is in degrees from y-axis
+        // ellipse rotation angle is in radians from x-axis
+        float theta = (rotation + 90.0) * (M_PI / 180.0f);
+        ellipse = new casacore::LCEllipsoid(cx, cy, bmaj, bmin, theta, m_latticeShape.keepAxes(m_xyAxes));
     }
     return ellipse;
 }
