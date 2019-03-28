@@ -5,6 +5,7 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
+#include <casacore/casa/BasicSL/Constants.h> // pi
 #include <algorithm> // max
 #include <cmath>  // round
 
@@ -248,6 +249,8 @@ casacore::LCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& p
     if (points.size()==2) {
         float cx(points[0].x()), cy(points[0].y());
         float bmaj(points[1].x()), bmin(points[1].y());
+        // ellipse rotation angle is from x-axis, not north-south axis
+        rotation -= casacore::C::pi_2;
         ellipse = new casacore::LCEllipsoid(cx, cy, bmaj, bmin, rotation, m_latticeShape.keepAxes(m_xyAxes));
     }
     return ellipse;
