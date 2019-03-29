@@ -376,16 +376,16 @@ int main(int argc, const char* argv[]) {
 	// Used to map between 
 	populate_event_name_map();
 
-	// One filelisthandler works for all sessions.
-	fileListHandler =
-	  new FileListHandler(permissionsMap, usePermissions,
-			      rootFolder, baseFolder);
-	
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
         if (usePermissions) {
             readPermissions("permissions.txt");
         }
+
+	// One filelisthandler works for all sessions.
+	fileListHandler =
+	  new FileListHandler(permissionsMap, usePermissions,
+			      rootFolder, baseFolder);
 
         sessionNumber = 0;
 
