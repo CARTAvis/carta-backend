@@ -17,6 +17,7 @@ struct ImageStats {
     std::vector<float> percentileRanks;
     std::vector<int> histogramBins;
     int64_t nanCount;
+    bool valid;
 };
 
 enum class Data : uint32_t

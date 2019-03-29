@@ -350,8 +350,8 @@ void FileLoader::loadStats3DPercent() {
 
 void FileLoader::loadImageStats(bool loadPercentiles) {
     channelStats.resize(nstokes);
-    for (size_t i = 0; i < nstokes; i++) {
-        channelStats[i].resize(nchannels);
+    for (size_t s = 0; s < nstokes; s++) {
+        channelStats[s].resize(nchannels);
     }
     cubeStats.resize(nstokes);
     
@@ -367,6 +367,13 @@ void FileLoader::loadImageStats(bool loadPercentiles) {
             if (loadPercentiles) {
                 loadStats2DPercent();
             }
+            
+            // If we loaded all the 2D stats successfully, assume all channel stats are valid
+            for (size_t s = 0; s < nstokes; s++) {
+                for (size_t c = 0; c < nchannels; c++) {
+                    channelStats[s][c].valid = true;
+                }
+            }
         }
         
         if (hasData(FileInfo::Data::Stats3D)) {        
@@ -379,6 +386,11 @@ void FileLoader::loadImageStats(bool loadPercentiles) {
             
             if (loadPercentiles) {
                 loadStats3DPercent();
+            }
+            
+            // If we loaded all the 3D stats successfully, assume all cube stats are valid
+            for (size_t s = 0; s < nstokes; s++) {
+                cubeStats[s].valid = true;
             }
         }
     }

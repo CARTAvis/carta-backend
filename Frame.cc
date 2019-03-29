@@ -574,7 +574,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             bool haveHistogram(false);
 
             // Check if read from image file (HDF5 only)
-            if (!currentStats.histogramBins.empty()) {
+            if (currentStats.valid) {
                 int nbins(currentStats.histogramBins.size());
                 if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
                     newHistogram->set_num_bins(nbins);
