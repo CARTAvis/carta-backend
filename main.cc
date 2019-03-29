@@ -373,7 +373,7 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-	// Used to map between 
+	// Used to map between sting names of messages and local int ids. 
 	populate_event_name_map();
 
         // Construct task scheduler, permissions
