@@ -138,6 +138,9 @@ const HDF5Loader::ipos HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
         {
             return getStatsDataShapeTyped<casacore::Double>(ds);
         }
+        default: {
+            throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype.");
+        }
     }
 }
 
@@ -168,9 +171,10 @@ casacore::ArrayBase* HDF5Loader::getStatsData(FileInfo::Data ds) {
         {
             return getStatsDataTyped<casacore::Double, casacore::Float>(ds);
         }
+        default: {
+            throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype.");
+        }
     }
-    
-    return nullptr;
 }
 
 // TODO: We need to use the C API to read scalar datasets for now, but we should patch casacore to handle them correctly.
