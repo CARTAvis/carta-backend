@@ -179,11 +179,6 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
 	  sess->sendPendingMessages();
         });
 
-    // there is only one fileListHandler which handles all users file list browsing
-    if (!fileListHandler) {
-        fileListHandler = new FileListHandler(permissionsMap, usePermissions, rootFolder, baseFolder);
-    }
-
     session= new Session(ws, uuid, permissionsMap, usePermissions,
 			 rootFolder, baseFolder, outgoing,
 			 fileListHandler, verbose);
@@ -192,31 +187,33 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
     session->increase_ref_count();
     outgoing->setData(session);
 
-
     log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, ++_num_sessions);
 }
 
 
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
-void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
+void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code,
+		  char* message, size_t length) {
   Session * session= (Session*)ws->getUserData();
-  if ( ! session->decrease_ref_count() ) {
-    delete session;
-    session= nullptr;
-  }
-  ws->setUserData(nullptr); //Avoid having destructor called twice.
-  --_num_sessions;
   
-  if ((session == 0) && fileListHandler) { // if there is no user connection, delete the fileListHandler
-    delete fileListHandler;  // This will not get deleted if session ref_count > 0 at this point. Need to look into this...
-    fileListHandler = nullptr;
+  if( session ) {
+    auto uuid= session->uuid;
+    if ( ! session->decrease_ref_count() ) {
+      delete session;
+      ws->setUserData(nullptr);
+      --_num_sessions;   
+    }
+    log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}",
+	uuid, ws->getAddress().address, _num_sessions);
   }
-
-  // Commented this out for now since uuid is not declared in scope
-  // with the current merge.
-  //  log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}", uuid, ws->getAddress().address, sessions.size());
+  else {
+    std::cerr <<
+      "Warning: OnDisconnect called with no Session object.\n";
+  }
 }
+  
+
 
 
     
@@ -370,13 +367,20 @@ int main(int argc, const char* argv[]) {
         baseFolder = inp.getString("base");
         rootFolder = inp.getString("root");
 
-	populate_event_name_map();
         }
 
         if (!checkRootBaseFolders(rootFolder, baseFolder)) {
             return 1;
         }
 
+	// Used to map between 
+	populate_event_name_map();
+
+	// One filelisthandler works for all sessions.
+	fileListHandler =
+	  new FileListHandler(permissionsMap, usePermissions,
+			      rootFolder, baseFolder);
+	
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
         if (usePermissions) {
