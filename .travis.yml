@@ -140,7 +140,9 @@ jobs:
         - echo "Upload the package"
         - cd $HOME
         - ls -sort
+        - cd $TRAVIS_BUILD_DIR
         - export SHORT_COMMIT_ID="$(git rev-parse --short ${TRAVIS_COMMIT})"
+        - cd -
         - echo "$SHORT_COMMIT_ID"
         - cp -r package MacOS_backend_$SHORT_COMMIT_ID
         - tar -czvf MacOS_backend_$SHORT_COMMIT_ID.tar.gz MacOS_backend_$SHORT_COMMIT_ID
