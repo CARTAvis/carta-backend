@@ -46,6 +46,8 @@ class Session {
     uWS::WebSocket<uWS::SERVER>* socket;
     std::vector<char> binaryPayloadCache;
 
+    bool _connected;
+    
     // permissions
     std::string apiKey;
 
@@ -125,6 +127,8 @@ public:
     }
     int increase_ref_count() { return ++_ref_count; }
     int decrease_ref_count() { return --_ref_count; }
+    void disconnect_called() { _connected= false; }
+
     
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);

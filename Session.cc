@@ -38,6 +38,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
       newFrame(false),
       fsettings(this) {
   _ref_count= 0;
+  _connected= true;
 
   ++__num_sessions;
 }
@@ -802,8 +803,10 @@ void Session::sendPendingMessages() {
     // Do not parallelize: this must be done serially
     // due to the constraints of uWS.
     std::vector<char> msg;
-    while(out_msgs.try_pop(msg)) {
+    if( _connected ) {
+      while(out_msgs.try_pop(msg)) {
         socket->send(msg.data(), msg.size(), uWS::BINARY);
+      }
     }
 }
 
