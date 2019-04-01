@@ -88,7 +88,7 @@ private:
     // Create xy regions
     bool setXYRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
     casacore::LCRegion* makePointRegion(const std::vector<CARTA::Point>& points);
-    casacore::LCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points);
+    casacore::LCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::LCRegion* makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::LCRegion* makePolygonRegion(const std::vector<CARTA::Point>& points);
 

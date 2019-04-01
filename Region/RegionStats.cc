@@ -42,13 +42,15 @@ CARTA::SetHistogramRequirements_HistogramConfig RegionStats::getHistogramConfig(
 bool RegionStats::getMinMax(int channel, int stokes, float& minVal, float& maxVal) {
     // Get stored min,max for given channel and stokes; return value indicates status
     bool haveMinMax(false);
-    try {
-        minmax_t vals = m_minmax.at(stokes).at(channel);
-        minVal = vals.first;
-        maxVal = vals.second;
-        haveMinMax = true;
-    } catch (std::out_of_range) {
-        // not stored
+    if (m_histogramsValid) {
+        try {
+            minmax_t vals = m_minmax.at(stokes).at(channel);
+            minVal = vals.first;
+            maxVal = vals.second;
+            haveMinMax = true;
+        } catch (std::out_of_range) {
+            // not stored
+        }
     }
     return haveMinMax;
 }
@@ -75,14 +77,16 @@ void RegionStats::calcMinMax(int channel, int stokes, const std::vector<float>& 
 bool RegionStats::getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram) {
     // Get stored histogram for given channel and stokes; return value indicates status
     bool haveHistogram(false);
-    try {
-        CARTA::Histogram storedHistogram = m_histograms.at(stokes).at(channel);
-        if (storedHistogram.num_bins() == nbins) {
-            histogram = storedHistogram;
-            haveHistogram = true;
+    if (m_histogramsValid) {
+        try {
+            CARTA::Histogram storedHistogram = m_histograms.at(stokes).at(channel);
+            if (storedHistogram.num_bins() == nbins) {
+                histogram = storedHistogram;
+                haveHistogram = true;
+            }
+        } catch (std::out_of_range) {
+            // not stored
         }
-    } catch (std::out_of_range) {
-        // not stored
     }
     return haveHistogram;
 }
@@ -93,26 +97,37 @@ void RegionStats::setHistogram(int channel, int stokes, CARTA::Histogram& histog
         m_histograms[stokes].clear();
     }
     m_histograms[stokes][channel] = histogram;
+    m_histogramsValid = true;
 }
 
 void RegionStats::calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
         const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
     // Calculate and store histogram for given channel, stokes, nbins; return histogram
-    tbb::blocked_range<size_t> range(0, data.size());
-    Histogram hist(nBins, minVal, maxVal, data);
-    tbb::parallel_reduce(range, hist);
-    std::vector<int> histogramBins(hist.getHistogram());
-    float binWidth(hist.getBinWidth());
+    float binWidth(0), binCenter(0);
+    std::vector<int> histogramBins;
+    if ((minVal == std::numeric_limits<float>::max()) || (maxVal == std::numeric_limits<float>::min())
+         || data.empty()) {
+        // empty / NaN region
+        histogramBins.resize(nBins, 0);
+    } else {
+        tbb::blocked_range<size_t> range(0, data.size());
+        Histogram hist(nBins, minVal, maxVal, data);
+        tbb::parallel_reduce(range, hist);
+        histogramBins = hist.getHistogram();
+        binWidth = hist.getBinWidth();
+        binCenter = minVal + (binWidth / 2.0);
+    }
 
     // fill histogram message
     histogramMsg.set_channel(channel);
     histogramMsg.set_num_bins(nBins);
     histogramMsg.set_bin_width(binWidth);
-    histogramMsg.set_first_bin_center(minVal + (binWidth / 2.0));
+    histogramMsg.set_first_bin_center(binCenter);
     *histogramMsg.mutable_bins() = {histogramBins.begin(), histogramBins.end()};
 
     // save for next time
     setHistogram(channel, stokes, histogramMsg);
+    m_histogramsValid = true;
 }
 
 // ***** Statistics *****
@@ -125,16 +140,17 @@ size_t RegionStats::numStats() {
    return m_regionStats.size();
 }
 
-void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice,
-    bool hasXYRegion) {
-    // fill RegionStatsData with statistics types set in requirements
+void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice) {
+    // Fill RegionStatsData with statistics types set in requirements.
+    // Sublattice shape may be empty because of no xyregion (outside image or 0 pixels selected),
+    // or lattice mask removed all NaN values
     if (m_regionStats.empty()) {  // no requirements set, add empty StatisticsValue
         auto statsValue = statsData.add_statistics();
         statsValue->set_stats_type(CARTA::StatsType::None);
         return;
     } else {
         std::vector<std::vector<double>> results;
-	// stats for entire region, not per channel
+        // stats for entire region, not per channel
         bool haveStats(getStatsValues(results, m_regionStats, subLattice, false));
         // update message whether have stats or not
         for (size_t i=0; i<m_regionStats.size(); ++i) {
@@ -142,13 +158,14 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
             auto statsValue = statsData.add_statistics();
             auto statType = static_cast<CARTA::StatsType>(m_regionStats[i]);
             statsValue->set_stats_type(statType);
-            if (haveStats) {
-                statsValue->set_value(results[i][0]);
-            } else {
-                statsValue->set_value(std::numeric_limits<float>::quiet_NaN());
-                if ((statType==CARTA::NumPixels) && !hasXYRegion) { // region is outside image 
+            if (!haveStats || results[i].empty()) { // region outside image or NaNs
+                if (statType==CARTA::NumPixels) {
                     statsValue->set_value(0.0);
+                } else {
+                    statsValue->set_value(std::numeric_limits<double>::quiet_NaN());
                 }
+            } else {
+                statsValue->set_value(results[i][0]);
             }
         }
     }
@@ -262,13 +279,5 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
         }
     }
     return true;
-}
-
-// ***** Clear calculations *****
-
-void RegionStats::clearStats() {
-    // Clear stored calculations for new region definition
-    m_minmax.clear();
-    m_histograms.clear();
 }
 

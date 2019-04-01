@@ -430,6 +430,7 @@ void Region::calcHistogram(int channel, int stokes, int nBins, float minVal, flo
     m_stats->calcHistogram(channel, stokes, nBins, minVal, maxVal, data, histogramMsg);
 }
 
+
 // stats
 void Region::setStatsRequirements(const std::vector<int>& statsTypes) {
     m_stats->setStatsRequirements(statsTypes);
@@ -440,7 +441,7 @@ size_t Region::numStats() {
 }
 
 void Region::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice) {
-    m_stats->fillStatsData(statsData, subLattice, xyRegionValid());
+    m_stats->fillStatsData(statsData, subLattice);
 }
 
 // ***********************************
@@ -509,21 +510,25 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
         size_t nstats = requestedStats.size();
         std::vector<std::vector<double>> statsValues;
         // get values from RegionStats
-        if (m_stats->getStatsValues(statsValues, requestedStats, sublattice)) {
-            for (size_t i=0; i<nstats; ++i) {
-                auto statType = static_cast<CARTA::StatsType>(requestedStats[i]);
-                // one SpectralProfile per stats type
-                auto newProfile = profileData.add_profiles();
-                newProfile->set_coordinate(profileCoord);
-                newProfile->set_stats_type(statType);
+        bool haveStats(m_stats->getStatsValues(statsValues, requestedStats, sublattice));
+        for (size_t i=0; i<nstats; ++i) {
+            // one SpectralProfile per stats type
+            auto newProfile = profileData.add_profiles();
+            newProfile->set_coordinate(profileCoord);
+            auto statType = static_cast<CARTA::StatsType>(requestedStats[i]);
+            newProfile->set_stats_type(statType);
+            // convert to float for spectral profile
+            std::vector<float> values;
+            if (!haveStats || statsValues[i].empty()) {  // region outside image or NaNs
+                values.resize(1, std::numeric_limits<float>::quiet_NaN());
+            } else {
                 // convert to float for spectral profile
-                std::vector<float> values(statsValues[i].size());
+                values.resize(statsValues[i].size());
                 for (size_t v=0; v<statsValues[i].size(); ++v) {
                     values[v] = static_cast<float>(statsValues[i][v]);
                 }
-                *newProfile->mutable_vals() = {values.begin(), values.end()};
             }
+            *newProfile->mutable_vals() = {values.begin(), values.end()};
         }
     }
 }
-

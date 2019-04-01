@@ -90,7 +90,7 @@ public:
             std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
             bool enforcePermissions,
             std::string root,
-	    std::string base,
+            std::string base,
             uS::Async *outgoing,
             FileListHandler *fileListHandler,
             bool verbose = false);
@@ -104,7 +104,6 @@ public:
     }
     void cancel_SetHistReqs() {
       histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
-      sendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
     }
 
     void addViewSetting(CARTA::SetImageView message, uint32_t requestId) {
@@ -118,8 +117,8 @@ public:
     bool image_channel_task_test_and_set() {
       if( _image_channel_task_active ) return true;
       else {
-	_image_channel_task_active= true;
-	return false;
+        _image_channel_task_active= true;
+        return false;
       }
     }
     void image_channal_task_set_idle() {

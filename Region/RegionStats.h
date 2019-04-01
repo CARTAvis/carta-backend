@@ -43,10 +43,13 @@ public:
         const std::vector<int>& requestedStats, const casacore::SubLattice<float>& lattice,
         bool perChannel=true);
 
-    // Clear all calculations for new region
-    void clearStats();
+    // invalidate stored calculations (only histograms for now) for new region
+    inline void clearStats() { m_histogramsValid = false; };
 
 private:
+
+    bool m_histogramsValid; // for current region
+
     // Histogram config
     std::vector<CARTA::SetHistogramRequirements_HistogramConfig> m_configs;
 

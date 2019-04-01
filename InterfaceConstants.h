@@ -24,6 +24,7 @@
 
 // histograms
 #define AUTO_BIN_SIZE -1
+#define HISTOGRAM_START 0.0
 #define HISTOGRAM_COMPLETE 1.0
 #define HISTOGRAM_CANCEL -1.0
 
