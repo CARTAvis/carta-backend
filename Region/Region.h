@@ -32,13 +32,12 @@ public:
         const std::vector<CARTA::Point>& points, float rotation);
     inline std::vector<CARTA::Point> getControlPoints() { return m_ctrlpoints; };
     casacore::IPosition xyShape();
+    inline bool xyRegionValid() { return (m_xyRegion != nullptr); };
 
     // get lattice region for requested stokes and (optionally) single channel
     bool getRegion(casacore::LatticeRegion& region, int stokes, int channel=ALL_CHANNELS);
-    inline bool xyRegionValid() { return (m_xyRegion != nullptr); };
-
-    // get lattice region for requested stokes
-    bool getRegion(casacore::LatticeRegion& region, int stokes);
+    // get data from sublattice (LCRegion applied to Lattice by Frame)
+    bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);
 
     // Histogram: pass through to RegionStats
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
@@ -47,13 +46,10 @@ public:
     bool getMinMax(int channel, int stokes, float& minVal, float& maxVal);
     void setMinMax(int channel, int stokes, float minVal, float maxVal);
     void calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minVal, float& maxVal);
-    bool calcMinMax(int channel, int stokes, casacore::SubLattice<float>& sublattice, float& minVal, float& maxVal);
     bool getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram);
     void setHistogram(int channel, int stokes, CARTA::Histogram& histogram);
     void calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
         const std::vector<float>& data, CARTA::Histogram& histogramMsg);
-    bool calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
-        casacore::SubLattice<float>& sublattice, CARTA::Histogram& histogramMsg);
 
     // Spatial: pass through to RegionProfiler
     bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
@@ -68,6 +64,8 @@ public:
     bool getSpectralConfigStokes(int& stokes, int profileIndex);
     std::string getSpectralCoordinate(int profileIndex);
     bool getSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profileIndex);
+    void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex,
+        std::vector<float>& spectralData);
     void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex,
         casacore::SubLattice<float>& sublattice);
 
@@ -98,8 +96,6 @@ private:
     bool makeExtensionBox(casacore::LCBox& extendBox, int stokes, int channel=ALL_CHANNELS); // for extended region
     casacore::LCRegion* makeExtendedRegion(int stokes, int channel=ALL_CHANNELS);  // x/y region extended chan/stokes
 
-    // get data from sublattice (LCRegion applied to Lattice by Frame)
-    bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);
 
     // region definition (ICD SET_REGION parameters)
     std::string m_name;

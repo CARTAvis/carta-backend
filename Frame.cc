@@ -692,7 +692,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     }
                     profile.resize(end);
                     casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
-                    std::unique_lock<std::mutex> guard(latticeMutex);
+                    std::lock_guard<std::mutex> guard(latticeMutex);
                     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
                 }
                 // SpatialProfile
@@ -736,10 +736,18 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 // get sublattice for stokes requested in profile
                 casacore::SubLattice<float> sublattice;
                 std::unique_lock<std::mutex> guard(latticeMutex);
-                getRegionSubLattice(regionId, sublattice, profileStokes);
-                // fill SpectralProfiles for this config
-                region->fillSpectralProfileData(profileData, i, sublattice);
-                guard.unlock();
+                if (getRegionSubLattice(regionId, sublattice, profileStokes)) {
+                    // fill SpectralProfiles for this config
+		    if (region->isPoint()) {  // values
+                        std::vector<float> spectralData;
+			region->getData(spectralData, sublattice);
+			guard.unlock();
+			region->fillSpectralProfileData(profileData, i, spectralData);
+                    } else {  // statistics
+                        region->fillSpectralProfileData(profileData, i, sublattice);
+			guard.unlock();
+                    }
+                }
             }
         }
         profileOK = true;
@@ -761,7 +769,7 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         statsData.set_channel(channelIndex);
         statsData.set_stokes(stokesIndex);
         casacore::SubLattice<float> sublattice;
-        std::unique_lock<std::mutex> guard(latticeMutex);
+        std::lock_guard<std::mutex> guard(latticeMutex);
         // current channel only
         getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex);
         region->fillStatsData(statsData, sublattice);
@@ -810,9 +818,16 @@ bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minva
             region->calcMinMax(channel, stokes, imageCache, minval, maxval);
             minmaxOK = true;
         } else {
+            std::unique_lock<std::mutex> guard(latticeMutex);
             casacore::SubLattice<float> sublattice;
             getRegionSubLattice(regionId, sublattice, stokes, channel);
-            minmaxOK = region->calcMinMax(channel, stokes, sublattice, minval, maxval);
+            std::vector<float> regionData;
+	    bool hasData(region->getData(regionData, sublattice));
+            guard.unlock();
+	    if (hasData) {
+                region->calcMinMax(channel, stokes, regionData, minval, maxval);
+            }
+	    minmaxOK = hasData;
         }
     }
     return minmaxOK;
@@ -849,10 +864,16 @@ bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins
             }
             histogramOK = true;
         } else {
+            std::unique_lock<std::mutex> guard(latticeMutex);
             casacore::SubLattice<float> sublattice;
             getRegionSubLattice(regionId, sublattice, stokes, channel);
-            histogramOK = region->calcHistogram(channel, stokes, nbins, minval, maxval,
-                sublattice, histogram);
+            std::vector<float> regionData;
+	    bool hasData(region->getData(regionData, sublattice));
+            guard.unlock();
+	    if (hasData) {
+                region->calcHistogram(channel, stokes, nbins, minval, maxval, regionData, histogram);
+            }
+	    histogramOK = hasData;
         }
     }
     return histogramOK;
