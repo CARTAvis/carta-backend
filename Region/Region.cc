@@ -384,12 +384,11 @@ bool Region::getData(std::vector<float>& data, casacore::SubLattice<float>& subl
             }
             size_t begin = 0; // the begin index of profile vector in each copy
             size_t upperBound = (profileSize%checkPerChannels == 0 ? profileSize/checkPerChannels : profileSize/checkPerChannels + 1);
-            // get regional parameters setting as this moment
+            // get regional parameters setting at this moment
             std::vector<CARTA::Point> tmp_ctrlpoints = m_ctrlpoints;
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             for (size_t i=0; i<upperBound; ++i) {
                 if (pointsChanged(tmp_ctrlpoints)) { // check if regional parameters setting changed during this loop
-                    data.clear();
                     return false; // stop profile process and don't send the data
                 }
                 // modify the start position for slicer
@@ -399,9 +398,8 @@ bool Region::getData(std::vector<float>& data, casacore::SubLattice<float>& subl
                 casacore::Slicer slicer(start, count);
                 casacore::Array<float> buffer;
                 sublattice.doGetSlice(buffer, slicer);
-                std::vector<float> tmp = buffer.tovector();
-                memcpy(&data[begin], &tmp[0], tmp.size()*sizeof(float));
-                begin += tmp.size();
+                memcpy(&data[begin], buffer.data(), count(profileAxis)*sizeof(float));
+                begin += count(profileAxis);
             }
             dataOK = true;
         } catch (casacore::AipsError& err) {
