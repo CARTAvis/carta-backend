@@ -389,7 +389,8 @@ bool Region::getData(std::vector<float>& data, casacore::SubLattice<float>& subl
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             for (size_t i=0; i<upperBound; ++i) {
                 if (pointsChanged(tmp_ctrlpoints)) { // check if regional parameters setting changed during this loop
-                    break;
+                    data.clear();
+                    return false; // stop profile process and don't send the data
                 }
                 // modify the start position for slicer
                 start(profileAxis) = i*checkPerChannels;
