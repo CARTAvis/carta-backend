@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "AnimationQueue.h"
 #include "FileSettings.h"
 #include "Session.h"
 

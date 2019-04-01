@@ -54,6 +54,9 @@ bool HDF5Loader::hasData(FileInfo::Data ds) const {
     default:
         auto group_ptr = image.group();
         std::string data = dataSetToString(ds);
+        if (data.empty()) {
+            return false;
+        }
         return casacore::HDF5Group::exists(*group_ptr, data);
     }
 }
