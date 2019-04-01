@@ -738,14 +738,14 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 std::unique_lock<std::mutex> guard(latticeMutex);
                 if (getRegionSubLattice(regionId, sublattice, profileStokes)) {
                     // fill SpectralProfiles for this config
-		    if (region->isPoint()) {  // values
+                    if (region->isPoint()) {  // values
                         std::vector<float> spectralData;
-			region->getData(spectralData, sublattice);
-			guard.unlock();
-			region->fillSpectralProfileData(profileData, i, spectralData);
+                        region->getData(spectralData, sublattice);
+                        guard.unlock();
+                        region->fillSpectralProfileData(profileData, i, spectralData);
                     } else {  // statistics
                         region->fillSpectralProfileData(profileData, i, sublattice);
-			guard.unlock();
+                        guard.unlock();
                     }
                 }
             }
@@ -823,12 +823,12 @@ bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minva
             casacore::SubLattice<float> sublattice;
             getRegionSubLattice(regionId, sublattice, stokes, channel);
             std::vector<float> regionData;
-	    bool hasData(region->getData(regionData, sublattice));
+            bool hasData(region->getData(regionData, sublattice));
             guard.unlock();
-	    if (hasData) {
+            if (hasData) {
                 region->calcMinMax(channel, stokes, regionData, minval, maxval);
             }
-	    minmaxOK = hasData;
+            minmaxOK = hasData;
         }
     }
     return minmaxOK;
@@ -869,12 +869,12 @@ bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins
             casacore::SubLattice<float> sublattice;
             getRegionSubLattice(regionId, sublattice, stokes, channel);
             std::vector<float> regionData;
-	    bool hasData(region->getData(regionData, sublattice));
+            bool hasData(region->getData(regionData, sublattice));
             guard.unlock();
-	    if (hasData) {
+            if (hasData) {
                 region->calcHistogram(channel, stokes, nbins, minval, maxval, regionData, histogram);
             }
-	    histogramOK = hasData;
+            histogramOK = hasData;
         }
     }
     return histogramOK;
