@@ -364,53 +364,16 @@ casacore::IPosition Region::xyShape() {
 // ***********************************
 // Region data
 
-bool Region::getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels) {
+bool Region::getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice) {
     // fill data vector using region SubLattice
     bool dataOK(false);
     casacore::IPosition sublattShape = sublattice.shape();
     data.resize(sublattShape.product());
-    if (checkPerChannels > 0 && sublattShape.size() > 2) { // stoppable spectral profile process
-        try {
-            casacore::IPosition start(sublattShape.size(), 0);
-            casacore::IPosition count(sublattShape);
-            int profileAxis; // profile axis index
-            size_t profileSize; // profile vector size
-            // get profile axis index and its vector size
-            for (int i=0; i<sublattShape.size(); ++i) {
-                if (count(i)>1) {
-                    profileAxis = i;
-                    profileSize = count(i);
-                }
-            }
-            size_t begin = 0; // the begin index of profile vector in each copy
-            size_t upperBound = (profileSize%checkPerChannels == 0 ? profileSize/checkPerChannels : profileSize/checkPerChannels + 1);
-            // get regional parameters setting at this moment
-            std::vector<CARTA::Point> tmp_ctrlpoints = m_ctrlpoints;
-            // get profile data section by section with a specific length (i.e., checkPerChannels)
-            for (size_t i=0; i<upperBound; ++i) {
-                if (pointsChanged(tmp_ctrlpoints)) { // check if regional parameters setting changed during this loop
-                    return false; // stop profile process and don't send the data
-                }
-                // modify the start position for slicer
-                start(profileAxis) = i*checkPerChannels;
-                 // modify the count for slicer
-                count(profileAxis) = (checkPerChannels*(i+1) < profileSize ? checkPerChannels : profileSize - i*checkPerChannels);
-                casacore::Slicer slicer(start, count);
-                casacore::Array<float> buffer;
-                sublattice.doGetSlice(buffer, slicer);
-                memcpy(&data[begin], buffer.data(), count(profileAxis)*sizeof(float));
-                begin += count(profileAxis);
-            }
-            dataOK = true;
-        } catch (casacore::AipsError& err) {
-        }
-    } else { // non-stoppable spectral profile process
-        casacore::Array<float> tmp(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
-        try {
-            sublattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
-            dataOK = true;
-        } catch (casacore::AipsError& err) {
-        }
+    casacore::Array<float> tmp(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
+    try {
+        sublattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
+        dataOK = true;
+    } catch (casacore::AipsError& err) {
     }
     return dataOK;
 }
@@ -546,7 +509,7 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
             newProfile->set_coordinate(profileCoord);
             newProfile->set_stats_type(CARTA::StatsType::None);
             std::vector<float> profile;
-            if (getData(profile, sublattice, 100)) {
+            if (getData(profile, sublattice)) {
                 *newProfile->mutable_vals() = {profile.begin(), profile.end()};
             }
         } else { // get values from RegionStats

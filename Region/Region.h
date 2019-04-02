@@ -99,7 +99,7 @@ private:
     casacore::LCRegion* makeExtendedRegion(int stokes, int channel=ALL_CHANNELS);  // x/y region extended chan/stokes
 
     // get data from sublattice (LCRegion applied to Lattice by Frame)
-    bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels=ALL_CHANNELS);
+    bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);
 
     // region definition (ICD SET_REGION parameters)
     std::string m_name;
