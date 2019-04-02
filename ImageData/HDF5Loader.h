@@ -190,7 +190,7 @@ casacore::ArrayBase* HDF5Loader::getStatsDataTyped(FileInfo::Data ds) {
         D value;
         casacore::HDF5DataType dtype((D*)0);
         H5Dread(dataSet.getHid(), dtype.getHidMem(), H5S_ALL, H5S_ALL, H5P_DEFAULT, &value);
-        casacore::ArrayBase* scalar = new casacore::Array<D>(ipos(1), value);
+        casacore::ArrayBase* scalar = new casacore::Array<D>(ipos(1, 1), value);
         return scalar;
     }
     
