@@ -574,7 +574,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             bool haveHistogram(false);
 
             // Check if read from image file (HDF5 only)
-            if (regionId == IMAGE_REGION_ID || (regionId == CUBE_REGION_ID && configChannel == ALL_CHANNELS)) {
+            if (regionId == IMAGE_REGION_ID || regionId == CUBE_REGION_ID) {
                 auto& currentStats = loader->getImageStats(currStokes, configChannel);
 
                 if (currentStats.valid) {
