@@ -940,7 +940,7 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
             }
             size_t begin = 0; // the begin index of profile vector in each copy
             size_t upperBound = (profileSize%checkPerChannels == 0 ? profileSize/checkPerChannels : profileSize/checkPerChannels + 1);
-            // get cursor's x-y coordinate at this moment
+            // get cursor's x-y coordinate from sub-lattice
             std::pair<int, int> tmpXY;
             getSublatticeXY(sublattice, tmpXY);
             // get profile data section by section with a specific length (i.e., checkPerChannels)
