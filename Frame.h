@@ -81,6 +81,13 @@ private:
     // histogram helpers
     int calcAutoNumBins(int regionId); // calculate automatic bin size for region
 
+    // current cursor's x-y coordinate
+    std::pair<int, int> cursorXY;
+    // get cursor's x-y coordinate forom sub-lattice
+    bool getSublatticeXY(casacore::SubLattice<float>& sublattice, std::pair<int, int>& cursor_xy);
+    // get spectral profile data from sub-lattice
+    bool getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels=ALL_CHANNELS);
+
 
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu,
