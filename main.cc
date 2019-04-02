@@ -179,6 +179,7 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
 	  sess->sendPendingMessages();
         });
 
+
     session= new Session(ws, uuid, permissionsMap, usePermissions,
 			 rootFolder, baseFolder, outgoing,
 			 fileListHandler, verbose);
@@ -199,6 +200,7 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code,
   
   if( session ) {
     auto uuid= session->uuid;
+    session->disconnect_called();
     if ( ! session->decrease_ref_count() ) {
       delete session;
       ws->setUserData(nullptr);

@@ -38,6 +38,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
       newFrame(false),
       fsettings(this) {
   _ref_count= 0;
+  _connected= true;
 
   ++__num_sessions;
 }
@@ -192,7 +193,7 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         rootPath.append(filename);
         string absFilename(rootPath.resolvedName());
 
-	// create Frame for open file
+        // create Frame for open file
         auto frame = std::unique_ptr<Frame>(new Frame(uuid, absFilename, hdu));
         if (frame->isValid()) {
             std::unique_lock<std::mutex> lock(frameMutex); // open/close lock
@@ -802,8 +803,10 @@ void Session::sendPendingMessages() {
     // Do not parallelize: this must be done serially
     // due to the constraints of uWS.
     std::vector<char> msg;
-    while(out_msgs.try_pop(msg)) {
+    if( _connected ) {
+      while(out_msgs.try_pop(msg)) {
         socket->send(msg.data(), msg.size(), uWS::BINARY);
+      }
     }
 }
 
