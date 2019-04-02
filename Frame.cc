@@ -131,6 +131,11 @@ bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type,
     if (!regionSet) {
         message = fmt::format("Region parameters failed to validate for region id {}", regionId);
     }
+
+    // set cursor's x-y coordinate cache
+    if (name == "cursor" && type == CARTA::RegionType::POINT)
+        cursorXY = std::make_pair(points[0].x(), points[0].y());
+
     return regionSet;
 }
 
@@ -740,7 +745,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     // fill SpectralProfiles for this config
                     if (region->isPoint()) {  // values
                         std::vector<float> spectralData;
-                        region->getData(spectralData, sublattice);
+                        getSpectralData(spectralData, sublattice, 100);
                         guard.unlock();
                         region->fillSpectralProfileData(profileData, i, spectralData);
                     } else {  // statistics
@@ -901,4 +906,68 @@ void Frame::setRegionHistogram(int regionId, int channel, int stokes, CARTA::His
         auto& region = regions[regionId];
         region->setHistogram(channel, stokes, histogram);
     }
+}
+
+bool Frame::getSublatticeXY(casacore::SubLattice<float>& sublattice, std::pair<int, int>& cursor_xy) {
+    bool result(false);
+    casacore::IPosition sublattShape = sublattice.shape();
+    casacore::IPosition start(sublattShape.size(), 0);
+    casacore::IPosition count(sublattShape);
+    if (count(0) == 1 && count(1) == 1) { // make sure the sub-lattice is a point region in x-y plane
+        casacore::IPosition pos = sublattice.positionInParent(start);
+        cursor_xy = std::make_pair(pos(0), pos(1));
+        result = true;
+    }
+    return result;
+}
+
+bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels) {
+    bool dataOK(false);
+    casacore::IPosition sublattShape = sublattice.shape();
+    data.resize(sublattShape.product());
+    if (checkPerChannels > 0 && sublattShape.size() > 2) { // stoppable spectral profile process
+        try {
+            casacore::IPosition start(sublattShape.size(), 0);
+            casacore::IPosition count(sublattShape);
+            int profileAxis; // profile axis index
+            size_t profileSize; // profile vector size
+            // get profile axis index and its vector size
+            for (int i=0; i<sublattShape.size(); ++i) {
+                if (count(i)>1) {
+                    profileAxis = i;
+                    profileSize = count(i);
+                }
+            }
+            size_t begin = 0; // the begin index of profile vector in each copy
+            size_t upperBound = (profileSize%checkPerChannels == 0 ? profileSize/checkPerChannels : profileSize/checkPerChannels + 1);
+            // get cursor's x-y coordinate from sub-lattice
+            std::pair<int, int> tmpXY;
+            getSublatticeXY(sublattice, tmpXY);
+            // get profile data section by section with a specific length (i.e., checkPerChannels)
+            for (size_t i=0; i<upperBound; ++i) {
+                // check if cursor's position changed during this loop, if so, stop the profile process
+                if (tmpXY != cursorXY)
+                    return false;
+                // modify the start position for slicer
+                start(profileAxis) = i*checkPerChannels;
+                // modify the count for slicer
+                count(profileAxis) = (checkPerChannels*(i+1) < profileSize ? checkPerChannels : profileSize - i*checkPerChannels);
+                casacore::Slicer slicer(start, count);
+                casacore::Array<float> buffer;
+                sublattice.doGetSlice(buffer, slicer);
+                memcpy(&data[begin], buffer.data(), count(profileAxis)*sizeof(float));
+                begin += count(profileAxis);
+            }
+            dataOK = true;
+        } catch (casacore::AipsError& err) {
+        }
+    } else { // non-stoppable spectral profile process
+        casacore::Array<float> tmp(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
+        try {
+            sublattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
+            dataOK = true;
+        } catch (casacore::AipsError& err) {
+        }
+    }
+    return dataOK;
 }
