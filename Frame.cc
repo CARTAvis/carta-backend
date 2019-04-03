@@ -343,13 +343,15 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
             if (region->getRegion(lattRegion, stokes, channel)) {
                 sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::XYZW), lattRegion);
                 if (!sublattice.hasPixelMask()) { // apply lattice mask if possible
+                    casacore::Array<bool> maskArray;
                     if (loader->hasData(FileInfo::Data::Mask)) {
                         // apply region slicer to lattice pixel mask - same shape as sublattice
-                        casacore::Array<bool> maskArray;
                         loader->getPixelMaskSlice(maskArray, lattRegion.slicer());
-                        casacore::ArrayLattice<bool> pixelMask(maskArray);
-                        sublattice.setPixelMask(pixelMask, false);
+                    } else {
+                        generatePixelMask(maskArray, sublattice);
                     }
+                    casacore::ArrayLattice<bool> pixelMask(maskArray);
+                    sublattice.setPixelMask(pixelMask, false);
                 }
                 sublatticeOK = true;
             }
@@ -358,6 +360,17 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
     return sublatticeOK;
 }
 
+void Frame::generatePixelMask(casacore::Array<bool>& maskArray, casacore::SubLattice<float>& sublattice) {
+    // Create boolean Array which is false for NaN values in sublattice
+    std::vector<float> regionData;
+    getSpectralData(regionData, sublattice);
+    size_t dataSize(regionData.size());
+    casacore::Vector<bool> maskData(dataSize);
+    for (size_t i=0; i<dataSize; ++i)
+        maskData[i] = isfinite(regionData[i]);
+    casacore::Array<bool> mask(sublattice.shape(), maskData.data());
+    maskArray.reference(mask);
+}
 
 // ****************************************************
 // Region requirements
@@ -576,21 +589,26 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             auto newHistogram = histogramData->add_histograms();
             newHistogram->set_channel(configChannel);
             // get stored histograms or fill new histograms
-            auto& currentStats = loader->getImageStats(currStokes, configChannel);
+            
             bool haveHistogram(false);
 
             // Check if read from image file (HDF5 only)
-            if (currentStats.valid) {
-                int nbins(currentStats.histogramBins.size());
-                if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
-                    newHistogram->set_num_bins(nbins);
-                    newHistogram->set_bin_width((currentStats.maxVal - currentStats.minVal) / nbins);
-                    newHistogram->set_first_bin_center(currentStats.minVal + (newHistogram->bin_width()/2.0));
-                    *newHistogram->mutable_bins() = {currentStats.histogramBins.begin(),
-                        currentStats.histogramBins.end()};
-                    haveHistogram = true;
+            if (regionId == IMAGE_REGION_ID || regionId == CUBE_REGION_ID) {
+                auto& currentStats = loader->getImageStats(currStokes, configChannel);
+
+                if (currentStats.valid) {
+                    int nbins(currentStats.histogramBins.size());
+                    if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
+                        newHistogram->set_num_bins(nbins);
+                        newHistogram->set_bin_width((currentStats.maxVal - currentStats.minVal) / nbins);
+                        newHistogram->set_first_bin_center(currentStats.minVal + (newHistogram->bin_width()/2.0));
+                        *newHistogram->mutable_bins() = {currentStats.histogramBins.begin(),
+                            currentStats.histogramBins.end()};
+                        haveHistogram = true;
+                    }
                 }
             }
+            
             if (!haveHistogram) {
                 // Retrieve histogram if stored
                 if (!getRegionHistogram(regionId, configChannel, currStokes, configNumBins, *newHistogram)) {
