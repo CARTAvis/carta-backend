@@ -343,19 +343,33 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
             if (region->getRegion(lattRegion, stokes, channel)) {
                 sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::XYZW), lattRegion);
                 if (!sublattice.hasPixelMask()) { // apply lattice mask if possible
+                    casacore::Array<bool> maskArray;
                     if (loader->hasData(FileInfo::Data::Mask)) {
                         // apply region slicer to lattice pixel mask - same shape as sublattice
-                        casacore::Array<bool> maskArray;
                         loader->getPixelMaskSlice(maskArray, lattRegion.slicer());
-                        casacore::ArrayLattice<bool> pixelMask(maskArray);
-                        sublattice.setPixelMask(pixelMask, false);
+                    } else {
+                        generatePixelMask(maskArray, sublattice);
                     }
+                    casacore::ArrayLattice<bool> pixelMask(maskArray);
+                    sublattice.setPixelMask(pixelMask, false);
                 }
                 sublatticeOK = true;
             }
         }
     }
     return sublatticeOK;
+}
+
+void Frame::generatePixelMask(casacore::Array<bool>& maskArray, casacore::SubLattice<float>& sublattice) {
+    // Create boolean Array which is false for NaN values in sublattice
+    std::vector<float> regionData;
+    getSpectralData(regionData, sublattice);
+    size_t dataSize(regionData.size());
+    casacore::Vector<bool> maskData(dataSize);
+    for (size_t i=0; i<dataSize; ++i)
+        maskData[i] = isfinite(regionData[i]);
+    casacore::Array<bool> mask(sublattice.shape(), maskData.data());
+    maskArray.reference(mask);
 }
 
 // ****************************************************
