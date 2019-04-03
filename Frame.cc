@@ -575,21 +575,26 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             auto newHistogram = histogramData->add_histograms();
             newHistogram->set_channel(configChannel);
             // get stored histograms or fill new histograms
-            auto& currentStats = loader->getImageStats(currStokes, configChannel);
+            
             bool haveHistogram(false);
 
             // Check if read from image file (HDF5 only)
-            if (currentStats.valid) {
-                int nbins(currentStats.histogramBins.size());
-                if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
-                    newHistogram->set_num_bins(nbins);
-                    newHistogram->set_bin_width((currentStats.maxVal - currentStats.minVal) / nbins);
-                    newHistogram->set_first_bin_center(currentStats.minVal + (newHistogram->bin_width()/2.0));
-                    *newHistogram->mutable_bins() = {currentStats.histogramBins.begin(),
-                        currentStats.histogramBins.end()};
-                    haveHistogram = true;
+            if (regionId == IMAGE_REGION_ID || regionId == CUBE_REGION_ID) {
+                auto& currentStats = loader->getImageStats(currStokes, configChannel);
+
+                if (currentStats.valid) {
+                    int nbins(currentStats.histogramBins.size());
+                    if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
+                        newHistogram->set_num_bins(nbins);
+                        newHistogram->set_bin_width((currentStats.maxVal - currentStats.minVal) / nbins);
+                        newHistogram->set_first_bin_center(currentStats.minVal + (newHistogram->bin_width()/2.0));
+                        *newHistogram->mutable_bins() = {currentStats.histogramBins.begin(),
+                            currentStats.histogramBins.end()};
+                        haveHistogram = true;
+                    }
                 }
             }
+            
             if (!haveHistogram) {
                 // Retrieve histogram if stored
                 if (!getRegionHistogram(regionId, configChannel, currStokes, configNumBins, *newHistogram)) {
