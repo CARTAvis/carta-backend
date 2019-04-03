@@ -49,11 +49,15 @@ bool Region::updateRegionParameters(const std::string name, const CARTA::RegionT
     m_name = name;
     m_type = type;
     m_rotation = rotation;
-
-    // validate and set points
+    // validate and set points, create LCRegion
     bool pointsSet(setPoints(points));
-    // region changed if xy params changed and validated, and xyregion created
-    m_xyRegionChanged = xyParamsChanged && pointsSet && setXYRegion(points, rotation);
+    if (pointsSet)
+        setXYRegion(points, rotation);
+
+    // region changed if xy params changed and points validated
+    m_xyRegionChanged = xyParamsChanged && pointsSet;
+    if (m_xyRegionChanged && m_stats)
+        m_stats->clearStats(); // recalculate everything
 
     return pointsSet;
 }
@@ -368,12 +372,16 @@ bool Region::getData(std::vector<float>& data, casacore::SubLattice<float>& subl
     // fill data vector using region SubLattice
     bool dataOK(false);
     casacore::IPosition sublattShape = sublattice.shape();
+    if (sublattShape.empty())
+        return dataOK;
+
     data.resize(sublattShape.product());
     casacore::Array<float> tmp(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
     try {
         sublattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
         dataOK = true;
     } catch (casacore::AipsError& err) {
+        data.clear();
     }
     return dataOK;
 }
@@ -421,6 +429,7 @@ void Region::calcHistogram(int channel, int stokes, int nBins, float minVal, flo
         const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
     m_stats->calcHistogram(channel, stokes, nBins, minVal, maxVal, data, histogramMsg);
 }
+
 
 // stats
 void Region::setStatsRequirements(const std::vector<int>& statsTypes) {
@@ -501,21 +510,25 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
         size_t nstats = requestedStats.size();
         std::vector<std::vector<double>> statsValues;
         // get values from RegionStats
-        if (m_stats->getStatsValues(statsValues, requestedStats, sublattice)) {
-            for (size_t i=0; i<nstats; ++i) {
-                auto statType = static_cast<CARTA::StatsType>(requestedStats[i]);
-                // one SpectralProfile per stats type
-                auto newProfile = profileData.add_profiles();
-                newProfile->set_coordinate(profileCoord);
-                newProfile->set_stats_type(statType);
+        bool haveStats(m_stats->getStatsValues(statsValues, requestedStats, sublattice));
+        for (size_t i=0; i<nstats; ++i) {
+            // one SpectralProfile per stats type
+            auto newProfile = profileData.add_profiles();
+            newProfile->set_coordinate(profileCoord);
+            auto statType = static_cast<CARTA::StatsType>(requestedStats[i]);
+            newProfile->set_stats_type(statType);
+            // convert to float for spectral profile
+            std::vector<float> values;
+            if (!haveStats || statsValues[i].empty()) {  // region outside image or NaNs
+                values.resize(1, std::numeric_limits<float>::quiet_NaN());
+            } else {
                 // convert to float for spectral profile
-                std::vector<float> values(statsValues[i].size());
+                values.resize(statsValues[i].size());
                 for (size_t v=0; v<statsValues[i].size(); ++v) {
                     values[v] = static_cast<float>(statsValues[i][v]);
                 }
-                *newProfile->mutable_vals() = {values.begin(), values.end()};
             }
+            *newProfile->mutable_vals() = {values.begin(), values.end()};
         }
     }
 }
-

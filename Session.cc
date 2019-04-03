@@ -37,6 +37,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
       fileListHandler(fileListHandler),
       newFrame(false),
       fsettings(this) {
+  histogramProgress.fetch_and_store(HISTOGRAM_COMPLETE);
   _ref_count= 0;
   _connected= true;
 
@@ -265,10 +266,7 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
             if (frames.at(fileId)->setImageChannels(channel, stokes, errMessage)) {
                 // RESPONSE: updated image raster/histogram
                 sendRasterImageData(fileId, true); // true = send histogram
-                // RESPONSE: cursor spatial and spectral profiles
-                sendSpatialProfileData(fileId, CURSOR_REGION_ID);
-                if (stokesChanged) sendSpectralProfileData(fileId, CURSOR_REGION_ID);
-                // RESPONSE: region data
+                // RESPONSE: region data (includes image, cursor, and set regions)
                 updateRegionData(fileId, channelChanged, stokesChanged);
             } else {
                 if (!errMessage.empty())
@@ -289,17 +287,16 @@ void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
     if (frames.count(fileId)) {
         try {
             if (frames.at(fileId)->setCursorRegion(CURSOR_REGION_ID, message.point())) {
-                // RESPONSE
-                if (message.has_spatial_requirements()) {
-                    onSetSpatialRequirements(message.spatial_requirements(), requestId);
-                    sendSpectralProfileData(fileId, CURSOR_REGION_ID);
-                } else {
-                    sendSpatialProfileData(fileId, CURSOR_REGION_ID);
-                    sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                if (frames.at(fileId)->regionChanged(CURSOR_REGION_ID)) {
+                    // RESPONSE
+                    if (message.has_spatial_requirements()) {
+                        onSetSpatialRequirements(message.spatial_requirements(), requestId);
+                        sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                    } else {
+                        sendSpatialProfileData(fileId, CURSOR_REGION_ID);
+                        sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                    }
                 }
-            } else {
-                string error = "Cursor point out of range";
-                sendLogEvent(error, {"cursor"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);
@@ -523,7 +520,7 @@ bool Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         dataSent = true;
                     }
                 } else { // calculate cube histogram
-                    histogramProgress.fetch_and_store(0.0);  // start at 0
+                    histogramProgress.fetch_and_store(HISTOGRAM_START);
                     auto tStart = std::chrono::high_resolution_clock::now();
                     // determine cube min and max values
                     float cubemin(FLT_MAX), cubemax(FLT_MIN);
@@ -618,8 +615,10 @@ bool Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             // send completed histogram message
                             sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, finalHistogramMessage);
                             dataSent = true;
+                            histogramProgress.fetch_and_store(HISTOGRAM_COMPLETE);
                         }
                     }
+                    histogramProgress.fetch_and_store(HISTOGRAM_COMPLETE);
                 }
             }
         } catch (std::out_of_range& rangeError) {
