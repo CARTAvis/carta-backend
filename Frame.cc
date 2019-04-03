@@ -974,7 +974,7 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
     bool dataOK(false);
     casacore::IPosition sublattShape = sublattice.shape();
     data.resize(sublattShape.product());
-    if (checkPerChannels > 0 && sublattShape.size() > 2) { // stoppable spectral profile process
+    if (checkPerChannels > 0 && sublattShape.size() > 2 && sublattShape > 1) { // stoppable spectral profile process
         try {
             casacore::IPosition start(sublattShape.size(), 0);
             casacore::IPosition count(sublattShape);
