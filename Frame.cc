@@ -822,7 +822,7 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         // current channel only
         std::lock_guard<std::mutex> guard(latticeMutex);
         getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex);
-        region->fillStatsData(statsData, sublattice);
+        region->fillStatsData(statsData, sublattice, channelIndex, stokesIndex);
         statsOK = true;
     }
     return statsOK;

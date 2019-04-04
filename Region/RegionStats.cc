@@ -19,22 +19,36 @@
 using namespace carta;
 using namespace std;
 
+RegionStats::RegionStats() {
+    clearStats();
+}
+
+RegionStats::~RegionStats() {
+}
+
+// ***** Cache *****
+
+void RegionStats::clearStats() {
+    m_histogramsValid = false;
+    m_statsValid = false;    
+}
+
 // ***** Histograms *****
 
 // config
 bool RegionStats::setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs) {
-    m_configs = histogramReqs;
+    m_histogramReqs = histogramReqs;
     return true;
 }
 
 size_t RegionStats::numHistogramConfigs() {
-    return m_configs.size();
+    return m_histogramReqs.size();
 }
 
 CARTA::SetHistogramRequirements_HistogramConfig RegionStats::getHistogramConfig(int histogramIndex) {
     CARTA::SetHistogramRequirements_HistogramConfig config;
-    if (histogramIndex < m_configs.size())
-        config = m_configs[histogramIndex];
+    if (histogramIndex < m_histogramReqs.size())
+        config = m_histogramReqs[histogramIndex];
     return config;
 }
 
@@ -93,6 +107,8 @@ bool RegionStats::getHistogram(int channel, int stokes, int nbins, CARTA::Histog
 
 void RegionStats::setHistogram(int channel, int stokes, CARTA::Histogram& histogram) {
     // Store histogram for given channel and stokes
+    if (!m_histogramsValid)
+        m_histograms.clear();
     if (channel == ALL_CHANNELS) { // all channels(cube); don't save intermediate channel histograms
         m_histograms[stokes].clear();
     }
@@ -127,51 +143,78 @@ void RegionStats::calcHistogram(int channel, int stokes, int nBins, float minVal
 
     // save for next time
     setHistogram(channel, stokes, histogramMsg);
-    m_histogramsValid = true;
 }
 
 // ***** Statistics *****
 
 void RegionStats::setStatsRequirements(const std::vector<int>& statsTypes) {
-    m_regionStats = statsTypes;
+    m_statsReqs = statsTypes;
 }
 
 size_t RegionStats::numStats() {
-   return m_regionStats.size();
+   return m_statsReqs.size();
 }
 
-void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice) {
+void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData,
+        const casacore::SubLattice<float>& subLattice, int channel, int stokes) {
     // Fill RegionStatsData with statistics types set in requirements.
-    // Sublattice shape may be empty because of no xyregion (outside image or 0 pixels selected),
-    // or lattice mask removed all NaN values
-    if (m_regionStats.empty()) {  // no requirements set, add empty StatisticsValue
+    if (m_statsReqs.empty()) {  // no requirements set, add empty StatisticsValue
         auto statsValue = statsData.add_statistics();
         statsValue->set_stats_type(CARTA::StatsType::None);
-        return;
     } else {
         std::vector<std::vector<double>> results;
-        // stats for entire region, not per channel
-        bool haveStats(getStatsValues(results, m_regionStats, subLattice, false));
-        // update message whether have stats or not
-        for (size_t i=0; i<m_regionStats.size(); ++i) {
-            // add StatisticsValue to message
-            auto statsValue = statsData.add_statistics();
-            auto statType = static_cast<CARTA::StatsType>(m_regionStats[i]);
-            statsValue->set_stats_type(statType);
-            if (!haveStats || results[i].empty()) { // region outside image or NaNs
-                if (statType==CARTA::NumPixels) {
-                    statsValue->set_value(0.0);
-                } else {
-                    statsValue->set_value(std::numeric_limits<double>::quiet_NaN());
+        if (m_statsValid && (m_statsData.count(stokes)) && (m_statsData.at(stokes).count(channel))) {
+            // used stored stats
+            try {
+                std::vector<double> storedStats(m_statsData.at(stokes).at(channel));
+                for (size_t i=0; i<m_statsReqs.size(); ++i) {
+                    // add StatisticsValue to message
+                    auto statsValue = statsData.add_statistics();
+                    auto cartaStatType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
+                    statsValue->set_stats_type(cartaStatType);
+                    statsValue->set_value(storedStats[cartaStatType-13]);
                 }
-            } else {
-                statsValue->set_value(results[i][0]);
+            } catch (std::out_of_range& rangeError) {
+                // stats cleared
+                auto statsValue = statsData.add_statistics();
+                statsValue->set_stats_type(CARTA::StatsType::None);
             }
+        } else {
+            // calculate stats
+            if (!m_statsValid)
+                m_statsData.clear();
+            // per channel = false, stats for entire region
+            bool haveStats(calcStatsValues(results, m_statsReqs, subLattice, false));
+            // update message whether have stats or not
+            for (size_t i=0; i<m_statsReqs.size(); ++i) {
+                // add StatisticsValue to message
+                auto statsValue = statsData.add_statistics();
+                auto cartaStatType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
+                statsValue->set_stats_type(cartaStatType);
+                double value(0.0);
+                if (!haveStats || results[i].empty()) { // region outside image or NaNs
+                    if (cartaStatType != CARTA::NumPixels) {
+                        value = std::numeric_limits<double>::quiet_NaN();
+                    }
+                } else {
+                    value = results[i][0];
+                }
+                statsValue->set_value(value);
+
+                // cache stats values
+                if (m_statsData[stokes][channel].empty()) { // resize vector, set to NaN
+                    m_statsData[stokes][channel].resize(CARTA::StatsType_MAX-13, // 13 is the first stat
+                        std::numeric_limits<double>::quiet_NaN());
+                }
+                // first type enum is 13; make 0-based
+                m_statsData[stokes][channel][cartaStatType-13] = value;
+            }
+            m_statsValid = true;
         }
     }
 }
 
-bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
+bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
     const std::vector<int>& requestedStats, const casacore::SubLattice<float>& subLattice,
     bool perChannel) {
     // Fill statsValues vector for requested stats; one vector<float> per stat if per channel,

@@ -440,8 +440,9 @@ size_t Region::numStats() {
     return m_stats->numStats();
 }
 
-void Region::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice) {
-    m_stats->fillStatsData(statsData, subLattice);
+void Region::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice,
+        int channel, int stokes) {
+    m_stats->fillStatsData(statsData, subLattice, channel, stokes);
 }
 
 // ***********************************
@@ -510,7 +511,7 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
         size_t nstats = requestedStats.size();
         std::vector<std::vector<double>> statsValues;
         // get values from RegionStats
-        bool haveStats(m_stats->getStatsValues(statsValues, requestedStats, sublattice));
+        bool haveStats(m_stats->calcStatsValues(statsValues, requestedStats, sublattice));
         for (size_t i=0; i<nstats; ++i) {
             // one SpectralProfile per stats type
             auto newProfile = profileData.add_profiles();
