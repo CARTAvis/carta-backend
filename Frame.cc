@@ -2,6 +2,7 @@
 #include "compression.h"
 #include "util.h"
 
+#include <casacore/tables/DataMan/TiledFileAccess.h>
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
@@ -331,9 +332,9 @@ void Frame::getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int 
 
 bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes,
         int channel) {
-    // Apply lattice region to lattice and return SubLattice. Applies lattice mask to SubLattice.
+    // Apply lattice region to lattice and return SubLattice.
     // channel could be ALL_CHANNELS in region channel range (default) or
-    // a given channel (e.g. current channel).
+    //   a given channel (e.g. current channel).
     // Returns false if lattice region is invalid and cannot make sublattice.
     bool sublatticeOK(false);
     if (checkStokes(stokes) && (regions.count(regionId))) {
@@ -342,17 +343,6 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
             casacore::LatticeRegion lattRegion;
             if (region->getRegion(lattRegion, stokes, channel)) {
                 sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::XYZW), lattRegion);
-                if (!sublattice.hasPixelMask()) { // apply lattice mask if possible
-                    casacore::Array<bool> maskArray;
-                    if (loader->hasData(FileInfo::Data::Mask)) {
-                        // apply region slicer to lattice pixel mask - same shape as sublattice
-                        loader->getPixelMaskSlice(maskArray, lattRegion.slicer());
-                    } else {
-                        generatePixelMask(maskArray, sublattice);
-                    }
-                    casacore::ArrayLattice<bool> pixelMask(maskArray);
-                    sublattice.setPixelMask(pixelMask, false);
-                }
                 sublatticeOK = true;
             }
         }
@@ -360,16 +350,48 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
     return sublatticeOK;
 }
 
-void Frame::generatePixelMask(casacore::Array<bool>& maskArray, casacore::SubLattice<float>& sublattice) {
+void Frame::setPixelMask(casacore::SubLattice<float>& sublattice) {
+    // apply pixel mask from lattice or generate one
+    if (!sublattice.hasPixelMask()) { // apply lattice mask if possible
+        casacore::ArrayLattice<bool> pixelMask;
+        if (loader->hasData(FileInfo::Data::Mask)) {
+            // apply region slicer to lattice pixel mask - same shape as sublattice
+            casacore::Array<bool> maskArray;
+            const casacore::LatticeRegion* lattRegion(sublattice.getRegionPtr());
+            loader->getPixelMaskSlice(maskArray, lattRegion->slicer());
+            pixelMask = casacore::ArrayLattice<bool>(maskArray);
+        } else {
+            pixelMask = casacore::ArrayLattice<bool>(sublattice.shape());
+            generatePixelMask(pixelMask, sublattice);
+        }
+        sublattice.setPixelMask(pixelMask, false);
+    }
+}
+
+void Frame::generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore::SubLattice<float>& sublattice) {
     // Create boolean Array which is false for NaN values in sublattice
-    std::vector<float> regionData;
-    getSpectralData(regionData, sublattice);
-    size_t dataSize(regionData.size());
-    casacore::Vector<bool> maskData(dataSize);
-    for (size_t i=0; i<dataSize; ++i)
-        maskData[i] = isfinite(regionData[i]);
-    casacore::Array<bool> mask(sublattice.shape(), maskData.data());
-    maskArray.reference(mask);
+    unsigned int maxPix(sublattice.advisedMaxPixels());
+    if (maxPix == 0) {
+        casacore::IPosition tileshape(casacore::TiledFileAccess::makeTileShape(sublattice.shape()));
+        maxPix = tileshape.product();
+    }
+    casacore::IPosition cursorShape(sublattice.doNiceCursorShape(maxPix));
+    casacore::RO_LatticeIterator<float> sublattIter(sublattice, cursorShape);
+    casacore::LatticeIterator<bool> maskIter(pixelMask, cursorShape);
+    maskIter.reset();
+    casacore::Array<bool> mask;
+    for (sublattIter.reset(); !sublattIter.atEnd(); sublattIter++) {
+        try {
+            mask.resize();
+            mask = isFinite(sublattIter.cursor());
+            maskIter.rwCursor() = isFinite(sublattIter.cursor());
+        } catch (casacore::AipsError& err) {
+            // sublattIter resizes cursor if needed, maskIter does not
+            mask.resize(maskIter.rwCursor().shape(), true);
+            maskIter.rwCursor() = mask;
+        }
+        maskIter++;
+    }
 }
 
 // ****************************************************
@@ -795,6 +817,8 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     guard.unlock();
                     region->fillSpectralProfileData(profileData, i, spectralData);
                 } else {  // statistics
+                    if (!sublattice.shape().empty())
+                        setPixelMask(sublattice);
                     region->fillSpectralProfileData(profileData, i, sublattice);
                     guard.unlock();
                 }
@@ -819,9 +843,10 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         statsData.set_channel(channelIndex);
         statsData.set_stokes(stokesIndex);
         casacore::SubLattice<float> sublattice;
-        // current channel only
         std::lock_guard<std::mutex> guard(latticeMutex);
         getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex);
+        if (!sublattice.shape().empty())
+             setPixelMask(sublattice);
         region->fillStatsData(statsData, sublattice);
         statsOK = true;
     }
