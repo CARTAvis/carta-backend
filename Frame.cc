@@ -131,6 +131,11 @@ bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type,
     if (!regionSet) {
         message = fmt::format("Region parameters failed to validate for region id {}", regionId);
     }
+
+    // set cursor's x-y coordinate cache
+    if (name == "cursor" && type == CARTA::RegionType::POINT)
+        cursorXY = std::make_pair(points[0].x(), points[0].y());
+
     return regionSet;
 }
 
@@ -270,7 +275,7 @@ void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, siz
     chanMatrix.resize(imageShape(0) * imageShape(1));
     casacore::Array<float> tmp(section.length(), chanMatrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
-    std::unique_lock<std::mutex> guard(latticeMutex);
+    std::lock_guard<std::mutex> guard(latticeMutex);
     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
 }
 
@@ -338,19 +343,33 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
             if (region->getRegion(lattRegion, stokes, channel)) {
                 sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::XYZW), lattRegion);
                 if (!sublattice.hasPixelMask()) { // apply lattice mask if possible
+                    casacore::Array<bool> maskArray;
                     if (loader->hasData(FileInfo::Data::Mask)) {
                         // apply region slicer to lattice pixel mask - same shape as sublattice
-                        casacore::Array<bool> maskArray;
                         loader->getPixelMaskSlice(maskArray, lattRegion.slicer());
-                        casacore::ArrayLattice<bool> pixelMask(maskArray);
-                        sublattice.setPixelMask(pixelMask, false);
+                    } else {
+                        generatePixelMask(maskArray, sublattice);
                     }
+                    casacore::ArrayLattice<bool> pixelMask(maskArray);
+                    sublattice.setPixelMask(pixelMask, false);
                 }
                 sublatticeOK = true;
             }
         }
     }
     return sublatticeOK;
+}
+
+void Frame::generatePixelMask(casacore::Array<bool>& maskArray, casacore::SubLattice<float>& sublattice) {
+    // Create boolean Array which is false for NaN values in sublattice
+    std::vector<float> regionData;
+    getSpectralData(regionData, sublattice);
+    size_t dataSize(regionData.size());
+    casacore::Vector<bool> maskData(dataSize);
+    for (size_t i=0; i<dataSize; ++i)
+        maskData[i] = isfinite(regionData[i]);
+    casacore::Array<bool> mask(sublattice.shape(), maskData.data());
+    maskArray.reference(mask);
 }
 
 // ****************************************************
@@ -561,7 +580,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             // get histogram requirements for this index
             CARTA::SetHistogramRequirements_HistogramConfig config = region->getHistogramConfig(i);
             int configChannel(config.channel()), configNumBins(config.num_bins());
-            // only send if using current stokes, which changed
+            // only send if using current channel, which changed
             if (checkCurrentChannel && (configChannel != CURRENT_CHANNEL))
                 return false;
             if (configChannel == CURRENT_CHANNEL) {
@@ -570,31 +589,63 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             auto newHistogram = histogramData->add_histograms();
             newHistogram->set_channel(configChannel);
             // get stored histograms or fill new histograms
-            auto& currentStats = loader->getImageStats(currStokes, configChannel);
+            
             bool haveHistogram(false);
 
             // Check if read from image file (HDF5 only)
-            if (currentStats.valid) {
-                int nbins(currentStats.histogramBins.size());
-                if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
-                    newHistogram->set_num_bins(nbins);
-                    newHistogram->set_bin_width((currentStats.maxVal - currentStats.minVal) / nbins);
-                    newHistogram->set_first_bin_center(currentStats.minVal + (newHistogram->bin_width()/2.0));
-                    *newHistogram->mutable_bins() = {currentStats.histogramBins.begin(),
-                        currentStats.histogramBins.end()};
-                    haveHistogram = true;
+            if (regionId == IMAGE_REGION_ID || regionId == CUBE_REGION_ID) {
+                auto& currentStats = loader->getImageStats(currStokes, configChannel);
+
+                if (currentStats.valid) {
+                    int nbins(currentStats.histogramBins.size());
+                    if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
+                        newHistogram->set_num_bins(nbins);
+                        newHistogram->set_bin_width((currentStats.maxVal - currentStats.minVal) / nbins);
+                        newHistogram->set_first_bin_center(currentStats.minVal + (newHistogram->bin_width()/2.0));
+                        *newHistogram->mutable_bins() = {currentStats.histogramBins.begin(),
+                            currentStats.histogramBins.end()};
+                        haveHistogram = true;
+                    }
                 }
             }
+            
             if (!haveHistogram) {
                 // Retrieve histogram if stored
                 if (!getRegionHistogram(regionId, configChannel, currStokes, configNumBins, *newHistogram)) {
                     // Calculate histogram
-                    float minval, maxval;
-                    if (!getRegionMinMax(regionId, configChannel, currStokes, minval, maxval)) {
-                        calcRegionMinMax(regionId, configChannel, currStokes, minval, maxval);
+                    int nbins = (configNumBins==AUTO_BIN_SIZE ? calcAutoNumBins(regionId) : configNumBins);
+                    float minval(0.0), maxval(0.0);
+                    if (regionId == IMAGE_REGION_ID) {
+                        if (configChannel == channelIndex) {  // use imageCache
+                            if (!getRegionMinMax(regionId, configChannel, currStokes, minval, maxval)) {
+                                calcRegionMinMax(regionId, configChannel, currStokes, minval, maxval);
+                            }
+                            calcRegionHistogram(regionId, configChannel, currStokes, nbins,
+                                minval, maxval, *newHistogram);
+                        } else {  // use matrix slicer on lattice
+                            std::vector<float> data;
+                            getChannelMatrix(data, configChannel, currStokes); // slice lattice once
+                            if (!getRegionMinMax(regionId, configChannel, currStokes, minval, maxval)) {
+                                region->calcMinMax(configChannel, currStokes, data, minval, maxval);
+                            }
+                            region->calcHistogram(configChannel, currStokes, nbins, minval, maxval,
+                                data, *newHistogram);
+                        }
+                    } else {
+                        std::unique_lock<std::mutex> guard(latticeMutex);
+                        casacore::SubLattice<float> sublattice;
+                        getRegionSubLattice(regionId, sublattice, currStokes, configChannel);
+                        std::vector<float> regionData;
+                        bool hasData(region->getData(regionData, sublattice)); // get sublattice data once
+                        guard.unlock();
+                        if (hasData) {
+                            if (!getRegionMinMax(regionId, configChannel, currStokes, minval, maxval)) {
+                                region->calcMinMax(configChannel, currStokes, regionData, minval, maxval);
+                            }
+                        }
+                        region->calcHistogram(configChannel, currStokes, nbins, minval, maxval,
+                            regionData, *newHistogram);
                     }
-                    calcRegionHistogram(regionId, configChannel, currStokes, configNumBins, minval, maxval,
-                        *newHistogram);
                 }
             }
         }
@@ -621,21 +672,21 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
             y(static_cast<int>(std::round(ctrlPts[0].y())));
         // check that control points in image
         bool pointInImage((x >= 0) && (x < imageShape(0)) && (y >= 0) && (y < imageShape(1)));
-        if (pointInImage) {
-            ssize_t nImageCol(imageShape(0)), nImageRow(imageShape(1));
-            float value(0.0);
-            if (!imageCache.empty()) {
-                bool writeLock(false);
-                tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-                value = imageCache[(y*nImageCol) + x];
-                cacheLock.release();
-            }
-            profileData.set_x(x);
-            profileData.set_y(y);
-            profileData.set_channel(channelIndex);
-            profileData.set_stokes(stokesIndex);
-            profileData.set_value(value);
+        ssize_t nImageCol(imageShape(0)), nImageRow(imageShape(1));
+        float value(0.0);
+        if (!imageCache.empty()) {
+            bool writeLock(false);
+            tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+            value = imageCache[(y*nImageCol) + x];
+            cacheLock.release();
+        }
+        profileData.set_x(x);
+        profileData.set_y(y);
+        profileData.set_channel(channelIndex);
+        profileData.set_stokes(stokesIndex);
+        profileData.set_value(value);
 
+        if (pointInImage) {
             // set profiles
             for (size_t i=0; i<numProfiles; ++i) {
                 // get <axis, stokes> for slicing image data
@@ -692,7 +743,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     }
                     profile.resize(end);
                     casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
-                    std::unique_lock<std::mutex> guard(latticeMutex);
+                    std::lock_guard<std::mutex> guard(latticeMutex);
                     loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
                 }
                 // SpatialProfile
@@ -736,11 +787,17 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 // get sublattice for stokes requested in profile
                 casacore::SubLattice<float> sublattice;
                 std::unique_lock<std::mutex> guard(latticeMutex);
-                if (getRegionSubLattice(regionId, sublattice, profileStokes)) {
-                    // fill SpectralProfiles for this config
+                getRegionSubLattice(regionId, sublattice, profileStokes);
+                // fill SpectralProfiles for this config
+                if (region->isPoint()) {  // values
+                    std::vector<float> spectralData;
+                    getSpectralData(spectralData, sublattice, 100);
+                    guard.unlock();
+                    region->fillSpectralProfileData(profileData, i, spectralData);
+                } else {  // statistics
                     region->fillSpectralProfileData(profileData, i, sublattice);
+                    guard.unlock();
                 }
-                guard.unlock();
             }
         }
         profileOK = true;
@@ -762,12 +819,11 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         statsData.set_channel(channelIndex);
         statsData.set_stokes(stokesIndex);
         casacore::SubLattice<float> sublattice;
-        std::unique_lock<std::mutex> guard(latticeMutex);
         // current channel only
-        if (getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex)) {
-            region->fillStatsData(statsData, sublattice);
-            statsOK = true;
-        }
+        std::lock_guard<std::mutex> guard(latticeMutex);
+        getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex);
+        region->fillStatsData(statsData, sublattice);
+        statsOK = true;
     }
     return statsOK;
 }
@@ -801,20 +857,32 @@ bool Frame::getRegionMinMax(int regionId, int channel, int stokes, float& minval
 }
 
 bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval) {
-    // Calculate and store min/max for region data
+    // Calculate min/max for region data; primarily for cube histogram
     bool minmaxOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
-        if (((regionId == IMAGE_REGION_ID) || (regionId == CUBE_REGION_ID)) &&
-            (channel == channelIndex)) {  // use channel cache
-            bool writeLock(false);
-            tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
-            region->calcMinMax(channel, stokes, imageCache, minval, maxval);
+        if (regionId == IMAGE_REGION_ID) {
+            if (channel == channelIndex) {  // use channel cache
+                bool writeLock(false);
+                tbb::queuing_rw_mutex::scoped_lock cacheLock(cacheMutex, writeLock);
+                region->calcMinMax(channel, stokes, imageCache, minval, maxval);
+            } else {
+                std::vector<float> data;
+                getChannelMatrix(data, channel, stokes);
+                region->calcMinMax(channel, stokes, data, minval, maxval);
+            }
             minmaxOK = true;
         } else {
+            std::unique_lock<std::mutex> guard(latticeMutex);
             casacore::SubLattice<float> sublattice;
             getRegionSubLattice(regionId, sublattice, stokes, channel);
-            minmaxOK = region->calcMinMax(channel, stokes, sublattice, minval, maxval);
+            std::vector<float> regionData;
+            bool hasData(region->getData(regionData, sublattice));
+            guard.unlock();
+            if (hasData) {
+                region->calcMinMax(channel, stokes, regionData, minval, maxval);
+            }
+            minmaxOK = hasData;
         }
     }
     return minmaxOK;
@@ -834,7 +902,7 @@ bool Frame::getRegionHistogram(int regionId, int channel, int stokes, int nbins,
 
 bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins,
     float minval, float maxval, CARTA::Histogram& histogram) {
-    // Return calculated histogram in histogram parameter
+    // Return calculated histogram in histogram parameter; primarily for cube histogram
     bool histogramOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
@@ -851,10 +919,16 @@ bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins
             }
             histogramOK = true;
         } else {
+            std::unique_lock<std::mutex> guard(latticeMutex);
             casacore::SubLattice<float> sublattice;
             getRegionSubLattice(regionId, sublattice, stokes, channel);
-            histogramOK = region->calcHistogram(channel, stokes, nbins, minval, maxval,
-                sublattice, histogram);
+            std::vector<float> regionData;
+            bool hasData(region->getData(regionData, sublattice));
+            guard.unlock();
+            if (hasData) {
+                region->calcHistogram(channel, stokes, nbins, minval, maxval, regionData, histogram);
+            }
+            histogramOK = hasData;
         }
     }
     return histogramOK;
@@ -881,4 +955,68 @@ void Frame::setRegionHistogram(int regionId, int channel, int stokes, CARTA::His
         auto& region = regions[regionId];
         region->setHistogram(channel, stokes, histogram);
     }
+}
+
+bool Frame::getSublatticeXY(casacore::SubLattice<float>& sublattice, std::pair<int, int>& cursor_xy) {
+    bool result(false);
+    casacore::IPosition sublattShape = sublattice.shape();
+    casacore::IPosition start(sublattShape.size(), 0);
+    casacore::IPosition count(sublattShape);
+    if (count(0) == 1 && count(1) == 1) { // make sure the sub-lattice is a point region in x-y plane
+        casacore::IPosition pos = sublattice.positionInParent(start);
+        cursor_xy = std::make_pair(pos(0), pos(1));
+        result = true;
+    }
+    return result;
+}
+
+bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels) {
+    bool dataOK(false);
+    casacore::IPosition sublattShape = sublattice.shape();
+    data.resize(sublattShape.product());
+    if (checkPerChannels > 0 && sublattShape.size() > 2 && sublattShape > 1) { // stoppable spectral profile process
+        try {
+            casacore::IPosition start(sublattShape.size(), 0);
+            casacore::IPosition count(sublattShape);
+            int profileAxis; // profile axis index
+            size_t profileSize; // profile vector size
+            // get profile axis index and its vector size
+            for (int i=0; i<sublattShape.size(); ++i) {
+                if (count(i)>1) {
+                    profileAxis = i;
+                    profileSize = count(i);
+                }
+            }
+            size_t begin = 0; // the begin index of profile vector in each copy
+            size_t upperBound = (profileSize%checkPerChannels == 0 ? profileSize/checkPerChannels : profileSize/checkPerChannels + 1);
+            // get cursor's x-y coordinate from sub-lattice
+            std::pair<int, int> tmpXY;
+            getSublatticeXY(sublattice, tmpXY);
+            // get profile data section by section with a specific length (i.e., checkPerChannels)
+            for (size_t i=0; i<upperBound; ++i) {
+                // check if cursor's position changed during this loop, if so, stop the profile process
+                if (tmpXY != cursorXY)
+                    return false;
+                // modify the start position for slicer
+                start(profileAxis) = i*checkPerChannels;
+                // modify the count for slicer
+                count(profileAxis) = (checkPerChannels*(i+1) < profileSize ? checkPerChannels : profileSize - i*checkPerChannels);
+                casacore::Slicer slicer(start, count);
+                casacore::Array<float> buffer;
+                sublattice.doGetSlice(buffer, slicer);
+                memcpy(&data[begin], buffer.data(), count(profileAxis)*sizeof(float));
+                begin += count(profileAxis);
+            }
+            dataOK = true;
+        } catch (casacore::AipsError& err) {
+        }
+    } else { // non-stoppable spectral profile process
+        casacore::Array<float> tmp(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
+        try {
+            sublattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
+            dataOK = true;
+        } catch (casacore::AipsError& err) {
+        }
+    }
+    return dataOK;
 }
