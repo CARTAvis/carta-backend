@@ -16,20 +16,16 @@ using namespace std;
 
 
 int __num_sessions= 0;
-// Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
+// Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
 		 std::string uuid,
-		 std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
-		 bool enforcePermissions,
 		 std::string root,
-		 std::string base, // is currently ignored ???
 		 uS::Async *outgoing_,
 		 FileListHandler *fileListHandler,
 		 bool verbose)
     : uuid(std::move(uuid)),
       socket(ws),
       rootFolder(root),
-      baseFolder(base),
       verboseLogging(verbose),
       selectedFileInfo(nullptr),
       selectedFileInfoExtended(nullptr),

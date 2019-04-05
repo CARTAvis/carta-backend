@@ -180,9 +180,7 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
         });
 
 
-    session= new Session(ws, uuid, permissionsMap, usePermissions,
-			 rootFolder, baseFolder, outgoing,
-			 fileListHandler, verbose);
+    session= new Session(ws, uuid, rootFolder, outgoing, fileListHandler, verbose);
 
     ws->setUserData(session);
     session->increase_ref_count();

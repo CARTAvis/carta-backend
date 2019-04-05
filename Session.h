@@ -52,7 +52,6 @@ class Session {
     std::string apiKey;
 
     std::string rootFolder;
-    std::string baseFolder;
     
     bool verboseLogging;
 
@@ -87,10 +86,7 @@ class Session {
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
             std::string uuid,
-            std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
-            bool enforcePermissions,
             std::string root,
-            std::string base,
             uS::Async *outgoing,
             FileListHandler *fileListHandler,
             bool verbose = false);
