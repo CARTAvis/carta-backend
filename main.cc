@@ -38,9 +38,6 @@ FileListHandler* fileListHandler;
 int sessionNumber;
 uWS::Hub wsHub;
 
-// Number of active sessions
-int _num_sessions= 0;
-
 // Map from string uuids to 32 bit ints.
 unordered_map<std::string,uint8_t> _event_name_map;
 
@@ -182,7 +179,8 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
     session->increase_ref_count();
     outgoing->setData(session);
 
-    log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, ++_num_sessions);
+    log(uuid, "Client {} [{}] Connected. Num sessions: {}",
+	uuid, ws->getAddress().address, Session::number_of_sessions());
 }
 
 
@@ -195,13 +193,12 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code,
   if( session ) {
     auto uuid= session->uuid;
     session->disconnect_called();
+    log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}",
+	uuid, ws->getAddress().address, Session::number_of_sessions());
     if ( ! session->decrease_ref_count() ) {
       delete session;
       ws->setUserData(nullptr);
-      --_num_sessions;   
     }
-    log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}",
-	uuid, ws->getAddress().address, _num_sessions);
   }
   else {
     std::cerr <<
