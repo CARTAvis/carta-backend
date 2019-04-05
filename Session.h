@@ -81,6 +81,8 @@ class Session {
     // Reference counter
     int _ref_count;
 
+    static int _num_sessions;
+    
     // file list handler
     FileListHandler *fileListHandler;
     
@@ -127,7 +129,7 @@ public:
     int increase_ref_count() { return ++_ref_count; }
     int decrease_ref_count() { return --_ref_count; }
     void disconnect_called() { _connected= false; }
-
+    static int number_of_sessions() { return _num_sessions; }
     
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
