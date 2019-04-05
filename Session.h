@@ -3,7 +3,9 @@
 #ifndef __CARTA_SESSION_H__
 #define __CARTA_SESSION_H__
 
+#include "FileListHandler.h"
 #include "FileSettings.h"
+#include "Frame.h"
 #include "util.h"
 
 #include <utility>
@@ -15,7 +17,6 @@
 #include <vector>
 
 #include <casacore/casa/aips.h>
-#include <casacore/casa/OS/File.h>
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
@@ -32,8 +33,6 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 
-#include "Frame.h"
-#include "FileListHandler.h"
 
 
 class Session {

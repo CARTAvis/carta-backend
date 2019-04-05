@@ -1,14 +1,4 @@
-#include "FileSettings.h"
-#include "OnMessageTask.h"
-#include "Session.h"
-#include "EventMappings.h"
-#include "util.h"
-
-	//#include <unordered_map>
-
-#include "FileListHandler.h"
-
-
+#include <casacore/casa/OS/File.h>
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/casa/Inputs/Input.h>
 #include <fmt/format.h>
@@ -27,6 +17,12 @@
 #include <thread>
 #include <mutex>
 
+#include "EventMappings.h"
+#include "FileListHandler.h"
+#include "FileSettings.h"
+#include "OnMessageTask.h"
+#include "Session.h"
+#include "util.h"
 
 using namespace std;
 

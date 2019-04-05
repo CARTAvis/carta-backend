@@ -4,8 +4,7 @@
 #include "util.h"
 #include <carta-protobuf/error.pb.h>
 
-#include <casacore/casa/OS/Path.h>
-#include <casacore/casa/OS/DirectoryIterator.h>
+#include <casacore/casa/OS/File.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 

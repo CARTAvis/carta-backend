@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "FileSettings.h"
 #include "Session.h"
 
 #include <tbb/concurrent_queue.h>

@@ -6,11 +6,9 @@
 #include <tbb/mutex.h>
 
 #include <casacore/casa/aips.h>
-#include <casacore/casa/OS/File.h>
+#include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/file_list.pb.h>
-
-#include "Frame.h"
 #include "util.h"
 
 class FileListHandler {
