@@ -15,7 +15,6 @@
 #include "InterfaceConstants.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
-#include "compression.h"
 
 class Frame {
 

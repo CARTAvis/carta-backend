@@ -5,12 +5,10 @@
 #include "Histogram.h"
 #include "MinMax.h"
 
-#include <chrono>
 #include <cmath>
-#include <fmt/format.h>
 #include <limits>
+#include <fmt/format.h>
 #include <tbb/blocked_range.h>
-#include <tbb/blocked_range2d.h>
 #include <tbb/parallel_reduce.h>
 
 #include <casacore/casa/Arrays/ArrayMath.h>

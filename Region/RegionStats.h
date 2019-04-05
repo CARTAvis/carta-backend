@@ -6,8 +6,6 @@
 #include <carta-protobuf/region_requirements.pb.h>  // HistogramConfig
 #include <carta-protobuf/region_stats.pb.h>  // RegionStatsData
 
-#include <casacore/casa/Arrays/Matrix.h>
-#include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/lattices/Lattices/SubLattice.h>
 
 #include <vector>

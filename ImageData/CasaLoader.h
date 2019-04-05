@@ -2,8 +2,6 @@
 
 #include "FileLoader.h"
 #include <casacore/images/Images/PagedImage.h>
-#include <string>
-#include <unordered_map>
 
 namespace carta {
 
