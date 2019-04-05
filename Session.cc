@@ -15,7 +15,11 @@
 using namespace std;
 
 
-int __num_sessions= 0;
+#define DEBUG( _DB_TEXT_ ) { }
+
+int Session::_num_sessions= 0;
+
+
 // Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
 		 std::string uuid,
@@ -41,7 +45,8 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
   _ref_count= 0;
   _connected= true;
 
-  ++__num_sessions;
+  ++_num_sessions;
+  DEBUG(fprintf(stderr,"%p ::Session (%d)\n", this, _num_sessions ));
 }
 
 Session::~Session() {
@@ -51,7 +56,11 @@ Session::~Session() {
     }
     frames.clear();
     outgoing->close();
-    --__num_sessions;
+    
+    --_num_sessions;
+    DEBUG(fprintf(stderr,"%p  ~Session (%d)\n", this, _num_sessions ));
+    if( !_num_sessions )
+      std::cout << "No remaining sessions." << endl;
 }
 
 // ********************************************************************************
