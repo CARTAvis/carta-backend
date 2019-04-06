@@ -7,7 +7,11 @@ make -j 2
 sudo cp libsofa.a /usr/local/lib/
 cd $HOME
 
-git clone https://github.com/casacore/casacore.git
+#git clone https://github.com/casacore/casacore.git
+git clone https://github.com/veggiesaurus/casacore.git
+cd casacore
+git checkout fix_hdf5_contiguous_tileshape
+cd ..
 
 mv casacore casacore-src
 
