@@ -4,7 +4,6 @@
 #include "HDF5Attributes.h"
 
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
-#include <string>
 #include <unordered_map>
 
 namespace carta {

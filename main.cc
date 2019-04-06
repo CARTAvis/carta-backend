@@ -1,14 +1,4 @@
-#include "FileSettings.h"
-#include "OnMessageTask.h"
-#include "Session.h"
-#include "EventMappings.h"
-#include "util.h"
-
-	//#include <unordered_map>
-
-#include "FileListHandler.h"
-
-
+#include <casacore/casa/OS/File.h>
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/casa/Inputs/Input.h>
 #include <fmt/format.h>
@@ -27,6 +17,12 @@
 #include <thread>
 #include <mutex>
 
+#include "EventMappings.h"
+#include "FileListHandler.h"
+#include "FileSettings.h"
+#include "OnMessageTask.h"
+#include "Session.h"
+#include "util.h"
 
 using namespace std;
 
@@ -41,9 +37,6 @@ FileListHandler* fileListHandler;
 
 int sessionNumber;
 uWS::Hub wsHub;
-
-// Number of active sessions
-int _num_sessions= 0;
 
 // Map from string uuids to 32 bit ints.
 unordered_map<std::string,uint8_t> _event_name_map;
@@ -180,15 +173,14 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
         });
 
 
-    session= new Session(ws, uuid, permissionsMap, usePermissions,
-			 rootFolder, baseFolder, outgoing,
-			 fileListHandler, verbose);
+    session= new Session(ws, uuid, rootFolder, outgoing, fileListHandler, verbose);
 
     ws->setUserData(session);
     session->increase_ref_count();
     outgoing->setData(session);
 
-    log(uuid, "Client {} [{}] Connected. Clients: {}", uuid, ws->getAddress().address, ++_num_sessions);
+    log(uuid, "Client {} [{}] Connected. Num sessions: {}",
+	uuid, ws->getAddress().address, Session::number_of_sessions());
 }
 
 
@@ -201,13 +193,12 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code,
   if( session ) {
     auto uuid= session->uuid;
     session->disconnect_called();
+    log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}",
+	uuid, ws->getAddress().address, Session::number_of_sessions());
     if ( ! session->decrease_ref_count() ) {
       delete session;
       ws->setUserData(nullptr);
-      --_num_sessions;   
     }
-    log(uuid, "Client {} [{}] Disconnected. Remaining clients: {}",
-	uuid, ws->getAddress().address, _num_sessions);
   }
   else {
     std::cerr <<

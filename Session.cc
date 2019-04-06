@@ -4,8 +4,7 @@
 #include "util.h"
 #include <carta-protobuf/error.pb.h>
 
-#include <casacore/casa/OS/Path.h>
-#include <casacore/casa/OS/DirectoryIterator.h>
+#include <casacore/casa/OS/File.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 
@@ -15,21 +14,21 @@
 using namespace std;
 
 
-int __num_sessions= 0;
-// Default constructor. Associates a websocket with a UUID and sets the root and base folders for all files
+#define DEBUG( _DB_TEXT_ ) { }
+
+int Session::_num_sessions= 0;
+
+
+// Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
 		 std::string uuid,
-		 std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
-		 bool enforcePermissions,
 		 std::string root,
-		 std::string base, // is currently ignored ???
 		 uS::Async *outgoing_,
 		 FileListHandler *fileListHandler,
 		 bool verbose)
     : uuid(std::move(uuid)),
       socket(ws),
       rootFolder(root),
-      baseFolder(base),
       verboseLogging(verbose),
       selectedFileInfo(nullptr),
       selectedFileInfoExtended(nullptr),
@@ -37,10 +36,12 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
       fileListHandler(fileListHandler),
       newFrame(false),
       fsettings(this) {
+  histogramProgress.fetch_and_store(HISTOGRAM_COMPLETE);
   _ref_count= 0;
   _connected= true;
 
-  ++__num_sessions;
+  ++_num_sessions;
+  DEBUG(fprintf(stderr,"%p ::Session (%d)\n", this, _num_sessions ));
 }
 
 Session::~Session() {
@@ -50,7 +51,11 @@ Session::~Session() {
     }
     frames.clear();
     outgoing->close();
-    --__num_sessions;
+    
+    --_num_sessions;
+    DEBUG(fprintf(stderr,"%p  ~Session (%d)\n", this, _num_sessions ));
+    if( !_num_sessions )
+      std::cout << "No remaining sessions." << endl;
 }
 
 // ********************************************************************************
@@ -193,7 +198,7 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         rootPath.append(filename);
         string absFilename(rootPath.resolvedName());
 
-	// create Frame for open file
+        // create Frame for open file
         auto frame = std::unique_ptr<Frame>(new Frame(uuid, absFilename, hdu));
         if (frame->isValid()) {
             std::unique_lock<std::mutex> lock(frameMutex); // open/close lock
@@ -265,10 +270,7 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
             if (frames.at(fileId)->setImageChannels(channel, stokes, errMessage)) {
                 // RESPONSE: updated image raster/histogram
                 sendRasterImageData(fileId, true); // true = send histogram
-                // RESPONSE: cursor spatial and spectral profiles
-                sendSpatialProfileData(fileId, CURSOR_REGION_ID);
-                if (stokesChanged) sendSpectralProfileData(fileId, CURSOR_REGION_ID);
-                // RESPONSE: region data
+                // RESPONSE: region data (includes image, cursor, and set regions)
                 updateRegionData(fileId, channelChanged, stokesChanged);
             } else {
                 if (!errMessage.empty())
@@ -289,17 +291,16 @@ void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
     if (frames.count(fileId)) {
         try {
             if (frames.at(fileId)->setCursorRegion(CURSOR_REGION_ID, message.point())) {
-                // RESPONSE
-                if (message.has_spatial_requirements()) {
-                    onSetSpatialRequirements(message.spatial_requirements(), requestId);
-                    sendSpectralProfileData(fileId, CURSOR_REGION_ID);
-                } else {
-                    sendSpatialProfileData(fileId, CURSOR_REGION_ID);
-                    sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                if (frames.at(fileId)->regionChanged(CURSOR_REGION_ID)) {
+                    // RESPONSE
+                    if (message.has_spatial_requirements()) {
+                        onSetSpatialRequirements(message.spatial_requirements(), requestId);
+                        sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                    } else {
+                        sendSpatialProfileData(fileId, CURSOR_REGION_ID);
+                        sendSpectralProfileData(fileId, CURSOR_REGION_ID);
+                    }
                 }
-            } else {
-                string error = "Cursor point out of range";
-                sendLogEvent(error, {"cursor"}, CARTA::ErrorSeverity::ERROR);
             }
         } catch (std::out_of_range& rangeError) {
             string error = fmt::format("File id {} closed", fileId);
@@ -531,7 +532,7 @@ bool Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         dataSent = true;
                     }
                 } else { // calculate cube histogram
-                    histogramProgress.fetch_and_store(0.0);  // start at 0
+                    histogramProgress.fetch_and_store(HISTOGRAM_START);
                     auto tStart = std::chrono::high_resolution_clock::now();
                     // determine cube min and max values
                     float cubemin(FLT_MAX), cubemax(FLT_MIN);
@@ -626,8 +627,10 @@ bool Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             // send completed histogram message
                             sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, finalHistogramMessage);
                             dataSent = true;
+                            histogramProgress.fetch_and_store(HISTOGRAM_COMPLETE);
                         }
                     }
+                    histogramProgress.fetch_and_store(HISTOGRAM_COMPLETE);
                 }
             }
         } catch (std::out_of_range& rangeError) {

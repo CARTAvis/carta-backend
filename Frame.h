@@ -15,7 +15,6 @@
 #include "InterfaceConstants.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
-#include "compression.h"
 
 class Frame {
 
@@ -77,9 +76,19 @@ private:
     // make Lattice sublattice from Region given channel and stokes
     bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes,
         int channel=ALL_CHANNELS);
+    // add pixel mask to sublattice for stats
+    void setPixelMask(casacore::SubLattice<float>& sublattice);
+    void generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore::SubLattice<float>& sublattice);
 
     // histogram helpers
     int calcAutoNumBins(int regionId); // calculate automatic bin size for region
+
+    // current cursor's x-y coordinate
+    std::pair<int, int> cursorXY;
+    // get cursor's x-y coordinate forom sub-lattice
+    bool getSublatticeXY(casacore::SubLattice<float>& sublattice, std::pair<int, int>& cursor_xy);
+    // get spectral profile data from sub-lattice
+    bool getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels=ALL_CHANNELS);
 
 
 public:

@@ -3,7 +3,9 @@
 #ifndef __CARTA_SESSION_H__
 #define __CARTA_SESSION_H__
 
+#include "FileListHandler.h"
 #include "FileSettings.h"
+#include "Frame.h"
 #include "util.h"
 
 #include <utility>
@@ -15,7 +17,6 @@
 #include <vector>
 
 #include <casacore/casa/aips.h>
-#include <casacore/casa/OS/File.h>
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
@@ -32,8 +33,6 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 
-#include "Frame.h"
-#include "FileListHandler.h"
 
 
 class Session {
@@ -52,7 +51,6 @@ class Session {
     std::string apiKey;
 
     std::string rootFolder;
-    std::string baseFolder;
     
     bool verboseLogging;
 
@@ -81,16 +79,15 @@ class Session {
     // Reference counter
     int _ref_count;
 
+    static int _num_sessions;
+    
     // file list handler
     FileListHandler *fileListHandler;
     
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
             std::string uuid,
-            std::unordered_map<std::string, std::vector<std::string>>& permissionsMap,
-            bool enforcePermissions,
             std::string root,
-	    std::string base,
             uS::Async *outgoing,
             FileListHandler *fileListHandler,
             bool verbose = false);
@@ -104,7 +101,6 @@ public:
     }
     void cancel_SetHistReqs() {
       histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
-      sendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
     }
 
     void addViewSetting(CARTA::SetImageView message, uint32_t requestId) {
@@ -118,8 +114,8 @@ public:
     bool image_channel_task_test_and_set() {
       if( _image_channel_task_active ) return true;
       else {
-	_image_channel_task_active= true;
-	return false;
+        _image_channel_task_active= true;
+        return false;
       }
     }
     void image_channal_task_set_idle() {
@@ -128,7 +124,7 @@ public:
     int increase_ref_count() { return ++_ref_count; }
     int decrease_ref_count() { return --_ref_count; }
     void disconnect_called() { _connected= false; }
-
+    static int number_of_sessions() { return _num_sessions; }
     
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
