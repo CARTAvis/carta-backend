@@ -505,11 +505,19 @@ bool Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                 if (frames.at(fileId)->getRegionHistogram(regionId, channel, stokes, numbins, *histogram)) {
                     // use stored cube histogram
                     sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
+                    dataSent = true;
+                } else if (frames.at(fileId)->getImageHistogram(ALL_CHANNELS, stokes, numbins, *histogram)) {
+                    // use image cube histogram
+                    sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
+                    dataSent = true;
                 } else if (frames.at(fileId)->nchannels() == 1) {
                     // use per-channel histogram for channel 0
                     int channum(0);
                     if (frames.at(fileId)->getRegionHistogram(IMAGE_REGION_ID, channum, stokes, numbins,
                             *histogram)) { // use stored channel 0 histogram
+                        sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
+                        dataSent = true;
+                    } else if (frames.at(fileId)->getImageHistogram(channum, stokes, numbins, *histogram)) {// use image channel 0 histogram
                         sendFileEvent(fileId, "REGION_HISTOGRAM_DATA", requestId, histogramMessage);
                         dataSent = true;
                     } else { // calculate channel 0 histogram
