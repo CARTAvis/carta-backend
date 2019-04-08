@@ -35,6 +35,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
       outgoing(outgoing_),
       fileListHandler(fileListHandler),
       newFrame(false),
+      _image_channel_task_active(false),
       fsettings(this) {
   histogramProgress.fetch_and_store(HISTOGRAM_COMPLETE);
   _ref_count= 0;
