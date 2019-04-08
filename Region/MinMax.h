@@ -43,8 +43,7 @@ void MinMax<T>::operator()(const tbb::blocked_range<size_t> &r) {
     T tmax = maxval;
     for(size_t i = r.begin(); i != r.end(); ++i) {
         T val = data[i];
-	if(val == val) {  // True if val is not NaN
-                          // (cheap version of "!std::isnan(val)")
+	if(!std::isnan(val)) {
 	  if(val < tmin) tmin= val;
 	  else if((val > tmax) && !std::isinf(val)) tmax= val;
 	}
