@@ -140,6 +140,7 @@ public:
     // histogram only (not full data message) : get if stored, else can calculate
     bool getRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval);
     bool calcRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval);
+    bool getImageHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram);
     bool getRegionHistogram(int regionId, int channel, int stokes, int nbins,
         CARTA::Histogram& histogram);
     bool calcRegionHistogram(int regionId, int channel, int stokes, int nbins, float minval,

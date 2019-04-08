@@ -616,19 +616,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
 
             // Check if read from image file (HDF5 only)
             if (regionId == IMAGE_REGION_ID || regionId == CUBE_REGION_ID) {
-                auto& currentStats = loader->getImageStats(currStokes, configChannel);
-
-                if (currentStats.valid) {
-                    int nbins(currentStats.histogramBins.size());
-                    if ((configNumBins == AUTO_BIN_SIZE) || (configNumBins == nbins)) {
-                        newHistogram->set_num_bins(nbins);
-                        newHistogram->set_bin_width((currentStats.maxVal - currentStats.minVal) / nbins);
-                        newHistogram->set_first_bin_center(currentStats.minVal + (newHistogram->bin_width()/2.0));
-                        *newHistogram->mutable_bins() = {currentStats.histogramBins.begin(),
-                            currentStats.histogramBins.end()};
-                        haveHistogram = true;
-                    }
-                }
+                haveHistogram = getImageHistogram(configChannel, currStokes, configNumBins, *newHistogram);
             }
             
             if (!haveHistogram) {
@@ -911,7 +899,29 @@ bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minva
         }
     }
     return minmaxOK;
-} 
+}  
+
+bool Frame::getImageHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram) {
+    // Return image histogram in histogram parameter
+    bool haveHistogram(false);
+    
+    auto& currentStats = loader->getImageStats(stokes, channel);
+
+    if (currentStats.valid) {
+        int imageNbins(currentStats.histogramBins.size());
+        
+        if ((nbins == AUTO_BIN_SIZE) || (nbins == imageNbins)) {
+            histogram.set_num_bins(imageNbins);
+            histogram.set_bin_width((currentStats.maxVal - currentStats.minVal) / imageNbins);
+            histogram.set_first_bin_center(currentStats.minVal + (histogram.bin_width()/2.0));
+            *histogram.mutable_bins() = {currentStats.histogramBins.begin(),
+                currentStats.histogramBins.end()};
+            haveHistogram = true;
+        }
+    }
+    
+    return haveHistogram;
+}
 
 bool Frame::getRegionHistogram(int regionId, int channel, int stokes, int nbins,
     CARTA::Histogram& histogram) {
