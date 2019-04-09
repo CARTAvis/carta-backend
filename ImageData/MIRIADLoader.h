@@ -31,18 +31,21 @@ void MIRIADLoader::openFile(const std::string &filename, const std::string& /*hd
 
 bool MIRIADLoader::hasData(FileInfo::Data dl) const {
     switch(dl) {
-    case FileInfo::Data::XY:
-        return image.shape().size() >= 2;
-    case FileInfo::Data::XYZ:
-        return image.shape().size() >= 3;
-    case FileInfo::Data::XYZW:
-        return image.shape().size() >= 4;
-    default:
-        break;
+        case FileInfo::Data::Image:
+            return true;
+        case FileInfo::Data::XY:
+            return ndims >= 2;
+        case FileInfo::Data::XYZ:
+            return ndims >= 3;
+        case FileInfo::Data::XYZW:
+            return ndims >= 4;
+        default:
+            break;
     }
     return false;
 }
 
+// TODO: should this check the parameter and fail if it's not the image dataset? 
 typename MIRIADLoader::image_ref MIRIADLoader::loadData(FileInfo::Data) {
     return image;
 }

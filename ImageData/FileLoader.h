@@ -22,12 +22,17 @@ struct ImageStats {
 
 enum class Data : uint32_t
 {
-     // Standard layouts
+    // Main dataset
+    Image,
+    // Possible aliases to main dataset
     XY, XYZ, XYZW,
-     // Swizzled layouts
+    // Possible swizzled datasets
     YX, ZYX, ZYXW,
+    // Alias to swizzled dataset
+    Swizzled,
     // Statistics tables
-    Stats, Stats2D, S2DMin, S2DMax, S2DMean, S2DNans, S2DHist, S2DPercent, Ranks,
+    Stats, Ranks,
+    Stats2D, S2DMin, S2DMax, S2DMean, S2DNans, S2DHist, S2DPercent,
     Stats3D, S3DMin, S3DMax, S3DMean, S3DNans, S3DHist, S3DPercent,
     // Mask
     Mask
@@ -76,6 +81,7 @@ public:
     // specified HDU/group/table/etc.
     virtual image_ref loadData(FileInfo::Data ds) = 0;
     virtual bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
+    virtual bool getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY);
 protected:
     virtual const casacore::CoordinateSystem& getCoordSystem() = 0;
     
