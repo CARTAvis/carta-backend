@@ -26,7 +26,7 @@ using namespace std;
 using key_type = string;
 
 // key is current folder
-unordered_map<std::string, vector<string>> permissionsMap;
+unordered_map<string, vector<string>> permissionsMap;
 
 // file list handler for the file browser
 FileListHandler* fileListHandler;
@@ -35,7 +35,7 @@ int sessionNumber;
 uWS::Hub wsHub;
 
 // Map from string uuids to 32 bit ints.
-unordered_map<std::string,uint8_t> _event_name_map;
+unordered_map<string,uint8_t> _event_name_map;
 
 // command-line arguments
 string rootFolder("/"), baseFolder("."), version_id("1.1");
@@ -43,11 +43,11 @@ bool verbose, usePermissions;
 
 
 
-inline uint8_t get_event_id_by_string(std::string& strname)
+inline uint8_t get_event_id_by_string(string& strname)
 {
   int8_t ret= _event_name_map[ strname ];
   if( ! ret ) {
-    std::cerr << "Name lookup failure in  get_event_no_by_string : "
+    cerr << "Name lookup failure in  get_event_no_by_string : "
 	      << strname << endl;
   }
   return ret;
@@ -101,15 +101,15 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code,
     }
   }
   else {
-    std::cerr <<
+    cerr <<
       "Warning: OnDisconnect called with no Session object.\n";
   }
 }
-  
 
 
 
-    
+
+
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
 	       size_t length, uWS::OpCode opCode) {
@@ -191,7 +191,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
     }
   }
   else if (opCode == uWS::OpCode::TEXT) {
-    if (std::strncmp(rawMessage, "PING", 4) == 0) {
+    if (strncmp(rawMessage, "PING", 4) == 0) {
       ws->send("PONG");
     }
   }
