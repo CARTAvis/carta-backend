@@ -47,9 +47,14 @@ HDF5Loader::~HDF5Loader() {
 
 void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
     image = casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Image), hdu);
+    
+    // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
+    ndims = image.shape().size();
+    
     if (hasData(FileInfo::Data::Swizzled)) {
         swizzledImage = new casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Swizzled), hdu);
     }
+    
 }
 
 // We assume that the main image dataset is always loaded and therefore available.
@@ -64,14 +69,12 @@ bool HDF5Loader::hasData(FileInfo::Data ds) const {
             return ndims >= 3;
         case FileInfo::Data::XYZW:
             return ndims >= 4;
-        case FileInfo::Data::Swizzled:
-            return ((ndims == 3 && hasData(FileInfo::Data::ZYX)) || (ndims == 4 && hasData(FileInfo::Data::ZYXW)));
         default:
             auto group_ptr = image.group();
             std::string data(dataSetToString(ds));
             if (data.empty()) {
                 return false;
-            }
+            }            
             return casacore::HDF5Group::exists(*group_ptr, data);
     }
 }
@@ -114,7 +117,7 @@ typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
         default:
             break;
     }
-    
+        
     throw casacore::HDF5Error("Unable to load dataset " + dataSetToString(ds) + ".");
 }
 
@@ -139,9 +142,9 @@ struct EnumClassHash {
 std::string HDF5Loader::dataSetToString(FileInfo::Data ds) const {
     static std::unordered_map<FileInfo::Data, std::string, EnumClassHash> um = {
         { FileInfo::Data::Image,      "DATA" },
-        { FileInfo::Data::YX,         "Swizzled/YX" },
-        { FileInfo::Data::ZYX,        "Swizzled/ZYX" },
-        { FileInfo::Data::XYZW,       "Swizzled/ZYXW" },
+        { FileInfo::Data::YX,         "SwizzledData/YX" },
+        { FileInfo::Data::ZYX,        "SwizzledData/ZYX" },
+        { FileInfo::Data::ZYXW,       "SwizzledData/ZYXW" },
         { FileInfo::Data::Stats,      "Statistics" },
         { FileInfo::Data::Stats2D,    "Statistics/XY" },
         { FileInfo::Data::S2DMin,     "Statistics/XY/MIN" },
@@ -324,7 +327,7 @@ void HDF5Loader::findCoords(int& spectralAxis, int& stokesAxis) {
 }
 bool HDF5Loader::getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY) {
     bool dataOK(false);
-    
+        
     if (hasData(FileInfo::Data::Swizzled)) {
         casacore::Slicer slicer;
         if (ndims == 4) {
@@ -338,6 +341,7 @@ bool HDF5Loader::getCursorSpectralData(std::vector<float>& data, int stokes, int
             loadData(FileInfo::Data::Swizzled).doGetSlice(tmp, slicer);
             dataOK = true;
         } catch (casacore::AipsError& err) {
+            std::cout << "AIPS ERROR: " << err.getMesg() << std::endl;
         }
     }
     
