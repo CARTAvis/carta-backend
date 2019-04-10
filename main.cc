@@ -1,15 +1,11 @@
-#include <casacore/casa/OS/File.h>
 #include <casacore/casa/OS/HostInfo.h>
-#include <casacore/casa/Inputs/Input.h>
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
 
-#include <fstream>
 #include <iostream>
-#include <regex>
 #include <tuple>
 #include <vector>
 #include <signal.h>
@@ -45,102 +41,6 @@ unordered_map<std::string,uint8_t> _event_name_map;
 string rootFolder("/"), baseFolder("."), version_id("1.1");
 bool verbose, usePermissions;
 
-bool checkRootBaseFolders(std::string& root, std::string& base) {
-    if (root=="base" && base == "root") {
-        fmt::print("ERROR: Must set root or base directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    if (root=="base") root = base;
-    if (base=="root") base = root;
-
-    // check root
-    casacore::File rootFolder(root);
-    if (!(rootFolder.exists() && rootFolder.isDirectory(true) &&
-          rootFolder.isReadable() && rootFolder.isExecutable())) {
-        fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        root = rootFolder.path().resolvedName(); // fails on root folder /
-    } catch (casacore::AipsError& err) {
-        try {
-            root = rootFolder.path().absoluteName();
-        } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
-        }
-        if (root.empty()) root = "/";
-    }
-    // check base
-    casacore::File baseFolder(base);
-    if (!(baseFolder.exists() && baseFolder.isDirectory(true) &&
-          baseFolder.isReadable() && baseFolder.isExecutable())) {
-        fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        base = baseFolder.path().resolvedName(); // fails on root folder /
-    } catch (casacore::AipsError& err) {
-        try {
-            base = baseFolder.path().absoluteName();
-        } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
-        }
-        if (base.empty()) base = "/";
-    }
-    // check if base is same as or subdir of root
-    if (base != root) {
-        bool isSubdirectory(false);
-        casacore::Path basePath(base);
-        casacore::String parentString(basePath.dirName()), rootString(root);
-	if (parentString == rootString)
-            isSubdirectory = true;
-        while (!isSubdirectory && (parentString != rootString)) {  // navigate up directory tree
-            basePath = casacore::Path(parentString);
-            parentString = basePath.dirName();
-            if (parentString == rootString) {
-                isSubdirectory = true;
-	    } else if (parentString == "/") {
-                break;
-            }
-        }
-        if (!isSubdirectory) {
-            fmt::print("ERROR: Base {} must be a subdirectory of root {}. Exiting carta.\n", base, root);
-            return false;
-        }
-    }
-    return true;
-}
-
-// Reads a permissions file to determine which API keys are required to access various subdirectories
-void readPermissions(string filename) {
-    ifstream permissionsFile(filename);
-    if (permissionsFile.good()) {
-        fmt::print("Reading permissions file\n");
-        string line;
-        regex commentRegex("\\s*#.*");
-        regex folderRegex("\\s*(\\S+):\\s*");
-        regex keyRegex("\\s*(\\S{4,}|\\*)\\s*");
-        string currentFolder;
-        while (getline(permissionsFile, line)) {
-            smatch matches;
-            if (regex_match(line, commentRegex)) {
-                continue;
-            } else if (regex_match(line, matches, folderRegex) && matches.size() == 2) {
-                currentFolder = matches[1].str();
-            } else if (currentFolder.length() && regex_match(line, matches, keyRegex) && matches.size() == 2) {
-                string key = matches[1].str();
-                permissionsMap[currentFolder].push_back(key);
-            }
-        }
-    } else {
-        fmt::print("Missing permissions file\n");
-    }
-}
 
 
 inline uint8_t get_event_id_by_string(std::string& strname)
@@ -366,13 +266,13 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-	// Used to map between sting names of messages and local int ids. 
+	// Used to map between sting names of messages and local int ids.
 	populate_event_name_map();
 
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
         if (usePermissions) {
-            readPermissions("permissions.txt");
+            readPermissions("permissions.txt", permissionsMap);
         }
 
 	// One filelisthandler works for all sessions.
