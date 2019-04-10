@@ -328,22 +328,25 @@ void HDF5Loader::findCoords(int& spectralAxis, int& stokesAxis) {
 bool HDF5Loader::getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY) {
     bool dataOK(false);
     
-    std::cout << "stokes " << stokes << "; x " << cursorX << "; y " << cursorY << std::endl;
+    std::cerr << "stokes " << stokes << "; x " << cursorX << "; y " << cursorY << std::endl;
     
     if (hasData(FileInfo::Data::Swizzled)) {
         casacore::Slicer slicer;
         if (ndims == 4) {
-            slicer = casacore::Slicer(ipos(4, stokes, cursorX, cursorY, 0), ipos(4, 1, 1, 1, nchannels));
+            slicer = casacore::Slicer(ipos(4, 0, cursorY, cursorX, stokes), ipos(4, nchannels, 1, 1, 1));
         } else if (ndims == 3) {
-            slicer = casacore::Slicer(ipos(3, cursorX, cursorY, 0), ipos(3, 1, 1, nchannels));
+            slicer = casacore::Slicer(ipos(3, 0, cursorY, cursorX), ipos(3, nchannels, 1, 1));
         }
+        
+        std::cerr << "slicer length " << slicer.length() << std::endl;
+        std::cerr << "dataset shape " << loadData(FileInfo::Data::Swizzled).shape() << std::endl;
         
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         try {
             loadData(FileInfo::Data::Swizzled).doGetSlice(tmp, slicer);
             dataOK = true;
         } catch (casacore::AipsError& err) {
-            std::cout << "AIPS ERROR: " << err.getMesg() << std::endl;
+            std::cerr << "AIPS ERROR: " << err.getMesg() << std::endl;
         }
     }
     

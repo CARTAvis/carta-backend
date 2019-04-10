@@ -339,8 +339,6 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
     bool sublatticeOK(false);
     if (checkStokes(stokes) && (regions.count(regionId))) {
         auto& region = regions[regionId];
-        std::cout << "Region X: " << region->getControlPoints()[0].x() << std::endl;
-        std::cout << "Region Y: " << region->getControlPoints()[0].y() << std::endl;
         if (region->isValid()) {
             casacore::LatticeRegion lattRegion;
             if (region->getRegion(lattRegion, stokes, channel)) {
@@ -804,11 +802,11 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 if (region->isPoint()) {  // values
                     std::vector<float> spectralData;
                     getSpectralData(spectralData, sublattice, 100);
-                    std::cout << "normal spectral data (first 5): " << spectralData[0] << " " << spectralData[1] << " " << spectralData[2] << " " << spectralData[3] << " " << spectralData[4] << std::endl;
+                    std::cerr << "normal spectral data (first 5): " << spectralData[0] << " " << spectralData[1] << " " << spectralData[2] << " " << spectralData[3] << " " << spectralData[4] << std::endl;
                     std::vector<float> spectralData2;
                     auto cursorPos = region->getControlPoints()[0];
                     if (loader->getCursorSpectralData(spectralData2, profileStokes, cursorPos.x(), cursorPos.y())) {
-                        std::cout << "swizzled spectral data (first 5): " << spectralData2[0] << " " << spectralData2[1] << " " << spectralData2[2] << " " << spectralData2[3] << " " << spectralData2[4] << std::endl;
+                        std::cerr << "swizzled spectral data (first 5): " << spectralData2[0] << " " << spectralData2[1] << " " << spectralData2[2] << " " << spectralData2[3] << " " << spectralData2[4] << std::endl;
                     }
                     guard.unlock();
                     region->fillSpectralProfileData(profileData, i, spectralData);
