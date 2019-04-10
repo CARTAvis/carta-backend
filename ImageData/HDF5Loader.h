@@ -327,9 +327,6 @@ void HDF5Loader::findCoords(int& spectralAxis, int& stokesAxis) {
 }
 bool HDF5Loader::getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY) {
     bool dataOK(false);
-    
-    std::cerr << "stokes " << stokes << "; x " << cursorX << "; y " << cursorY << std::endl;
-    
     if (hasData(FileInfo::Data::Swizzled)) {
         casacore::Slicer slicer;
         if (ndims == 4) {
@@ -337,10 +334,8 @@ bool HDF5Loader::getCursorSpectralData(std::vector<float>& data, int stokes, int
         } else if (ndims == 3) {
             slicer = casacore::Slicer(ipos(3, 0, cursorY, cursorX), ipos(3, nchannels, 1, 1));
         }
-        
-        std::cerr << "slicer length " << slicer.length() << std::endl;
-        std::cerr << "dataset shape " << loadData(FileInfo::Data::Swizzled).shape() << std::endl;
-        
+
+        data.resize(nchannels);
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         try {
             loadData(FileInfo::Data::Swizzled).doGetSlice(tmp, slicer);
