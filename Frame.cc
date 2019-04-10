@@ -801,12 +801,10 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 // fill SpectralProfiles for this config
                 if (region->isPoint()) {  // values
                     std::vector<float> spectralData;
-                    getSpectralData(spectralData, sublattice, 100);
-                    std::cerr << "normal spectral data (first 5): " << spectralData[0] << " " << spectralData[1] << " " << spectralData[2] << " " << spectralData[3] << " " << spectralData[4] << std::endl;
-                    std::vector<float> spectralData2;
                     auto cursorPos = region->getControlPoints()[0];
-                    if (loader->getCursorSpectralData(spectralData2, profileStokes, cursorPos.x(), cursorPos.y())) {
-                        std::cerr << "swizzled spectral data (first 5): " << spectralData2[0] << " " << spectralData2[1] << " " << spectralData2[2] << " " << spectralData2[3] << " " << spectralData2[4] << std::endl;
+                    // try use the loader's optimized cursor profile reader first
+                    if (!loader->getCursorSpectralData(spectralData, profileStokes, cursorPos.x(), cursorPos.y())) {
+                        getSpectralData(spectralData, sublattice, 100);
                     }
                     guard.unlock();
                     region->fillSpectralProfileData(profileData, i, spectralData);
