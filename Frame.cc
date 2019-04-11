@@ -839,7 +839,7 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex);
         if (!sublattice.shape().empty())
              setPixelMask(sublattice);
-        region->fillStatsData(statsData, sublattice);
+        region->fillStatsData(statsData, sublattice, channelIndex, stokesIndex);
         statsOK = true;
     }
     return statsOK;
