@@ -11,7 +11,6 @@ namespace carta {
 class HDF5Loader : public FileLoader {
 public:
     HDF5Loader(const std::string &filename);
-    ~HDF5Loader();
     void openFile(const std::string &file, const std::string &hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
@@ -23,7 +22,7 @@ public:
 private:
     std::string file, hdf5Hdu;
     casacore::HDF5Lattice<float> image;
-    casacore::HDF5Lattice<float>* swizzledImage;
+    std::unique_ptr<casacore::HDF5Lattice<float>> swizzledImage;
     
     std::string dataSetToString(FileInfo::Data ds) const;
     
@@ -36,14 +35,8 @@ private:
 
 HDF5Loader::HDF5Loader(const std::string &filename)
     : file(filename),
-      hdf5Hdu("0"),
-      swizzledImage(nullptr)
+      hdf5Hdu("0")
 {}
-
-HDF5Loader::~HDF5Loader() {
-    if (swizzledImage != nullptr)
-        delete swizzledImage;
-}
 
 void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
     image = casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Image), hdu);
@@ -52,7 +45,7 @@ void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
     ndims = image.shape().size();
     
     if (hasData(FileInfo::Data::Swizzled)) {
-        swizzledImage = new casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Swizzled), hdu);
+        swizzledImage = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Swizzled), hdu));
     }
     
 }
@@ -100,17 +93,17 @@ typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
             }
             break;
         case FileInfo::Data::Swizzled:
-            if (swizzledImage != nullptr) {
+            if (swizzledImage.get()) {
                 return *swizzledImage;
             }
             break;
         case FileInfo::Data::ZYX:
-            if (ndims == 3 && swizzledImage != nullptr) {
+            if (ndims == 3 && swizzledImage.get()) {
                 return *swizzledImage;
             }
             break;
         case FileInfo::Data::ZYXW:
-            if (ndims == 4 && swizzledImage != nullptr) {
+            if (ndims == 4 && swizzledImage.get()) {
                 return *swizzledImage;
             }
             break;
