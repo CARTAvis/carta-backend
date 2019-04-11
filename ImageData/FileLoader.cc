@@ -77,7 +77,7 @@ void FileLoader::findCoords(int& spectralAxis, int& stokesAxis) {
 }
 
 bool FileLoader::findShape(ipos& shape, size_t& nchannels, size_t& nstokes, int& spectralAxis, int& stokesAxis) {
-    auto &image = loadData(FileInfo::Data::XYZW);
+    auto &image = loadData(FileInfo::Data::Image);
     
     shape = image.shape();
     size_t ndims = shape.size();
@@ -398,4 +398,9 @@ void FileLoader::loadImageStats(bool loadPercentiles) {
 
 FileInfo::ImageStats& FileLoader::getImageStats(int stokes, int channel) {
     return (channel >= 0 ? channelStats[stokes][channel] : cubeStats[stokes]);
+}
+
+bool FileLoader::getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY) {
+    // Must be implemented in subclasses
+    return false;
 }

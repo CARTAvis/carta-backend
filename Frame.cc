@@ -267,7 +267,7 @@ void Frame::setImageCache() {
     casacore::Slicer section = getChannelMatrixSlicer(channelIndex, stokesIndex);
     casacore::Array<float> tmp(section.length(), imageCache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(latticeMutex);
-    loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
+    loader->loadData(FileInfo::Data::Image).getSlice(tmp, section, true);
 }
 
 void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes) {
@@ -277,7 +277,7 @@ void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, siz
     casacore::Array<float> tmp(section.length(), chanMatrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
     std::lock_guard<std::mutex> guard(latticeMutex);
-    loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
+    loader->loadData(FileInfo::Data::Image).getSlice(tmp, section, true);
 }
 
 casacore::Slicer Frame::getChannelMatrixSlicer(size_t channel, size_t stokes) {
@@ -342,7 +342,7 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
         if (region->isValid()) {
             casacore::LatticeRegion lattRegion;
             if (region->getRegion(lattRegion, stokes, channel)) {
-                sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::XYZW), lattRegion);
+                sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::Image), lattRegion);
                 sublatticeOK = true;
             }
         }
@@ -754,7 +754,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     profile.resize(end);
                     casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
                     std::lock_guard<std::mutex> guard(latticeMutex);
-                    loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
+                    loader->loadData(FileInfo::Data::Image).getSlice(tmp, section, true);
                 }
                 // SpatialProfile
                 auto newProfile = profileData.add_profiles();
@@ -801,7 +801,11 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 // fill SpectralProfiles for this config
                 if (region->isPoint()) {  // values
                     std::vector<float> spectralData;
-                    getSpectralData(spectralData, sublattice, 100);
+                    auto cursorPos = region->getControlPoints()[0];
+                    // try use the loader's optimized cursor profile reader first
+                    if (!loader->getCursorSpectralData(spectralData, profileStokes, cursorPos.x(), cursorPos.y())) {
+                        getSpectralData(spectralData, sublattice, 100);
+                    }
                     guard.unlock();
                     region->fillSpectralProfileData(profileData, i, spectralData);
                 } else {  // statistics

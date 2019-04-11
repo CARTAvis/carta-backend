@@ -40,20 +40,25 @@ void FITSLoader::openFile(const std::string &filename, const std::string &hdu) {
 
 bool FITSLoader::hasData(FileInfo::Data dl) const {
     switch(dl) {
-    case FileInfo::Data::XY:
-        return image->shape().size() >= 2;
-    case FileInfo::Data::XYZ:
-        return image->shape().size() >= 3;
-    case FileInfo::Data::XYZW:
-        return image->shape().size() >= 4;
-    case FileInfo::Data::Mask:
-        return image->hasPixelMask();
-    default:
-        break;
+        case FileInfo::Data::Image:
+            return true;
+        case FileInfo::Data::XY:
+            return ndims >= 2;
+        case FileInfo::Data::XYZ:
+            return ndims >= 3;
+        case FileInfo::Data::XYZW:
+            return ndims >= 4;
+        case FileInfo::Data::Mask:
+            return image->hasPixelMask();
+        default:
+            break;
     }
     return false;
 }
 
+// TODO: should this check the parameter and fail if it's not the image dataset?
+// TODO: other loaders don't have this fallback; we should either consistently assume that openFile has been run, or not.
+// TODO: in other loaders this is also not an optional property which could be a null pointer.
 typename FITSLoader::image_ref FITSLoader::loadData(FileInfo::Data) {
     if (image==nullptr)
         openFile(file, fitsHdu);
