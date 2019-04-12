@@ -1,4 +1,5 @@
 #include <casacore/casa/OS/HostInfo.h>
+#include <casacore/casa/Inputs/Input.h>
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
