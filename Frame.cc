@@ -1012,20 +1012,20 @@ bool Frame::getSublatticeXY(casacore::SubLattice<float>& sublattice, std::pair<i
 bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels) {
     bool dataOK(false);
     casacore::IPosition sublattShape = sublattice.shape();
+    casacore::IPosition count(sublattShape);
+    int profileAxis = -1; // profile axis index
+    size_t profileSize; // profile vector size
+    // get profile axis index and its vector size
+    for (int i=0; i<sublattShape.size(); ++i) {
+        if (count(i)>1) {
+            profileAxis = i;
+            profileSize = count(i);
+        }
+    }
     data.resize(sublattShape.product());
-    if (checkPerChannels > 0 && sublattShape.size() > 2 && sublattShape > 1) { // stoppable spectral profile process
+    if (checkPerChannels > 0 && sublattShape.size() > 2 && profileAxis > 0) { // stoppable spectral profile process
         try {
             casacore::IPosition start(sublattShape.size(), 0);
-            casacore::IPosition count(sublattShape);
-            int profileAxis; // profile axis index
-            size_t profileSize; // profile vector size
-            // get profile axis index and its vector size
-            for (int i=0; i<sublattShape.size(); ++i) {
-                if (count(i)>1) {
-                    profileAxis = i;
-                    profileSize = count(i);
-                }
-            }
             size_t begin = 0; // the begin index of profile vector in each copy
             size_t upperBound = (profileSize%checkPerChannels == 0 ? profileSize/checkPerChannels : profileSize/checkPerChannels + 1);
             // get cursor's x-y coordinate from sub-lattice
