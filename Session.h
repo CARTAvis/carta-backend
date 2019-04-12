@@ -123,9 +123,9 @@ public:
     }
     int increase_ref_count() { return ++_ref_count; }
     int decrease_ref_count() { return --_ref_count; }
-    void disconnect_called() { _connected= false; }
+    void disconnect_called();
     static int number_of_sessions() { return _num_sessions; }
-    
+
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
     void onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId);

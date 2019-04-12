@@ -52,11 +52,18 @@ Session::~Session() {
     }
     frames.clear();
     outgoing->close();
-    
+
     --_num_sessions;
     DEBUG(fprintf(stderr,"%p  ~Session (%d)\n", this, _num_sessions ));
     if( !_num_sessions )
       std::cout << "No remaining sessions." << endl;
+}
+
+void Session::disconnect_called() {
+    _connected= false;
+    for (auto& frame : frames) {
+        frame.second->disconnect_called();  // call to stop the frame process
+    }
 }
 
 // ********************************************************************************

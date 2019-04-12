@@ -23,6 +23,9 @@ private:
     std::string uuid;
     bool valid;
 
+    // communication
+    bool connected;
+
     // image loader, stats from image file
     std::string filename;
     std::unique_ptr<carta::FileLoader> loader;
@@ -147,4 +150,7 @@ public:
         float maxval, CARTA::Histogram& histogram);
     void setRegionMinMax(int regionId, int channel, int stokes, float minval, float maxval);
     void setRegionHistogram(int regionId, int channel, int stokes, CARTA::Histogram& histogram);
+
+    // set the flag connected = false, in order to stop the job
+    void disconnect_called();
 };

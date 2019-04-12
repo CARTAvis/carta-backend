@@ -12,19 +12,20 @@ using namespace std;
 Frame::Frame(const string& uuidString, const string& filename, const string& hdu, int defaultChannel)
     : uuid(uuidString),
       valid(true),
+      connected(true),
       cursorSet(false),
       filename(filename),
       loader(FileLoader::getLoader(filename)),
       spectralAxis(-1), stokesAxis(-1),
       channelIndex(-1), stokesIndex(-1),
       nchan(1), nstok(1) {
-    
+
     if (loader==nullptr) {
         log(uuid, "Problem loading file {}: loader not implemented", filename);
         valid = false;
         return;
     }
-    
+
     try {
         loader->openFile(filename, hdu);
     } catch (casacore::AipsError& err) {
@@ -69,6 +70,10 @@ Frame::~Frame() {
 
 bool Frame::isValid() {
     return valid;
+}
+
+void Frame::disconnect_called() {
+    connected = false;
 }
 
 std::vector<int> Frame::getRegionIds() {
@@ -1034,7 +1039,7 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             for (size_t i=0; i<upperBound; ++i) {
                 // check if cursor's position changed during this loop, if so, stop the profile process
-                if (tmpXY != cursorXY)
+                if (tmpXY != cursorXY || !connected)
                     return false;
                 // modify the start position for slicer
                 start(profileAxis) = i*checkPerChannels;
