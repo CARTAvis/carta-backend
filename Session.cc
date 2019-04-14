@@ -242,12 +242,13 @@ void Session::onSetImageView(const CARTA::SetImageView& message, uint32_t reques
     auto fileId = message.file_id();
     if (frames.count(fileId)) {
         try {
-           if (frames.at(fileId)->setImageView(message.image_bounds(), message.mip(), message.compression_type(),
-                message.compression_quality(), message.num_subsets())) {
+           if (frames.at(fileId)->setImageView(message.image_bounds(), message.mip(),
+                message.compression_type(), message.compression_quality(),
+                message.num_subsets())) {
                 sendRasterImageData(fileId, newFrame); // send histogram only if new frame
                 newFrame = false;
             } else {
-                sendLogEvent("Image view out of bounds", {"view"}, CARTA::ErrorSeverity::ERROR);
+                sendLogEvent("Image view not processed", {"view"}, CARTA::ErrorSeverity::DEBUG);
             }
         } catch (std::out_of_range& rangeError) {
             std::string error = fmt::format("File id {} closed", fileId);
