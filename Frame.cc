@@ -808,11 +808,14 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     std::vector<float> spectralData;
                     auto cursorPos = region->getControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
+                    bool complete(false); // whether the spectral profile is complete (for all image channels)
                     if (!loader->getCursorSpectralData(spectralData, profileStokes, cursorPos.x(), cursorPos.y())) {
-                        getSpectralData(spectralData, sublattice, 100);
+                        complete = getSpectralData(spectralData, sublattice, 100);
                     }
                     guard.unlock();
-                    region->fillSpectralProfileData(profileData, i, spectralData);
+                    // only send spectral profile data to frontend while it is complete
+                    if (complete)
+                        region->fillSpectralProfileData(profileData, i, spectralData);
                 } else {  // statistics
                     if (!sublattice.shape().empty())
                         setPixelMask(sublattice);
@@ -1028,7 +1031,7 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
         }
     }
     data.resize(sublattShape.product());
-    if (checkPerChannels > 0 && sublattShape.size() > 2 && profileAxis > 0) { // stoppable spectral profile process
+    if (checkPerChannels > 0 && sublattShape.size() > 2 && profileAxis > -1) { // stoppable spectral profile process
         try {
             casacore::IPosition start(sublattShape.size(), 0);
             size_t begin = 0; // the begin index of profile vector in each copy
