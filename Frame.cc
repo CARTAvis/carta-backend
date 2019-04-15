@@ -808,14 +808,12 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     std::vector<float> spectralData;
                     auto cursorPos = region->getControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
-                    bool complete(false); // whether the spectral profile is complete (for all image channels)
                     if (!loader->getCursorSpectralData(spectralData, profileStokes, cursorPos.x(), cursorPos.y())) {
-                        complete = getSpectralData(spectralData, sublattice, 100);
+                        // only send spectral profile data to frontend while it is complete
+                        if (getSpectralData(spectralData, sublattice, 100))
+                            region->fillSpectralProfileData(profileData, i, spectralData);
                     }
                     guard.unlock();
-                    // only send spectral profile data to frontend while it is complete
-                    if (complete)
-                        region->fillSpectralProfileData(profileData, i, spectralData);
                 } else {  // statistics
                     if (!sublattice.shape().empty())
                         setPixelMask(sublattice);
