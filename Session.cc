@@ -236,10 +236,12 @@ void Session::onCloseFile(const CARTA::CloseFile& message, uint32_t requestId) {
     std::unique_lock<std::mutex> lock(frameMutex);
     if (fileId == ALL_FILES) {
         for (auto& frame : frames) {
+            frame.second->disconnect_called();
             frame.second.reset();  // delete Frame
         }
         frames.clear();
     } else if (frames.count(fileId)) {
+        frames[fileId]->disconnect_called();
         frames[fileId].reset();
         frames.erase(fileId);
     }
