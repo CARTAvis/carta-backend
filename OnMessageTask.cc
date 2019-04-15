@@ -155,3 +155,16 @@ SetHistogramReqsTask::execute()
 
    return nullptr;
 }
+
+tbb::task*
+AnimationTask::execute()
+{
+  if( session->execute_animation_frame() ) {
+    increment_ref_count();
+    recycle_as_safe_continuation();
+  }
+  
+  return nullptr;
+}
+
+  

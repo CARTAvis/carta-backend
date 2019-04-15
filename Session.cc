@@ -3,11 +3,13 @@
 #include "FileInfoLoader.h"
 #include "util.h"
 #include <carta-protobuf/error.pb.h>
+#include <carta-protobuf/defs.pb.h>
 
 #include <casacore/casa/OS/File.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 
+#include <thread>
 #include <chrono>
 #include <limits>
 
@@ -39,6 +41,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
       fsettings(this) {
   histogramProgress.fetch_and_store(HISTOGRAM_COMPLETE);
   _ref_count= 0;
+  _ani_obj= nullptr;
   _connected= true;
 
   ++_num_sessions;
@@ -52,7 +55,10 @@ Session::~Session() {
     }
     frames.clear();
     outgoing->close();
-    
+    if( _ani_obj ) {
+      delete _ani_obj;
+      _ani_obj= nullptr;
+    }
     --_num_sessions;
     DEBUG(fprintf(stderr,"%p  ~Session (%d)\n", this, _num_sessions ));
     if( !_num_sessions )
@@ -286,6 +292,9 @@ void Session::onSetImageChannels(const CARTA::SetImageChannels& message, uint32_
         sendLogEvent(error, {"channels"}, CARTA::ErrorSeverity::DEBUG);
     }
 }
+
+
+
 
 void Session::onSetCursor(const CARTA::SetCursor& message, uint32_t requestId) {
     auto fileId(message.file_id());
@@ -830,4 +839,154 @@ void Session::sendLogEvent(std::string message, std::vector<std::string> tags, C
     sendEvent("ERROR_DATA", 0, errorData);
     if ((severity > CARTA::ErrorSeverity::DEBUG) || verboseLogging)
         log(uuid, message);
+}
+
+
+void
+Session::build_animation_object(::CARTA::StartAnimation &msg, uint32_t requestID)
+{
+  ::CARTA::AnimationFrame startF, endF, deltaF;
+  int file_id;
+  uint32_t millisec;
+  bool looping, reverse_at_end;
+  uint8_t compType, compQual;
+
+  startF= msg.start_frame();
+  endF= msg.end_frame();
+  deltaF= msg.delta_frame();
+
+  millisec= msg.frame_interval();
+  looping= msg.looping();
+  reverse_at_end= msg.reverse();
+  compType= msg.compression_type();
+  compQual= msg.compression_quality();
+    
+  _ani_obj= new AnimationObject( file_id, startF, endF, deltaF,
+				 millisec, looping, reverse_at_end,
+				 compType, compQual );
+
+  CARTA::StartAnimationAck ackMessage;
+  ackMessage.set_success(true);
+  ackMessage.set_message("Starting animation");
+  sendEvent("START_ANIMATION_ACK", requestID, ackMessage);
+}
+
+bool
+Session::execute_animation_frame( void )
+{
+  if( !_ani_obj ) {
+    std::fprintf(stderr,
+		 "%p execute_animation_frame called with null AnimationObject\n",
+		 this );
+    exit(1);
+  }
+
+  if( _ani_obj->_stop_called ) {
+
+    // Note not checking for the stop frame yet.
+    
+    return false;
+  }
+  
+  ::CARTA::AnimationFrame curr_frame= _ani_obj->_curr_frame;
+  ::CARTA::AnimationFrame delta_frame= _ani_obj->_delta_frame; 
+  bool recycle_task= true;
+  
+  auto fileId(_ani_obj->_file_id);
+  if (frames.count(fileId)) {
+    try {
+      std::string errMessage;
+      auto channel = curr_frame.channel();
+      auto stokes = curr_frame.stokes();
+      bool channelChanged(channel != frames.at(fileId)->currentChannel());
+      bool stokesChanged(stokes != frames.at(fileId)->currentStokes());
+      if (frames.at(fileId)->setImageChannels(channel, stokes, errMessage)) {
+	// RESPONSE: updated image raster/histogram
+	sendRasterImageData(fileId, true); // true = send histogram
+	// RESPONSE: region data (includes image, cursor, and set regions)
+	updateRegionData(fileId, channelChanged, stokesChanged);
+      } else {
+	if (!errMessage.empty())
+	  sendLogEvent(errMessage, {"animation"}, CARTA::ErrorSeverity::ERROR);
+      }
+    } catch (std::out_of_range& rangeError) {
+      string error = fmt::format("File id {} closed", fileId);
+      sendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
+    }
+  } else {
+    string error = fmt::format("File id {} not found", fileId);
+    sendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
+  }
+
+  ::CARTA::AnimationFrame tmpF;
+
+  if( _ani_obj->_going_forward ) {
+    tmpF.set_channel(curr_frame.channel() + delta_frame.channel());
+    tmpF.set_stokes(curr_frame.stokes() + delta_frame.stokes());
+    
+    if( (tmpF.channel() > _ani_obj->_end_frame.channel()) ||
+	(tmpF.stokes() > _ani_obj->_end_frame.stokes()) ) {
+      if( _ani_obj->_reverse_at_end ) {
+	_ani_obj->_going_forward= false;
+      }
+      else if( _ani_obj->_looping ) {
+	tmpF.set_channel(_ani_obj->_start_frame.channel());
+	tmpF.set_stokes(_ani_obj->_start_frame.stokes());
+	_ani_obj->_curr_frame= tmpF;
+      }
+      else {
+	recycle_task= false;
+      }
+    }
+    else {
+      _ani_obj->_curr_frame= tmpF;
+    }
+  }
+  else { // going backwards;
+    tmpF.set_channel(curr_frame.channel() - _ani_obj->_delta_frame.channel());
+    tmpF.set_stokes(curr_frame.stokes() - _ani_obj->_delta_frame.stokes());
+    
+    if( (tmpF.channel() < _ani_obj->_start_frame.channel()) ||
+	(tmpF.stokes() < _ani_obj->_start_frame.stokes()) ) {
+      if( _ani_obj->_reverse_at_end ) {
+	_ani_obj->_going_forward= true;
+	recycle_task= true;
+      }
+      else if( _ani_obj->_looping ) {
+	tmpF.set_channel(_ani_obj->_end_frame.channel());
+	tmpF.set_stokes(_ani_obj->_end_frame.stokes());
+	_ani_obj->_curr_frame= tmpF;
+      }
+      else {
+	recycle_task= false;
+      }
+    }
+    else {
+      _ani_obj->_curr_frame= tmpF;
+    }
+  }
+
+  if( recycle_task ) {
+    std::this_thread::sleep_for( _ani_obj->_frame_interval );
+    return true;
+  }
+  else return false;
+}
+
+
+void
+Session::stop_animation( int fid, CARTA::AnimationFrame stop_frame )
+{
+  if( !_ani_obj ) {
+    std::fprintf(stderr,"%p Session::stop_animation called with null AnimationObject\n", this );
+    return;
+  }
+
+  if( _ani_obj->_file_id != fid ) {
+    std::fprintf(stderr,"%p Session::stop_animation called with file id %d. Expected file id %d", this, fid, _ani_obj->_file_id );
+    return;
+  }
+
+  _ani_obj->_stop_frame= stop_frame;
+  _ani_obj->_stop_called= true;
 }

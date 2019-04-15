@@ -5,6 +5,7 @@
 
 #include "FileListHandler.h"
 #include "FileSettings.h"
+#include "AnimationObject.h"
 #include "Frame.h"
 #include "util.h"
 
@@ -63,7 +64,9 @@ class Session {
     std::mutex frameMutex; // lock frames to create/destroy
     bool newFrame;         // flag to send histogram with data
 
-
+    // State for animation functions.
+    AnimationObject * _ani_obj;
+    
     std::mutex _image_channel_mutex;
     bool _image_channel_task_active;
 
@@ -102,7 +105,9 @@ public:
     void cancel_SetHistReqs() {
       histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
     }
-
+    void build_animation_object(::CARTA::StartAnimation &msg, uint32_t req_id);
+    bool execute_animation_frame();
+    void stop_animation(int file_id, ::CARTA::AnimationFrame frame);
     void addViewSetting(CARTA::SetImageView message, uint32_t requestId) {
       fsettings.addViewSetting(message, requestId);
     }
