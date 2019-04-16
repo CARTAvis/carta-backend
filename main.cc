@@ -279,6 +279,19 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
         }
 	break;
       }
+      case START_ANIMATION_ID: {
+	CARTA::StartAnimation message;
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	tsk= new (tbb::task::allocate_root())
+	  AnimationTask(session, requestId, message );
+	break;
+      }
+      case STOP_ANIMATION_ID: {
+	CARTA::StopAnimation message;
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	session->stop_animation( message.file_id(), message.end_frame() );
+	break;
+      }
       default: {
 	tsk= new (tbb::task::allocate_root())
 	  MultiMessageTask(session,
@@ -296,6 +309,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
     }
   }
 }
+
 
 
 
@@ -325,6 +339,8 @@ void populate_event_name_map(void)
   _event_name_map["SET_STATS_REQUIREMENTS"]= SET_STATS_REQUIREMENTS_ID;
   _event_name_map["SET_REGION"]= SET_REGION_ID;
   _event_name_map["REMOVE_REGION"]= REMOVE_REGION_ID;
+  _event_name_map["START_ANIMATION"]= START_ANIMATION_ID;
+  _event_name_map["STOP_ANIMATION"]= STOP_ANIMATION_ID;
 }
 
 
