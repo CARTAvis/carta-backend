@@ -191,7 +191,6 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
     }
 
     // use LatticeRegion for positional stats
-    const casacore::LatticeRegion* lregion = subLattice.getRegionPtr();
 
     casacore::Array<casacore::Double> npts; 
     size_t nstats(requestedStats.size());
@@ -234,22 +233,19 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
                 lattStatsType = casacore::LatticeStatsBase::MAX;
                 break;
             case CARTA::StatsType::Blc: {
-                casacore::Slicer lrSlicer = lregion->slicer();
-                casacore::IPosition blc(lrSlicer.start());
+                const casacore::IPosition blc(subLattice.getRegionPtr()->slicer().start());
                 intResult = blc.asStdVector();
                 break;
             }
             case CARTA::StatsType::Trc: {
-                casacore::Slicer lrSlicer = lregion->slicer();
-                casacore::IPosition trc(lrSlicer.end());
+                const casacore::IPosition trc(subLattice.getRegionPtr()->slicer().end());
                 intResult = trc.asStdVector();
                 break;
             }
             case CARTA::StatsType::MinPos:
             case CARTA::StatsType::MaxPos: {
                 if (!perChannel) { // only works when no display axes
-                    casacore::Slicer lrSlicer = lregion->slicer();
-                    casacore::IPosition blc(lrSlicer.start());
+                    const casacore::IPosition blc(subLattice.getRegionPtr()->slicer().start());
                     casacore::IPosition minPos, maxPos;
                     latticeStats.getMinMaxPos(minPos, maxPos);
                     if (statType==CARTA::StatsType::MinPos)
