@@ -190,8 +190,6 @@ bool RegionStats::getStatsValues(std::vector<std::vector<double>>& statsValues,
             return false;
     }
 
-    // use LatticeRegion for positional stats
-
     casacore::Array<casacore::Double> npts; 
     size_t nstats(requestedStats.size());
     statsValues.resize(nstats);
