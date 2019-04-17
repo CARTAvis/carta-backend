@@ -1026,7 +1026,6 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
             casacore::IPosition start(sublattShape.size(), 0);
             casacore::IPosition count(sublattShape);
             size_t profileSize = nchannels(); // profile vector size
-            size_t begin = 0; // the begin index of profile vector in each copy
             size_t upperBound = (profileSize%checkPerChannels == 0 ? profileSize/checkPerChannels : profileSize/checkPerChannels + 1);
             // get cursor's x-y coordinate from sub-lattice
             std::pair<int, int> tmpXY;
@@ -1043,8 +1042,7 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
                 casacore::Slicer slicer(start, count);
                 casacore::Array<float> buffer;
                 sublattice.doGetSlice(buffer, slicer);
-                memcpy(&data[begin], buffer.data(), count(spectralAxis)*sizeof(float));
-                begin += count(spectralAxis);
+                memcpy(&data[i*checkPerChannels], buffer.data(), count(spectralAxis)*sizeof(float));
             }
             dataOK = true;
         } catch (casacore::AipsError& err) {
