@@ -318,11 +318,7 @@ casacore::WCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>&
     casacore::Quantum<casacore::Vector<casacore::Double> > ycoord(worldCoords.row(1));
     casacore::Vector<casacore::String> coordUnits = m_cSys.worldAxisUnits();
     xcoord.setUnit(coordUnits(0));
-    ycoord.setUnit(coordUnits(1));
-   
-    
-       
-	
+    ycoord.setUnit(coordUnits(1));	
 	
     boxPolygon = new casacore::WCPolygon(xcoord, ycoord, m_xyAxes, m_cSys);
   }
@@ -338,13 +334,27 @@ casacore::WCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& p
         // rotation is in degrees from y-axis
         // ellipse rotation angle is in radians from x-axis
         float theta = (rotation + 90.0) * (M_PI / 180.0f);
-	casacore::Vector<casacore::Quantum<casacore::Double>> center, radii;
-	center(0) = casacore::Quantity(cx, "pixel");
-	center(1) = casacore::Quantity(cy, "pixel");
-	radii(0) = casacore::Quantity(bmaj, "pixel");
-	radii(1) = casacore::Quantity(bmin, "pixel");
+
+	casacore::Vector<casacore::Double> centerPixels(2);
+	centerPixels(0) = cx;
+	centerPixels(1) = cy;
+	casacore::Vector<casacore::Double> centerWorldCoords(2);
+	bool success = m_cSys.toWorld(centerWorldCoords, centerPixels);
+	casacore::Vector<casacore::String> coordUnits = m_cSys.worldAxisUnits();
+	casacore::Vector<casacore::Quantum<casacore::Double>> centerCoords(2);
+	centerCoords(0) = casacore::Quantity(centerWorldCoords(0), coordUnits(0));
+	centerCoords(1) = casacore::Quantity(centerWorldCoords(1), coordUnits(1));
+
+	casacore::Vector<casacore::Double> radiiPixels(2);
+	radiiPixels(0) = bmaj;
+	radiiPixels(1) = bmin;
+	casacore::Vector<casacore::Double> radiiWorldCoords(2);
+	bool success2 = m_cSys.toWorld(radiiWorldCoords, radiiPixels);
+	casacore::Vector<casacore::Quantum<casacore::Double>> radiiCoords(2);
+	radiiCoords(0) = casacore::Quantity(radiiWorldCoords(0), coordUnits(0));
+	radiiCoords(1) = casacore::Quantity(radiiWorldCoords(1), coordUnits(1));
 	
-        ellipse = new casacore::WCEllipsoid(center, radii, m_xyAxes, m_cSys);
+        ellipse = new casacore::WCEllipsoid(centerCoords, radiiCoords, m_xyAxes, m_cSys);
     }
     return ellipse;
 }
