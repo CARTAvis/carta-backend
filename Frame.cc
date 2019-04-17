@@ -13,6 +13,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
     : uuid(uuidString),
       valid(true),
       connected_(true),
+      job_count_(0),
       cursorSet(false),
       filename(filename),
       loader(FileLoader::getLoader(filename)),
@@ -1018,6 +1019,7 @@ bool Frame::getSublatticeXY(casacore::SubLattice<float>& sublattice, std::pair<i
 }
 
 bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels) {
+increase_job_count_();
     bool dataOK(false);
     casacore::IPosition sublattShape = sublattice.shape();
     data.resize(sublattShape.product());
@@ -1033,8 +1035,10 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             for (size_t i=0; i<upperBound; ++i) {
                 // check if cursor's position changed during this loop, if so, stop the profile process
-                if (tmpXY != cursorXY || !connected_)
+                if (tmpXY != cursorXY || !connected_) {
+decrease_job_count_();
                     return false;
+                }
                 // modify the start position for slicer
                 start(spectralAxis) = i*checkPerChannels;
                 // modify the count for slicer
@@ -1055,5 +1059,6 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
         } catch (casacore::AipsError& err) {
         }
     }
+decrease_job_count_();
     return dataOK;
 }

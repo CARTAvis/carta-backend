@@ -7,6 +7,7 @@
 #include <mutex>
 #include <algorithm>
 #include <tbb/queuing_rw_mutex.h>
+#include <tbb/atomic.h>
 
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
@@ -25,6 +26,9 @@ private:
 
     // communication
     bool connected_;
+
+    // Reference counter
+    tbb::atomic<int> job_count_;
 
     // image loader, stats from image file
     std::string filename;
@@ -93,6 +97,8 @@ private:
     // get spectral profile data from sub-lattice
     bool getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels=ALL_CHANNELS);
 
+    void increase_job_count_() { ++job_count_; }
+    void decrease_job_count_() { --job_count_; }
 
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu,
@@ -153,4 +159,5 @@ public:
 
     // set the flag connected_ = false, in order to stop the job
     void DisconnectCalled();
+    int get_job_count_() { return job_count_; }
 };
