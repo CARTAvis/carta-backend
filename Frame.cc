@@ -809,11 +809,13 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     auto cursorPos = region->getControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
                     if (!loader->getCursorSpectralData(spectralData, profileStokes, cursorPos.x(), cursorPos.y())) {
+                        // get spectral profile data
+                        bool complete = getSpectralData(spectralData, sublattice, 100);
+                        guard.unlock();
                         // only send spectral profile data to frontend while it is complete
-                        if (getSpectralData(spectralData, sublattice, 100))
+                        if (complete)
                             region->fillSpectralProfileData(profileData, i, spectralData);
                     }
-                    guard.unlock();
                 } else {  // statistics
                     if (!sublattice.shape().empty())
                         setPixelMask(sublattice);
