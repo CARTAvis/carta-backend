@@ -12,7 +12,7 @@ using namespace std;
 Frame::Frame(const string& uuidString, const string& filename, const string& hdu, int defaultChannel)
     : uuid(uuidString),
       valid(true),
-      connected(true),
+      connected_(true),
       cursorSet(false),
       filename(filename),
       loader(FileLoader::getLoader(filename)),
@@ -72,8 +72,8 @@ bool Frame::isValid() {
     return valid;
 }
 
-void Frame::disconnect_called() {
-    connected = false;
+void Frame::DisconnectCalled() {
+    connected_ = false;
 }
 
 std::vector<int> Frame::getRegionIds() {
@@ -1033,7 +1033,7 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             for (size_t i=0; i<upperBound; ++i) {
                 // check if cursor's position changed during this loop, if so, stop the profile process
-                if (tmpXY != cursorXY || !connected)
+                if (tmpXY != cursorXY || !connected_)
                     return false;
                 // modify the start position for slicer
                 start(spectralAxis) = i*checkPerChannels;
