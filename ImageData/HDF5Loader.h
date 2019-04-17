@@ -2,7 +2,7 @@
 
 #include "FileLoader.h"
 #include "HDF5Attributes.h"
-
+#include <casacore/images/Images/HDF5Image.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 #include <unordered_map>
 
@@ -21,8 +21,9 @@ public:
     
 private:
     std::string file, hdf5Hdu;
-    casacore::HDF5Lattice<float> image;
-    std::unique_ptr<casacore::HDF5Lattice<float>> swizzledImage;
+    //switched Lattice to Image
+    casacore::HDF5Image<float> image;
+    std::unique_ptr<casacore::HDF5Image<float>> swizzledImage;
     
     std::string dataSetToString(FileInfo::Data ds) const;
     
@@ -39,13 +40,13 @@ HDF5Loader::HDF5Loader(const std::string &filename)
 {}
 
 void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
-    image = casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Image), hdu);
+    image = casacore::HDF5Image<float>(filename, dataSetToString(FileInfo::Data::Image), hdu);
     
     // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
     ndims = image.shape().size();
     
     if (hasData(FileInfo::Data::Swizzled)) {
-        swizzledImage = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Swizzled), hdu));
+        swizzledImage = std::unique_ptr<casacore::HDF5Image<float>>(new casacore::HDF5Image<float>(filename, dataSetToString(FileInfo::Data::Swizzled), hdu));
     }
     
 }

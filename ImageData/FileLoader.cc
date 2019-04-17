@@ -1,6 +1,6 @@
 #include "CasaLoader.h"
 #include "FileLoader.h"
-#include "HDF5Loader.h"
+//#include "HDF5Loader.h"
 #include "FITSLoader.h"
 #include "MIRIADLoader.h"
 
@@ -23,8 +23,8 @@ FileLoader* FileLoader::getLoader(const std::string &file) {
         break;
     case casacore::ImageOpener::NEWSTAR:
         break;
-    case casacore::ImageOpener::HDF5:
-        return new HDF5Loader(file);
+	// case casacore::ImageOpener::HDF5:
+        //return new HDF5Loader(file);
     case casacore::ImageOpener::IMAGECONCAT:
         break;
     case casacore::ImageOpener::IMAGEEXPR:

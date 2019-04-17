@@ -5,6 +5,11 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
+#include <casacore/images/Regions/WCBox.h>
+#include <casacore/images/Regions/WCEllipsoid.h>
+#include <casacore/images/Regions/WCExtension.h>
+#include <casacore/images/Regions/WCPolygon.h>
+#include <casacore/images/Regions/WCRegion.h>
 #include <algorithm> // max
 #include <cmath>  // round
 
@@ -12,7 +17,7 @@ using namespace carta;
 
 Region::Region(const std::string& name, const CARTA::RegionType type,
         const std::vector<CARTA::Point>& points, const float rotation,
-        const casacore::IPosition imageShape, int spectralAxis, int stokesAxis) :
+	       const casacore::IPosition imageShape, int spectralAxis, int stokesAxis, const casacore::CoordinateSystem& cSys) :
         m_name(name),
         m_type(type),
         m_rotation(0.0),
@@ -22,7 +27,9 @@ Region::Region(const std::string& name, const CARTA::RegionType type,
         m_spectralAxis(spectralAxis),
         m_stokesAxis(stokesAxis),
         m_xyAxes(casacore::IPosition(2, 0, 1)),
-        m_xyRegion(nullptr) {
+        m_xyRegion(nullptr),
+        m_cSys(cSys)
+    {
     // validate and set region parameters
     m_valid = updateRegionParameters(name, type, points, rotation);
     if (m_valid) {
@@ -158,19 +165,19 @@ bool Region::pointsChanged(const std::vector<CARTA::Point>& newpoints) {
 // ***********************************
 // Lattice Region with parameters applied
 
-bool Region::getRegion(casacore::LatticeRegion& region, int stokes, int channel) {
+bool Region::getRegion(casacore::ImageRegion& region, int stokes, int channel) {
     // Return LatticeRegion for given stokes and region parameters.
     bool regionOK(false);
     if (stokes < 0) // invalid
         return regionOK;
 
     if (m_latticeShape.size()==2) {
-        region = casacore::LatticeRegion(*m_xyRegion);
+        region = casacore::ImageRegion(m_xyRegion);
         regionOK = true;
     } else {  // extend 2D region by chan range, stokes
-        casacore::LCRegion* lcregion = makeExtendedRegion(stokes, channel);
-        if (lcregion) {
-            region = casacore::LatticeRegion(lcregion);
+        casacore::WCRegion* wcregion = makeExtendedRegion(stokes, channel);
+        if (wcregion) {
+	  region = casacore::ImageRegion(wcregion);
             regionOK = true;
         }
     } 
@@ -180,7 +187,7 @@ bool Region::getRegion(casacore::LatticeRegion& region, int stokes, int channel)
 bool Region::setXYRegion(const std::vector<CARTA::Point>& points, float rotation) {
     // create 2D casacore::LCRegion for type using stored control points and rotation
     bool xyRegionOK(false);
-    casacore::LCRegion* region(nullptr);
+    casacore::WCRegion* region(nullptr);
     try {
         switch(m_type) {
             case CARTA::RegionType::POINT: {
@@ -214,143 +221,216 @@ bool Region::setXYRegion(const std::vector<CARTA::Point>& points, float rotation
     return xyRegionOK;
 }
 
-casacore::LCRegion* Region::makePointRegion(const std::vector<CARTA::Point>& points) {
-    // 1 x 1 LCBox
-    casacore::LCBox* box(nullptr);
+casacore::WCRegion* Region::makePointRegion(const std::vector<CARTA::Point>& points) {
+    // 1 x 1 WCBox
+  
+    casacore::WCBox* box(nullptr);
+    casacore::Vector<casacore::Int> absRel;
     if (points.size()==1) {
         auto x = points[0].x();
         auto y = points[0].y();
-        casacore::IPosition blc(2, x, y), trc(2, x, y);
-        box = new casacore::LCBox(blc, trc, m_latticeShape.keepAxes(m_xyAxes));
+        
+	casacore::Vector<casacore::Double> pixels(2);
+	pixels(0) = x;
+	pixels(1) = y;
+	casacore::Vector<casacore::Double> worldCoords(2);
+	
+	bool success = m_cSys.toWorld(worldCoords, pixels);
+
+
+	casacore::Vector<casacore::String> coordUnits = m_cSys.worldAxisUnits();
+	casacore::Vector<casacore::Quantum<casacore::Double>> blc(2);
+	
+	blc(0) = casacore::Quantity(worldCoords(0), coordUnits(0));
+	blc(1) = casacore::Quantity(worldCoords(1), coordUnits(1));
+
+	
+       
+	//blc(1) = worldCoords.column(1);
+	//trc(0) = blc(0);
+	//trc(1) = blc(1);
+	
+        box = new casacore::WCBox(blc, blc, m_cSys, absRel);
     }
     return box;
 }
 
-casacore::LCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation) {
-    casacore::LCPolygon* boxPolygon(nullptr);
-    if (points.size()==2) {
-        // points are (cx, cy), (width, height)
-        float centerX = points[0].x();
-        float centerY = points[0].y();
-        float width = points[1].x();
-        float height = points[1].y();
-        casacore::Vector<float> x(4), y(4); // 4 corner points
-        if (rotation == 0.0f) {
-            float xmin(centerX-width/2.0f), xmax(centerX+width/2.0f);
-            float ymin(centerY-height/2.0f), ymax(centerY+height/2.0f);
-            // Bottom left
-            x(0) = xmin;
-            y(0) = ymin;
-            // Bottom right
-            x(1) = xmax;
-            y(1) = ymin;
-            // Top right
-            x(2) = xmax;
-            y(2) = ymax;
-            // Top left
-            x(3) = xmin;
-            y(3) = ymax;
-        } else {
-            // Apply rotation matrix to get width and height vectors in rotated basis
-            float cosX = cos(rotation * M_PI / 180.0f);
-            float sinX = sin(rotation * M_PI / 180.0f);
-            float widthVectorX = cosX * width;
-            float widthVectorY = sinX * width;
-            float heightVectorX = -sinX * height;
-            float heightVectorY = cosX * height;
+//std::vector<CARTA::Point> Region::convertPoints(const std::vector<CARTA::Point>& points)
+//{
+//  
+//}
+casacore::WCRegion* Region::makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation) {
+  casacore::WCPolygon* boxPolygon(nullptr);
+  if (points.size()==2) {
+    // points are (cx, cy), (width, height)
+    float centerX = points[0].x();
+    float centerY = points[0].y();
+    float width = points[1].x();
+    float height = points[1].y();
+    casacore::Vector<casacore::Double> x(4), y(4); // 4 corner points
+    if (rotation == 0.0f) {
+      float xmin(centerX-width/2.0f), xmax(centerX+width/2.0f);
+      float ymin(centerY-height/2.0f), ymax(centerY+height/2.0f);
+      // Bottom left
+      x(0) = xmin;
+      y(0) = ymin;
+      // Bottom right
+      x(1) = xmax;
+      y(1) = ymin;
+      // Top right
+      x(2) = xmax;
+      y(2) = ymax;
+      // Top left
+      x(3) = xmin;
+      y(3) = ymax;
+    } else {
+      // Apply rotation matrix to get width and height vectors in rotated basis
+      float cosX = cos(rotation * M_PI / 180.0f);
+      float sinX = sin(rotation * M_PI / 180.0f);
+      float widthVectorX = cosX * width;
+      float widthVectorY = sinX * width;
+      float heightVectorX = -sinX * height;
+      float heightVectorY = cosX * height;
 
-            // Bottom left
-            x(0) = centerX + (-widthVectorX - heightVectorX) / 2.0f;
-            y(0) = centerY + (-widthVectorY - heightVectorY) / 2.0f;
-            // Bottom right
-            x(1) = centerX + (widthVectorX - heightVectorX) / 2.0f;
-            y(1) = centerY + (widthVectorY - heightVectorY) / 2.0f;
-            // Top right
-            x(2) = centerX + (widthVectorX + heightVectorX) / 2.0f;
-            y(2) = centerY + (widthVectorY + heightVectorY) / 2.0f;
-            // Top left
-            x(3) = centerX + (-widthVectorX + heightVectorX) / 2.0f;
-            y(3) = centerY + (-widthVectorY + heightVectorY) / 2.0f;
-        }
-        boxPolygon = new casacore::LCPolygon(x, y, m_latticeShape.keepAxes(m_xyAxes));
+      // Bottom left
+      x(0) = centerX + (-widthVectorX - heightVectorX) / 2.0f;
+      y(0) = centerY + (-widthVectorY - heightVectorY) / 2.0f;
+      // Bottom right
+      x(1) = centerX + (widthVectorX - heightVectorX) / 2.0f;
+      y(1) = centerY + (widthVectorY - heightVectorY) / 2.0f;
+      // Top right
+      x(2) = centerX + (widthVectorX + heightVectorX) / 2.0f;
+      y(2) = centerY + (widthVectorY + heightVectorY) / 2.0f;
+      // Top left
+      x(3) = centerX + (-widthVectorX + heightVectorX) / 2.0f;
+      y(3) = centerY + (-widthVectorY + heightVectorY) / 2.0f;
     }
-    return boxPolygon;
+    casacore::Matrix<casacore::Double> pixels(2,4);
+    pixels.row(0) = x;
+    pixels.row(1) = y;
+    casacore::Matrix<casacore::Double> worldCoords(2,4);
+    casacore::Vector<casacore::Bool> failures;
+  
+    bool success = m_cSys.toWorldMany(worldCoords, pixels, failures);
+	
+    // make a vector of quantums for x and y
+    casacore::Quantum<casacore::Vector<casacore::Double> > xcoord(worldCoords.row(0));
+    casacore::Quantum<casacore::Vector<casacore::Double> > ycoord(worldCoords.row(1));
+    casacore::Vector<casacore::String> coordUnits = m_cSys.worldAxisUnits();
+    xcoord.setUnit(coordUnits(0));
+    ycoord.setUnit(coordUnits(1));
+   
+    
+       
+	
+	
+    boxPolygon = new casacore::WCPolygon(xcoord, ycoord, m_xyAxes, m_cSys);
+  }
+  return boxPolygon;
 }
 
-casacore::LCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation) {
-    // LCEllipse from center x,y, bmaj, bmin, rotation
-    casacore::LCEllipsoid* ellipse(nullptr);
+casacore::WCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation) {
+    // WCEllipse from center x,y, bmaj, bmin, rotation
+    casacore::WCEllipsoid* ellipse(nullptr);
     if (points.size()==2) {
         float cx(points[0].x()), cy(points[0].y());
         float bmaj(points[1].x()), bmin(points[1].y());
         // rotation is in degrees from y-axis
         // ellipse rotation angle is in radians from x-axis
         float theta = (rotation + 90.0) * (M_PI / 180.0f);
-        ellipse = new casacore::LCEllipsoid(cx, cy, bmaj, bmin, theta, m_latticeShape.keepAxes(m_xyAxes));
+	casacore::Vector<casacore::Quantum<casacore::Double>> center, radii;
+	center(0) = casacore::Quantity(cx, "pixel");
+	center(1) = casacore::Quantity(cy, "pixel");
+	radii(0) = casacore::Quantity(bmaj, "pixel");
+	radii(1) = casacore::Quantity(bmin, "pixel");
+	
+        ellipse = new casacore::WCEllipsoid(center, radii, m_xyAxes, m_cSys);
     }
     return ellipse;
 }
 
-casacore::LCRegion* Region::makePolygonRegion(const std::vector<CARTA::Point>& points) {
+casacore::WCRegion* Region::makePolygonRegion(const std::vector<CARTA::Point>& points) {
     // npoints region
-    casacore::LCPolygon* polygon(nullptr);
+    casacore::WCPolygon* polygon(nullptr);
     size_t npoints(points.size());
-    casacore::Vector<float> x(npoints), y(npoints);
+    casacore::Vector<casacore::Double> x, y;
     for (size_t i=0; i<npoints; ++i) {
-        x(i) = points[i].x();
-        y(i) = points[i].y();
+      x(i) = points[i].x();
+      y(i) = points[i].y();
     }
-    polygon = new casacore::LCPolygon(x, y, m_latticeShape.keepAxes(m_xyAxes));
+    casacore::Quantum <casacore::Vector<casacore::Double> > xcoord(x);
+    casacore::Quantum <casacore::Vector<casacore::Double> > ycoord(y);
+    xcoord.setUnit("pix");
+    ycoord.setUnit("pix");
+    polygon = new casacore::WCPolygon(xcoord, ycoord, m_xyAxes, m_cSys);
     return polygon;
 }
 
-bool Region::makeExtensionBox(casacore::LCBox& extendBox, int stokes, int channel) {
+bool Region::makeExtensionBox(casacore::WCBox& extendBox, int stokes, int channel) {
     // Create extension box for stored channel range and given stokes.
     // This can change for different profile/histogram/stats requirements so not stored 
     if (m_latticeShape.size() < 3)
         return false; // not needed
+    
+    casacore::Vector<casacore::Quantum<casacore::Double> > blc(2);
+    casacore::Vector<casacore::Quantum<casacore::Double> > trc(2);
+    
+    casacore::IPosition axes(2);
+    // Can't assume this
+    //spectralAxis and stokesAxis are passed in - use these to set axes
+    axes(0) = 2;
+    axes(1) = 3;
 
-    casacore::IPosition start(m_latticeShape), count(m_latticeShape), boxShape(m_latticeShape);
     if (m_spectralAxis > 0) {
         if (channel == ALL_CHANNELS) {
-            start(m_spectralAxis) = 0;
-            count(m_spectralAxis) = m_latticeShape(m_spectralAxis);
+	  blc(0) = casacore::Quantity(0, "pixel");
+	  blc(1) = casacore::Quantity(stokes, "pixel");
+	  trc(0) = casacore::Quantity(m_latticeShape(m_spectralAxis), "pixel");
+	  trc(1) = casacore::Quantity(stokes, "pixel");
         } else {
-            start(m_spectralAxis) = channel;
-            count(m_spectralAxis) = 1;
+	  blc(0) = casacore::Quantity(channel, "pixel");
+	  blc(1) = casacore::Quantity(0, "pixel");
+	  trc(0) = casacore::Quantity(channel, "pixel");
+	  trc(1) = casacore::Quantity(stokes, "pixel");
         }
     }
-    if (m_stokesAxis > 0) {
-        start(m_stokesAxis) = stokes;
-        count(m_stokesAxis) = 1;
-    }
+    casacore::Vector<casacore::Int> absRel;
+    casacore::WCBox* sbox = new casacore::WCBox(blc, trc, axes, m_cSys,absRel);
+    casacore::WCExtension extension(extendBox, *sbox);
+    
+    //if (m_stokesAxis > 0) {
+    //    start(m_stokesAxis) = stokes;
+    //    count(m_stokesAxis) = 1;
+    //}
     // remove x,y axes from IPositions
-    casacore::IPosition extBoxStart = start.removeAxes(m_xyAxes);
-    casacore::IPosition extBoxCount= count.removeAxes(m_xyAxes);
-    casacore::IPosition extBoxShape = boxShape.removeAxes(m_xyAxes);
+    //casacore::IPosition extBoxStart = start.removeAxes(m_xyAxes);
+    //casacore::IPosition extBoxCount= count.removeAxes(m_xyAxes);
+    //casacore::IPosition extBoxShape = boxShape.removeAxes(m_xyAxes);
     // make extension box from slicer
-    casacore::Slicer extSlicer(extBoxStart, extBoxCount);
-    extendBox = casacore::LCBox(extSlicer, extBoxShape);
+    //casacore::Slicer extSlicer(extBoxStart, extBoxCount);
+    
+    
     return true;
 }
 
-casacore::LCRegion* Region::makeExtendedRegion(int stokes, int channel) {
+casacore::WCRegion* Region::makeExtendedRegion(int stokes, int channel) {
     // Return 2D lattice region extended by chan range, stokes
     // Returns nullptr if 2D image
     size_t ndim(m_latticeShape.size());
-    casacore::LCRegion* region(nullptr);
+    casacore::WCExtension* region(nullptr);
     if (!isValid() || (ndim==2) || !m_xyRegion)
         return region;
 
     // create extension box for channel/stokes
     try {
-        casacore::LCBox extBox;
+        casacore::WCBox extBox;
         if (!makeExtensionBox(extBox, stokes, channel))
             return region;  // no need for extension
         // specify 0-based extension axes, either axis 2 (3D image) or 2 and 3 (4D image)
         casacore::IPosition extAxes = (ndim == 3 ? casacore::IPosition(1, 2) : casacore::IPosition(2, 2, 3));
         // apply extension box with extension axes to xy region
-        region = new casacore::LCExtension(*m_xyRegion, extAxes, extBox);
+       
+        region = new casacore::WCExtension(*m_xyRegion, extBox);
     } catch (casacore::AipsError& err) {
         // region failed, return nullptr
     }
@@ -361,7 +441,7 @@ casacore::IPosition Region::xyShape() {
     // returns bounding box shape of xy region
     casacore::IPosition xyshape;
     if (m_xyRegion)
-        xyshape = m_xyRegion->shape();
+      xyshape = m_xyRegion->toLCRegion(m_cSys,m_latticeShape.keepAxes(m_xyAxes))->shape();
     return xyshape;
 }
 

@@ -6,7 +6,9 @@
 #include "RegionProfiler.h"
 #include "../InterfaceConstants.h"
 #include <carta-protobuf/spectral_profile.pb.h>
-
+#include <casacore/coordinates/Coordinates/CoordinateSystem.h>
+#include <casacore/images/Regions/WCBox.h>
+#include <casacore/images/Regions/ImageRegion.h>
 namespace carta {
 
 class Region {
@@ -19,7 +21,7 @@ class Region {
 
 public:
     Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points,
-        const float rotation, const casacore::IPosition imageShape, int spectralAxis, int stokesAxis);
+	   const float rotation, const casacore::IPosition imageShape, int spectralAxis, int stokesAxis, const casacore::CoordinateSystem &cSys);
     ~Region();
 
     // to determine if data needs to be updated
@@ -35,7 +37,7 @@ public:
     inline bool xyRegionValid() { return (m_xyRegion != nullptr); };
 
     // get lattice region for requested stokes and (optionally) single channel
-    bool getRegion(casacore::LatticeRegion& region, int stokes, int channel=ALL_CHANNELS);
+    bool getRegion(casacore::ImageRegion& region, int stokes, int channel=ALL_CHANNELS);
     // get data from sublattice (LCRegion applied to Lattice by Frame)
     bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);
 
@@ -88,14 +90,14 @@ private:
 
     // Create xy regions
     bool setXYRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
-    casacore::LCRegion* makePointRegion(const std::vector<CARTA::Point>& points);
-    casacore::LCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
-    casacore::LCRegion* makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
-    casacore::LCRegion* makePolygonRegion(const std::vector<CARTA::Point>& points);
+    casacore::WCRegion* makePointRegion(const std::vector<CARTA::Point>& points);
+    casacore::WCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
+    casacore::WCRegion* makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
+    casacore::WCRegion* makePolygonRegion(const std::vector<CARTA::Point>& points);
 
     // Extend xy region to make LCRegion
-    bool makeExtensionBox(casacore::LCBox& extendBox, int stokes, int channel=ALL_CHANNELS); // for extended region
-    casacore::LCRegion* makeExtendedRegion(int stokes, int channel=ALL_CHANNELS);  // x/y region extended chan/stokes
+    bool makeExtensionBox(casacore::WCBox& extendBox, int stokes, int channel=ALL_CHANNELS); // for extended region
+    casacore::WCRegion* makeExtendedRegion(int stokes, int channel=ALL_CHANNELS);  // x/y region extended chan/stokes
 
 
     // region definition (ICD SET_REGION parameters)
@@ -114,8 +116,11 @@ private:
     int m_spectralAxis, m_stokesAxis;
 
     // stored 2D region
-    casacore::LCRegion* m_xyRegion;
+    casacore::WCRegion* m_xyRegion;
 
+    // coordinate system
+    casacore::CoordinateSystem m_cSys;
+    
     // classes for requirements, calculations
     std::unique_ptr<carta::RegionStats> m_stats;
     std::unique_ptr<carta::RegionProfiler> m_profiler;

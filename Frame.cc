@@ -122,8 +122,9 @@ bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type,
         auto& region = regions[regionId];
         regionSet = region->updateRegionParameters(name, type, points, rotation);
     }  else { // map new Region to region id
-        auto region = unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation,
-            imageShape, spectralAxis, stokesAxis));
+      const casacore::CoordinateSystem cSys = loader->loadData(FileInfo::Data::Image).coordinates();
+      auto region = unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation,
+								  imageShape, spectralAxis, stokesAxis, cSys));
         if (region->isValid()) {
             regions[regionId] = move(region);
             regionSet = true;
@@ -361,9 +362,9 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
     if (checkStokes(stokes) && (regions.count(regionId))) {
         auto& region = regions[regionId];
         if (region->isValid()) {
-            casacore::LatticeRegion lattRegion;
+            casacore::ImageRegion lattRegion;
             if (region->getRegion(lattRegion, stokes, channel)) {
-                sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::Image), lattRegion);
+                sublattice = casacore::SubImage<float>(loader->loadData(FileInfo::Data::Image), lattRegion);
                 sublatticeOK = true;
             }
         }

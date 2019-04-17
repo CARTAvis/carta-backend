@@ -12,6 +12,8 @@
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
+#include <casacore/images/Regions/ImageRegion.h>
+#include <casacore/images/Images/SubImage.h>
 #include "InterfaceConstants.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
