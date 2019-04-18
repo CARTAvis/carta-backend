@@ -62,7 +62,7 @@ Session::~Session() {
 void Session::disconnect_called() {
     _connected= false;
     for (auto& frame : frames) {
-        frame.second->DisconnectCalled(); // call to stop Frame's jobs
+        frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
 }
 
@@ -236,12 +236,12 @@ void Session::onCloseFile(const CARTA::CloseFile& message, uint32_t requestId) {
     std::unique_lock<std::mutex> lock(frameMutex);
     if (fileId == ALL_FILES) {
         for (auto& frame : frames) {
-            frame.second->DisconnectCalled(); // call to stop Frame's jobs
+            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
             frame.second.reset();  // delete Frame
         }
         frames.clear();
     } else if (frames.count(fileId)) {
-        frames[fileId]->DisconnectCalled(); // call to stop Frame's jobs
+        frames[fileId]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
         frames[fileId].reset();
         frames.erase(fileId);
     }
