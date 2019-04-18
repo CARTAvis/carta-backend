@@ -74,7 +74,8 @@ bool Frame::isValid() {
 }
 
 void Frame::DisconnectCalled() {
-    connected_ = false;
+    connected_ = false; // set a false flag to interrupt the running jobs
+    while (job_count_) {} // wait for the jobs finished
 }
 
 std::vector<int> Frame::getRegionIds() {

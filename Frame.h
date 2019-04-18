@@ -157,7 +157,6 @@ public:
     void setRegionMinMax(int regionId, int channel, int stokes, float minval, float maxval);
     void setRegionHistogram(int regionId, int channel, int stokes, CARTA::Histogram& histogram);
 
-    // set the flag connected_ = false, in order to stop the job
+    // set the flag connected_ = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
-    int get_job_count_() { return job_count_; }
 };

@@ -48,7 +48,6 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
 Session::~Session() {
     std::unique_lock<std::mutex> lock(frameMutex);
     for (auto& frame : frames) {
-        while (frame.second->get_job_count_()) {} // wait for Frame's jobs finished
         frame.second.reset();  // delete Frame
     }
     frames.clear();
@@ -238,13 +237,11 @@ void Session::onCloseFile(const CARTA::CloseFile& message, uint32_t requestId) {
     if (fileId == ALL_FILES) {
         for (auto& frame : frames) {
             frame.second->DisconnectCalled(); // call to stop Frame's jobs
-            while (frame.second->get_job_count_()) {} // wait for Frame's jobs finished
             frame.second.reset();  // delete Frame
         }
         frames.clear();
     } else if (frames.count(fileId)) {
         frames[fileId]->DisconnectCalled(); // call to stop Frame's jobs
-        while (frames[fileId]->get_job_count_()) {} // wait for Frame's jobs finished
         frames[fileId].reset();
         frames.erase(fileId);
     }
