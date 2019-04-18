@@ -779,14 +779,19 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
 bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData,
         bool checkCurrentStokes) {
     // fill spectral profile message with requested statistics (or values for a point region)
+    increase_job_count_();
     bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
-        if (!region->isValid())
+        if (!region->isValid()) {
+            decrease_job_count_();
             return false;
+        }
         size_t numProfiles(region->numSpectralProfiles());
-        if (numProfiles == 0)
+        if (numProfiles == 0) {
+            decrease_job_count_();
             return false; // not requested
+        }
 
         // set profile parameters
         int currStokes(currentStokes());
@@ -797,8 +802,10 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
             int profileStokes;
             if (region->getSpectralConfigStokes(profileStokes, i)) {
                 // only send if using current stokes, which changed
-                if (checkCurrentStokes && (profileStokes != CURRENT_STOKES))
+                if (checkCurrentStokes && (profileStokes != CURRENT_STOKES)) {
+                    decrease_job_count_();
                     return false;
+                }
                 if (profileStokes == CURRENT_STOKES)
                     profileStokes = currStokes;
                 // get sublattice for stokes requested in profile
@@ -828,6 +835,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
         }
         profileOK = true;
     }
+    decrease_job_count_();
     return profileOK;
 }
 
@@ -1020,7 +1028,6 @@ bool Frame::getSublatticeXY(casacore::SubLattice<float>& sublattice, std::pair<i
 }
 
 bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels) {
-increase_job_count_();
     bool dataOK(false);
     casacore::IPosition sublattShape = sublattice.shape();
     data.resize(sublattShape.product());
@@ -1036,10 +1043,8 @@ increase_job_count_();
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             for (size_t i=0; i<upperBound; ++i) {
                 // check if cursor's position changed during this loop, if so, stop the profile process
-                if (tmpXY != cursorXY || !connected_) {
-decrease_job_count_();
+                if (tmpXY != cursorXY || !connected_)
                     return false;
-                }
                 // modify the start position for slicer
                 start(spectralAxis) = i*checkPerChannels;
                 // modify the count for slicer
@@ -1060,6 +1065,5 @@ decrease_job_count_();
         } catch (casacore::AipsError& err) {
         }
     }
-decrease_job_count_();
     return dataOK;
 }
