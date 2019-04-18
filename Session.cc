@@ -647,14 +647,12 @@ bool Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
 }
 
 void Session::createCubeHistogramMessage(CARTA::RegionHistogramData& message, int fileId, int stokes, float progress) {
-    // check for cancel then update progress and make new message
-    if (histogramProgress != HISTOGRAM_CANCEL) {
-        histogramProgress.fetch_and_store(progress);
-        message.set_file_id(fileId);
-        message.set_region_id(CUBE_REGION_ID);
-        message.set_stokes(stokes);
-        message.set_progress(progress);
-    }
+    // update progress and make new message
+    histogramProgress.fetch_and_store(progress);
+    message.set_file_id(fileId);
+    message.set_region_id(CUBE_REGION_ID);
+    message.set_stokes(stokes);
+    message.set_progress(progress);
 }
 
 bool Session::sendRasterImageData(int fileId, bool sendHistogram) {
