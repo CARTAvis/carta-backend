@@ -897,12 +897,13 @@ bool Frame::getRegionMinMax(int regionId, int channel, int stokes, float& minval
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         haveMinMax = region->getMinMax(channel, stokes, minval, maxval);
-    } 
+    }
     return haveMinMax;
 }
 
 bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minval, float& maxval) {
     // Calculate min/max for region data; primarily for cube histogram
+    increase_job_count_();
     bool minmaxOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
@@ -930,18 +931,19 @@ bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minva
             minmaxOK = hasData;
         }
     }
+    decrease_job_count_();
     return minmaxOK;
-}  
+}
 
 bool Frame::getImageHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram) {
     // Return image histogram in histogram parameter
     bool haveHistogram(false);
-    
+
     auto& currentStats = loader->getImageStats(stokes, channel);
 
     if (currentStats.valid) {
         int imageNbins(currentStats.histogramBins.size());
-        
+
         if ((nbins == AUTO_BIN_SIZE) || (nbins == imageNbins)) {
             histogram.set_num_bins(imageNbins);
             histogram.set_bin_width((currentStats.maxVal - currentStats.minVal) / imageNbins);
