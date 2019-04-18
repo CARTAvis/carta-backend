@@ -972,6 +972,7 @@ bool Frame::getRegionHistogram(int regionId, int channel, int stokes, int nbins,
 bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins,
     float minval, float maxval, CARTA::Histogram& histogram) {
     // Return calculated histogram in histogram parameter; primarily for cube histogram
+    increase_job_count_();
     bool histogramOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
@@ -1000,6 +1001,7 @@ bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins
             histogramOK = hasData;
         }
     }
+    decrease_job_count_();
     return histogramOK;
 }
 
