@@ -364,8 +364,9 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
         if (region->isValid()) {
             casacore::ImageRegion lattRegion;
             if (region->getRegion(lattRegion, stokes, channel)) {
-	      sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::Image), lattRegion);
-	      //sublattice = subimage;
+	      casacore::CoordinateSystem cSys = loader->loadData(FileInfo::Data::Image).coordinates();
+	      casacore::LCRegion* lcregion = lattRegion.toLCRegion(cSys, imageShape);
+                sublattice = casacore::SubImage<float>(loader->loadData(FileInfo::Data::Image), lattRegion);
                 sublatticeOK = true;
             }
         }

@@ -351,8 +351,14 @@ casacore::WCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& p
 	casacore::Vector<casacore::Double> radiiWorldCoords(2);
 	bool success2 = m_cSys.toWorld(radiiWorldCoords, radiiPixels);
 	casacore::Vector<casacore::Quantum<casacore::Double>> radiiCoords(2);
-	radiiCoords(0) = casacore::Quantity(radiiWorldCoords(0), coordUnits(0));
-	radiiCoords(1) = casacore::Quantity(radiiWorldCoords(1), coordUnits(1));
+	//radiiCoords(0) = casacore::Quantity(radiiWorldCoords(0), coordUnits(0));
+	//radiiCoords(1) = casacore::Quantity(radiiWorldCoords(1), coordUnits(1));
+
+	radiiCoords(0) = casacore::Quantity(radiiPixels(0), "pix");
+	radiiCoords(1) = casacore::Quantity(radiiPixels(1), "pix");
+	std::cout <<coordUnits << std::endl;
+	std::cout<<radiiPixels<<std::endl;
+	std::cout<<radiiWorldCoords<<std::endl;
 	
         ellipse = new casacore::WCEllipsoid(centerCoords, radiiCoords, m_xyAxes, m_cSys);
     }
