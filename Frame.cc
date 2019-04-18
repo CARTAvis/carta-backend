@@ -599,12 +599,15 @@ bool Frame::getImageData(std::vector<float>& imageData, bool meanFilter) {
 bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* histogramData,
         bool checkCurrentChannel) {
     // fill histogram message with histograms for requested channel/num bins
+    increase_job_count_();
     bool histogramOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         size_t numHistograms(region->numHistogramConfigs());
-        if (numHistograms==0)
+        if (numHistograms==0) {
+            decrease_job_count_();
             return false; // not requested
+        }
 
         int currStokes(currentStokes());
         histogramData->set_stokes(currStokes);
@@ -614,22 +617,24 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             CARTA::SetHistogramRequirements_HistogramConfig config = region->getHistogramConfig(i);
             int configChannel(config.channel()), configNumBins(config.num_bins());
             // only send if using current channel, which changed
-            if (checkCurrentChannel && (configChannel != CURRENT_CHANNEL))
+            if (checkCurrentChannel && (configChannel != CURRENT_CHANNEL)) {
+                decrease_job_count_();
                 return false;
+            }
             if (configChannel == CURRENT_CHANNEL) {
                 configChannel = channelIndex;
             }
             auto newHistogram = histogramData->add_histograms();
             newHistogram->set_channel(configChannel);
             // get stored histograms or fill new histograms
-            
+
             bool haveHistogram(false);
 
             // Check if read from image file (HDF5 only)
             if (regionId == IMAGE_REGION_ID || regionId == CUBE_REGION_ID) {
                 haveHistogram = getImageHistogram(configChannel, currStokes, configNumBins, *newHistogram);
             }
-            
+
             if (!haveHistogram) {
                 // Retrieve histogram if stored
                 if (!getRegionHistogram(regionId, configChannel, currStokes, configNumBins, *newHistogram)) {
@@ -672,6 +677,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
         }
         histogramOK = true;
     }
+    decrease_job_count_();
     return histogramOK;
 }
 
