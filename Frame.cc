@@ -244,6 +244,7 @@ bool Frame::setImageView(const CARTA::ImageBounds& newBounds, int newMip,
 }
 
 bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message) {
+    increase_job_count_();
     bool updated(false);
     if (!valid || (regions.count(IMAGE_REGION_ID)==0)) {
         message = "No file loaded";
@@ -263,6 +264,7 @@ bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message
             }
         }
     }
+    decrease_job_count_();
     return updated;
 }
 
@@ -454,6 +456,7 @@ bool Frame::setRegionStatsRequirements(int regionId, const std::vector<int> stat
 
 bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::string& message) {
     // fill data message with compressed channel cache data
+    increase_job_count_();
     bool rasterDataOK(false);
     std::vector<float> imageData;
     if (getImageData(imageData)) {
@@ -512,6 +515,7 @@ bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::st
     } else {
         message = "Raster image data failed to load";
     }
+    decrease_job_count_();
     return rasterDataOK;
 }
 
