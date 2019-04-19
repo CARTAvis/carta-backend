@@ -684,19 +684,14 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
 bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& profileData,
         bool checkCurrentStokes) {
     // fill spatial profile message with requested x/y profiles (for a point region)
-    increase_job_count_();
     bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
-        if (!region->isValid() || !region->isPoint()) {
-            decrease_job_count_();
+        if (!region->isValid() || !region->isPoint())
             return profileOK;
-        }
         size_t numProfiles(region->numSpatialProfiles());
-        if (numProfiles==0) {
-            decrease_job_count_();
+        if (numProfiles==0)
             return profileOK; // not requested
-        }
 
         // set spatial profile fields
         std::vector<CARTA::Point> ctrlPts = region->getControlPoints();
@@ -724,10 +719,8 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                 // get <axis, stokes> for slicing image data
                 std::pair<int,int> axisStokes = region->getSpatialProfileReq(i);
                 // only send if using current stokes, which changed
-                if (checkCurrentStokes && (axisStokes.second != CURRENT_STOKES)) {
-                    decrease_job_count_();
+                if (checkCurrentStokes && (axisStokes.second != CURRENT_STOKES))
                     return false;
-                }
 
                 int profileStokes = (axisStokes.second < 0 ? stokesIndex : axisStokes.second);
                 std::vector<float> profile;
@@ -790,7 +783,6 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
             profileOK = true;
         }
     }
-    decrease_job_count_();
     return profileOK;
 }
 
