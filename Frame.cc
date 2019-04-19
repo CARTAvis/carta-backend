@@ -852,18 +852,13 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
 bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData) {
     // fill stats data message with requested statistics for the region with
     // current channel and stokes
-    increase_job_count_();
     bool statsOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
-        if (!region->isValid()) {
-            decrease_job_count_();
+        if (!region->isValid())
             return false;
-        }
-        if (region->numStats() == 0) {
-            decrease_job_count_();
+        if (region->numStats() == 0)
             return false; // not requested
-        }
 
         statsData.set_channel(channelIndex);
         statsData.set_stokes(stokesIndex);
@@ -875,7 +870,6 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         region->fillStatsData(statsData, sublattice, channelIndex, stokesIndex);
         statsOK = true;
     }
-    decrease_job_count_();
     return statsOK;
 }
 
