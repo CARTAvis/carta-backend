@@ -959,21 +959,19 @@ bool Frame::getImageHistogram(int channel, int stokes, int nbins, CARTA::Histogr
             haveHistogram = true;
         }
     }
-
+    
     return haveHistogram;
 }
 
 bool Frame::getRegionHistogram(int regionId, int channel, int stokes, int nbins,
     CARTA::Histogram& histogram) {
     // Return stored histogram in histogram parameter
-    increase_job_count_();
     bool haveHistogram(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         nbins = (nbins==AUTO_BIN_SIZE ? calcAutoNumBins(regionId) : nbins);
         haveHistogram = region->getHistogram(channel, stokes, nbins, histogram);
     }
-    decrease_job_count_();
     return haveHistogram;
 }
 
