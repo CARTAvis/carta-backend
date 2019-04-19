@@ -12,8 +12,8 @@ using namespace std;
 Frame::Frame(const string& uuidString, const string& filename, const string& hdu, int defaultChannel)
     : uuid(uuidString),
       valid(true),
-      connected_(true),
-      job_count_(0),
+      connected(true),
+      zProfileCount(0),
       cursorSet(false),
       filename(filename),
       loader(FileLoader::getLoader(filename)),
@@ -73,9 +73,9 @@ bool Frame::isValid() {
     return valid;
 }
 
-void Frame::DisconnectCalled() {
-    connected_ = false; // set a false flag to interrupt the running jobs
-    while (job_count_) {} // wait for the jobs finished
+void Frame::disconnectCalled() {
+    connected = false; // set a false flag to interrupt the running jobs
+    while (zProfileCount) {} // wait for the jobs finished
 }
 
 std::vector<int> Frame::getRegionIds() {
@@ -779,17 +779,17 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
 bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData,
         bool checkCurrentStokes) {
     // fill spectral profile message with requested statistics (or values for a point region)
-    increase_job_count_();
+    increaseZProfileCount();
     bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
         if (!region->isValid()) {
-            decrease_job_count_();
+            decreaseZProfileCount();
             return false;
         }
         size_t numProfiles(region->numSpectralProfiles());
         if (numProfiles == 0) {
-            decrease_job_count_();
+            decreaseZProfileCount();
             return false; // not requested
         }
 
@@ -803,7 +803,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
             if (region->getSpectralConfigStokes(profileStokes, i)) {
                 // only send if using current stokes, which changed
                 if (checkCurrentStokes && (profileStokes != CURRENT_STOKES)) {
-                    decrease_job_count_();
+                    decreaseZProfileCount();
                     return false;
                 }
                 if (profileStokes == CURRENT_STOKES)
@@ -835,7 +835,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
         }
         profileOK = true;
     }
-    decrease_job_count_();
+    decreaseZProfileCount();
     return profileOK;
 }
 
@@ -1043,7 +1043,7 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             for (size_t i=0; i<upperBound; ++i) {
                 // check if cursor's position changed during this loop, if so, stop the profile process
-                if (tmpXY != cursorXY || !connected_)
+                if (tmpXY != cursorXY || !connected)
                     return false;
                 // modify the start position for slicer
                 start(spectralAxis) = i*checkPerChannels;

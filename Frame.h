@@ -25,10 +25,10 @@ private:
     bool valid;
 
     // communication
-    bool connected_;
+    bool connected;
 
-    // Reference counter
-    tbb::atomic<int> job_count_;
+    // spectral profile counter
+    tbb::atomic<int> zProfileCount;
 
     // image loader, stats from image file
     std::string filename;
@@ -97,8 +97,8 @@ private:
     // get spectral profile data from sub-lattice
     bool getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels=ALL_CHANNELS);
 
-    void increase_job_count_() { ++job_count_; }
-    void decrease_job_count_() { --job_count_; }
+    void increaseZProfileCount() { ++zProfileCount; }
+    void decreaseZProfileCount() { --zProfileCount; }
 
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu,
@@ -157,6 +157,6 @@ public:
     void setRegionMinMax(int regionId, int channel, int stokes, float minval, float maxval);
     void setRegionHistogram(int regionId, int channel, int stokes, CARTA::Histogram& histogram);
 
-    // set the flag connected_ = false, in order to stop the jobs and wait for jobs finished
-    void DisconnectCalled();
+    // set the flag connected = false, in order to stop the jobs and wait for jobs finished
+    void disconnectCalled();
 };
