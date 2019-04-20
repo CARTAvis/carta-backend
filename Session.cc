@@ -847,7 +847,7 @@ Session::build_animation_object(::CARTA::StartAnimation &msg, uint32_t requestID
   ::CARTA::AnimationFrame startF, endF, deltaF;
   int file_id;
   uint32_t millisec;
-  bool looping, reverse_at_end;
+  bool looping, reverse_at_end, always_wait;
   uint8_t compType, compQual;
 
   startF= msg.start_frame();
@@ -859,10 +859,11 @@ Session::build_animation_object(::CARTA::StartAnimation &msg, uint32_t requestID
   reverse_at_end= msg.reverse();
   compType= msg.compression_type();
   compQual= msg.compression_quality();
-    
+  always_wait= false;
+
   _ani_obj= new AnimationObject( file_id, startF, endF, deltaF,
 				 millisec, looping, reverse_at_end,
-				 compType, compQual );
+				 compType, compQual, always_wait );
 
   CARTA::StartAnimationAck ackMessage;
   ackMessage.set_success(true);
