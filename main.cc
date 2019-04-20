@@ -38,7 +38,7 @@ FileListHandler* fileListHandler;
 int sessionNumber;
 uWS::Hub wsHub;
 
-// Map from string uuids to 32 bit ints.
+// Map from string uuids to 8 bit ints.
 unordered_map<std::string,uint8_t> _event_name_map;
 
 // command-line arguments
