@@ -14,13 +14,17 @@ class AnimationObject {
   ::CARTA::AnimationFrame _delta_frame;
   ::CARTA::AnimationFrame _curr_frame;
   ::CARTA::AnimationFrame _stop_frame;
-  std::chrono::milliseconds _frame_interval;
+  std::chrono::microseconds _frame_interval;
+  std::chrono::time_point<std::chrono::high_resolution_clock> _tStart;
+  std::chrono::time_point<std::chrono::high_resolution_clock> _tLast;
   bool _looping;
   bool _reverse_at_end;
   bool _going_forward;
+  bool _always_wait;
   uint8_t _compression_type;
   float _compression_quality;
   volatile bool _stop_called;
+  int _waitms;
  public:
  AnimationObject(int fid,
 		 ::CARTA::AnimationFrame &sf,
@@ -35,8 +39,10 @@ class AnimationObject {
     _end_frame(ef), _delta_frame(df),
     _looping(l), _reverse_at_end(rae),
     _compression_type(ct), _compression_quality(cq) {
-    _frame_interval= std::chrono::milliseconds(1)*fi;
+    _frame_interval= std::chrono::microseconds(1000)*fi;
     _going_forward= true;
+    _always_wait= false;
+    _waitms= 100;
   }
   ~AnimationObject() {
   }

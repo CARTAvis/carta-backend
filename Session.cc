@@ -880,97 +880,99 @@ Session::execute_animation_frame( void )
 		 this );
     exit(1);
   }
-
   if( _ani_obj->_stop_called ) {
-
-    // Note not checking for the stop frame yet.
-    
+    // Note: not checking for the stop frame yet, since need clarity on logic
+    // ... so just stop now!
     return false;
   }
-  
-  ::CARTA::AnimationFrame curr_frame= _ani_obj->_curr_frame;
-  ::CARTA::AnimationFrame delta_frame= _ani_obj->_delta_frame; 
+
   bool recycle_task= true;
-  
-  auto fileId(_ani_obj->_file_id);
-  if (frames.count(fileId)) {
-    try {
-      std::string errMessage;
-      auto channel = curr_frame.channel();
-      auto stokes = curr_frame.stokes();
-      bool channelChanged(channel != frames.at(fileId)->currentChannel());
-      bool stokesChanged(stokes != frames.at(fileId)->currentStokes());
-      if (frames.at(fileId)->setImageChannels(channel, stokes, errMessage)) {
-	// RESPONSE: updated image raster/histogram
-	sendRasterImageData(fileId, true); // true = send histogram
-	// RESPONSE: region data (includes image, cursor, and set regions)
-	updateRegionData(fileId, channelChanged, stokesChanged);
-      } else {
-	if (!errMessage.empty())
-	  sendLogEvent(errMessage, {"animation"}, CARTA::ErrorSeverity::ERROR);
+  auto waitms= std::chrono::duration_cast<std::chrono::microseconds>
+    (_ani_obj->_tLast + _ani_obj->_frame_interval
+     - std::chrono::high_resolution_clock::now());
+
+  if( (waitms.count() < _ani_obj->_waitms) || _ani_obj->_always_wait ) {
+    // Wait for time to execute next frame processing.
+    std::this_thread::sleep_for( waitms );
+    
+    ::CARTA::AnimationFrame curr_frame= _ani_obj->_curr_frame;
+    ::CARTA::AnimationFrame delta_frame= _ani_obj->_delta_frame; 
+    
+    auto fileId(_ani_obj->_file_id);
+    if (frames.count(fileId)) {
+      try {
+	std::string errMessage;
+	auto channel = curr_frame.channel();
+	auto stokes = curr_frame.stokes();
+	bool channelChanged(channel != frames.at(fileId)->currentChannel());
+	bool stokesChanged(stokes != frames.at(fileId)->currentStokes());
+	if (frames.at(fileId)->setImageChannels(channel, stokes, errMessage)) {
+	  // RESPONSE: updated image raster/histogram
+	  sendRasterImageData(fileId, true); // true = send histogram
+	  // RESPONSE: region data (includes image, cursor, and set regions)
+	  updateRegionData(fileId, channelChanged, stokesChanged);
+	} else {
+	  if (!errMessage.empty())
+	    sendLogEvent(errMessage, {"animation"}, CARTA::ErrorSeverity::ERROR);
+	}
+      } catch (std::out_of_range& rangeError) {
+	string error = fmt::format("File id {} closed", fileId);
+	sendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
       }
-    } catch (std::out_of_range& rangeError) {
-      string error = fmt::format("File id {} closed", fileId);
+    } else {
+      string error = fmt::format("File id {} not found", fileId);
       sendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
     }
-  } else {
-    string error = fmt::format("File id {} not found", fileId);
-    sendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
-  }
 
-  ::CARTA::AnimationFrame tmpF;
-
-  if( _ani_obj->_going_forward ) {
-    tmpF.set_channel(curr_frame.channel() + delta_frame.channel());
-    tmpF.set_stokes(curr_frame.stokes() + delta_frame.stokes());
+    ::CARTA::AnimationFrame tmpF;
     
-    if( (tmpF.channel() > _ani_obj->_end_frame.channel()) ||
-	(tmpF.stokes() > _ani_obj->_end_frame.stokes()) ) {
-      if( _ani_obj->_reverse_at_end ) {
-	_ani_obj->_going_forward= false;
-      }
-      else if( _ani_obj->_looping ) {
-	tmpF.set_channel(_ani_obj->_start_frame.channel());
-	tmpF.set_stokes(_ani_obj->_start_frame.stokes());
-	_ani_obj->_curr_frame= tmpF;
+    if( _ani_obj->_going_forward ) {
+      tmpF.set_channel(curr_frame.channel() + delta_frame.channel());
+      tmpF.set_stokes(curr_frame.stokes() + delta_frame.stokes());
+      
+      if( (tmpF.channel() > _ani_obj->_end_frame.channel()) ||
+	  (tmpF.stokes() > _ani_obj->_end_frame.stokes()) ) {
+	if( _ani_obj->_reverse_at_end ) {
+	  _ani_obj->_going_forward= false;
+	}
+	else if( _ani_obj->_looping ) {
+	  tmpF.set_channel(_ani_obj->_start_frame.channel());
+	  tmpF.set_stokes(_ani_obj->_start_frame.stokes());
+	  _ani_obj->_curr_frame= tmpF;
+	}
+	else {
+	  recycle_task= false;
+	}
       }
       else {
-	recycle_task= false;
-      }
-    }
-    else {
-      _ani_obj->_curr_frame= tmpF;
-    }
-  }
-  else { // going backwards;
-    tmpF.set_channel(curr_frame.channel() - _ani_obj->_delta_frame.channel());
-    tmpF.set_stokes(curr_frame.stokes() - _ani_obj->_delta_frame.stokes());
-    
-    if( (tmpF.channel() < _ani_obj->_start_frame.channel()) ||
-	(tmpF.stokes() < _ani_obj->_start_frame.stokes()) ) {
-      if( _ani_obj->_reverse_at_end ) {
-	_ani_obj->_going_forward= true;
-	recycle_task= true;
-      }
-      else if( _ani_obj->_looping ) {
-	tmpF.set_channel(_ani_obj->_end_frame.channel());
-	tmpF.set_stokes(_ani_obj->_end_frame.stokes());
 	_ani_obj->_curr_frame= tmpF;
       }
+    }
+    else { // going backwards;
+      tmpF.set_channel(curr_frame.channel() - _ani_obj->_delta_frame.channel());
+      tmpF.set_stokes(curr_frame.stokes() - _ani_obj->_delta_frame.stokes());
+      
+      if( (tmpF.channel() < _ani_obj->_start_frame.channel()) ||
+	  (tmpF.stokes() < _ani_obj->_start_frame.stokes()) ) {
+	if( _ani_obj->_reverse_at_end ) {
+	  _ani_obj->_going_forward= true;
+	}
+	else if( _ani_obj->_looping ) {
+	  tmpF.set_channel(_ani_obj->_end_frame.channel());
+	  tmpF.set_stokes(_ani_obj->_end_frame.stokes());
+	  _ani_obj->_curr_frame= tmpF;
+	}
+	else {
+	  recycle_task= false;
+	}
+      }
       else {
-	recycle_task= false;
+	_ani_obj->_curr_frame= tmpF;
       }
     }
-    else {
-      _ani_obj->_curr_frame= tmpF;
-    }
+    _ani_obj->_tLast= std::chrono::high_resolution_clock::now();
   }
-
-  if( recycle_task ) {
-    std::this_thread::sleep_for( _ani_obj->_frame_interval );
-    return true;
-  }
-  else return false;
+  return recycle_task;
 }
 
 
@@ -978,12 +980,15 @@ void
 Session::stop_animation( int fid, CARTA::AnimationFrame stop_frame )
 {
   if( !_ani_obj ) {
-    std::fprintf(stderr,"%p Session::stop_animation called with null AnimationObject\n", this );
+    std::fprintf(stderr,
+		 "%p Session::stop_animation called with null AnimationObject\n",
+		 this );
     return;
   }
 
   if( _ani_obj->_file_id != fid ) {
-    std::fprintf(stderr,"%p Session::stop_animation called with file id %d. Expected file id %d", this, fid, _ani_obj->_file_id );
+    std::fprintf(stderr,"%p Session::stop_animation called with file id %d."
+		 "Expected file id %d", this, fid, _ani_obj->_file_id );
     return;
   }
 
