@@ -145,7 +145,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
 	}
 	else {
 	// has its own queue to keep channels in order during animation
-	  session->addToAniQueue(message, requestId);
+	  session->addToSetChanQueue(message, requestId);
 	}
 	session->image_channel_unlock();
 	break;

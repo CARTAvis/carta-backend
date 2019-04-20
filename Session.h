@@ -40,7 +40,7 @@ class Session {
  public:
     std::string uuid;
     carta::FileSettings fsettings;
-    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> aniq;
+    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> setchanq;
  protected:
     // communication
     uWS::WebSocket<uWS::SERVER>* socket;
@@ -96,10 +96,10 @@ public:
             bool verbose = false);
     ~Session();
 
-    void addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId) {
-      aniq.push(std::make_pair(message, requestId));
+    void addToSetChanQueue(CARTA::SetImageChannels message, uint32_t requestId) {
+      setchanq.push(std::make_pair(message, requestId));
     }
-    void executeAniEvt(std::pair<CARTA::SetImageChannels,uint32_t> req) {
+    void executeSetChanEvt(std::pair<CARTA::SetImageChannels,uint32_t> req) {
       onSetImageChannels(req.first, req.second);
     }
     void cancel_SetHistReqs() {

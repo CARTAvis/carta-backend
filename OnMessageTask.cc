@@ -114,9 +114,9 @@ SetImageChannelsTask::execute()
   bool tester;
 
   do {
-    session->executeAniEvt(_req);
+    session->executeSetChanEvt(_req);
     session->image_channel_lock();
-    if( ! (tester= session->aniq.try_pop(_req)) )
+    if( ! (tester= session->setchanq.try_pop(_req)) )
       session->image_channal_task_set_idle();
     session->image_channel_unlock();
   } while( tester );
