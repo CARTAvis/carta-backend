@@ -33,10 +33,10 @@ unordered_map<string, vector<string>> permissionsMap;
 FileListHandler* fileListHandler;
 
 int sessionNumber;
-uWS::Hub
+uWS::Hub wsHub;
 
 // Map from string uuids to 8 bit ints.
-unordered_map<string,uint8_t> _event_name_map;
+unordered_map<std::string,uint8_t> _event_name_map;
 
 // command-line arguments
 string rootFolder("/"), baseFolder("."), version_id("1.1");
