@@ -248,12 +248,13 @@ void Session::onSetImageView(const CARTA::SetImageView& message, uint32_t reques
     auto fileId = message.file_id();
     if (frames.count(fileId)) {
         try {
-           if (frames.at(fileId)->setImageView(message.image_bounds(), message.mip(), message.compression_type(),
-                message.compression_quality(), message.num_subsets())) {
+           if (frames.at(fileId)->setImageView(message.image_bounds(), message.mip(),
+                message.compression_type(), message.compression_quality(),
+                message.num_subsets())) {
                 sendRasterImageData(fileId, newFrame); // send histogram only if new frame
                 newFrame = false;
             } else {
-                sendLogEvent("Image view out of bounds", {"view"}, CARTA::ErrorSeverity::ERROR);
+                sendLogEvent("Image view not processed", {"view"}, CARTA::ErrorSeverity::DEBUG);
             }
         } catch (std::out_of_range& rangeError) {
             std::string error = fmt::format("File id {} closed", fileId);
@@ -655,14 +656,12 @@ bool Session::sendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
 }
 
 void Session::createCubeHistogramMessage(CARTA::RegionHistogramData& message, int fileId, int stokes, float progress) {
-    // check for cancel then update progress and make new message
-    if (histogramProgress != HISTOGRAM_CANCEL) {
-        histogramProgress.fetch_and_store(progress);
-        message.set_file_id(fileId);
-        message.set_region_id(CUBE_REGION_ID);
-        message.set_stokes(stokes);
-        message.set_progress(progress);
-    }
+    // update progress and make new message
+    histogramProgress.fetch_and_store(progress);
+    message.set_file_id(fileId);
+    message.set_region_id(CUBE_REGION_ID);
+    message.set_stokes(stokes);
+    message.set_progress(progress);
 }
 
 bool Session::sendRasterImageData(int fileId, bool sendHistogram) {
