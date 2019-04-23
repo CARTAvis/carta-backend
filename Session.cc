@@ -837,8 +837,7 @@ void Session::sendLogEvent(std::string message, std::vector<std::string> tags, C
 }
 
 
-void
-Session::build_animation_object(::CARTA::StartAnimation &msg, uint32_t requestID)
+void Session::build_animation_object(::CARTA::StartAnimation &msg, uint32_t requestID)
 {
   ::CARTA::AnimationFrame startF, endF, deltaF;
   int file_id;
@@ -868,8 +867,7 @@ Session::build_animation_object(::CARTA::StartAnimation &msg, uint32_t requestID
   sendEvent("START_ANIMATION_ACK", requestID, ackMessage);
 }
 
-bool
-Session::execute_animation_frame( void )
+bool Session::execute_animation_frame( void )
 {
   if( !_ani_obj ) {
     std::fprintf(stderr,
@@ -973,8 +971,7 @@ Session::execute_animation_frame( void )
 }
 
 
-void
-Session::stop_animation( int fid, CARTA::AnimationFrame stop_frame )
+void Session::stop_animation( int fid, CARTA::AnimationFrame stop_frame )
 {
   if( !_ani_obj ) {
     std::fprintf(stderr,
