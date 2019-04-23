@@ -849,7 +849,7 @@ Session::build_animation_object(::CARTA::StartAnimation &msg, uint32_t requestID
   startF= msg.start_frame();
   endF= msg.end_frame();
   deltaF= msg.delta_frame();
-
+  file_id= msg.file_id();
   millisec= msg.frame_interval();
   looping= msg.looping();
   reverse_at_end= msg.reverse();
