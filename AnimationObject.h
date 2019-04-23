@@ -34,16 +34,18 @@ class AnimationObject {
 		 bool l,
 		 bool rae,
 		 uint8_t ct,
-		 uint8_t cq,
+		 float cq,
 		 bool aw) :
-  _file_id(fid), _start_frame(sf), _curr_frame(sf),
+  _file_id(fid), _start_frame(sf), 
     _end_frame(ef), _delta_frame(df),
     _looping(l), _reverse_at_end(rae),
-    _compression_type(ct), _compression_quality(cq),
     _always_wait(aw) {
-    _frame_interval= std::chrono::microseconds(1000)*fi;
-    _going_forward= true;
-    _waitms= 100;
+      _compression_type= ct;
+      _compression_quality= cq;
+      _curr_frame= sf,
+	_frame_interval= std::chrono::microseconds(1000)*fi;
+      _going_forward= true;
+      _waitms= 100;
   }
   ~AnimationObject() {
   }
