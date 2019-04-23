@@ -65,7 +65,7 @@ class Session {
     bool newFrame;         // flag to send histogram with data
 
     // State for animation functions.
-    AnimationObject * _ani_obj;
+    std::unique_ptr<AnimationObject> _ani_obj;
     
     std::mutex _image_channel_mutex;
     bool _image_channel_task_active;

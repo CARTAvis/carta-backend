@@ -12,8 +12,8 @@
 #include <thread>
 #include <chrono>
 #include <limits>
+#include <memory>
 
-using namespace std;
 
 
 #define DEBUG( _DB_TEXT_ ) { }
@@ -55,10 +55,6 @@ Session::~Session() {
     }
     frames.clear();
     outgoing->close();
-    if( _ani_obj ) {
-      delete _ani_obj;
-      _ani_obj= nullptr;
-    }
     --_num_sessions;
     DEBUG(fprintf(stderr,"%p  ~Session (%d)\n", this, _num_sessions ));
     if( !_num_sessions )
@@ -861,9 +857,10 @@ Session::build_animation_object(::CARTA::StartAnimation &msg, uint32_t requestID
   compQual= msg.compression_quality();
   always_wait= false;
 
-  _ani_obj= new AnimationObject( file_id, startF, endF, deltaF,
-				 millisec, looping, reverse_at_end,
-				 compType, compQual, always_wait );
+  _ani_obj= std::unique_ptr<AnimationObject>
+    (new AnimationObject(file_id, startF, endF, deltaF,
+			 millisec, looping, reverse_at_end,
+			 compType, compQual, always_wait));
 
   CARTA::StartAnimationAck ackMessage;
   ackMessage.set_success(true);
