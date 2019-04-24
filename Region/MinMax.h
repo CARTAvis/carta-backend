@@ -41,12 +41,12 @@ template <typename T>
 void MinMax<T>::operator()(const tbb::blocked_range<size_t> &r) {
     T tmin = minval;
     T tmax = maxval;
-    for(size_t i = r.begin(); i != r.end(); ++i) {
+    for (size_t i = r.begin(); i != r.end(); ++i) {
         T val = data[i];
-	if( std::isfinite(val) ) {
-	    if( val < tmin ) {
+	if (std::isfinite(val)) {
+	    if ( val < tmin) {
 	        tmin = val;
-	    } else if( val > tmax ) {
+	    } else if (val > tmax) {
 	        tmax = val;
 	    }
 	}
