@@ -44,7 +44,7 @@ void MinMax<T>::operator()(const tbb::blocked_range<size_t> &r) {
     for (size_t i = r.begin(); i != r.end(); ++i) {
         T val = data[i];
 	if (std::isfinite(val)) {
-	    if ( val < tmin) {
+	    if (val < tmin) {
 	        tmin = val;
 	    } else if (val > tmax) {
 	        tmax = val;
