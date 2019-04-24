@@ -172,7 +172,9 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
           session->cancel_SetHistReqs();
         }
         else {
-          tsk= new (tbb::task::allocate_root())
+	  tbb::task_group_context * context= new tbb::task_group_context();
+	  session->_context= context;
+          tsk= new (tbb::task::allocate_root(*context))
 	    SetHistogramReqsTask(session,
 				 make_tuple(event_id,
 					    requestId,
