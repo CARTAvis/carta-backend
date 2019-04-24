@@ -38,7 +38,7 @@ The server build depends on the following libraries:
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.([Recommended: v0.14.8](https://github.com/uNetworking/uWebSockets/releases/tag/v0.14.8))
 * [tbb](https://www.threadingbuildingblocks.org/download) Threading Building Blocks for task parallelization.
 
-[![Build Status](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend/badge/icon)](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend) 
+Jenkins RedHat7 [![Build Status](https://carta.asiaa.sinica.edu.tw/jenkins/buildStatus/icon?job=all_carta_backends)](https://carta.asiaa.sinica.edu.tw/jenkins/job/all_carta_backends/)
 
 [![Build Status](https://travis-ci.org/CARTAvis/carta-backend.svg?branch=master)](https://travis-ci.org/CARTAvis/carta-backend)
 
