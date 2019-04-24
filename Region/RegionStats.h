@@ -15,8 +15,10 @@ namespace carta {
 
 class RegionStats {
 
-
 public:
+    RegionStats();
+    ~RegionStats();
+
     // Histograms
     // config
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
@@ -36,29 +38,32 @@ public:
     // Stats
     void setStatsRequirements(const std::vector<int>& statsTypes);
     size_t numStats();
-    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice);
-    bool getStatsValues(std::vector<std::vector<double>>& statsValues,
+    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice,
+        int channel, int stokes);
+    bool calcStatsValues(std::vector<std::vector<double>>& statsValues,
         const std::vector<int>& requestedStats, const casacore::SubLattice<float>& lattice,
         bool perChannel=true);
 
-    // invalidate stored calculations (only histograms for now) for new region
-    inline void clearStats() { m_histogramsValid = false; };
+    // invalidate stored calculations for previous region settings
+    void clearStats();
 
 private:
 
-    bool m_histogramsValid; // for current region
+    // Valid calculations
+    bool m_histogramsValid, m_statsValid;
 
     // Histogram config
-    std::vector<CARTA::SetHistogramRequirements_HistogramConfig> m_configs;
-
+    std::vector<CARTA::SetHistogramRequirements_HistogramConfig> m_histogramReqs;
     // Statistics config
-    std::vector<int> m_regionStats; // CARTA::StatsType requirements for this region
+    std::vector<int> m_statsReqs; // CARTA::StatsType requirements for this region
 
-    // MinMax, histogram maps to store calculations
-    // first key is stokes, second is channel number (-2 all channels for cube)
+    // Cache calculations
+    // MinMax: first key is stokes, second is channel number (-2 all channels for cube)
     std::unordered_map<int, std::unordered_map<int, minmax_t>> m_minmax;
+    // Histogram: first key is stokes, second is channel number (-2 all channels for cube)
     std::unordered_map<int, std::unordered_map<int, CARTA::Histogram>> m_histograms;
-
+    // Region stats: first key is stokes, second is channel number
+    std::unordered_map<int, std::unordered_map<int, std::vector<double>>> m_statsData;
 };
 
 }

@@ -17,12 +17,14 @@ public:
     bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     const casacore::CoordinateSystem& getCoordSystem() override;
     void findCoords(int& spectralAxis, int& stokesAxis) override;
-
+    bool getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY) override;
+    
 private:
     std::string file, hdf5Hdu;
     casacore::HDF5Lattice<float> image;
+    std::unique_ptr<casacore::HDF5Lattice<float>> swizzledImage;
     
-    static std::string dataSetToString(FileInfo::Data ds);
+    std::string dataSetToString(FileInfo::Data ds) const;
     
     template <typename T> const ipos getStatsDataShapeTyped(FileInfo::Data ds);
     template <typename S, typename D> casacore::ArrayBase* getStatsDataTyped(FileInfo::Data ds);
@@ -37,32 +39,79 @@ HDF5Loader::HDF5Loader(const std::string &filename)
 {}
 
 void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
-    file = filename;
-    hdf5Hdu = hdu;
-    image = casacore::HDF5Lattice<float>(file, dataSetToString(FileInfo::Data::XYZW), hdf5Hdu);
+    image = casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Image), hdu);
+    
+    // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
+    ndims = image.shape().size();
+    
+    if (hasData(FileInfo::Data::Swizzled)) {
+        swizzledImage = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Swizzled), hdu));
+    }
+    
 }
 
+// We assume that the main image dataset is always loaded and therefore available.
+// For everything else, we refer back to the file.
 bool HDF5Loader::hasData(FileInfo::Data ds) const {
     switch(ds) {
-    case FileInfo::Data::XY:
-        return image.shape().size() >= 2;
-    case FileInfo::Data::XYZ:
-        return image.shape().size() >= 3;
-    case FileInfo::Data::XYZW:
-        return image.shape().size() >= 4;
-    default:
-        auto group_ptr = image.group();
-        std::string data = dataSetToString(ds);
-        if (data.empty()) {
-            return false;
-        }
-        return casacore::HDF5Group::exists(*group_ptr, data);
+        case FileInfo::Data::Image:
+            return true;
+        case FileInfo::Data::XY:
+            return ndims >= 2;
+        case FileInfo::Data::XYZ:
+            return ndims >= 3;
+        case FileInfo::Data::XYZW:
+            return ndims >= 4;
+        default:
+            auto group_ptr = image.group();
+            std::string data(dataSetToString(ds));
+            if (data.empty()) {
+                return false;
+            }            
+            return casacore::HDF5Group::exists(*group_ptr, data);
     }
 }
 
-// TODO: later we can implement swizzled datasets. We don't store stats in the same way as the main dataset(s).
+// TODO: when we fix the typing issue, this should probably return any dataset again, for consistency.
 typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
-    return image;
+    switch(ds) {
+        case FileInfo::Data::Image:
+            return image;
+        case FileInfo::Data::XY:
+            if (ndims == 2) {
+                return image;
+            }
+            break;
+        case FileInfo::Data::XYZ:
+            if (ndims == 3) {
+                return image;
+            }
+            break;
+        case FileInfo::Data::XYZW:
+            if (ndims == 4) {
+                return image;
+            }
+            break;
+        case FileInfo::Data::Swizzled:
+            if (swizzledImage.get()) {
+                return *swizzledImage;
+            }
+            break;
+        case FileInfo::Data::ZYX:
+            if (ndims == 3 && swizzledImage.get()) {
+                return *swizzledImage;
+            }
+            break;
+        case FileInfo::Data::ZYXW:
+            if (ndims == 4 && swizzledImage.get()) {
+                return *swizzledImage;
+            }
+            break;
+        default:
+            break;
+    }
+        
+    throw casacore::HDF5Error("Unable to load dataset " + dataSetToString(ds) + ".");
 }
 
 bool HDF5Loader::getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
@@ -83,14 +132,12 @@ struct EnumClassHash {
     }
 };
 
-std::string HDF5Loader::dataSetToString(FileInfo::Data ds) {
+std::string HDF5Loader::dataSetToString(FileInfo::Data ds) const {
     static std::unordered_map<FileInfo::Data, std::string, EnumClassHash> um = {
-        { FileInfo::Data::XY,         "DATA" },
-        { FileInfo::Data::XYZ,        "DATA" },
-        { FileInfo::Data::XYZW,       "DATA" },
-        { FileInfo::Data::YX,         "Swizzled/YX" },
-        { FileInfo::Data::ZYX,        "Swizzled/ZYX" },
-        { FileInfo::Data::XYZW,       "Swizzled/ZYXW" },
+        { FileInfo::Data::Image,      "DATA" },
+        { FileInfo::Data::YX,         "SwizzledData/YX" },
+        { FileInfo::Data::ZYX,        "SwizzledData/ZYX" },
+        { FileInfo::Data::ZYXW,       "SwizzledData/ZYXW" },
         { FileInfo::Data::Stats,      "Statistics" },
         { FileInfo::Data::Stats2D,    "Statistics/XY" },
         { FileInfo::Data::S2DMin,     "Statistics/XY/MIN" },
@@ -108,14 +155,36 @@ std::string HDF5Loader::dataSetToString(FileInfo::Data ds) {
         { FileInfo::Data::S3DPercent, "Statistics/XYZ/PERCENTILES" },
         { FileInfo::Data::Ranks,      "PERCENTILE_RANKS" },
     };
-    return (um.find(ds) != um.end()) ? um[ds] : "";
+    
+    switch(ds) {
+        case FileInfo::Data::XY:
+            return ndims == 2 ? dataSetToString(FileInfo::Data::Image) : "";
+        case FileInfo::Data::XYZ:
+            return ndims == 3 ? dataSetToString(FileInfo::Data::Image) : "";
+        case FileInfo::Data::XYZW:
+            return ndims == 4 ? dataSetToString(FileInfo::Data::Image) : "";
+        case FileInfo::Data::Swizzled:
+            switch(ndims) {
+                case 2:
+                    return dataSetToString(FileInfo::Data::YX);
+                case 3:
+                    return dataSetToString(FileInfo::Data::ZYX);
+                case 4:
+                    return dataSetToString(FileInfo::Data::ZYXW);
+                default:
+                    return "";
+            }
+            break;
+        default:
+            return (um.find(ds) != um.end()) ? um[ds] : "";
+    }
 }
 
 const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
     // this does not work: 
     // (/casacore/lattices/LEL/LELCoordinates.cc : 69) Failed AlwaysAssert !coords_p.null()
     const casacore::LELImageCoord* lelImCoords =
-        dynamic_cast<const casacore::LELImageCoord*>(&(loadData(FileInfo::Data::XYZW).lelCoordinates().coordinates()));
+        dynamic_cast<const casacore::LELImageCoord*>(&(loadData(FileInfo::Data::Image).lelCoordinates().coordinates()));
     return lelImCoords->coordinates();
 }
 
@@ -249,5 +318,29 @@ void HDF5Loader::findCoords(int& spectralAxis, int& stokesAxis) {
         else stokesAxis = 2;
     } 
 }
+bool HDF5Loader::getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY) {
+    bool dataOK(false);
+    if (hasData(FileInfo::Data::Swizzled)) {
+        casacore::Slicer slicer;
+        if (ndims == 4) {
+            slicer = casacore::Slicer(ipos(4, 0, cursorY, cursorX, stokes), ipos(4, nchannels, 1, 1, 1));
+        } else if (ndims == 3) {
+            slicer = casacore::Slicer(ipos(3, 0, cursorY, cursorX), ipos(3, nchannels, 1, 1));
+        }
+
+        data.resize(nchannels);
+        casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
+        try {
+            loadData(FileInfo::Data::Swizzled).doGetSlice(tmp, slicer);
+            dataOK = true;
+        } catch (casacore::AipsError& err) {
+            std::cerr << "AIPS ERROR: " << err.getMesg() << std::endl;
+        }
+    }
+    
+    return dataOK;
+}
+
+
 
 } // namespace carta

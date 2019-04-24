@@ -225,15 +225,36 @@ bool Frame::setImageView(const CARTA::ImageBounds& newBounds, int newMip,
         return false;
     if ((imageShape(1) < ymin + reqHeight) || (imageShape(0) < xmin + reqWidth))
         return false;
-    if (newMip < 0)
+    if (newMip <= 0)
         return false;
 
-    bounds = newBounds;
-    mip = newMip;
-    compType = newCompression;
-    quality = newQuality;
-    nsubsets = newSubsets;
+    // changed check
+    ViewSettings current_view_settings = getViewSettings();
+    CARTA::ImageBounds current_view_bounds = current_view_settings.image_bounds;
+    if ((current_view_bounds.x_min() == xmin) &&
+        (current_view_bounds.x_max() == xmax) &&
+        (current_view_bounds.y_min() == ymin) &&
+        (current_view_bounds.y_max() == ymax) &&
+        (current_view_settings.mip == newMip) &&
+        (current_view_settings.compression_type == newCompression) &&
+        (current_view_settings.quality == newQuality) &&
+        (current_view_settings.num_subsets == newSubsets))
+        return false;
+
+    setViewSettings(newBounds, newMip, newCompression, newQuality, newSubsets);
     return true;
+}
+
+void Frame::setViewSettings(const CARTA::ImageBounds& newBounds, int newMip,
+        CARTA::CompressionType newCompression, float newQuality, int newSubsets) {
+    // save new view settings in atomic operation
+    ViewSettings settings;
+    settings.image_bounds = newBounds;
+    settings.mip = newMip;
+    settings.compression_type = newCompression;
+    settings.quality = newQuality;
+    settings.num_subsets = newSubsets;
+    view_settings_ = settings;
 }
 
 bool Frame::setImageChannels(int newChannel, int newStokes, std::string& message) {
@@ -267,7 +288,7 @@ void Frame::setImageCache() {
     casacore::Slicer section = getChannelMatrixSlicer(channelIndex, stokesIndex);
     casacore::Array<float> tmp(section.length(), imageCache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(latticeMutex);
-    loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
+    loader->loadData(FileInfo::Data::Image).getSlice(tmp, section, true);
 }
 
 void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes) {
@@ -277,7 +298,7 @@ void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, siz
     casacore::Array<float> tmp(section.length(), chanMatrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
     std::lock_guard<std::mutex> guard(latticeMutex);
-    loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
+    loader->loadData(FileInfo::Data::Image).getSlice(tmp, section, true);
 }
 
 casacore::Slicer Frame::getChannelMatrixSlicer(size_t channel, size_t stokes) {
@@ -342,7 +363,7 @@ bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& subla
         if (region->isValid()) {
             casacore::LatticeRegion lattRegion;
             if (region->getRegion(lattRegion, stokes, channel)) {
-                sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::XYZW), lattRegion);
+                sublattice = casacore::SubLattice<float>(loader->loadData(FileInfo::Data::Image), lattRegion);
                 sublatticeOK = true;
             }
         }
@@ -448,32 +469,44 @@ bool Frame::setRegionStatsRequirements(int regionId, const std::vector<int> stat
 bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::string& message) {
     // fill data message with compressed channel cache data
     bool rasterDataOK(false);
+    // retrieve settings
+    ViewSettings view_settings = getViewSettings();
+    // get downsampled raster data for message
     std::vector<float> imageData;
-    if (getImageData(imageData)) {
-        rasterImageData.mutable_image_bounds()->set_x_min(bounds.x_min());
-        rasterImageData.mutable_image_bounds()->set_x_max(bounds.x_max());
-        rasterImageData.mutable_image_bounds()->set_y_min(bounds.y_min());
-        rasterImageData.mutable_image_bounds()->set_y_max(bounds.y_max());
+    CARTA::ImageBounds bounds_setting(view_settings.image_bounds);
+    int mip_setting(view_settings.mip);
+    if (getRasterData(imageData, bounds_setting, mip_setting)) {
+        // set common message fields
+        rasterImageData.mutable_image_bounds()->set_x_min(bounds_setting.x_min());
+        rasterImageData.mutable_image_bounds()->set_x_max(bounds_setting.x_max());
+        rasterImageData.mutable_image_bounds()->set_y_min(bounds_setting.y_min());
+        rasterImageData.mutable_image_bounds()->set_y_max(bounds_setting.y_max());
         rasterImageData.set_channel(channelIndex);
         rasterImageData.set_stokes(stokesIndex);
-        rasterImageData.set_mip(mip);
-        if (compType == CARTA::CompressionType::NONE) {
-            rasterImageData.set_compression_type(CARTA::CompressionType::NONE);
+        rasterImageData.set_mip(mip_setting);
+        CARTA::CompressionType compression_setting = view_settings.compression_type;
+        rasterImageData.set_compression_type(compression_setting);
+
+        // add data
+        if (compression_setting == CARTA::CompressionType::NONE) {
             rasterImageData.set_compression_quality(0);
             rasterImageData.add_image_data(imageData.data(), imageData.size() * sizeof(float));
             rasterDataOK = true;
-        } else if (compType == CARTA::CompressionType::ZFP) {
-            rasterImageData.set_compression_type(CARTA::CompressionType::ZFP);
-            int precision = lround(quality);
+        } else if (compression_setting == CARTA::CompressionType::ZFP) {
+            // compression settings
+            float quality_setting(view_settings.quality);
+            int num_subsets_setting(view_settings.num_subsets);
+
+            int precision = lround(quality_setting);
             rasterImageData.set_compression_quality(precision);
 
-            auto rowLength = (bounds.x_max() - bounds.x_min()) / mip;
-            auto numRows = (bounds.y_max() - bounds.y_min()) / mip;
-            std::vector<std::vector<char>> compressionBuffers(nsubsets);
-            std::vector<size_t> compressedSizes(nsubsets);
-            std::vector<std::vector<int32_t>> nanEncodings(nsubsets);
+            auto rowLength = (bounds_setting.x_max() - bounds_setting.x_min()) / mip_setting;
+            auto numRows = (bounds_setting.y_max() - bounds_setting.y_min()) / mip_setting;
+            std::vector<std::vector<char>> compressionBuffers(num_subsets_setting);
+            std::vector<size_t> compressedSizes(num_subsets_setting);
+            std::vector<std::vector<int32_t>> nanEncodings(num_subsets_setting);
 
-            auto N = std::min(nsubsets, MAX_SUBSETS);
+            auto N = std::min(num_subsets_setting, MAX_SUBSETS);
             auto range = tbb::blocked_range<int>(0, N);
             auto loop = [&](const tbb::blocked_range<int> &r) {
                 for(int i = r.begin(); i != r.end(); ++i) {
@@ -493,7 +526,7 @@ bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::st
             tbb::parallel_for(range, loop);
 
             // Complete message
-            for (auto i = 0; i < nsubsets; i++) {
+            for (auto i = 0; i < num_subsets_setting; i++) {
                 rasterImageData.add_image_data(compressionBuffers[i].data(), compressedSizes[i]);
                 rasterImageData.add_nan_encodings((char*) nanEncodings[i].data(),
                     nanEncodings[i].size() * sizeof(int));
@@ -508,7 +541,8 @@ bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::st
     return rasterDataOK;
 }
 
-bool Frame::getImageData(std::vector<float>& imageData, bool meanFilter) {
+bool Frame::getRasterData(std::vector<float>& imageData,
+                         CARTA::ImageBounds& bounds, int mip, bool meanFilter) {
     // apply bounds and downsample image cache
     if (!valid || imageCache.empty()) {
         return false;
@@ -525,7 +559,7 @@ bool Frame::getImageData(std::vector<float>& imageData, bool meanFilter) {
     if (imageShape(1) < y + reqHeight || imageShape(0) < x + reqWidth)
         return false;
     // check mip; cannot divide by zero
-    if (mip < 0)
+    if (mip <= 0)
         return false;
 
     // size returned vector
@@ -546,9 +580,9 @@ bool Frame::getImageData(std::vector<float>& imageData, bool meanFilter) {
                 for (size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
                     float pixelSum = 0;
                     int pixelCount = 0;
-                    size_t imageRow = y + j * mip;
+                    size_t imageRow = y + (j * mip);
                     for (size_t pixelY = 0; pixelY < mip; pixelY++) {
-                        size_t imageCol = x + i * mip;
+                        size_t imageCol = x + (i * mip);
                         for (size_t pixelX = 0; pixelX < mip; pixelX++) {
                             float pixVal = imageCache[(imageRow * nImgCol) + imageCol];
                             if (isfinite(pixVal)) {
@@ -754,7 +788,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     profile.resize(end);
                     casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
                     std::lock_guard<std::mutex> guard(latticeMutex);
-                    loader->loadData(FileInfo::Data::XYZW).getSlice(tmp, section, true);
+                    loader->loadData(FileInfo::Data::Image).getSlice(tmp, section, true);
                 }
                 // SpatialProfile
                 auto newProfile = profileData.add_profiles();
@@ -801,7 +835,11 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 // fill SpectralProfiles for this config
                 if (region->isPoint()) {  // values
                     std::vector<float> spectralData;
-                    getSpectralData(spectralData, sublattice, 100);
+                    auto cursorPos = region->getControlPoints()[0];
+                    // try use the loader's optimized cursor profile reader first
+                    if (!loader->getCursorSpectralData(spectralData, profileStokes, cursorPos.x(), cursorPos.y())) {
+                        getSpectralData(spectralData, sublattice, 100);
+                    }
                     guard.unlock();
                     region->fillSpectralProfileData(profileData, i, spectralData);
                 } else {  // statistics
@@ -835,7 +873,7 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex);
         if (!sublattice.shape().empty())
              setPixelMask(sublattice);
-        region->fillStatsData(statsData, sublattice);
+        region->fillStatsData(statsData, sublattice, channelIndex, stokesIndex);
         statsOK = true;
     }
     return statsOK;

@@ -72,7 +72,8 @@ public:
     // Stats: pass through to RegionStats
     void setStatsRequirements(const std::vector<int>& statsTypes);
     size_t numStats();
-    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice);
+    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice,
+        int channel, int stokes);
 
 private:
 
