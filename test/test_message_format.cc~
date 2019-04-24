@@ -6,31 +6,26 @@
 #include "build/carta-protobuf/register_viewer.pb.h"
 
 
-enum msg_type:uint16_t {
-  reg_viewer_ack= 1
-};
-
-
 typedef struct {
-  struct msg_type _type;
-  uint16_t _icd_vers;
-  uint32_t _req_id;
+  uint8_t _type; 
+  uint8_t _icd_vers;
+  uint16_t _req_id;
 } msg_header;
 
 
-const uint16_t test_TYPE= 1;  // Will make this an enum later
-const uint16_t ICD_VERSION= 2;
+const uint8_t test_TYPE= 1;
+const uint8_t ICD_VERSION= 2;
 
 void
 recv_event( char * buff, int length )
 {
   msg_header head= *reinterpret_cast<msg_header*>(buff);
 
-  std::printf("type= %d, icd vers= %d, reqid= %d\n",
+  std::printf("type= %d, icd vers= %d, flags= 0x%02d, reqid= %d\n",
 	      head._type, head._icd_vers, head._req_id );
   
   switch( head._type ) {
-  case msg_type::reg_viewer_ack: {
+  case test_TYPE: {
     CARTA::RegisterViewerAck Message;
     Message.ParseFromArray(buff + sizeof(msg_header), length);
     std::cout << " Got RVack for uuid " << Message.session_id() << std::endl;
@@ -44,8 +39,9 @@ recv_event( char * buff, int length )
 
 
 void
-send_event( msg_type evt_type,
-	    uint32_t event_id,
+send_event( uint8_t evt_type,
+	    uint16_t flags,
+	    uint64_t event_id,
 	    google::protobuf::MessageLite& Message )
 {
   msg_header head;
@@ -53,6 +49,7 @@ send_event( msg_type evt_type,
   
   head._type= evt_type;
   head._icd_vers= ICD_VERSION;
+  head._flags= flags;
   head._req_id= event_id;
 
   std::memcpy(buffer, &head, sizeof(msg_header));
@@ -65,9 +62,10 @@ send_event( msg_type evt_type,
 
 int main(int argc, const char* argv[])
 {
-  uint32_t req_id= 1002;
-  std::string message("Error string ...");
-  std::string uuid("123882"); // Should be uint32_t, but need to update protobuf def
+  uint16_t flags= 0x3;
+  uint64_t req_id= 1002;
+  std::string message("Its all gone wrong");
+  std::string uuid("123882"); // Should be uint32_t, but need tup update protobuf def
   ::CARTA::SessionType type(CARTA::SessionType::NEW);
   
   CARTA::RegisterViewerAck ackMessage;
@@ -79,7 +77,7 @@ int main(int argc, const char* argv[])
   
   std::cout << " message type : " << ackMessage.GetTypeName() << std::endl;
 
-  send_event(test_TYPE, req_id, ackMessage);
+  send_event(test_TYPE, flags, req_id, ackMessage);
   
   return 0;
 }
