@@ -6,15 +6,20 @@
 #include "build/carta-protobuf/register_viewer.pb.h"
 
 
+enum msg_type:uint16_t {
+  reg_viewer_ack= 1
+};
+
+
 typedef struct {
-  uint8_t _type; 
-  uint8_t _icd_vers;
-  uint16_t _req_id;
+  struct msg_type _type;
+  uint16_t _icd_vers;
+  uint32_t _req_id;
 } msg_header;
 
 
-const uint8_t test_TYPE= 1;
-const uint8_t ICD_VERSION= 2;
+const uint16_t test_TYPE= 1;  // Will make this an enum later
+const uint16_t ICD_VERSION= 2;
 
 void
 recv_event( char * buff, int length )
@@ -25,7 +30,7 @@ recv_event( char * buff, int length )
 	      head._type, head._icd_vers, head._req_id );
   
   switch( head._type ) {
-  case test_TYPE: {
+  case msg_type::reg_viewer_ack: {
     CARTA::RegisterViewerAck Message;
     Message.ParseFromArray(buff + sizeof(msg_header), length);
     std::cout << " Got RVack for uuid " << Message.session_id() << std::endl;
@@ -39,7 +44,7 @@ recv_event( char * buff, int length )
 
 
 void
-send_event( uint8_t evt_type,
+send_event( msg_type evt_type,
 	    uint32_t event_id,
 	    google::protobuf::MessageLite& Message )
 {
