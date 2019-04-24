@@ -21,7 +21,6 @@
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
-#include <tbb/task.h>
 #include <tbb/atomic.h>
 #include <uWS/uWS.h>
 
@@ -42,7 +41,6 @@ class Session {
     std::string uuid;
     carta::FileSettings fsettings;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> setchanq;
-    tbb::task_group_context * _context;
  protected:
     // communication
     uWS::WebSocket<uWS::SERVER>* socket;
@@ -73,7 +71,7 @@ class Session {
     bool _image_channel_task_active;
 
     // cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
-    float histogramProgress;
+    tbb::atomic<float> histogramProgress;
 
     // Notification mechanism when outgoing messages are ready
     uS::Async *outgoing;
@@ -105,7 +103,7 @@ public:
       onSetImageChannels(req.first, req.second);
     }
     void cancel_SetHistReqs() {
-      _context->cancel_group_execution();
+      histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
     }
     void build_animation_object(::CARTA::StartAnimation &msg, uint32_t req_id);
     bool execute_animation_frame();
