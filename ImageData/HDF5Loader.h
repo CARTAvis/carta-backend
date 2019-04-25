@@ -17,7 +17,6 @@ public:
     image_ref loadData(FileInfo::Data ds) override;
     bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     const casacore::CoordinateSystem& getCoordSystem() override;
-    void findCoords(int& spectralAxis, int& stokesAxis) override;
     bool getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY) override;
     
 private:
@@ -34,19 +33,22 @@ private:
     casacore::ArrayBase* getStatsData(FileInfo::Data ds) override;
 };
 
+
 HDF5Loader::HDF5Loader(const std::string &filename)
     : file(filename),
       hdf5Hdu("0")
 {}
 
 void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
+    // Open hdf5 image with specified hdu
     image = std::unique_ptr<carta::HDF5Image>(new carta::HDF5Image(filename,
         dataSetToString(FileInfo::Data::Image), hdu));
     
     // We need this immediately because dataSetToString uses it to find the name
     // of the swizzled dataset
     ndims = image->shape().size();
-    
+
+    // Load swizzled image lattice
     if (hasData(FileInfo::Data::Swizzled)) {
         swizzledImage = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Swizzled), hdu));
     }
@@ -184,11 +186,7 @@ std::string HDF5Loader::dataSetToString(FileInfo::Data ds) const {
 }
 
 const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
-    // this does not work: 
-    // (/casacore/lattices/LEL/LELCoordinates.cc : 69) Failed AlwaysAssert !coords_p.null()
-    const casacore::LELImageCoord* lelImCoords =
-        dynamic_cast<const casacore::LELImageCoord*>(&(loadData(FileInfo::Data::Image).lelCoordinates().coordinates()));
-    return lelImCoords->coordinates();
+    return image->coordinates();
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this complicated templating, at least for now.
@@ -270,57 +268,6 @@ casacore::ArrayBase* HDF5Loader::getStatsDataTyped(FileInfo::Data ds) {
     return data;
 }
 
-void HDF5Loader::findCoords(int& spectralAxis, int& stokesAxis) {
-    // find spectral and stokes axis in 4D image; cannot use CoordinateSystem!
-    // load attributes
-    casacore::HDF5File hdfFile(file);
-    casacore::HDF5Group hdfGroup(hdfFile, hdf5Hdu, true);
-    casacore::Record attributes = HDF5Attributes::doReadAttributes(hdfGroup.getHid());
-    hdfGroup.close();
-    hdfFile.close();
-    if (attributes.empty()) { // use defaults
-        spectralAxis = 2;
-        stokesAxis = 3;
-	return;
-    }
-
-    casacore::String cType3, cType4;
-    if (attributes.isDefined("CTYPE3")) {
-        cType3 = attributes.asString("CTYPE3");
-	cType3.upcase();
-    }
-    if (attributes.isDefined("CTYPE4")) {
-        cType4 = attributes.asString("CTYPE4");
-	cType4.upcase();
-    }
-    // find spectral axis
-    if ((cType3.startsWith("FREQ") || cType3.startsWith("VRAD") || cType3.startsWith("VELO")))
-        spectralAxis = 2;
-    else if ((cType4.startsWith("FREQ") || cType4.startsWith("VRAD") || cType4.startsWith("VELO")))
-        spectralAxis = 3;
-    else
-        spectralAxis = -1;
-    // find stokes axis
-    if (cType3 == "STOKES")
-        stokesAxis = 2;
-    else if (cType4 == "STOKES")
-        stokesAxis = 3;
-    else 
-        stokesAxis = -1;
-    // make assumptions if both not found
-    if (spectralAxis < 0) { // not found
-        if (stokesAxis < 0) {  // not found, use defaults
-            spectralAxis = 2;
-            stokesAxis = 3;
-        } else { // stokes found, set chan to other one
-            if (stokesAxis==2) spectralAxis = 3;
-            else spectralAxis = 2;
-        }
-    } else {  // chan found, set stokes to other one
-        if (spectralAxis == 2) stokesAxis = 3;
-        else stokesAxis = 2;
-    } 
-}
 bool HDF5Loader::getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY) {
     bool dataOK(false);
     if (hasData(FileInfo::Data::Swizzled)) {
@@ -343,7 +290,6 @@ bool HDF5Loader::getCursorSpectralData(std::vector<float>& data, int stokes, int
     
     return dataOK;
 }
-
 
 
 } // namespace carta
