@@ -12,19 +12,21 @@ using namespace std;
 Frame::Frame(const string& uuidString, const string& filename, const string& hdu, int defaultChannel)
     : uuid(uuidString),
       valid(true),
+      connected(true),
+      zProfileCount(0),
       cursorSet(false),
       filename(filename),
       loader(FileLoader::getLoader(filename)),
       spectralAxis(-1), stokesAxis(-1),
       channelIndex(-1), stokesIndex(-1),
       nchan(1), nstok(1) {
-    
+
     if (loader==nullptr) {
         log(uuid, "Problem loading file {}: loader not implemented", filename);
         valid = false;
         return;
     }
-    
+
     try {
         loader->openFile(filename, hdu);
     } catch (casacore::AipsError& err) {
@@ -69,6 +71,11 @@ Frame::~Frame() {
 
 bool Frame::isValid() {
     return valid;
+}
+
+void Frame::disconnectCalled() {
+    connected = false; // set a false flag to interrupt the running jobs
+    while (zProfileCount) {} // wait for the jobs finished
 }
 
 std::vector<int> Frame::getRegionIds() {
@@ -806,14 +813,19 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
 bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData,
         bool checkCurrentStokes) {
     // fill spectral profile message with requested statistics (or values for a point region)
+    increaseZProfileCount();
     bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
-        if (!region->isValid())
+        if (!region->isValid()) {
+            decreaseZProfileCount();
             return false;
+        }
         size_t numProfiles(region->numSpectralProfiles());
-        if (numProfiles == 0)
+        if (numProfiles == 0) {
+            decreaseZProfileCount();
             return false; // not requested
+        }
 
         // set profile parameters
         int currStokes(currentStokes());
@@ -824,8 +836,10 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
             int profileStokes;
             if (region->getSpectralConfigStokes(profileStokes, i)) {
                 // only send if using current stokes, which changed
-                if (checkCurrentStokes && (profileStokes != CURRENT_STOKES))
+                if (checkCurrentStokes && (profileStokes != CURRENT_STOKES)) {
+                    decreaseZProfileCount();
                     return false;
+                }
                 if (profileStokes == CURRENT_STOKES)
                     profileStokes = currStokes;
                 // get sublattice for stokes requested in profile
@@ -838,10 +852,13 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     auto cursorPos = region->getControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
                     if (!loader->getCursorSpectralData(spectralData, profileStokes, cursorPos.x(), cursorPos.y())) {
-                        getSpectralData(spectralData, sublattice, 100);
+                        // get spectral profile data
+                        bool complete = getSpectralData(spectralData, sublattice, 100);
+                        guard.unlock();
+                        // only send spectral profile data to frontend while it is complete
+                        if (complete)
+                            region->fillSpectralProfileData(profileData, i, spectralData);
                     }
-                    guard.unlock();
-                    region->fillSpectralProfileData(profileData, i, spectralData);
                 } else {  // statistics
                     if (!sublattice.shape().empty())
                         setPixelMask(sublattice);
@@ -852,6 +869,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
         }
         profileOK = true;
     }
+    decreaseZProfileCount();
     return profileOK;
 }
 
@@ -1047,20 +1065,11 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
     bool dataOK(false);
     casacore::IPosition sublattShape = sublattice.shape();
     data.resize(sublattShape.product());
-    if (checkPerChannels > 0 && sublattShape.size() > 2 && sublattShape > 1) { // stoppable spectral profile process
+    if (checkPerChannels > 0 && sublattShape.size() > 2 && spectralAxis >= 0) { // stoppable spectral profile process
         try {
             casacore::IPosition start(sublattShape.size(), 0);
             casacore::IPosition count(sublattShape);
-            int profileAxis; // profile axis index
-            size_t profileSize; // profile vector size
-            // get profile axis index and its vector size
-            for (int i=0; i<sublattShape.size(); ++i) {
-                if (count(i)>1) {
-                    profileAxis = i;
-                    profileSize = count(i);
-                }
-            }
-            size_t begin = 0; // the begin index of profile vector in each copy
+            size_t profileSize = nchannels(); // profile vector size
             size_t upperBound = (profileSize%checkPerChannels == 0 ? profileSize/checkPerChannels : profileSize/checkPerChannels + 1);
             // get cursor's x-y coordinate from sub-lattice
             std::pair<int, int> tmpXY;
@@ -1068,17 +1077,16 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             for (size_t i=0; i<upperBound; ++i) {
                 // check if cursor's position changed during this loop, if so, stop the profile process
-                if (tmpXY != cursorXY)
+                if (tmpXY != cursorXY || !connected)
                     return false;
                 // modify the start position for slicer
-                start(profileAxis) = i*checkPerChannels;
+                start(spectralAxis) = i*checkPerChannels;
                 // modify the count for slicer
-                count(profileAxis) = (checkPerChannels*(i+1) < profileSize ? checkPerChannels : profileSize - i*checkPerChannels);
+                count(spectralAxis) = (checkPerChannels*(i+1) < profileSize ? checkPerChannels : profileSize - i*checkPerChannels);
                 casacore::Slicer slicer(start, count);
                 casacore::Array<float> buffer;
                 sublattice.doGetSlice(buffer, slicer);
-                memcpy(&data[begin], buffer.data(), count(profileAxis)*sizeof(float));
-                begin += count(profileAxis);
+                memcpy(&data[i*checkPerChannels], buffer.data(), count(spectralAxis)*sizeof(float));
             }
             dataOK = true;
         } catch (casacore::AipsError& err) {

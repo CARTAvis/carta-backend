@@ -7,6 +7,7 @@
 #include <mutex>
 #include <algorithm>
 #include <tbb/queuing_rw_mutex.h>
+#include <tbb/atomic.h>
 
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
@@ -31,6 +32,12 @@ private:
     // setup
     std::string uuid;
     bool valid;
+
+    // communication
+    bool connected;
+
+    // spectral profile counter
+    tbb::atomic<int> zProfileCount;
 
     // image loader, stats from image file
     std::string filename;
@@ -100,6 +107,8 @@ private:
     // get spectral profile data from sub-lattice
     bool getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels=ALL_CHANNELS);
 
+    void increaseZProfileCount() { ++zProfileCount; }
+    void decreaseZProfileCount() { --zProfileCount; }
 
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu,
@@ -157,4 +166,7 @@ public:
         float maxval, CARTA::Histogram& histogram);
     void setRegionMinMax(int regionId, int channel, int stokes, float minval, float maxval);
     void setRegionHistogram(int regionId, int channel, int stokes, CARTA::Histogram& histogram);
+
+    // set the flag connected = false, in order to stop the jobs and wait for jobs finished
+    void disconnectCalled();
 };

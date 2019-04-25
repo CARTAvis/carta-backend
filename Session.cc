@@ -61,6 +61,13 @@ Session::~Session() {
       std::cout << "No remaining sessions." << endl;
 }
 
+void Session::disconnect_called() {
+    _connected= false;
+    for (auto& frame : frames) {
+        frame.second->disconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+    }
+}
+
 // ********************************************************************************
 // File browser
 
@@ -180,8 +187,8 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
     ack.set_file_id(fileId);
     string errMessage;
 
-    bool infoLoaded((selectedFileInfo != nullptr) && 
-        (selectedFileInfoExtended != nullptr) && 
+    bool infoLoaded((selectedFileInfo != nullptr) &&
+        (selectedFileInfoExtended != nullptr) &&
         (selectedFileInfo->name() == filename)); // correct file loaded
     if (!infoLoaded) { // load from image file
         resetFileInfo(true);
@@ -231,10 +238,12 @@ void Session::onCloseFile(const CARTA::CloseFile& message, uint32_t requestId) {
     std::unique_lock<std::mutex> lock(frameMutex);
     if (fileId == ALL_FILES) {
         for (auto& frame : frames) {
+            frame.second->disconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
             frame.second.reset();  // delete Frame
         }
         frames.clear();
     } else if (frames.count(fileId)) {
+        frames[fileId]->disconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
         frames[fileId].reset();
         frames.erase(fileId);
     }
@@ -889,10 +898,10 @@ bool Session::execute_animation_frame( void )
   if( (waitms.count() < _ani_obj->_waitms) || _ani_obj->_always_wait ) {
     // Wait for time to execute next frame processing.
     std::this_thread::sleep_for( waitms );
-    
+
     ::CARTA::AnimationFrame curr_frame= _ani_obj->_curr_frame;
-    ::CARTA::AnimationFrame delta_frame= _ani_obj->_delta_frame; 
-    
+    ::CARTA::AnimationFrame delta_frame= _ani_obj->_delta_frame;
+
     auto fileId(_ani_obj->_file_id);
     if (frames.count(fileId)) {
       try {
@@ -920,11 +929,11 @@ bool Session::execute_animation_frame( void )
     }
 
     ::CARTA::AnimationFrame tmpF;
-    
+
     if( _ani_obj->_going_forward ) {
       tmpF.set_channel(curr_frame.channel() + delta_frame.channel());
       tmpF.set_stokes(curr_frame.stokes() + delta_frame.stokes());
-      
+
       if( (tmpF.channel() > _ani_obj->_end_frame.channel()) ||
 	  (tmpF.stokes() > _ani_obj->_end_frame.stokes()) ) {
 	if( _ani_obj->_reverse_at_end ) {
@@ -946,7 +955,7 @@ bool Session::execute_animation_frame( void )
     else { // going backwards;
       tmpF.set_channel(curr_frame.channel() - _ani_obj->_delta_frame.channel());
       tmpF.set_stokes(curr_frame.stokes() - _ani_obj->_delta_frame.stokes());
-      
+
       if( (tmpF.channel() < _ani_obj->_start_frame.channel()) ||
 	  (tmpF.stokes() < _ani_obj->_start_frame.stokes()) ) {
 	if( _ani_obj->_reverse_at_end ) {
