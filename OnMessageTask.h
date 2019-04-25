@@ -3,6 +3,8 @@
 #pragma once
 
 #include "Session.h"
+#include "AnimationObject.h"
+
 
 #include <tbb/concurrent_queue.h>
 #include <tbb/task.h>
@@ -86,6 +88,20 @@ public:
     _msg= msg;
   }
   ~SetHistogramReqsTask() {
+  }
+};
+
+class AnimationTask : public OnMessageTask {
+  std::tuple<uint8_t,uint32_t,std::vector<char>> _msg;
+  tbb::task* execute();
+  
+ public:
+ AnimationTask(Session *session_, uint32_t req_id,
+	       CARTA::StartAnimation msg)
+   : OnMessageTask( session_ ) {
+    session_->build_animation_object( msg, req_id );
+  }
+  ~AnimationTask() {
   }
 };
 
