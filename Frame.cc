@@ -842,24 +842,26 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                 }
                 if (profileStokes == CURRENT_STOKES)
                     profileStokes = currStokes;
-                // get sublattice for stokes requested in profile
-                casacore::SubLattice<float> sublattice;
-                std::unique_lock<std::mutex> guard(latticeMutex);
-                getRegionSubLattice(regionId, sublattice, profileStokes);
                 // fill SpectralProfiles for this config
                 if (region->isPoint()) {  // values
                     std::vector<float> spectralData;
-                    auto cursorPos = region->getControlPoints()[0];
+                    auto cursorPoints = region->getControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
-                    if (!loader->getCursorSpectralData(spectralData, profileStokes, cursorPos.x(), cursorPos.y())) {
-                        // get spectral profile data
-                        bool complete = getSpectralData(spectralData, sublattice, 100);
+                    bool haveSpectralData = loader->getCursorSpectralData(spectralData, profileStokes, cursorPoints.x(), cursorPoints.y());
+		    if (!haveSpectralData) {  // load from sublattice in 100-channel chunks
+                        casacore::SubLattice<float> sublattice;
+                        std::unique_lock<std::mutex> guard(latticeMutex);
+                        getRegionSubLattice(regionId, sublattice, profileStokes);
+                        haveSpectralData = getSpectralData(spectralData, sublattice, 100);
                         guard.unlock();
-                        // only send spectral profile data to frontend while it is complete
-                        if (complete)
-                            region->fillSpectralProfileData(profileData, i, spectralData);
+                    }
+                    if (haveSpectralData) {
+                        region->fillSpectralProfileData(profileData, i, spectralData);
                     }
                 } else {  // statistics
+                    casacore::SubLattice<float> sublattice;
+                    std::unique_lock<std::mutex> guard(latticeMutex);
+                    getRegionSubLattice(regionId, sublattice, profileStokes);
                     if (!sublattice.shape().empty())
                         setPixelMask(sublattice);
                     region->fillSpectralProfileData(profileData, i, sublattice);

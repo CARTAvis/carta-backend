@@ -67,3 +67,43 @@ void HDF5Attributes::readScalar (hid_t attrId, hid_t dtid, const casacore::Strin
     }
 }
 
+// get int value (might be string)
+bool HDF5Attributes::getIntAttribute(casacore::Int64& val, const casacore::Record& rec,
+        const casacore::String& field) {
+    bool getOK(true);
+    if (rec.isDefined(field)) {
+        try {
+            val = rec.asInt64(field);
+        } catch (casacore::AipsError& err) {
+            try {
+                val = casacore::String::toInt(rec.asString(field));
+            } catch (casacore::AipsError& err) {
+                getOK = false;
+            }
+        }
+    } else {
+        getOK = false;
+    }
+    return getOK;
+}
+
+// get double value (might be string)
+bool HDF5Attributes::getDoubleAttribute(casacore::Double& val, const casacore::Record& rec,
+        const casacore::String& field) {
+    bool getOK(true);
+    if (rec.isDefined(field)) {
+        try {
+            val = rec.asDouble(field);
+        } catch (casacore::AipsError& err) {
+            try {
+                val = casacore::String::toDouble(rec.asString(field));
+            } catch (casacore::AipsError& err) {
+                getOK = false;
+            }
+        }
+    } else {
+        getOK = false;
+    }
+    return getOK;
+}
+
