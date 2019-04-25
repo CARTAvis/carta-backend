@@ -1,4 +1,3 @@
-#include <casacore/casa/OS/File.h>
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/casa/Inputs/Input.h>
 #include <fmt/format.h>
@@ -7,9 +6,7 @@
 #include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
 
-#include <fstream>
 #include <iostream>
-#include <regex>
 #include <tuple>
 #include <vector>
 #include <signal.h>
@@ -30,7 +27,7 @@ using namespace std;
 using key_type = string;
 
 // key is current folder
-unordered_map<std::string, vector<string>> permissionsMap;
+unordered_map<string, vector<string>> permissionsMap;
 
 // file list handler for the file browser
 FileListHandler* fileListHandler;
@@ -38,116 +35,20 @@ FileListHandler* fileListHandler;
 int sessionNumber;
 uWS::Hub wsHub;
 
-// Map from string uuids to 32 bit ints.
+// Map from string uuids to 8 bit ints.
 unordered_map<std::string,uint8_t> _event_name_map;
 
 // command-line arguments
 string rootFolder("/"), baseFolder("."), version_id("1.1");
 bool verbose, usePermissions;
 
-bool checkRootBaseFolders(std::string& root, std::string& base) {
-    if (root=="base" && base == "root") {
-        fmt::print("ERROR: Must set root or base directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    if (root=="base") root = base;
-    if (base=="root") base = root;
-
-    // check root
-    casacore::File rootFolder(root);
-    if (!(rootFolder.exists() && rootFolder.isDirectory(true) &&
-          rootFolder.isReadable() && rootFolder.isExecutable())) {
-        fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        root = rootFolder.path().resolvedName(); // fails on root folder /
-    } catch (casacore::AipsError& err) {
-        try {
-            root = rootFolder.path().absoluteName();
-        } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
-        }
-        if (root.empty()) root = "/";
-    }
-    // check base
-    casacore::File baseFolder(base);
-    if (!(baseFolder.exists() && baseFolder.isDirectory(true) &&
-          baseFolder.isReadable() && baseFolder.isExecutable())) {
-        fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        base = baseFolder.path().resolvedName(); // fails on root folder /
-    } catch (casacore::AipsError& err) {
-        try {
-            base = baseFolder.path().absoluteName();
-        } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
-        }
-        if (base.empty()) base = "/";
-    }
-    // check if base is same as or subdir of root
-    if (base != root) {
-        bool isSubdirectory(false);
-        casacore::Path basePath(base);
-        casacore::String parentString(basePath.dirName()), rootString(root);
-	if (parentString == rootString)
-            isSubdirectory = true;
-        while (!isSubdirectory && (parentString != rootString)) {  // navigate up directory tree
-            basePath = casacore::Path(parentString);
-            parentString = basePath.dirName();
-            if (parentString == rootString) {
-                isSubdirectory = true;
-	    } else if (parentString == "/") {
-                break;
-            }
-        }
-        if (!isSubdirectory) {
-            fmt::print("ERROR: Base {} must be a subdirectory of root {}. Exiting carta.\n", base, root);
-            return false;
-        }
-    }
-    return true;
-}
-
-// Reads a permissions file to determine which API keys are required to access various subdirectories
-void readPermissions(string filename) {
-    ifstream permissionsFile(filename);
-    if (permissionsFile.good()) {
-        fmt::print("Reading permissions file\n");
-        string line;
-        regex commentRegex("\\s*#.*");
-        regex folderRegex("\\s*(\\S+):\\s*");
-        regex keyRegex("\\s*(\\S{4,}|\\*)\\s*");
-        string currentFolder;
-        while (getline(permissionsFile, line)) {
-            smatch matches;
-            if (regex_match(line, commentRegex)) {
-                continue;
-            } else if (regex_match(line, matches, folderRegex) && matches.size() == 2) {
-                currentFolder = matches[1].str();
-            } else if (currentFolder.length() && regex_match(line, matches, keyRegex) && matches.size() == 2) {
-                string key = matches[1].str();
-                permissionsMap[currentFolder].push_back(key);
-            }
-        }
-    } else {
-        fmt::print("Missing permissions file\n");
-    }
-}
 
 
-inline uint8_t get_event_id_by_string(std::string& strname)
+inline uint8_t get_event_id_by_string(string& strname)
 {
   int8_t ret= _event_name_map[ strname ];
   if( ! ret ) {
-    std::cerr << "Name lookup failure in  get_event_no_by_string : "
+    cerr << "Name lookup failure in  get_event_no_by_string : "
 	      << strname << endl;
   }
   return ret;
@@ -201,15 +102,15 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code,
     }
   }
   else {
-    std::cerr <<
+    cerr <<
       "Warning: OnDisconnect called with no Session object.\n";
   }
 }
-  
 
 
 
-    
+
+
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
 	       size_t length, uWS::OpCode opCode) {
@@ -244,7 +145,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
 	}
 	else {
 	// has its own queue to keep channels in order during animation
-	  session->addToAniQueue(message, requestId);
+	  session->addToSetChanQueue(message, requestId);
 	}
 	session->image_channel_unlock();
 	break;
@@ -279,6 +180,19 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
         }
 	break;
       }
+      case START_ANIMATION_ID: {
+	CARTA::StartAnimation message;
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	tsk= new (tbb::task::allocate_root())
+	  AnimationTask(session, requestId, message );
+	break;
+      }
+      case STOP_ANIMATION_ID: {
+	CARTA::StopAnimation message;
+	message.ParseFromArray(eventPayload.data(), eventPayload.size());
+	session->stop_animation( message.file_id(), message.end_frame() );
+	break;
+      }
       default: {
 	tsk= new (tbb::task::allocate_root())
 	  MultiMessageTask(session,
@@ -291,11 +205,12 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
     }
   }
   else if (opCode == uWS::OpCode::TEXT) {
-    if (std::strncmp(rawMessage, "PING", 4) == 0) {
+    if (strncmp(rawMessage, "PING", 4) == 0) {
       ws->send("PONG");
     }
   }
 }
+
 
 
 
@@ -325,6 +240,8 @@ void populate_event_name_map(void)
   _event_name_map["SET_STATS_REQUIREMENTS"]= SET_STATS_REQUIREMENTS_ID;
   _event_name_map["SET_REGION"]= SET_REGION_ID;
   _event_name_map["REMOVE_REGION"]= REMOVE_REGION_ID;
+  _event_name_map["START_ANIMATION"]= START_ANIMATION_ID;
+  _event_name_map["STOP_ANIMATION"]= STOP_ANIMATION_ID;
 }
 
 
@@ -366,13 +283,13 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-	// Used to map between sting names of messages and local int ids. 
+	// Used to map between sting names of messages and local int ids.
 	populate_event_name_map();
 
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
         if (usePermissions) {
-            readPermissions("permissions.txt");
+            readPermissions("permissions.txt", permissionsMap);
         }
 
 	// One filelisthandler works for all sessions.
