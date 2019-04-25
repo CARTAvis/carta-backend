@@ -2,7 +2,7 @@
 
 #include "FileLoader.h"
 #include "HDF5Attributes.h"
-#include "HDF5Image.h"
+#include "CartaHdf5Image.h"
 
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 #include <unordered_map>
@@ -21,7 +21,7 @@ public:
     
 private:
     std::string file, hdf5Hdu;
-    std::unique_ptr<carta::HDF5Image> image;
+    std::unique_ptr<CartaHdf5Image> image;
     std::unique_ptr<casacore::HDF5Lattice<float>> swizzledImage;
     
     std::string dataSetToString(FileInfo::Data ds) const;
@@ -41,7 +41,7 @@ HDF5Loader::HDF5Loader(const std::string &filename)
 
 void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
     // Open hdf5 image with specified hdu
-    image = std::unique_ptr<carta::HDF5Image>(new carta::HDF5Image(filename,
+    image = std::unique_ptr<CartaHdf5Image>(new CartaHdf5Image(filename,
         dataSetToString(FileInfo::Data::Image), hdu));
     
     // We need this immediately because dataSetToString uses it to find the name

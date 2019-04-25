@@ -1,6 +1,6 @@
-//# HDF5Image.cc : specialized implementation for IDIA HDF5 schema
+//# CartaHdf5Image.cc : specialized Image implementation for IDIA HDF5 schema
 
-#include "HDF5Image.h"
+#include "CartaHdf5Image.h"
 
 #include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
@@ -9,9 +9,9 @@
 
 #include "HDF5Attributes.h"
 
-namespace carta {
+using namespace carta;
 
-HDF5Image::HDF5Image (const std::string& filename, const std::string& array_name,
+CartaHdf5Image::CartaHdf5Image (const std::string& filename, const std::string& array_name,
         const std::string& hdu, casacore::MaskSpecifier spec) :
     casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)), 
     valid_(false),
@@ -21,7 +21,7 @@ HDF5Image::HDF5Image (const std::string& filename, const std::string& array_name
     valid_ = Setup(filename, hdu);
 }
 
-HDF5Image::HDF5Image(const carta::HDF5Image& other) :
+CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other) :
     casacore::ImageInterface<float>(other),
     valid_(other.valid_),
     region_(nullptr),
@@ -34,44 +34,44 @@ HDF5Image::HDF5Image(const carta::HDF5Image& other) :
 
 // Image interface
 
-casacore::String HDF5Image::name(bool stripPath) const {
+casacore::String CartaHdf5Image::name(bool stripPath) const {
     return lattice_.name(stripPath);
 }
 
-casacore::IPosition HDF5Image::shape() const {
+casacore::IPosition CartaHdf5Image::shape() const {
     return lattice_.shape();
 }
 
-casacore::Bool HDF5Image::ok() const {
+casacore::Bool CartaHdf5Image::ok() const {
     return (lattice_.ndim() == coordinates().nPixelAxes());
 }
 
-casacore::Bool HDF5Image::doGetSlice(casacore::Array<float>& buffer,
+casacore::Bool CartaHdf5Image::doGetSlice(casacore::Array<float>& buffer,
                           const casacore::Slicer& section) {
     return lattice_.doGetSlice(buffer, section);
 }
 
-void HDF5Image::doPutSlice(const casacore::Array<float>& buffer,
+void CartaHdf5Image::doPutSlice(const casacore::Array<float>& buffer,
     const casacore::IPosition& where, const casacore::IPosition& stride) {
     lattice_.doPutSlice(buffer, where, stride);
 }
 
-const casacore::LatticeRegion* HDF5Image::getRegionPtr() const {
+const casacore::LatticeRegion* CartaHdf5Image::getRegionPtr() const {
     return region_;
 }
 
-casacore::ImageInterface<float>* HDF5Image::cloneII() const {
-    return new carta::HDF5Image(*this);
+casacore::ImageInterface<float>* CartaHdf5Image::cloneII() const {
+    return new CartaHdf5Image(*this);
 }
 
-void HDF5Image::resize(const casacore::TiledShape& newShape) {
-    throw(casacore::AipsError("HDF5Image::resize - an HDF5Image cannot be resized"));
+void CartaHdf5Image::resize(const casacore::TiledShape& newShape) {
+    throw(casacore::AipsError("CartaHdf5Image::resize - an HDF5 image cannot be resized"));
 }
 
 
 // Set up image manually
 
-bool HDF5Image::Setup(const std::string& filename, const std::string& hdu) {
+bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu) {
   // Setup coordinate system, image info
     bool valid(false);
     casacore::HDF5File hdf5_file(filename);
@@ -90,7 +90,7 @@ bool HDF5Image::Setup(const std::string& filename, const std::string& hdu) {
     return valid;
 }
 
-bool HDF5Image::SetupCoordSys(casacore::Record& attributes) {
+bool CartaHdf5Image::SetupCoordSys(casacore::Record& attributes) {
     // Use header attributes to set up Image CoordinateSystem
     if (attributes.empty())
       return false;  // should not have gotten past the file browser in this case
@@ -188,7 +188,7 @@ bool HDF5Image::SetupCoordSys(casacore::Record& attributes) {
     return coordsys_set;
 }
 
-void HDF5Image::SetupImageInfo(casacore::Record& attributes) {
+void CartaHdf5Image::SetupImageInfo(casacore::Record& attributes) {
     // Holds object name and restoring beam
     casacore::ImageInfo image_info;
 
@@ -217,6 +217,4 @@ void HDF5Image::SetupImageInfo(casacore::Record& attributes) {
     } catch (casacore::AipsError& err) {
     }
 }
-
-} // namespace carta
 

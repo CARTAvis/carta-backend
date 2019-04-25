@@ -1,21 +1,25 @@
-//# HDF5Image.h : CARTA HDF5Image derived from casacore::HDF5Image
+//# CartaHdf5Image.h : HDF5 Image class derived from casacore::ImageInterface
 
 #ifndef CARTA_HDF5IMAGE_H
 #define CARTA_HDF5IMAGE_H
 
-#include <casacore/images/Images/HDF5Image.h>
-#include <casacore/images/Images/MaskSpecifier.h>
 #include <casacore/casa/Containers/Record.h>
+#include <casacore/casa/HDF5/HDF5File.h>
+#include <casacore/casa/HDF5/HDF5Group.h>
+#include <casacore/images/Images/ImageInterface.h>
+#include <casacore/images/Images/MaskSpecifier.h>
+#include <casacore/images/Regions/RegionHandlerHDF5.h>
+#include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 namespace carta {
 
-class HDF5Image : public casacore::ImageInterface<float> {
+class CartaHdf5Image : public casacore::ImageInterface<float> {
     public:
       // Construct an image from a pre-existing file.
-      HDF5Image(const std::string& filename, const std::string& array_name,
+      CartaHdf5Image(const std::string& filename, const std::string& array_name,
           const std::string& hdu, casacore::MaskSpecifier = casacore::MaskSpecifier());
       // Copy constructor
-      HDF5Image(const carta::HDF5Image& other);
+      CartaHdf5Image(const CartaHdf5Image& other);
 
       inline bool valid() { return valid_; };
 
@@ -39,7 +43,7 @@ class HDF5Image : public casacore::ImageInterface<float> {
   private:
       // Function to return the internal HDF5File object to the RegionHandlerHDF5
       inline static const casacore::CountedPtr<casacore::HDF5File>& GetHdf5File(void* image) {
-          carta::HDF5Image* im = static_cast<carta::HDF5Image*>(image);
+          CartaHdf5Image* im = static_cast<CartaHdf5Image*>(image);
           return im->lattice().file();
       }
 
