@@ -7,6 +7,7 @@
 #include <mutex>
 #include <algorithm>
 #include <tbb/queuing_rw_mutex.h>
+#include <tbb/atomic.h>
 
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
@@ -16,6 +17,15 @@
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
 
+
+struct ViewSettings {
+    CARTA::ImageBounds image_bounds;
+    int mip;
+    CARTA::CompressionType compression_type;
+    float quality;
+    int num_subsets;
+};
+
 class Frame {
 
 private:
@@ -23,11 +33,17 @@ private:
     std::string uuid;
     bool valid;
 
+    // communication
+    bool connected;
+
+    // spectral profile counter
+    tbb::atomic<int> zProfileCount;
+
     // image loader, stats from image file
     std::string filename;
     std::unique_ptr<carta::FileLoader> loader;
 
-    // shape
+    // shape, channel, and stokes
     casacore::IPosition imageShape; // (width, height, depth, stokes)
     int spectralAxis, stokesAxis;   // axis index for each in 4D image
     int channelIndex, stokesIndex;  // current channel, stokes for image
@@ -35,12 +51,7 @@ private:
     size_t nstok;
 
     // Image settings
-    // view and compression
-    CARTA::ImageBounds bounds;
-    int mip, nsubsets;
-    CARTA::CompressionType compType;
-    float quality;
-    // channel and stokes
+    ViewSettings view_settings_;
 
     std::vector<float> imageCache;  // image data for current channelIndex, stokesIndex
     tbb::queuing_rw_mutex cacheMutex; // allow concurrent reads but lock for write
@@ -55,6 +66,11 @@ private:
     void setImageRegion(int regionId); // set region for entire plane image or cube
     void setDefaultCursor(); // using center point of image
 
+    // Image view settings
+    void setViewSettings(const CARTA::ImageBounds& newBounds, int newMip,
+        CARTA::CompressionType newCompression, float newQuality, int newSubsets);
+    inline ViewSettings getViewSettings() { return view_settings_; };
+
     // validate channel, stokes index values
     bool checkChannel(int channel);
     bool checkStokes(int stokes);
@@ -63,7 +79,8 @@ private:
     // save Image region data for current channel, stokes
     void setImageCache();
     // downsampled data from image cache
-    bool getImageData(std::vector<float>& imageData, bool meanFilter = true);
+    bool getRasterData(std::vector<float>& imageData, CARTA::ImageBounds& bounds,
+        int mip, bool meanFilter = true);
 
     // fill vector for given channel and stokes
     void getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, size_t stokes);
@@ -80,7 +97,7 @@ private:
     void setPixelMask(casacore::SubLattice<float>& sublattice);
     void generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore::SubLattice<float>& sublattice);
 
-    // histogram helpers
+    // histogram helper
     int calcAutoNumBins(int regionId); // calculate automatic bin size for region
 
     // current cursor's x-y coordinate
@@ -90,6 +107,8 @@ private:
     // get spectral profile data from sub-lattice
     bool getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels=ALL_CHANNELS);
 
+    void increaseZProfileCount() { ++zProfileCount; }
+    void decreaseZProfileCount() { --zProfileCount; }
 
 public:
     Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu,
@@ -147,4 +166,7 @@ public:
         float maxval, CARTA::Histogram& histogram);
     void setRegionMinMax(int regionId, int channel, int stokes, float minval, float maxval);
     void setRegionHistogram(int regionId, int channel, int stokes, CARTA::Histogram& histogram);
+
+    // set the flag connected = false, in order to stop the jobs and wait for jobs finished
+    void disconnectCalled();
 };
