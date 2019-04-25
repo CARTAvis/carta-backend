@@ -2,6 +2,7 @@
 
 #include "FileLoader.h"
 #include "HDF5Attributes.h"
+#include "HDF5Image.h"
 
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 #include <unordered_map>
@@ -21,7 +22,7 @@ public:
     
 private:
     std::string file, hdf5Hdu;
-    casacore::HDF5Lattice<float> image;
+    std::unique_ptr<carta::HDF5Image> image;
     std::unique_ptr<casacore::HDF5Lattice<float>> swizzledImage;
     
     std::string dataSetToString(FileInfo::Data ds) const;
@@ -39,10 +40,12 @@ HDF5Loader::HDF5Loader(const std::string &filename)
 {}
 
 void HDF5Loader::openFile(const std::string &filename, const std::string &hdu) {
-    image = casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Image), hdu);
+    image = std::unique_ptr<carta::HDF5Image>(new carta::HDF5Image(filename,
+        dataSetToString(FileInfo::Data::Image), hdu));
     
-    // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
-    ndims = image.shape().size();
+    // We need this immediately because dataSetToString uses it to find the name
+    // of the swizzled dataset
+    ndims = image->shape().size();
     
     if (hasData(FileInfo::Data::Swizzled)) {
         swizzledImage = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(filename, dataSetToString(FileInfo::Data::Swizzled), hdu));
@@ -63,7 +66,7 @@ bool HDF5Loader::hasData(FileInfo::Data ds) const {
         case FileInfo::Data::XYZW:
             return ndims >= 4;
         default:
-            auto group_ptr = image.group();
+            auto group_ptr = image->group();
             std::string data(dataSetToString(ds));
             if (data.empty()) {
                 return false;
@@ -76,20 +79,20 @@ bool HDF5Loader::hasData(FileInfo::Data ds) const {
 typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
     switch(ds) {
         case FileInfo::Data::Image:
-            return image;
+            return *image;
         case FileInfo::Data::XY:
             if (ndims == 2) {
-                return image;
+                return *image;
             }
             break;
         case FileInfo::Data::XYZ:
             if (ndims == 3) {
-                return image;
+                return *image;
             }
             break;
         case FileInfo::Data::XYZW:
             if (ndims == 4) {
-                return image;
+                return *image;
             }
             break;
         case FileInfo::Data::Swizzled:
@@ -190,7 +193,7 @@ const casacore::CoordinateSystem& HDF5Loader::getCoordSystem() {
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this complicated templating, at least for now.
 const HDF5Loader::ipos HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
-    auto dtype = casacore::HDF5DataSet::getDataType((*image.group()).getHid(), dataSetToString(ds));
+    auto dtype = casacore::HDF5DataSet::getDataType(image->group()->getHid(), dataSetToString(ds));
     
     switch(dtype) {
         case casacore::TpInt:
@@ -217,13 +220,13 @@ const HDF5Loader::ipos HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
 
 template <typename T>
 const HDF5Loader::ipos HDF5Loader::getStatsDataShapeTyped(FileInfo::Data ds) {
-    casacore::HDF5DataSet dataSet(*image.group(), dataSetToString(ds), (const T*)0);
+    casacore::HDF5DataSet dataSet(*(image->group()), dataSetToString(ds), (const T*)0);
     return dataSet.shape();
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the same type class. We cannot guarantee a particular native type -- e.g. some files use doubles instead of floats. This necessitates this complicated templating, at least for now.
 casacore::ArrayBase* HDF5Loader::getStatsData(FileInfo::Data ds) {
-    auto dtype = casacore::HDF5DataSet::getDataType((*image.group()).getHid(), dataSetToString(ds));
+    auto dtype = casacore::HDF5DataSet::getDataType(image->group()->getHid(), dataSetToString(ds));
         
     switch(dtype) {
         case casacore::TpInt:
@@ -251,7 +254,7 @@ casacore::ArrayBase* HDF5Loader::getStatsData(FileInfo::Data ds) {
 // TODO: We need to use the C API to read scalar datasets for now, but we should patch casacore to handle them correctly.
 template <typename S, typename D>
 casacore::ArrayBase* HDF5Loader::getStatsDataTyped(FileInfo::Data ds) {
-    casacore::HDF5DataSet dataSet(*image.group(), dataSetToString(ds), (const S*)0);
+    casacore::HDF5DataSet dataSet(*(image->group()), dataSetToString(ds), (const S*)0);
 
     if (dataSet.shape().size() == 0) {
         // Scalar dataset hackaround

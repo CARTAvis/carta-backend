@@ -26,6 +26,7 @@ set(SOURCE_FILES
   compression.cc
   ImageData/HDF5Attributes.cc
   ImageData/FileLoader.cc
+  ImageData/HDF5Image.cc
   FileInfoLoader.cc
   Region/Region.cc
   Region/RegionStats.cc

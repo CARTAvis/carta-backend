@@ -3,9 +3,6 @@
 #include <casacore/casa/Containers/Record.h>
 #include <casacore/casa/HDF5/HDF5HidMeta.h>
 
-//#################################################################################
-// HDF5Attributes class
-
 class HDF5Attributes {
 
 public:
