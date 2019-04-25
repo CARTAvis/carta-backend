@@ -241,20 +241,20 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         // Convert numeric values to string
         double val;
         bool ok;
-        ok = getDoubleAttribute(val, attributes, "EQUINOX");
+        ok = HDF5Attributes::getDoubleAttribute(val, attributes, "EQUINOX");
         if (ok) equinox = casacore::String::toString(val);
-        ok = getDoubleAttribute(val, attributes, "CRPIX1");
+        ok = HDF5Attributes::getDoubleAttribute(val, attributes, "CRPIX1");
         if (ok) crpix1 = casacore::String::toString(val);
-        ok = getDoubleAttribute(val, attributes, "CRPIX2");
+        ok = HDF5Attributes::getDoubleAttribute(val, attributes, "CRPIX2");
         if (ok) crpix2 = casacore::String::toString(val);
         // Get numeric values
-        double crval1 = (getDoubleAttribute(val, attributes, "CRVAL1") ? val : 0.0);
-        double crval2 = (getDoubleAttribute(val, attributes, "CRVAL2") ? val : 0.0);
-        double cdelt1 = (getDoubleAttribute(val, attributes, "CDELT1") ? val : 0.0);
-        double cdelt2 = (getDoubleAttribute(val, attributes, "CDELT2") ? val : 0.0);
-        double bmaj = (getDoubleAttribute(val, attributes, "BMAJ") ? val : 0.0);
-        double bmin = (getDoubleAttribute(val, attributes, "BMIN") ? val : 0.0);
-        double bpa = (getDoubleAttribute(val, attributes, "BPA") ? val : 0.0);
+        double crval1 = (HDF5Attributes::getDoubleAttribute(val, attributes, "CRVAL1") ? val : 0.0);
+        double crval2 = (HDF5Attributes::getDoubleAttribute(val, attributes, "CRVAL2") ? val : 0.0);
+        double cdelt1 = (HDF5Attributes::getDoubleAttribute(val, attributes, "CDELT1") ? val : 0.0);
+        double cdelt2 = (HDF5Attributes::getDoubleAttribute(val, attributes, "CDELT2") ? val : 0.0);
+        double bmaj = (HDF5Attributes::getDoubleAttribute(val, attributes, "BMAJ") ? val : 0.0);
+        double bmin = (HDF5Attributes::getDoubleAttribute(val, attributes, "BMIN") ? val : 0.0);
+        double bpa = (HDF5Attributes::getDoubleAttribute(val, attributes, "BPA") ? val : 0.0);
 
         // shape, chan, stokes entries first
         int chanAxis, stokesAxis;
@@ -985,49 +985,6 @@ void FileInfoLoader::findChanStokesAxis(const casacore::IPosition& dataShape, co
         stokesAxis = 3;
     else 
         stokesAxis = -1;
-}
-
-
-// ***** casacore::Record attributes *****
-
-// get int value
-bool FileInfoLoader::getIntAttribute(casacore::Int64& val, const casacore::Record& rec,
-        const casacore::String& field) {
-    bool getOK(true);
-    if (rec.isDefined(field)) {
-        try {
-            val = rec.asInt64(field);
-        } catch (casacore::AipsError& err) {
-            try {
-                val = casacore::String::toInt(rec.asString(field));
-            } catch (casacore::AipsError& err) {
-                getOK = false;
-            }
-        }
-    } else {
-        getOK = false;
-    }
-    return getOK;
-}
-
-// get double value
-bool FileInfoLoader::getDoubleAttribute(casacore::Double& val, const casacore::Record& rec,
-        const casacore::String& field) {
-    bool getOK(true);
-    if (rec.isDefined(field)) {
-        try {
-            val = rec.asDouble(field);
-        } catch (casacore::AipsError& err) {
-            try {
-                val = casacore::String::toDouble(rec.asString(field));
-            } catch (casacore::AipsError& err) {
-                getOK = false;
-            }
-        }
-    } else {
-        getOK = false;
-    }
-    return getOK;
 }
 
 
