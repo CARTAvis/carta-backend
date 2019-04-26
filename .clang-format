@@ -17,6 +17,7 @@ SpacesBeforeTrailingComments: 1
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: false
 AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AlignAfterOpenBracket: DontAlign
 AccessModifierOffset: -4
