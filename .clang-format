@@ -18,5 +18,5 @@ AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: false
 AllowShortBlocksOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
-AlignAfterOpenBracket: false
+AlignAfterOpenBracket: DontAlign
 AccessModifierOffset: -4
