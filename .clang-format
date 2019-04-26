@@ -6,7 +6,6 @@ Language: Cpp
 
 # Since we're using 4 space indents, we need a bit more room
 ColumnLimit: 140
-ReflowComments: false
 
 # Force pointers to the type for C++.
 DerivePointerAlignment: false
