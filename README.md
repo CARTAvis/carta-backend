@@ -40,6 +40,7 @@ The server build depends on the following libraries:
 
 Jenkins RedHat7 [![Build Status](https://carta.asiaa.sinica.edu.tw/jenkins/buildStatus/icon?job=all_carta_backends)](https://carta.asiaa.sinica.edu.tw/jenkins/job/all_carta_backends/)
 
+
 Jenkins MacOS [![Build Status](http://v9i0wanaw9vupbd4z7wwp5.webrelay.io/buildStatus/icon?job=carta-backend-macos)](http://v9i0wanaw9vupbd4z7wwp5.webrelay.io/job/carta-backend-macos/)
 
 [![Build Status](https://travis-ci.org/CARTAvis/carta-backend.svg?branch=master)](https://travis-ci.org/CARTAvis/carta-backend)
