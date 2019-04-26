@@ -172,7 +172,7 @@ bool Region::getRegion(casacore::ImageRegion& region, int stokes, int channel) {
         return regionOK;
 
     casacore::WCRegion* wcregion = makeExtendedRegion(stokes, channel);
-    if (wcregion) {
+    if (wcregion != nullptr) {
         region = casacore::ImageRegion(wcregion);
         regionOK = true;
     } 
@@ -339,14 +339,6 @@ casacore::WCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& p
         if (!m_coordSys.toWorld(cWorldCoords, pixelCoords))
             return ellipse; // nullptr, conversion failed
 
-        // Convert ellipsoid radii pixel coords to world coords
-        casacore::Vector<casacore::Double> rWorldCoords(naxes);
-        pixelCoords = 0.0;
-        pixelCoords(0) = bmaj;
-        pixelCoords(1) = bmin;
-        if (!m_coordSys.toWorld(rWorldCoords, pixelCoords))
-            return ellipse; // nullptr, conversion failed
-
         // make Quantities for ellipsoid center
         casacore::Vector<casacore::String> coordUnits = m_coordSys.worldAxisUnits();
         casacore::Vector<casacore::Quantum<casacore::Double>> center(2);
@@ -354,8 +346,8 @@ casacore::WCRegion* Region::makeEllipseRegion(const std::vector<CARTA::Point>& p
         center(1) = casacore::Quantity(cWorldCoords(1), coordUnits(1));
         // make Quantities for ellipsoid radii
         casacore::Vector<casacore::Quantum<casacore::Double>> radii(2);
-        radii(0) = casacore::Quantity(rWorldCoords(0), coordUnits(0));
-        radii(1) = casacore::Quantity(rWorldCoords(1), coordUnits(1));
+        radii(0) = casacore::Quantity(bmaj, "pix");
+        radii(1) = casacore::Quantity(bmin, "pix");
 
         ellipse = new casacore::WCEllipsoid(center, radii, m_xyAxes, m_coordSys);
     }

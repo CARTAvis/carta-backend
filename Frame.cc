@@ -1086,7 +1086,7 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubImage<float>&
                     std::cerr << "Exiting zprofile before complete" << std::endl;
                     return false;
                 }
-	
+
                 // modify the start position for slicer
                 start(spectralAxis) = i*checkPerChannels;
                 // modify the count for slicer
