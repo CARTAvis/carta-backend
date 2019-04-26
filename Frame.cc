@@ -371,8 +371,6 @@ bool Frame::getRegionSubImage(int regionId, casacore::SubImage<float>& subimage,
         if (region->isValid()) {
             casacore::ImageRegion imRegion;
             if (region->getRegion(imRegion, stokes, channel)) {
-                casacore::CoordinateSystem cSys = loader->loadData(FileInfo::Data::Image).coordinates();
-                casacore::LCRegion* lcregion = imRegion.toLCRegion(cSys, imageShape);
                 subimage = casacore::SubImage<float>(loader->loadData(FileInfo::Data::Image), imRegion);
                 subimageOK = true;
             }
