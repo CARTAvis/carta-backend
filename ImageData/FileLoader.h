@@ -62,10 +62,13 @@ public:
     
     virtual ~FileLoader() = default;
 
-    static FileLoader* getLoader(const std::string &file);
+    static FileLoader* getLoader(const std::string &filename);
+
+    // Do anything required to open the file (set up cache size, etc)
+    virtual void openFile(const std::string &file, const std::string &hdu) = 0;
+
     // return coordinates for axis types
     virtual void findCoords(int& spectralAxis, int& stokesAxis);
-    
     // get shape and axis information from image
     virtual bool findShape(ipos& shape, size_t& nchannels, size_t& nstokes, int& spectralAxis, int& stokesAxis);
     
@@ -74,15 +77,14 @@ public:
     // Retrieve stats for a particular channel or all channels
     virtual FileInfo::ImageStats& getImageStats(int currStokes, int channel);
 
-    // Do anything required to open the file (set up cache size, etc)
-    virtual void openFile(const std::string &file, const std::string &hdu) = 0;
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool hasData(FileInfo::Data ds) const = 0;
     // Return a casacore image type representing the data stored in the
     // specified HDU/group/table/etc.
     virtual image_ref loadData(FileInfo::Data ds) = 0;
-    virtual bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
     virtual bool getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY);
+    virtual bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
+
 protected:
     virtual const casacore::CoordinateSystem& getCoordSystem() = 0;
     

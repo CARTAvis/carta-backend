@@ -38,10 +38,10 @@ public:
     // Stats
     void setStatsRequirements(const std::vector<int>& statsTypes);
     size_t numStats();
-    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice,
+    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::MaskedLattice<float>& mlattice,
         int channel, int stokes);
     bool calcStatsValues(std::vector<std::vector<double>>& statsValues,
-        const std::vector<int>& requestedStats, const casacore::SubLattice<float>& lattice,
+        const std::vector<int>& requestedStats, const casacore::MaskedLattice<float>& mlattice,
         bool perChannel=true);
 
     // invalidate stored calculations for previous region settings

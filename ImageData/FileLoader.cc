@@ -1,21 +1,21 @@
 #include "CasaLoader.h"
 #include "FileLoader.h"
-//#include "HDF5Loader.h"
+#include "HDF5Loader.h"
 #include "FITSLoader.h"
 #include "MIRIADLoader.h"
 
 using namespace carta;
 
-FileLoader* FileLoader::getLoader(const std::string &file) {
-    casacore::ImageOpener::ImageTypes type = FileInfo::fileType(file);
+FileLoader* FileLoader::getLoader(const std::string &filename) {
+    casacore::ImageOpener::ImageTypes type = FileInfo::fileType(filename);
     switch(type) {
     case casacore::ImageOpener::AIPSPP:
-        return new CasaLoader(file);
+        return new CasaLoader(filename);
     case casacore::ImageOpener::FITS:
-        return new FITSLoader(file);
+        return new FITSLoader(filename);
         break;
     case casacore::ImageOpener::MIRIAD:
-        return new MIRIADLoader(file);
+        return new MIRIADLoader(filename);
         break;
     case casacore::ImageOpener::GIPSY:
         break;
@@ -23,8 +23,9 @@ FileLoader* FileLoader::getLoader(const std::string &file) {
         break;
     case casacore::ImageOpener::NEWSTAR:
         break;
-	// case casacore::ImageOpener::HDF5:
-        //return new HDF5Loader(file);
+    case casacore::ImageOpener::HDF5:
+        return new HDF5Loader(filename);
+	break;
     case casacore::ImageOpener::IMAGECONCAT:
         break;
     case casacore::ImageOpener::IMAGEEXPR:

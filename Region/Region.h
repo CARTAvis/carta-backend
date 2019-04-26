@@ -7,6 +7,7 @@
 #include "../InterfaceConstants.h"
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
+#include <casacore/lattices/Lattices/MaskedLattice.h>
 #include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/ImageRegion.h>
 namespace carta {
@@ -36,10 +37,10 @@ public:
     casacore::IPosition xyShape();
     inline bool xyRegionValid() { return (m_xyRegion != nullptr); };
 
-    // get lattice region for requested stokes and (optionally) single channel
+    // get image region for requested stokes and (optionally) single channel
     bool getRegion(casacore::ImageRegion& region, int stokes, int channel=ALL_CHANNELS);
-    // get data from sublattice (LCRegion applied to Lattice by Frame)
-    bool getData(std::vector<float>& data, casacore::SubLattice<float>& sublattice);
+    // get data from subimage (LCRegion applied to Image by Frame)
+    bool getData(std::vector<float>& data, casacore::MaskedLattice<float>& mlattice);
 
     // Histogram: pass through to RegionStats
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
@@ -69,12 +70,12 @@ public:
     void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex,
         std::vector<float>& spectralData);
     void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex,
-        casacore::SubLattice<float>& sublattice);
+        casacore::MaskedLattice<float>& mlattice);
 
     // Stats: pass through to RegionStats
     void setStatsRequirements(const std::vector<int>& statsTypes);
     size_t numStats();
-    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice,
+    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::MaskedLattice<float>& mlattice,
         int channel, int stokes);
 
 private:
@@ -111,15 +112,15 @@ private:
     bool m_valid, m_xyRegionChanged;
 
     // image shape info
-    casacore::IPosition m_latticeShape;
-    casacore::IPosition m_xyAxes; // first two axes of lattice shape, to keep or remove
-    int m_spectralAxis, m_stokesAxis;
+    casacore::IPosition m_imageShape;
+    casacore::IPosition m_xyAxes; // first two axes of image shape, to keep or remove
+    int m_ndim, m_spectralAxis, m_stokesAxis;
 
     // stored 2D region
     casacore::WCRegion* m_xyRegion;
 
     // coordinate system
-    casacore::CoordinateSystem m_cSys;
+    casacore::CoordinateSystem m_coordSys;
     
     // classes for requirements, calculations
     std::unique_ptr<carta::RegionStats> m_stats;

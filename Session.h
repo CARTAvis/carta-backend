@@ -5,6 +5,7 @@
 
 #include "FileListHandler.h"
 #include "FileSettings.h"
+#include "AnimationObject.h"
 #include "Frame.h"
 #include "util.h"
 
@@ -39,7 +40,7 @@ class Session {
  public:
     std::string uuid;
     carta::FileSettings fsettings;
-    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> aniq;
+    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> setchanq;
  protected:
     // communication
     uWS::WebSocket<uWS::SERVER>* socket;
@@ -63,7 +64,9 @@ class Session {
     std::mutex frameMutex; // lock frames to create/destroy
     bool newFrame;         // flag to send histogram with data
 
-
+    // State for animation functions.
+    std::unique_ptr<AnimationObject> _ani_obj;
+    
     std::mutex _image_channel_mutex;
     bool _image_channel_task_active;
 
@@ -93,16 +96,18 @@ public:
             bool verbose = false);
     ~Session();
 
-    void addToAniQueue(CARTA::SetImageChannels message, uint32_t requestId) {
-      aniq.push(std::make_pair(message, requestId));
+    void addToSetChanQueue(CARTA::SetImageChannels message, uint32_t requestId) {
+      setchanq.push(std::make_pair(message, requestId));
     }
-    void executeAniEvt(std::pair<CARTA::SetImageChannels,uint32_t> req) {
+    void executeSetChanEvt(std::pair<CARTA::SetImageChannels,uint32_t> req) {
       onSetImageChannels(req.first, req.second);
     }
     void cancel_SetHistReqs() {
       histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
     }
-
+    void build_animation_object(::CARTA::StartAnimation &msg, uint32_t req_id);
+    bool execute_animation_frame();
+    void stop_animation(int file_id, ::CARTA::AnimationFrame frame);
     void addViewSetting(CARTA::SetImageView message, uint32_t requestId) {
       fsettings.addViewSetting(message, requestId);
     }
@@ -123,9 +128,9 @@ public:
     }
     int increase_ref_count() { return ++_ref_count; }
     int decrease_ref_count() { return --_ref_count; }
-    void disconnect_called() { _connected= false; }
+    void disconnect_called();
     static int number_of_sessions() { return _num_sessions; }
-    
+
     // CARTA ICD
     void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
     void onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId);

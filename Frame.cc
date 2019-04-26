@@ -12,19 +12,21 @@ using namespace std;
 Frame::Frame(const string& uuidString, const string& filename, const string& hdu, int defaultChannel)
     : uuid(uuidString),
       valid(true),
+      connected(true),
+      zProfileCount(0),
       cursorSet(false),
       filename(filename),
       loader(FileLoader::getLoader(filename)),
       spectralAxis(-1), stokesAxis(-1),
       channelIndex(-1), stokesIndex(-1),
       nchan(1), nstok(1) {
-    
+
     if (loader==nullptr) {
         log(uuid, "Problem loading file {}: loader not implemented", filename);
         valid = false;
         return;
     }
-    
+
     try {
         loader->openFile(filename, hdu);
     } catch (casacore::AipsError& err) {
@@ -69,6 +71,11 @@ Frame::~Frame() {
 
 bool Frame::isValid() {
     return valid;
+}
+
+void Frame::disconnectCalled() {
+    connected = false; // set a false flag to interrupt the running jobs
+    while (zProfileCount) {} // wait for the jobs finished
 }
 
 std::vector<int> Frame::getRegionIds() {
@@ -124,7 +131,7 @@ bool Frame::setRegion(int regionId, std::string name, CARTA::RegionType type,
     }  else { // map new Region to region id
       const casacore::CoordinateSystem cSys = loader->loadData(FileInfo::Data::Image).coordinates();
       auto region = unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation,
-								  imageShape, spectralAxis, stokesAxis, cSys));
+          imageShape, spectralAxis, stokesAxis, cSys));
         if (region->isValid()) {
             regions[regionId] = move(region);
             regionSet = true;
@@ -288,7 +295,7 @@ void Frame::setImageCache() {
     imageCache.resize(imageShape(0) * imageShape(1));
     casacore::Slicer section = getChannelMatrixSlicer(channelIndex, stokesIndex);
     casacore::Array<float> tmp(section.length(), imageCache.data(), casacore::StorageInitPolicy::SHARE);
-    std::lock_guard<std::mutex> guard(latticeMutex);
+    std::lock_guard<std::mutex> guard(imageMutex);
     loader->loadData(FileInfo::Data::Image).getSlice(tmp, section, true);
 }
 
@@ -298,7 +305,7 @@ void Frame::getChannelMatrix(std::vector<float>& chanMatrix, size_t channel, siz
     chanMatrix.resize(imageShape(0) * imageShape(1));
     casacore::Array<float> tmp(section.length(), chanMatrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
-    std::lock_guard<std::mutex> guard(latticeMutex);
+    std::lock_guard<std::mutex> guard(imageMutex);
     loader->loadData(FileInfo::Data::Image).getSlice(tmp, section, true);
 }
 
@@ -321,7 +328,7 @@ casacore::Slicer Frame::getChannelMatrixSlicer(size_t channel, size_t stokes) {
     return section;
 }
 
-void Frame::getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes) {
+void Frame::getImageSlicer(casacore::Slicer& imageSlicer, int x, int y, int channel, int stokes) {
     // to slice image data along axes (full axis indicated with -1)
     // Start with entire image:
     casacore::IPosition count(imageShape);
@@ -349,58 +356,59 @@ void Frame::getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int 
     }
 
     casacore::Slicer section(start, count);
-    latticeSlicer = section;
+    imageSlicer = section;
 }
 
-bool Frame::getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes,
-        int channel) {
-    // Apply lattice region to lattice and return SubLattice.
+bool Frame::getRegionSubImage(int regionId, casacore::SubImage<float>& subimage,
+    int stokes, int channel) {
+    // Apply ImageRegion to image and return SubImage.
     // channel could be ALL_CHANNELS in region channel range (default) or
     //   a given channel (e.g. current channel).
-    // Returns false if lattice region is invalid and cannot make sublattice.
-    bool sublatticeOK(false);
+    // Returns false if image region is invalid and cannot make subimage.
+    bool subimageOK(false);
     if (checkStokes(stokes) && (regions.count(regionId))) {
         auto& region = regions[regionId];
         if (region->isValid()) {
-            casacore::ImageRegion lattRegion;
-            if (region->getRegion(lattRegion, stokes, channel)) {
-	      casacore::CoordinateSystem cSys = loader->loadData(FileInfo::Data::Image).coordinates();
-	      casacore::LCRegion* lcregion = lattRegion.toLCRegion(cSys, imageShape);
-                sublattice = casacore::SubImage<float>(loader->loadData(FileInfo::Data::Image), lattRegion);
-                sublatticeOK = true;
+            casacore::ImageRegion imRegion;
+            if (region->getRegion(imRegion, stokes, channel)) {
+                casacore::CoordinateSystem cSys = loader->loadData(FileInfo::Data::Image).coordinates();
+                casacore::LCRegion* lcregion = imRegion.toLCRegion(cSys, imageShape);
+                subimage = casacore::SubImage<float>(loader->loadData(FileInfo::Data::Image), imRegion);
+                subimageOK = true;
             }
         }
     }
-    return sublatticeOK;
+    return subimageOK;
 }
 
-void Frame::setPixelMask(casacore::SubLattice<float>& sublattice) {
-    // apply pixel mask from lattice or generate one
-    if (!sublattice.hasPixelMask()) { // apply lattice mask if possible
+/*
+void Frame::setPixelMask(casacore::SubImage<float>& subimage) {
+    // apply pixel mask from image or generate one
+    if (!subimage.hasPixelMask()) { // apply image mask if possible
         casacore::ArrayLattice<bool> pixelMask;
         if (loader->hasData(FileInfo::Data::Mask)) {
-            // apply region slicer to lattice pixel mask - same shape as sublattice
+            // apply region slicer to image pixel mask - same shape as subimage
             casacore::Array<bool> maskArray;
-            const casacore::LatticeRegion* lattRegion(sublattice.getRegionPtr());
-            loader->getPixelMaskSlice(maskArray, lattRegion->slicer());
+            const casacore::LatticeRegion* latticeRegion(subimage.getRegionPtr());
+            loader->getPixelMaskSlice(maskArray, latticeRegion->slicer());
             pixelMask = casacore::ArrayLattice<bool>(maskArray);
         } else {
-            pixelMask = casacore::ArrayLattice<bool>(sublattice.shape());
-            generatePixelMask(pixelMask, sublattice);
+            pixelMask = casacore::ArrayLattice<bool>(subimage.shape());
+            generatePixelMask(pixelMask, subimage);
         }
-        sublattice.setPixelMask(pixelMask, false);
+        subimage.setPixelMask(pixelMask, false);
     }
 }
 
-void Frame::generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore::SubLattice<float>& sublattice) {
-    // Create boolean Array which is false for NaN values in sublattice
-    unsigned int maxPix(sublattice.advisedMaxPixels());
+void Frame::generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore::SubImage<float>& subimage) {
+    // Create boolean Array which is false for NaN values in subimage
+    unsigned int maxPix(subimage.advisedMaxPixels());
     if (maxPix == 0) {
-        casacore::IPosition tileshape(casacore::TiledFileAccess::makeTileShape(sublattice.shape()));
+        casacore::IPosition tileshape(casacore::TiledFileAccess::makeTileShape(subimage.shape()));
         maxPix = tileshape.product();
     }
-    casacore::IPosition cursorShape(sublattice.doNiceCursorShape(maxPix));
-    casacore::RO_LatticeIterator<float> sublattIter(sublattice, cursorShape);
+    casacore::IPosition cursorShape(subimage.doNiceCursorShape(maxPix));
+    casacore::RO_LatticeIterator<float> sublattIter(subimage, cursorShape);
     casacore::LatticeIterator<bool> maskIter(pixelMask, cursorShape);
     maskIter.reset();
     casacore::Array<bool> mask;
@@ -417,6 +425,7 @@ void Frame::generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore:
         maskIter++;
     }
 }
+*/
 
 // ****************************************************
 // Region requirements
@@ -650,7 +659,6 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             // get stored histograms or fill new histograms
             
             bool haveHistogram(false);
-
             // Check if read from image file (HDF5 only)
             if (regionId == IMAGE_REGION_ID || regionId == CUBE_REGION_ID) {
                 haveHistogram = getImageHistogram(configChannel, currStokes, configNumBins, *newHistogram);
@@ -658,9 +666,9 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
             
             if (!haveHistogram) {
                 // Retrieve histogram if stored
-                if (!getRegionHistogram(regionId, configChannel, currStokes, configNumBins, *newHistogram)) {
+                int nbins = (configNumBins==AUTO_BIN_SIZE ? calcAutoNumBins(regionId) : configNumBins);
+                if (!getRegionHistogram(regionId, configChannel, currStokes, nbins, *newHistogram)) {
                     // Calculate histogram
-                    int nbins = (configNumBins==AUTO_BIN_SIZE ? calcAutoNumBins(regionId) : configNumBins);
                     float minval(0.0), maxval(0.0);
                     if (regionId == IMAGE_REGION_ID) {
                         if (configChannel == channelIndex) {  // use imageCache
@@ -669,9 +677,9 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                             }
                             calcRegionHistogram(regionId, configChannel, currStokes, nbins,
                                 minval, maxval, *newHistogram);
-                        } else {  // use matrix slicer on lattice
+                        } else {  // use matrix slicer on image
                             std::vector<float> data;
-                            getChannelMatrix(data, configChannel, currStokes); // slice lattice once
+                            getChannelMatrix(data, configChannel, currStokes); // slice image once
                             if (!getRegionMinMax(regionId, configChannel, currStokes, minval, maxval)) {
                                 region->calcMinMax(configChannel, currStokes, data, minval, maxval);
                             }
@@ -679,11 +687,11 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                                 data, *newHistogram);
                         }
                     } else {
-                        std::unique_lock<std::mutex> guard(latticeMutex);
-                        casacore::SubLattice<float> sublattice;
-                        getRegionSubLattice(regionId, sublattice, currStokes, configChannel);
+                        std::unique_lock<std::mutex> guard(imageMutex);
+                        casacore::SubImage<float> subimage;
+                        getRegionSubImage(regionId, subimage, currStokes, configChannel);
                         std::vector<float> regionData;
-                        bool hasData(region->getData(regionData, sublattice)); // get sublattice data once
+                        bool hasData(region->getData(regionData, subimage)); // get subimage data once
                         guard.unlock();
                         if (hasData) {
                             if (!getRegionMinMax(regionId, configChannel, currStokes, minval, maxval)) {
@@ -778,19 +786,19 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     casacore::Slicer section;
                     switch (axisStokes.first) {
                         case 0: {  // x
-                            getLatticeSlicer(section, -1, y, channelIndex, profileStokes);
+                            getImageSlicer(section, -1, y, channelIndex, profileStokes);
                             end = imageShape(0);
                             break;
                         }
                         case 1: { // y
-                            getLatticeSlicer(section, x, -1, channelIndex, profileStokes);
+                            getImageSlicer(section, x, -1, channelIndex, profileStokes);
                             end = imageShape(1);
                             break;
                         }
                     }
                     profile.resize(end);
                     casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
-                    std::lock_guard<std::mutex> guard(latticeMutex);
+                    std::lock_guard<std::mutex> guard(imageMutex);
                     loader->loadData(FileInfo::Data::Image).getSlice(tmp, section, true);
                 }
                 // SpatialProfile
@@ -809,14 +817,19 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
 bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& profileData,
         bool checkCurrentStokes) {
     // fill spectral profile message with requested statistics (or values for a point region)
+    increaseZProfileCount();
     bool profileOK(false);
     if (regions.count(regionId)) {
         auto& region = regions[regionId];
-        if (!region->isValid())
+        if (!region->isValid()) {
+            decreaseZProfileCount();
             return false;
+        }
         size_t numProfiles(region->numSpectralProfiles());
-        if (numProfiles == 0)
+        if (numProfiles == 0) {
+            decreaseZProfileCount();
             return false; // not requested
+        }
 
         // set profile parameters
         int currStokes(currentStokes());
@@ -827,34 +840,42 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
             int profileStokes;
             if (region->getSpectralConfigStokes(profileStokes, i)) {
                 // only send if using current stokes, which changed
-                if (checkCurrentStokes && (profileStokes != CURRENT_STOKES))
+                if (checkCurrentStokes && (profileStokes != CURRENT_STOKES)) {
+                    decreaseZProfileCount();
                     return false;
+                }
                 if (profileStokes == CURRENT_STOKES)
                     profileStokes = currStokes;
-                // get sublattice for stokes requested in profile
-                casacore::SubLattice<float> sublattice;
-                std::unique_lock<std::mutex> guard(latticeMutex);
-                getRegionSubLattice(regionId, sublattice, profileStokes);
                 // fill SpectralProfiles for this config
                 if (region->isPoint()) {  // values
                     std::vector<float> spectralData;
-                    auto cursorPos = region->getControlPoints()[0];
+                    auto cursorPoints = region->getControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
-                    if (!loader->getCursorSpectralData(spectralData, profileStokes, cursorPos.x(), cursorPos.y())) {
-                        getSpectralData(spectralData, sublattice, 100);
+                    bool haveSpectralData = loader->getCursorSpectralData(spectralData, profileStokes, cursorPoints.x(), cursorPoints.y());
+                    if (!haveSpectralData) {  // load from subimage in 100-channel chunks
+                        casacore::SubImage<float> subimage;
+                        std::unique_lock<std::mutex> guard(imageMutex);
+                        bool subimageOK = getRegionSubImage(regionId, subimage, profileStokes);
+                        haveSpectralData = getSpectralData(spectralData, subimage, 100);
+                        guard.unlock();
                     }
-                    guard.unlock();
-                    region->fillSpectralProfileData(profileData, i, spectralData);
+                    if (haveSpectralData) {
+                        region->fillSpectralProfileData(profileData, i, spectralData);
+                    }
                 } else {  // statistics
-                    if (!sublattice.shape().empty())
-                        setPixelMask(sublattice);
-                    region->fillSpectralProfileData(profileData, i, sublattice);
+                    casacore::SubImage<float> subimage;
+                    std::unique_lock<std::mutex> guard(imageMutex);
+                    getRegionSubImage(regionId, subimage, profileStokes);
+                    //if (!subimage.shape().empty())
+                    //    setPixelMask(subimage); 
+                    region->fillSpectralProfileData(profileData, i, subimage);
                     guard.unlock();
                 }
             }
         }
         profileOK = true;
     }
+    decreaseZProfileCount();
     return profileOK;
 }
 
@@ -871,12 +892,12 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
 
         statsData.set_channel(channelIndex);
         statsData.set_stokes(stokesIndex);
-        casacore::SubLattice<float> sublattice;
-        std::lock_guard<std::mutex> guard(latticeMutex);
-        getRegionSubLattice(regionId, sublattice, stokesIndex, channelIndex);
-        if (!sublattice.shape().empty())
-             setPixelMask(sublattice);
-        region->fillStatsData(statsData, sublattice, channelIndex, stokesIndex);
+        casacore::SubImage<float> subimage;
+        std::lock_guard<std::mutex> guard(imageMutex);
+        getRegionSubImage(regionId, subimage, stokesIndex, channelIndex);
+        //if (!subimage.shape().empty())
+        //     setPixelMask(subimage);
+        region->fillStatsData(statsData, subimage, channelIndex, stokesIndex);
         statsOK = true;
     }
     return statsOK;
@@ -927,11 +948,11 @@ bool Frame::calcRegionMinMax(int regionId, int channel, int stokes, float& minva
             }
             minmaxOK = true;
         } else {
-            std::unique_lock<std::mutex> guard(latticeMutex);
-            casacore::SubLattice<float> sublattice;
-            getRegionSubLattice(regionId, sublattice, stokes, channel);
+            std::unique_lock<std::mutex> guard(imageMutex);
+            casacore::SubImage<float> subimage;
+            getRegionSubImage(regionId, subimage, stokes, channel);
             std::vector<float> regionData;
-            bool hasData(region->getData(regionData, sublattice));
+            bool hasData(region->getData(regionData, subimage));
             guard.unlock();
             if (hasData) {
                 region->calcMinMax(channel, stokes, regionData, minval, maxval);
@@ -995,11 +1016,11 @@ bool Frame::calcRegionHistogram(int regionId, int channel, int stokes, int nbins
             }
             histogramOK = true;
         } else {
-            std::unique_lock<std::mutex> guard(latticeMutex);
-            casacore::SubLattice<float> sublattice;
-            getRegionSubLattice(regionId, sublattice, stokes, channel);
+            std::unique_lock<std::mutex> guard(imageMutex);
+            casacore::SubImage<float> subimage;
+            getRegionSubImage(regionId, subimage, stokes, channel);
             std::vector<float> regionData;
-            bool hasData(region->getData(regionData, sublattice));
+            bool hasData(region->getData(regionData, subimage));
             guard.unlock();
             if (hasData) {
                 region->calcHistogram(channel, stokes, nbins, minval, maxval, regionData, histogram);
@@ -1033,65 +1054,61 @@ void Frame::setRegionHistogram(int regionId, int channel, int stokes, CARTA::His
     }
 }
 
-bool Frame::getSublatticeXY(casacore::SubLattice<float>& sublattice, std::pair<int, int>& cursor_xy) {
+bool Frame::getSubimageXY(casacore::SubImage<float>& subimage, std::pair<int, int>& cursor_xy) {
     bool result(false);
-    casacore::IPosition sublattShape = sublattice.shape();
-    casacore::IPosition start(sublattShape.size(), 0);
-    casacore::IPosition count(sublattShape);
-    if (count(0) == 1 && count(1) == 1) { // make sure the sub-lattice is a point region in x-y plane
-        casacore::IPosition pos = sublattice.positionInParent(start);
-        cursor_xy = std::make_pair(pos(0), pos(1));
+    casacore::IPosition subimageShape = subimage.shape();
+    casacore::IPosition start(subimageShape.size(), 0);
+    casacore::IPosition count(subimageShape);
+    if (count(0) == 1 && count(1) == 1) { // make sure the subimage is a point region in x-y plane
+        casacore::IPosition parentPosition = subimage.getRegionPtr()->convert(start);
+        cursor_xy = std::make_pair(parentPosition(0), parentPosition(1));
         result = true;
     }
     return result;
 }
 
-bool Frame::getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels) {
+bool Frame::getSpectralData(std::vector<float>& data, casacore::SubImage<float>& subimage, int checkPerChannels) {
     bool dataOK(false);
-    casacore::IPosition sublattShape = sublattice.shape();
-    data.resize(sublattShape.product());
-    if (checkPerChannels > 0 && sublattShape.size() > 2 && sublattShape > 1) { // stoppable spectral profile process
+    casacore::IPosition subimageShape = subimage.shape();
+    data.resize(subimageShape.product());
+    if ((checkPerChannels > 0) && (subimageShape.size() > 2) &&
+        (spectralAxis >= 0)) { // stoppable spectral profile process
         try {
-            casacore::IPosition start(sublattShape.size(), 0);
-            casacore::IPosition count(sublattShape);
-            int profileAxis; // profile axis index
-            size_t profileSize; // profile vector size
-            // get profile axis index and its vector size
-            for (int i=0; i<sublattShape.size(); ++i) {
-                if (count(i)>1) {
-                    profileAxis = i;
-                    profileSize = count(i);
-                }
-            }
-            size_t begin = 0; // the begin index of profile vector in each copy
+            casacore::IPosition start(subimageShape.size(), 0);
+            casacore::IPosition count(subimageShape);
+            size_t profileSize = nchannels(); // profile vector size
             size_t upperBound = (profileSize%checkPerChannels == 0 ? profileSize/checkPerChannels : profileSize/checkPerChannels + 1);
-            // get cursor's x-y coordinate from sub-lattice
+            // get cursor's x-y coordinate from subimage
             std::pair<int, int> tmpXY;
-            getSublatticeXY(sublattice, tmpXY);
+            getSubimageXY(subimage, tmpXY);
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             for (size_t i=0; i<upperBound; ++i) {
                 // check if cursor's position changed during this loop, if so, stop the profile process
-                if (tmpXY != cursorXY)
+                if (tmpXY != cursorXY || !connected) {
+                    std::cerr << "Exiting zprofile before complete" << std::endl;
                     return false;
+                }
+	
                 // modify the start position for slicer
-                start(profileAxis) = i*checkPerChannels;
+                start(spectralAxis) = i*checkPerChannels;
                 // modify the count for slicer
-                count(profileAxis) = (checkPerChannels*(i+1) < profileSize ? checkPerChannels : profileSize - i*checkPerChannels);
+                count(spectralAxis) = (checkPerChannels*(i+1) < profileSize ? checkPerChannels : profileSize - i*checkPerChannels);
                 casacore::Slicer slicer(start, count);
                 casacore::Array<float> buffer;
-                sublattice.doGetSlice(buffer, slicer);
-                memcpy(&data[begin], buffer.data(), count(profileAxis)*sizeof(float));
-                begin += count(profileAxis);
+                subimage.doGetSlice(buffer, slicer);
+                memcpy(&data[i*checkPerChannels], buffer.data(), count(spectralAxis)*sizeof(float));
             }
             dataOK = true;
         } catch (casacore::AipsError& err) {
+            std::cerr << "Spectral profile error: " << err.getMesg() << std::endl;
         }
     } else { // non-stoppable spectral profile process
-        casacore::Array<float> tmp(sublattShape, data.data(), casacore::StorageInitPolicy::SHARE);
+        casacore::Array<float> tmp(subimageShape, data.data(), casacore::StorageInitPolicy::SHARE);
         try {
-            sublattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sublattShape.size(), 0), sublattShape));
+            subimage.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(subimageShape.size(), 0), subimageShape));
             dataOK = true;
         } catch (casacore::AipsError& err) {
+            std::cerr << "Spectral profile error: " << err.getMesg() << std::endl;
         }
     }
     return dataOK;

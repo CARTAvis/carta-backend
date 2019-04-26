@@ -14,3 +14,6 @@ const uint8_t SET_REGION_ID= 11;
 const uint8_t REMOVE_REGION_ID= 12;
 const uint8_t CLOSE_FILE_ID= 13;
 const uint8_t SET_SPECTRAL_REQUIREMENTS_ID= 14;
+const uint8_t START_ANIMATION_ID= 15;
+const uint8_t START_ANIMATION_ACK_ID= 16;
+const uint8_t STOP_ANIMATION_ID= 17;
