@@ -102,7 +102,7 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
     }
 
     if (opCode == uWS::OpCode::BINARY) {
-        if (length > 36) {
+        if (length > sizeof(CARTA::EventHeader)) {
             CARTA::EventHeader head= *reinterpret_cast<CARTA::EventHeader*>(rawMessage);
             char * event_buf= rawMessage + sizeof(CARTA::EventHeader);
             int event_length= length - sizeof(CARTA::EventHeader);
