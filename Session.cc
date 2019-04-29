@@ -805,7 +805,7 @@ void Session::updateRegionData(int fileId, bool channelChanged, bool stokesChang
 // SEND uWEBSOCKET MESSAGES
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
- void Session::sendEvent(uint16_t eventType, u_int32_t eventId, google::protobuf::MessageLite& message) {
+void Session::sendEvent(CARTA::EventType eventType, uint32_t eventId, google::protobuf::MessageLite& message) {
     int messageLength = message.ByteSize();
     size_t requiredSize = messageLength + sizeof(CARTA::EventHeader);
     CARTA::EventHeader head;
@@ -813,7 +813,7 @@ void Session::updateRegionData(int fileId, bool channelChanged, bool stokesChang
     std::vector<char> msg(requiredSize,0);
     head._type= eventType;
     head._icd_vers= CARTA::ICD_VERSION;
-    head._req_id= eventID;
+    head._req_id= eventId;
     
     memcpy(msg.data(), &head, sizeof(CARTA::EventHeader));
     message.SerializeToArray(msg.data() + sizeof(CARTA::EventHeader), messageLength);
@@ -822,7 +822,7 @@ void Session::updateRegionData(int fileId, bool channelChanged, bool stokesChang
     //socket->send(msg.data(), msg.size(), uWS::BINARY);
 }
 
-void Session::sendFileEvent(int32_t fileId, uint16_t eventType, uint32_t eventId,
+void Session::sendFileEvent(int32_t fileId, CARTA::EventType eventType, uint32_t eventId,
     google::protobuf::MessageLite& message) {
     // do not send if file is closed
     if (frames.count(fileId))
