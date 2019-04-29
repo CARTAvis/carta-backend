@@ -1,6 +1,8 @@
 #pragma once
 
 namespace CARTA {
+    const uint16_t ICD_VERSION= 2;
+
     enum EventType:uint16_t {
 	REGISTER_VIEWER= 1,
 	FILE_LIST_REQUEST= 2,

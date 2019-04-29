@@ -807,10 +807,13 @@ void Session::updateRegionData(int fileId, bool channelChanged, bool stokesChang
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
  void Session::sendEvent(uint16_t eventType, u_int32_t eventId, google::protobuf::MessageLite& message) {
     int messageLength = message.ByteSize();
-   size_t requiredSize = messageLength + sizeof(CARTA::EventHeader);
+    size_t requiredSize = messageLength + sizeof(CARTA::EventHeader);
     CARTA::EventHeader head;
     //    char * msg_buf = new char[requiredSize]; // REPLACE THIS WITH BUFFER POOL.
     std::vector<char> msg(requiredSize,0);
+    head._type= eventType;
+    head._icd_vers= CARTA::ICD_VERSION;
+    head._req_id= eventID;
     
     memcpy(msg.data(), &head, sizeof(CARTA::EventHeader));
     message.SerializeToArray(msg.data() + sizeof(CARTA::EventHeader), messageLength);
