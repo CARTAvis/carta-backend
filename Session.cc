@@ -808,18 +808,15 @@ void Session::updateRegionData(int fileId, bool channelChanged, bool stokesChang
 void Session::sendEvent(CARTA::EventType eventType, uint32_t eventId, google::protobuf::MessageLite& message) {
     int messageLength = message.ByteSize();
     size_t requiredSize = messageLength + sizeof(CARTA::EventHeader);
-    CARTA::EventHeader head;
-    //    char * msg_buf = new char[requiredSize]; // REPLACE THIS WITH BUFFER POOL.
     std::vector<char> msg(requiredSize,0);
-    head._type= eventType;
-    head._icd_vers= CARTA::ICD_VERSION;
-    head._req_id= eventId;
-    
-    memcpy(msg.data(), &head, sizeof(CARTA::EventHeader));
+    CARTA::EventHeader* head = (CARTA::EventHeader*)msg.data();
+
+    head->_type = eventType;
+    head->_icd_vers = CARTA::ICD_VERSION;
+    head->_req_id = eventId;
     message.SerializeToArray(msg.data() + sizeof(CARTA::EventHeader), messageLength);
     out_msgs.push(msg);
     outgoing->send();
-    //socket->send(msg.data(), msg.size(), uWS::BINARY);
 }
 
 void Session::sendFileEvent(int32_t fileId, CARTA::EventType eventType, uint32_t eventId,
