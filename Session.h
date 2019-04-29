@@ -6,6 +6,7 @@
 #include "FileListHandler.h"
 #include "FileSettings.h"
 #include "AnimationObject.h"
+#include "EventHeader.h"
 #include "Frame.h"
 #include "util.h"
 
@@ -172,8 +173,8 @@ protected:
     void updateRegionData(int fileId, bool channelChanged, bool stokesChanged);
 
     // Send protobuf messages
-    void sendEvent(uint16_t eventType, u_int32_t eventId, google::protobuf::MessageLite& message);
-    void sendFileEvent(int fileId, uint16_t eventType, u_int32_t eventId,
+    void sendEvent(CARTA::EventType eventType, u_int32_t eventId, google::protobuf::MessageLite& message);
+    void sendFileEvent(int fileId, CARTA::EventType eventType, u_int32_t eventId,
         google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
