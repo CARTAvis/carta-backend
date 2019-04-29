@@ -812,7 +812,7 @@ void Session::updateRegionData(int fileId, bool channelChanged, bool stokesChang
     //    char * msg_buf = new char[requiredSize]; // REPLACE THIS WITH BUFFER POOL.
     std::vector<char> msg;
     
-    memcpy(msg.data(), &head, sizeof(CARTA::EventType));
+    memcpy(msg.data(), &head, sizeof(CARTA::EventHeader));
     message.SerializeToArray(msg.data() + sizeof(CARTA::EventHeader), messageLength);
     out_msgs.push(msg);
     outgoing->send();
