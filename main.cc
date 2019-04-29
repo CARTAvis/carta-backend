@@ -14,7 +14,7 @@
 #include <thread>
 #include <mutex>
 
-#include "EventMappings.h"
+#include "EventHeader.h"
 #include "FileListHandler.h"
 #include "FileSettings.h"
 #include "OnMessageTask.h"
@@ -32,24 +32,11 @@ FileListHandler* fileListHandler;
 uint32_t sessionNumber;
 uWS::Hub wsHub;
 
-// Map from string uuids to 8 bit ints.
-unordered_map<std::string,uint8_t> _event_name_map;
 
 // command-line arguments
 string rootFolder("/"), baseFolder("."), version_id("1.1");
 bool verbose, usePermissions;
 
-
-
-inline uint8_t get_event_id_by_string(string& strname)
-{
-  int8_t ret= _event_name_map[ strname ];
-  if( ! ret ) {
-    cerr << "Name lookup failure in  get_event_no_by_string : "
-	      << strname << endl;
-  }
-  return ret;
-}
 
 
 
@@ -105,108 +92,93 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code,
 
 
 
-
-
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage,
-	       size_t length, uWS::OpCode opCode) {
-  Session * session= (Session*) ws->getUserData();
-  if (!session) {
-    fmt::print("Missing session!\n");
-    return;
-  }
-
-  if (opCode == uWS::OpCode::BINARY) {
-    if (length > 36) {
-      static const size_t max_len = 32;
-      string eventName(rawMessage, min(strlen(rawMessage), max_len));
-      uint32_t requestId = *reinterpret_cast<uint32_t*>(rawMessage+32);
-      vector<char> eventPayload(&rawMessage[36], &rawMessage[length]);
-      
-      OnMessageTask * tsk= nullptr;
-      uint8_t event_id= get_event_id_by_string( eventName );
-
-      switch(event_id) {
-      case 0: {
-	// Do nothing if event type is not known.
-	break;
-      }
-      case SET_IMAGE_CHANNELS_ID: {
-	CARTA::SetImageChannels message;
-	message.ParseFromArray(eventPayload.data(), eventPayload.size());
-	session->image_channel_lock();
-	if( ! session->image_channel_task_test_and_set() ) {
-	  tsk= new (tbb::task::allocate_root())
-	    SetImageChannelsTask(session, make_pair(message, requestId));
-	}
-	else {
-	// has its own queue to keep channels in order during animation
-	  session->addToSetChanQueue(message, requestId);
-	}
-	session->image_channel_unlock();
-	break;
-      }
-      case SET_IMAGE_VIEW_ID: {
-        CARTA::SetImageView message;
-        message.ParseFromArray(eventPayload.data(), eventPayload.size());
-        session->addViewSetting(message, requestId);
-        tsk= new (tbb::task::allocate_root())
-	  SetImageViewTask(session, message.file_id());
-	break;
-      }	
-      case SET_CURSOR_ID: {
-	CARTA::SetCursor message;
-        message.ParseFromArray(eventPayload.data(), eventPayload.size());
-        session->addCursorSetting(message, requestId);
-        tsk= new (tbb::task::allocate_root()) SetCursorTask(session, message.file_id());
-	break;
-      }
-      case SET_HISTOGRAM_REQUIREMENTS_ID: {
-        CARTA::SetHistogramRequirements message;
-        message.ParseFromArray(eventPayload.data(), eventPayload.size());
-        if(message.histograms_size() == 0) {
-          session->cancel_SetHistReqs();
-        }
-        else {
-          tsk= new (tbb::task::allocate_root())
-	    SetHistogramReqsTask(session,
-				 make_tuple(event_id,
-					    requestId,
-					    eventPayload));
-        }
-	break;
-      }
-      case START_ANIMATION_ID: {
-	CARTA::StartAnimation message;
-	message.ParseFromArray(eventPayload.data(), eventPayload.size());
-	tsk= new (tbb::task::allocate_root())
-	  AnimationTask(session, requestId, message );
-	break;
-      }
-      case STOP_ANIMATION_ID: {
-	CARTA::StopAnimation message;
-	message.ParseFromArray(eventPayload.data(), eventPayload.size());
-	session->stop_animation( message.file_id(), message.end_frame() );
-	break;
-      }
-      default: {
-	tsk= new (tbb::task::allocate_root())
-	  MultiMessageTask(session,
-			   make_tuple(event_id,
-				      requestId,
-				      eventPayload) );
-      }
-      }
-      if( tsk ) tbb::task::enqueue(*tsk);
+               size_t length, uWS::OpCode opCode) {
+    Session * session= (Session*) ws->getUserData();
+    if (!session) {
+        fmt::print("Missing session!\n");
+        return;
     }
-  }
-  else if (opCode == uWS::OpCode::TEXT) {
-    if (strncmp(rawMessage, "PING", 4) == 0) {
-      ws->send("PONG");
+
+    if (opCode == uWS::OpCode::BINARY) {
+        if (length > 36) {
+            CARTA::EventHeader head= *reinterpret_cast<CARTA::EventHeader*>(rawMessage);
+            char * event_buf= rawMessage + sizeof(CARTA::EventHeader);
+            int event_length= length - sizeof(CARTA::EventHeader);
+            static const size_t max_len = 32;
+            OnMessageTask * tsk= nullptr;
+
+            switch(head._type) {
+            case CARTA::EventType::SET_IMAGE_CHANNELS: {
+                CARTA::SetImageChannels message;
+                message.ParseFromArray(event_buf, event_length);
+                session->image_channel_lock();
+                if( ! session->image_channel_task_test_and_set() ) {
+                    tsk= new (tbb::task::allocate_root())
+                        SetImageChannelsTask(session, make_pair(message, head._req_id));
+                }
+                else {
+                    // has its own queue to keep channels in order during animation
+                    session->addToSetChanQueue(message, head._req_id);
+                }
+                session->image_channel_unlock();
+                break;
+            }
+            case CARTA::EventType::SET_IMAGE_VIEW: {
+                CARTA::SetImageView message;
+                message.ParseFromArray(event_buf, event_length);
+                session->addViewSetting(message, head._req_id);
+                tsk= new (tbb::task::allocate_root())
+                    SetImageViewTask(session, message.file_id());
+                break;
+            }
+            case CARTA::EventType::SET_CURSOR: {
+                CARTA::SetCursor message;
+                message.ParseFromArray(event_buf, event_length);
+                session->addCursorSetting(message, head._req_id);
+                tsk= new (tbb::task::allocate_root()) SetCursorTask(session, message.file_id());
+                break;
+            }
+	    case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS: {
+                CARTA::SetHistogramRequirements message;
+                message.ParseFromArray(event_buf, event_length);
+                if(message.histograms_size() == 0) {
+                    session->cancel_SetHistReqs();
+                }
+                else {
+                    tsk= new (tbb::task::allocate_root())
+                        SetHistogramReqsTask(session, head, event_length, event_buf);
+                }
+                break;
+            }
+            case CARTA::EventType::START_ANIMATION: {
+                CARTA::StartAnimation message;
+                message.ParseFromArray(event_buf, event_length);
+                tsk= new (tbb::task::allocate_root())
+                    AnimationTask(session, head._req_id, message );
+                break;
+            }
+            case CARTA::EventType::STOP_ANIMATION: {
+                CARTA::StopAnimation message;
+                message.ParseFromArray(event_buf, event_length);
+                session->stop_animation( message.file_id(), message.end_frame() );
+                break;
+            }
+            default: {
+                tsk= new (tbb::task::allocate_root())
+                    MultiMessageTask(session, head, event_length, event_buf );
+            }
+            }
+            if( tsk ) tbb::task::enqueue(*tsk);
+        }
     }
-  }
+    else if (opCode == uWS::OpCode::TEXT) {
+        if (strncmp(rawMessage, "PING", 4) == 0) {
+            ws->send("PONG");
+        } 
+    } 
 }
-
 
 
 
@@ -215,30 +187,6 @@ void exit_backend(int s) {
     exit(0);
 }
 
-
-
-
-
-// Note : this is still under construction.
-void populate_event_name_map(void)
-{
-  _event_name_map["REGISTER_VIEWER"]= REGISTER_VIEWER_ID;
-  _event_name_map["FILE_LIST_REQUEST"]= FILE_LIST_REQUEST_ID;
-  _event_name_map["FILE_INFO_REQUEST"]= FILE_INFO_REQUEST_ID;;
-  _event_name_map["OPEN_FILE"]= OPEN_FILE_ID;
-  _event_name_map["CLOSE_FILE"]= CLOSE_FILE_ID;
-  _event_name_map["SET_IMAGE_VIEW"]= SET_IMAGE_VIEW_ID;
-  _event_name_map["SET_IMAGE_CHANNELS"]= SET_IMAGE_CHANNELS_ID;
-  _event_name_map["SET_CURSOR"]= SET_CURSOR_ID;
-  _event_name_map["SET_SPATIAL_REQUIREMENTS"]= SET_SPATIAL_REQUIREMENTS_ID;
-  _event_name_map["SET_SPECTRAL_REQUIREMENTS"]= SET_SPECTRAL_REQUIREMENTS_ID;
-  _event_name_map["SET_HISTOGRAM_REQUIREMENTS"]= SET_HISTOGRAM_REQUIREMENTS_ID;
-  _event_name_map["SET_STATS_REQUIREMENTS"]= SET_STATS_REQUIREMENTS_ID;
-  _event_name_map["SET_REGION"]= SET_REGION_ID;
-  _event_name_map["REMOVE_REGION"]= REMOVE_REGION_ID;
-  _event_name_map["START_ANIMATION"]= START_ANIMATION_ID;
-  _event_name_map["STOP_ANIMATION"]= STOP_ANIMATION_ID;
-}
 
 
   
@@ -279,8 +227,6 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-	// Used to map between sting names of messages and local int ids.
-	populate_event_name_map();
 
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);

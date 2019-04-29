@@ -1,0 +1,30 @@
+#pragma once
+
+namespace CARTA {
+    enum EventType:uint16_t {
+	REGISTER_VIEWER= 1,
+	FILE_LIST_REQUEST= 2,
+	FILE_INFO_REQUEST= 3,
+	OPEN_FILE= 4,
+	SET_IMAGE_VIEW= 5,
+	SET_IMAGE_CHANNELS= 6,
+	SET_CURSOR= 7,
+	SET_SPATIAL_REQUIREMENTS= 8,
+	SET_HISTOGRAM_REQUIREMENTS= 9,
+	SET_STATS_REQUIREMENTS= 10,
+	SET_REGION= 11,
+	REMOVE_REGION= 12,
+	CLOSE_FILE= 13,
+	SET_SPECTRAL_REQUIREMENTS= 14,
+	START_ANIMATION= 15,
+	START_ANIMATION_ACK= 16,
+	STOP_ANIMATION= 17
+    };
+
+    typedef struct {
+	CARTA::EventType _type;
+	uint16_t _icd_vers;
+	uint32_t _req_id;
+    } EventHeader;
+ 
+}
