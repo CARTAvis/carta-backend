@@ -23,16 +23,13 @@
 
 using namespace std;
 
-// key is uuid:
-using key_type = string;
-
 // key is current folder
 unordered_map<string, vector<string>> permissionsMap;
 
 // file list handler for the file browser
 FileListHandler* fileListHandler;
 
-int sessionNumber;
+uint32_t sessionNumber;
 uWS::Hub wsHub;
 
 // Map from string uuids to 8 bit ints.
@@ -58,10 +55,9 @@ inline uint8_t get_event_id_by_string(string& strname)
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
-    string uuidstr = fmt::format("{}{}", ++sessionNumber,
-        casacore::Int(casacore::HostInfo::secondsFrom1970()));
-
-    auto &uuid= *((string *)new string(uuidstr));
+    sessionNumber++;
+    // protect against overflow
+    sessionNumber = max(sessionNumber, 1u);
 
     uS::Async *outgoing = new uS::Async(wsHub.getLoop());
 
@@ -74,14 +70,14 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
         });
 
 
-    session= new Session(ws, uuid, rootFolder, outgoing, fileListHandler, verbose);
+    session= new Session(ws, sessionNumber, rootFolder, outgoing, fileListHandler, verbose);
 
     ws->setUserData(session);
     session->increase_ref_count();
     outgoing->setData(session);
 
-    log(uuid, "Client {} [{}] Connected. Num sessions: {}",
-	uuid, ws->getAddress().address, Session::number_of_sessions());
+    log(sessionNumber, "Client {} [{}] Connected. Num sessions: {}",
+        sessionNumber, ws->getAddress().address, Session::number_of_sessions());
 }
 
 
@@ -92,7 +88,7 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code,
   Session * session= (Session*)ws->getUserData();
   
   if( session ) {
-    auto uuid= session->uuid;
+    auto uuid= session->id;
     session->disconnect_called();
     log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}",
 	uuid, ws->getAddress().address, Session::number_of_sessions());

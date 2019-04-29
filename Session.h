@@ -38,7 +38,7 @@
 
 class Session {
  public:
-    std::string uuid;
+    uint32_t id;
     carta::FileSettings fsettings;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> setchanq;
  protected:
@@ -89,7 +89,7 @@ class Session {
     
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
-            std::string uuid,
+            uint32_t id,
             std::string root,
             uS::Async *outgoing,
             FileListHandler *fileListHandler,

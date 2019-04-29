@@ -23,12 +23,12 @@ int Session::_num_sessions= 0;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws,
-		 std::string uuid,
+		 uint32_t id,
 		 std::string root,
 		 uS::Async *outgoing_,
 		 FileListHandler *fileListHandler,
 		 bool verbose)
-    : uuid(std::move(uuid)),
+    : id(id),
       socket(ws),
       rootFolder(root),
       verboseLogging(verbose),
@@ -129,13 +129,13 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t re
     std::string error;
     CARTA::SessionType type(CARTA::SessionType::NEW);
     // check session id
-    if (sessionId.empty()) {
-        sessionId = uuid;
+    if (!sessionId) {
+        sessionId = id;
         success = true;
     } else {
         type = CARTA::SessionType::RESUMED;
-        if (sessionId.compare(uuid) != 0) {  // invalid session id
-            error = "Cannot resume session id " + sessionId;
+        if (sessionId != id) {  // invalid session id
+            error = fmt::format("Cannot resume session id {}", sessionId);
         } else {
             success = true;
         }
@@ -209,7 +209,7 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
         string absFilename(rootPath.resolvedName());
 
         // create Frame for open file
-        auto frame = std::unique_ptr<Frame>(new Frame(uuid, absFilename, hdu));
+        auto frame = std::unique_ptr<Frame>(new Frame(id, absFilename, hdu));
         if (frame->isValid()) {
             std::unique_lock<std::mutex> lock(frameMutex); // open/close lock
             frames[fileId] = move(frame);
@@ -842,7 +842,7 @@ void Session::sendLogEvent(std::string message, std::vector<std::string> tags, C
     *errorData.mutable_tags() = {tags.begin(), tags.end()};
     sendEvent("ERROR_DATA", 0, errorData);
     if ((severity > CARTA::ErrorSeverity::DEBUG) || verboseLogging)
-        log(uuid, message);
+        log(id, message);
 }
 
 
