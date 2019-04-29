@@ -172,8 +172,8 @@ protected:
     void updateRegionData(int fileId, bool channelChanged, bool stokesChanged);
 
     // Send protobuf messages
-    void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
-    void sendFileEvent(int fileId, std::string eventName, u_int64_t eventId,
+    void sendEvent(uint16_t eventType, u_int32_t eventId, google::protobuf::MessageLite& message);
+    void sendFileEvent(int fileId, uint16_t eventType, u_int32_t eventId,
         google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
