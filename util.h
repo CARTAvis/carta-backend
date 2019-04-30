@@ -12,16 +12,16 @@
 
 using namespace std;
 
-void log(const string& uuid, const string& logMessage);
+void log(uint32_t id, const string& logMessage);
 
 template<typename... Args>
-inline void log(const string& uuid, const char* templateString, Args... args) {
-    log(uuid, fmt::format(templateString, args...));
+inline void log(uint32_t id, const char* templateString, Args... args) {
+    log(id, fmt::format(templateString, args...));
 }
 
 template<typename... Args>
-inline void log(const string& uuid, const string& templateString, Args... args) {
-    log(uuid, fmt::format(templateString, args...));
+inline void log(uint32_t id, const string& templateString, Args... args) {
+    log(id, fmt::format(templateString, args...));
 }
 
 void readPermissions(string filename, unordered_map<string, vector<string>>& permissionsMap);
