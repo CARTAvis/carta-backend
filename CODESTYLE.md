@@ -15,10 +15,11 @@ Details of the formatting style can be seen in `.clang-format`.
 Naming convention follows [Google C++ style](https://google.github.io/styleguide/cppguide.html#Naming), with the following changes:
 * file names use PascalCase instead of underscore_case
 * the `CARTA` namespace (from the auto-generated protocol buffer code) is uppercase, while all other namespaces are lower case
+* private class members have a leading underscore, rather than trailing
 
 To summarise these conventions:
 * variable names and class data members use underscore_case, such as `table_name`, `icd_version`, `session_id`.
-* private class members have a trailing underscore, such as `num_stokes_`
+* private class members have a leading underscore, such as `_num_stokes`
 * function and class names use PascalCase, such as `OpenFile()`, `FillHistogramData()`
 * getter and setter functions are named like variables, such as `get_count()`, `set_count(int count)` or simply `count()`
 * enumerators are named in UPPER_CASE, such as `REGISTER_VIEWER`, `REGION_REQUIREMENTS`.
