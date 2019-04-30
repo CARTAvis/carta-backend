@@ -4,7 +4,7 @@
 
 #include "Session.h"
 #include "AnimationObject.h"
-
+#include "EventHeader.h"
 
 #include <tbb/concurrent_queue.h>
 #include <tbb/task.h>
@@ -31,13 +31,17 @@ public:
 };
 
 class MultiMessageTask : public OnMessageTask {
-  std::tuple<uint8_t,uint32_t,std::vector<char>> _msg;
-  tbb::task* execute();
+    CARTA::EventHeader _header;
+    int _event_length;
+    char * _event_buffer;
+    tbb::task* execute();
 public:
- MultiMessageTask(Session *session_,
-		  std::tuple<uint8_t,uint32_t,std::vector<char>> msg)
+ MultiMessageTask(Session *session_, CARTA::EventHeader& head,
+		  int evt_len, char* event_buf)
    : OnMessageTask( session_ ) {
-    _msg= msg;
+      _header= head;
+      _event_length= evt_len;
+      _event_buffer= event_buf;
   }
   ~MultiMessageTask() {}
 };
@@ -70,7 +74,7 @@ class SetCursorTask : public OnMessageTask {
   int _file_id;
   tbb::task* execute();
 public:
- SetCursorTask(Session *session_ , int fd ) : OnMessageTask( session_ ) {
+ SetCursorTask(Session* session , int fd ) : OnMessageTask( session ) {
     _file_id= fd;
   }
   ~SetCursorTask() {}
@@ -78,28 +82,31 @@ public:
 
 
 class SetHistogramReqsTask : public OnMessageTask {
-  std::tuple<uint8_t,uint32_t,std::vector<char>> _msg;
   tbb::task* execute();
-  
+  CARTA::EventHeader _header;
+  int _event_length;
+  char * _event_buffer;
 public:
- SetHistogramReqsTask(Session *session_,
-		      std::tuple<uint8_t,uint32_t,std::vector<char>> msg )
-   : OnMessageTask( session_ ) {
-    _msg= msg;
+ SetHistogramReqsTask(Session* session, CARTA::EventHeader& head, int len, char * buf)
+   : OnMessageTask( session ) {
+      _header= head;
+      _event_length= len;
+      _event_buffer= buf;
   }
   ~SetHistogramReqsTask() {
   }
 };
+
 
 class AnimationTask : public OnMessageTask {
   std::tuple<uint8_t,uint32_t,std::vector<char>> _msg;
   tbb::task* execute();
   
  public:
- AnimationTask(Session *session_, uint32_t req_id,
+ AnimationTask(Session* session, uint32_t req_id,
 	       CARTA::StartAnimation msg)
-   : OnMessageTask( session_ ) {
-    session_->build_animation_object( msg, req_id );
+   : OnMessageTask( session ) {
+    session->build_animation_object( msg, req_id );
   }
   ~AnimationTask() {
   }

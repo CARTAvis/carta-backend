@@ -9,8 +9,8 @@
 using namespace carta;
 using namespace std;
 
-Frame::Frame(const string& uuidString, const string& filename, const string& hdu, int defaultChannel)
-    : uuid(uuidString),
+Frame::Frame(uint32_t sessionId, const string& filename, const string& hdu, int defaultChannel)
+    : sessionId(sessionId),
       valid(true),
       connected(true),
       zProfileCount(0),
@@ -22,7 +22,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
       nchan(1), nstok(1) {
 
     if (loader==nullptr) {
-        log(uuid, "Problem loading file {}: loader not implemented", filename);
+        log(sessionId, "Problem loading file {}: loader not implemented", filename);
         valid = false;
         return;
     }
@@ -30,14 +30,14 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
     try {
         loader->openFile(filename, hdu);
     } catch (casacore::AipsError& err) {
-        log(uuid, "Problem loading file {}: {}", filename, err.getMesg());
+        log(sessionId, "Problem loading file {}: {}", filename, err.getMesg());
         valid = false;
         return;
     }
         
     // Get shape and axis values from the loader
     if (!loader->findShape(imageShape, nchan, nstok, spectralAxis, stokesAxis)) {
-        log(uuid, "Problem loading file {}: could not determine image shape", filename);
+        log(sessionId, "Problem loading file {}: could not determine image shape", filename);
         valid = false;
         return;
     }
@@ -58,7 +58,7 @@ Frame::Frame(const string& uuidString, const string& filename, const string& hdu
         // A failure here shouldn't invalidate the frame 
         loader->loadImageStats();
     } catch (casacore::AipsError& err) {
-        log(uuid, "Problem loading statistics from file {}: {}", filename, err.getMesg());
+        log(sessionId, "Problem loading statistics from file {}: {}", filename, err.getMesg());
     }
 }
 

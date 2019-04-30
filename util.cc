@@ -1,17 +1,11 @@
 #include "util.h"
 
-void log(const string& uuid, const string& logMessage) {
-    // Shorten uuids a bit for brevity
-    auto uuidString = uuid;
-    auto lastHash = uuidString.find_last_of('-');
-    if (lastHash != string::npos) {
-        uuidString = uuidString.substr(lastHash + 1);
-    }
+void log(uint32_t id, const string& logMessage) {
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string timeString = ctime(&time);
     timeString = timeString.substr(0, timeString.length() - 1);
 
-    fmt::print("Session {} ({}): {}\n", uuidString, timeString, logMessage);
+    fmt::print("Session {} ({}): {}\n", id, timeString, logMessage);
 }
 
 void readPermissions(string filename, unordered_map<string, vector<string>>& permissionsMap) {

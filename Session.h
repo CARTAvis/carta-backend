@@ -6,6 +6,7 @@
 #include "FileListHandler.h"
 #include "FileSettings.h"
 #include "AnimationObject.h"
+#include "EventHeader.h"
 #include "Frame.h"
 #include "util.h"
 
@@ -38,7 +39,7 @@
 
 class Session {
  public:
-    std::string uuid;
+    uint32_t id;
     carta::FileSettings fsettings;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels,uint32_t>> setchanq;
  protected:
@@ -89,7 +90,7 @@ class Session {
     
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws,
-            std::string uuid,
+            uint32_t id,
             std::string root,
             uS::Async *outgoing,
             FileListHandler *fileListHandler,
@@ -172,8 +173,8 @@ protected:
     void updateRegionData(int fileId, bool channelChanged, bool stokesChanged);
 
     // Send protobuf messages
-    void sendEvent(std::string eventName, u_int64_t eventId, google::protobuf::MessageLite& message);
-    void sendFileEvent(int fileId, std::string eventName, u_int64_t eventId,
+    void sendEvent(CARTA::EventType eventType, u_int32_t eventId, google::protobuf::MessageLite& message);
+    void sendFileEvent(int fileId, CARTA::EventType eventType, u_int32_t eventId,
         google::protobuf::MessageLite& message);
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };

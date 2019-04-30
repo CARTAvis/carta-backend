@@ -48,14 +48,15 @@ send_event( carta::msg_type evt_type,
 	    uint32_t event_id,
 	    google::protobuf::MessageLite& Message )
 {
-  msg_header head;
+  msg_header* head;
   char buffer[128]; // Would have buffer pool in production system.
-  
-  head._type= evt_type;
-  head._icd_vers= ICD_VERSION;
-  head._req_id= event_id;
 
-  std::memcpy(buffer, &head, sizeof(msg_header));
+  head = (msg_header*)buffer;
+  head->_type= evt_type;
+  head->_icd_vers= ICD_VERSION;
+  head->_req_id= event_id;
+  //
+  //  std::memcpy(buffer, &head, sizeof(msg_header));
   Message.SerializeToArray(buffer + sizeof(msg_header), Message.ByteSize());
   
   // Would add to the send queue here in real version, but just pass it straight
@@ -67,7 +68,7 @@ int main(int argc, const char* argv[])
 {
   uint32_t req_id= 1002;
   std::string message("Error string ...");
-  std::string uuid("123882"); // Should be uint32_t, but need to update protobuf def
+  uint32_t uuid(1232); 
   ::CARTA::SessionType type(CARTA::SessionType::NEW);
   
   CARTA::RegisterViewerAck ackMessage;
