@@ -20,16 +20,16 @@ class CartaHdf5Image : public casacore::ImageInterface<float> {
       // Copy constructor
       CartaHdf5Image(const CartaHdf5Image& other);
 
-      inline bool valid() { return valid_; };
+      inline bool valid() { return _valid; };
 
       inline const casacore::CountedPtr<casacore::HDF5Group> group() const {
-          return lattice_.group(); };
-      inline const casacore::HDF5Lattice<float> lattice() { return lattice_; };
+          return _lattice.group(); };
+      inline const casacore::HDF5Lattice<float> lattice() { return _lattice; };
 
       // implement casacore ImageInterface
-      virtual inline casacore::String imageType() const { return "HDF5Image"; };
+      virtual inline casacore::String imageType() const { return "CartaHdf5Image"; };
       virtual casacore::String name(bool stripPath=false) const;
-      virtual inline casacore::IPosition shape() const { return shape_; };
+      virtual inline casacore::IPosition shape() const { return _shape; };
       virtual casacore::Bool ok() const;
       virtual casacore::Bool doGetSlice(casacore::Array<float>& buffer,
           const casacore::Slicer& section);
@@ -50,10 +50,10 @@ class CartaHdf5Image : public casacore::ImageInterface<float> {
       bool SetupCoordSys(casacore::Record& attributes);
       void SetupImageInfo(casacore::Record& attributes);
 
-      bool valid_;
-      casacore::HDF5Lattice<float> lattice_;
-      casacore::IPosition shape_;
-      casacore::LatticeRegion* region_;
+      bool _valid;
+      casacore::HDF5Lattice<float> _lattice;
+      casacore::IPosition _shape;
+      casacore::LatticeRegion* _region;
 };
 
 } // namespace carta

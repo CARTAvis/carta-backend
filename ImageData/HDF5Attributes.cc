@@ -6,7 +6,7 @@
 #include <casacore/casa/HDF5/HDF5Error.h>
 #include <casacore/fits/FITS/FITSDateUtil.h>
 
-casacore::Record HDF5Attributes::doReadAttributes (hid_t groupHid) {
+casacore::Record HDF5Attributes::DoReadAttributes (hid_t groupHid) {
     // reads attributes but not links
     casacore::Record rec;
     char cname[512];
@@ -16,8 +16,8 @@ casacore::Record HDF5Attributes::doReadAttributes (hid_t groupHid) {
     for (int index=0; index<nfields; ++index) {
         casacore::HDF5HidAttribute id(H5Aopen_idx(groupHid, index));
         AlwaysAssert (id.getHid()>=0, casacore::AipsError);
-        unsigned int namsz = H5Aget_name(id, sizeof(cname), cname);
-        AlwaysAssert (namsz<sizeof(cname), casacore::AipsError);
+        unsigned int name_size = H5Aget_name(id, sizeof(cname), cname);
+        AlwaysAssert (name_size<sizeof(cname), casacore::AipsError);
         casacore::String name(cname);
         // Get rank and shape from the dataspace info.
         casacore::HDF5HidDataSpace dsid (H5Aget_space(id));
@@ -29,13 +29,13 @@ casacore::Record HDF5Attributes::doReadAttributes (hid_t groupHid) {
         // Get data type and its size.
         if (rank == 0) {
           casacore::HDF5HidDataType dtid(H5Aget_type(id));
-          readScalar (id, dtid, name, rec);
+          ReadScalar (id, dtid, name, rec);
         }
     }
     return rec;
 }
 
-void HDF5Attributes::readScalar (hid_t attrId, hid_t dtid, const casacore::String& name,
+void HDF5Attributes::ReadScalar (hid_t attrId, hid_t dtid, const casacore::String& name,
     casacore::RecordInterface& rec) {
     // Handle a scalar field.
     int sz = H5Tget_size(dtid);
@@ -69,7 +69,7 @@ void HDF5Attributes::readScalar (hid_t attrId, hid_t dtid, const casacore::Strin
 }
 
 // get int value (might be string)
-bool HDF5Attributes::getIntAttribute(casacore::Int64& val, const casacore::Record& rec,
+bool HDF5Attributes::GetIntAttribute(casacore::Int64& val, const casacore::Record& rec,
         const casacore::String& field) {
     bool getOK(true);
     if (rec.isDefined(field)) {
@@ -89,7 +89,7 @@ bool HDF5Attributes::getIntAttribute(casacore::Int64& val, const casacore::Recor
 }
 
 // get double value (might be string)
-bool HDF5Attributes::getDoubleAttribute(casacore::Double& val, const casacore::Record& rec,
+bool HDF5Attributes::GetDoubleAttribute(casacore::Double& val, const casacore::Record& rec,
         const casacore::String& field) {
     bool getOK(true);
     if (rec.isDefined(field)) {
@@ -108,17 +108,17 @@ bool HDF5Attributes::getDoubleAttribute(casacore::Double& val, const casacore::R
     return getOK;
 }
 
-void HDF5Attributes::convertToFits(casacore::Record& in) {
+void HDF5Attributes::ConvertToFits(casacore::Record& in) {
     // hdf5 attribute data types are non-standardized
     casacore::Record out;
     if (in.isDefined("BITPIX")) { // should be second keyword
         int val;    
         casacore::DataType type(in.type(in.fieldNumber("BITPIX")));
-	if (type==casacore::TpString)
+        if (type==casacore::TpString)
             val = casacore::String::toInt(in.asString("BITPIX"));
-	else
+        else
             val = in.asInt("BITPIX");
-	out.define("BIXPIX", val);
+        out.define("BIXPIX", val);
     }
     for (unsigned int i=0; i < in.nfields(); ++i) {
         casacore::String name(in.name(i));
@@ -129,18 +129,18 @@ void HDF5Attributes::convertToFits(casacore::Record& in) {
         casacore::DataType type(in.type(i));
         switch (type) {
             case casacore::TpString: {
-                casacore::String strval(in.asString(name));
-		if (strval=="Kelvin") strval = "K";
+                casacore::String str_val(in.asString(name));
+                if (str_val=="Kelvin") str_val = "K";
                 if (name=="BITPIX")
                     break;
                 if ((name=="SIMPLE") || (name=="EXTEND") ||
                     (name=="BLOCKED")) {
                     // convert to bool
-                    bool val = (strval == "T" ? true : false);
+                    bool val = (str_val == "T" ? true : false);
                     out.define(name, val);
                 } else if (name.startsWith("NAXIS")) {
                     // convert to int
-                    int val = casacore::String::toInt(strval);
+                    int val = casacore::String::toInt(str_val);
                     out.define(name, val);
                 } else if ((name == "EQUINOX") || (name == "EPOCH") ||
                            (name == "LONPOLE") || (name == "LATPOLE") ||
@@ -151,16 +151,16 @@ void HDF5Attributes::convertToFits(casacore::Record& in) {
                            (name.startsWith("CDELT")) ||
                            (name.startsWith("CROTA"))) {
                     // convert to float
-                    float val = casacore::String::toFloat(strval);
+                    float val = casacore::String::toFloat(str_val);
                     out.define(name, val);
                 } else if (name == "DATE-OBS") {
                     // convert format
-                    casacore::String dateOut;
-                    casacore::FITSDateUtil::convertDateString(dateOut, strval);
-		    out.define(name, dateOut);
+                    casacore::String date_out;
+                    casacore::FITSDateUtil::convertDateString(date_out, str_val);
+                    out.define(name, date_out);
                 } else {
-                    strval.trim();
-                    out.define(name, strval);
+                    str_val.trim();
+                    out.define(name, str_val);
                 }
                 break;
             }
