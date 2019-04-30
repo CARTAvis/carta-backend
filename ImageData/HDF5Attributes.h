@@ -1,5 +1,7 @@
 //# HDF5Attributes.h: get HDF5 header attributes in casacore::Record
 
+#pragma once
+
 #include <casacore/casa/Containers/Record.h>
 #include <casacore/casa/HDF5/HDF5HidMeta.h>
 
@@ -15,6 +17,7 @@ public:
         const casacore::String& field);
     static bool getDoubleAttribute(casacore::Double& val, const casacore::Record& rec,
         const casacore::String& field);
+    static void convertToFits(casacore::Record& in);
 
 private:
     // Read a scalar value (int, float, string) and add it to the record.

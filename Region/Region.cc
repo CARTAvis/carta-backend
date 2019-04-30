@@ -182,29 +182,35 @@ bool Region::getRegion(casacore::ImageRegion& region, int stokes, int channel) {
 bool Region::setXYRegion(const std::vector<CARTA::Point>& points, float rotation) {
     // create 2D casacore::WCRegion for type
     casacore::WCRegion* region(nullptr);
+    std::string regionType;
     try {
         switch(m_type) {
             case CARTA::RegionType::POINT: {
+                regionType = "POINT";
                 region = makePointRegion(points);
                 break;
             }
             case CARTA::RegionType::RECTANGLE: {
+                regionType = "RECTANGLE";
                 region = makeRectangleRegion(points, rotation);
                 break;
             }
             case CARTA::RegionType::ELLIPSE: {
+                regionType = "ELLIPSE";
                 region = makeEllipseRegion(points, rotation);
                 break;
             }
             case CARTA::RegionType::POLYGON: {
+                regionType = "POLYGON";
                 region = makePolygonRegion(points);
                 break;
             }
             default:
+                regionType = "NOT SUPPORTED";
                 break;
         }
     } catch (casacore::AipsError& err) { // xy region failed
-        std::cerr << "ERROR: xy region type " << m_type << " failed: " << err.getMesg() << std::endl;
+        std::cerr << "ERROR: xy region type " << regionType << " failed: " << err.getMesg() << std::endl;
     }
 
     if (m_xyRegion != nullptr)

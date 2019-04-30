@@ -5,6 +5,9 @@
 #include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
+#include <casacore/fits/FITS/fits.h>  // keyword list
+#include <casacore/fits/FITS/FITSKeywordUtil.h>  // convert Record to keyword list
+#include <casacore/images/Images/ImageFITSConverter.h>  // get coord system
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 #include "HDF5Attributes.h"
@@ -18,6 +21,7 @@ CartaHdf5Image::CartaHdf5Image (const std::string& filename, const std::string& 
     region_(nullptr)
 {
     lattice_ = casacore::HDF5Lattice<float>(filename, array_name, hdu);
+    shape_ = lattice_.shape();
     valid_ = Setup(filename, hdu);
 }
 
@@ -36,10 +40,6 @@ CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other) :
 
 casacore::String CartaHdf5Image::name(bool stripPath) const {
     return lattice_.name(stripPath);
-}
-
-casacore::IPosition CartaHdf5Image::shape() const {
-    return lattice_.shape();
 }
 
 casacore::Bool CartaHdf5Image::ok() const {
@@ -81,6 +81,7 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu) 
         attributes = HDF5Attributes::doReadAttributes(hdf5_group.getHid());
         hdf5_group.close();
         hdf5_file.close();
+	HDF5Attributes::convertToFits(attributes);
         valid = SetupCoordSys(attributes);
         SetupImageInfo(attributes);
     } catch (casacore::HDF5Error& err) {
@@ -93,97 +94,48 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu) 
 bool CartaHdf5Image::SetupCoordSys(casacore::Record& attributes) {
     // Use header attributes to set up Image CoordinateSystem
     if (attributes.empty())
-      return false;  // should not have gotten past the file browser in this case
+      return false;  // should not have gotten past the file browser
 
     bool coordsys_set(false);
     try {
-      casacore::CoordinateSystem coordsys = casacore::CoordinateSystem();
-      casacore::Int64 naxis;
-      HDF5Attributes::getIntAttribute(naxis, attributes, "NAXIS");
-
-      // add Direction coordinate
-      casacore::MDirection::Types direction_type(casacore::MDirection::DEFAULT);
-      if (attributes.isDefined("RADESYS")) {
-          std::string radesys(attributes.asString("RADESYS"));
-          casacore::MDirection::getType(direction_type, radesys);
-      }
-      std::string ctype_long(attributes.asString("CTYPE1"));
-      std::string ctype_lat(attributes.asString("CTYPE2"));
-      std::string long_unit(attributes.asString("CUNIT1"));
-      std::string lat_unit(attributes.asString("CUNIT2"));
-      // Projection
-      std::vector<double> parameters;
-      casacore::Projection projection = casacore::Projection(ctype_long, ctype_lat,
-          parameters);
-      double ref_longitude(0.0), ref_latitude(0.0), inc_longitude(0.0),
-             inc_latitude(0.0), ref_x(0.0), ref_y(0.0);
-      HDF5Attributes::getDoubleAttribute(ref_longitude, attributes, "CRVAL1");
-      HDF5Attributes::getDoubleAttribute(ref_latitude, attributes, "CRVAL2");
-      HDF5Attributes::getDoubleAttribute(inc_longitude, attributes, "CDELT1");
-      HDF5Attributes::getDoubleAttribute(inc_latitude, attributes, "CDELT2");
-      HDF5Attributes::getDoubleAttribute(ref_x, attributes, "CRPIX1");
-      HDF5Attributes::getDoubleAttribute(ref_y, attributes, "CRPIX2");
-      casacore::Matrix<casacore::Double> xform;
-      if (projection.type() == casacore::Projection::SIN) {
-          xform.resize(casacore::IPosition(2, 2, 0));
-          xform.diagonal() = 1;
-      }
-      casacore::DirectionCoordinate direction_coord(direction_type, projection,
-          casacore::Quantity(ref_longitude, long_unit),
-          casacore::Quantity(ref_latitude, lat_unit), 
-          casacore::Quantity(inc_longitude, long_unit), 
-          casacore::Quantity(inc_latitude, lat_unit),
-          xform, ref_x, ref_y);
-      coordsys.addCoordinate(direction_coord);
-
-      if (naxis > 2) {
-          // add Spectral coordinate
-          casacore::MFrequency::Types freq_type(casacore::MFrequency::DEFAULT);
-          if (attributes.isDefined("SPECSYS")) {
-            std::string specsys(attributes.asString("SPECSYS"));
-            casacore::MFrequency::getType(freq_type, specsys);
-          }
-          double crval3(0.0), cdelt3(0.0), crpix3(0.0), restfrq(0.0);
-          HDF5Attributes::getDoubleAttribute(crval3, attributes, "CRVAL3");
-          HDF5Attributes::getDoubleAttribute(cdelt3, attributes, "CDELT3");
-          HDF5Attributes::getDoubleAttribute(crpix3, attributes, "CRPIX3");
-          HDF5Attributes::getDoubleAttribute(restfrq, attributes, "RESTFRQ");
-          // convert val and delt to Hz
-          std::string freq_unit = (attributes.isDefined("CUNIT3") ?
-                                   attributes.asString("CUNIT3") : "Hz");
-          casacore::Quantity ref_freq(crval3, freq_unit);
-          ref_freq.convert("Hz");
-          casacore::Quantity inc_freq(cdelt3, freq_unit);
-          inc_freq.convert("Hz");
-          casacore::SpectralCoordinate spectral_coord(freq_type, ref_freq.getValue(),
-              inc_freq.getValue(), crpix3, restfrq);
-          coordsys.addCoordinate(spectral_coord);
+        // convert attributes to FITS keyword strings
+        casacore::FitsKeywordList fkwlist = casacore::FITSKeywordUtil::makeKeywordList();
+        casacore::FITSKeywordUtil::addKeywords(fkwlist, attributes);
+	fkwlist.end(); // add end card to end of list
+        if (fkwlist.isempty())
+            return false;
+        // put kw strings into Vector of Strings
+        casacore::Vector<casacore::String> header;
+        fkwlist.first();
+        casacore::FitsKeyword* x = fkwlist.next();
+        while (x != 0) {
+	    std::string headerItem(80, ' ');
+	    char* card = &(headerItem[0]);
+	    casacore::FitsKeyCardTranslator::fmtcard(card, *x);
+            size_t hsize(header.size());
+            header.resize(hsize + 1, true);
+            header(hsize) = headerItem;
+            x = fkwlist.next();
         }
+        // convert to coordinate system
+        int stokesFITSValue(1);
+        casacore::Record headerRec;
+	casacore::LogSink sink; // null sink; hide confusing FITS log messages
+        casacore::LogIO log(sink);
+        unsigned int whichRep(0);
+        casacore::IPosition imageShape(shape());
+        bool dropStokes(true);
+        casacore::CoordinateSystem coordsys =
+            casacore::ImageFITSConverter::getCoordinateSystem(stokesFITSValue,
+            headerRec, header, log, whichRep, imageShape, dropStokes);
+        setUnits(casacore::ImageFITSConverter::getBrightnessUnit(headerRec, log));
 
-        if (naxis > 3) {
-            // add Stokes coordinate
-            double nstokes(1);
-            HDF5Attributes::getDoubleAttribute(nstokes, attributes, "NAXIS4");
-            casacore::Vector<casacore::Int> whichStokes(nstokes);
-            casacore::indgen(whichStokes); // generate vector starting at 0
-            casacore::StokesCoordinate stokes_coord(whichStokes);
-            coordsys.addCoordinate(stokes_coord);
-          }
-
-          // ObsInfo
-          casacore::ObsInfo obs_info;
-          if (attributes.isDefined("TELE")) {
-              obs_info.setTelescope(attributes.asString("TELE"));
-          }
-          if (attributes.isDefined("OBSERVER")) {
-              obs_info.setObserver(attributes.asString("OBSERVER"));
-          }
-          coordsys.setObsInfo(obs_info);
-
-          // Set coord system in Image
-          setCoordinateInfo(coordsys);
-          coordsys_set = true;
+        // Set coord system in Image
+        setCoordinateInfo(coordsys);
+        coordsys_set = true;
     } catch (casacore::AipsError& err) {
+        std::cerr << "ERROR setting up hdf5 coordinate system: "
+                  << err.getMesg() << std::endl;
     }
     return coordsys_set;
 }

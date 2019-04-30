@@ -4,6 +4,7 @@
 
 #include <casacore/casa/HDF5/HDF5DataType.h>
 #include <casacore/casa/HDF5/HDF5Error.h>
+#include <casacore/fits/FITS/FITSDateUtil.h>
 
 casacore::Record HDF5Attributes::doReadAttributes (hid_t groupHid) {
     // reads attributes but not links
@@ -105,5 +106,76 @@ bool HDF5Attributes::getDoubleAttribute(casacore::Double& val, const casacore::R
         getOK = false;
     }
     return getOK;
+}
+
+void HDF5Attributes::convertToFits(casacore::Record& in) {
+    // hdf5 attribute data types are non-standardized
+    casacore::Record out;
+    if (in.isDefined("BITPIX")) { // should be second keyword
+        int val;    
+        casacore::DataType type(in.type(in.fieldNumber("BITPIX")));
+	if (type==casacore::TpString)
+            val = casacore::String::toInt(in.asString("BITPIX"));
+	else
+            val = in.asInt("BITPIX");
+	out.define("BIXPIX", val);
+    }
+    for (unsigned int i=0; i < in.nfields(); ++i) {
+        casacore::String name(in.name(i));
+        if (name.size() > 8 || (name == "SIMPLE")) {
+            // HDF5 keywords not needed, SIMPLE will be added
+            continue;
+        }
+        casacore::DataType type(in.type(i));
+        switch (type) {
+            case casacore::TpString: {
+                casacore::String strval(in.asString(name));
+		if (strval=="Kelvin") strval = "K";
+                if (name=="BITPIX")
+                    break;
+                if ((name=="SIMPLE") || (name=="EXTEND") ||
+                    (name=="BLOCKED")) {
+                    // convert to bool
+                    bool val = (strval == "T" ? true : false);
+                    out.define(name, val);
+                } else if (name.startsWith("NAXIS")) {
+                    // convert to int
+                    int val = casacore::String::toInt(strval);
+                    out.define(name, val);
+                } else if ((name == "EQUINOX") || (name == "EPOCH") ||
+                           (name == "LONPOLE") || (name == "LATPOLE") ||
+                           (name == "RESTFRQ") || (name == "MJD-OBS") ||
+                           (name == "DATAMIN") || (name == "DATAMAX") ||
+                           (name.startsWith("CRVAL")) ||
+                           (name.startsWith("CRPIX")) ||
+                           (name.startsWith("CDELT")) ||
+                           (name.startsWith("CROTA"))) {
+                    // convert to float
+                    float val = casacore::String::toFloat(strval);
+                    out.define(name, val);
+                } else if (name == "DATE-OBS") {
+                    // convert format
+                    casacore::String dateOut;
+                    casacore::FITSDateUtil::convertDateString(dateOut, strval);
+		    out.define(name, dateOut);
+                } else {
+                    strval.trim();
+                    out.define(name, strval);
+                }
+                break;
+            }
+            case casacore::TpInt: {
+                out.define(name, in.asInt(name));
+                break;
+            }
+            case casacore::TpDouble: {
+                out.define(name, in.asFloat(name));
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    in.assign(out);
 }
 

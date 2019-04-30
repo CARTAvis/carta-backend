@@ -1,7 +1,6 @@
 //# CartaHdf5Image.h : HDF5 Image class derived from casacore::ImageInterface
 
-#ifndef CARTA_HDF5IMAGE_H
-#define CARTA_HDF5IMAGE_H
+#pragma once
 
 #include <casacore/casa/Containers/Record.h>
 #include <casacore/casa/HDF5/HDF5File.h>
@@ -30,7 +29,7 @@ class CartaHdf5Image : public casacore::ImageInterface<float> {
       // implement casacore ImageInterface
       virtual inline casacore::String imageType() const { return "HDF5Image"; };
       virtual casacore::String name(bool stripPath=false) const;
-      virtual casacore::IPosition shape() const;
+      virtual inline casacore::IPosition shape() const { return shape_; };
       virtual casacore::Bool ok() const;
       virtual casacore::Bool doGetSlice(casacore::Array<float>& buffer,
           const casacore::Slicer& section);
@@ -47,16 +46,15 @@ class CartaHdf5Image : public casacore::ImageInterface<float> {
           return im->lattice().file();
       }
 
-
       bool Setup(const std::string& filename, const std::string& hdu);
       bool SetupCoordSys(casacore::Record& attributes);
       void SetupImageInfo(casacore::Record& attributes);
 
       bool valid_;
       casacore::HDF5Lattice<float> lattice_;
+      casacore::IPosition shape_;
       casacore::LatticeRegion* region_;
 };
 
 } // namespace carta
 
-#endif
