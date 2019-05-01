@@ -15,7 +15,6 @@ pipeline {
             steps {
                 sh "export PATH=/usr/local/bin:$PATH"
                 sh "git submodule init && git submodule update"
-                sh "mkdir build"
                 dir ('build') {
                  sh "pwd"
                  sh "cp ../../cmake-command.sh ."
@@ -29,10 +28,9 @@ pipeline {
             steps {
                     sh "export PATH=/usr/local/bin:$PATH"
                     dir ('build') {
-                      sh "cp ../../carta-backend-ICD-test-travis.tar.gz . && cp ../../run.sh ."
+                      sh "cp ../../carta-backend-ICD-test-travis.tar.gz . && tar -xvf carta-backend-ICD-test-travis.tar.gz && cp ../../run.sh ."
                       sh "./run.sh # run carta_backend in the background"
                       sh "lsof -i :3002 # check backend is running"
-                      sh "tar -xvf carta-backend-ICD-test-travis.tar.gz"
                       dir ('carta-backend-ICD-test-travis') {
                         dir ('protobuf') {
                         sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && git checkout master && npm install && ./build_proto.sh # prepare the tests"
