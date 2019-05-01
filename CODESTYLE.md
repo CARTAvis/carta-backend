@@ -6,7 +6,6 @@ Code formatting is enforced by `clang-format`. The `reformat.sh` script found in
 * Column limit increased to 140 characters
 * Left pointer alignment is enforced
 * Minor changes to single-line code styles
-* `#pragma once` used instead of include guards
 
 Details of the formatting style can be seen in `.clang-format`.
 
