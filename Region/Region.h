@@ -33,6 +33,7 @@ public:
     // set/get Region parameters
     bool updateRegionParameters(const std::string name, const CARTA::RegionType type,
         const std::vector<CARTA::Point>& points, float rotation);
+    inline std::string name() { return m_name; };
     inline std::vector<CARTA::Point> getControlPoints() { return m_ctrlpoints; };
     casacore::IPosition xyShape();
     inline bool xyRegionValid() { return (m_xyRegion != nullptr); };

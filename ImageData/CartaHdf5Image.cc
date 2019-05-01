@@ -28,8 +28,9 @@ CartaHdf5Image::CartaHdf5Image (const std::string& filename, const std::string& 
 CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other) :
     casacore::ImageInterface<float>(other),
     _valid(other._valid),
-    _region(nullptr),
-    _lattice(other._lattice)
+    _lattice(other._lattice),
+    _shape(other._shape),
+    _region(nullptr)
 {
     if (other._region != nullptr) {
         _region = new casacore::LatticeRegion(*other._region);

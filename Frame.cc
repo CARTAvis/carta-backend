@@ -363,7 +363,7 @@ bool Frame::getRegionSubImage(int regionId, casacore::SubImage<float>& subimage,
     int stokes, int channel) {
     // Apply ImageRegion to image and return SubImage.
     // channel could be ALL_CHANNELS in region channel range (default) or
-    //   a given channel (e.g. current channel).
+    //     a given channel (e.g. current channel).
     // Returns false if image region is invalid and cannot make subimage.
     bool subimageOK(false);
     if (checkStokes(stokes) && (regions.count(regionId))) {
@@ -371,59 +371,17 @@ bool Frame::getRegionSubImage(int regionId, casacore::SubImage<float>& subimage,
         if (region->isValid()) {
             casacore::ImageRegion imRegion;
             if (region->getRegion(imRegion, stokes, channel)) {
-                subimage = casacore::SubImage<float>(loader->loadData(FileInfo::Data::Image), imRegion);
-                subimageOK = true;
+                try {
+                    subimage = casacore::SubImage<float>(loader->loadData(FileInfo::Data::Image), imRegion);
+                    subimageOK = true;
+                } catch (casacore::AipsError& err) {
+                    log(sessionId, "Region creation for {} failed: {}", region->name(), err.getMesg());
+                }
             }
         }
     }
     return subimageOK;
 }
-
-/*
-void Frame::setPixelMask(casacore::SubImage<float>& subimage) {
-    // apply pixel mask from image or generate one
-    if (!subimage.hasPixelMask()) { // apply image mask if possible
-        casacore::ArrayLattice<bool> pixelMask;
-        if (loader->hasData(FileInfo::Data::Mask)) {
-            // apply region slicer to image pixel mask - same shape as subimage
-            casacore::Array<bool> maskArray;
-            const casacore::LatticeRegion* latticeRegion(subimage.getRegionPtr());
-            loader->getPixelMaskSlice(maskArray, latticeRegion->slicer());
-            pixelMask = casacore::ArrayLattice<bool>(maskArray);
-        } else {
-            pixelMask = casacore::ArrayLattice<bool>(subimage.shape());
-            generatePixelMask(pixelMask, subimage);
-        }
-        subimage.setPixelMask(pixelMask, false);
-    }
-}
-
-void Frame::generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore::SubImage<float>& subimage) {
-    // Create boolean Array which is false for NaN values in subimage
-    unsigned int maxPix(subimage.advisedMaxPixels());
-    if (maxPix == 0) {
-        casacore::IPosition tileshape(casacore::TiledFileAccess::makeTileShape(subimage.shape()));
-        maxPix = tileshape.product();
-    }
-    casacore::IPosition cursorShape(subimage.doNiceCursorShape(maxPix));
-    casacore::RO_LatticeIterator<float> sublattIter(subimage, cursorShape);
-    casacore::LatticeIterator<bool> maskIter(pixelMask, cursorShape);
-    maskIter.reset();
-    casacore::Array<bool> mask;
-    for (sublattIter.reset(); !sublattIter.atEnd(); sublattIter++) {
-        try {
-            mask.resize();
-            mask = isFinite(sublattIter.cursor());
-            maskIter.rwCursor() = isFinite(sublattIter.cursor());
-        } catch (casacore::AipsError& err) {
-            // sublattIter resizes cursor if needed, maskIter does not
-            mask.resize(maskIter.rwCursor().shape(), true);
-            maskIter.rwCursor() = mask;
-        }
-        maskIter++;
-    }
-}
-*/
 
 // ****************************************************
 // Region requirements
@@ -892,11 +850,12 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         statsData.set_stokes(stokesIndex);
         casacore::SubImage<float> subimage;
         std::lock_guard<std::mutex> guard(imageMutex);
-        getRegionSubImage(regionId, subimage, stokesIndex, channelIndex);
-        //if (!subimage.shape().empty())
-        //     setPixelMask(subimage);
-        region->fillStatsData(statsData, subimage, channelIndex, stokesIndex);
-        statsOK = true;
+        if (getRegionSubImage(regionId, subimage, stokesIndex, channelIndex)) {
+            //if (!subimage.shape().empty())
+            //     setPixelMask(subimage);
+            region->fillStatsData(statsData, subimage, channelIndex, stokesIndex);
+            statsOK = true;
+        }
     }
     return statsOK;
 }
