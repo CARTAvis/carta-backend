@@ -107,15 +107,15 @@ void HDF5Attributes::ConvertToFits(casacore::Record& in) {
     // hdf5 attribute data types are non-standardized
     casacore::Record out;
     if (in.isDefined("BITPIX")) { // should be second keyword
-        int val;    
+        int val;
         casacore::DataType type(in.type(in.fieldNumber("BITPIX")));
-        if (type==casacore::TpString)
+        if (type == casacore::TpString)
             val = casacore::String::toInt(in.asString("BITPIX"));
         else
             val = in.asInt("BITPIX");
         out.define("BIXPIX", val);
     }
-    for (unsigned int i=0; i < in.nfields(); ++i) {
+    for (unsigned int i = 0; i < in.nfields(); ++i) {
         casacore::String name(in.name(i));
         if (name.size() > 8 || (name == "SIMPLE")) {
             // HDF5 keywords not needed, SIMPLE will be added
@@ -125,10 +125,11 @@ void HDF5Attributes::ConvertToFits(casacore::Record& in) {
         switch (type) {
             case casacore::TpString: {
                 casacore::String str_val(in.asString(name));
-                if (str_val=="Kelvin") str_val = "K";
-                if (name=="BITPIX")
+                if (str_val == "Kelvin")
+                    str_val = "K";
+                if (name == "BITPIX")
                     break;
-                if ((name=="SIMPLE") || (name=="EXTEND") || (name=="BLOCKED")) {
+                if ((name == "SIMPLE") || (name == "EXTEND") || (name == "BLOCKED")) {
                     // convert to bool
                     bool val = (str_val == "T" ? true : false);
                     out.define(name, val);
@@ -136,10 +137,9 @@ void HDF5Attributes::ConvertToFits(casacore::Record& in) {
                     // convert to int
                     int val = casacore::String::toInt(str_val);
                     out.define(name, val);
-                } else if ((name == "EQUINOX") || (name == "EPOCH") || (name == "LONPOLE") || (name == "LATPOLE") ||
-                           (name == "RESTFRQ") || (name == "MJD-OBS") || (name == "DATAMIN") ||
-                           (name == "DATAMAX") || (name.startsWith("CRVAL")) || (name.startsWith("CRPIX")) ||
-                           (name.startsWith("CDELT")) || (name.startsWith("CROTA"))) {
+                } else if ((name == "EQUINOX") || (name == "EPOCH") || (name == "LONPOLE") || (name == "LATPOLE") || (name == "RESTFRQ") ||
+                           (name == "MJD-OBS") || (name == "DATAMIN") || (name == "DATAMAX") || (name.startsWith("CRVAL")) ||
+                           (name.startsWith("CRPIX")) || (name.startsWith("CDELT")) || (name.startsWith("CROTA"))) {
                     // convert to float
                     float val = casacore::String::toFloat(str_val);
                     out.define(name, val);
@@ -168,4 +168,3 @@ void HDF5Attributes::ConvertToFits(casacore::Record& in) {
     }
     in.assign(out);
 }
-

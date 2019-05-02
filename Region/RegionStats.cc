@@ -153,7 +153,8 @@ size_t RegionStats::numStats() {
     return m_statsReqs.size();
 }
 
-void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::MaskedLattice<float>& mlattice, int channel, int stokes) {
+void RegionStats::fillStatsData(
+    CARTA::RegionStatsData& statsData, const casacore::MaskedLattice<float>& mlattice, int channel, int stokes) {
     // Fill RegionStatsData with statistics types set in requirements.
     if (m_statsReqs.empty()) { // no requirements set, add empty StatisticsValue
         auto statsValue = statsData.add_statistics();
@@ -221,7 +222,7 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
     // Use LatticeStatistics to fill statistics values according to type;
     // template type matches masked lattice type
     casacore::LatticeStatistics<float> latticeStats = casacore::LatticeStatistics<float>(mlattice,
-            /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
+        /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
 
     if (perChannel) { // get stats per xy plane
         casacore::Vector<int> displayAxes(2);

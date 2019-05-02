@@ -27,7 +27,7 @@ private:
     std::unique_ptr<casacore::HDF5Lattice<float>> swizzledImage;
 
     std::string dataSetToString(FileInfo::Data ds) const;
-    
+
     template <typename T>
     const ipos getStatsDataShapeTyped(FileInfo::Data ds);
     template <typename S, typename D>
@@ -35,7 +35,7 @@ private:
 
     const ipos getStatsDataShape(FileInfo::Data ds) override;
     casacore::ArrayBase* getStatsData(FileInfo::Data ds) override;
-    
+
     casacore::Lattice<float>& loadSwizzledData(FileInfo::Data ds);
 };
 
@@ -87,18 +87,18 @@ typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
         case FileInfo::Data::XY:
             if (ndims == 2) {
                 return *image;
-            break;
-        }
+                break;
+            }
         case FileInfo::Data::XYZ:
             if (ndims == 3) {
                 return *image;
-            break;
-        }
+                break;
+            }
         case FileInfo::Data::XYZW:
             if (ndims == 4) {
                 return *image;
-            break;
-        }
+                break;
+            }
         default:
             break;
     }
@@ -107,22 +107,22 @@ typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
 
 casacore::Lattice<float>& HDF5Loader::loadSwizzledData(FileInfo::Data ds) {
     // swizzled data returns a Lattice
-    switch(ds) {
+    switch (ds) {
         case FileInfo::Data::Swizzled:
             if (swizzledImage.get()) {
                 return *swizzledImage;
-            break;
-        }
+                break;
+            }
         case FileInfo::Data::ZYX:
             if (ndims == 3 && swizzledImage.get()) {
                 return *swizzledImage;
-            break;
-        }
+                break;
+            }
         case FileInfo::Data::ZYXW:
             if (ndims == 4 && swizzledImage.get()) {
                 return *swizzledImage;
-            break;
-        }
+                break;
+            }
         default:
             break;
     }

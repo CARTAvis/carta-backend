@@ -36,8 +36,10 @@ public:
     virtual inline casacore::String imageType() const {
         return "CartaHdf5Image";
     };
-    virtual casacore::String name(bool stripPath=false) const;
-    virtual inline casacore::IPosition shape() const { return _shape; };
+    virtual casacore::String name(bool stripPath = false) const;
+    virtual inline casacore::IPosition shape() const {
+        return _shape;
+    };
     virtual casacore::Bool ok() const;
     virtual casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section);
     virtual void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride);

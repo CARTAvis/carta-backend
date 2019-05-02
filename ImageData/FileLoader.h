@@ -74,7 +74,7 @@ inline casacore::uInt getFITShdu(const std::string& hdu) {
 
 class FileLoader {
 public:
-  // Replaced Lattice with Image Interface - changed back
+    // Replaced Lattice with Image Interface - changed back
     using image_ref = casacore::ImageInterface<float>&;
     using ipos = casacore::IPosition;
 

@@ -133,9 +133,10 @@ bool Frame::setRegion(
     if (regions.count(regionId)) { // update Region
         auto& region = regions[regionId];
         regionSet = region->updateRegionParameters(name, type, points, rotation);
-    }  else { // map new Region to region id
+    } else { // map new Region to region id
         const casacore::CoordinateSystem cSys = loader->loadData(FileInfo::Data::Image).coordinates();
-        auto region = unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, imageShape, spectralAxis, stokesAxis, cSys));
+        auto region =
+            unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, imageShape, spectralAxis, stokesAxis, cSys));
         if (region->isValid()) {
             regions[regionId] = move(region);
             regionSet = true;
@@ -612,7 +613,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
 
             if (!haveHistogram) {
                 // Retrieve histogram if stored
-                int nbins = (configNumBins==AUTO_BIN_SIZE ? calcAutoNumBins(regionId) : configNumBins);
+                int nbins = (configNumBins == AUTO_BIN_SIZE ? calcAutoNumBins(regionId) : configNumBins);
                 if (!getRegionHistogram(regionId, configChannel, currStokes, nbins, *newHistogram)) {
                     // Calculate histogram
                     float minval(0.0), maxval(0.0);
@@ -622,7 +623,7 @@ bool Frame::fillRegionHistogramData(int regionId, CARTA::RegionHistogramData* hi
                                 calcRegionMinMax(regionId, configChannel, currStokes, minval, maxval);
                             }
                             calcRegionHistogram(regionId, configChannel, currStokes, nbins, minval, maxval, *newHistogram);
-                        } else {  // use matrix slicer on image
+                        } else { // use matrix slicer on image
                             std::vector<float> data;
                             getChannelMatrix(data, configChannel, currStokes); // slice image once
                             if (!getRegionMinMax(regionId, configChannel, currStokes, minval, maxval)) {
@@ -726,7 +727,7 @@ bool Frame::fillSpatialProfileData(int regionId, CARTA::SpatialProfileData& prof
                     // slice image data
                     casacore::Slicer section;
                     switch (axisStokes.first) {
-                        case 0: {  // x
+                        case 0: { // x
                             getImageSlicer(section, -1, y, channelIndex, profileStokes);
                             end = imageShape(0);
                             break;
@@ -792,7 +793,7 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     auto cursorPoints = region->getControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
                     bool haveSpectralData = loader->getCursorSpectralData(spectralData, profileStokes, cursorPoints.x(), cursorPoints.y());
-                    if (!haveSpectralData) {  // load from subimage in 100-channel chunks
+                    if (!haveSpectralData) { // load from subimage in 100-channel chunks
                         casacore::SubImage<float> subimage;
                         std::unique_lock<std::mutex> guard(imageMutex);
                         bool subimageOK = getRegionSubImage(regionId, subimage, profileStokes);
@@ -802,12 +803,12 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     if (haveSpectralData) {
                         region->fillSpectralProfileData(profileData, i, spectralData);
                     }
-                } else {  // statistics
+                } else { // statistics
                     casacore::SubImage<float> subimage;
                     std::unique_lock<std::mutex> guard(imageMutex);
                     getRegionSubImage(regionId, subimage, profileStokes);
-                    //if (!subimage.shape().empty())
-                    //    setPixelMask(subimage); 
+                    // if (!subimage.shape().empty())
+                    //    setPixelMask(subimage);
                     region->fillSpectralProfileData(profileData, i, subimage);
                     guard.unlock();
                 }
@@ -835,7 +836,7 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         casacore::SubImage<float> subimage;
         std::lock_guard<std::mutex> guard(imageMutex);
         if (getRegionSubImage(regionId, subimage, stokesIndex, channelIndex)) {
-            //if (!subimage.shape().empty())
+            // if (!subimage.shape().empty())
             //     setPixelMask(subimage);
             region->fillStatsData(statsData, subimage, channelIndex, stokesIndex);
             statsOK = true;
@@ -1009,8 +1010,7 @@ bool Frame::getSpectralData(std::vector<float>& data, casacore::SubImage<float>&
     bool dataOK(false);
     casacore::IPosition subimageShape = subimage.shape();
     data.resize(subimageShape.product());
-    if ((checkPerChannels > 0) && (subimageShape.size() > 2) &&
-        (spectralAxis >= 0)) { // stoppable spectral profile process
+    if ((checkPerChannels > 0) && (subimageShape.size() > 2) && (spectralAxis >= 0)) { // stoppable spectral profile process
         try {
             casacore::IPosition start(subimageShape.size(), 0);
             casacore::IPosition count(subimageShape);

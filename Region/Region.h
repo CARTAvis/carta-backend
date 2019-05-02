@@ -4,9 +4,9 @@
 #define CARTA_BACKEND_REGION_REGION_H_
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
-#include <casacore/lattices/Lattices/MaskedLattice.h>
-#include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/ImageRegion.h>
+#include <casacore/images/Regions/WCBox.h>
+#include <casacore/lattices/Lattices/MaskedLattice.h>
 
 #include <carta-protobuf/spectral_profile.pb.h>
 
@@ -25,7 +25,7 @@ class Region {
 
 public:
     Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, const float rotation,
-        const casacore::IPosition imageShape, int spectralAxis, int stokesAxis, const casacore::CoordinateSystem &cSys);
+        const casacore::IPosition imageShape, int spectralAxis, int stokesAxis, const casacore::CoordinateSystem& cSys);
     ~Region();
 
     // to determine if data needs to be updated
@@ -42,7 +42,9 @@ public:
     // set/get Region parameters
     bool updateRegionParameters(
         const std::string name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation);
-    inline std::string name() { return m_name; };
+    inline std::string name() {
+        return m_name;
+    };
     inline std::vector<CARTA::Point> getControlPoints() {
         return m_ctrlpoints;
     };
@@ -52,7 +54,7 @@ public:
     };
 
     // get image region for requested stokes and (optionally) single channel
-    bool getRegion(casacore::ImageRegion& region, int stokes, int channel=ALL_CHANNELS);
+    bool getRegion(casacore::ImageRegion& region, int stokes, int channel = ALL_CHANNELS);
     // get data from subimage (LCRegion applied to Image by Frame)
     bool getData(std::vector<float>& data, casacore::MaskedLattice<float>& mlattice);
 
@@ -129,7 +131,7 @@ private:
 
     // coordinate system
     casacore::CoordinateSystem m_coordSys;
-    
+
     // classes for requirements, calculations
     std::unique_ptr<carta::RegionStats> m_stats;
     std::unique_ptr<carta::RegionProfiler> m_profiler;

@@ -5,16 +5,16 @@
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
-#include <casacore/fits/FITS/fits.h>                    // keyword list
-#include <casacore/fits/FITS/FITSKeywordUtil.h>         // convert Record to keyword list
-#include <casacore/images/Images/ImageFITSConverter.h>  // get coord system
+#include <casacore/fits/FITS/FITSKeywordUtil.h>        // convert Record to keyword list
+#include <casacore/fits/FITS/fits.h>                   // keyword list
+#include <casacore/images/Images/ImageFITSConverter.h> // get coord system
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 #include "HDF5Attributes.h"
 
 using namespace carta;
 
-CartaHdf5Image::CartaHdf5Image (
+CartaHdf5Image::CartaHdf5Image(
     const std::string& filename, const std::string& array_name, const std::string& hdu, casacore::MaskSpecifier mask_spec)
     : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)), _valid(false), _region(nullptr) {
     _lattice = casacore::HDF5Lattice<float>(filename, array_name, hdu);
@@ -84,7 +84,7 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu) 
 bool CartaHdf5Image::SetupCoordSys(casacore::Record& attributes) {
     // Use header attributes to set up Image CoordinateSystem
     if (attributes.empty())
-      return false;  // should not have gotten past the file browser
+        return false; // should not have gotten past the file browser
 
     bool coordsys_set(false);
     try {
@@ -115,17 +115,15 @@ bool CartaHdf5Image::SetupCoordSys(casacore::Record& attributes) {
         unsigned int which_rep(0);
         casacore::IPosition image_shape(shape());
         bool drop_stokes(true);
-        casacore::CoordinateSystem coordinate_system =
-            casacore::ImageFITSConverter::getCoordinateSystem(stokes_fits_value,
-            header_rec, header, log, which_rep, image_shape, drop_stokes);
+        casacore::CoordinateSystem coordinate_system = casacore::ImageFITSConverter::getCoordinateSystem(
+            stokes_fits_value, header_rec, header, log, which_rep, image_shape, drop_stokes);
         setUnits(casacore::ImageFITSConverter::getBrightnessUnit(header_rec, log));
 
         // Set coord system in Image
         setCoordinateInfo(coordinate_system);
         coordsys_set = true;
     } catch (casacore::AipsError& err) {
-        std::cerr << "ERROR setting up hdf5 coordinate system: "
-                  << err.getMesg() << std::endl;
+        std::cerr << "ERROR setting up hdf5 coordinate system: " << err.getMesg() << std::endl;
     }
     return coordsys_set;
 }
