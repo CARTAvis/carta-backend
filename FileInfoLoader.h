@@ -1,14 +1,17 @@
 //# FileInfoLoader.h: load FileInfo and FileInfoExtended fields for all supported file types
 
-#pragma once
+#ifndef CARTA_BACKEND__FILEINFOLOADER_H_
+#define CARTA_BACKEND__FILEINFOLOADER_H_
 
-#include <carta-protobuf/file_info.pb.h>
+#include <string>
+
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/fits/FITS/FITSError.h>
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/measures/Measures/MDirection.h>
-#include <string>
+
+#include <carta-protobuf/file_info.pb.h>
 
 // #####################################################################
 
@@ -71,3 +74,4 @@ private:
     casacore::ImageOpener::ImageTypes m_type; 
 };
 
+#endif // CARTA_BACKEND__FILEINFOLOADER_H_

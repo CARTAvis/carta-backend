@@ -1,10 +1,11 @@
 #include "Frame.h"
-#include "compression.h"
-#include "util.h"
 
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
+
+#include "compression.h"
+#include "util.h"
 
 using namespace carta;
 using namespace std;

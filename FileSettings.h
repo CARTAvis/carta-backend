@@ -1,18 +1,17 @@
 //# FileSettings.h: uses tbb::concurrent_unordered_map to keep latest per-file settings
 //# Used for cursor and view settings
 
-//#pragma once
-#ifndef __CARTA_FILESETTINGS_H__
-#define __CARTA_FILESETTINGS_H__
+#ifndef CARTA_BACKEND__FILESETTINGS_H_
+#define CARTA_BACKEND__FILESETTINGS_H_
 
-
-#include <carta-protobuf/set_image_view.pb.h>
-#include <carta-protobuf/set_cursor.pb.h>
+#include <mutex>
+#include <utility>
 
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/queuing_rw_mutex.h>
-#include <mutex>
-#include <utility>
+
+#include <carta-protobuf/set_cursor.pb.h>
+#include <carta-protobuf/set_image_view.pb.h>
 
 class Session; // RWJS.
 
@@ -47,4 +46,4 @@ private:
 } // namespace carta
 
 
-#endif // __CARTA_FILESETTINGS_H__
+#endif // CARTA_BACKEND__FILESETTINGS_H_

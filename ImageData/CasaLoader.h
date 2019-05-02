@@ -1,7 +1,9 @@
-#pragma once
+#ifndef CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+
+#include <casacore/images/Images/PagedImage.h>
 
 #include "FileLoader.h"
-#include <casacore/images/Images/PagedImage.h>
 
 namespace carta {
 
@@ -61,3 +63,5 @@ const casacore::CoordinateSystem& CasaLoader::getCoordSystem() {
 }
 
 } // namespace carta
+
+#endif // CARTA_BACKEND_IMAGEDATA_CASALOADER_H_

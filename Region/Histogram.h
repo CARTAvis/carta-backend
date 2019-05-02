@@ -1,9 +1,11 @@
-#pragma once
+#ifndef CARTA_BACKEND_REGION_HISTOGRAM_H_
+#define CARTA_BACKEND_REGION_HISTOGRAM_H_
+
+#include <vector>
 
 #include <casacore/casa/Arrays/Matrix.h>
 #include <tbb/blocked_range2d.h>
 #include <tbb/blocked_range3d.h>
-#include <vector>
 
 namespace carta {
 
@@ -30,3 +32,5 @@ public:
 };
 
 } // namespace carta
+
+#endif // CARTA_BACKEND_REGION_HISTOGRAM_H_

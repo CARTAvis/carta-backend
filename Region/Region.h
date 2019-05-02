@@ -1,11 +1,13 @@
 //# Region.h: class for managing a region
 
-#pragma once
+#ifndef CARTA_BACKEND_REGION_REGION_H_
+#define CARTA_BACKEND_REGION_REGION_H_
+
+#include <carta-protobuf/spectral_profile.pb.h>
 
 #include "RegionStats.h"
 #include "RegionProfiler.h"
 #include "../InterfaceConstants.h"
-#include <carta-protobuf/spectral_profile.pb.h>
 
 namespace carta {
 
@@ -122,3 +124,5 @@ private:
 };
 
 } // namespace carta
+
+#endif // CARTA_BACKEND_REGION_REGION_H_

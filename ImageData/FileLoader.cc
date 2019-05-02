@@ -1,5 +1,6 @@
-#include "CasaLoader.h"
 #include "FileLoader.h"
+
+#include "CasaLoader.h"
 #include "HDF5Loader.h"
 #include "FITSLoader.h"
 #include "MIRIADLoader.h"

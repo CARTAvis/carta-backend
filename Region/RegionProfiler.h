@@ -1,6 +1,7 @@
 // RegionProfiler.h: class for creating requested profiles for and axis (x, y, z) and stokes
 
-#pragma once
+#ifndef CARTA_BACKEND_REGION_REGIONPROFILER_H_
+#define CARTA_BACKEND_REGION_REGIONPROFILER_H_
 
 #include <vector>
 #include <utility>
@@ -43,3 +44,5 @@ private:
 };
 
 }
+
+#endif // CARTA_BACKEND_REGION_REGIONPROFILER_H_

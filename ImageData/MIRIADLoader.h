@@ -1,7 +1,9 @@
-#pragma once
+#ifndef CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
+
+#include <casacore/images/Images/MIRIADImage.h>
 
 #include "FileLoader.h"
-#include <casacore/images/Images/MIRIADImage.h>
 
 namespace carta {
 
@@ -59,3 +61,5 @@ const casacore::CoordinateSystem& MIRIADLoader::getCoordSystem() {
 }
 
 } // namespace carta
+
+#endif // CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_

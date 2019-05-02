@@ -1,12 +1,11 @@
 //# FileInfoLoader.cc: fill FileInfoExtended for all supported file types
 
 #include "FileInfoLoader.h"
-#include "ImageData/HDF5Attributes.h"
 
 #include <algorithm>
 #include <regex>
-#include <fmt/format.h>
 
+#include <fmt/format.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/fits/FITS/hdu.h>
@@ -21,6 +20,8 @@
 #include <casacore/images/Images/PagedImage.h>
 #include <casacore/mirlib/miriad.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
+
+#include "ImageData/HDF5Attributes.h"
 
 //#################################################################################
 // FILE INFO LOADER

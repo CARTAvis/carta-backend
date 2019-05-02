@@ -1,6 +1,7 @@
 //# HDF5Attributes.cc: get HDF5 header attributes in casacore::Record
-#include <cstring>
 #include "HDF5Attributes.h"
+
+#include <cstring>
 
 #include <casacore/casa/HDF5/HDF5DataType.h>
 #include <casacore/casa/HDF5/HDF5Error.h>

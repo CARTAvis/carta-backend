@@ -1,12 +1,14 @@
-#pragma once
+#ifndef CARTA_BACKEND__UTIL_H_
+#define CARTA_BACKEND__UTIL_H_
 
 #include <string>
 #include <chrono>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <fstream>
 #include <regex>
 #include <unordered_map>
+
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Inputs/Input.h>
 
@@ -26,3 +28,5 @@ inline void log(uint32_t id, const string& templateString, Args... args) {
 
 void readPermissions(string filename, unordered_map<string, vector<string>>& permissionsMap);
 bool checkRootBaseFolders(string& root, string& base);
+
+#endif // CARTA_BACKEND__UTIL_H_

@@ -1,18 +1,19 @@
 //# RegionStats.cc: implementation of class for calculating region statistics and histograms
 
 #include "RegionStats.h"
-#include "../InterfaceConstants.h"
-#include "Histogram.h"
-#include "MinMax.h"
 
 #include <cmath>
 #include <limits>
+
 #include <fmt/format.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
-
 #include <casacore/casa/Arrays/ArrayMath.h>
 #include <casacore/lattices/LatticeMath/LatticeStatistics.h>
+
+#include "../InterfaceConstants.h"
+#include "Histogram.h"
+#include "MinMax.h"
 
 using namespace carta;
 using namespace std;

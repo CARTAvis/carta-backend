@@ -1,5 +1,7 @@
 #include "Histogram.h"
+
 #include <algorithm>
+
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 

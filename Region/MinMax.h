@@ -1,6 +1,8 @@
-#pragma once
+#ifndef CARTA_BACKEND_REGION_MINMAX_H_
+#define CARTA_BACKEND_REGION_MINMAX_H_
 
 #include <algorithm>
+
 #include <casacore/casa/Arrays/Array.h>
 #include <tbb/blocked_range2d.h>
 #include <tbb/blocked_range3d.h>
@@ -68,3 +70,5 @@ std::pair<T,T> MinMax<T>::getMinMax() const {
 
 
 } // namespace carta
+
+#endif // CARTA_BACKEND_REGION_MINMAX_H_

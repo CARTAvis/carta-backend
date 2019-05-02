@@ -1,14 +1,7 @@
 //# Session.h: representation of a client connected to a server; processes requests from frontend
 
-#ifndef __CARTA_SESSION_H__
-#define __CARTA_SESSION_H__
-
-#include "FileListHandler.h"
-#include "FileSettings.h"
-#include "AnimationObject.h"
-#include "EventHeader.h"
-#include "Frame.h"
-#include "util.h"
+#ifndef CARTA_BACKEND__SESSION_H_
+#define CARTA_BACKEND__SESSION_H_
 
 #include <utility>
 #include <cstdint>
@@ -35,6 +28,12 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 
+#include "FileListHandler.h"
+#include "FileSettings.h"
+#include "AnimationObject.h"
+#include "EventHeader.h"
+#include "Frame.h"
+#include "util.h"
 
 
 class Session {
@@ -179,4 +178,4 @@ protected:
     void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
 
-#endif // __SESSION_H__
+#endif // CARTA_BACKEND__SESSION_H_

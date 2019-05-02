@@ -1,6 +1,8 @@
 #include "compression.h"
-#include <zfp.h>
+
 #include <cmath>
+
+#include <zfp.h>
 
 using namespace std;
 

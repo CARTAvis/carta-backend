@@ -1,17 +1,18 @@
 //# OnMessageTask.h: dequeues messages and calls appropriate Session handlers
 
-#pragma once
+#ifndef CARTA_BACKEND__ONMESSAGETASK_H_
+#define CARTA_BACKEND__ONMESSAGETASK_H_
 
-#include "Session.h"
-#include "AnimationObject.h"
-#include "EventHeader.h"
-
-#include <tbb/concurrent_queue.h>
-#include <tbb/task.h>
 #include <string>
 #include <tuple>
 #include <vector>
 
+#include <tbb/concurrent_queue.h>
+#include <tbb/task.h>
+
+#include "Session.h"
+#include "AnimationObject.h"
+#include "EventHeader.h"
 
 
 class OnMessageTask : public tbb::task {
@@ -112,3 +113,4 @@ class AnimationTask : public OnMessageTask {
   }
 };
 
+#endif // CARTA_BACKEND__ONMESSAGETASK_H_

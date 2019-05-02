@@ -1,6 +1,5 @@
-
-#pragma once
-
+#ifndef CARTA_BACKEND__ANIMATIONOBJECT_H_
+#define CARTA_BACKEND__ANIMATIONOBJECT_H_
 
 #include <carta-protobuf/animation.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
@@ -50,3 +49,6 @@ class AnimationObject {
   ~AnimationObject() {
   }
 };
+
+#endif // CARTA_BACKEND__ANIMATIONOBJECT_H_
+

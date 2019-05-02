@@ -1,8 +1,11 @@
 #include "OnMessageTask.h"
-#include "util.h"
+
 #include <algorithm>
 #include <cstring>
+
 #include <fmt/format.h>
+
+#include "util.h"
 #include "EventHeader.h"
 
 // Looks for null termination in a char array to determine event names from message payloads

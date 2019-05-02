@@ -1,12 +1,15 @@
 //# Region.cc: implementation of class for managing a region
 
 #include "Region.h"
-#include "../InterfaceConstants.h"
+
+#include <algorithm> // max
+#include <cmath>  // round
+
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
-#include <algorithm> // max
-#include <cmath>  // round
+
+#include "../InterfaceConstants.h"
 
 using namespace carta;
 

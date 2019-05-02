@@ -1,11 +1,14 @@
 //# Frame.h: represents an open image file.  Handles slicing data and region calculations
 //# (profiles, histograms, stats)
 
-#pragma once
+#ifndef CARTA_BACKEND__FRAME_H_
+#define CARTA_BACKEND__FRAME_H_
+
 #include <unordered_map>
 #include <memory>
 #include <mutex>
 #include <algorithm>
+
 #include <tbb/queuing_rw_mutex.h>
 #include <tbb/atomic.h>
 
@@ -13,6 +16,7 @@
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
+
 #include "InterfaceConstants.h"
 #include "ImageData/FileLoader.h"
 #include "Region/Region.h"
@@ -170,3 +174,5 @@ public:
     // set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void disconnectCalled();
 };
+
+#endif // CARTA_BACKEND__FRAME_H_

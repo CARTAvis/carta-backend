@@ -1,9 +1,11 @@
-#pragma once
+#ifndef CARTA_BACKEND_IMAGEDATA_FILELOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_FILELOADER_H_
+
+#include <string>
+#include <memory>
 
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/images/Images/ImageInterface.h>
-#include <string>
-#include <memory>
 
 namespace carta {
 
@@ -104,3 +106,5 @@ protected:
 };
 
 } // namespace carta
+
+#endif // CARTA_BACKEND_IMAGEDATA_FILELOADER_H_

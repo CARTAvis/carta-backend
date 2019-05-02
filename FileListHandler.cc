@@ -1,8 +1,9 @@
 #include "FileListHandler.h"
-#include "FileInfoLoader.h"
 
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/OS/DirectoryIterator.h>
+
+#include "FileInfoLoader.h"
 
 // Default constructor
 FileListHandler::FileListHandler(std::unordered_map<std::string,

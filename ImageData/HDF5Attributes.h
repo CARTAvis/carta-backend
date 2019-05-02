@@ -1,4 +1,6 @@
 //# HDF5Attributes.h: get HDF5 header attributes in casacore::Record
+#ifndef CARTA_BACKEND_IMAGEDATA_HDF5ATTRIBUTES_H_
+#define CARTA_BACKEND_IMAGEDATA_HDF5ATTRIBUTES_H_
 
 #include <casacore/casa/Containers/Record.h>
 #include <casacore/casa/HDF5/HDF5HidMeta.h>
@@ -22,3 +24,4 @@ private:
         casacore::RecordInterface& rec);
 };
 
+#endif // CARTA_BACKEND_IMAGEDATA_HDF5ATTRIBUTES_H_

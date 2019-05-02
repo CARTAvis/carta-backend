@@ -1,15 +1,16 @@
 //# RegionStats.h: class for calculating region statistics and histograms
 
-#pragma once
+#ifndef CARTA_BACKEND_REGION_REGIONSTATS_H_
+#define CARTA_BACKEND_REGION_REGIONSTATS_H_
+
+#include <vector>
+#include <unordered_map>
+
+#include <casacore/lattices/Lattices/SubLattice.h>
 
 #include <carta-protobuf/defs.pb.h>  // Histogram, StatisticsValue
 #include <carta-protobuf/region_requirements.pb.h>  // HistogramConfig
 #include <carta-protobuf/region_stats.pb.h>  // RegionStatsData
-
-#include <casacore/lattices/Lattices/SubLattice.h>
-
-#include <vector>
-#include <unordered_map>
 
 namespace carta {
 
@@ -67,3 +68,4 @@ private:
 };
 
 }
+#endif // CARTA_BACKEND_REGION_REGIONSTATS_H_

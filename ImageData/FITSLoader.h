@@ -1,7 +1,9 @@
-#pragma once
+#ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
+
+#include <casacore/images/Images/FITSImage.h>
 
 #include "FileLoader.h"
-#include <casacore/images/Images/FITSImage.h>
 
 namespace carta {
 
@@ -74,3 +76,5 @@ const casacore::CoordinateSystem& FITSLoader::getCoordSystem() {
 }
 
 } // namespace carta
+
+#endif // CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
