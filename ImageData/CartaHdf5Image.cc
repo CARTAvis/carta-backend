@@ -16,23 +16,47 @@ using namespace carta;
 
 CartaHdf5Image::CartaHdf5Image(
     const std::string& filename, const std::string& array_name, const std::string& hdu, casacore::MaskSpecifier mask_spec)
-    : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)), _valid(false), _region(nullptr) {
+    : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)),
+      _valid(false),
+      _pixel_mask(nullptr),
+      _mask_spec(mask_spec) {
     _lattice = casacore::HDF5Lattice<float>(filename, array_name, hdu);
+    _pixel_mask = new casacore::ArrayLattice<bool>(_lattice.shape());
+    _pixel_mask->set(true);
     _shape = _lattice.shape();
     _valid = Setup(filename, hdu);
 }
 
 CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other)
-    : casacore::ImageInterface<float>(other), _valid(other._valid), _lattice(other._lattice), _shape(other._shape), _region(nullptr) {
-    if (other._region != nullptr) {
-        _region = new casacore::LatticeRegion(*other._region);
+    : casacore::ImageInterface<float>(other),
+      _valid(other._valid),
+      _mask_spec(other._mask_spec),
+      _lattice(other._lattice),
+      _pixel_mask(nullptr),
+      _shape(other._shape) {
+    if (other._pixel_mask != nullptr)
+        _pixel_mask = other._pixel_mask->clone();
+}
+
+CartaHdf5Image::~CartaHdf5Image() {
+    if (_pixel_mask != nullptr) {
+        delete _pixel_mask;
+        _pixel_mask = nullptr;
     }
 }
 
 // Image interface
 
+casacore::String CartaHdf5Image::imageType() const {
+    return "CartaHdf5Image";
+}
+
 casacore::String CartaHdf5Image::name(bool stripPath) const {
     return _lattice.name(stripPath);
+}
+
+casacore::IPosition CartaHdf5Image::shape() const {
+    return _shape;
 }
 
 casacore::Bool CartaHdf5Image::ok() const {
@@ -48,7 +72,7 @@ void CartaHdf5Image::doPutSlice(const casacore::Array<float>& buffer, const casa
 }
 
 const casacore::LatticeRegion* CartaHdf5Image::getRegionPtr() const {
-    return _region;
+    return nullptr; // full lattice
 }
 
 casacore::ImageInterface<float>* CartaHdf5Image::cloneII() const {
@@ -59,7 +83,60 @@ void CartaHdf5Image::resize(const casacore::TiledShape& newShape) {
     throw(casacore::AipsError("CartaHdf5Image::resize - an HDF5 image cannot be resized"));
 }
 
-// Set up image manually
+casacore::Bool CartaHdf5Image::isMasked() const {
+    return (_pixel_mask != nullptr);
+}
+
+casacore::Bool CartaHdf5Image::hasPixelMask() const {
+    return (_pixel_mask != nullptr);
+}
+
+const casacore::Lattice<bool>& CartaHdf5Image::pixelMask() const {
+    if (!hasPixelMask()) {
+        throw(casacore::AipsError("CartaHdf5Image::pixelMask - no pixelmask used"));
+    }
+    return *_pixel_mask;
+}
+
+casacore::Lattice<bool>& CartaHdf5Image::pixelMask() {
+    if (!hasPixelMask()) {
+        throw(casacore::AipsError("CartaHdf5Image::pixelMask - no pixelmask used"));
+    }
+    return *_pixel_mask;
+}
+
+casacore::Bool CartaHdf5Image::doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) {
+    // set buffer to mask for section of image
+    if (!hasPixelMask()) {
+        buffer.resize(section.length()); // section shape
+        buffer = true;                   // use entire section
+        return false;
+    }
+    // Get section of data
+    casacore::SubLattice<float> sublattice(_lattice, section);
+    casacore::ArrayLattice<bool> mask_lattice(sublattice.shape());
+    // Set up iterators
+    unsigned int max_pix(sublattice.advisedMaxPixels());
+    casacore::IPosition cursor_shape(sublattice.doNiceCursorShape(max_pix));
+    casacore::RO_LatticeIterator<float> lattice_iter(sublattice, cursor_shape);
+    casacore::LatticeIterator<bool> mask_iter(mask_lattice, cursor_shape);
+    mask_iter.reset();
+    // Retrieve each iteration and set mask
+    casacore::Array<bool> mask_cursor_data; // cursor array for each iteration
+    for (lattice_iter.reset(); !lattice_iter.atEnd(); lattice_iter++) {
+        mask_cursor_data.resize();
+        mask_cursor_data = isFinite(lattice_iter.cursor());
+        // make sure mask data is same shape as mask cursor
+        casacore::IPosition mask_cursor_shape(mask_iter.rwCursor().shape());
+        if (mask_cursor_data.shape() != mask_cursor_shape)
+            mask_cursor_data.resize(mask_cursor_shape, true);
+        mask_iter.rwCursor() = mask_cursor_data;
+        mask_iter++;
+    }
+    buffer = mask_lattice.asArray();
+}
+
+// Set up image CoordinateSystem, ImageInfo
 
 bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu) {
     // Setup coordinate system, image info

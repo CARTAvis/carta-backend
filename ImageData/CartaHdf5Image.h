@@ -20,6 +20,7 @@ public:
         casacore::MaskSpecifier = casacore::MaskSpecifier());
     // Copy constructor
     CartaHdf5Image(const CartaHdf5Image& other);
+    ~CartaHdf5Image();
 
     inline bool valid() {
         return _valid;
@@ -33,19 +34,21 @@ public:
     };
 
     // implement casacore ImageInterface
-    virtual inline casacore::String imageType() const {
-        return "CartaHdf5Image";
-    };
+    virtual casacore::String imageType() const;
     virtual casacore::String name(bool stripPath = false) const;
-    virtual inline casacore::IPosition shape() const {
-        return _shape;
-    };
+    virtual casacore::IPosition shape() const;
     virtual casacore::Bool ok() const;
     virtual casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section);
     virtual void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride);
     virtual const casacore::LatticeRegion* getRegionPtr() const;
     virtual casacore::ImageInterface<float>* cloneII() const;
     virtual void resize(const casacore::TiledShape& newShape);
+
+    virtual casacore::Bool isMasked() const;
+    virtual casacore::Bool hasPixelMask() const;
+    virtual const casacore::Lattice<bool>& pixelMask() const;
+    virtual casacore::Lattice<bool>& pixelMask();
+    virtual casacore::Bool doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section);
 
 private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5
@@ -59,7 +62,9 @@ private:
     void SetupImageInfo(casacore::Record& attributes);
 
     bool _valid;
+    casacore::MaskSpecifier _mask_spec;
     casacore::HDF5Lattice<float> _lattice;
+    casacore::Lattice<bool>* _pixel_mask;
     casacore::IPosition _shape;
     casacore::LatticeRegion* _region;
 };
