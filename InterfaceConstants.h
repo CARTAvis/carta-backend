@@ -1,5 +1,7 @@
 //# InterfaceConstants.h: definitions used in the Interface Control Document
 //* Others added for implementation
+#ifndef CARTA_BACKEND__INTERFACECONSTANTS_H_
+#define CARTA_BACKEND__INTERFACECONSTANTS_H_
 
 // file ids
 #define ALL_FILES -1
@@ -28,3 +30,4 @@
 #define HISTOGRAM_COMPLETE 1.0
 #define HISTOGRAM_CANCEL -1.0
 
+#endif // CARTA_BACKEND__INTERFACECONSTANTS_H_
