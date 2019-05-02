@@ -1,29 +1,27 @@
 #include "FileListHandler.h"
 
-#include <casacore/casa/OS/File.h>
 #include <casacore/casa/OS/DirectoryIterator.h>
+#include <casacore/casa/OS/File.h>
 
 #include "FileInfoLoader.h"
 
 // Default constructor
-FileListHandler::FileListHandler(std::unordered_map<std::string,
-    std::vector<std::string>>& permissionsMap, bool enforcePermissions,
-    std::string root, std::string base)
+FileListHandler::FileListHandler(
+    std::unordered_map<std::string, std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string root, std::string base)
     : permissionsMap(permissionsMap),
       permissionsEnabled(enforcePermissions),
       rootFolder(root),
       baseFolder(base),
-      filelistFolder("nofolder") {
-}
+      filelistFolder("nofolder") {}
 
-FileListHandler::~FileListHandler() {
-}
+FileListHandler::~FileListHandler() {}
 
-void FileListHandler::onFileListRequest(std::string api_key, const CARTA::FileListRequest& request,
-    uint32_t requestId, CARTA::FileListResponse &response, ResultMsg& resultMsg) {
+void FileListHandler::onFileListRequest(std::string api_key, const CARTA::FileListRequest& request, uint32_t requestId,
+    CARTA::FileListResponse& response, ResultMsg& resultMsg) {
     // use tbb scoped lock so that it only processes the file list a time for one user
     tbb::mutex::scoped_lock lock(fileListMutex);
-    apiKey = api_key; // different users may have different api keys, so it is necessary to lock this variable setting to avoid using the wrong key
+    apiKey = api_key; // different users may have different api keys, so it is necessary to lock this variable setting to avoid using the
+                      // wrong key
     string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == filelistFolder) {
@@ -33,7 +31,7 @@ void FileListHandler::onFileListRequest(std::string api_key, const CARTA::FileLi
     }
 
     // resolve empty folder string or current dir "."
-    if (folder.empty() || folder.compare(".")==0)
+    if (folder.empty() || folder.compare(".") == 0)
         folder = rootFolder;
     // resolve $BASE keyword in folder string
     if (folder.find("$BASE") != std::string::npos) {
@@ -47,28 +45,30 @@ void FileListHandler::onFileListRequest(std::string api_key, const CARTA::FileLi
     // get file list response and result message if any
     getFileList(response, folder, resultMsg);
 
-    filelistFolder = "nofolder";  // ready for next file list request
+    filelistFolder = "nofolder"; // ready for next file list request
 }
 
 void FileListHandler::getRelativePath(std::string& folder) {
     // Remove root folder path from given folder string
-    if (folder.find("./")==0) {
+    if (folder.find("./") == 0) {
         folder.replace(0, 2, ""); // remove leading "./"
-    } else if (folder.find(rootFolder)==0) {
+    } else if (folder.find(rootFolder) == 0) {
         folder.replace(0, rootFolder.length(), ""); // remove root folder path
-        if (folder.front()=='/') folder.replace(0,1,""); // remove leading '/'
+        if (folder.front() == '/')
+            folder.replace(0, 1, ""); // remove leading '/'
     }
-    if (folder.empty()) folder=".";
+    if (folder.empty())
+        folder = ".";
 }
 
 void FileListHandler::getFileList(CARTA::FileListResponse& fileList, string folder, ResultMsg& resultMsg) {
     // fill FileListResponse
-    std::string requestedFolder = ((folder.compare(".")==0) ? rootFolder : folder);
+    std::string requestedFolder = ((folder.compare(".") == 0) ? rootFolder : folder);
     casacore::Path requestedPath(rootFolder);
     if (requestedFolder == rootFolder) {
         // set directory in response; parent is null
         fileList.set_directory(".");
-    } else  { // append folder to root folder
+    } else { // append folder to root folder
         casacore::Path requestedPath(rootFolder);
         requestedPath.append(folder);
         // set directory and parent in response
@@ -97,29 +97,30 @@ void FileListHandler::getFileList(CARTA::FileListResponse& fileList, string fold
             casacore::Directory startDir(folderPath);
             casacore::DirectoryIterator dirIter(startDir);
             while (!dirIter.pastEnd()) {
-                casacore::File ccfile(dirIter.file());  // directory is also a File
-                casacore::String name(ccfile.path().baseName()); // in case it is a link
-                if (ccfile.exists() && name.firstchar() != '.') {  // ignore hidden files/folders
+                casacore::File ccfile(dirIter.file());            // directory is also a File
+                casacore::String name(ccfile.path().baseName());  // in case it is a link
+                if (ccfile.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                     casacore::String fullpath(ccfile.path().absoluteName());
                     try {
                         bool addImage(false);
                         if (ccfile.isDirectory(true) && ccfile.isExecutable() && ccfile.isReadable()) {
                             casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
-                            if ((imType==casacore::ImageOpener::AIPSPP) || (imType==casacore::ImageOpener::MIRIAD))
+                            if ((imType == casacore::ImageOpener::AIPSPP) || (imType == casacore::ImageOpener::MIRIAD))
                                 addImage = true;
-                            else if (imType==casacore::ImageOpener::UNKNOWN) {
+                            else if (imType == casacore::ImageOpener::UNKNOWN) {
                                 // Check if it is a directory and the user has permission to access it
                                 casacore::String dirname(ccfile.path().baseName());
-                                string pathNameRelative = (folder.length() && folder != "/") ? folder + "/" + string(dirname): dirname;
+                                string pathNameRelative = (folder.length() && folder != "/") ? folder + "/" + string(dirname) : dirname;
                                 if (checkPermissionForDirectory(pathNameRelative))
-                                   fileList.add_subdirectories(dirname);
+                                    fileList.add_subdirectories(dirname);
                             } else {
-                                std::string imageTypeMsg = fmt::format("{}: image type {} not supported", ccfile.path().baseName(), getType(imType));
+                                std::string imageTypeMsg =
+                                    fmt::format("{}: image type {} not supported", ccfile.path().baseName(), getType(imType));
                                 resultMsg = {imageTypeMsg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                             }
                         } else if (ccfile.isRegular(true) && ccfile.isReadable()) {
                             casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
-                            if ((imType==casacore::ImageOpener::FITS) || (imType==casacore::ImageOpener::HDF5))
+                            if ((imType == casacore::ImageOpener::FITS) || (imType == casacore::ImageOpener::HDF5))
                                 addImage = true;
                         }
 
@@ -128,7 +129,7 @@ void FileListHandler::getFileList(CARTA::FileListResponse& fileList, string fold
                             fileInfo->set_name(name);
                             bool ok = fillFileInfo(fileInfo, fullpath);
                         }
-                    } catch (casacore::AipsError& err) {  // RegularFileIO error
+                    } catch (casacore::AipsError& err) { // RegularFileIO error
                         // skip it
                     }
                 }
@@ -205,7 +206,7 @@ bool FileListHandler::checkPermissionForEntry(string entry) {
 
 std::string FileListHandler::getType(casacore::ImageOpener::ImageTypes type) { // convert enum to string
     std::string typeStr;
-    switch(type) {
+    switch (type) {
         case casacore::ImageOpener::GIPSY:
             typeStr = "Gipsy";
             break;

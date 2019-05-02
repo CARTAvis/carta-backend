@@ -1,27 +1,27 @@
 #ifndef CARTA_BACKEND__UTIL_H_
 #define CARTA_BACKEND__UTIL_H_
 
-#include <string>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 #include <chrono>
 #include <fstream>
 #include <regex>
+#include <string>
 #include <unordered_map>
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 
-#include <casacore/casa/OS/File.h>
 #include <casacore/casa/Inputs/Input.h>
+#include <casacore/casa/OS/File.h>
 
 using namespace std;
 
 void log(uint32_t id, const string& logMessage);
 
-template<typename... Args>
+template <typename... Args>
 inline void log(uint32_t id, const char* templateString, Args... args) {
     log(id, fmt::format(templateString, args...));
 }
 
-template<typename... Args>
+template <typename... Args>
 inline void log(uint32_t id, const string& templateString, Args... args) {
     log(id, fmt::format(templateString, args...));
 }

@@ -13,14 +13,14 @@ class Histogram {
     float binWidth;
     float minVal;
     std::vector<int> hist;
-    const std::vector<float> &data;
+    const std::vector<float>& data;
 
 public:
-    Histogram(int numBins, float minValue, float maxValue, const std::vector<float> &data_);
-    Histogram(Histogram &h, tbb::split);
+    Histogram(int numBins, float minValue, float maxValue, const std::vector<float>& data_);
+    Histogram(Histogram& h, tbb::split);
 
-    void operator()(const tbb::blocked_range<size_t> &r);
-    void join(Histogram &h);
+    void operator()(const tbb::blocked_range<size_t>& r);
+    void join(Histogram& h);
 
     float getBinWidth() const {
         return binWidth;
