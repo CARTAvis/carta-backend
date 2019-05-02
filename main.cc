@@ -3,11 +3,11 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <fmt/format.h>
 
 #include <signal.h>
 #include <casacore/casa/OS/HostInfo.h>
 #include <casacore/casa/Inputs/Input.h>
-#include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task_scheduler_init.h>

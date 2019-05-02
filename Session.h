@@ -10,9 +10,9 @@
 #include <unordered_map>
 #include <tuple>
 #include <vector>
+#include <fmt/format.h>
 
 #include <casacore/casa/aips.h>
-#include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/atomic.h>

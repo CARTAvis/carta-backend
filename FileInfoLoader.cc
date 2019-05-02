@@ -4,8 +4,8 @@
 
 #include <algorithm>
 #include <regex>
-
 #include <fmt/format.h>
+
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/fits/FITS/hdu.h>
@@ -269,7 +269,7 @@ bool FileInfoLoader::fillHdf5ExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             xyCoords = fmt::format("{}, {}", coordTypeX, coordTypeY);
         if (!crpix1.empty() && !crpix2.empty())
             crPixels = fmt::format("[{}, {}] ", crpix1, crpix2);
-        if (!(crval1 == 0.0 && crval2 == 0.0)) 
+        if (!(crval1 == 0.0 && crval2 == 0.0))
             crCoords = fmt::format("[{:.4f} {}, {:.4f} {}]", crval1, cunit1, crval2, cunit2);
         cr1 = makeValueStr(coordTypeX, crval1, cunit1);
         cr2 = makeValueStr(coordTypeY, crval2, cunit2);
@@ -327,7 +327,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
 
         // use FITSTable to get Record of hdu entries
         hdunum += 1;  // FITSTable starts at 1
-        casacore::FITSTable fitsTable(m_file, hdunum, true); 
+        casacore::FITSTable fitsTable(m_file, hdunum, true);
         casacore::Record hduEntries(fitsTable.primaryKeywords().toRecord());
         // set dims
         extendedInfo->set_width(dataShape(0));
@@ -359,7 +359,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             bunit, crpix1, crpix2, cunit1, cunit2;
         double crval1(0.0), crval2(0.0), cdelt1(0.0), cdelt2(0.0), bmaj(0.0), bmin(0.0), bpa(0.0);
 
-        // set header entries 
+        // set header entries
         for (casacore::uInt field=0; field < hduEntries.nfields(); ++field) {
             casacore::String name = hduEntries.name(field);
             if ((name!="SIMPLE") && (name!="BITPIX") && !name.startsWith("PC")) {
@@ -370,7 +370,7 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
                     case casacore::TpString: {
                         *headerEntry->mutable_value() = hduEntries.asString(field);
                         headerEntry->set_entry_type(CARTA::EntryType::STRING);
-                        if (headerEntry->name() == "CTYPE1") 
+                        if (headerEntry->name() == "CTYPE1")
                             coordTypeX = headerEntry->value();
                         else if (headerEntry->name() == "CTYPE2")
                             coordTypeY = headerEntry->value();
@@ -378,15 +378,15 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
                             coordType3 = headerEntry->value();
                         else if (headerEntry->name() == "CTYPE4")
                             coordType4 = headerEntry->value();
-                        else if (headerEntry->name() == "RADESYS") 
+                        else if (headerEntry->name() == "RADESYS")
                             radeSys = headerEntry->value();
-                        else if (headerEntry->name() == "SPECSYS") 
+                        else if (headerEntry->name() == "SPECSYS")
                             specSys = headerEntry->value();
-                        else if (headerEntry->name() == "BUNIT") 
+                        else if (headerEntry->name() == "BUNIT")
                             bunit = headerEntry->value();
-                        else if (headerEntry->name() == "CUNIT1") 
+                        else if (headerEntry->name() == "CUNIT1")
                             cunit1 = headerEntry->value();
-                        else if (headerEntry->name() == "CUNIT2") 
+                        else if (headerEntry->name() == "CUNIT2")
                             cunit2 = headerEntry->value();
                         break;
                     }
@@ -444,12 +444,12 @@ bool FileInfoLoader::fillFITSExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
             xyCoords = fmt::format("{}, {}", coordTypeX, coordTypeY);
         if (!crpix1.empty() && !crpix2.empty())
             crPixels = fmt::format("[{}, {}] ", crpix1, crpix2);
-        if (crval1!=0.0 && crval2!=0.0) 
+        if (crval1!=0.0 && crval2!=0.0)
             crCoords = fmt::format("[{:.4f} {}, {:.4f} {}]", crval1, cunit1, crval2, cunit2);
         cr1 = makeValueStr(coordTypeX, crval1, cunit1);
         cr2 = makeValueStr(coordTypeY, crval2, cunit2);
         crDegStr = fmt::format("[{}, {}]", cr1, cr2);
-        if (!(cdelt1 == 0.0 && cdelt2 == 0.0)) 
+        if (!(cdelt1 == 0.0 && cdelt2 == 0.0))
             axisInc = fmt::format("{}, {}", unitConversion(cdelt1, cunit1), unitConversion(cdelt2, cunit2));
         if (!(bmaj == 0.0 && bmin == 0.0 && bpa == 0.0))
             rsBeam = deg2arcsec(bmaj) + " X " + deg2arcsec(bmin) +  fmt::format(", {:.4f} deg", bpa);
@@ -537,7 +537,7 @@ bool FileInfoLoader::fillCASAExtFileInfo(CARTA::FileInfoExtended* extendedInfo, 
         }
 
         // if in header, save values for computed entries
-        std::string rsBeam, bunit, projection, equinox, radeSys, 
+        std::string rsBeam, bunit, projection, equinox, radeSys,
             coordTypeX, coordTypeY, coordType3, coordType4, specSys;
 
         // BMAJ, BMIN, BPA
@@ -862,13 +862,13 @@ void FileInfoLoader::addComputedEntries(CARTA::FileInfoExtended* extendedInfo,
 void FileInfoLoader::addShapeEntries(CARTA::FileInfoExtended* extendedInfo, const casacore::IPosition& shape,
      int chanAxis, int stokesAxis) {
     // Set fields/header entries for shape
- 
+
     // dim, width, height, depth, stokes fields
     int ndim(shape.size());
     extendedInfo->set_dimensions(ndim);
     extendedInfo->set_width(shape(0));
     extendedInfo->set_height(shape(1));
-    if (shape.size() == 2) { 
+    if (shape.size() == 2) {
         extendedInfo->set_depth(1);
         extendedInfo->set_stokes(1);
     } else if (shape.size() == 3) {
@@ -984,7 +984,7 @@ void FileInfoLoader::findChanStokesAxis(const casacore::IPosition& dataShape, co
         stokesAxis = 2;
     else if (cType4 == "STOKES")
         stokesAxis = 3;
-    else 
+    else
         stokesAxis = -1;
 }
 
@@ -999,15 +999,15 @@ void FileInfoLoader::convertAxisName(std::string& axisName, std::string& project
         axisName = (projection.empty() ? "DEC" : "DEC--" + projection);
     } else if (axisName == "Longitude") {
         switch(type) {
-            case casacore::MDirection::GALACTIC: 
+            case casacore::MDirection::GALACTIC:
                 axisName = (projection.empty() ? "GLON" : "GLON-" + projection);
                 break;
-            case casacore::MDirection::SUPERGAL: 
+            case casacore::MDirection::SUPERGAL:
                 axisName = (projection.empty() ? "SLON" : "SLON-" + projection);
                 break;
-            case casacore::MDirection::ECLIPTIC: 
-            case casacore::MDirection::MECLIPTIC: 
-            case casacore::MDirection::TECLIPTIC: 
+            case casacore::MDirection::ECLIPTIC:
+            case casacore::MDirection::MECLIPTIC:
+            case casacore::MDirection::TECLIPTIC:
                 axisName = (projection.empty() ? "ELON" : "ELON-" + projection);
                 break;
             default:
@@ -1015,15 +1015,15 @@ void FileInfoLoader::convertAxisName(std::string& axisName, std::string& project
         }
     } else if (axisName == "Latitude") {
         switch(type) {
-            case casacore::MDirection::GALACTIC: 
+            case casacore::MDirection::GALACTIC:
                 axisName = (projection.empty() ? "GLAT" : "GLAT-" + projection);
                 break;
-            case casacore::MDirection::SUPERGAL: 
+            case casacore::MDirection::SUPERGAL:
                 axisName = (projection.empty() ? "SLAT" : "SLAT-" + projection);
                 break;
-            case casacore::MDirection::ECLIPTIC: 
-            case casacore::MDirection::MECLIPTIC: 
-            case casacore::MDirection::TECLIPTIC: 
+            case casacore::MDirection::ECLIPTIC:
+            case casacore::MDirection::MECLIPTIC:
+            case casacore::MDirection::TECLIPTIC:
                 axisName = (projection.empty() ? "ELAT" : "ELAT-" + projection);
                 break;
             default:
@@ -1057,7 +1057,7 @@ void FileInfoLoader::getRadesysFromEquinox(std::string& radeSys, std::string& eq
         radeSys = "FK4";
     }
 }
-        
+
 std::string FileInfoLoader::makeValueStr(const std::string& type, double val, const std::string& unit) {
     // make coordinate angle string for RA, DEC, GLON, GLAT; else just return "{val} {unit}"
     std::string valStr;
