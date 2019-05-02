@@ -4,4 +4,4 @@
 # It should be run from the root directory of the repository.
 # The clang-format configuration is found in .clang-format
 
-find . -iname "*.h" -o -iname "*.cc" | xargs clang-format -i
+find . -regex ".*\.\(cc\|h\)" -not -path "./build/*" | xargs clang-format -i
