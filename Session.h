@@ -3,7 +3,6 @@
 #ifndef CARTA_BACKEND__SESSION_H_
 #define CARTA_BACKEND__SESSION_H_
 
-#include <fmt/format.h>
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
@@ -12,11 +11,13 @@
 #include <utility>
 #include <vector>
 
-#include <casacore/casa/aips.h>
+#include <fmt/format.h>
 #include <tbb/atomic.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <uWS/uWS.h>
+
+#include <casacore/casa/aips.h>
 
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/file_info.pb.h>

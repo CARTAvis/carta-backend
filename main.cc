@@ -1,17 +1,18 @@
-#include <fmt/format.h>
 #include <iostream>
 #include <mutex>
 #include <thread>
 #include <tuple>
 #include <vector>
 
-#include <casacore/casa/Inputs/Input.h>
-#include <casacore/casa/OS/HostInfo.h>
+#include <fmt/format.h>
 #include <signal.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
+
+#include <casacore/casa/Inputs/Input.h>
+#include <casacore/casa/OS/HostInfo.h>
 
 #include "EventHeader.h"
 #include "FileListHandler.h"

@@ -3,9 +3,10 @@
 
 #include <vector>
 
-#include <casacore/casa/Arrays/Matrix.h>
 #include <tbb/blocked_range2d.h>
 #include <tbb/blocked_range3d.h>
+
+#include <casacore/casa/Arrays/Matrix.h>
 
 namespace carta {
 

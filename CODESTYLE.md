@@ -6,6 +6,7 @@ Code formatting is enforced by `clang-format`. The `reformat.sh` script found in
 * Column limit increased to 140 characters
 * Left pointer alignment is enforced
 * Minor changes to single-line code styles
+* Ordering of include files: `casacore` and `carta-protobuf` includes are given their own include group after other external library includes
 
 Details of the formatting style can be seen in `.clang-format`.
 

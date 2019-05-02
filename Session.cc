@@ -5,9 +5,10 @@
 #include <memory>
 #include <thread>
 
-#include <casacore/casa/OS/File.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
+
+#include <casacore/casa/OS/File.h>
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/error.pb.h>

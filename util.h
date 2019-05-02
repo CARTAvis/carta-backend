@@ -1,13 +1,14 @@
 #ifndef CARTA_BACKEND__UTIL_H_
 #define CARTA_BACKEND__UTIL_H_
 
-#include <fmt/format.h>
-#include <fmt/ostream.h>
 #include <chrono>
 #include <fstream>
 #include <regex>
 #include <string>
 #include <unordered_map>
+
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/File.h>

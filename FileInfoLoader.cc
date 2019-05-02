@@ -2,9 +2,10 @@
 
 #include "FileInfoLoader.h"
 
-#include <fmt/format.h>
 #include <algorithm>
 #include <regex>
+
+#include <fmt/format.h>
 
 #include <casacore/casa/HDF5/HDF5Error.h>
 #include <casacore/casa/HDF5/HDF5File.h>

@@ -3,10 +3,11 @@
 
 #include <algorithm>
 
-#include <casacore/casa/Arrays/Array.h>
 #include <tbb/blocked_range2d.h>
 #include <tbb/blocked_range3d.h>
 #include <tbb/parallel_reduce.h>
+
+#include <casacore/casa/Arrays/Array.h>
 
 namespace carta {
 

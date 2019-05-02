@@ -5,11 +5,12 @@
 #include <cmath>
 #include <limits>
 
-#include <casacore/casa/Arrays/ArrayMath.h>
-#include <casacore/lattices/LatticeMath/LatticeStatistics.h>
 #include <fmt/format.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
+
+#include <casacore/casa/Arrays/ArrayMath.h>
+#include <casacore/lattices/LatticeMath/LatticeStatistics.h>
 
 #include "../InterfaceConstants.h"
 #include "Histogram.h"
