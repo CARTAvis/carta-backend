@@ -1,0 +1,23 @@
+# We'll use defaults from the Google style, but with 4 space indentation.
+
+BasedOnStyle: Google
+IndentWidth: 4
+Language: Cpp
+
+# Since we're using 4 space indents, we need a bit more room
+ColumnLimit: 140
+
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Left
+
+# Other adjustments
+
+SpacesBeforeTrailingComments: 1
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlignAfterOpenBracket: DontAlign
+AccessModifierOffset: -4

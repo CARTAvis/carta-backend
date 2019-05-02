@@ -1,18 +1,20 @@
 //# RegionStats.cc: implementation of class for calculating region statistics and histograms
 
 #include "RegionStats.h"
-#include "../InterfaceConstants.h"
-#include "Histogram.h"
-#include "MinMax.h"
 
 #include <cmath>
 #include <limits>
+
 #include <fmt/format.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_reduce.h>
 
 #include <casacore/casa/Arrays/ArrayMath.h>
 #include <casacore/lattices/LatticeMath/LatticeStatistics.h>
+
+#include "../InterfaceConstants.h"
+#include "Histogram.h"
+#include "MinMax.h"
 
 using namespace carta;
 using namespace std;
@@ -21,14 +23,13 @@ RegionStats::RegionStats() {
     clearStats();
 }
 
-RegionStats::~RegionStats() {
-}
+RegionStats::~RegionStats() {}
 
 // ***** Cache *****
 
 void RegionStats::clearStats() {
     m_histogramsValid = false;
-    m_statsValid = false;    
+    m_statsValid = false;
 }
 
 // ***** Histograms *****
@@ -114,13 +115,12 @@ void RegionStats::setHistogram(int channel, int stokes, CARTA::Histogram& histog
     m_histogramsValid = true;
 }
 
-void RegionStats::calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
-        const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
+void RegionStats::calcHistogram(
+    int channel, int stokes, int nBins, float minVal, float maxVal, const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
     // Calculate and store histogram for given channel, stokes, nbins; return histogram
     float binWidth(0), binCenter(0);
     std::vector<int> histogramBins;
-    if ((minVal == std::numeric_limits<float>::max()) || (maxVal == std::numeric_limits<float>::min())
-         || data.empty()) {
+    if ((minVal == std::numeric_limits<float>::max()) || (maxVal == std::numeric_limits<float>::min()) || data.empty()) {
         // empty / NaN region
         histogramBins.resize(nBins, 0);
     } else {
@@ -150,13 +150,12 @@ void RegionStats::setStatsRequirements(const std::vector<int>& statsTypes) {
 }
 
 size_t RegionStats::numStats() {
-   return m_statsReqs.size();
+    return m_statsReqs.size();
 }
 
-void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData,
-        const casacore::SubLattice<float>& subLattice, int channel, int stokes) {
+void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice, int channel, int stokes) {
     // Fill RegionStatsData with statistics types set in requirements.
-    if (m_statsReqs.empty()) {  // no requirements set, add empty StatisticsValue
+    if (m_statsReqs.empty()) { // no requirements set, add empty StatisticsValue
         auto statsValue = statsData.add_statistics();
         statsValue->set_stats_type(CARTA::StatsType::None);
     } else {
@@ -165,12 +164,12 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData,
             // used stored stats
             try {
                 std::vector<double> storedStats(m_statsData.at(stokes).at(channel));
-                for (size_t i=0; i<m_statsReqs.size(); ++i) {
+                for (size_t i = 0; i < m_statsReqs.size(); ++i) {
                     // add StatisticsValue to message
                     auto statsValue = statsData.add_statistics();
                     auto cartaStatType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
                     statsValue->set_stats_type(cartaStatType);
-                    statsValue->set_value(storedStats[cartaStatType-13]);
+                    statsValue->set_value(storedStats[cartaStatType - 13]);
                 }
             } catch (std::out_of_range& rangeError) {
                 // stats cleared
@@ -184,7 +183,7 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData,
             // per channel = false, stats for entire region
             bool haveStats(calcStatsValues(results, m_statsReqs, subLattice, false));
             // update message whether have stats or not
-            for (size_t i=0; i<m_statsReqs.size(); ++i) {
+            for (size_t i = 0; i < m_statsReqs.size(); ++i) {
                 // add StatisticsValue to message
                 auto statsValue = statsData.add_statistics();
                 auto cartaStatType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
@@ -200,21 +199,20 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData,
                 statsValue->set_value(value);
 
                 // cache stats values
-                if (m_statsData[stokes][channel].empty()) { // resize vector, set to NaN
-                    m_statsData[stokes][channel].resize(CARTA::StatsType_MAX-13, // 13 is the first stat
+                if (m_statsData[stokes][channel].empty()) {                        // resize vector, set to NaN
+                    m_statsData[stokes][channel].resize(CARTA::StatsType_MAX - 13, // 13 is the first stat
                         std::numeric_limits<double>::quiet_NaN());
                 }
                 // first type enum is 13; make 0-based
-                m_statsData[stokes][channel][cartaStatType-13] = value;
+                m_statsData[stokes][channel][cartaStatType - 13] = value;
             }
             m_statsValid = true;
         }
     }
 }
 
-bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
-    const std::vector<int>& requestedStats, const casacore::SubLattice<float>& subLattice,
-    bool perChannel) {
+bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues, const std::vector<int>& requestedStats,
+    const casacore::SubLattice<float>& subLattice, bool perChannel) {
     // Fill statsValues vector for requested stats; one vector<float> per stat if per channel,
     // else one value per stat per region.
     if (subLattice.shape().empty()) // outside image or all masked (NaN)
@@ -223,7 +221,7 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
     // Use LatticeStatistics to fill statistics values according to type;
     // template type matches sublattice type
     casacore::LatticeStatistics<float> latticeStats = casacore::LatticeStatistics<float>(subLattice,
-            /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
+        /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
 
     if (perChannel) { // get stats per xy plane
         casacore::Vector<int> displayAxes(2);
@@ -233,10 +231,10 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
             return false;
     }
 
-    casacore::Array<casacore::Double> npts; 
+    casacore::Array<casacore::Double> npts;
     size_t nstats(requestedStats.size());
     statsValues.resize(nstats);
-    for (size_t i=0; i<nstats; ++i) {
+    for (size_t i = 0; i < nstats; ++i) {
         // get requested statistics values
         casacore::LatticeStatsBase::StatisticsTypes lattStatsType(casacore::LatticeStatsBase::NSTATS);
         auto statType = static_cast<CARTA::StatsType>(requestedStats[i]);
@@ -252,8 +250,8 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
             case CARTA::StatsType::Sum:
                 lattStatsType = casacore::LatticeStatsBase::SUM;
                 break;
-            case CARTA::StatsType::FluxDensity:  // not supported for lattice statistics
-                //lattStatsType = casacore::LatticeStatsBase::FLUX;
+            case CARTA::StatsType::FluxDensity: // not supported for lattice statistics
+                // lattStatsType = casacore::LatticeStatsBase::FLUX;
                 break;
             case CARTA::StatsType::Mean:
                 lattStatsType = casacore::LatticeStatsBase::MEAN;
@@ -289,7 +287,7 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
                     const casacore::IPosition blc(subLattice.getRegionPtr()->slicer().start());
                     casacore::IPosition minPos, maxPos;
                     latticeStats.getMinMaxPos(minPos, maxPos);
-                    if (statType==CARTA::StatsType::MinPos)
+                    if (statType == CARTA::StatsType::MinPos)
                         intResult = (blc + minPos).asStdVector();
                     else // MaxPos
                         intResult = (blc + maxPos).asStdVector();
@@ -300,14 +298,14 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
                 break;
         }
         if (lattStatsType < casacore::LatticeStatsBase::NSTATS) { // get lattice statistic
-            casacore::Array<casacore::Double> result; // must be double
+            casacore::Array<casacore::Double> result;             // must be double
             if (latticeStats.getStatistic(result, lattStatsType)) {
                 if (anyEQ(result, 0.0)) { // actually 0, or NaN?
                     // NaN if number of points is zero
                     if (npts.empty())
                         latticeStats.getStatistic(npts, casacore::LatticeStatsBase::NPTS);
-                    for (size_t i=0; i<result.size(); ++i) {
-                        casacore::IPosition index(1,i);
+                    for (size_t i = 0; i < result.size(); ++i) {
+                        casacore::IPosition index(1, i);
                         if ((result(index) == 0.0) && (npts(index) == 0.0)) {
                             result(index) = std::numeric_limits<double>::quiet_NaN();
                         }
@@ -319,7 +317,7 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
 
         if (!intResult.empty()) {
             dblResult.reserve(intResult.size());
-            for (unsigned int i=0; i<intResult.size(); ++i) {  // convert to double
+            for (unsigned int i = 0; i < intResult.size(); ++i) { // convert to double
                 dblResult.push_back(static_cast<double>(intResult[i]));
             }
         }
@@ -330,4 +328,3 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
     }
     return true;
 }
-

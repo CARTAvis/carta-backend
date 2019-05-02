@@ -34,18 +34,19 @@ void readPermissions(string filename, unordered_map<string, vector<string>>& per
 }
 
 bool checkRootBaseFolders(string& root, string& base) {
-    if (root=="base" && base == "root") {
+    if (root == "base" && base == "root") {
         fmt::print("ERROR: Must set root or base directory.\n");
         fmt::print("Exiting carta.\n");
         return false;
     }
-    if (root=="base") root = base;
-    if (base=="root") base = root;
+    if (root == "base")
+        root = base;
+    if (base == "root")
+        base = root;
 
     // check root
     casacore::File rootFolder(root);
-    if (!(rootFolder.exists() && rootFolder.isDirectory(true) &&
-          rootFolder.isReadable() && rootFolder.isExecutable())) {
+    if (!(rootFolder.exists() && rootFolder.isDirectory(true) && rootFolder.isReadable() && rootFolder.isExecutable())) {
         fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
         fmt::print("Exiting carta.\n");
         return false;
@@ -59,12 +60,12 @@ bool checkRootBaseFolders(string& root, string& base) {
         } catch (casacore::AipsError& err) {
             fmt::print(err.getMesg());
         }
-        if (root.empty()) root = "/";
+        if (root.empty())
+            root = "/";
     }
     // check base
     casacore::File baseFolder(base);
-    if (!(baseFolder.exists() && baseFolder.isDirectory(true) &&
-          baseFolder.isReadable() && baseFolder.isExecutable())) {
+    if (!(baseFolder.exists() && baseFolder.isDirectory(true) && baseFolder.isReadable() && baseFolder.isExecutable())) {
         fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
         fmt::print("Exiting carta.\n");
         return false;
@@ -78,21 +79,22 @@ bool checkRootBaseFolders(string& root, string& base) {
         } catch (casacore::AipsError& err) {
             fmt::print(err.getMesg());
         }
-        if (base.empty()) base = "/";
+        if (base.empty())
+            base = "/";
     }
     // check if base is same as or subdir of root
     if (base != root) {
         bool isSubdirectory(false);
         casacore::Path basePath(base);
         casacore::String parentString(basePath.dirName()), rootString(root);
-	if (parentString == rootString)
+        if (parentString == rootString)
             isSubdirectory = true;
-        while (!isSubdirectory && (parentString != rootString)) {  // navigate up directory tree
+        while (!isSubdirectory && (parentString != rootString)) { // navigate up directory tree
             basePath = casacore::Path(parentString);
             parentString = basePath.dirName();
             if (parentString == rootString) {
                 isSubdirectory = true;
-	    } else if (parentString == "/") {
+            } else if (parentString == "/") {
                 break;
             }
         }
