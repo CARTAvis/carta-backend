@@ -134,6 +134,7 @@ casacore::Bool CartaHdf5Image::doGetMaskSlice(casacore::Array<bool>& buffer, con
         mask_iter++;
     }
     buffer = mask_lattice.asArray();
+    return true;
 }
 
 // Set up image CoordinateSystem, ImageInfo
