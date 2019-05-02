@@ -30,7 +30,7 @@ class Frame {
 
 private:
     // setup
-    std::string uuid;
+    uint32_t sessionId;
     bool valid;
 
     // communication
@@ -111,7 +111,7 @@ private:
     void decreaseZProfileCount() { --zProfileCount; }
 
 public:
-    Frame(const std::string& uuidString, const std::string& filename, const std::string& hdu,
+    Frame(uint32_t sessionId, const std::string& filename, const std::string& hdu,
         int defaultChannel = DEFAULT_CHANNEL);
     ~Frame();
 
