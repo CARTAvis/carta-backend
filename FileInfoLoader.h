@@ -1,24 +1,26 @@
 //# FileInfoLoader.h: load FileInfo and FileInfoExtended fields for all supported file types
 
-#pragma once
+#ifndef CARTA_BACKEND__FILEINFOLOADER_H_
+#define CARTA_BACKEND__FILEINFOLOADER_H_
 
-#include <carta-protobuf/file_info.pb.h>
+#include <string>
+
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/fits/FITS/FITSError.h>
 #include <casacore/images/Images/ImageOpener.h>
-#include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/measures/Measures/MDirection.h>
-#include <string>
+#include <casacore/measures/Measures/MFrequency.h>
+
+#include <carta-protobuf/file_info.pb.h>
 
 // #####################################################################
 
-inline void fileInfoFitsErrHandler(const char *errMessage, casacore::FITSError::ErrorLevel severity) {
+inline void fileInfoFitsErrHandler(const char* errMessage, casacore::FITSError::ErrorLevel severity) {
     if (severity > casacore::FITSError::WARN)
         std::cout << errMessage << std::endl;
 }
 
 class FileInfoLoader {
-
 public:
     FileInfoLoader(const std::string& filename);
     ~FileInfoLoader() {}
@@ -27,7 +29,7 @@ public:
     bool fillFileExtInfo(CARTA::FileInfoExtended* extInfo, std::string& hdu, std::string& message);
 
 private:
-    casacore::ImageOpener::ImageTypes fileType(const std::string &file);
+    casacore::ImageOpener::ImageTypes fileType(const std::string& file);
     CARTA::FileType convertFileType(int ccImageType);
 
     // FileInfo
@@ -39,15 +41,12 @@ private:
     bool fillCASAExtFileInfo(CARTA::FileInfoExtended* extInfo, std::string& message);
 
     // Computed entries
-    void addComputedEntries(CARTA::FileInfoExtended* extInfo, const std::string& xyCoords,
-        const std::string& crPixels, const std::string& crCoords, const std::string& crRaDec,
-        const std::string& radeSys, const std::string& specSys, const std::string& bunit,
-        const std::string& axisInc, const std::string& rsBeam);
-    void addShapeEntries(CARTA::FileInfoExtended* extendedInfo, const casacore::IPosition& shape,
-        int chanAxis, int stokesAxis);
-    void findChanStokesAxis(const casacore::IPosition& dataShape, const casacore::String& axisType1,
-        const casacore::String& axisType2, const casacore::String& axisType3, const casacore::String& axisType4,
-        int& chanAxis, int& stokesAxis);
+    void addComputedEntries(CARTA::FileInfoExtended* extInfo, const std::string& xyCoords, const std::string& crPixels,
+        const std::string& crCoords, const std::string& crRaDec, const std::string& radeSys, const std::string& specSys,
+        const std::string& bunit, const std::string& axisInc, const std::string& rsBeam);
+    void addShapeEntries(CARTA::FileInfoExtended* extendedInfo, const casacore::IPosition& shape, int chanAxis, int stokesAxis);
+    void findChanStokesAxis(const casacore::IPosition& dataShape, const casacore::String& axisType1, const casacore::String& axisType2,
+        const casacore::String& axisType3, const casacore::String& axisType4, int& chanAxis, int& stokesAxis);
 
     // casacore::Record attributes
     bool getIntAttribute(casacore::Int64& val, const casacore::Record& rec, const casacore::String& field);
@@ -65,9 +64,10 @@ private:
     double rad2deg(const double rad);
     std::string deg2arcsec(const double degree);
     std::string convertHz(const double hz);
-    std::string makeValueStr(const std::string& type, double val, const std::string& unit); // convert MVAngle to string 
+    std::string makeValueStr(const std::string& type, double val, const std::string& unit); // convert MVAngle to string
 
     std::string m_file;
-    casacore::ImageOpener::ImageTypes m_type; 
+    casacore::ImageOpener::ImageTypes m_type;
 };
 
+#endif // CARTA_BACKEND__FILEINFOLOADER_H_

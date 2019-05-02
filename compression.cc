@@ -1,10 +1,13 @@
 #include "compression.h"
-#include <zfp.h>
+
 #include <cmath>
+
+#include <zfp.h>
 
 using namespace std;
 
-int compress(vector<float>& array, size_t offset, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny, uint32_t precision) {
+int compress(vector<float>& array, size_t offset, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny,
+    uint32_t precision) {
     int status = 0;    /* return value: 0 = success */
     zfp_type type;     /* array scalar type */
     zfp_field* field;  /* array meta data */
@@ -43,7 +46,8 @@ int compress(vector<float>& array, size_t offset, vector<char>& compressionBuffe
     return status;
 }
 
-int decompress(vector<float>& array, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny, uint32_t precision) {
+int decompress(
+    vector<float>& array, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny, uint32_t precision) {
     int status = 0;    /* return value: 0 = success */
     zfp_type type;     /* array scalar type */
     zfp_field* field;  /* array meta data */
@@ -63,7 +67,7 @@ int decompress(vector<float>& array, vector<char>& compressionBuffer, size_t& co
     zfp_stream_rewind(zfp);
 
     if (!zfp_decompress(zfp, field)) {
-        //fmt::print("decompression failed\n");
+        // fmt::print("decompression failed\n");
         status = 1;
     }
     /* clean up */

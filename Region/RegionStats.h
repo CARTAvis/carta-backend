@@ -1,20 +1,20 @@
 //# RegionStats.h: class for calculating region statistics and histograms
 
-#pragma once
+#ifndef CARTA_BACKEND_REGION_REGIONSTATS_H_
+#define CARTA_BACKEND_REGION_REGIONSTATS_H_
 
-#include <carta-protobuf/defs.pb.h>  // Histogram, StatisticsValue
-#include <carta-protobuf/region_requirements.pb.h>  // HistogramConfig
-#include <carta-protobuf/region_stats.pb.h>  // RegionStatsData
+#include <unordered_map>
+#include <vector>
 
 #include <casacore/lattices/Lattices/SubLattice.h>
 
-#include <vector>
-#include <unordered_map>
+#include <carta-protobuf/defs.pb.h>                // Histogram, StatisticsValue
+#include <carta-protobuf/region_requirements.pb.h> // HistogramConfig
+#include <carta-protobuf/region_stats.pb.h>        // RegionStatsData
 
 namespace carta {
 
 class RegionStats {
-
 public:
     RegionStats();
     ~RegionStats();
@@ -32,23 +32,20 @@ public:
     // CARTA::Histogram
     bool getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram);
     void setHistogram(int channel, int stokes, CARTA::Histogram& histogram);
-    void calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
-        const std::vector<float>& data, CARTA::Histogram& histogramMsg);
+    void calcHistogram(
+        int channel, int stokes, int nBins, float minVal, float maxVal, const std::vector<float>& data, CARTA::Histogram& histogramMsg);
 
     // Stats
     void setStatsRequirements(const std::vector<int>& statsTypes);
     size_t numStats();
-    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::MaskedLattice<float>& mlattice,
-        int channel, int stokes);
-    bool calcStatsValues(std::vector<std::vector<double>>& statsValues,
-        const std::vector<int>& requestedStats, const casacore::MaskedLattice<float>& mlattice,
-        bool perChannel=true);
+    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::MaskedLattice<float>& mlattice, int channel, int stokes);
+    bool calcStatsValues(std::vector<std::vector<double>>& statsValues, const std::vector<int>& requestedStats,
+        const casacore::MaskedLattice<float>& mlattice, bool perChannel = true);
 
     // invalidate stored calculations for previous region settings
     void clearStats();
 
 private:
-
     // Valid calculations
     bool m_histogramsValid, m_statsValid;
 
@@ -66,4 +63,5 @@ private:
     std::unordered_map<int, std::unordered_map<int, std::vector<double>>> m_statsData;
 };
 
-}
+} // namespace carta
+#endif // CARTA_BACKEND_REGION_REGIONSTATS_H_

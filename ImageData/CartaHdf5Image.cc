@@ -2,11 +2,11 @@
 
 #include "CartaHdf5Image.h"
 
-#include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
-#include <casacore/fits/FITS/fits.h>  // keyword list
-#include <casacore/fits/FITS/FITSKeywordUtil.h>  // convert Record to keyword list
+#include <casacore/fits/FITS/fits.h>                    // keyword list
+#include <casacore/fits/FITS/FITSKeywordUtil.h>         // convert Record to keyword list
 #include <casacore/images/Images/ImageFITSConverter.h>  // get coord system
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
@@ -14,24 +14,16 @@
 
 using namespace carta;
 
-CartaHdf5Image::CartaHdf5Image (const std::string& filename, const std::string& array_name,
-        const std::string& hdu, casacore::MaskSpecifier mask_spec) :
-    casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)), 
-    _valid(false),
-    _region(nullptr)
-{
+CartaHdf5Image::CartaHdf5Image (
+    const std::string& filename, const std::string& array_name, const std::string& hdu, casacore::MaskSpecifier mask_spec)
+    : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)), _valid(false), _region(nullptr) {
     _lattice = casacore::HDF5Lattice<float>(filename, array_name, hdu);
     _shape = _lattice.shape();
     _valid = Setup(filename, hdu);
 }
 
-CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other) :
-    casacore::ImageInterface<float>(other),
-    _valid(other._valid),
-    _lattice(other._lattice),
-    _shape(other._shape),
-    _region(nullptr)
-{
+CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other)
+    : casacore::ImageInterface<float>(other), _valid(other._valid), _lattice(other._lattice), _shape(other._shape), _region(nullptr) {
     if (other._region != nullptr) {
         _region = new casacore::LatticeRegion(*other._region);
     }
@@ -47,13 +39,11 @@ casacore::Bool CartaHdf5Image::ok() const {
     return (_lattice.ndim() == coordinates().nPixelAxes());
 }
 
-casacore::Bool CartaHdf5Image::doGetSlice(casacore::Array<float>& buffer,
-                          const casacore::Slicer& section) {
+casacore::Bool CartaHdf5Image::doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) {
     return _lattice.doGetSlice(buffer, section);
 }
 
-void CartaHdf5Image::doPutSlice(const casacore::Array<float>& buffer,
-    const casacore::IPosition& where, const casacore::IPosition& stride) {
+void CartaHdf5Image::doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride) {
     _lattice.doPutSlice(buffer, where, stride);
 }
 
@@ -69,11 +59,10 @@ void CartaHdf5Image::resize(const casacore::TiledShape& newShape) {
     throw(casacore::AipsError("CartaHdf5Image::resize - an HDF5 image cannot be resized"));
 }
 
-
 // Set up image manually
 
 bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu) {
-  // Setup coordinate system, image info
+    // Setup coordinate system, image info
     bool valid(false);
     casacore::HDF5File hdf5_file(filename);
     casacore::HDF5Group hdf5_group(hdf5_file, hdu, true);
@@ -170,4 +159,3 @@ void CartaHdf5Image::SetupImageInfo(casacore::Record& attributes) {
     } catch (casacore::AipsError& err) {
     }
 }
-

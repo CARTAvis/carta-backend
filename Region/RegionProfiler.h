@@ -1,28 +1,26 @@
 // RegionProfiler.h: class for creating requested profiles for and axis (x, y, z) and stokes
 
-#pragma once
+#ifndef CARTA_BACKEND_REGION_REGIONPROFILER_H_
+#define CARTA_BACKEND_REGION_REGIONPROFILER_H_
 
-#include <vector>
-#include <utility>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <carta-protobuf/region_requirements.pb.h>
 
 namespace carta {
 
 class RegionProfiler {
-
 public:
-
     // spatial
     bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
     size_t numSpatialProfiles();
-    std::pair<int,int> getSpatialProfileReq(int profileIndex);
+    std::pair<int, int> getSpatialProfileReq(int profileIndex);
     std::string getSpatialCoordinate(int profileIndex);
 
     // spectral
-    bool setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles,
-        const int nstokes);
+    bool setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int nstokes);
     size_t numSpectralProfiles();
     // return false if profileIndex out of range:
     bool getSpectralConfigStokes(int& stokes, int profileIndex);
@@ -42,4 +40,6 @@ private:
     std::vector<CARTA::SetSpectralRequirements_SpectralConfig> m_spectralConfigs;
 };
 
-}
+} // namespace carta
+
+#endif // CARTA_BACKEND_REGION_REGIONPROFILER_H_

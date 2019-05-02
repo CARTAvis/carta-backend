@@ -1,16 +1,18 @@
-#pragma once
+#ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
+
+#include <casacore/images/Images/FITSImage.h>
 
 #include "FileLoader.h"
-#include <casacore/images/Images/FITSImage.h>
 
 namespace carta {
 
 class FITSLoader : public FileLoader {
 public:
-    FITSLoader(const std::string &file);
+    FITSLoader(const std::string& file);
     ~FITSLoader();
 
-    void openFile(const std::string &file, const std::string &hdu) override;
+    void openFile(const std::string& file, const std::string& hdu) override;
     bool hasData(FileInfo::Data ds) const override;
     image_ref loadData(FileInfo::Data ds) override;
     bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
@@ -21,17 +23,14 @@ private:
     casacore::FITSImage* image;
 };
 
-FITSLoader::FITSLoader(const std::string &filename)
-    : file(filename),
-      image(nullptr)
-{}
+FITSLoader::FITSLoader(const std::string& filename) : file(filename), image(nullptr) {}
 
 FITSLoader::~FITSLoader() {
     if (image != nullptr)
         delete image;
 }
 
-void FITSLoader::openFile(const std::string &filename, const std::string &hdu) {
+void FITSLoader::openFile(const std::string& filename, const std::string& hdu) {
     file = filename;
     fitsHdu = hdu;
     casacore::uInt hdunum(FileInfo::getFITShdu(hdu));
@@ -39,7 +38,7 @@ void FITSLoader::openFile(const std::string &filename, const std::string &hdu) {
 }
 
 bool FITSLoader::hasData(FileInfo::Data dl) const {
-    switch(dl) {
+    switch (dl) {
         case FileInfo::Data::Image:
             return true;
         case FileInfo::Data::XY:
@@ -60,7 +59,7 @@ bool FITSLoader::hasData(FileInfo::Data dl) const {
 // TODO: other loaders don't have this fallback; we should either consistently assume that openFile has been run, or not.
 // TODO: in other loaders this is also not an optional property which could be a null pointer.
 typename FITSLoader::image_ref FITSLoader::loadData(FileInfo::Data) {
-    if (image==nullptr)
+    if (image == nullptr)
         openFile(file, fitsHdu);
     return *image;
 }
@@ -74,3 +73,5 @@ const casacore::CoordinateSystem& FITSLoader::getCoordSystem() {
 }
 
 } // namespace carta
+
+#endif // CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_

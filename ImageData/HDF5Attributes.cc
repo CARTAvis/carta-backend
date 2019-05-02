@@ -1,42 +1,42 @@
 //# HDF5Attributes.cc: get HDF5 header attributes in casacore::Record
-#include <cstring>
 #include "HDF5Attributes.h"
+
+#include <cstring>
 
 #include <casacore/casa/HDF5/HDF5DataType.h>
 #include <casacore/casa/HDF5/HDF5Error.h>
 #include <casacore/fits/FITS/FITSDateUtil.h>
 
-casacore::Record HDF5Attributes::DoReadAttributes (hid_t groupHid) {
+casacore::Record HDF5Attributes::DoReadAttributes(hid_t groupHid) {
     // reads attributes but not links
     casacore::Record rec;
     char cname[512];
-    int nfields = H5Aget_num_attrs (groupHid);
+    int nfields = H5Aget_num_attrs(groupHid);
     // Iterate through the attributes in order of index, so we're sure
     // they are read back in the same order as written.
-    for (int index=0; index<nfields; ++index) {
+    for (int index = 0; index < nfields; ++index) {
         casacore::HDF5HidAttribute id(H5Aopen_idx(groupHid, index));
-        AlwaysAssert (id.getHid()>=0, casacore::AipsError);
-        unsigned int name_size = H5Aget_name(id, sizeof(cname), cname);
-        AlwaysAssert (name_size<sizeof(cname), casacore::AipsError);
+        AlwaysAssert(id.getHid() >= 0, casacore::AipsError);
+        unsigned int namsz = H5Aget_name(id, sizeof(cname), cname);
+        AlwaysAssert(namsz < sizeof(cname), casacore::AipsError);
         casacore::String name(cname);
         // Get rank and shape from the dataspace info.
-        casacore::HDF5HidDataSpace dsid (H5Aget_space(id));
+        casacore::HDF5HidDataSpace dsid(H5Aget_space(id));
         int rank = H5Sget_simple_extent_ndims(dsid);
         if (rank > 0) {
-          casacore::Block<hsize_t> shp(rank);
-          rank = H5Sget_simple_extent_dims(dsid, shp.storage(), NULL);
+            casacore::Block<hsize_t> shp(rank);
+            rank = H5Sget_simple_extent_dims(dsid, shp.storage(), NULL);
         }
         // Get data type and its size.
         if (rank == 0) {
-          casacore::HDF5HidDataType dtid(H5Aget_type(id));
-          ReadScalar (id, dtid, name, rec);
+            casacore::HDF5HidDataType dtid(H5Aget_type(id));
+            ReadScalar(id, dtid, name, rec);
         }
     }
     return rec;
 }
 
-void HDF5Attributes::ReadScalar (hid_t attrId, hid_t dtid, const casacore::String& name,
-    casacore::RecordInterface& rec) {
+void HDF5Attributes::ReadScalar(hid_t attrId, hid_t dtid, const casacore::String& name, casacore::RecordInterface& rec) {
     // Handle a scalar field.
     int sz = H5Tget_size(dtid);
     switch (H5Tget_class(dtid)) {
@@ -45,32 +45,28 @@ void HDF5Attributes::ReadScalar (hid_t attrId, hid_t dtid, const casacore::Strin
             casacore::HDF5DataType dtype((casacore::Int64*)0);
             H5Aread(attrId, dtype.getHidMem(), &value);
             rec.define(name, value);
-            }
-            break;
+        } break;
         case H5T_FLOAT: {
             casacore::Double value;
             casacore::HDF5DataType dtype((casacore::Double*)0);
             H5Aread(attrId, dtype.getHidMem(), &value);
             rec.define(name, value);
-            }
-            break;
+        } break;
         case H5T_STRING: {
             casacore::String value;
-            value.resize(sz+1);
+            value.resize(sz + 1);
             casacore::HDF5DataType dtype(value);
             H5Aread(attrId, dtype.getHidMem(), const_cast<char*>(value.c_str()));
             value.resize(std::strlen(value.c_str()));
             rec.define(name, value);
-            }
-            break;
-        default: 
-           throw casacore::HDF5Error ("Unknown data type of scalar attribute " + name);
+        } break;
+        default:
+            throw casacore::HDF5Error("Unknown data type of scalar attribute " + name);
     }
 }
 
 // get int value (might be string)
-bool HDF5Attributes::GetIntAttribute(casacore::Int64& val, const casacore::Record& rec,
-        const casacore::String& field) {
+bool HDF5Attributes::GetIntAttribute(casacore::Int64& val, const casacore::Record& rec, const casacore::String& field) {
     bool getOK(true);
     if (rec.isDefined(field)) {
         try {
@@ -89,8 +85,7 @@ bool HDF5Attributes::GetIntAttribute(casacore::Int64& val, const casacore::Recor
 }
 
 // get double value (might be string)
-bool HDF5Attributes::GetDoubleAttribute(casacore::Double& val, const casacore::Record& rec,
-        const casacore::String& field) {
+bool HDF5Attributes::GetDoubleAttribute(casacore::Double& val, const casacore::Record& rec, const casacore::String& field) {
     bool getOK(true);
     if (rec.isDefined(field)) {
         try {
@@ -133,8 +128,7 @@ void HDF5Attributes::ConvertToFits(casacore::Record& in) {
                 if (str_val=="Kelvin") str_val = "K";
                 if (name=="BITPIX")
                     break;
-                if ((name=="SIMPLE") || (name=="EXTEND") ||
-                    (name=="BLOCKED")) {
+                if ((name=="SIMPLE") || (name=="EXTEND") || (name=="BLOCKED")) {
                     // convert to bool
                     bool val = (str_val == "T" ? true : false);
                     out.define(name, val);
@@ -142,14 +136,10 @@ void HDF5Attributes::ConvertToFits(casacore::Record& in) {
                     // convert to int
                     int val = casacore::String::toInt(str_val);
                     out.define(name, val);
-                } else if ((name == "EQUINOX") || (name == "EPOCH") ||
-                           (name == "LONPOLE") || (name == "LATPOLE") ||
-                           (name == "RESTFRQ") || (name == "MJD-OBS") ||
-                           (name == "DATAMIN") || (name == "DATAMAX") ||
-                           (name.startsWith("CRVAL")) ||
-                           (name.startsWith("CRPIX")) ||
-                           (name.startsWith("CDELT")) ||
-                           (name.startsWith("CROTA"))) {
+                } else if ((name == "EQUINOX") || (name == "EPOCH") || (name == "LONPOLE") || (name == "LATPOLE") ||
+                           (name == "RESTFRQ") || (name == "MJD-OBS") || (name == "DATAMIN") ||
+                           (name == "DATAMAX") || (name.startsWith("CRVAL")) || (name.startsWith("CRPIX")) ||
+                           (name.startsWith("CDELT")) || (name.startsWith("CROTA"))) {
                     // convert to float
                     float val = casacore::String::toFloat(str_val);
                     out.define(name, val);

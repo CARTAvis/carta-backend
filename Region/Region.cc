@@ -1,34 +1,34 @@
 //# Region.cc: implementation of class for managing a region
 
 #include "Region.h"
-#include "../InterfaceConstants.h"
+
+#include <algorithm> // max
+#include <cmath>     // round
+
 #include <casacore/images/Regions/WCEllipsoid.h>
 #include <casacore/images/Regions/WCExtension.h>
 #include <casacore/images/Regions/WCPolygon.h>
 #include <casacore/images/Regions/WCRegion.h>
-#include <algorithm> // max
-#include <cmath>  // round
+
+#include "../InterfaceConstants.h"
 
 using namespace carta;
 
-Region::Region(const std::string& name, const CARTA::RegionType type,
-        const std::vector<CARTA::Point>& points, const float rotation,
-        const casacore::IPosition imageShape, int spectralAxis, int stokesAxis,
-        const casacore::CoordinateSystem& coordinateSys) :
-    m_name(name),
-    m_type(type),
-    m_rotation(0.0),
-    m_valid(false),
-    m_xyRegionChanged(false),
-    m_imageShape(imageShape),
-    m_spectralAxis(spectralAxis),
-    m_stokesAxis(stokesAxis),
-    m_xyAxes(casacore::IPosition(2, 0, 1)),
-    m_xyRegion(nullptr),
-    m_coordSys(coordinateSys)
-{
-    m_ndim = imageShape.size();
+Region::Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, const float rotation,
+    const casacore::IPosition imageShape, int spectralAxis, int stokesAxis, const casacore::CoordinateSystem& coordinateSys)
+    : m_name(name),
+      m_type(type),
+      m_rotation(0.0),
+      m_valid(false),
+      m_xyRegionChanged(false),
+      m_imageShape(imageShape),
+      m_spectralAxis(spectralAxis),
+      m_stokesAxis(stokesAxis),
+      m_xyAxes(casacore::IPosition(2, 0, 1)),
+      m_xyRegion(nullptr),
+      m_coordSys(coordinateSys) {
     // validate and set region parameters
+    m_ndim = imageShape.size();
     m_valid = updateRegionParameters(name, type, points, rotation);
     if (m_valid) {
         m_stats = std::unique_ptr<RegionStats>(new RegionStats());
@@ -48,8 +48,8 @@ Region::~Region() {
 // *************************************************************************
 // Region settings
 
-bool Region::updateRegionParameters(const std::string name, const CARTA::RegionType type,
-        const std::vector<CARTA::Point>& points, float rotation) {
+bool Region::updateRegionParameters(
+    const std::string name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation) {
     // Set region parameters and flag if xy region changed
     bool xyParamsChanged((pointsChanged(points) || (rotation != m_rotation)));
 
@@ -70,7 +70,7 @@ bool Region::updateRegionParameters(const std::string name, const CARTA::RegionT
 }
 
 bool Region::setPoints(const std::vector<CARTA::Point>& points) {
-    // check and set control points 
+    // check and set control points
     bool pointsUpdated(false);
     if (checkPoints(points)) {
         m_ctrlpoints = points;
@@ -89,19 +89,19 @@ bool Region::checkPoints(const std::vector<CARTA::Point>& points) {
         case CARTA::POINT: {
             pointsOK = checkPixelPoint(points);
             break;
-            }
+        }
         case CARTA::RECTANGLE: {
             pointsOK = checkRectanglePoints(points);
             break;
-            }
+        }
         case CARTA::ELLIPSE: {
             pointsOK = checkEllipsePoints(points);
             break;
-            }
+        }
         case CARTA::POLYGON: {
             pointsOK = checkPolygonPoints(points);
             break;
-            }
+        }
         default:
             break;
     }
@@ -115,7 +115,7 @@ bool Region::checkPixelPoint(const std::vector<CARTA::Point>& points) {
         float x(points[0].x()), y(points[0].y());
         pointsOK = (std::isfinite(x) && std::isfinite(y));
     }
-    return pointsOK; 
+    return pointsOK;
 }
 
 bool Region::checkRectanglePoints(const std::vector<CARTA::Point>& points) {
@@ -126,7 +126,7 @@ bool Region::checkRectanglePoints(const std::vector<CARTA::Point>& points) {
         bool pointsExist = (std::isfinite(cx) && std::isfinite(cy) && std::isfinite(width) && std::isfinite(height));
         pointsOK = (pointsExist && (width > 0) && (height > 0));
     }
-    return pointsOK; 
+    return pointsOK;
 }
 
 bool Region::checkEllipsePoints(const std::vector<CARTA::Point>& points) {
@@ -136,7 +136,7 @@ bool Region::checkEllipsePoints(const std::vector<CARTA::Point>& points) {
         float cx(points[0].x()), cy(points[0].y()), bmaj(points[1].x()), bmin(points[1].y());
         pointsOK = (std::isfinite(cx) && std::isfinite(cy) && std::isfinite(bmaj) && std::isfinite(bmin));
     }
-    return pointsOK; 
+    return pointsOK;
 }
 
 bool Region::checkPolygonPoints(const std::vector<CARTA::Point>& points) {
@@ -144,16 +144,15 @@ bool Region::checkPolygonPoints(const std::vector<CARTA::Point>& points) {
     bool pointsOK(true);
     for (auto& point : points)
         pointsOK &= (std::isfinite(point.x()) && std::isfinite(point.y()));
-    return pointsOK; 
+    return pointsOK;
 }
 
 bool Region::pointsChanged(const std::vector<CARTA::Point>& newpoints) {
     // check equality of points (no operator==)
     bool changed(newpoints.size() != m_ctrlpoints.size()); // check number of points
-    if (!changed) { // check each point in vectors
-        for (size_t i=0; i<newpoints.size(); ++i) {
-            if ((newpoints[i].x() != m_ctrlpoints[i].x()) || 
-                (newpoints[i].y() != m_ctrlpoints[i].y())) {
+    if (!changed) {                                        // check each point in vectors
+        for (size_t i = 0; i < newpoints.size(); ++i) {
+            if ((newpoints[i].x() != m_ctrlpoints[i].x()) || (newpoints[i].y() != m_ctrlpoints[i].y())) {
                 changed = true;
                 break;
             }
@@ -184,7 +183,7 @@ bool Region::setXYRegion(const std::vector<CARTA::Point>& points, float rotation
     casacore::WCRegion* region(nullptr);
     std::string regionType;
     try {
-        switch(m_type) {
+        switch (m_type) {
             case CARTA::RegionType::POINT: {
                 regionType = "POINT";
                 region = makePointRegion(points);
@@ -364,7 +363,7 @@ casacore::WCRegion* Region::makePolygonRegion(const std::vector<CARTA::Point>& p
     // npoints region
     casacore::WCPolygon* polygon(nullptr);
     size_t npoints(points.size());
-    casacore::Vector<casacore::Double> x, y;
+    casacore::Vector<casacore::Double> x(npoints), y(npoints);
     for (size_t i=0; i<npoints; ++i) {
       x(i) = points[i].x();
       y(i) = points[i].y();
@@ -536,11 +535,10 @@ void Region::setHistogram(int channel, int stokes, CARTA::Histogram& histogram) 
     m_stats->setHistogram(channel, stokes, histogram);
 }
 
-void Region::calcHistogram(int channel, int stokes, int nBins, float minVal, float maxVal,
-        const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
+void Region::calcHistogram(
+    int channel, int stokes, int nBins, float minVal, float maxVal, const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
     m_stats->calcHistogram(channel, stokes, nBins, minVal, maxVal, data, histogramMsg);
 }
-
 
 // stats
 void Region::setStatsRequirements(const std::vector<int>& statsTypes) {
@@ -551,8 +549,7 @@ size_t Region::numStats() {
     return m_stats->numStats();
 }
 
-void Region::fillStatsData(CARTA::RegionStatsData& statsData,
-        const casacore::MaskedLattice<float>& mlattice, int channel, int stokes) {
+void Region::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::MaskedLattice<float>& mlattice, int channel, int stokes) {
     m_stats->fillStatsData(statsData, mlattice, channel, stokes);
 }
 
@@ -569,7 +566,7 @@ size_t Region::numSpatialProfiles() {
     return m_profiler->numSpatialProfiles();
 }
 
-std::pair<int,int> Region::getSpatialProfileReq(int profileIndex) {
+std::pair<int, int> Region::getSpatialProfileReq(int profileIndex) {
     return m_profiler->getSpatialProfileReq(profileIndex);
 }
 
@@ -579,8 +576,7 @@ std::string Region::getSpatialCoordinate(int profileIndex) {
 
 // spectral
 
-bool Region::setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs,
-        const int nstokes) {
+bool Region::setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs, const int nstokes) {
     return m_profiler->setSpectralRequirements(configs, nstokes);
 }
 
@@ -596,8 +592,7 @@ std::string Region::getSpectralCoordinate(int profileIndex) {
     return m_profiler->getSpectralCoordinate(profileIndex);
 }
 
-void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex,
-    std::vector<float>& spectralData) {
+void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, std::vector<float>& spectralData) {
     // Fill SpectralProfile with values for point region;
     // This assumes one spectral config with StatsType::None
     if (isPoint()) {
@@ -612,8 +607,7 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
     }
 }
 
-void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex,
-    casacore::MaskedLattice<float>& mlattice) {
+void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, casacore::MaskedLattice<float>& mlattice) {
     // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
     CARTA::SetSpectralRequirements_SpectralConfig config;
     if (m_profiler->getSpectralConfig(config, profileIndex)) {
@@ -631,12 +625,12 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
             newProfile->set_stats_type(statType);
             // convert to float for spectral profile
             std::vector<float> values;
-            if (!haveStats || statsValues[i].empty()) {  // region outside image or NaNs
+            if (!haveStats || statsValues[i].empty()) { // region outside image or NaNs
                 values.resize(1, std::numeric_limits<float>::quiet_NaN());
             } else {
                 // convert to float for spectral profile
                 values.resize(statsValues[i].size());
-                for (size_t v=0; v<statsValues[i].size(); ++v) {
+                for (size_t v = 0; v < statsValues[i].size(); ++v) {
                     values[v] = static_cast<float>(statsValues[i][v]);
                 }
             }
