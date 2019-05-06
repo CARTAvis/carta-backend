@@ -29,16 +29,14 @@ pipeline {
                     sh "export PATH=/usr/local/bin:$PATH"
                     sh "pwd && ls -sort"
                     dir ('build') {
-                      sh "pwd && ls -sort"
                       sh "cp ../../carta-backend-ICD-test-travis.tar.gz . && tar -xvf carta-backend-ICD-test-travis.tar.gz && cp ../../run.sh ."
                       sh "./run.sh # run carta_backend in the background"
                       sh "lsof -i :3002 # check backend is running"
                       dir ('carta-backend-ICD-test-travis') {
                         dir ('protobuf') {
-                        sh "pwd && ls -sort"
-                        sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && git checkout master && npm install && ./build_proto.sh # prepare the tests"
+                          sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && git checkout master && npm install && ./build_proto.sh # prepare the tests"
                         }
-                        sh "source ~/emsdk/emsdk_env.sh && ./run-travis.sh # run the tests"
+                          sh "source ~/emsdk/emsdk_env.sh && ./run-travis.sh # run the tests"
                       }
                    }
                  echo "Finished !!"
