@@ -807,8 +807,6 @@ bool Frame::fillSpectralProfileData(int regionId, CARTA::SpectralProfileData& pr
                     casacore::SubImage<float> subimage;
                     std::unique_lock<std::mutex> guard(imageMutex);
                     getRegionSubImage(regionId, subimage, profileStokes);
-                    // if (!subimage.shape().empty())
-                    //    setPixelMask(subimage);
                     region->fillSpectralProfileData(profileData, i, subimage);
                     guard.unlock();
                 }
@@ -836,8 +834,6 @@ bool Frame::fillRegionStatsData(int regionId, CARTA::RegionStatsData& statsData)
         casacore::SubImage<float> subimage;
         std::lock_guard<std::mutex> guard(imageMutex);
         if (getRegionSubImage(regionId, subimage, stokesIndex, channelIndex)) {
-            // if (!subimage.shape().empty())
-            //     setPixelMask(subimage);
             region->fillStatsData(statsData, subimage, channelIndex, stokesIndex);
             statsOK = true;
         }
