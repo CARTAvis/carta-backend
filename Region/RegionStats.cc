@@ -157,7 +157,7 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
     // Fill RegionStatsData with statistics types set in requirements.
     if (m_statsReqs.empty()) { // no requirements set, add empty StatisticsValue
         auto statsValue = statsData.add_statistics();
-        statsValue->set_stats_type(CARTA::StatsType::None);
+        statsValue->set_stats_type(CARTA::StatsType::Sum);
     } else {
         std::vector<std::vector<double>> results;
         if (m_statsValid && (m_statsData.count(stokes)) && (m_statsData.at(stokes).count(channel))) {
@@ -169,12 +169,12 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
                     auto statsValue = statsData.add_statistics();
                     auto cartaStatType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
                     statsValue->set_stats_type(cartaStatType);
-                    statsValue->set_value(storedStats[cartaStatType - 13]);
+                    statsValue->set_value(storedStats[cartaStatType]);
                 }
             } catch (std::out_of_range& rangeError) {
                 // stats cleared
                 auto statsValue = statsData.add_statistics();
-                statsValue->set_stats_type(CARTA::StatsType::None);
+                statsValue->set_stats_type(CARTA::StatsType::Sum);
             }
         } else {
             // calculate stats
@@ -200,11 +200,10 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
 
                 // cache stats values
                 if (m_statsData[stokes][channel].empty()) {                        // resize vector, set to NaN
-                    m_statsData[stokes][channel].resize(CARTA::StatsType_MAX - 13, // 13 is the first stat
+                    m_statsData[stokes][channel].resize(CARTA::StatsType_MAX,
                         std::numeric_limits<double>::quiet_NaN());
                 }
-                // first type enum is 13; make 0-based
-                m_statsData[stokes][channel][cartaStatType - 13] = value;
+                m_statsData[stokes][channel][cartaStatType] = value;
             }
             m_statsValid = true;
         }
@@ -242,8 +241,6 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
         std::vector<double> dblResult; // lattice stats
         std::vector<int> intResult;    // position stats
         switch (statType) {
-            case CARTA::StatsType::None:
-                break;
             case CARTA::StatsType::NumPixels:
                 lattStatsType = casacore::LatticeStatsBase::NPTS;
                 break;

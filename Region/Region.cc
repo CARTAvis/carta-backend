@@ -487,14 +487,14 @@ std::string Region::getSpectralCoordinate(int profileIndex) {
 
 void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, std::vector<float>& spectralData) {
     // Fill SpectralProfile with values for point region;
-    // This assumes one spectral config with StatsType::None
+    // This assumes one spectral config with StatsType::Sum
     if (isPoint()) {
         CARTA::SetSpectralRequirements_SpectralConfig config;
         if (m_profiler->getSpectralConfig(config, profileIndex)) { // make sure it was requested
             std::string profileCoord(config.coordinate());
             auto newProfile = profileData.add_profiles();
             newProfile->set_coordinate(profileCoord);
-            newProfile->set_stats_type(CARTA::StatsType::None);
+            newProfile->set_stats_type(CARTA::StatsType::Sum);
             *newProfile->mutable_vals() = {spectralData.begin(), spectralData.end()};
         }
     }
