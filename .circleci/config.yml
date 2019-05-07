@@ -2,7 +2,7 @@ version: 2.0
 jobs:
   "ubuntu":
     docker:
-      - image: ajmasiaa/carta-backend-builder-ubuntu
+      - image: ajmasiaa/carta-backend-builder-ubuntu-may2019
     steps:
       - checkout
       - run:
@@ -28,7 +28,7 @@ jobs:
             echo "Finished !!!"
   "centos6":
     docker:
-      - image: ajmasiaa/carta-backend-builder-centos6
+      - image: ajmasiaa/carta-backend-builder-centos6-may2019
     steps:
       - checkout
       - run:
