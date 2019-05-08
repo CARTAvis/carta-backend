@@ -144,7 +144,9 @@ void onMessage(uWS::WebSocket<uWS::SERVER>* ws, char* rawMessage, size_t length,
                     session->stop_animation(message.file_id(), message.end_frame());
                     break;
                 }
-                default: { tsk = new (tbb::task::allocate_root()) MultiMessageTask(session, head, event_length, event_buf); }
+                default: {
+                    tsk = new (tbb::task::allocate_root()) MultiMessageTask(session, head, event_length, event_buf);
+                }
             }
             if (tsk)
                 tbb::task::enqueue(*tsk);

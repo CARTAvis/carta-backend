@@ -219,7 +219,9 @@ const HDF5Loader::ipos HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
         case casacore::TpDouble: {
             return getStatsDataShapeTyped<casacore::Double>(ds);
         }
-        default: { throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype."); }
+        default: {
+            throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype.");
+        }
     }
 }
 
@@ -248,7 +250,9 @@ casacore::ArrayBase* HDF5Loader::getStatsData(FileInfo::Data ds) {
         case casacore::TpDouble: {
             return getStatsDataTyped<casacore::Double, casacore::Float>(ds);
         }
-        default: { throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype."); }
+        default: {
+            throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype.");
+        }
     }
 }
 
