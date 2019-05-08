@@ -4,9 +4,9 @@
 #define CARTA_BACKEND_REGION_REGION_H_
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
+#include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Regions/ImageRegion.h>
 #include <casacore/images/Regions/WCBox.h>
-#include <casacore/lattices/Lattices/MaskedLattice.h>
 
 #include <carta-protobuf/spectral_profile.pb.h>
 
@@ -56,7 +56,7 @@ public:
     // get image region for requested stokes and (optionally) single channel
     bool getRegion(casacore::ImageRegion& region, int stokes, int channel = ALL_CHANNELS);
     // get data from subimage (LCRegion applied to Image by Frame)
-    bool getData(std::vector<float>& data, casacore::MaskedLattice<float>& mlattice);
+    bool getData(std::vector<float>& data, casacore::ImageInterface<float>& image);
 
     // Histogram: pass through to RegionStats
     bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
@@ -83,12 +83,12 @@ public:
     std::string getSpectralCoordinate(int profileIndex);
     bool getSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profileIndex);
     void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, std::vector<float>& spectralData);
-    void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, casacore::MaskedLattice<float>& mlattice);
+    void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, casacore::ImageInterface<float>& image);
 
     // Stats: pass through to RegionStats
     void setStatsRequirements(const std::vector<int>& statsTypes);
     size_t numStats();
-    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::MaskedLattice<float>& mlattice, int channel, int stokes);
+    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::ImageInterface<float>& image, int channel, int stokes);
 
 private:
     // bounds checking for Region parameters

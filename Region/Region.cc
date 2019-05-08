@@ -468,17 +468,17 @@ casacore::IPosition Region::xyShape() {
 // ***********************************
 // Region data
 
-bool Region::getData(std::vector<float>& data, casacore::MaskedLattice<float>& mlattice) {
+bool Region::getData(std::vector<float>& data, casacore::ImageInterface<float>& image) {
     // fill data vector using region masked lattice (subimage)
     bool dataOK(false);
-    casacore::IPosition latticeShape = mlattice.shape();
-    if (latticeShape.empty())
+    casacore::IPosition imageShape = image.shape();
+    if (imageShape.empty())
         return dataOK;
 
-    data.resize(latticeShape.product());
-    casacore::Array<float> tmp(latticeShape, data.data(), casacore::StorageInitPolicy::SHARE);
+    data.resize(imageShape.product());
+    casacore::Array<float> tmp(imageShape, data.data(), casacore::StorageInitPolicy::SHARE);
     try {
-        mlattice.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(latticeShape.size(), 0), latticeShape));
+        image.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(imageShape.size(), 0), imageShape));
         dataOK = true;
     } catch (casacore::AipsError& err) {
         data.clear();
@@ -539,8 +539,8 @@ size_t Region::numStats() {
     return m_stats->numStats();
 }
 
-void Region::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::MaskedLattice<float>& mlattice, int channel, int stokes) {
-    m_stats->fillStatsData(statsData, mlattice, channel, stokes);
+void Region::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::ImageInterface<float>& image, int channel, int stokes) {
+    m_stats->fillStatsData(statsData, image, channel, stokes);
 }
 
 // ***********************************
@@ -597,16 +597,16 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
     }
 }
 
-void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, casacore::MaskedLattice<float>& mlattice) {
+void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, casacore::ImageInterface<float>& image) {
     // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
     CARTA::SetSpectralRequirements_SpectralConfig config;
     if (m_profiler->getSpectralConfig(config, profileIndex)) {
         std::string profileCoord(config.coordinate());
-        const std::vector<int> requestedStats(config.stats_types().begin(), config.stats_types().end());
+        std::vector<int> requestedStats(config.stats_types().begin(), config.stats_types().end());
         size_t nstats = requestedStats.size();
         std::vector<std::vector<double>> statsValues;
         // get values from RegionStats
-        bool haveStats(m_stats->calcStatsValues(statsValues, requestedStats, mlattice));
+        bool haveStats(m_stats->calcStatsValues(statsValues, requestedStats, image));
         for (size_t i = 0; i < nstats; ++i) {
             // one SpectralProfile per stats type
             auto newProfile = profileData.add_profiles();
