@@ -202,7 +202,6 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
                 if (m_statsData[stokes][channel].empty()) { // resize vector, set to NaN
                     m_statsData[stokes][channel].resize(CARTA::StatsType_MAX, std::numeric_limits<double>::quiet_NaN());
                 }
-                // first type enum is 13; make 0-based
                 m_statsData[stokes][channel][cartaStatsType] = value;
             }
             m_statsValid = true;
