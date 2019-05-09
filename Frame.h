@@ -22,6 +22,7 @@
 #include "ImageData/FileLoader.h"
 #include "InterfaceConstants.h"
 #include "Region/Region.h"
+#include "Tile.h"
 
 struct ViewSettings {
     CARTA::ImageBounds image_bounds;
