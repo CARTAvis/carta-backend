@@ -153,7 +153,7 @@ size_t RegionStats::numStats() {
     return m_statsReqs.size();
 }
 
-void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice, int channel, int stokes) {
+void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::ImageInterface<float>& image, int channel, int stokes) {
     // Fill RegionStatsData with statistics types set in requirements.
     if (m_statsReqs.empty()) { // no requirements set, add empty StatisticsValue
         auto statsValue = statsData.add_statistics();
@@ -167,9 +167,9 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
                 for (size_t i = 0; i < m_statsReqs.size(); ++i) {
                     // add StatisticsValue to message
                     auto statsValue = statsData.add_statistics();
-                    auto cartaStatType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
-                    statsValue->set_stats_type(cartaStatType);
-                    statsValue->set_value(storedStats[cartaStatType - 13]);
+                    auto cartaStatsType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
+                    statsValue->set_stats_type(cartaStatsType);
+                    statsValue->set_value(storedStats[cartaStatsType - 13]);
                 }
             } catch (std::out_of_range& rangeError) {
                 // stats cleared
@@ -181,16 +181,16 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
             if (!m_statsValid)
                 m_statsData.clear();
             // per channel = false, stats for entire region
-            bool haveStats(calcStatsValues(results, m_statsReqs, subLattice, false));
+            bool haveStats(calcStatsValues(results, m_statsReqs, image, false));
             // update message whether have stats or not
             for (size_t i = 0; i < m_statsReqs.size(); ++i) {
                 // add StatisticsValue to message
                 auto statsValue = statsData.add_statistics();
-                auto cartaStatType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
-                statsValue->set_stats_type(cartaStatType);
+                auto cartaStatsType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
+                statsValue->set_stats_type(cartaStatsType);
                 double value(0.0);
                 if (!haveStats || results[i].empty()) { // region outside image or NaNs
-                    if (cartaStatType != CARTA::NumPixels) {
+                    if (cartaStatsType != CARTA::NumPixels) {
                         value = std::numeric_limits<double>::quiet_NaN();
                     }
                 } else {
@@ -204,7 +204,7 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
                         std::numeric_limits<double>::quiet_NaN());
                 }
                 // first type enum is 13; make 0-based
-                m_statsData[stokes][channel][cartaStatType - 13] = value;
+                m_statsData[stokes][channel][cartaStatsType - 13] = value;
             }
             m_statsValid = true;
         }
@@ -212,22 +212,22 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
 }
 
 bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues, const std::vector<int>& requestedStats,
-    const casacore::SubLattice<float>& subLattice, bool perChannel) {
+    const casacore::ImageInterface<float>& image, bool perChannel) {
     // Fill statsValues vector for requested stats; one vector<float> per stat if per channel,
     // else one value per stat per region.
-    if (subLattice.shape().empty()) // outside image or all masked (NaN)
+    if (image.shape().empty()) // outside image or all masked (NaN)
         return false;
 
-    // Use LatticeStatistics to fill statistics values according to type;
-    // template type matches sublattice type
-    casacore::LatticeStatistics<float> latticeStats = casacore::LatticeStatistics<float>(subLattice,
+    // Use ImageStatistics to fill statistics values according to type;
+    // template type matches image type
+    casacore::ImageStatistics<float> imageStats = casacore::ImageStatistics<float>(image,
         /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
 
     if (perChannel) { // get stats per xy plane
         casacore::Vector<int> displayAxes(2);
         displayAxes(0) = 0;
         displayAxes(1) = 1;
-        if (!latticeStats.setAxes(displayAxes))
+        if (!imageStats.setAxes(displayAxes))
             return false;
     }
 
@@ -236,58 +236,58 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
     statsValues.resize(nstats);
     for (size_t i = 0; i < nstats; ++i) {
         // get requested statistics values
-        casacore::LatticeStatsBase::StatisticsTypes lattStatsType(casacore::LatticeStatsBase::NSTATS);
-        auto statType = static_cast<CARTA::StatsType>(requestedStats[i]);
+        casacore::LatticeStatsBase::StatisticsTypes latticeStatsType(casacore::LatticeStatsBase::NSTATS);
+        auto cartaStatsType = static_cast<CARTA::StatsType>(requestedStats[i]);
 
         std::vector<double> dblResult; // lattice stats
         std::vector<int> intResult;    // position stats
-        switch (statType) {
+        switch (cartaStatsType) {
             case CARTA::StatsType::None:
                 break;
             case CARTA::StatsType::NumPixels:
-                lattStatsType = casacore::LatticeStatsBase::NPTS;
+                latticeStatsType = casacore::LatticeStatsBase::NPTS;
                 break;
             case CARTA::StatsType::Sum:
-                lattStatsType = casacore::LatticeStatsBase::SUM;
+                latticeStatsType = casacore::LatticeStatsBase::SUM;
                 break;
-            case CARTA::StatsType::FluxDensity: // not supported for lattice statistics
-                // lattStatsType = casacore::LatticeStatsBase::FLUX;
+            case CARTA::StatsType::FluxDensity:
+                latticeStatsType = casacore::LatticeStatsBase::FLUX;
                 break;
             case CARTA::StatsType::Mean:
-                lattStatsType = casacore::LatticeStatsBase::MEAN;
+                latticeStatsType = casacore::LatticeStatsBase::MEAN;
                 break;
             case CARTA::StatsType::RMS:
-                lattStatsType = casacore::LatticeStatsBase::RMS;
+                latticeStatsType = casacore::LatticeStatsBase::RMS;
                 break;
             case CARTA::StatsType::Sigma:
-                lattStatsType = casacore::LatticeStatsBase::SIGMA;
+                latticeStatsType = casacore::LatticeStatsBase::SIGMA;
                 break;
             case CARTA::StatsType::SumSq:
-                lattStatsType = casacore::LatticeStatsBase::SUMSQ;
+                latticeStatsType = casacore::LatticeStatsBase::SUMSQ;
                 break;
             case CARTA::StatsType::Min:
-                lattStatsType = casacore::LatticeStatsBase::MIN;
+                latticeStatsType = casacore::LatticeStatsBase::MIN;
                 break;
             case CARTA::StatsType::Max:
-                lattStatsType = casacore::LatticeStatsBase::MAX;
+                latticeStatsType = casacore::LatticeStatsBase::MAX;
                 break;
             case CARTA::StatsType::Blc: {
-                const casacore::IPosition blc(subLattice.getRegionPtr()->slicer().start());
+                const casacore::IPosition blc(image.region().slicer().start());
                 intResult = blc.asStdVector();
                 break;
             }
             case CARTA::StatsType::Trc: {
-                const casacore::IPosition trc(subLattice.getRegionPtr()->slicer().end());
+                const casacore::IPosition trc(image.region().slicer().end());
                 intResult = trc.asStdVector();
                 break;
             }
             case CARTA::StatsType::MinPos:
             case CARTA::StatsType::MaxPos: {
                 if (!perChannel) { // only works when no display axes
-                    const casacore::IPosition blc(subLattice.getRegionPtr()->slicer().start());
+                    const casacore::IPosition blc(image.region().slicer().start());
                     casacore::IPosition minPos, maxPos;
-                    latticeStats.getMinMaxPos(minPos, maxPos);
-                    if (statType == CARTA::StatsType::MinPos)
+                    imageStats.getMinMaxPos(minPos, maxPos);
+                    if (cartaStatsType == CARTA::StatsType::MinPos)
                         intResult = (blc + minPos).asStdVector();
                     else // MaxPos
                         intResult = (blc + maxPos).asStdVector();
@@ -297,13 +297,13 @@ bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues,
             default:
                 break;
         }
-        if (lattStatsType < casacore::LatticeStatsBase::NSTATS) { // get lattice statistic
-            casacore::Array<casacore::Double> result;             // must be double
-            if (latticeStats.getStatistic(result, lattStatsType)) {
+        if (latticeStatsType < casacore::LatticeStatsBase::NSTATS) { // get lattice statistic
+            casacore::Array<casacore::Double> result; // must be double
+            if (imageStats.getStatistic(result, latticeStatsType)) {
                 if (anyEQ(result, 0.0)) { // actually 0, or NaN?
                     // NaN if number of points is zero
                     if (npts.empty())
-                        latticeStats.getStatistic(npts, casacore::LatticeStatsBase::NPTS);
+                        imageStats.getStatistic(npts, casacore::LatticeStatsBase::NPTS);
                     for (size_t i = 0; i < result.size(); ++i) {
                         casacore::IPosition index(1, i);
                         if ((result(index) == 0.0) && (npts(index) == 0.0)) {

@@ -35,6 +35,8 @@ private:
 
     const ipos getStatsDataShape(FileInfo::Data ds) override;
     casacore::ArrayBase* getStatsData(FileInfo::Data ds) override;
+
+    casacore::Lattice<float>& loadSwizzledData(FileInfo::Data ds);
 };
 
 HDF5Loader::HDF5Loader(const std::string& filename) : file(filename), hdf5Hdu("0") {}
@@ -78,44 +80,54 @@ bool HDF5Loader::hasData(FileInfo::Data ds) const {
 
 // TODO: when we fix the typing issue, this should probably return any dataset again, for consistency.
 typename HDF5Loader::image_ref HDF5Loader::loadData(FileInfo::Data ds) {
+    // data returns an ImageInterface
     switch (ds) {
         case FileInfo::Data::Image:
             return *image;
         case FileInfo::Data::XY:
             if (ndims == 2) {
                 return *image;
+                break;
             }
-            break;
         case FileInfo::Data::XYZ:
             if (ndims == 3) {
                 return *image;
+                break;
             }
-            break;
         case FileInfo::Data::XYZW:
             if (ndims == 4) {
                 return *image;
+                break;
             }
+        default:
             break;
+    }
+    throw casacore::HDF5Error("Unable to load dataset " + dataSetToString(ds) + ".");
+}
+
+casacore::Lattice<float>& HDF5Loader::loadSwizzledData(FileInfo::Data ds) {
+    // swizzled data returns a Lattice
+    switch (ds) {
         case FileInfo::Data::Swizzled:
             if (swizzledImage.get()) {
                 return *swizzledImage;
+                break;
             }
-            break;
         case FileInfo::Data::ZYX:
             if (ndims == 3 && swizzledImage.get()) {
                 return *swizzledImage;
+                break;
             }
-            break;
         case FileInfo::Data::ZYXW:
             if (ndims == 4 && swizzledImage.get()) {
                 return *swizzledImage;
+                break;
             }
-            break;
         default:
             break;
     }
 
-    throw casacore::HDF5Error("Unable to load dataset " + dataSetToString(ds) + ".");
+    throw casacore::HDF5Error("Unable to load swizzled dataset " + dataSetToString(ds) + ".");
 }
 
 bool HDF5Loader::getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
@@ -207,7 +219,9 @@ const HDF5Loader::ipos HDF5Loader::getStatsDataShape(FileInfo::Data ds) {
         case casacore::TpDouble: {
             return getStatsDataShapeTyped<casacore::Double>(ds);
         }
-        default: { throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype."); }
+        default: {
+            throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype.");
+        }
     }
 }
 
@@ -236,7 +250,9 @@ casacore::ArrayBase* HDF5Loader::getStatsData(FileInfo::Data ds) {
         case casacore::TpDouble: {
             return getStatsDataTyped<casacore::Double, casacore::Float>(ds);
         }
-        default: { throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype."); }
+        default: {
+            throw casacore::HDF5Error("Dataset " + dataSetToString(ds) + " has an unsupported datatype.");
+        }
     }
 }
 
@@ -272,7 +288,7 @@ bool HDF5Loader::getCursorSpectralData(std::vector<float>& data, int stokes, int
         data.resize(nchannels);
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         try {
-            loadData(FileInfo::Data::Swizzled).doGetSlice(tmp, slicer);
+            loadSwizzledData(FileInfo::Data::Swizzled).doGetSlice(tmp, slicer);
             dataOK = true;
         } catch (casacore::AipsError& err) {
             std::cerr << "AIPS ERROR: " << err.getMesg() << std::endl;
