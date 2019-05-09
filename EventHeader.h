@@ -32,7 +32,8 @@ enum EventType : uint16_t {
     SPATIAL_PROFILE_DATA = 25,
     SPECTRAL_PROFILE_DATA = 26,
     REGION_STATS_DATA = 27,
-    ERROR_DATA = 28
+    ERROR_DATA = 28,
+    ANIMATION_FLOW_CONTROL = 29
 };
 
 struct EventHeader {

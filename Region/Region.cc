@@ -519,9 +519,9 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
             // convert to float for spectral profile
             std::vector<float> values;
             if (!haveStats || statsValues[i].empty()) { // region outside image or NaNs
-              newProfile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
+                newProfile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
             } else {
-              *newProfile->mutable_double_vals() = {statsValues[i].begin(), statsValues[i].end()};
+                *newProfile->mutable_double_vals() = {statsValues[i].begin(), statsValues[i].end()};
             }
         }
     }

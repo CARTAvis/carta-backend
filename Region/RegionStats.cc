@@ -199,9 +199,8 @@ void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacor
                 statsValue->set_value(value);
 
                 // cache stats values
-                if (m_statsData[stokes][channel].empty()) {                        // resize vector, set to NaN
-                    m_statsData[stokes][channel].resize(CARTA::StatsType_MAX,
-                        std::numeric_limits<double>::quiet_NaN());
+                if (m_statsData[stokes][channel].empty()) { // resize vector, set to NaN
+                    m_statsData[stokes][channel].resize(CARTA::StatsType_MAX, std::numeric_limits<double>::quiet_NaN());
                 }
                 m_statsData[stokes][channel][cartaStatType] = value;
             }
