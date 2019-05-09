@@ -147,6 +147,7 @@ void Session::onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t re
     ackMessage.set_success(success);
     ackMessage.set_message(error);
     ackMessage.set_session_type(type);
+    ackMessage.set_server_feature_flags(CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE);
     sendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, requestId, ackMessage);
 }
 
@@ -221,6 +222,15 @@ void Session::onOpenFile(const CARTA::OpenFile& message, uint32_t requestId) {
             responseFileInfo->add_hdu_list(hdu); // loaded hdu only
             *ack.mutable_file_info() = *responseFileInfo;
             *ack.mutable_file_info_extended() = *selectedFileInfoExtended;
+            uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
+            // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
+            if (selectedFileInfo->type() == CARTA::FileType::HDF5) {
+                feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
+                feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
+                feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
+            }
+            ack.set_file_feature_flags(feature_flags);
+
             success = true;
         } else {
             errMessage = "Could not load image";
