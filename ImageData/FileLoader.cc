@@ -7,16 +7,16 @@
 
 using namespace carta;
 
-FileLoader* FileLoader::getLoader(const std::string& file) {
-    casacore::ImageOpener::ImageTypes type = FileInfo::fileType(file);
+FileLoader* FileLoader::getLoader(const std::string& filename) {
+    casacore::ImageOpener::ImageTypes type = FileInfo::fileType(filename);
     switch (type) {
         case casacore::ImageOpener::AIPSPP:
-            return new CasaLoader(file);
+            return new CasaLoader(filename);
         case casacore::ImageOpener::FITS:
-            return new FITSLoader(file);
+            return new FITSLoader(filename);
             break;
         case casacore::ImageOpener::MIRIAD:
-            return new MIRIADLoader(file);
+            return new MIRIADLoader(filename);
             break;
         case casacore::ImageOpener::GIPSY:
             break;
@@ -25,7 +25,7 @@ FileLoader* FileLoader::getLoader(const std::string& file) {
         case casacore::ImageOpener::NEWSTAR:
             break;
         case casacore::ImageOpener::HDF5:
-            return new HDF5Loader(file);
+            return new HDF5Loader(filename);
         case casacore::ImageOpener::IMAGECONCAT:
             break;
         case casacore::ImageOpener::IMAGEEXPR:
@@ -164,7 +164,8 @@ void FileLoader::loadStats2DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {}
+                default: {
+                }
             }
 
             delete data;
@@ -274,7 +275,8 @@ void FileLoader::loadStats3DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {}
+                default: {
+                }
             }
 
             delete data;

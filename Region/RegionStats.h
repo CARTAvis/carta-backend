@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <casacore/lattices/Lattices/SubLattice.h>
+#include <casacore/images/Images/ImageStatistics.h>
 
 #include <carta-protobuf/defs.pb.h>                // Histogram, StatisticsValue
 #include <carta-protobuf/region_requirements.pb.h> // HistogramConfig
@@ -38,9 +38,9 @@ public:
     // Stats
     void setStatsRequirements(const std::vector<int>& statsTypes);
     size_t numStats();
-    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::SubLattice<float>& subLattice, int channel, int stokes);
+    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::ImageInterface<float>& image, int channel, int stokes);
     bool calcStatsValues(std::vector<std::vector<double>>& statsValues, const std::vector<int>& requestedStats,
-        const casacore::SubLattice<float>& lattice, bool perChannel = true);
+        const casacore::ImageInterface<float>& image, bool perChannel = true);
 
     // invalidate stored calculations for previous region settings
     void clearStats();

@@ -74,7 +74,8 @@ inline casacore::uInt getFITShdu(const std::string& hdu) {
 
 class FileLoader {
 public:
-    using image_ref = casacore::Lattice<float>&;
+    // Replaced Lattice with Image Interface - changed back
+    using image_ref = casacore::ImageInterface<float>&;
     using ipos = casacore::IPosition;
 
     virtual ~FileLoader() = default;
@@ -98,8 +99,8 @@ public:
     // Return a casacore image type representing the data stored in the
     // specified HDU/group/table/etc.
     virtual image_ref loadData(FileInfo::Data ds) = 0;
-    virtual bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
     virtual bool getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY);
+    virtual bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
 
 protected:
     virtual const casacore::CoordinateSystem& getCoordSystem() = 0;
