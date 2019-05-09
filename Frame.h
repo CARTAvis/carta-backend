@@ -9,6 +9,8 @@
 #include <mutex>
 #include <unordered_map>
 
+#include <casacore/images/Images/SubImage.h>
+#include <casacore/images/Regions/ImageRegion.h>
 #include <tbb/atomic.h>
 #include <tbb/queuing_rw_mutex.h>
 
@@ -57,7 +59,7 @@ private:
 
     std::vector<float> imageCache;    // image data for current channelIndex, stokesIndex
     tbb::queuing_rw_mutex cacheMutex; // allow concurrent reads but lock for write
-    std::mutex latticeMutex;          // only one disk access at a time
+    std::mutex imageMutex;            // only one disk access at a time
     bool cacheLoaded;                 // channel cache is set
 
     // Region
@@ -90,14 +92,14 @@ private:
     // get slicer for xy matrix with given channel and stokes
     casacore::Slicer getChannelMatrixSlicer(size_t channel, size_t stokes);
     // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
-    void getLatticeSlicer(casacore::Slicer& latticeSlicer, int x, int y, int channel, int stokes);
+    void getImageSlicer(casacore::Slicer& imageSlicer, int x, int y, int channel, int stokes);
     // xy region created (subset of image)
     bool xyRegionValid(int regionId);
     // make Lattice sublattice from Region given channel and stokes
-    bool getRegionSubLattice(int regionId, casacore::SubLattice<float>& sublattice, int stokes, int channel = ALL_CHANNELS);
+    bool getRegionSubImage(int regionId, casacore::SubImage<float>& subimage, int stokes, int channel = ALL_CHANNELS);
     // add pixel mask to sublattice for stats
-    void setPixelMask(casacore::SubLattice<float>& sublattice);
-    void generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore::SubLattice<float>& sublattice);
+    // void setPixelMask(casacore::SubImage<float>& subimage);
+    // void generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore::SubImage<float>& subimage);
 
     // histogram helper
     int calcAutoNumBins(int regionId); // calculate automatic bin size for region
@@ -105,9 +107,9 @@ private:
     // current cursor's x-y coordinate
     std::pair<int, int> cursorXY;
     // get cursor's x-y coordinate forom sub-lattice
-    bool getSublatticeXY(casacore::SubLattice<float>& sublattice, std::pair<int, int>& cursor_xy);
+    bool getSubimageXY(casacore::SubImage<float>& subimage, std::pair<int, int>& cursor_xy);
     // get spectral profile data from sub-lattice
-    bool getSpectralData(std::vector<float>& data, casacore::SubLattice<float>& sublattice, int checkPerChannels = ALL_CHANNELS);
+    bool getSpectralData(std::vector<float>& data, casacore::SubImage<float>& subimage, int checkPerChannels = ALL_CHANNELS);
 
     void increaseZProfileCount() {
         ++zProfileCount;
