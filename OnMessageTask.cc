@@ -6,7 +6,7 @@
 #include <fmt/format.h>
 
 #include "EventHeader.h"
-#include "util.h"
+#include "Util.h"
 
 // Looks for null termination in a char array to determine event names from message payloads
 std::string getEventName(char* rawMessage) {

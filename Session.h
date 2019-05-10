@@ -34,7 +34,7 @@
 #include "FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
-#include "util.h"
+#include "Util.h"
 
 class Session {
 public:

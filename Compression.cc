@@ -1,4 +1,4 @@
-#include "compression.h"
+#include "Compression.h"
 
 #include <cmath>
 
@@ -6,13 +6,13 @@
 
 using namespace std;
 
-int compress(vector<float>& array, size_t offset, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny,
+int Compress(vector<float>& array, size_t offset, vector<char>& compression_buffer, size_t& compressed_size, uint32_t nx, uint32_t ny,
     uint32_t precision) {
     int status = 0;    /* return value: 0 = success */
     zfp_type type;     /* array scalar type */
     zfp_field* field;  /* array meta data */
     zfp_stream* zfp;   /* compressed stream */
-    size_t bufsize;    /* byte size of compressed buffer */
+    size_t buffer_size;    /* byte size of compressed buffer */
     bitstream* stream; /* bit stream to write to or read from */
 
     type = zfp_type_float;
@@ -25,16 +25,16 @@ int compress(vector<float>& array, size_t offset, vector<char>& compressionBuffe
     zfp_stream_set_precision(zfp, precision);
 
     /* allocate buffer for compressed data */
-    bufsize = zfp_stream_maximum_size(zfp, field);
-    if (compressionBuffer.size() < bufsize) {
-        compressionBuffer.resize(bufsize);
+    buffer_size = zfp_stream_maximum_size(zfp, field);
+    if (compression_buffer.size() < buffer_size) {
+        compression_buffer.resize(buffer_size);
     }
-    stream = stream_open(compressionBuffer.data(), bufsize);
+    stream = stream_open(compression_buffer.data(), buffer_size);
     zfp_stream_set_bit_stream(zfp, stream);
     zfp_stream_rewind(zfp);
 
-    compressedSize = zfp_compress(zfp, field);
-    if (!compressedSize) {
+    compressed_size = zfp_compress(zfp, field);
+    if (!compressed_size) {
         status = 1;
     }
 
@@ -46,8 +46,8 @@ int compress(vector<float>& array, size_t offset, vector<char>& compressionBuffe
     return status;
 }
 
-int decompress(
-    vector<float>& array, vector<char>& compressionBuffer, size_t& compressedSize, uint32_t nx, uint32_t ny, uint32_t precision) {
+int Decompress(
+    vector<float>& array, vector<char>& compression_buffer, size_t& compressed_size, uint32_t nx, uint32_t ny, uint32_t precision) {
     int status = 0;    /* return value: 0 = success */
     zfp_type type;     /* array scalar type */
     zfp_field* field;  /* array meta data */
@@ -62,7 +62,7 @@ int decompress(
     zfp = zfp_stream_open(nullptr);
     zfp_stream_set_precision(zfp, precision);
 
-    stream = stream_open(compressionBuffer.data(), compressedSize);
+    stream = stream_open(compression_buffer.data(), compressed_size);
     zfp_stream_set_bit_stream(zfp, stream);
     zfp_stream_rewind(zfp);
 
@@ -79,15 +79,15 @@ int decompress(
 }
 
 // Removes NaNs from an array and returns run-length encoded list of NaNs
-vector<int32_t> getNanEncodingsSimple(vector<float>& array, int offset, int length) {
-    int32_t prevIndex = offset;
+vector<int32_t> GetNanEncodingsSimple(vector<float>& array, int offset, int length) {
+    int32_t prev_index = offset;
     bool prev = false;
-    vector<int32_t> encodedArray;
+    vector<int32_t> encoded_array;
     // Find first non-NaN number in the array
-    float prevValidNum = 0;
+    float prev_valid_num = 0;
     for (auto i = offset; i < offset + length; i++) {
         if (!isnan(array[i])) {
-            prevValidNum = array[i];
+            prev_valid_num = array[i];
             break;
         }
     }
@@ -98,66 +98,66 @@ vector<int32_t> getNanEncodingsSimple(vector<float>& array, int offset, int leng
     for (auto i = offset; i < offset + length; i++) {
         bool current = isnan(array[i]);
         if (current != prev) {
-            encodedArray.push_back(i - prevIndex);
-            prevIndex = i;
+            encoded_array.push_back(i - prev_index);
+            prev_index = i;
             prev = current;
         }
         if (current) {
-            array[i] = prevValidNum;
+            array[i] = prev_valid_num;
         } else {
-            prevValidNum = array[i];
+            prev_valid_num = array[i];
         }
     }
-    encodedArray.push_back(offset + length - prevIndex);
-    return encodedArray;
+    encoded_array.push_back(offset + length - prev_index);
+    return encoded_array;
 }
 
-vector<int32_t> getNanEncodingsBlock(vector<float>& array, int offset, int w, int h) {
+vector<int32_t> GetNanEncodingsBlock(vector<float>& array, int offset, int w, int h) {
     // Generate RLE NaN list
     int length = w * h;
-    int32_t prevIndex = offset;
+    int32_t prev_index = offset;
     bool prev = false;
-    vector<int32_t> encodedArray;
+    vector<int32_t> encoded_array;
 
     for (auto i = offset; i < offset + length; i++) {
         bool current = isnan(array[i]);
         if (current != prev) {
-            encodedArray.push_back(i - prevIndex);
-            prevIndex = i;
+            encoded_array.push_back(i - prev_index);
+            prev_index = i;
             prev = current;
         }
     }
-    encodedArray.push_back(offset + length - prevIndex);
+    encoded_array.push_back(offset + length - prev_index);
 
     // Skip all-NaN images and NaN-free images
-    if (encodedArray.size() > 1) {
+    if (encoded_array.size() > 1) {
         // Calculate average of 4x4 blocks (matching blocks used in ZFP), and replace NaNs with block average
         for (auto i = 0; i < w; i += 4) {
             for (auto j = 0; j < h; j += 4) {
-                int blockStart = offset + j * w + i;
-                int validCount = 0;
+                int block_start = offset + j * w + i;
+                int valid_count = 0;
                 float sum = 0;
                 // Limit the block size when at the edges of the image
-                int blockWidth = min(4, w - i);
-                int blockHeight = min(4, h - j);
-                for (int x = 0; x < blockWidth; x++) {
-                    for (int y = 0; y < blockHeight; y++) {
-                        float v = array[blockStart + (y * w) + x];
+                int block_width = min(4, w - i);
+                int block_height = min(4, h - j);
+                for (int x = 0; x < block_width; x++) {
+                    for (int y = 0; y < block_height; y++) {
+                        float v = array[block_start + (y * w) + x];
                         if (!isnan(v)) {
-                            validCount++;
+                            valid_count++;
                             sum += v;
                         }
                     }
                 }
 
                 // Only process blocks which have at least one valid value AND at least one NaN. All-NaN blocks won't affect ZFP compression
-                if (validCount && validCount != blockWidth * blockHeight) {
-                    float average = sum / validCount;
-                    for (int x = 0; x < blockWidth; x++) {
-                        for (int y = 0; y < blockHeight; y++) {
-                            float v = array[blockStart + (y * w) + x];
+                if (valid_count && valid_count != block_width * block_height) {
+                    float average = sum / valid_count;
+                    for (int x = 0; x < block_width; x++) {
+                        for (int y = 0; y < block_height; y++) {
+                            float v = array[block_start + (y * w) + x];
                             if (isnan(v)) {
-                                array[blockStart + (y * w) + x] = average;
+                                array[block_start + (y * w) + x] = average;
                             }
                         }
                     }
@@ -165,5 +165,5 @@ vector<int32_t> getNanEncodingsBlock(vector<float>& array, int offset, int w, in
             }
         }
     }
-    return encodedArray;
+    return encoded_array;
 }
