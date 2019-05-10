@@ -6,117 +6,117 @@ using namespace carta;
 
 // ***** spatial *****
 
-bool RegionProfiler::setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes) {
+bool RegionProfiler::SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes) {
     // process profile strings into pairs <axis, stokes>
-    m_spatialProfiles.clear();
-    m_profilePairs.clear();
-    for (auto profile : profiles) {
+    _spatial_profiles.clear();
+    _profile_pairs.clear();
+    for (const auto& profile : profiles) {
         if (profile.empty() || profile.size() > 2) // ignore invalid profile string
             continue;
         // convert string to pair<axisIndex, stokesIndex>;
-        std::pair<int, int> axisStokes = getAxisStokes(profile);
-        if ((axisStokes.first < 0) || (axisStokes.first > 1)) // invalid axis
+        std::pair<int, int> axis_stokes = GetAxisStokes(profile);
+        if ((axis_stokes.first < 0) || (axis_stokes.first > 1)) // invalid axis
             continue;
-        if (axisStokes.second > (nstokes - 1)) // invalid stokes
+        if (axis_stokes.second > (num_stokes - 1)) // invalid stokes
             continue;
-        m_spatialProfiles.push_back(profile);
-        m_profilePairs.push_back(axisStokes);
+        _spatial_profiles.push_back(profile);
+        _profile_pairs.push_back(axis_stokes);
     }
-    return (profiles.size() == m_spatialProfiles.size());
+    return (profiles.size() == _spatial_profiles.size());
 }
 
-std::pair<int, int> RegionProfiler::getAxisStokes(std::string profile) {
+std::pair<int, int> RegionProfiler::GetAxisStokes(std::string profile) {
     // converts profile string into <axis, stokes> pair
-    int axisIndex(-1), stokesIndex(-1);
+    int axis_index(-1), stokes_index(-1);
     // axis
-    char axisChar(profile.back());
-    if (axisChar == 'x')
-        axisIndex = 0;
-    else if (axisChar == 'y')
-        axisIndex = 1;
-    else if (axisChar == 'z')
-        axisIndex = 2;
+    char axis_char(profile.back());
+    if (axis_char == 'x')
+        axis_index = 0;
+    else if (axis_char == 'y')
+        axis_index = 1;
+    else if (axis_char == 'z')
+        axis_index = 2;
     // stokes
     if (profile.size() == 2) {
-        char stokesChar(profile.front());
-        if (stokesChar == 'I')
-            stokesIndex = 0;
-        else if (stokesChar == 'Q')
-            stokesIndex = 1;
-        else if (stokesChar == 'U')
-            stokesIndex = 2;
-        else if (stokesChar == 'V')
-            stokesIndex = 3;
+        char stokes_char(profile.front());
+        if (stokes_char == 'I')
+            stokes_index = 0;
+        else if (stokes_char == 'Q')
+            stokes_index = 1;
+        else if (stokes_char == 'U')
+            stokes_index = 2;
+        else if (stokes_char == 'V')
+            stokes_index = 3;
     }
-    return std::make_pair(axisIndex, stokesIndex);
+    return std::make_pair(axis_index, stokes_index);
 }
 
-size_t RegionProfiler::numSpatialProfiles() {
-    return m_profilePairs.size();
+size_t RegionProfiler::NumSpatialProfiles() {
+    return _profile_pairs.size();
 }
 
-std::pair<int, int> RegionProfiler::getSpatialProfileReq(int profileIndex) {
-    if (profileIndex < m_profilePairs.size())
-        return m_profilePairs[profileIndex];
+std::pair<int, int> RegionProfiler::GetSpatialProfileReq(int profile_index) {
+    if (profile_index < _profile_pairs.size())
+        return _profile_pairs[profile_index];
     else
-        return std::pair<int, int>();
+        return {};
 }
 
-std::string RegionProfiler::getSpatialCoordinate(int profileIndex) {
-    if (profileIndex < m_spatialProfiles.size())
-        return m_spatialProfiles[profileIndex];
+std::string RegionProfiler::GetSpatialCoordinate(int profile_index) {
+    if (profile_index < _spatial_profiles.size())
+        return _spatial_profiles[profile_index];
     else
         return std::string();
 }
 
 // ***** spectral *****
 
-bool RegionProfiler::setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs, const int nstokes) {
+bool RegionProfiler::SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs, const int num_stokes) {
     // parse stokes into index
-    m_spectralConfigs.clear();
-    m_spectralStokes.clear();
-    for (auto config : configs) {
+    _spectral_configs.clear();
+    _spectral_stokes.clear();
+    for (const auto& config : configs) {
         std::string coordinate(config.coordinate());
         if (coordinate.empty() || coordinate.size() > 2) // ignore invalid profile string
             continue;
-        std::pair<int, int> axisStokes = getAxisStokes(coordinate);
-        if (axisStokes.first != 2) // invalid axis
+        std::pair<int, int> axis_stokes = GetAxisStokes(coordinate);
+        if (axis_stokes.first != 2) // invalid axis
             continue;
-        if (axisStokes.second > (nstokes - 1)) // invalid stokes
+        if (axis_stokes.second > (num_stokes - 1)) // invalid stokes
             continue;
-        m_spectralConfigs.push_back(config);
-        m_spectralStokes.push_back(axisStokes.second);
+        _spectral_configs.push_back(config);
+        _spectral_stokes.push_back(axis_stokes.second);
     }
-    return (configs.size() == m_spectralConfigs.size());
+    return (configs.size() == _spectral_configs.size());
 }
 
-size_t RegionProfiler::numSpectralProfiles() {
-    return m_spectralConfigs.size();
+size_t RegionProfiler::NumSpectralProfiles() {
+    return _spectral_configs.size();
 }
 
-bool RegionProfiler::getSpectralConfigStokes(int& stokes, int profileIndex) {
+bool RegionProfiler::GetSpectralConfigStokes(int& stokes, int profile_index) {
     // return Stokes int value at given index; return false if index out of range
-    bool indexOK(false);
-    if (profileIndex < m_spectralStokes.size()) {
-        stokes = m_spectralStokes[profileIndex];
-        indexOK = true;
+    bool index_ok(false);
+    if (profile_index < _spectral_stokes.size()) {
+        stokes = _spectral_stokes[profile_index];
+        index_ok = true;
     }
-    return indexOK;
+    return index_ok;
 }
 
-std::string RegionProfiler::getSpectralCoordinate(int profileIndex) {
-    if (profileIndex < m_spectralConfigs.size())
-        return m_spectralConfigs[profileIndex].coordinate();
+std::string RegionProfiler::GetSpectralCoordinate(int profile_index) {
+    if (profile_index < _spectral_configs.size())
+        return _spectral_configs[profile_index].coordinate();
     else
         return std::string();
 }
 
-bool RegionProfiler::getSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profileIndex) {
+bool RegionProfiler::GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index) {
     // return SpectralConfig at given index; return false if index out of range
-    bool indexOK(false);
-    if (profileIndex < m_spectralConfigs.size()) {
-        config = m_spectralConfigs[profileIndex];
-        indexOK = true;
+    bool index_ok(false);
+    if (profile_index < _spectral_configs.size()) {
+        config = _spectral_configs[profile_index];
+        index_ok = true;
     }
-    return indexOK;
+    return index_ok;
 }

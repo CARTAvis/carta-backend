@@ -22,7 +22,7 @@
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 #include <casacore/mirlib/miriad.h>
 
-#include "ImageData/HDF5Attributes.h"
+#include "ImageData/Hdf5Attributes.h"
 
 //#################################################################################
 // FILE INFO LOADER
@@ -156,7 +156,7 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         casacore::HDF5Group hdf_group(hdf_file, hdu, true);
         casacore::Record attributes;
         try {
-            attributes = HDF5Attributes::DoReadAttributes(hdf_group.getHid());
+            attributes = Hdf5Attributes::DoReadAttributes(hdf_group.getHid());
         } catch (casacore::HDF5Error& err) {
             message = "Error reading HDF5 attributes: " + err.getMesg();
             hdf_group.close();
@@ -238,24 +238,24 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         // Convert numeric values to string
         double val;
         bool ok;
-        ok = HDF5Attributes::GetDoubleAttribute(val, attributes, "EQUINOX");
+        ok = Hdf5Attributes::GetDoubleAttribute(val, attributes, "EQUINOX");
         if (ok)
             equinox = casacore::String::toString(val);
-        ok = HDF5Attributes::GetDoubleAttribute(val, attributes, "CRPIX1");
+        ok = Hdf5Attributes::GetDoubleAttribute(val, attributes, "CRPIX1");
         if (ok)
             crpix1 = casacore::String::toString(val);
-        ok = HDF5Attributes::GetDoubleAttribute(val, attributes, "CRPIX2");
+        ok = Hdf5Attributes::GetDoubleAttribute(val, attributes, "CRPIX2");
         if (ok)
             crpix2 = casacore::String::toString(val);
 
         // Get numeric values
-        double crval1 = (HDF5Attributes::GetDoubleAttribute(val, attributes, "CRVAL1") ? val : 0.0);
-        double crval2 = (HDF5Attributes::GetDoubleAttribute(val, attributes, "CRVAL2") ? val : 0.0);
-        double cdelt1 = (HDF5Attributes::GetDoubleAttribute(val, attributes, "CDELT1") ? val : 0.0);
-        double cdelt2 = (HDF5Attributes::GetDoubleAttribute(val, attributes, "CDELT2") ? val : 0.0);
-        double bmaj = (HDF5Attributes::GetDoubleAttribute(val, attributes, "BMAJ") ? val : 0.0);
-        double bmin = (HDF5Attributes::GetDoubleAttribute(val, attributes, "BMIN") ? val : 0.0);
-        double bpa = (HDF5Attributes::GetDoubleAttribute(val, attributes, "BPA") ? val : 0.0);
+        double crval1 = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "CRVAL1") ? val : 0.0);
+        double crval2 = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "CRVAL2") ? val : 0.0);
+        double cdelt1 = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "CDELT1") ? val : 0.0);
+        double cdelt2 = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "CDELT2") ? val : 0.0);
+        double bmaj = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "BMAJ") ? val : 0.0);
+        double bmin = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "BMIN") ? val : 0.0);
+        double bpa = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "BPA") ? val : 0.0);
 
         // shape, chan, stokes entries first
         int chan_axis, stokes_axis;

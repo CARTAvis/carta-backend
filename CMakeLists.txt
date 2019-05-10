@@ -49,7 +49,7 @@ set(SOURCE_FILES
         Session.cc
         Frame.cc
         Compression.cc
-        ImageData/HDF5Attributes.cc
+        ImageData/Hdf5Attributes.cc
         ImageData/FileLoader.cc
         ImageData/CartaHdf5Image.cc
         FileInfoLoader.cc
@@ -76,9 +76,4 @@ if (test)
     enable_testing()
     find_package(GTest)
     include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
-
-    add_executable(testPriorityCtpl test/TestPriorityCtpl.cpp)
-    target_link_libraries(testPriorityCtpl gtest gtest_main Threads::Threads)
-
-    add_test(NAME TestPCtpl COMMAND testPriorityCtpl)
 endif (test)

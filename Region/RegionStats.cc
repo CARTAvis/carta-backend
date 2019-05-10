@@ -79,7 +79,7 @@ void RegionStats::CalcMinMax(int channel, int stokes, const std::vector<float>& 
     tbb::blocked_range<size_t> range(0, data.size());
     MinMax<float> mm(data);
     tbb::parallel_reduce(range, mm);
-    minmax_t minmax_vals(mm.getMinMax());
+    minmax_t minmax_vals(mm.GetMinMax());
     SetMinMax(channel, stokes, minmax_vals);
     min_val = minmax_vals.first;
     max_val = minmax_vals.second;
@@ -125,8 +125,8 @@ void RegionStats::CalcHistogram(
         tbb::blocked_range<size_t> range(0, data.size());
         Histogram hist(num_bins, min_val, max_val, data);
         tbb::parallel_reduce(range, hist);
-        histogram_bins = hist.getHistogram();
-        bin_width = hist.getBinWidth();
+        histogram_bins = hist.GetHistogram();
+        bin_width = hist.GetBinWidth();
         bin_center = min_val + (bin_width / 2.0);
     }
 

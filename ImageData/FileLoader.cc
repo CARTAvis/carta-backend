@@ -2,22 +2,20 @@
 
 #include "CasaLoader.h"
 #include "FITSLoader.h"
-#include "HDF5Loader.h"
-#include "MIRIADLoader.h"
+#include "Hdf5Loader.h"
+#include "MiriadLoader.h"
 
 using namespace carta;
 
-FileLoader* FileLoader::getLoader(const std::string& filename) {
+FileLoader* FileLoader::GetLoader(const std::string& filename) {
     casacore::ImageOpener::ImageTypes type = FileInfo::fileType(filename);
     switch (type) {
         case casacore::ImageOpener::AIPSPP:
             return new CasaLoader(filename);
         case casacore::ImageOpener::FITS:
             return new FITSLoader(filename);
-            break;
         case casacore::ImageOpener::MIRIAD:
-            return new MIRIADLoader(filename);
-            break;
+            return new MiriadLoader(filename);
         case casacore::ImageOpener::GIPSY:
             break;
         case casacore::ImageOpener::CAIPS:
@@ -25,7 +23,7 @@ FileLoader* FileLoader::getLoader(const std::string& filename) {
         case casacore::ImageOpener::NEWSTAR:
             break;
         case casacore::ImageOpener::HDF5:
-            return new HDF5Loader(filename);
+            return new Hdf5Loader(filename);
         case casacore::ImageOpener::IMAGECONCAT:
             break;
         case casacore::ImageOpener::IMAGEEXPR:
@@ -38,128 +36,128 @@ FileLoader* FileLoader::getLoader(const std::string& filename) {
     return nullptr;
 }
 
-void FileLoader::findCoords(int& spectralAxis, int& stokesAxis) {
+void FileLoader::FindCoords(int& spectral_axis, int& stokes_axis) {
     // use CoordinateSystem to determine axis coordinate types
-    spectralAxis = -1;
-    stokesAxis = -1;
-    const casacore::CoordinateSystem csys(getCoordSystem());
+    spectral_axis = -1;
+    stokes_axis = -1;
+    const casacore::CoordinateSystem coord_sys(GetCoordSystem());
     // spectral axis
-    spectralAxis = casacore::CoordinateUtil::findSpectralAxis(csys);
-    if (spectralAxis < 0) {
-        int tabCoord = csys.findCoordinate(casacore::Coordinate::TABULAR);
-        if (tabCoord >= 0) {
-            casacore::Vector<casacore::Int> pixelAxes = csys.pixelAxes(tabCoord);
-            for (casacore::uInt i = 0; i < pixelAxes.size(); ++i) {
-                casacore::String axisName = csys.worldAxisNames()(pixelAxes(i));
-                if (axisName == "Frequency" || axisName == "Velocity")
-                    spectralAxis = pixelAxes(i);
+    spectral_axis = casacore::CoordinateUtil::findSpectralAxis(coord_sys);
+    if (spectral_axis < 0) {
+        int tab_coord = coord_sys.findCoordinate(casacore::Coordinate::TABULAR);
+        if (tab_coord >= 0) {
+            casacore::Vector<casacore::Int> pixel_axes = coord_sys.pixelAxes(tab_coord);
+            for (casacore::uInt i = 0; i < pixel_axes.size(); ++i) {
+                casacore::String axis_name = coord_sys.worldAxisNames()(pixel_axes(i));
+                if (axis_name == "Frequency" || axis_name == "Velocity")
+                    spectral_axis = pixel_axes(i);
             }
         }
     }
     // stokes axis
     int pixel, world, coord;
-    casacore::CoordinateUtil::findStokesAxis(pixel, world, coord, csys);
+    casacore::CoordinateUtil::findStokesAxis(pixel, world, coord, coord_sys);
     if (coord >= 0)
-        stokesAxis = pixel;
+        stokes_axis = pixel;
 
     // not found!
-    if (spectralAxis < 2) {   // spectral not found or is xy
-        if (stokesAxis < 2) { // stokes not found or is xy, use defaults
-            spectralAxis = 2;
-            stokesAxis = 3;
+    if (spectral_axis < 2) {   // spectral not found or is xy
+        if (stokes_axis < 2) { // stokes not found or is xy, use defaults
+            spectral_axis = 2;
+            stokes_axis = 3;
         } else { // stokes found, set spectral to other one
-            if (stokesAxis == 2)
-                spectralAxis = 3;
+            if (stokes_axis == 2)
+                spectral_axis = 3;
             else
-                spectralAxis = 2;
+                spectral_axis = 2;
         }
-    } else if (stokesAxis < 2) { // stokes not found
+    } else if (stokes_axis < 2) { // stokes not found
         // set stokes to the other one
-        if (spectralAxis == 2)
-            stokesAxis = 3;
+        if (spectral_axis == 2)
+            stokes_axis = 3;
         else
-            stokesAxis = 2;
+            stokes_axis = 2;
     }
 }
 
-bool FileLoader::findShape(ipos& shape, size_t& nchannels, size_t& nstokes, int& spectralAxis, int& stokesAxis) {
-    auto& image = loadData(FileInfo::Data::Image);
+bool FileLoader::FindShape(IPos& shape, size_t& num_channels, size_t& num_stokes, int& spectral_axis, int& stokes_axis) {
+    auto& image = LoadData(FileInfo::Data::Image);
 
     shape = image.shape();
-    size_t ndims = shape.size();
+    size_t num_dims = shape.size();
 
-    if (ndims < 2 || ndims > 4) {
+    if (num_dims < 2 || num_dims > 4) {
         return false;
     }
 
     // determine axis order (0-based)
-    if (ndims == 3) { // use defaults
-        spectralAxis = 2;
-        stokesAxis = -1;
-    } else if (ndims == 4) { // find spectral and stokes axes
-        findCoords(spectralAxis, stokesAxis);
+    if (num_dims == 3) { // use defaults
+        spectral_axis = 2;
+        stokes_axis = -1;
+    } else if (num_dims == 4) { // find spectral and stokes axes
+        FindCoords(spectral_axis, stokes_axis);
     }
 
-    nchannels = (spectralAxis >= 0 ? shape(spectralAxis) : 1);
-    nstokes = (stokesAxis >= 0 ? shape(stokesAxis) : 1);
+    num_channels = (spectral_axis >= 0 ? shape(spectral_axis) : 1);
+    num_stokes = (stokes_axis >= 0 ? shape(stokes_axis) : 1);
 
-    this->ndims = ndims;
-    this->nchannels = nchannels;
-    this->nstokes = nstokes;
+    _num_dims = num_dims;
+    _num_channels = num_channels;
+    _num_stokes = num_stokes;
 
     return true;
 }
 
-const FileLoader::ipos FileLoader::getStatsDataShape(FileInfo::Data ds) {
+const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }
 
-casacore::ArrayBase* FileLoader::getStatsData(FileInfo::Data ds) {
+casacore::ArrayBase* FileLoader::GetStatsData(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsData not implemented in this loader");
 }
 
-void FileLoader::loadStats2DBasic(FileInfo::Data ds) {
-    if (hasData(ds)) {
-        const ipos& statDims = getStatsDataShape(ds);
+void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
+    if (HasData(ds)) {
+        const IPos& stat_dims = GetStatsDataShape(ds);
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((ndims == 2 && statDims.size() == 0) || (ndims == 3 && statDims.isEqual(ipos(1, nchannels))) ||
-            (ndims == 4 && statDims.isEqual(ipos(2, nchannels, nstokes)))) {
-            auto data = getStatsData(ds);
+        if ((_num_dims == 2 && stat_dims.size() == 0) || (_num_dims == 3 && stat_dims.isEqual(IPos(1, _num_channels))) ||
+            (_num_dims == 4 && stat_dims.isEqual(IPos(2, _num_channels, _num_stokes)))) {
+            auto data = GetStatsData(ds);
 
             switch (ds) {
-                case FileInfo::Data::S2DMax: {
+                case FileInfo::Data::STATS_2D_MAX: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (size_t s = 0; s < nstokes; s++) {
-                        for (size_t c = 0; c < nchannels; c++) {
-                            channelStats[s][c].maxVal = *it++;
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        for (size_t c = 0; c < _num_channels; c++) {
+                            _channel_stats[s][c].max_val = *it++;
                         }
                     }
                     break;
                 }
-                case FileInfo::Data::S2DMin: {
+                case FileInfo::Data::STATS_2D_MIN: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (size_t s = 0; s < nstokes; s++) {
-                        for (size_t c = 0; c < nchannels; c++) {
-                            channelStats[s][c].minVal = *it++;
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        for (size_t c = 0; c < _num_channels; c++) {
+                            _channel_stats[s][c].min_val = *it++;
                         }
                     }
                     break;
                 }
-                case FileInfo::Data::S2DMean: {
+                case FileInfo::Data::STATS_2D_MEAN: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (size_t s = 0; s < nstokes; s++) {
-                        for (size_t c = 0; c < nchannels; c++) {
-                            channelStats[s][c].mean = *it++;
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        for (size_t c = 0; c < _num_channels; c++) {
+                            _channel_stats[s][c].mean = *it++;
                         }
                     }
                     break;
                 }
-                case FileInfo::Data::S2DNans: {
+                case FileInfo::Data::STATS_2D_NANS: {
                     auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
-                    for (size_t s = 0; s < nstokes; s++) {
-                        for (size_t c = 0; c < nchannels; c++) {
-                            channelStats[s][c].nanCount = *it++;
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        for (size_t c = 0; c < _num_channels; c++) {
+                            _channel_stats[s][c].nan_count = *it++;
                         }
                     }
                     break;
@@ -172,24 +170,24 @@ void FileLoader::loadStats2DBasic(FileInfo::Data ds) {
     }
 }
 
-void FileLoader::loadStats2DHist() {
-    FileInfo::Data ds = FileInfo::Data::S2DHist;
+void FileLoader::LoadStats2DHist() {
+    FileInfo::Data ds = FileInfo::Data::STATS_2D_HIST;
 
-    if (hasData(ds)) {
-        const ipos& statDims = getStatsDataShape(ds);
-        size_t nbins = statDims[0];
+    if (HasData(ds)) {
+        const IPos& stat_dims = GetStatsDataShape(ds);
+        size_t num_bins = stat_dims[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((ndims == 2 && statDims.isEqual(ipos(1, nbins))) || (ndims == 3 && statDims.isEqual(ipos(2, nbins, nchannels))) ||
-            (ndims == 4 && statDims.isEqual(ipos(3, nbins, nchannels, nstokes)))) {
-            auto data = static_cast<casacore::Array<casacore::Int64>*>(getStatsData(ds));
+        if ((_num_dims == 2 && stat_dims.isEqual(IPos(1, num_bins))) || (_num_dims == 3 && stat_dims.isEqual(IPos(2, num_bins, _num_channels))) ||
+            (_num_dims == 4 && stat_dims.isEqual(IPos(3, num_bins, _num_channels, _num_stokes)))) {
+            auto data = static_cast<casacore::Array<casacore::Int64>*>(GetStatsData(ds));
             auto it = data->begin();
 
-            for (size_t s = 0; s < nstokes; s++) {
-                for (size_t c = 0; c < nchannels; c++) {
-                    channelStats[s][c].histogramBins.resize(nbins);
-                    for (size_t b = 0; b < nbins; b++) {
-                        channelStats[s][c].histogramBins[b] = *it++;
+            for (size_t s = 0; s < _num_stokes; s++) {
+                for (size_t c = 0; c < _num_channels; c++) {
+                    _channel_stats[s][c].histogram_bins.resize(num_bins);
+                    for (size_t b = 0; b < num_bins; b++) {
+                        _channel_stats[s][c].histogram_bins[b] = *it++;
                     }
                 }
             }
@@ -201,32 +199,32 @@ void FileLoader::loadStats2DHist() {
 
 // TODO: untested
 
-void FileLoader::loadStats2DPercent() {
-    FileInfo::Data dsr = FileInfo::Data::Ranks;
-    FileInfo::Data dsp = FileInfo::Data::S2DPercent;
+void FileLoader::LoadStats2DPercent() {
+    FileInfo::Data dsr = FileInfo::Data::RANKS;
+    FileInfo::Data dsp = FileInfo::Data::STATS_2D_PERCENT;
 
-    if (hasData(dsp) && hasData(dsr)) {
-        const ipos& dimsVals = getStatsDataShape(dsp);
-        const ipos& dimsRanks = getStatsDataShape(dsr);
+    if (HasData(dsp) && HasData(dsr)) {
+        const IPos& dims_vals = GetStatsDataShape(dsp);
+        const IPos& dims_ranks = GetStatsDataShape(dsr);
 
-        size_t nranks = dimsRanks[0];
+        size_t num_ranks = dims_ranks[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((ndims == 2 && dimsVals.isEqual(ipos(1, nranks))) || (ndims == 3 && dimsVals.isEqual(ipos(2, nranks, nchannels))) ||
-            (ndims == 4 && dimsVals.isEqual(ipos(3, nranks, nchannels, nstokes)))) {
-            auto ranks = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsr));
-            auto data = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsp));
+        if ((_num_dims == 2 && dims_vals.isEqual(IPos(1, num_ranks))) || (_num_dims == 3 && dims_vals.isEqual(IPos(2, num_ranks, _num_channels))) ||
+            (_num_dims == 4 && dims_vals.isEqual(IPos(3, num_ranks, _num_channels, _num_stokes)))) {
+            auto ranks = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsr));
+            auto data = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsp));
 
             auto it = data->begin();
             auto itr = ranks->begin();
 
-            for (size_t s = 0; s < nstokes; s++) {
-                for (size_t c = 0; c < nchannels; c++) {
-                    channelStats[s][c].percentiles.resize(nranks);
-                    channelStats[s][c].percentileRanks.resize(nranks);
-                    for (size_t r = 0; r < nranks; r++) {
-                        channelStats[s][c].percentiles[r] = *it++;
-                        channelStats[s][c].percentileRanks[r] = *itr++;
+            for (size_t s = 0; s < _num_stokes; s++) {
+                for (size_t c = 0; c < _num_channels; c++) {
+                    _channel_stats[s][c].percentiles.resize(num_ranks);
+                    _channel_stats[s][c].percentile_ranks.resize(num_ranks);
+                    for (size_t r = 0; r < num_ranks; r++) {
+                        _channel_stats[s][c].percentiles[r] = *it++;
+                        _channel_stats[s][c].percentile_ranks[r] = *itr++;
                     }
                 }
             }
@@ -237,40 +235,40 @@ void FileLoader::loadStats2DPercent() {
     }
 }
 
-void FileLoader::loadStats3DBasic(FileInfo::Data ds) {
-    if (hasData(ds)) {
-        const ipos& statDims = getStatsDataShape(ds);
+void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
+    if (HasData(ds)) {
+        const IPos& stat_dims = GetStatsDataShape(ds);
 
         // We can handle 3D and 4D in the same way
-        if ((ndims == 3 && statDims.size() == 0) || (ndims == 4 && statDims.isEqual(ipos(1, nstokes)))) {
-            auto data = getStatsData(ds);
+        if ((_num_dims == 3 && stat_dims.size() == 0) || (_num_dims == 4 && stat_dims.isEqual(IPos(1, _num_stokes)))) {
+            auto data = GetStatsData(ds);
 
             switch (ds) {
-                case FileInfo::Data::S3DMax: {
+                case FileInfo::Data::STATS_3D_MAX: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (size_t s = 0; s < nstokes; s++) {
-                        cubeStats[s].maxVal = *it++;
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        _cube_stats[s].max_val = *it++;
                     }
                     break;
                 }
-                case FileInfo::Data::S3DMin: {
+                case FileInfo::Data::STATS_3D_MIN: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (size_t s = 0; s < nstokes; s++) {
-                        cubeStats[s].minVal = *it++;
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        _cube_stats[s].min_val = *it++;
                     }
                     break;
                 }
-                case FileInfo::Data::S3DMean: {
+                case FileInfo::Data::STATS_3D_MEAN: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
-                    for (size_t s = 0; s < nstokes; s++) {
-                        cubeStats[s].mean = *it++;
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        _cube_stats[s].mean = *it++;
                     }
                     break;
                 }
-                case FileInfo::Data::S3DNans: {
+                case FileInfo::Data::STATS_3D_NANS: {
                     auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
-                    for (size_t s = 0; s < nstokes; s++) {
-                        cubeStats[s].nanCount = *it++;
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        _cube_stats[s].nan_count = *it++;
                     }
                     break;
                 }
@@ -282,22 +280,22 @@ void FileLoader::loadStats3DBasic(FileInfo::Data ds) {
     }
 }
 
-void FileLoader::loadStats3DHist() {
-    FileInfo::Data ds = FileInfo::Data::S3DHist;
+void FileLoader::LoadStats3DHist() {
+    FileInfo::Data ds = FileInfo::Data::STATS_3D_HIST;
 
-    if (hasData(ds)) {
-        const ipos& statDims = getStatsDataShape(ds);
-        size_t nbins = statDims[0];
+    if (HasData(ds)) {
+        const IPos& stat_dims = GetStatsDataShape(ds);
+        size_t num_bins = stat_dims[0];
 
         // We can handle 3D and 4D in the same way
-        if ((ndims == 3 && statDims.isEqual(ipos(1, nbins))) || (ndims == 4 && statDims.isEqual(ipos(2, nbins, nstokes)))) {
-            auto data = static_cast<casacore::Array<casacore::Int64>*>(getStatsData(ds));
+        if ((_num_dims == 3 && stat_dims.isEqual(IPos(1, num_bins))) || (_num_dims == 4 && stat_dims.isEqual(IPos(2, num_bins, _num_stokes)))) {
+            auto data = static_cast<casacore::Array<casacore::Int64>*>(GetStatsData(ds));
             auto it = data->begin();
 
-            for (size_t s = 0; s < nstokes; s++) {
-                cubeStats[s].histogramBins.resize(nbins);
-                for (size_t b = 0; b < nbins; b++) {
-                    cubeStats[s].histogramBins[b] = *it++;
+            for (size_t s = 0; s < _num_stokes; s++) {
+                _cube_stats[s].histogram_bins.resize(num_bins);
+                for (size_t b = 0; b < num_bins; b++) {
+                    _cube_stats[s].histogram_bins[b] = *it++;
                 }
             }
 
@@ -308,30 +306,30 @@ void FileLoader::loadStats3DHist() {
 
 // TODO: untested
 
-void FileLoader::loadStats3DPercent() {
-    FileInfo::Data dsr = FileInfo::Data::Ranks;
-    FileInfo::Data dsp = FileInfo::Data::S2DPercent;
+void FileLoader::LoadStats3DPercent() {
+    FileInfo::Data dsr = FileInfo::Data::RANKS;
+    FileInfo::Data dsp = FileInfo::Data::STATS_2D_PERCENT;
 
-    if (hasData(dsp) && hasData(dsr)) {
-        const ipos& dimsVals = getStatsDataShape(dsp);
-        const ipos& dimsRanks = getStatsDataShape(dsr);
+    if (HasData(dsp) && HasData(dsr)) {
+        const IPos& dims_vals = GetStatsDataShape(dsp);
+        const IPos& dims_ranks = GetStatsDataShape(dsr);
 
-        size_t nranks = dimsRanks[0];
+        size_t nranks = dims_ranks[0];
 
         // We can handle 3D and 4D in the same way
-        if ((ndims == 3 && dimsVals.isEqual(ipos(1, nranks))) || (ndims == 4 && dimsVals.isEqual(ipos(2, nranks, nstokes)))) {
-            auto ranks = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsr));
-            auto data = static_cast<casacore::Array<casacore::Float>*>(getStatsData(dsp));
+        if ((_num_dims == 3 && dims_vals.isEqual(IPos(1, nranks))) || (_num_dims == 4 && dims_vals.isEqual(IPos(2, nranks, _num_stokes)))) {
+            auto ranks = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsr));
+            auto data = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsp));
 
             auto it = data->begin();
             auto itr = ranks->begin();
 
-            for (size_t s = 0; s < nstokes; s++) {
-                cubeStats[s].percentiles.resize(nranks);
-                cubeStats[s].percentileRanks.resize(nranks);
+            for (size_t s = 0; s < _num_stokes; s++) {
+                _cube_stats[s].percentiles.resize(nranks);
+                _cube_stats[s].percentile_ranks.resize(nranks);
                 for (size_t r = 0; r < nranks; r++) {
-                    cubeStats[s].percentiles[r] = *it++;
-                    cubeStats[s].percentileRanks[r] = *itr++;
+                    _cube_stats[s].percentiles[r] = *it++;
+                    _cube_stats[s].percentile_ranks[r] = *itr++;
                 }
             }
 
@@ -341,59 +339,59 @@ void FileLoader::loadStats3DPercent() {
     }
 }
 
-void FileLoader::loadImageStats(bool loadPercentiles) {
-    channelStats.resize(nstokes);
-    for (size_t s = 0; s < nstokes; s++) {
-        channelStats[s].resize(nchannels);
+void FileLoader::LoadImageStats(bool load_percentiles) {
+    _channel_stats.resize(_num_stokes);
+    for (size_t s = 0; s < _num_stokes; s++) {
+        _channel_stats[s].resize(_num_channels);
     }
-    cubeStats.resize(nstokes);
+    _cube_stats.resize(_num_stokes);
 
-    if (hasData(FileInfo::Data::Stats)) {
-        if (hasData(FileInfo::Data::Stats2D)) {
-            loadStats2DBasic(FileInfo::Data::S2DMax);
-            loadStats2DBasic(FileInfo::Data::S2DMin);
-            loadStats2DBasic(FileInfo::Data::S2DMean);
-            loadStats2DBasic(FileInfo::Data::S2DNans);
+    if (HasData(FileInfo::Data::STATS)) {
+        if (HasData(FileInfo::Data::STATS_2D)) {
+            LoadStats2DBasic(FileInfo::Data::STATS_2D_MAX);
+            LoadStats2DBasic(FileInfo::Data::STATS_2D_MIN);
+            LoadStats2DBasic(FileInfo::Data::STATS_2D_MEAN);
+            LoadStats2DBasic(FileInfo::Data::STATS_2D_NANS);
 
-            loadStats2DHist();
+            LoadStats2DHist();
 
-            if (loadPercentiles) {
-                loadStats2DPercent();
+            if (load_percentiles) {
+                LoadStats2DPercent();
             }
 
             // If we loaded all the 2D stats successfully, assume all channel stats are valid
-            for (size_t s = 0; s < nstokes; s++) {
-                for (size_t c = 0; c < nchannels; c++) {
-                    channelStats[s][c].valid = true;
+            for (size_t s = 0; s < _num_stokes; s++) {
+                for (size_t c = 0; c < _num_channels; c++) {
+                    _channel_stats[s][c].valid = true;
                 }
             }
         }
 
-        if (hasData(FileInfo::Data::Stats3D)) {
-            loadStats3DBasic(FileInfo::Data::S3DMax);
-            loadStats3DBasic(FileInfo::Data::S3DMin);
-            loadStats3DBasic(FileInfo::Data::S3DMean);
-            loadStats3DBasic(FileInfo::Data::S3DNans);
+        if (HasData(FileInfo::Data::STATS_3D)) {
+            LoadStats3DBasic(FileInfo::Data::STATS_3D_MAX);
+            LoadStats3DBasic(FileInfo::Data::STATS_3D_MIN);
+            LoadStats3DBasic(FileInfo::Data::STATS_3D_MEAN);
+            LoadStats3DBasic(FileInfo::Data::STATS_3D_NANS);
 
-            loadStats3DHist();
+            LoadStats3DHist();
 
-            if (loadPercentiles) {
-                loadStats3DPercent();
+            if (load_percentiles) {
+                LoadStats3DPercent();
             }
 
             // If we loaded all the 3D stats successfully, assume all cube stats are valid
-            for (size_t s = 0; s < nstokes; s++) {
-                cubeStats[s].valid = true;
+            for (size_t s = 0; s < _num_stokes; s++) {
+                _cube_stats[s].valid = true;
             }
         }
     }
 }
 
-FileInfo::ImageStats& FileLoader::getImageStats(int stokes, int channel) {
-    return (channel >= 0 ? channelStats[stokes][channel] : cubeStats[stokes]);
+FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int channel) {
+    return (channel >= 0 ? _channel_stats[current_stokes][channel] : _cube_stats[current_stokes]);
 }
 
-bool FileLoader::getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY) {
+bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) {
     // Must be implemented in subclasses
     return false;
 }

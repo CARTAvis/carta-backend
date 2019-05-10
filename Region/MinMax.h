@@ -13,54 +13,54 @@ namespace carta {
 
 template <typename T>
 class MinMax {
-    T minval, maxval;
-    const std::vector<T>& data;
+    T _min_val, _max_val;
+    const std::vector<T>& _data;
 
 public:
-    MinMax(const std::vector<T>& data_);
+    MinMax(const std::vector<T>& data);
     MinMax(MinMax& mm, tbb::split);
 
     void operator()(const tbb::blocked_range<size_t>& r);
     void join(MinMax& other);
 
-    std::pair<T, T> getMinMax() const;
+    std::pair<T, T> GetMinMax() const;
 };
 
 template <typename T>
-MinMax<T>::MinMax(const std::vector<T>& data_)
-    : minval(std::numeric_limits<T>::max()), maxval(std::numeric_limits<T>::min()), data(data_) {}
+MinMax<T>::MinMax(const std::vector<T>& data)
+    : _min_val(std::numeric_limits<T>::max()), _max_val(std::numeric_limits<T>::min()), _data(data) {}
 
 template <typename T>
 MinMax<T>::MinMax(MinMax<T>& mm, tbb::split)
-    : minval(std::numeric_limits<T>::max()), maxval(std::numeric_limits<T>::min()), data(mm.data) {}
+    : _min_val(std::numeric_limits<T>::max()), _max_val(std::numeric_limits<T>::min()), _data(mm._data) {}
 
 template <typename T>
 void MinMax<T>::operator()(const tbb::blocked_range<size_t>& r) {
-    T tmin = minval;
-    T tmax = maxval;
+    T t_min = _min_val;
+    T t_max = _max_val;
     for (size_t i = r.begin(); i != r.end(); ++i) {
-        T val = data[i];
+        T val = _data[i];
         if (std::isfinite(val)) {
-            if (val < tmin) {
-                tmin = val;
-            } else if (val > tmax) {
-                tmax = val;
+            if (val < t_min) {
+                t_min = val;
+            } else if (val > t_max) {
+                t_max = val;
             }
         }
     }
-    minval = tmin;
-    maxval = tmax;
+    _min_val = t_min;
+    _max_val = t_max;
 }
 
 template <typename T>
 void MinMax<T>::join(MinMax<T>& other) {
-    minval = std::min(minval, other.minval);
-    maxval = std::max(maxval, other.maxval);
+    _min_val = std::min(_min_val, other._min_val);
+    _max_val = std::max(_max_val, other._max_val);
 }
 
 template <typename T>
-std::pair<T, T> MinMax<T>::getMinMax() const {
-    return {minval, maxval};
+std::pair<T, T> MinMax<T>::GetMinMax() const {
+    return {_min_val, _max_val};
 }
 
 } // namespace carta

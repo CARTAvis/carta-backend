@@ -12,43 +12,42 @@ public:
     FITSLoader(const std::string& file);
     ~FITSLoader();
 
-    void openFile(const std::string& file, const std::string& hdu) override;
-    bool hasData(FileInfo::Data ds) const override;
-    image_ref loadData(FileInfo::Data ds) override;
-    bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
-    const casacore::CoordinateSystem& getCoordSystem() override;
+    void OpenFile(const std::string& file, const std::string& hdu) override;
+    bool HasData(FileInfo::Data ds) const override;
+    ImageRef LoadData(FileInfo::Data ds) override;
+    bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
+    const casacore::CoordinateSystem& GetCoordSystem() override;
 
 private:
-    std::string file, fitsHdu;
-    casacore::FITSImage* image;
+    std::string _file, _fits_hdu;
+    casacore::FITSImage* _image;
 };
 
-FITSLoader::FITSLoader(const std::string& filename) : file(filename), image(nullptr) {}
+FITSLoader::FITSLoader(const std::string& filename) : _file(filename), _image(nullptr) {}
 
 FITSLoader::~FITSLoader() {
-    if (image != nullptr)
-        delete image;
+    delete _image;
 }
 
-void FITSLoader::openFile(const std::string& filename, const std::string& hdu) {
-    file = filename;
-    fitsHdu = hdu;
-    casacore::uInt hdunum(FileInfo::getFITShdu(hdu));
-    image = new casacore::FITSImage(filename, 0, hdunum);
+void FITSLoader::OpenFile(const std::string& filename, const std::string& hdu) {
+    _file = filename;
+    _fits_hdu = hdu;
+    casacore::uInt hdu_num(FileInfo::GetFitShdu(hdu));
+    _image = new casacore::FITSImage(filename, 0, hdu_num);
 }
 
-bool FITSLoader::hasData(FileInfo::Data dl) const {
+bool FITSLoader::HasData(FileInfo::Data dl) const {
     switch (dl) {
         case FileInfo::Data::Image:
             return true;
         case FileInfo::Data::XY:
-            return ndims >= 2;
+            return _num_dims >= 2;
         case FileInfo::Data::XYZ:
-            return ndims >= 3;
+            return _num_dims >= 3;
         case FileInfo::Data::XYZW:
-            return ndims >= 4;
-        case FileInfo::Data::Mask:
-            return image->hasPixelMask();
+            return _num_dims >= 4;
+        case FileInfo::Data::MASK:
+            return _image->hasPixelMask();
         default:
             break;
     }
@@ -58,18 +57,18 @@ bool FITSLoader::hasData(FileInfo::Data dl) const {
 // TODO: should this check the parameter and fail if it's not the image dataset?
 // TODO: other loaders don't have this fallback; we should either consistently assume that openFile has been run, or not.
 // TODO: in other loaders this is also not an optional property which could be a null pointer.
-typename FITSLoader::image_ref FITSLoader::loadData(FileInfo::Data) {
-    if (image == nullptr)
-        openFile(file, fitsHdu);
-    return *image;
+typename FITSLoader::ImageRef FITSLoader::LoadData(FileInfo::Data) {
+    if (_image == nullptr)
+        OpenFile(_file, _fits_hdu);
+    return *_image;
 }
 
-bool FITSLoader::getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    return image->getMaskSlice(mask, slicer);
+bool FITSLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
+    return _image->getMaskSlice(mask, slicer);
 }
 
-const casacore::CoordinateSystem& FITSLoader::getCoordSystem() {
-    return image->coordinates();
+const casacore::CoordinateSystem& FITSLoader::GetCoordSystem() {
+    return _image->coordinates();
 }
 
 } // namespace carta
