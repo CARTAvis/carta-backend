@@ -32,90 +32,6 @@ struct ViewSettings {
 };
 
 class Frame {
-private:
-    // setup
-    uint32_t _session_id;
-    bool _valid;
-
-    // communication
-    bool _connected;
-
-    // spectral profile counter
-    tbb::atomic<int> _z_profile_count;
-
-    // image loader, stats from image file
-    std::string _filename;
-    std::unique_ptr<carta::FileLoader> _loader;
-
-    // shape, channel, and stokes
-    casacore::IPosition _image_shape;  // (width, height, depth, stokes)
-    int _spectral_axis, _stokes_axis;  // axis index for each in 4D image
-    int _channel_index, _stokes_index; // current channel, stokes for image
-    size_t _num_channels;
-    size_t _num_stokes;
-
-    // Image settings
-    ViewSettings _view_settings;
-
-    std::vector<float> _image_cache;    // image data for current channelIndex, stokesIndex
-    tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
-    std::mutex _image_mutex;            // only one disk access at a time
-    bool _cache_loaded;                 // channel cache is set
-
-    // Region
-    std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID
-    bool _cursor_set;                                                 // cursor region set by frontend, not internally
-
-    // Internal regions: image, cursor
-    void SetImageRegion(int region_id); // set region for entire plane image or cube
-    void SetDefaultCursor();            // using center point of image
-
-    // Image view settings
-    void SetViewSettings(
-        const CARTA::ImageBounds& new_bounds, int new_mip, CARTA::CompressionType new_compression, float new_quality, int new_subsets);
-    inline ViewSettings GetViewSettings() {
-        return _view_settings;
-    };
-
-    // validate channel, stokes index values
-    bool CheckChannel(int channel);
-    bool CheckStokes(int stokes);
-
-    // Image data and slicers
-    // save Image region data for current channel, stokes
-    void SetImageCache();
-    // downsampled data from image cache
-    bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
-
-    // fill vector for given channel and stokes
-    void GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes);
-    // get slicer for xy matrix with given channel and stokes
-    casacore::Slicer GetChannelMatrixSlicer(size_t channel, size_t stokes);
-    // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
-    void GetImageSlicer(casacore::Slicer& image_slicer, int x, int y, int channel, int stokes);
-    // make Lattice sublattice from Region given channel and stokes
-    bool GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_image, int stokes, int channel = ALL_CHANNELS);
-    // add pixel mask to sublattice for stats
-    // void setPixelMask(casacore::SubImage<float>& subimage);
-    // void generatePixelMask(casacore::ArrayLattice<bool>& pixelMask, casacore::SubImage<float>& subimage);
-
-    // histogram helper
-    int CalcAutoNumBins(int region_id); // calculate automatic bin size for region
-
-    // current cursor's x-y coordinate
-    std::pair<int, int> _cursor_xy;
-    // get cursor's x-y coordinate forom sub-lattice
-    bool GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, int>& cursor_xy);
-    // get spectral profile data from sub-lattice
-    bool GetSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image, int check_per_channels = ALL_CHANNELS);
-
-    void IncreaseZProfileCount() {
-        ++_z_profile_count;
-    }
-    void DecreaseZProfileCount() {
-        --_z_profile_count;
-    }
-
 public:
     Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, int default_channel = DEFAULT_CHANNEL);
     ~Frame();
@@ -133,9 +49,9 @@ public:
     bool SetRegion(int region_id, const std::string& name, CARTA::RegionType type, std::vector<CARTA::Point>& points, float rotation,
         std::string& message);
     bool SetCursorRegion(int region_id, const CARTA::Point& point);
-    inline bool IsCursorSet() {
+    inline bool IsCursorSet() { // set by frontend, not default
         return _cursor_set;
-    } // set by frontend, not default
+    }
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
 
@@ -170,6 +86,88 @@ public:
 
     // set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
+
+private:
+    // Internal regions: image, cursor
+    void SetImageRegion(int region_id); // set region for entire plane image or cube
+    void SetDefaultCursor();            // using center point of image
+
+    // Image view settings
+    void SetViewSettings(
+        const CARTA::ImageBounds& new_bounds, int new_mip, CARTA::CompressionType new_compression, float new_quality, int new_subsets);
+    inline ViewSettings GetViewSettings() {
+        return _view_settings;
+    };
+
+    // validate channel, stokes index values
+    bool CheckChannel(int channel);
+    bool CheckStokes(int stokes);
+
+    // Image data
+    // save image region data for current channel, stokes
+    void SetImageCache();
+    // downsampled data from image cache
+    bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
+
+    // fill vector for given channel and stokes
+    void GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes);
+    // get slicer for xy matrix with given channel and stokes
+    casacore::Slicer GetChannelMatrixSlicer(size_t channel, size_t stokes);
+    // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
+    void GetImageSlicer(casacore::Slicer& image_slicer, int x, int y, int channel, int stokes);
+    // make Lattice sublattice from Region given channel and stokes
+    bool GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_image, int stokes, int channel = ALL_CHANNELS);
+
+    // histogram helper
+    int CalcAutoNumBins(int region_id); // calculate automatic bin size for region
+
+    // current cursor's x-y coordinate
+    std::pair<int, int> _cursor_xy;
+    // get cursor's x-y coordinate from subimage
+    bool GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, int>& cursor_xy);
+    // get spectral profile data from subimage
+    bool GetSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image, int check_per_channels = ALL_CHANNELS);
+
+    void IncreaseZProfileCount() {
+        ++_z_profile_count;
+    }
+    void DecreaseZProfileCount() {
+        --_z_profile_count;
+    }
+
+    // setup
+    uint32_t _session_id;
+    bool _valid;
+
+    // communication
+    bool _connected;
+
+    // spectral profile counter
+    tbb::atomic<int> _z_profile_count;
+
+    // image loader, stats from image file
+    std::string _filename;
+    std::unique_ptr<carta::FileLoader> _loader;
+
+    // shape, channel, and stokes
+    casacore::IPosition _image_shape;  // (width, height, depth, stokes)
+    int _spectral_axis, _stokes_axis;  // axis index for each in 4D image
+    int _channel_index, _stokes_index; // current channel, stokes for image
+    size_t _num_channels;
+    size_t _num_stokes;
+
+    // Image settings
+    ViewSettings _view_settings;
+
+    // Image data handling
+    std::vector<float> _image_cache;    // image data for current channelIndex, stokesIndex
+    tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
+    std::mutex _image_mutex;            // only one disk access at a time
+    bool _cache_loaded;                 // channel cache is set
+
+    // Region
+    std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID
+    bool _cursor_set; // cursor region set by frontend, not internally
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

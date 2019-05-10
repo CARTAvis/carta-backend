@@ -60,7 +60,7 @@ inline casacore::ImageOpener::ImageTypes fileType(const std::string& file) {
     return casacore::ImageOpener::imageType(file);
 }
 
-inline casacore::uInt GetFitShdu(const std::string& hdu) {
+inline casacore::uInt GetFitsHdu(const std::string& hdu) {
     // convert from string to casacore unsigned int
     casacore::uInt hdu_num(0);
     if (!hdu.empty() && hdu != "0") {
@@ -75,12 +75,12 @@ inline casacore::uInt GetFitShdu(const std::string& hdu) {
 class FileLoader {
 public:
     // Replaced Lattice with Image Interface - changed back
-    using ImageRef = casacore::ImageInterface<float>&;
+    using ImageRef = casacore::ImageInterface<float>*;
     using IPos = casacore::IPosition;
 
     virtual ~FileLoader() = default;
 
-    static FileLoader* GetLoader(const std::string& file);
+    static FileLoader* GetLoader(const std::string& filename);
     // return coordinates for axis types
     virtual void FindCoords(int& spectral_axis, int& stokes_axis);
 
@@ -93,7 +93,7 @@ public:
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
     // Do anything required to open the file (set up cache size, etc)
-    virtual void OpenFile(const std::string& file, const std::string& hdu) = 0;
+    virtual void OpenFile(const std::string& hdu) = 0;
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Return a casacore image type representing the data stored in the
@@ -103,7 +103,7 @@ public:
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
 
 protected:
-    virtual const casacore::CoordinateSystem& GetCoordSystem() = 0;
+    virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
 
     // Dimension values used by stats functions
     size_t _num_channels, _num_stokes, _num_dims;

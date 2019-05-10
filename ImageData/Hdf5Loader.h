@@ -14,15 +14,18 @@ namespace carta {
 class Hdf5Loader : public FileLoader {
 public:
     Hdf5Loader(const std::string& filename);
-    void OpenFile(const std::string& file, const std::string& hdu) override;
+    void OpenFile(const std::string& hdu) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
-    const casacore::CoordinateSystem& GetCoordSystem() override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) override;
 
+protected:
+    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
+
 private:
-    std::string _file, _hdf5_hdu;
+    std::string _filename;
+    std::string _hdu;
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
 
@@ -36,23 +39,22 @@ private:
     const IPos GetStatsDataShape(FileInfo::Data ds) override;
     casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
 
-    casacore::Lattice<float>& LoadSwizzledData(FileInfo::Data ds);
+    casacore::Lattice<float>* LoadSwizzledData(FileInfo::Data ds);
 };
 
-Hdf5Loader::Hdf5Loader(const std::string& filename) : _file(filename), _hdf5_hdu("0") {}
+Hdf5Loader::Hdf5Loader(const std::string& filename) : _filename(filename), _hdu("0") {}
 
-void Hdf5Loader::OpenFile(const std::string& filename, const std::string& hdu) {
+void Hdf5Loader::OpenFile(const std::string& hdu) {
     // Open hdf5 image with specified hdu
-    _image = std::unique_ptr<CartaHdf5Image>(new CartaHdf5Image(filename, DataSetToString(FileInfo::Data::Image), hdu));
+    _image = std::unique_ptr<CartaHdf5Image>(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu));
 
-    // We need this immediately because dataSetToString uses it to find the name
-    // of the swizzled dataset
+    // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
     _num_dims = _image->shape().size();
 
     // Load swizzled image lattice
     if (HasData(FileInfo::Data::SWIZZLED)) {
         _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(
-            new casacore::HDF5Lattice<float>(filename, DataSetToString(FileInfo::Data::SWIZZLED), hdu));
+            new casacore::HDF5Lattice<float>(_filename, DataSetToString(FileInfo::Data::SWIZZLED), hdu));
     }
 }
 
@@ -68,6 +70,8 @@ bool Hdf5Loader::HasData(FileInfo::Data ds) const {
             return _num_dims >= 3;
         case FileInfo::Data::XYZW:
             return _num_dims >= 4;
+        case FileInfo::Data::MASK:
+            return ((_image != nullptr) && _image->hasPixelMask());
         default:
             auto group_ptr = _image->Group();
             std::string data(DataSetToString(ds));
@@ -80,21 +84,21 @@ bool Hdf5Loader::HasData(FileInfo::Data ds) const {
 
 // TODO: when we fix the typing issue, this should probably return any dataset again, for consistency.
 typename Hdf5Loader::ImageRef Hdf5Loader::LoadData(FileInfo::Data ds) {
-    // data returns an ImageInterface
+    // returns an ImageInterface*
     switch (ds) {
         case FileInfo::Data::Image:
-            return *_image;
+            return _image.get();
         case FileInfo::Data::XY:
             if (_num_dims == 2) {
-                return *_image;
+                return _image.get();
             }
         case FileInfo::Data::XYZ:
             if (_num_dims == 3) {
-                return *_image;
+                return _image.get();
             }
         case FileInfo::Data::XYZW:
             if (_num_dims == 4) {
-                return *_image;
+                return _image.get();
             }
         default:
             break;
@@ -102,20 +106,20 @@ typename Hdf5Loader::ImageRef Hdf5Loader::LoadData(FileInfo::Data ds) {
     throw casacore::HDF5Error("Unable to load dataset " + DataSetToString(ds) + ".");
 }
 
-casacore::Lattice<float>& Hdf5Loader::LoadSwizzledData(FileInfo::Data ds) {
+casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData(FileInfo::Data ds) {
     // swizzled data returns a Lattice
     switch (ds) {
         case FileInfo::Data::SWIZZLED:
             if (_swizzled_image) {
-                return *_swizzled_image;
+                return _swizzled_image.get();
             }
         case FileInfo::Data::ZYX:
             if (_num_dims == 3 && _swizzled_image) {
-                return *_swizzled_image;
+                return _swizzled_image.get();
             }
         case FileInfo::Data::ZYXW:
             if (_num_dims == 4 && _swizzled_image) {
-                return *_swizzled_image;
+                return _swizzled_image.get();
             }
         default:
             break;
@@ -125,8 +129,11 @@ casacore::Lattice<float>& Hdf5Loader::LoadSwizzledData(FileInfo::Data ds) {
 }
 
 bool Hdf5Loader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    // HDF5Lattice is not a masked lattice
-    return false;
+    if (_image == nullptr) {
+        return false;
+    } else {
+        return _image->getMaskSlice(mask, slicer);
+    }
 }
 
 // This is necessary on some systems where the compiler
@@ -189,8 +196,13 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
     }
 }
 
-const casacore::CoordinateSystem& Hdf5Loader::GetCoordSystem() {
-    return _image->coordinates();
+bool Hdf5Loader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
+    if (_image == nullptr) {
+        return false;
+    } else {
+        coord_sys = _image->coordinates();
+        return true;
+    }
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
@@ -277,7 +289,7 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
         data.resize(_num_channels);
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         try {
-            LoadSwizzledData(FileInfo::Data::SWIZZLED).doGetSlice(tmp, slicer);
+            LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
             data_ok = true;
         } catch (casacore::AipsError& err) {
             std::cerr << "AIPS ERROR: " << err.getMesg() << std::endl;

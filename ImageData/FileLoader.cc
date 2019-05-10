@@ -1,7 +1,7 @@
 #include "FileLoader.h"
 
 #include "CasaLoader.h"
-#include "FITSLoader.h"
+#include "FitsLoader.h"
 #include "Hdf5Loader.h"
 #include "MiriadLoader.h"
 
@@ -13,7 +13,7 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
         case casacore::ImageOpener::AIPSPP:
             return new CasaLoader(filename);
         case casacore::ImageOpener::FITS:
-            return new FITSLoader(filename);
+            return new FitsLoader(filename);
         case casacore::ImageOpener::MIRIAD:
             return new MiriadLoader(filename);
         case casacore::ImageOpener::GIPSY:
@@ -40,50 +40,53 @@ void FileLoader::FindCoords(int& spectral_axis, int& stokes_axis) {
     // use CoordinateSystem to determine axis coordinate types
     spectral_axis = -1;
     stokes_axis = -1;
-    const casacore::CoordinateSystem coord_sys(GetCoordSystem());
-    // spectral axis
-    spectral_axis = casacore::CoordinateUtil::findSpectralAxis(coord_sys);
-    if (spectral_axis < 0) {
-        int tab_coord = coord_sys.findCoordinate(casacore::Coordinate::TABULAR);
-        if (tab_coord >= 0) {
-            casacore::Vector<casacore::Int> pixel_axes = coord_sys.pixelAxes(tab_coord);
-            for (casacore::uInt i = 0; i < pixel_axes.size(); ++i) {
-                casacore::String axis_name = coord_sys.worldAxisNames()(pixel_axes(i));
-                if (axis_name == "Frequency" || axis_name == "Velocity")
-                    spectral_axis = pixel_axes(i);
+    casacore::CoordinateSystem coord_sys;
+    if (GetCoordinateSystem(coord_sys)) {
+        // spectral axis
+        spectral_axis = casacore::CoordinateUtil::findSpectralAxis(coord_sys);
+        if (spectral_axis < 0) {
+            int tab_coord = coord_sys.findCoordinate(casacore::Coordinate::TABULAR);
+            if (tab_coord >= 0) {
+                casacore::Vector<casacore::Int> pixel_axes = coord_sys.pixelAxes(tab_coord);
+                for (casacore::uInt i = 0; i < pixel_axes.size(); ++i) {
+                    casacore::String axis_name = coord_sys.worldAxisNames()(pixel_axes(i));
+                    if (axis_name == "Frequency" || axis_name == "Velocity")
+                        spectral_axis = pixel_axes(i);
+                }
             }
         }
-    }
-    // stokes axis
-    int pixel, world, coord;
-    casacore::CoordinateUtil::findStokesAxis(pixel, world, coord, coord_sys);
-    if (coord >= 0)
-        stokes_axis = pixel;
+        // stokes axis
+        int pixel, world, coord;
+        casacore::CoordinateUtil::findStokesAxis(pixel, world, coord, coord_sys);
+        if (coord >= 0)
+            stokes_axis = pixel;
 
-    // not found!
-    if (spectral_axis < 2) {   // spectral not found or is xy
-        if (stokes_axis < 2) { // stokes not found or is xy, use defaults
-            spectral_axis = 2;
-            stokes_axis = 3;
-        } else { // stokes found, set spectral to other one
-            if (stokes_axis == 2)
-                spectral_axis = 3;
-            else
+        // not found!
+        if (spectral_axis < 2) {   // spectral not found or is xy
+            if (stokes_axis < 2) { // stokes not found or is xy, use defaults
                 spectral_axis = 2;
+                stokes_axis = 3;
+            } else { // stokes found, set spectral to other one
+                if (stokes_axis == 2)
+                    spectral_axis = 3;
+                else
+                    spectral_axis = 2;
+            }
+        } else if (stokes_axis < 2) { // stokes not found
+            // set stokes to the other one
+            if (spectral_axis == 2)
+                stokes_axis = 3;
+            else
+                stokes_axis = 2;
         }
-    } else if (stokes_axis < 2) { // stokes not found
-        // set stokes to the other one
-        if (spectral_axis == 2)
-            stokes_axis = 3;
-        else
-            stokes_axis = 2;
     }
 }
 
 bool FileLoader::FindShape(IPos& shape, size_t& num_channels, size_t& num_stokes, int& spectral_axis, int& stokes_axis) {
-    auto& image = LoadData(FileInfo::Data::Image);
+    if (!HasData(FileInfo::Data::Image))
+        return false;
 
-    shape = image.shape();
+    shape = LoadData(FileInfo::Data::Image)->shape();
     size_t num_dims = shape.size();
 
     if (num_dims < 2 || num_dims > 4) {

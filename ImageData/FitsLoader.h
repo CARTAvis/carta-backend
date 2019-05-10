@@ -1,15 +1,15 @@
-#ifndef CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
-#define CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
+#ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 
-#include <casacore/images/Images/MIRIADImage.h>
+#include <casacore/images/Images/FITSImage.h>
 
 #include "FileLoader.h"
 
 namespace carta {
 
-class MiriadLoader : public FileLoader {
+class FitsLoader : public FileLoader {
 public:
-    MiriadLoader(const std::string& file);
+    FitsLoader(const std::string& file);
     void OpenFile(const std::string& hdu) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
@@ -20,17 +20,20 @@ protected:
 
 private:
     std::string _filename;
-    std::unique_ptr<casacore::MIRIADImage> _image;
+    casacore::uInt _hdu;
+    std::unique_ptr<casacore::FITSImage> _image;
 };
 
-MiriadLoader::MiriadLoader(const std::string& filename) : _filename(filename) {}
+FitsLoader::FitsLoader(const std::string& filename) : _filename(filename) {}
 
-void MiriadLoader::OpenFile(const std::string& hdu /*hdu*/) {
-    _image = std::unique_ptr<casacore::MIRIADImage>(new casacore::MIRIADImage(_filename));
+void FitsLoader::OpenFile(const std::string& hdu) {
+    casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
+    _image = std::unique_ptr<casacore::FITSImage>(new casacore::FITSImage(_filename, 0, hdu_num));
+    _hdu = hdu_num;
     _num_dims = _image->shape().size();
 }
 
-bool MiriadLoader::HasData(FileInfo::Data dl) const {
+bool FitsLoader::HasData(FileInfo::Data dl) const {
     switch (dl) {
         case FileInfo::Data::Image:
             return true;
@@ -48,14 +51,14 @@ bool MiriadLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename MiriadLoader::ImageRef MiriadLoader::LoadData(FileInfo::Data ds) {
+typename FitsLoader::ImageRef FitsLoader::LoadData(FileInfo::Data ds) {
     if (ds != FileInfo::Data::Image) {
         return nullptr;
     }
     return _image.get(); // nullptr if image not opened
 }
 
-bool MiriadLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
+bool FitsLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
     if (_image == nullptr) {
         return false;
     } else {
@@ -63,7 +66,7 @@ bool MiriadLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore
     }
 }
 
-bool MiriadLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
+bool FitsLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
     if (_image == nullptr) {
         return false;
     } else {
@@ -74,4 +77,4 @@ bool MiriadLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
+#endif // CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_

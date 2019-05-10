@@ -38,64 +38,31 @@
 
 class Session {
 public:
-    // TODO: should these be public?
-    uint32_t _id;
-    FileSettings _file_settings;
-    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
-
-protected:
-    // communication
-    uWS::WebSocket<uWS::SERVER>* _socket;
-
-    bool _connected;
-
-    // permissions
-    std::string _api_key;
-
-    std::string _root_folder;
-
-    bool _verbose_logging;
-
-    // load for file browser, reuse when open file
-    CARTA::FileInfo* _selected_file_info;
-    CARTA::FileInfoExtended* _selected_file_info_extended;
-
-    // <file_id, Frame>: one frame per image file
-    std::unordered_map<int, std::unique_ptr<Frame>> _frames;
-    std::mutex _frame_mutex; // lock frames to create/destroy
-    bool _new_frame;         // flag to send histogram with data
-
-    // State for animation functions.
-    std::unique_ptr<AnimationObject> _animation_object;
-
-    std::mutex _image_channel_mutex;
-    bool _image_channel_task_active;
-
-    // cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
-    tbb::atomic<float> _histogram_progress;
-
-    // Notification mechanism when outgoing messages are ready
-    uS::Async* _outgoing_async;
-
-    // Return message queue
-    tbb::concurrent_queue<std::vector<char>> _out_msgs;
-
-    // Reference counter
-    int _ref_count;
-
-    static int _num_sessions;
-
-    // file list handler
-    FileListHandler* _file_list_handler;
-
-public:
     Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async, FileListHandler* file_list_handler,
         bool verbose = false);
     ~Session();
 
-    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
+    // CARTA ICD
+    void OnRegisterViewer(const CARTA::RegisterViewer& message, uint32_t request_id);
+    void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
+    void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
+    void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
+    void OnCloseFile(const CARTA::CloseFile& message);
+    void OnSetImageView(const CARTA::SetImageView& message);
+    void OnSetImageChannels(const CARTA::SetImageChannels& message);
+    void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
+    void OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id);
+    void OnRemoveRegion(const CARTA::RemoveRegion& message);
+    void OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& message);
+    void OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
+    void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);
+    void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
+
+    void SendPendingMessages();    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         _set_channel_queue.push(std::make_pair(message, request_id));
     }
+
+    // Task handling
     void ExecuteSetChannelEvt(std::pair<CARTA::SetImageChannels, uint32_t> request) {
         OnSetImageChannels(request.first);
     }
@@ -118,9 +85,9 @@ public:
         _image_channel_mutex.unlock();
     }
     bool ImageChannelTaskTestAndSet() {
-        if (_image_channel_task_active)
+        if (_image_channel_task_active) {
             return true;
-        else {
+	} else {
             _image_channel_task_active = true;
             return false;
         }
@@ -139,26 +106,13 @@ public:
         return _num_sessions;
     }
 
-    // CARTA ICD
-    void OnRegisterViewer(const CARTA::RegisterViewer& message, uint32_t request_id);
-    void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
-    void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
-    void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
-    void OnCloseFile(const CARTA::CloseFile& message);
-    void OnSetImageView(const CARTA::SetImageView& message);
-    void OnSetImageChannels(const CARTA::SetImageChannels& message);
-    void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
-    void OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id);
-    void OnRemoveRegion(const CARTA::RemoveRegion& message);
-    void OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& message);
-    void OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
-    void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);
-    void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
+    // TODO: should these be public?
+    uint32_t _id;
+    FileSettings _file_settings;
+    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
 
-    void SendPendingMessages();
-
-protected:
-    // ICD: File info response
+private:
+    // File info
     void ResetFileInfo(bool create = false); // delete existing file info ptrs, optionally create new ones
     bool FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const std::string& folder,
         const std::string& filename, std::string hdu, std::string& message);
@@ -169,7 +123,7 @@ protected:
     // basic message to update progress
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
-    // send data streams
+    // Send data streams
     bool SendRasterImageData(int file_id, bool send_histogram = false);
     bool SendSpatialProfileData(int file_id, int region_id, bool check_current_stokes = false);
     bool SendSpectralProfileData(int file_id, int region_id, bool check_current_stokes = false);
@@ -181,6 +135,41 @@ protected:
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
+
+    uWS::WebSocket<uWS::SERVER>* _socket;
+    std::string _api_key;
+    std::string _root_folder;
+    bool _verbose_logging;
+
+    // File browser
+    FileListHandler* _file_list_handler;
+
+    // File info for browser, open file
+    CARTA::FileInfo* _selected_file_info;
+    CARTA::FileInfoExtended* _selected_file_info_extended;
+
+    // Frame
+    std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
+    std::mutex _frame_mutex; // lock frames to create/destroy
+    bool _new_frame;         // flag to send histogram with data
+
+    // State for animation functions.
+    std::unique_ptr<AnimationObject> _animation_object;
+
+    // Manage image channel
+    std::mutex _image_channel_mutex;
+    bool _image_channel_task_active;
+
+    // Cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
+    tbb::atomic<float> _histogram_progress;
+
+    // Outgoing messages
+    uS::Async* _outgoing_async; // Notification mechanism when messages are ready
+    tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
+
+    int _ref_count;
+    bool _connected;
+    static int _num_sessions;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_

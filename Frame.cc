@@ -32,7 +32,7 @@ Frame::Frame(uint32_t session_id, const string& filename, const string& hdu, int
     }
 
     try {
-        _loader->OpenFile(filename, hdu);
+        _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
         Log(session_id, "Problem loading file {}: {}", filename, err.getMesg());
         _valid = false;
@@ -134,9 +134,9 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
         auto& region = _regions[region_id];
         region_set = region->UpdateRegionParameters(name, type, points, rotation);
     } else { // map new Region to region id
-        const casacore::CoordinateSystem c_sys = _loader->LoadData(FileInfo::Data::Image).coordinates();
+        const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
         auto region =
-            unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, c_sys));
+            unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
         if (region->IsValid()) {
             _regions[region_id] = move(region);
             region_set = true;
@@ -296,7 +296,7 @@ void Frame::SetImageCache() {
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->LoadData(FileInfo::Data::Image).getSlice(tmp, section, true);
+    _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
 }
 
 void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes) {
@@ -306,7 +306,7 @@ void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, si
     casacore::Array<float> tmp(section.length(), chan_matrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->LoadData(FileInfo::Data::Image).getSlice(tmp, section, true);
+    _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
 }
 
 casacore::Slicer Frame::GetChannelMatrixSlicer(size_t channel, size_t stokes) {
@@ -371,7 +371,7 @@ bool Frame::GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_imag
             casacore::ImageRegion image_region;
             if (region->GetRegion(image_region, stokes, channel)) {
                 try {
-                    sub_image = casacore::SubImage<float>(_loader->LoadData(FileInfo::Data::Image), image_region);
+                    sub_image = casacore::SubImage<float>(*_loader->LoadData(FileInfo::Data::Image), image_region);
                     sub_image_ok = true;
                 } catch (casacore::AipsError& err) {
                     Log(_session_id, "Region creation for {} failed: {}", region->Name(), err.getMesg());
@@ -742,7 +742,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                     profile.resize(end);
                     casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
                     std::lock_guard<std::mutex> guard(_image_mutex);
-                    _loader->LoadData(FileInfo::Data::Image).getSlice(tmp, section, true);
+                    _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
                 }
                 // SpatialProfile
                 auto new_profile = profile_data.add_profiles();
