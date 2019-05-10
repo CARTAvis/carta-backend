@@ -17,9 +17,8 @@
 
 class FileListHandler {
 public:
-    FileListHandler(std::unordered_map<std::string, std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string root,
-        std::string base);
-    ~FileListHandler();
+    FileListHandler(std::unordered_map<std::string, std::vector<std::string>>& permissions_map, bool enforce_permissions,
+        const std::string& root, const std::string& base);
 
     struct ResultMsg {
         std::string message;
@@ -27,25 +26,25 @@ public:
         CARTA::ErrorSeverity severity;
     };
 
-    void onFileListRequest(std::string api_key, const CARTA::FileListRequest& request, uint32_t requestId,
-        CARTA::FileListResponse& response, ResultMsg& resultMsg);
+    void OnFileListRequest(
+        std::string api_key, const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg);
 
 private:
     // lock on file list handler
-    tbb::mutex fileListMutex;
+    tbb::mutex _file_list_mutex;
     // ICD: File list response
-    void getRelativePath(std::string& folder);
-    void getFileList(CARTA::FileListResponse& fileList, std::string folder, ResultMsg& resultMsg);
-    bool checkPermissionForDirectory(std::string prefix);
-    bool checkPermissionForEntry(std::string entry);
-    std::string getType(casacore::ImageOpener::ImageTypes type); // convert enum to string
-    bool fillFileInfo(CARTA::FileInfo* fileInfo, const std::string& filename);
+    void GetRelativePath(std::string& folder);
+    void GetFileList(CARTA::FileListResponse& fileList, std::string folder, ResultMsg& result_msg);
+    bool CheckPermissionForDirectory(std::string prefix);
+    bool CheckPermissionForEntry(const std::string& entry);
+    std::string GetType(casacore::ImageOpener::ImageTypes type); // convert enum to string
+    bool FillFileInfo(CARTA::FileInfo* file_info, const std::string& filename);
     // permissions
-    std::unordered_map<std::string, std::vector<std::string>>& permissionsMap;
-    bool permissionsEnabled;
-    bool verboseLogging;
-    std::string apiKey;
-    std::string rootFolder, baseFolder, filelistFolder;
+    std::unordered_map<std::string, std::vector<std::string>>& _permissions_map;
+    bool _permissions_enabled;
+    bool _verbose_logging;
+    std::string _api_key;
+    std::string _root_folder, _base_folder, _filelist_folder;
 };
 
 #endif // CARTA_BACKEND__FILELISTHANDLER_H_

@@ -20,306 +20,304 @@ using namespace carta;
 using namespace std;
 
 RegionStats::RegionStats() {
-    clearStats();
+    ClearStats();
 }
-
-RegionStats::~RegionStats() {}
 
 // ***** Cache *****
 
-void RegionStats::clearStats() {
-    m_histogramsValid = false;
-    m_statsValid = false;
+void RegionStats::ClearStats() {
+    _histograms_valid = false;
+    _stats_valid = false;
 }
 
 // ***** Histograms *****
 
 // config
-bool RegionStats::setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs) {
-    m_histogramReqs = histogramReqs;
+bool RegionStats::SetHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_reqs) {
+    _histogram_reqs = histogram_reqs;
     return true;
 }
 
-size_t RegionStats::numHistogramConfigs() {
-    return m_histogramReqs.size();
+size_t RegionStats::NumHistogramConfigs() {
+    return _histogram_reqs.size();
 }
 
-CARTA::SetHistogramRequirements_HistogramConfig RegionStats::getHistogramConfig(int histogramIndex) {
+CARTA::SetHistogramRequirements_HistogramConfig RegionStats::GetHistogramConfig(int histogram_index) {
     CARTA::SetHistogramRequirements_HistogramConfig config;
-    if (histogramIndex < m_histogramReqs.size())
-        config = m_histogramReqs[histogramIndex];
+    if (histogram_index < _histogram_reqs.size())
+        config = _histogram_reqs[histogram_index];
     return config;
 }
 
 // min max
-bool RegionStats::getMinMax(int channel, int stokes, float& minVal, float& maxVal) {
+bool RegionStats::GetMinMax(int channel, int stokes, float& min_val, float& max_val) {
     // Get stored min,max for given channel and stokes; return value indicates status
-    bool haveMinMax(false);
-    if (m_histogramsValid) {
+    bool have_min_max(false);
+    if (_histograms_valid) {
         try {
-            minmax_t vals = m_minmax.at(stokes).at(channel);
-            minVal = vals.first;
-            maxVal = vals.second;
-            haveMinMax = true;
+            minmax_t vals = _minmax.at(stokes).at(channel);
+            min_val = vals.first;
+            max_val = vals.second;
+            have_min_max = true;
         } catch (std::out_of_range) {
             // not stored
         }
     }
-    return haveMinMax;
+    return have_min_max;
 }
 
-void RegionStats::setMinMax(int channel, int stokes, minmax_t minmaxVals) {
+void RegionStats::SetMinMax(int channel, int stokes, minmax_t minmax_vals) {
     // Save min, max for given channel and stokes
     if (channel == ALL_CHANNELS) { // all channels (cube); don't save intermediate channel min/max
-        m_minmax[stokes].clear();
+        _minmax[stokes].clear();
     }
-    m_minmax[stokes][channel] = minmaxVals;
+    _minmax[stokes][channel] = minmax_vals;
 }
 
-void RegionStats::calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minval, float& maxval) {
-    // Calculate and store min, max values in data; return minval and maxval
+void RegionStats::CalcMinMax(int channel, int stokes, const std::vector<float>& data, float& min_val, float& max_val) {
+    // Calculate and store min, max values in data; return min_val and maxval
     tbb::blocked_range<size_t> range(0, data.size());
     MinMax<float> mm(data);
     tbb::parallel_reduce(range, mm);
-    minmax_t minmaxVals(mm.getMinMax());
-    setMinMax(channel, stokes, minmaxVals);
-    minval = minmaxVals.first;
-    maxval = minmaxVals.second;
+    minmax_t minmax_vals(mm.getMinMax());
+    SetMinMax(channel, stokes, minmax_vals);
+    min_val = minmax_vals.first;
+    max_val = minmax_vals.second;
 }
 
-bool RegionStats::getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram) {
+bool RegionStats::GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram) {
     // Get stored histogram for given channel and stokes; return value indicates status
-    bool haveHistogram(false);
-    if (m_histogramsValid) {
+    bool have_histogram(false);
+    if (_histograms_valid) {
         try {
-            CARTA::Histogram storedHistogram = m_histograms.at(stokes).at(channel);
-            if (storedHistogram.num_bins() == nbins) {
-                histogram = storedHistogram;
-                haveHistogram = true;
+            CARTA::Histogram stored_histogram = _histograms.at(stokes).at(channel);
+            if (stored_histogram.num_bins() == num_bins) {
+                histogram = stored_histogram;
+                have_histogram = true;
             }
         } catch (std::out_of_range) {
             // not stored
         }
     }
-    return haveHistogram;
+    return have_histogram;
 }
 
-void RegionStats::setHistogram(int channel, int stokes, CARTA::Histogram& histogram) {
+void RegionStats::SetHistogram(int channel, int stokes, CARTA::Histogram& histogram) {
     // Store histogram for given channel and stokes
-    if (!m_histogramsValid)
-        m_histograms.clear();
+    if (!_histograms_valid)
+        _histograms.clear();
     if (channel == ALL_CHANNELS) { // all channels(cube); don't save intermediate channel histograms
-        m_histograms[stokes].clear();
+        _histograms[stokes].clear();
     }
-    m_histograms[stokes][channel] = histogram;
-    m_histogramsValid = true;
+    _histograms[stokes][channel] = histogram;
+    _histograms_valid = true;
 }
 
-void RegionStats::calcHistogram(
-    int channel, int stokes, int nBins, float minVal, float maxVal, const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
+void RegionStats::CalcHistogram(
+    int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data, CARTA::Histogram& histogram_msg) {
     // Calculate and store histogram for given channel, stokes, nbins; return histogram
-    float binWidth(0), binCenter(0);
-    std::vector<int> histogramBins;
-    if ((minVal == std::numeric_limits<float>::max()) || (maxVal == std::numeric_limits<float>::min()) || data.empty()) {
+    float bin_width(0), bin_center(0);
+    std::vector<int> histogram_bins;
+    if ((min_val == std::numeric_limits<float>::max()) || (max_val == std::numeric_limits<float>::min()) || data.empty()) {
         // empty / NaN region
-        histogramBins.resize(nBins, 0);
+        histogram_bins.resize(num_bins, 0);
     } else {
         tbb::blocked_range<size_t> range(0, data.size());
-        Histogram hist(nBins, minVal, maxVal, data);
+        Histogram hist(num_bins, min_val, max_val, data);
         tbb::parallel_reduce(range, hist);
-        histogramBins = hist.getHistogram();
-        binWidth = hist.getBinWidth();
-        binCenter = minVal + (binWidth / 2.0);
+        histogram_bins = hist.getHistogram();
+        bin_width = hist.getBinWidth();
+        bin_center = min_val + (bin_width / 2.0);
     }
 
     // fill histogram message
-    histogramMsg.set_channel(channel);
-    histogramMsg.set_num_bins(nBins);
-    histogramMsg.set_bin_width(binWidth);
-    histogramMsg.set_first_bin_center(binCenter);
-    *histogramMsg.mutable_bins() = {histogramBins.begin(), histogramBins.end()};
+    histogram_msg.set_channel(channel);
+    histogram_msg.set_num_bins(num_bins);
+    histogram_msg.set_bin_width(bin_width);
+    histogram_msg.set_first_bin_center(bin_center);
+    *histogram_msg.mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
 
     // save for next time
-    setHistogram(channel, stokes, histogramMsg);
+    SetHistogram(channel, stokes, histogram_msg);
 }
 
 // ***** Statistics *****
 
-void RegionStats::setStatsRequirements(const std::vector<int>& statsTypes) {
-    m_statsReqs = statsTypes;
+void RegionStats::SetStatsRequirements(const std::vector<int>& stats_types) {
+    _stats_reqs = stats_types;
 }
 
-size_t RegionStats::numStats() {
-    return m_statsReqs.size();
+size_t RegionStats::NumStats() {
+    return _stats_reqs.size();
 }
 
-void RegionStats::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::ImageInterface<float>& image, int channel, int stokes) {
+void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes) {
     // Fill RegionStatsData with statistics types set in requirements.
-    if (m_statsReqs.empty()) { // no requirements set, add empty StatisticsValue
-        auto statsValue = statsData.add_statistics();
-        statsValue->set_stats_type(CARTA::StatsType::Sum);
+    if (_stats_reqs.empty()) { // no requirements set, add empty StatisticsValue
+        auto stats_value = stats_data.add_statistics();
+        stats_value->set_stats_type(CARTA::StatsType::Sum);
     } else {
         std::vector<std::vector<double>> results;
-        if (m_statsValid && (m_statsData.count(stokes)) && (m_statsData.at(stokes).count(channel))) {
+        if (_stats_valid && (_stats_data.count(stokes)) && (_stats_data.at(stokes).count(channel))) {
             // used stored stats
             try {
-                std::vector<double> storedStats(m_statsData.at(stokes).at(channel));
-                for (size_t i = 0; i < m_statsReqs.size(); ++i) {
+                std::vector<double> stored_stats(_stats_data.at(stokes).at(channel));
+                for (size_t i = 0; i < _stats_reqs.size(); ++i) {
                     // add StatisticsValue to message
-                    auto statsValue = statsData.add_statistics();
-                    auto cartaStatsType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
-                    statsValue->set_stats_type(cartaStatsType);
-                    statsValue->set_value(storedStats[cartaStatsType]);
+                    auto stats_value = stats_data.add_statistics();
+                    auto carta_stats_type = static_cast<CARTA::StatsType>(_stats_reqs[i]);
+                    stats_value->set_stats_type(carta_stats_type);
+                    stats_value->set_value(stored_stats[carta_stats_type]);
                 }
-            } catch (std::out_of_range& rangeError) {
+            } catch (std::out_of_range& range_error) {
                 // stats cleared
-                auto statsValue = statsData.add_statistics();
-                statsValue->set_stats_type(CARTA::StatsType::Sum);
+                auto stats_value = stats_data.add_statistics();
+                stats_value->set_stats_type(CARTA::StatsType::Sum);
             }
         } else {
             // calculate stats
-            if (!m_statsValid)
-                m_statsData.clear();
+            if (!_stats_valid)
+                _stats_data.clear();
             // per channel = false, stats for entire region
-            bool haveStats(calcStatsValues(results, m_statsReqs, image, false));
+            bool have_stats(CalcStatsValues(results, _stats_reqs, image, false));
             // update message whether have stats or not
-            for (size_t i = 0; i < m_statsReqs.size(); ++i) {
+            for (size_t i = 0; i < _stats_reqs.size(); ++i) {
                 // add StatisticsValue to message
-                auto statsValue = statsData.add_statistics();
-                auto cartaStatsType = static_cast<CARTA::StatsType>(m_statsReqs[i]);
-                statsValue->set_stats_type(cartaStatsType);
+                auto stats_value = stats_data.add_statistics();
+                auto carta_stats_type = static_cast<CARTA::StatsType>(_stats_reqs[i]);
+                stats_value->set_stats_type(carta_stats_type);
                 double value(0.0);
-                if (!haveStats || results[i].empty()) { // region outside image or NaNs
-                    if (cartaStatsType != CARTA::NumPixels) {
+                if (!have_stats || results[i].empty()) { // region outside image or NaNs
+                    if (carta_stats_type != CARTA::NumPixels) {
                         value = std::numeric_limits<double>::quiet_NaN();
                     }
                 } else {
                     value = results[i][0];
                 }
-                statsValue->set_value(value);
+                stats_value->set_value(value);
 
                 // cache stats values
-                if (m_statsData[stokes][channel].empty()) { // resize vector, set to NaN
-                    m_statsData[stokes][channel].resize(CARTA::StatsType_MAX, std::numeric_limits<double>::quiet_NaN());
+                if (_stats_data[stokes][channel].empty()) { // resize vector, set to NaN
+                    _stats_data[stokes][channel].resize(CARTA::StatsType_MAX, std::numeric_limits<double>::quiet_NaN());
                 }
-                m_statsData[stokes][channel][cartaStatsType] = value;
+                _stats_data[stokes][channel][carta_stats_type] = value;
             }
-            m_statsValid = true;
+            _stats_valid = true;
         }
     }
 }
 
-bool RegionStats::calcStatsValues(std::vector<std::vector<double>>& statsValues, const std::vector<int>& requestedStats,
-    const casacore::ImageInterface<float>& image, bool perChannel) {
-    // Fill statsValues vector for requested stats; one vector<float> per stat if per channel,
+bool RegionStats::CalcStatsValues(std::vector<std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
+    const casacore::ImageInterface<float>& image, bool per_channel) {
+    // Fill stats_values vector for requested stats; one vector<float> per stat if per channel,
     // else one value per stat per region.
     if (image.shape().empty()) // outside image or all masked (NaN)
         return false;
 
     // Use ImageStatistics to fill statistics values according to type;
     // template type matches image type
-    casacore::ImageStatistics<float> imageStats = casacore::ImageStatistics<float>(image,
+    casacore::ImageStatistics<float> image_stats = casacore::ImageStatistics<float>(image,
         /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
 
-    if (perChannel) { // get stats per xy plane
-        casacore::Vector<int> displayAxes(2);
-        displayAxes(0) = 0;
-        displayAxes(1) = 1;
-        if (!imageStats.setAxes(displayAxes))
+    if (per_channel) { // get stats per xy plane
+        casacore::Vector<int> display_axes(2);
+        display_axes(0) = 0;
+        display_axes(1) = 1;
+        if (!image_stats.setAxes(display_axes))
             return false;
     }
 
-    casacore::Array<casacore::Double> npts;
-    size_t nstats(requestedStats.size());
-    statsValues.resize(nstats);
-    for (size_t i = 0; i < nstats; ++i) {
+    casacore::Array<casacore::Double> num_points;
+    size_t num_stats(requested_stats.size());
+    stats_values.resize(num_stats);
+    for (size_t i = 0; i < num_stats; ++i) {
         // get requested statistics values
-        casacore::LatticeStatsBase::StatisticsTypes latticeStatsType(casacore::LatticeStatsBase::NSTATS);
-        auto cartaStatsType = static_cast<CARTA::StatsType>(requestedStats[i]);
+        casacore::LatticeStatsBase::StatisticsTypes lattice_stats_type(casacore::LatticeStatsBase::NSTATS);
+        auto carta_stats_type = static_cast<CARTA::StatsType>(requested_stats[i]);
 
-        std::vector<double> dblResult; // lattice stats
-        std::vector<int> intResult;    // position stats
-        switch (cartaStatsType) {
+        std::vector<double> dbl_result; // lattice stats
+        std::vector<int> int_result;    // position stats
+        switch (carta_stats_type) {
             case CARTA::StatsType::NumPixels:
-                latticeStatsType = casacore::LatticeStatsBase::NPTS;
+                lattice_stats_type = casacore::LatticeStatsBase::NPTS;
                 break;
             case CARTA::StatsType::Sum:
-                latticeStatsType = casacore::LatticeStatsBase::SUM;
+                lattice_stats_type = casacore::LatticeStatsBase::SUM;
                 break;
             case CARTA::StatsType::FluxDensity:
-                latticeStatsType = casacore::LatticeStatsBase::FLUX;
+                lattice_stats_type = casacore::LatticeStatsBase::FLUX;
                 break;
             case CARTA::StatsType::Mean:
-                latticeStatsType = casacore::LatticeStatsBase::MEAN;
+                lattice_stats_type = casacore::LatticeStatsBase::MEAN;
                 break;
             case CARTA::StatsType::RMS:
-                latticeStatsType = casacore::LatticeStatsBase::RMS;
+                lattice_stats_type = casacore::LatticeStatsBase::RMS;
                 break;
             case CARTA::StatsType::Sigma:
-                latticeStatsType = casacore::LatticeStatsBase::SIGMA;
+                lattice_stats_type = casacore::LatticeStatsBase::SIGMA;
                 break;
             case CARTA::StatsType::SumSq:
-                latticeStatsType = casacore::LatticeStatsBase::SUMSQ;
+                lattice_stats_type = casacore::LatticeStatsBase::SUMSQ;
                 break;
             case CARTA::StatsType::Min:
-                latticeStatsType = casacore::LatticeStatsBase::MIN;
+                lattice_stats_type = casacore::LatticeStatsBase::MIN;
                 break;
             case CARTA::StatsType::Max:
-                latticeStatsType = casacore::LatticeStatsBase::MAX;
+                lattice_stats_type = casacore::LatticeStatsBase::MAX;
                 break;
             case CARTA::StatsType::Blc: {
                 const casacore::IPosition blc(image.region().slicer().start());
-                intResult = blc.asStdVector();
+                int_result = blc.asStdVector();
                 break;
             }
             case CARTA::StatsType::Trc: {
                 const casacore::IPosition trc(image.region().slicer().end());
-                intResult = trc.asStdVector();
+                int_result = trc.asStdVector();
                 break;
             }
             case CARTA::StatsType::MinPos:
             case CARTA::StatsType::MaxPos: {
-                if (!perChannel) { // only works when no display axes
+                if (!per_channel) { // only works when no display axes
                     const casacore::IPosition blc(image.region().slicer().start());
-                    casacore::IPosition minPos, maxPos;
-                    imageStats.getMinMaxPos(minPos, maxPos);
-                    if (cartaStatsType == CARTA::StatsType::MinPos)
-                        intResult = (blc + minPos).asStdVector();
+                    casacore::IPosition min_pos, max_pos;
+                    image_stats.getMinMaxPos(min_pos, max_pos);
+                    if (carta_stats_type == CARTA::StatsType::MinPos)
+                        int_result = (blc + min_pos).asStdVector();
                     else // MaxPos
-                        intResult = (blc + maxPos).asStdVector();
+                        int_result = (blc + max_pos).asStdVector();
                 }
                 break;
             }
             default:
                 break;
         }
-        if (latticeStatsType < casacore::LatticeStatsBase::NSTATS) { // get lattice statistic
+        if (lattice_stats_type < casacore::LatticeStatsBase::NSTATS) { // get lattice statistic
             casacore::Array<casacore::Double> result;                // must be double
-            if (imageStats.getStatistic(result, latticeStatsType)) {
+            if (image_stats.getStatistic(result, lattice_stats_type)) {
                 if (anyEQ(result, 0.0)) { // actually 0, or NaN?
                     // NaN if number of points is zero
-                    if (npts.empty())
-                        imageStats.getStatistic(npts, casacore::LatticeStatsBase::NPTS);
-                    for (size_t i = 0; i < result.size(); ++i) {
-                        casacore::IPosition index(1, i);
-                        if ((result(index) == 0.0) && (npts(index) == 0.0)) {
+                    if (num_points.empty())
+                        image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
+                    for (size_t j = 0; j < result.size(); ++j) {
+                        casacore::IPosition index(1, j);
+                        if ((result(index) == 0.0) && (num_points(index) == 0.0)) {
                             result(index) = std::numeric_limits<double>::quiet_NaN();
                         }
                     }
                 }
-                result.tovector(dblResult);
+                result.tovector(dbl_result);
             }
         }
 
-        if (!intResult.empty()) {
-            dblResult.reserve(intResult.size());
-            for (unsigned int i = 0; i < intResult.size(); ++i) { // convert to double
-                dblResult.push_back(static_cast<double>(intResult[i]));
+        if (!int_result.empty()) {
+            dbl_result.reserve(int_result.size());
+            for (unsigned int j = 0; j < int_result.size(); ++j) { // convert to double
+                dbl_result.push_back(static_cast<double>(int_result[j]));
             }
         }
 
-        if (!dblResult.empty()) {
-            statsValues[i] = std::move(dblResult);
+        if (!dbl_result.empty()) {
+            stats_values[i] = std::move(dbl_result);
         }
     }
     return true;

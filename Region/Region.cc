@@ -64,7 +64,7 @@ bool Region::updateRegionParameters(
     // region changed if xy params changed and points validated
     m_xyRegionChanged = xyParamsChanged && pointsSet;
     if (m_xyRegionChanged && m_stats)
-        m_stats->clearStats(); // recalculate everything
+        m_stats->ClearStats(); // recalculate everything
 
     return pointsSet;
 }
@@ -492,55 +492,55 @@ bool Region::getData(std::vector<float>& data, casacore::ImageInterface<float>& 
 // histogram
 
 bool Region::setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs) {
-    m_stats->setHistogramRequirements(histogramReqs);
+    m_stats->SetHistogramRequirements(histogramReqs);
     return true;
 }
 
 CARTA::SetHistogramRequirements_HistogramConfig Region::getHistogramConfig(int histogramIndex) {
-    return m_stats->getHistogramConfig(histogramIndex);
+    return m_stats->GetHistogramConfig(histogramIndex);
 }
 
 size_t Region::numHistogramConfigs() {
-    return m_stats->numHistogramConfigs();
+    return m_stats->NumHistogramConfigs();
 }
 
 bool Region::getMinMax(int channel, int stokes, float& minVal, float& maxVal) {
-    return m_stats->getMinMax(channel, stokes, minVal, maxVal);
+    return m_stats->GetMinMax(channel, stokes, minVal, maxVal);
 }
 
 void Region::setMinMax(int channel, int stokes, float minVal, float maxVal) {
     std::pair<float, float> vals = std::make_pair(minVal, maxVal);
-    m_stats->setMinMax(channel, stokes, vals);
+    m_stats->SetMinMax(channel, stokes, vals);
 }
 
 void Region::calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minVal, float& maxVal) {
-    m_stats->calcMinMax(channel, stokes, data, minVal, maxVal);
+    m_stats->CalcMinMax(channel, stokes, data, minVal, maxVal);
 }
 
 bool Region::getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram) {
-    return m_stats->getHistogram(channel, stokes, nbins, histogram);
+    return m_stats->GetHistogram(channel, stokes, nbins, histogram);
 }
 
 void Region::setHistogram(int channel, int stokes, CARTA::Histogram& histogram) {
-    m_stats->setHistogram(channel, stokes, histogram);
+    m_stats->SetHistogram(channel, stokes, histogram);
 }
 
 void Region::calcHistogram(
     int channel, int stokes, int nBins, float minVal, float maxVal, const std::vector<float>& data, CARTA::Histogram& histogramMsg) {
-    m_stats->calcHistogram(channel, stokes, nBins, minVal, maxVal, data, histogramMsg);
+    m_stats->CalcHistogram(channel, stokes, nBins, minVal, maxVal, data, histogramMsg);
 }
 
 // stats
 void Region::setStatsRequirements(const std::vector<int>& statsTypes) {
-    m_stats->setStatsRequirements(statsTypes);
+    m_stats->SetStatsRequirements(statsTypes);
 }
 
 size_t Region::numStats() {
-    return m_stats->numStats();
+    return m_stats->NumStats();
 }
 
 void Region::fillStatsData(CARTA::RegionStatsData& statsData, const casacore::ImageInterface<float>& image, int channel, int stokes) {
-    m_stats->fillStatsData(statsData, image, channel, stokes);
+    m_stats->FillStatsData(statsData, image, channel, stokes);
 }
 
 // ***********************************
@@ -606,7 +606,7 @@ void Region::fillSpectralProfileData(CARTA::SpectralProfileData& profileData, in
         size_t nstats = requestedStats.size();
         std::vector<std::vector<double>> statsValues;
         // get values from RegionStats
-        bool haveStats(m_stats->calcStatsValues(statsValues, requestedStats, image));
+        bool haveStats(m_stats->CalcStatsValues(statsValues, requestedStats, image));
         for (size_t i = 0; i < nstats; ++i) {
             // one SpectralProfile per stats type
             auto newProfile = profileData.add_profiles();

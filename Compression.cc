@@ -8,12 +8,12 @@ using namespace std;
 
 int Compress(vector<float>& array, size_t offset, vector<char>& compression_buffer, size_t& compressed_size, uint32_t nx, uint32_t ny,
     uint32_t precision) {
-    int status = 0;    /* return value: 0 = success */
-    zfp_type type;     /* array scalar type */
-    zfp_field* field;  /* array meta data */
-    zfp_stream* zfp;   /* compressed stream */
-    size_t buffer_size;    /* byte size of compressed buffer */
-    bitstream* stream; /* bit stream to write to or read from */
+    int status = 0;     /* return value: 0 = success */
+    zfp_type type;      /* array scalar type */
+    zfp_field* field;   /* array meta data */
+    zfp_stream* zfp;    /* compressed stream */
+    size_t buffer_size; /* byte size of compressed buffer */
+    bitstream* stream;  /* bit stream to write to or read from */
 
     type = zfp_type_float;
     field = zfp_field_2d(array.data() + offset, type, nx, ny);

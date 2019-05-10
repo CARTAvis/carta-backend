@@ -38,47 +38,47 @@
 
 class Session {
 public:
-    uint32_t id;
-    carta::FileSettings fsettings;
-    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> setchanq;
+    // TODO: should these be public?
+    uint32_t _id;
+    FileSettings _file_settings;
+    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
 
 protected:
     // communication
-    uWS::WebSocket<uWS::SERVER>* socket;
-    std::vector<char> binaryPayloadCache;
+    uWS::WebSocket<uWS::SERVER>* _socket;
 
     bool _connected;
 
     // permissions
-    std::string apiKey;
+    std::string _api_key;
 
-    std::string rootFolder;
+    std::string _root_folder;
 
-    bool verboseLogging;
+    bool _verbose_logging;
 
     // load for file browser, reuse when open file
-    CARTA::FileInfo* selectedFileInfo;
-    CARTA::FileInfoExtended* selectedFileInfoExtended;
+    CARTA::FileInfo* _selected_file_info;
+    CARTA::FileInfoExtended* _selected_file_info_extended;
 
     // <file_id, Frame>: one frame per image file
-    std::unordered_map<int, std::unique_ptr<Frame>> frames;
-    std::mutex frameMutex; // lock frames to create/destroy
-    bool newFrame;         // flag to send histogram with data
+    std::unordered_map<int, std::unique_ptr<Frame>> _frames;
+    std::mutex _frame_mutex; // lock frames to create/destroy
+    bool _new_frame;         // flag to send histogram with data
 
     // State for animation functions.
-    std::unique_ptr<AnimationObject> _ani_obj;
+    std::unique_ptr<AnimationObject> _animation_object;
 
     std::mutex _image_channel_mutex;
     bool _image_channel_task_active;
 
     // cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
-    tbb::atomic<float> histogramProgress;
+    tbb::atomic<float> _histogram_progress;
 
     // Notification mechanism when outgoing messages are ready
-    uS::Async* outgoing;
+    uS::Async* _outgoing_async;
 
     // Return message queue
-    tbb::concurrent_queue<std::vector<char>> out_msgs;
+    tbb::concurrent_queue<std::vector<char>> _out_msgs;
 
     // Reference counter
     int _ref_count;
@@ -86,38 +86,38 @@ protected:
     static int _num_sessions;
 
     // file list handler
-    FileListHandler* fileListHandler;
+    FileListHandler* _file_list_handler;
 
 public:
-    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing, FileListHandler* fileListHandler,
+    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async, FileListHandler* file_list_handler,
         bool verbose = false);
     ~Session();
 
-    void addToSetChanQueue(CARTA::SetImageChannels message, uint32_t requestId) {
-        setchanq.push(std::make_pair(message, requestId));
+    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
+        _set_channel_queue.push(std::make_pair(message, request_id));
     }
-    void executeSetChanEvt(std::pair<CARTA::SetImageChannels, uint32_t> req) {
-        onSetImageChannels(req.first, req.second);
+    void ExecuteSetChannelEvt(std::pair<CARTA::SetImageChannels, uint32_t> request) {
+        OnSetImageChannels(request.first);
     }
-    void cancel_SetHistReqs() {
-        histogramProgress.fetch_and_store(HISTOGRAM_CANCEL);
+    void CancelSetHistRequirements() {
+        _histogram_progress.fetch_and_store(HISTOGRAM_CANCEL);
     }
-    void build_animation_object(::CARTA::StartAnimation& msg, uint32_t req_id);
-    bool execute_animation_frame();
-    void stop_animation(int file_id, ::CARTA::AnimationFrame frame);
-    void addViewSetting(CARTA::SetImageView message, uint32_t requestId) {
-        fsettings.addViewSetting(message, requestId);
+    void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
+    bool ExecuteAnimationFrame();
+    void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
+    void AddViewSetting(CARTA::SetImageView message, uint32_t request_id) {
+        _file_settings.AddViewSetting(message, request_id);
     }
-    void addCursorSetting(CARTA::SetCursor message, uint32_t requestId) {
-        fsettings.addCursorSetting(message, requestId);
+    void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
+        _file_settings.AddCursorSetting(message, request_id);
     }
-    void image_channel_lock() {
+    void ImageChannelLock() {
         _image_channel_mutex.lock();
     }
-    void image_channel_unlock() {
+    void ImageChannelUnlock() {
         _image_channel_mutex.unlock();
     }
-    bool image_channel_task_test_and_set() {
+    bool ImageChannelTaskTestAndSet() {
         if (_image_channel_task_active)
             return true;
         else {
@@ -125,62 +125,62 @@ public:
             return false;
         }
     }
-    void image_channal_task_set_idle() {
+    void ImageChannelTaskSetIdle() {
         _image_channel_task_active = false;
     }
-    int increase_ref_count() {
+    int IncreaseRefCount() {
         return ++_ref_count;
     }
-    int decrease_ref_count() {
+    int DecreaseRefCount() {
         return --_ref_count;
     }
-    void disconnect_called();
-    static int number_of_sessions() {
+    void DisconnectCalled();
+    static int NumberOfSessions() {
         return _num_sessions;
     }
 
     // CARTA ICD
-    void onRegisterViewer(const CARTA::RegisterViewer& message, uint32_t requestId);
-    void onFileListRequest(const CARTA::FileListRequest& request, uint32_t requestId);
-    void onFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t requestId);
-    void onOpenFile(const CARTA::OpenFile& message, uint32_t requestId);
-    void onCloseFile(const CARTA::CloseFile& message, uint32_t requestId);
-    void onSetImageView(const CARTA::SetImageView& message, uint32_t requestId);
-    void onSetImageChannels(const CARTA::SetImageChannels& message, uint32_t requestId);
-    void onSetCursor(const CARTA::SetCursor& message, uint32_t requestId);
-    void onSetRegion(const CARTA::SetRegion& message, uint32_t requestId);
-    void onRemoveRegion(const CARTA::RemoveRegion& message, uint32_t requestId);
-    void onSetSpatialRequirements(const CARTA::SetSpatialRequirements& message, uint32_t requestId);
-    void onSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
-    void onSetSpectralRequirements(const CARTA::SetSpectralRequirements& message, uint32_t requestId);
-    void onSetStatsRequirements(const CARTA::SetStatsRequirements& message, uint32_t requestId);
+    void OnRegisterViewer(const CARTA::RegisterViewer& message, uint32_t request_id);
+    void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
+    void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
+    void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
+    void OnCloseFile(const CARTA::CloseFile& message);
+    void OnSetImageView(const CARTA::SetImageView& message);
+    void OnSetImageChannels(const CARTA::SetImageChannels& message);
+    void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
+    void OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id);
+    void OnRemoveRegion(const CARTA::RemoveRegion& message);
+    void OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& message);
+    void OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
+    void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);
+    void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
 
-    void sendPendingMessages();
+    void SendPendingMessages();
 
 protected:
     // ICD: File info response
-    void resetFileInfo(bool create = false); // delete existing file info ptrs, optionally create new ones
-    bool fillExtendedFileInfo(CARTA::FileInfoExtended* extendedInfo, CARTA::FileInfo* fileInfo, const std::string folder,
-        const std::string filename, std::string hdu, std::string& message);
+    void ResetFileInfo(bool create = false); // delete existing file info ptrs, optionally create new ones
+    bool FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const std::string& folder,
+        const std::string& filename, std::string hdu, std::string& message);
 
     // Histogram
-    CARTA::RegionHistogramData* getRegionHistogramData(const int32_t fileId, const int32_t regionId, bool checkCurrentChannel = false);
-    bool sendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t requestId);
+    CARTA::RegionHistogramData* GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel = false);
+    bool SendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
     // basic message to update progress
-    void createCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fileId, int stokes, float progress);
+    void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
     // send data streams
-    bool sendRasterImageData(int fileId, bool sendHistogram = false);
-    bool sendSpatialProfileData(int fileId, int regionId, bool checkCurrentStokes = false);
-    bool sendSpectralProfileData(int fileId, int regionId, bool checkCurrentStokes = false);
-    bool sendRegionHistogramData(int fileId, int regionId, bool checkCurrentChannel = false);
-    bool sendRegionStatsData(int fileId, int regionId);
-    void updateRegionData(int fileId, bool channelChanged, bool stokesChanged);
+    bool SendRasterImageData(int file_id, bool send_histogram = false);
+    bool SendSpatialProfileData(int file_id, int region_id, bool check_current_stokes = false);
+    bool SendSpectralProfileData(int file_id, int region_id, bool check_current_stokes = false);
+    bool SendRegionHistogramData(int file_id, int region_id, bool check_current_channel = false);
+    bool SendRegionStatsData(int file_id, int region_id);
+    void UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed);
 
     // Send protobuf messages
-    void sendEvent(CARTA::EventType eventType, u_int32_t eventId, google::protobuf::MessageLite& message);
-    void sendFileEvent(int fileId, CARTA::EventType eventType, u_int32_t eventId, google::protobuf::MessageLite& message);
-    void sendLogEvent(std::string message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
+    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
+    void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
+    void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 };
 
 #endif // CARTA_BACKEND__SESSION_H_

@@ -16,18 +16,18 @@
 
 class OnMessageTask : public tbb::task {
 protected:
-    Session* session;
-    virtual tbb::task* execute() = 0;
+    Session* _session;
+    tbb::task* execute() override = 0;
 
 public:
-    OnMessageTask(Session* session_) {
-        session = session_;
-        session->increase_ref_count();
+    OnMessageTask(Session* session) {
+        _session = session;
+        _session->IncreaseRefCount();
     }
     ~OnMessageTask() {
-        if (!session->decrease_ref_count())
-            delete session;
-        session = 0;
+        if (!_session->DecreaseRefCount())
+            delete _session;
+        _session = nullptr;
     }
 };
 
@@ -35,7 +35,7 @@ class MultiMessageTask : public OnMessageTask {
     CARTA::EventHeader _header;
     int _event_length;
     char* _event_buffer;
-    tbb::task* execute();
+    tbb::task* execute() override;
 
 public:
     MultiMessageTask(Session* session_, CARTA::EventHeader& head, int evt_len, char* event_buf) : OnMessageTask(session_) {
@@ -43,66 +43,66 @@ public:
         _event_length = evt_len;
         _event_buffer = event_buf;
     }
-    ~MultiMessageTask() {}
+    ~MultiMessageTask() = default;
 };
 
 class SetImageChannelsTask : public OnMessageTask {
-    std::pair<CARTA::SetImageChannels, uint32_t> _req;
-    tbb::task* execute();
+    std::pair<CARTA::SetImageChannels, uint32_t> _request_pair;
+    tbb::task* execute() override;
 
 public:
-    SetImageChannelsTask(Session* session_, std::pair<CARTA::SetImageChannels, uint32_t> req_) : OnMessageTask(session_) {
-        _req = req_;
+    SetImageChannelsTask(Session* session, std::pair<CARTA::SetImageChannels, uint32_t> request_pair) : OnMessageTask(session) {
+        _request_pair = request_pair;
     }
-    ~SetImageChannelsTask() {}
+    ~SetImageChannelsTask() = default;
 };
 
 class SetImageViewTask : public OnMessageTask {
     int _file_id;
-    tbb::task* execute();
+    tbb::task* execute() override;
 
 public:
-    SetImageViewTask(Session* session_, int fd) : OnMessageTask(session_) {
-        _file_id = fd;
+    SetImageViewTask(Session* session, int file_id) : OnMessageTask(session) {
+        _file_id = file_id;
     }
-    ~SetImageViewTask() {}
+    ~SetImageViewTask() = default;
 };
 
 class SetCursorTask : public OnMessageTask {
     int _file_id;
-    tbb::task* execute();
+    tbb::task* execute() override;
 
 public:
-    SetCursorTask(Session* session, int fd) : OnMessageTask(session) {
-        _file_id = fd;
+    SetCursorTask(Session* session, int file_id) : OnMessageTask(session) {
+        _file_id = file_id;
     }
-    ~SetCursorTask() {}
+    ~SetCursorTask() = default;
 };
 
-class SetHistogramReqsTask : public OnMessageTask {
+class SetHistogramRequirementsTask : public OnMessageTask {
     tbb::task* execute();
     CARTA::EventHeader _header;
     int _event_length;
     char* _event_buffer;
 
 public:
-    SetHistogramReqsTask(Session* session, CARTA::EventHeader& head, int len, char* buf) : OnMessageTask(session) {
+    SetHistogramRequirementsTask(Session* session, CARTA::EventHeader& head, int len, char* buf) : OnMessageTask(session) {
         _header = head;
         _event_length = len;
         _event_buffer = buf;
     }
-    ~SetHistogramReqsTask() {}
+    ~SetHistogramRequirementsTask() = default;
 };
 
 class AnimationTask : public OnMessageTask {
     std::tuple<uint8_t, uint32_t, std::vector<char>> _msg;
-    tbb::task* execute();
+    tbb::task* execute() override;
 
 public:
-    AnimationTask(Session* session, uint32_t req_id, CARTA::StartAnimation msg) : OnMessageTask(session) {
-        session->build_animation_object(msg, req_id);
+    AnimationTask(Session* session, uint32_t request_id, CARTA::StartAnimation msg) : OnMessageTask(session) {
+        session->BuildAnimationObject(msg, request_id);
     }
-    ~AnimationTask() {}
+    ~AnimationTask() = default;
 };
 
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_

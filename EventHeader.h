@@ -4,9 +4,9 @@
 namespace CARTA {
 const uint16_t ICD_VERSION = 2;
 struct EventHeader {
-    uint16_t _type;
-    uint16_t _icd_vers;
-    uint32_t _req_id;
+    uint16_t type;
+    uint16_t icd_version;
+    uint32_t request_id;
 };
 } // namespace CARTA
 
