@@ -24,7 +24,7 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
     _hist = tmp;
 }
 
-void Histogram::join(Histogram& h) {
+void Histogram::join(Histogram& h) { // NOLINT
     auto range = tbb::blocked_range<size_t>(0, _hist.size());
     auto loop = [this, &h](const tbb::blocked_range<size_t>& r) {
         size_t beg = r.begin();
