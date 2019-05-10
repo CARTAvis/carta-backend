@@ -143,7 +143,7 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu) 
     casacore::HDF5Group hdf5_group(hdf5_file, hdu, true);
     casacore::Record attributes;
     try {
-        attributes = Hdf5Attributes::DoReadAttributes(hdf5_group.getHid());
+        attributes = Hdf5Attributes::ReadAttributes(hdf5_group.getHid());
         hdf5_group.close();
         hdf5_file.close();
         Hdf5Attributes::ConvertToFits(attributes);

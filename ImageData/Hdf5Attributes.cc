@@ -7,7 +7,7 @@
 #include <casacore/casa/HDF5/HDF5Error.h>
 #include <casacore/fits/FITS/FITSDateUtil.h>
 
-casacore::Record Hdf5Attributes::DoReadAttributes(hid_t group_hid) {
+casacore::Record Hdf5Attributes::ReadAttributes(hid_t group_hid) {
     // reads attributes but not links
     casacore::Record rec;
     char cname[512];

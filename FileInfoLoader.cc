@@ -156,7 +156,7 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         casacore::HDF5Group hdf_group(hdf_file, hdu, true);
         casacore::Record attributes;
         try {
-            attributes = Hdf5Attributes::DoReadAttributes(hdf_group.getHid());
+            attributes = Hdf5Attributes::ReadAttributes(hdf_group.getHid());
         } catch (casacore::HDF5Error& err) {
             message = "Error reading HDF5 attributes: " + err.getMesg();
             hdf_group.close();
