@@ -21,7 +21,7 @@ public:
     MinMax(MinMax& mm, tbb::split);
 
     void operator()(const tbb::blocked_range<size_t>& r);
-    void join(MinMax& other);
+    void join(MinMax& other); // NOLINT
 
     std::pair<T, T> GetMinMax() const;
 };
@@ -53,7 +53,7 @@ void MinMax<T>::operator()(const tbb::blocked_range<size_t>& r) {
 }
 
 template <typename T>
-void MinMax<T>::join(MinMax<T>& other) {
+void MinMax<T>::join(MinMax<T>& other) { // NOLINT
     _min_val = std::min(_min_val, other._min_val);
     _max_val = std::max(_max_val, other._max_val);
 }

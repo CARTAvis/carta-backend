@@ -33,9 +33,9 @@ void FileListHandler::OnFileListRequest(
         folder = _root_folder;
     // resolve $BASE keyword in folder string
     if (folder.find("$BASE") != std::string::npos) {
-        casacore::String folderString(folder);
-        folderString.gsub("$BASE", _base_folder);
-        folder = folderString;
+        casacore::String folder_string(folder);
+        folder_string.gsub("$BASE", _base_folder);
+        folder = folder_string;
     }
     // strip root_folder from folder
     GetRelativePath(folder);

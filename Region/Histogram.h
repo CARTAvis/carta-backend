@@ -21,7 +21,7 @@ public:
     Histogram(Histogram& h, tbb::split);
 
     void operator()(const tbb::blocked_range<size_t>& r);
-    void join(Histogram& h);
+    void join(Histogram& h); // NOLINT
 
     float GetBinWidth() const {
         return _bin_width;
