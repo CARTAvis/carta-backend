@@ -668,12 +668,12 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
 
         // RESTFRQ
         casacore::String rest_freq_string;
-        casacore::Quantum<casacore::Double> restFreq;
-        casacore::Bool ok = image_summary.restFrequency(rest_freq_string, restFreq);
+        casacore::Quantum<casacore::Double> rest_freq;
+        casacore::Bool ok = image_summary.restFrequency(rest_freq_string, rest_freq);
         if (ok) {
             num_axis_header_entry = ext_info->add_header_entries();
             num_axis_header_entry->set_name("RESTFRQ");
-            casacore::Double rest_freq_val(restFreq.getValue());
+            casacore::Double rest_freq_val(rest_freq.getValue());
             *num_axis_header_entry->mutable_value() = rest_freq_string;
             num_axis_header_entry->set_entry_type(CARTA::EntryType::FLOAT);
             num_axis_header_entry->set_numeric_value(rest_freq_val);
@@ -1058,12 +1058,12 @@ std::string FileInfoLoader::MakeValueStr(const std::string& type, double val, co
         // convert to uppercase for string comparisons
         std::string upper_type(type);
         transform(upper_type.begin(), upper_type.end(), upper_type.begin(), ::toupper);
-        bool isRA(upper_type.find("RA") != std::string::npos);
-        bool isAngle((upper_type.find("DEC") != std::string::npos) || (upper_type.find("LON") != std::string::npos) ||
-                     (upper_type.find("LAT") != std::string::npos));
-        if (isRA || isAngle) {
+        bool is_ra(upper_type.find("RA") != std::string::npos);
+        bool is_angle((upper_type.find("DEC") != std::string::npos) || (upper_type.find("LON") != std::string::npos) ||
+                      (upper_type.find("LAT") != std::string::npos));
+        if (is_ra || is_angle) {
             casacore::MVAngle::formatTypes format(casacore::MVAngle::ANGLE);
-            if (isRA)
+            if (is_ra)
                 format = casacore::MVAngle::TIME;
             casacore::Quantity quant1(val, unit);
             casacore::MVAngle mva(quant1);

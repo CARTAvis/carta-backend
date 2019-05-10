@@ -134,9 +134,9 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
         auto& region = _regions[region_id];
         region_set = region->UpdateRegionParameters(name, type, points, rotation);
     } else { // map new Region to region id
-        const casacore::CoordinateSystem cSys = _loader->LoadData(FileInfo::Data::Image).coordinates();
+        const casacore::CoordinateSystem c_sys = _loader->LoadData(FileInfo::Data::Image).coordinates();
         auto region =
-            unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, cSys));
+            unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, c_sys));
         if (region->IsValid()) {
             _regions[region_id] = move(region);
             region_set = true;
@@ -179,8 +179,8 @@ void Frame::SetImageRegion(int region_id) {
         CARTA::SetHistogramRequirements_HistogramConfig config;
         config.set_channel(CURRENT_CHANNEL);
         config.set_num_bins(AUTO_BIN_SIZE);
-        std::vector<CARTA::SetHistogramRequirements_HistogramConfig> defaultConfigs(1, config);
-        SetRegionHistogramRequirements(IMAGE_REGION_ID, defaultConfigs);
+        std::vector<CARTA::SetHistogramRequirements_HistogramConfig> default_configs(1, config);
+        SetRegionHistogramRequirements(IMAGE_REGION_ID, default_configs);
     }
 }
 
@@ -273,9 +273,9 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
     } else {
         if ((new_channel != _channel_index) || (new_stokes != _stokes_index)) {
             auto& region = _regions[IMAGE_REGION_ID];
-            bool chanOK(CheckChannel(new_channel));
-            bool stokesOK(CheckStokes(new_stokes));
-            if (chanOK && stokesOK) {
+            bool chan_ok(CheckChannel(new_channel));
+            bool stokes_ok(CheckStokes(new_stokes));
+            if (chan_ok && stokes_ok) {
                 _channel_index = new_channel;
                 _stokes_index = new_stokes;
                 SetImageCache();
@@ -470,13 +470,13 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
             std::vector<size_t> compressed_sizes(num_subsets_setting);
             std::vector<std::vector<int32_t>> nan_encodings(num_subsets_setting);
 
-            auto N = std::min(num_subsets_setting, MAX_SUBSETS);
-            auto range = tbb::blocked_range<int>(0, N);
+            auto num_subsets = std::min(num_subsets_setting, MAX_SUBSETS);
+            auto range = tbb::blocked_range<int>(0, num_subsets);
             auto loop = [&](const tbb::blocked_range<int>& r) {
                 for (int i = r.begin(); i != r.end(); ++i) {
-                    int subset_row_start = i * (num_rows / N);
-                    int subset_row_end = (i + 1) * (num_rows / N);
-                    if (i == N - 1) {
+                    int subset_row_start = i * (num_rows / num_subsets);
+                    int subset_row_end = (i + 1) * (num_rows / num_subsets);
+                    if (i == num_subsets - 1) {
                         subset_row_end = num_rows;
                     }
                     int subset_element_start = subset_row_start * row_length;

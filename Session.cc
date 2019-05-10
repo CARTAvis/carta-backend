@@ -352,7 +352,7 @@ void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
             auto& frame = _frames[file_id]; // use frame in SetRegion message
             success = _frames.at(file_id)->SetRegion(
                 region_id, message.region_name(), message.region_type(), points, message.rotation(), err_message);
-        } catch (std::out_of_range& rangeError) {
+        } catch (std::out_of_range& range_error) {
             err_message = fmt::format("File id {} closed", file_id);
         }
     } else {
@@ -810,14 +810,14 @@ void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_ch
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message) {
     int message_length = message.ByteSize();
-    size_t required_size = message_length + sizeof(CARTA::EventHeader);
+    size_t required_size = message_length + sizeof(carta::EventHeader);
     std::vector<char> msg(required_size, 0);
-    CARTA::EventHeader* head = (CARTA::EventHeader*)msg.data();
+    carta::EventHeader* head = (carta::EventHeader*)msg.data();
 
     head->type = event_type;
-    head->icd_version = CARTA::ICD_VERSION;
+    head->icd_version = carta::ICD_VERSION;
     head->request_id = event_id;
-    message.SerializeToArray(msg.data() + sizeof(CARTA::EventHeader), message_length);
+    message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
     _out_msgs.push(msg);
     _outgoing_async->send();
 }

@@ -32,13 +32,13 @@ public:
 };
 
 class MultiMessageTask : public OnMessageTask {
-    CARTA::EventHeader _header;
+    carta::EventHeader _header;
     int _event_length;
     char* _event_buffer;
     tbb::task* execute() override;
 
 public:
-    MultiMessageTask(Session* session_, CARTA::EventHeader& head, int evt_len, char* event_buf) : OnMessageTask(session_) {
+    MultiMessageTask(Session* session_, carta::EventHeader& head, int evt_len, char* event_buf) : OnMessageTask(session_) {
         _header = head;
         _event_length = evt_len;
         _event_buffer = event_buf;
@@ -81,12 +81,12 @@ public:
 
 class SetHistogramRequirementsTask : public OnMessageTask {
     tbb::task* execute();
-    CARTA::EventHeader _header;
+    carta::EventHeader _header;
     int _event_length;
     char* _event_buffer;
 
 public:
-    SetHistogramRequirementsTask(Session* session, CARTA::EventHeader& head, int len, char* buf) : OnMessageTask(session) {
+    SetHistogramRequirementsTask(Session* session, carta::EventHeader& head, int len, char* buf) : OnMessageTask(session) {
         _header = head;
         _event_length = len;
         _event_buffer = buf;
