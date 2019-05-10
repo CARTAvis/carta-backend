@@ -60,8 +60,8 @@ private:
     std::string ConvertHz(const double hz);
     std::string MakeValueStr(const std::string& type, double val, const std::string& unit); // convert MVAngle to string
 
-    std::string _m_file;
-    casacore::ImageOpener::ImageTypes _m_type;
+    std::string _filename;
+    casacore::ImageOpener::ImageTypes _image_type;
 };
 
 #endif // CARTA_BACKEND__FILEINFOLOADER_H_

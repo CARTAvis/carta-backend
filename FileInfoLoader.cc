@@ -27,8 +27,8 @@
 //#################################################################################
 // FILE INFO LOADER
 
-FileInfoLoader::FileInfoLoader(const std::string& filename) : _m_file(filename) {
-    _m_type = FileType(filename);
+FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename) {
+    _image_type = FileType(filename);
 }
 
 casacore::ImageOpener::ImageTypes FileInfoLoader::FileType(const std::string& file) {
@@ -39,7 +39,7 @@ casacore::ImageOpener::ImageTypes FileInfoLoader::FileType(const std::string& fi
 // FILE INFO
 
 bool FileInfoLoader::FillFileInfo(CARTA::FileInfo* file_info) {
-    casacore::File cc_file(_m_file);
+    casacore::File cc_file(_filename);
     if (!cc_file.exists()) {
         return false;
     }
@@ -56,7 +56,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo* file_info) {
     }
 
     file_info->set_size(file_info_size);
-    file_info->set_type(ConvertFileType(_m_type));
+    file_info->set_type(ConvertFileType(_image_type));
     casacore::String abs_file_name(cc_file.path().absoluteName());
     return GetHduList(file_info, abs_file_name);
 }
@@ -112,7 +112,7 @@ bool FileInfoLoader::GetHduList(CARTA::FileInfo* file_info, const std::string& f
 // FILE INFO EXTENDED
 
 bool FileInfoLoader::FillFileExtInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message) {
-    casacore::File cc_file(_m_file);
+    casacore::File cc_file(_filename);
     if (!cc_file.exists()) {
         return false;
     }
@@ -125,7 +125,7 @@ bool FileInfoLoader::FillFileExtInfo(CARTA::FileInfoExtended* ext_info, std::str
     entry->set_entry_type(CARTA::EntryType::STRING);
 
     // fill FileExtInfo depending on image type
-    switch (_m_type) {
+    switch (_image_type) {
         case casacore::ImageOpener::AIPSPP:
             ext_info_ok = FillCasaExtFileInfo(ext_info, message);
             break;
@@ -149,7 +149,7 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
     // Add extended info for HDF5 file
     try {
         // read attributes into casacore Record
-        casacore::HDF5File hdf_file(_m_file);
+        casacore::HDF5File hdf_file(_filename);
         if (hdu.empty()) { // use first
             hdu = casacore::HDF5Group::linkNames(hdf_file)[0];
         }
@@ -174,7 +174,7 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         casacore::uInt num_dims;
         casacore::IPosition data_shape;
         try {
-            casacore::HDF5Lattice<float> hdf5_lattice = casacore::HDF5Lattice<float>(_m_file, "DATA", hdu);
+            casacore::HDF5Lattice<float> hdf5_lattice = casacore::HDF5Lattice<float>(_filename, "DATA", hdu);
             data_shape = hdf5_lattice.shape();
             num_dims = data_shape.size();
         } catch (casacore::AipsError& err) {
@@ -307,7 +307,7 @@ bool FileInfoLoader::FillFitsExtFileInfo(CARTA::FileInfoExtended* ext_info, stri
         casacore::Int num_dim(0);
         casacore::IPosition data_shape;
         try {
-            casacore::FITSImage fits_img(_m_file, 0, hdu_num);
+            casacore::FITSImage fits_img(_filename, 0, hdu_num);
             data_shape = fits_img.shape();
             num_dim = data_shape.size();
             if (num_dim < 2 || num_dim > 4) {
@@ -326,7 +326,7 @@ bool FileInfoLoader::FillFitsExtFileInfo(CARTA::FileInfoExtended* ext_info, stri
 
         // use FITSTable to get Record of hdu entries
         hdu_num += 1; // FITSTable starts at 1
-        casacore::FITSTable fits_table(_m_file, hdu_num, true);
+        casacore::FITSTable fits_table(_filename, hdu_num, true);
         casacore::Record hdu_entries(fits_table.primaryKeywords().toRecord());
         // set dims
         ext_info->set_width(data_shape(0));
@@ -468,15 +468,15 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
     bool ext_info_ok(true);
     casacore::ImageInterface<casacore::Float>* cc_image(nullptr);
     try {
-        switch (_m_type) {
+        switch (_image_type) {
             case casacore::ImageOpener::AIPSPP: {
-                cc_image = new casacore::PagedImage<casacore::Float>(_m_file);
+                cc_image = new casacore::PagedImage<casacore::Float>(_filename);
                 break;
             }
             case casacore::ImageOpener::MIRIAD: {
                 // no way to catch error, use casacore miriad lib directly
                 int t_handle, i_handle, io_stat, num_dim;
-                hopen_c(&t_handle, _m_file.c_str(), "old", &io_stat);
+                hopen_c(&t_handle, _filename.c_str(), "old", &io_stat);
                 if (io_stat != 0) {
                     message = "Could not open MIRIAD file";
                     return false;
@@ -494,7 +494,7 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
                     return false;
                 }
                 // hopefully okay to open now as casacore Image
-                cc_image = new casacore::MIRIADImage(_m_file);
+                cc_image = new casacore::MIRIADImage(_filename);
                 break;
             }
             default:
