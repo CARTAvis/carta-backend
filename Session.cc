@@ -844,7 +844,7 @@ void Session::sendLogEvent(std::string message, std::vector<std::string> tags, C
     *errorData.mutable_tags() = {tags.begin(), tags.end()};
     sendEvent(CARTA::EventType::ERROR_DATA, 0, errorData);
     if ((severity > CARTA::ErrorSeverity::DEBUG) || verboseLogging)
-        log(id, message);
+        Log(id, message);
 }
 
 void Session::build_animation_object(::CARTA::StartAnimation& msg, uint32_t requestID) {

@@ -57,7 +57,7 @@ void onConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest httpRequest) {
     session->increase_ref_count();
     outgoing->setData(session);
 
-    log(sessionNumber, "Client {} [{}] Connected. Num sessions: {}", sessionNumber, ws->getAddress().address,
+    Log(sessionNumber, "Client {} [{}] Connected. Num sessions: {}", sessionNumber, ws->getAddress().address,
         Session::number_of_sessions());
 }
 
@@ -68,7 +68,7 @@ void onDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
     if (session) {
         auto uuid = session->id;
         session->disconnect_called();
-        log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address, Session::number_of_sessions());
+        Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address, Session::number_of_sessions());
         if (!session->decrease_ref_count()) {
             delete session;
             ws->setUserData(nullptr);
@@ -193,14 +193,14 @@ int main(int argc, const char* argv[]) {
             rootFolder = inp.getString("root");
         }
 
-        if (!checkRootBaseFolders(rootFolder, baseFolder)) {
+        if (!CheckRootBaseFolders(rootFolder, baseFolder)) {
             return 1;
         }
 
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_sched(threadCount);
         if (usePermissions) {
-            readPermissions("permissions.txt", permissionsMap);
+            ReadPermissions("permissions.txt", permissionsMap);
         }
 
         // One filelisthandler works for all sessions.

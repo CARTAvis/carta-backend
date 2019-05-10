@@ -13,21 +13,19 @@
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/File.h>
 
-using namespace std;
-
-void log(uint32_t id, const string& logMessage);
+void Log(uint32_t id, const std::string& log_message);
 
 template <typename... Args>
-inline void log(uint32_t id, const char* templateString, Args... args) {
-    log(id, fmt::format(templateString, args...));
+inline void Log(uint32_t id, const char* template_string, Args... args) {
+    Log(id, fmt::format(template_string, args...));
 }
 
 template <typename... Args>
-inline void log(uint32_t id, const string& templateString, Args... args) {
-    log(id, fmt::format(templateString, args...));
+inline void Log(uint32_t id, const std::string& template_string, Args... args) {
+    Log(id, fmt::format(template_string, args...));
 }
 
-void readPermissions(string filename, unordered_map<string, vector<string>>& permissionsMap);
-bool checkRootBaseFolders(string& root, string& base);
+void ReadPermissions(const std::string& filename, std::unordered_map<std::string, std::vector<std::string>>& permissions_map);
+bool CheckRootBaseFolders(std::string& root, std::string& base);
 
 #endif // CARTA_BACKEND__UTIL_H_

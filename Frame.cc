@@ -26,7 +26,7 @@ Frame::Frame(uint32_t sessionId, const string& filename, const string& hdu, int 
       nchan(1),
       nstok(1) {
     if (loader == nullptr) {
-        log(sessionId, "Problem loading file {}: loader not implemented", filename);
+        Log(sessionId, "Problem loading file {}: loader not implemented", filename);
         valid = false;
         return;
     }
@@ -34,14 +34,14 @@ Frame::Frame(uint32_t sessionId, const string& filename, const string& hdu, int 
     try {
         loader->openFile(filename, hdu);
     } catch (casacore::AipsError& err) {
-        log(sessionId, "Problem loading file {}: {}", filename, err.getMesg());
+        Log(sessionId, "Problem loading file {}: {}", filename, err.getMesg());
         valid = false;
         return;
     }
 
     // Get shape and axis values from the loader
     if (!loader->findShape(imageShape, nchan, nstok, spectralAxis, stokesAxis)) {
-        log(sessionId, "Problem loading file {}: could not determine image shape", filename);
+        Log(sessionId, "Problem loading file {}: could not determine image shape", filename);
         valid = false;
         return;
     }
@@ -62,7 +62,7 @@ Frame::Frame(uint32_t sessionId, const string& filename, const string& hdu, int 
         // A failure here shouldn't invalidate the frame
         loader->loadImageStats();
     } catch (casacore::AipsError& err) {
-        log(sessionId, "Problem loading statistics from file {}: {}", filename, err.getMesg());
+        Log(sessionId, "Problem loading statistics from file {}: {}", filename, err.getMesg());
     }
 }
 
@@ -374,7 +374,7 @@ bool Frame::getRegionSubImage(int regionId, casacore::SubImage<float>& subimage,
                     subimage = casacore::SubImage<float>(loader->loadData(FileInfo::Data::Image), imRegion);
                     subimageOK = true;
                 } catch (casacore::AipsError& err) {
-                    log(sessionId, "Region creation for {} failed: {}", region->name(), err.getMesg());
+                    Log(sessionId, "Region creation for {} failed: {}", region->name(), err.getMesg());
                 }
             }
         }
@@ -481,8 +481,8 @@ bool Frame::fillRasterImageData(CARTA::RasterImageData& rasterImageData, std::st
                     }
                     int subsetElementStart = subsetRowStart * rowLength;
                     int subsetElementEnd = subsetRowEnd * rowLength;
-                    nanEncodings[i] = getNanEncodingsBlock(imageData, subsetElementStart, rowLength, subsetRowEnd - subsetRowStart);
-                    compress(imageData, subsetElementStart, compressionBuffers[i], compressedSizes[i], rowLength,
+                    nanEncodings[i] = GetNanEncodingsBlock(imageData, subsetElementStart, rowLength, subsetRowEnd - subsetRowStart);
+                    Compress(imageData, subsetElementStart, compressionBuffers[i], compressedSizes[i], rowLength,
                         subsetRowEnd - subsetRowStart, precision);
                 }
             };
