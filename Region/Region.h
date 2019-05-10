@@ -81,7 +81,6 @@ public:
     size_t NumSpectralProfiles();
     bool GetSpectralConfigStokes(int& stokes, int profile_index);
     std::string GetSpectralCoordinate(int profile_index);
-    // TODO: this isn't implemented
     bool GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, casacore::ImageInterface<float>& image);

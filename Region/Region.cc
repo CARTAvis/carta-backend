@@ -577,6 +577,10 @@ bool Region::GetSpectralConfigStokes(int& stokes, int profile_index) {
     return _profiler->GetSpectralConfigStokes(stokes, profile_index);
 }
 
+bool Region::GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index) {
+    return _profiler->GetSpectralConfig(config, profile_index);
+}
+
 std::string Region::GetSpectralCoordinate(int profile_index) {
     return _profiler->GetSpectralCoordinate(profile_index);
 }
