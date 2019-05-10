@@ -71,7 +71,8 @@ std::string RegionProfiler::GetSpatialCoordinate(int profile_index) {
 
 // ***** spectral *****
 
-bool RegionProfiler::SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs, const int num_stokes) {
+bool RegionProfiler::SetSpectralRequirements(
+    const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs, const int num_stokes) {
     // parse stokes into index
     _spectral_configs.clear();
     _spectral_stokes.clear();

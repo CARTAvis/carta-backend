@@ -292,7 +292,7 @@ bool RegionStats::CalcStatsValues(std::vector<std::vector<double>>& stats_values
                 break;
         }
         if (lattice_stats_type < casacore::LatticeStatsBase::NSTATS) { // get lattice statistic
-            casacore::Array<casacore::Double> result;                // must be double
+            casacore::Array<casacore::Double> result;                  // must be double
             if (image_stats.getStatistic(result, lattice_stats_type)) {
                 if (anyEQ(result, 0.0)) { // actually 0, or NaN?
                     // NaN if number of points is zero

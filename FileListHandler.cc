@@ -94,7 +94,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& fileList, string fold
             casacore::Directory start_dir(folder_path);
             casacore::DirectoryIterator dir_iter(start_dir);
             while (!dir_iter.pastEnd()) {
-                casacore::File cc_file(dir_iter.file());            // directory is also a File
+                casacore::File cc_file(dir_iter.file());           // directory is also a File
                 casacore::String name(cc_file.path().baseName());  // in case it is a link
                 if (cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                     casacore::String fullpath(cc_file.path().absoluteName());

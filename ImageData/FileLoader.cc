@@ -178,7 +178,8 @@ void FileLoader::LoadStats2DHist() {
         size_t num_bins = stat_dims[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && stat_dims.isEqual(IPos(1, num_bins))) || (_num_dims == 3 && stat_dims.isEqual(IPos(2, num_bins, _num_channels))) ||
+        if ((_num_dims == 2 && stat_dims.isEqual(IPos(1, num_bins))) ||
+            (_num_dims == 3 && stat_dims.isEqual(IPos(2, num_bins, _num_channels))) ||
             (_num_dims == 4 && stat_dims.isEqual(IPos(3, num_bins, _num_channels, _num_stokes)))) {
             auto data = static_cast<casacore::Array<casacore::Int64>*>(GetStatsData(ds));
             auto it = data->begin();
@@ -210,7 +211,8 @@ void FileLoader::LoadStats2DPercent() {
         size_t num_ranks = dims_ranks[0];
 
         // We can handle 2D, 3D and 4D in the same way
-        if ((_num_dims == 2 && dims_vals.isEqual(IPos(1, num_ranks))) || (_num_dims == 3 && dims_vals.isEqual(IPos(2, num_ranks, _num_channels))) ||
+        if ((_num_dims == 2 && dims_vals.isEqual(IPos(1, num_ranks))) ||
+            (_num_dims == 3 && dims_vals.isEqual(IPos(2, num_ranks, _num_channels))) ||
             (_num_dims == 4 && dims_vals.isEqual(IPos(3, num_ranks, _num_channels, _num_stokes)))) {
             auto ranks = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsr));
             auto data = static_cast<casacore::Array<casacore::Float>*>(GetStatsData(dsp));
@@ -288,7 +290,8 @@ void FileLoader::LoadStats3DHist() {
         size_t num_bins = stat_dims[0];
 
         // We can handle 3D and 4D in the same way
-        if ((_num_dims == 3 && stat_dims.isEqual(IPos(1, num_bins))) || (_num_dims == 4 && stat_dims.isEqual(IPos(2, num_bins, _num_stokes)))) {
+        if ((_num_dims == 3 && stat_dims.isEqual(IPos(1, num_bins))) ||
+            (_num_dims == 4 && stat_dims.isEqual(IPos(2, num_bins, _num_stokes)))) {
             auto data = static_cast<casacore::Array<casacore::Int64>*>(GetStatsData(ds));
             auto it = data->begin();
 

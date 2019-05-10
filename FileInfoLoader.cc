@@ -949,7 +949,7 @@ void FileInfoLoader::FindChanStokesAxis(const casacore::IPosition& data_shape, c
 
     // find spectral axis
     if (!c_type1.empty() && (c_type1.contains("FELO") || c_type1.contains("FREQ") || c_type1.contains("VELO") || c_type1.contains("VOPT") ||
-                               c_type1.contains("VRAD") || c_type1.contains("WAVE") || c_type1.contains("AWAV"))) {
+                                c_type1.contains("VRAD") || c_type1.contains("WAVE") || c_type1.contains("AWAV"))) {
         chan_axis = 0;
     } else if (!c_type2.empty() &&
                (c_type2.contains("FELO") || c_type2.contains("FREQ") || c_type2.contains("VELO") || c_type2.contains("VOPT") ||
