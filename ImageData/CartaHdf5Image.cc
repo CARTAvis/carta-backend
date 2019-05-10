@@ -19,7 +19,6 @@ CartaHdf5Image::CartaHdf5Image(
     : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)),
       _valid(false),
       _pixel_mask(nullptr),
-      _region(nullptr),
       _mask_spec(mask_spec) {
     _lattice = casacore::HDF5Lattice<float>(filename, array_name, hdu);
     _pixel_mask = new casacore::ArrayLattice<bool>(_lattice.shape());
@@ -34,7 +33,6 @@ CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other)
       _mask_spec(other._mask_spec),
       _lattice(other._lattice),
       _pixel_mask(nullptr),
-      _region(nullptr),
       _shape(other._shape) {
     if (other._pixel_mask != nullptr)
         _pixel_mask = other._pixel_mask->clone();

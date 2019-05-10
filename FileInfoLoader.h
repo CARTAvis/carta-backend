@@ -47,11 +47,6 @@ private:
     void FindChanStokesAxis(const casacore::IPosition& data_shape, const casacore::String& axis_type_1, const casacore::String& axis_type_2,
         const casacore::String& axis_type_3, const casacore::String& axis_type_4, int& chan_axis, int& stokes_axis);
 
-    // casacore::Record attributes
-    // TODO: what are these for?
-    bool getIntAttribute(casacore::Int64& val, const casacore::Record& rec, const casacore::String& field);
-    bool getDoubleAttribute(casacore::Double& val, const casacore::Record& rec, const casacore::String& field);
-
     // FITS keyword conversion
     void ConvertAxisName(std::string& axis_name, std::string& projection, casacore::MDirection::Types type);
     void MakeRadeSysStr(std::string& rade_sys, const std::string& equinox);

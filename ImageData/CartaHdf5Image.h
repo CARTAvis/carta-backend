@@ -66,7 +66,6 @@ private:
     casacore::HDF5Lattice<float> _lattice;
     casacore::Lattice<bool>* _pixel_mask;
     casacore::IPosition _shape;
-    casacore::LatticeRegion* _region;
 };
 
 } // namespace carta
