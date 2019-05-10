@@ -1,4 +1,4 @@
-#include "compression.h"
+#include "Compression.h"
 
 #include <cmath>
 

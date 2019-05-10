@@ -16,7 +16,7 @@
 #include "EventHeader.h"
 #include "FileInfoLoader.h"
 #include "InterfaceConstants.h"
-#include "util.h"
+#include "Util.h"
 
 #define DEBUG(_DB_TEXT_) \
     {}

@@ -5,8 +5,8 @@
 
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 
-#include "compression.h"
-#include "util.h"
+#include "Compression.h"
+#include "Util.h"
 
 using namespace carta;
 using namespace std;

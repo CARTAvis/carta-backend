@@ -18,42 +18,64 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
-set(LINK_LIBS ${LINK_LIBS} carta-protobuf ${PROTOBUF_LIBRARY} fmt uWS ssl crypto z zfp tbb casa_casa casa_coordinates casa_tables casa_images casa_lattices casa_fits casa_measures casa_mirlib casa_scimath ${HDF5_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+set(LINK_LIBS
+        ${LINK_LIBS}
+        carta-protobuf
+        ${PROTOBUF_LIBRARY}
+        fmt
+        uWS
+        ssl
+        crypto
+        z
+        zfp
+        tbb
+        casa_casa
+        casa_coordinates
+        casa_tables
+        casa_images
+        casa_lattices
+        casa_fits
+        casa_measures
+        casa_mirlib
+        casa_scimath
+        ${HDF5_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT})
+
 set(SOURCE_FILES
-  main.cc
-  Session.cc
-  Frame.cc
-  compression.cc
-  ImageData/HDF5Attributes.cc
-  ImageData/FileLoader.cc
-  ImageData/CartaHdf5Image.cc
-  FileInfoLoader.cc
-  Region/Region.cc
-  Region/RegionStats.cc
-  Region/RegionProfiler.cc
-  Region/Histogram.cc
-  OnMessageTask.cc
-  FileSettings.cc
-  util.cc
-  FileListHandler.cc)
+        Main.cc
+        Session.cc
+        Frame.cc
+        Compression.cc
+        ImageData/HDF5Attributes.cc
+        ImageData/FileLoader.cc
+        ImageData/CartaHdf5Image.cc
+        FileInfoLoader.cc
+        Region/Region.cc
+        Region/RegionStats.cc
+        Region/RegionProfiler.cc
+        Region/Histogram.cc
+        OnMessageTask.cc
+        FileSettings.cc
+        Util.cc
+        FileListHandler.cc)
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  target_link_libraries(carta_backend uv ${LINK_LIBS})
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  target_link_libraries(carta_backend ${LINK_LIBS})
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(carta_backend uv ${LINK_LIBS})
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    target_link_libraries(carta_backend ${LINK_LIBS})
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Tests
 option(test "Build all tests." OFF)
-if(test)
-  enable_testing()
-  find_package(GTest)
-  include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+if (test)
+    enable_testing()
+    find_package(GTest)
+    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
 
-  add_executable(testPriorityCtpl test/TestPriorityCtpl.cpp)
-  target_link_libraries(testPriorityCtpl gtest gtest_main Threads::Threads)
+    add_executable(testPriorityCtpl test/TestPriorityCtpl.cpp)
+    target_link_libraries(testPriorityCtpl gtest gtest_main Threads::Threads)
 
-  add_test(NAME TestPCtpl COMMAND testPriorityCtpl)
-endif(test)
+    add_test(NAME TestPCtpl COMMAND testPriorityCtpl)
+endif (test)
