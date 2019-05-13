@@ -184,7 +184,7 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
                 header_record.define(header_entry.name(), static_cast<float>(header_entry.numeric_value()));
                 break;
             case CARTA::EntryType::INT:
-                header_record.define(header_entry.name(), static_cast<float>(header_entry.numeric_value()));
+                header_record.define(header_entry.name(), static_cast<int>(header_entry.numeric_value()));
                 break;
             default:
                 header_record.define(header_entry.name(), header_entry.value());
