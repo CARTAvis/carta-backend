@@ -13,36 +13,33 @@
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
 
-class Session; // RWJS.
-
-namespace carta {
+class Session;
 
 class FileSettings {
 public:
     FileSettings(Session* session);
 
-    void addViewSetting(CARTA::SetImageView message, uint32_t requestId);
-    void addCursorSetting(CARTA::SetCursor message, uint32_t requestId);
-    bool executeOne(const std::string eventName, const uint32_t fileId);
-    void clearSettings(const uint32_t fileId);
+    void AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id);
+    void AddCursorSetting(const CARTA::SetCursor& message, uint32_t request_id);
+    // TODO: change to event type
+    bool ExecuteOne(const std::string& event_name, const uint32_t file_id);
+    void ClearSettings(const uint32_t file_id);
 
 private:
-    Session* session;
-    tbb::queuing_rw_mutex viewMutex, cursorMutex;
+    Session* _session;
+    tbb::queuing_rw_mutex _view_mutex, _cursor_mutex;
 
     // pair is <message, requestId)
     using view_info_t = std::pair<CARTA::SetImageView, uint32_t>;
     using view_iter = tbb::concurrent_unordered_map<int, view_info_t>::iterator;
     // map is <fileId, view info>
-    tbb::concurrent_unordered_map<int, view_info_t> latestView;
+    tbb::concurrent_unordered_map<int, view_info_t> _latest_view;
 
     // pair is <message, requestId)
     using cursor_info_t = std::pair<CARTA::SetCursor, uint32_t>;
     using cursor_iter = tbb::concurrent_unordered_map<uint32_t, cursor_info_t>::iterator;
     // map is <fileId, cursor info>
-    tbb::concurrent_unordered_map<uint32_t, cursor_info_t> latestCursor;
+    tbb::concurrent_unordered_map<uint32_t, cursor_info_t> _latest_cursor;
 };
-
-} // namespace carta
 
 #endif // CARTA_BACKEND__FILESETTINGS_H_

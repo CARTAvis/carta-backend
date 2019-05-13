@@ -25,116 +25,115 @@ class Region {
 
 public:
     Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, const float rotation,
-        const casacore::IPosition imageShape, int spectralAxis, int stokesAxis, const casacore::CoordinateSystem& cSys);
+        const casacore::IPosition image_shape, int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys);
     ~Region();
 
     // to determine if data needs to be updated
-    inline bool isValid() {
-        return m_valid;
+    inline bool IsValid() {
+        return _valid;
     };
-    inline bool isPoint() {
-        return (m_type == CARTA::POINT);
+    inline bool IsPoint() {
+        return (_type == CARTA::POINT);
     };
-    inline bool regionChanged() {
-        return m_xyRegionChanged;
+    inline bool RegionChanged() {
+        return _xy_region_changed;
     };
 
     // set/get Region parameters
-    bool updateRegionParameters(
+    bool UpdateRegionParameters(
         const std::string name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation);
-    inline std::string name() {
-        return m_name;
+    inline std::string Name() {
+        return _name;
     };
-    inline std::vector<CARTA::Point> getControlPoints() {
-        return m_ctrlpoints;
+    inline std::vector<CARTA::Point> GetControlPoints() {
+        return _control_points;
     };
-    casacore::IPosition xyShape();
-    inline bool xyRegionValid() {
-        return (m_xyRegion != nullptr);
+    casacore::IPosition XyShape();
+    inline bool XyRegionValid() {
+        return (_xy_region != nullptr);
     };
 
     // get image region for requested stokes and (optionally) single channel
-    bool getRegion(casacore::ImageRegion& region, int stokes, int channel = ALL_CHANNELS);
+    bool GetRegion(casacore::ImageRegion& region, int stokes, int channel = ALL_CHANNELS);
     // get data from subimage (LCRegion applied to Image by Frame)
-    bool getData(std::vector<float>& data, casacore::ImageInterface<float>& image);
+    bool GetData(std::vector<float>& data, casacore::ImageInterface<float>& image);
 
     // Histogram: pass through to RegionStats
-    bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
-    CARTA::SetHistogramRequirements_HistogramConfig getHistogramConfig(int histogramIndex);
-    size_t numHistogramConfigs();
-    bool getMinMax(int channel, int stokes, float& minVal, float& maxVal);
-    void setMinMax(int channel, int stokes, float minVal, float maxVal);
-    void calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minVal, float& maxVal);
-    bool getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram);
-    void setHistogram(int channel, int stokes, CARTA::Histogram& histogram);
-    void calcHistogram(
-        int channel, int stokes, int nBins, float minVal, float maxVal, const std::vector<float>& data, CARTA::Histogram& histogramMsg);
+    bool SetHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_reqs);
+    CARTA::SetHistogramRequirements_HistogramConfig GetHistogramConfig(int histogram_index);
+    size_t NumHistogramConfigs();
+    bool GetMinMax(int channel, int stokes, float& min_val, float& max_val);
+    void SetMinMax(int channel, int stokes, float min_val, float max_val);
+    void CalcMinMax(int channel, int stokes, const std::vector<float>& data, float& min_val, float& max_val);
+    bool GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram);
+    void SetHistogram(int channel, int stokes, CARTA::Histogram& histogram);
+    void CalcHistogram(int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data,
+        CARTA::Histogram& histogram_msg);
 
     // Spatial: pass through to RegionProfiler
-    bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
-    size_t numSpatialProfiles();
-    std::pair<int, int> getSpatialProfileReq(int profileIndex);
-    std::string getSpatialCoordinate(int profileIndex);
+    bool SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes);
+    size_t NumSpatialProfiles();
+    std::pair<int, int> GetSpatialProfileReq(int profile_index);
+    std::string GetSpatialCoordinate(int profile_index);
 
     // Spectral: pass through to RegionProfiler
-    bool setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int nstokes);
-    size_t numSpectralProfiles();
-    bool getSpectralConfigStokes(int& stokes, int profileIndex);
-    std::string getSpectralCoordinate(int profileIndex);
-    bool getSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profileIndex);
-    void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, std::vector<float>& spectralData);
-    void fillSpectralProfileData(CARTA::SpectralProfileData& profileData, int profileIndex, casacore::ImageInterface<float>& image);
+    bool SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int num_stokes);
+    size_t NumSpectralProfiles();
+    bool GetSpectralConfigStokes(int& stokes, int profile_index);
+    std::string GetSpectralCoordinate(int profile_index);
+    bool GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index);
+    void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
+    void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, casacore::ImageInterface<float>& image);
 
     // Stats: pass through to RegionStats
-    void setStatsRequirements(const std::vector<int>& statsTypes);
-    size_t numStats();
-    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::ImageInterface<float>& image, int channel, int stokes);
+    void SetStatsRequirements(const std::vector<int>& stats_types);
+    size_t NumStats();
+    void FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes);
 
 private:
     // bounds checking for Region parameters
-    bool setPoints(const std::vector<CARTA::Point>& points);
-    bool checkPoints(const std::vector<CARTA::Point>& points);
-    bool checkPixelPoint(const std::vector<CARTA::Point>& points);
-    bool checkRectanglePoints(const std::vector<CARTA::Point>& points);
-    bool checkEllipsePoints(const std::vector<CARTA::Point>& points);
-    bool checkPolygonPoints(const std::vector<CARTA::Point>& points);
-    bool pointsChanged(const std::vector<CARTA::Point>& newpoints); // compare new points with stored points
+    bool SetPoints(const std::vector<CARTA::Point>& points);
+    bool CheckPoints(const std::vector<CARTA::Point>& points);
+    bool CheckPixelPoint(const std::vector<CARTA::Point>& points);
+    bool CheckRectanglePoints(const std::vector<CARTA::Point>& points);
+    bool CheckEllipsePoints(const std::vector<CARTA::Point>& points);
+    bool CheckPolygonPoints(const std::vector<CARTA::Point>& points);
+    bool PointsChanged(const std::vector<CARTA::Point>& new_points); // compare new points with stored points
 
     // Create xy regions
-    bool setXYRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
-    casacore::WCRegion* makePointRegion(const std::vector<CARTA::Point>& points);
-    casacore::WCRegion* makeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
-    casacore::WCRegion* makeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
-    casacore::WCRegion* makePolygonRegion(const std::vector<CARTA::Point>& points);
+    bool SetXyRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
+    casacore::WCRegion* MakePointRegion(const std::vector<CARTA::Point>& points);
+    casacore::WCRegion* MakeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
+    casacore::WCRegion* MakeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
+    casacore::WCRegion* MakePolygonRegion(const std::vector<CARTA::Point>& points);
 
     // Extend xy region to make LCRegion
-    bool makeExtensionBox(casacore::WCBox& extendBox, int stokes, int channel = ALL_CHANNELS); // for extended region
-    casacore::WCRegion* makeExtendedRegion(int stokes, int channel = ALL_CHANNELS);            // x/y region extended chan/stokes
+    bool MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int channel = ALL_CHANNELS); // for extended region
+    casacore::WCRegion* MakeExtendedRegion(int stokes, int channel = ALL_CHANNELS);             // x/y region extended chan/stokes
 
     // region definition (ICD SET_REGION parameters)
-    std::string m_name;
-    CARTA::RegionType m_type;
-    std::vector<CARTA::Point> m_ctrlpoints;
-    float m_rotation;
-    int m_minchan, m_maxchan;
+    std::string _name;
+    CARTA::RegionType _type;
+    std::vector<CARTA::Point> _control_points;
+    float _rotation;
 
     // region flags
-    bool m_valid, m_xyRegionChanged;
+    bool _valid, _xy_region_changed;
 
     // image shape info
-    casacore::IPosition m_imageShape;
-    casacore::IPosition m_xyAxes; // first two axes of image shape, to keep or remove
-    int m_ndim, m_spectralAxis, m_stokesAxis;
+    casacore::IPosition _image_shape;
+    casacore::IPosition _xy_axes; // first two axes of image shape, to keep or remove
+    int _num_dims, _spectral_axis, _stokes_axis;
 
     // stored 2D region
-    casacore::WCRegion* m_xyRegion;
+    casacore::WCRegion* _xy_region;
 
     // coordinate system
-    casacore::CoordinateSystem m_coordSys;
+    casacore::CoordinateSystem _coord_sys;
 
     // classes for requirements, calculations
-    std::unique_ptr<carta::RegionStats> m_stats;
-    std::unique_ptr<carta::RegionProfiler> m_profiler;
+    std::unique_ptr<carta::RegionStats> _stats;
+    std::unique_ptr<carta::RegionProfiler> _profiler;
 };
 
 } // namespace carta

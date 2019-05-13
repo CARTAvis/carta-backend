@@ -14,30 +14,30 @@ namespace carta {
 class RegionProfiler {
 public:
     // spatial
-    bool setSpatialRequirements(const std::vector<std::string>& profiles, const int nstokes);
-    size_t numSpatialProfiles();
-    std::pair<int, int> getSpatialProfileReq(int profileIndex);
-    std::string getSpatialCoordinate(int profileIndex);
+    bool SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes);
+    size_t NumSpatialProfiles();
+    std::pair<int, int> GetSpatialProfileReq(int profile_index);
+    std::string GetSpatialCoordinate(int profile_index);
 
     // spectral
-    bool setSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int nstokes);
-    size_t numSpectralProfiles();
+    bool SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int num_stokes);
+    size_t NumSpectralProfiles();
     // return false if profileIndex out of range:
-    bool getSpectralConfigStokes(int& stokes, int profileIndex);
-    std::string getSpectralCoordinate(int profileIndex);
-    bool getSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profileIndex);
+    bool GetSpectralConfigStokes(int& stokes, int profile_index);
+    std::string GetSpectralCoordinate(int profile_index);
+    bool GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index);
 
 private:
     // parse spatial/coordinate strings into <axisIndex, stokesIndex> pairs
-    std::pair<int, int> getAxisStokes(std::string profile);
+    std::pair<int, int> GetAxisStokes(std::string profile);
 
     // spatial
-    std::vector<std::string> m_spatialProfiles;
-    std::vector<std::pair<int, int>> m_profilePairs;
+    std::vector<std::string> _spatial_profiles;
+    std::vector<std::pair<int, int>> _profile_pairs;
 
     // spectral
-    std::vector<int> m_spectralStokes;
-    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> m_spectralConfigs;
+    std::vector<int> _spectral_stokes;
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> _spectral_configs;
 };
 
 } // namespace carta
