@@ -11,7 +11,7 @@
 using namespace carta;
 using namespace std;
 
-Frame::Frame(uint32_t session_id, const string& filename, const string& hdu, int default_channel)
+Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, int default_channel)
     : _session_id(session_id),
       _valid(true),
       _connected(true),
@@ -32,7 +32,7 @@ Frame::Frame(uint32_t session_id, const string& filename, const string& hdu, int
     }
 
     try {
-        _loader->OpenFile(hdu);
+        _loader->OpenFile(hdu, info);
     } catch (casacore::AipsError& err) {
         Log(session_id, "Problem loading file {}: {}", filename, err.getMesg());
         _valid = false;
