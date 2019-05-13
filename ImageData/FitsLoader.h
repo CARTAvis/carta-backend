@@ -1,15 +1,15 @@
-#ifndef CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
-#define CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#ifndef CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_
 
-#include <casacore/images/Images/PagedImage.h>
+#include <casacore/images/Images/FITSImage.h>
 
 #include "FileLoader.h"
 
 namespace carta {
 
-class CasaLoader : public FileLoader {
+class FitsLoader : public FileLoader {
 public:
-    CasaLoader(const std::string& filename);
+    FitsLoader(const std::string& file);
     void OpenFile(const std::string& hdu) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
@@ -20,17 +20,20 @@ protected:
 
 private:
     std::string _filename;
-    std::unique_ptr<casacore::PagedImage<float>> _image;
+    casacore::uInt _hdu;
+    std::unique_ptr<casacore::FITSImage> _image;
 };
 
-CasaLoader::CasaLoader(const std::string& filename) : _filename(filename) {}
+FitsLoader::FitsLoader(const std::string& filename) : _filename(filename) {}
 
-void CasaLoader::OpenFile(const std::string& /*hdu*/) {
-    _image = std::unique_ptr<casacore::PagedImage<float>>(new casacore::PagedImage<float>(_filename));
+void FitsLoader::OpenFile(const std::string& hdu) {
+    casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
+    _image = std::unique_ptr<casacore::FITSImage>(new casacore::FITSImage(_filename, 0, hdu_num));
+    _hdu = hdu_num;
     _num_dims = _image->shape().size();
 }
 
-bool CasaLoader::HasData(FileInfo::Data dl) const {
+bool FitsLoader::HasData(FileInfo::Data dl) const {
     switch (dl) {
         case FileInfo::Data::Image:
             return true;
@@ -48,14 +51,14 @@ bool CasaLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename CasaLoader::ImageRef CasaLoader::LoadData(FileInfo::Data ds) {
+typename FitsLoader::ImageRef FitsLoader::LoadData(FileInfo::Data ds) {
     if (ds != FileInfo::Data::Image) {
         return nullptr;
     }
     return _image.get(); // nullptr if image not opened
 }
 
-bool CasaLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
+bool FitsLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
     if (_image == nullptr) {
         return false;
     } else {
@@ -63,7 +66,7 @@ bool CasaLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::
     }
 }
 
-bool CasaLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
+bool FitsLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
     if (_image == nullptr) {
         return false;
     } else {
@@ -74,4 +77,4 @@ bool CasaLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#endif // CARTA_BACKEND_IMAGEDATA_FITSLOADER_H_

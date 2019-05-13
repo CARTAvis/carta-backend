@@ -20,41 +20,41 @@ public:
         casacore::MaskSpecifier = casacore::MaskSpecifier());
     // Copy constructor
     CartaHdf5Image(const CartaHdf5Image& other);
-    ~CartaHdf5Image();
+    ~CartaHdf5Image() override;
 
-    inline bool valid() {
+    inline bool Valid() {
         return _valid;
     };
 
-    inline const casacore::CountedPtr<casacore::HDF5Group> group() const {
+    inline const casacore::CountedPtr<casacore::HDF5Group> Group() const {
         return _lattice.group();
     };
-    inline const casacore::HDF5Lattice<float> lattice() {
+    inline const casacore::HDF5Lattice<float> Lattice() {
         return _lattice;
     };
 
     // implement casacore ImageInterface
-    virtual casacore::String imageType() const;
-    virtual casacore::String name(bool stripPath = false) const;
-    virtual casacore::IPosition shape() const;
-    virtual casacore::Bool ok() const;
-    virtual casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section);
-    virtual void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride);
-    virtual const casacore::LatticeRegion* getRegionPtr() const;
-    virtual casacore::ImageInterface<float>* cloneII() const;
-    virtual void resize(const casacore::TiledShape& newShape);
+    casacore::String imageType() const override;
+    casacore::String name(bool stripPath = false) const override;
+    casacore::IPosition shape() const override;
+    casacore::Bool ok() const override;
+    casacore::Bool doGetSlice(casacore::Array<float>& buffer, const casacore::Slicer& section) override;
+    void doPutSlice(const casacore::Array<float>& buffer, const casacore::IPosition& where, const casacore::IPosition& stride) override;
+    const casacore::LatticeRegion* getRegionPtr() const override;
+    casacore::ImageInterface<float>* cloneII() const override;
+    void resize(const casacore::TiledShape& newShape) override;
 
-    virtual casacore::Bool isMasked() const;
-    virtual casacore::Bool hasPixelMask() const;
-    virtual const casacore::Lattice<bool>& pixelMask() const;
-    virtual casacore::Lattice<bool>& pixelMask();
-    virtual casacore::Bool doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section);
+    casacore::Bool isMasked() const override;
+    casacore::Bool hasPixelMask() const override;
+    const casacore::Lattice<bool>& pixelMask() const override;
+    casacore::Lattice<bool>& pixelMask() override;
+    casacore::Bool doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) override;
 
 private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5
     inline static const casacore::CountedPtr<casacore::HDF5File>& GetHdf5File(void* image) {
         CartaHdf5Image* im = static_cast<CartaHdf5Image*>(image);
-        return im->lattice().file();
+        return im->Lattice().file();
     }
 
     bool Setup(const std::string& filename, const std::string& hdu);
@@ -66,7 +66,6 @@ private:
     casacore::HDF5Lattice<float> _lattice;
     casacore::Lattice<bool>* _pixel_mask;
     casacore::IPosition _shape;
-    casacore::LatticeRegion* _region;
 };
 
 } // namespace carta

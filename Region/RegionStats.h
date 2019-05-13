@@ -17,50 +17,49 @@ namespace carta {
 class RegionStats {
 public:
     RegionStats();
-    ~RegionStats();
 
     // Histograms
     // config
-    bool setHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogramReqs);
-    size_t numHistogramConfigs();
-    CARTA::SetHistogramRequirements_HistogramConfig getHistogramConfig(int histogramIndex);
+    bool SetHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_reqs);
+    size_t NumHistogramConfigs();
+    CARTA::SetHistogramRequirements_HistogramConfig GetHistogramConfig(int histogram_index);
     // min max
     using minmax_t = std::pair<float, float>; // <min, max>
-    bool getMinMax(int channel, int stokes, float& minVal, float& maxVal);
-    void setMinMax(int channel, int stokes, minmax_t minmaxVals);
-    void calcMinMax(int channel, int stokes, const std::vector<float>& data, float& minVal, float& maxVal);
+    bool GetMinMax(int channel, int stokes, float& min_val, float& max_val);
+    void SetMinMax(int channel, int stokes, minmax_t minmax_vals);
+    void CalcMinMax(int channel, int stokes, const std::vector<float>& data, float& min_val, float& max_val);
     // CARTA::Histogram
-    bool getHistogram(int channel, int stokes, int nbins, CARTA::Histogram& histogram);
-    void setHistogram(int channel, int stokes, CARTA::Histogram& histogram);
-    void calcHistogram(
-        int channel, int stokes, int nBins, float minVal, float maxVal, const std::vector<float>& data, CARTA::Histogram& histogramMsg);
+    bool GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram);
+    void SetHistogram(int channel, int stokes, CARTA::Histogram& histogram);
+    void CalcHistogram(int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data,
+        CARTA::Histogram& histogram_msg);
 
     // Stats
-    void setStatsRequirements(const std::vector<int>& statsTypes);
-    size_t numStats();
-    void fillStatsData(CARTA::RegionStatsData& statsData, const casacore::ImageInterface<float>& image, int channel, int stokes);
-    bool calcStatsValues(std::vector<std::vector<double>>& statsValues, const std::vector<int>& requestedStats,
-        const casacore::ImageInterface<float>& image, bool perChannel = true);
+    void SetStatsRequirements(const std::vector<int>& stats_types);
+    size_t NumStats();
+    void FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes);
+    bool CalcStatsValues(std::vector<std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
+        const casacore::ImageInterface<float>& image, bool per_channel = true);
 
     // invalidate stored calculations for previous region settings
-    void clearStats();
+    void ClearStats();
 
 private:
     // Valid calculations
-    bool m_histogramsValid, m_statsValid;
+    bool _histograms_valid, _stats_valid;
 
     // Histogram config
-    std::vector<CARTA::SetHistogramRequirements_HistogramConfig> m_histogramReqs;
+    std::vector<CARTA::SetHistogramRequirements_HistogramConfig> _histogram_reqs;
     // Statistics config
-    std::vector<int> m_statsReqs; // CARTA::StatsType requirements for this region
+    std::vector<int> _stats_reqs; // CARTA::StatsType requirements for this region
 
     // Cache calculations
     // MinMax: first key is stokes, second is channel number (-2 all channels for cube)
-    std::unordered_map<int, std::unordered_map<int, minmax_t>> m_minmax;
+    std::unordered_map<int, std::unordered_map<int, minmax_t>> _minmax;
     // Histogram: first key is stokes, second is channel number (-2 all channels for cube)
-    std::unordered_map<int, std::unordered_map<int, CARTA::Histogram>> m_histograms;
+    std::unordered_map<int, std::unordered_map<int, CARTA::Histogram>> _histograms;
     // Region stats: first key is stokes, second is channel number
-    std::unordered_map<int, std::unordered_map<int, std::vector<double>>> m_statsData;
+    std::unordered_map<int, std::unordered_map<int, std::vector<double>>> _stats_data;
 };
 
 } // namespace carta

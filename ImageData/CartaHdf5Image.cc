@@ -10,7 +10,7 @@
 #include <casacore/images/Images/ImageFITSConverter.h> // get coord system
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
-#include "HDF5Attributes.h"
+#include "Hdf5Attributes.h"
 
 using namespace carta;
 
@@ -39,10 +39,7 @@ CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other)
 }
 
 CartaHdf5Image::~CartaHdf5Image() {
-    if (_pixel_mask != nullptr) {
-        delete _pixel_mask;
-        _pixel_mask = nullptr;
-    }
+    delete _pixel_mask;
 }
 
 // Image interface
@@ -146,10 +143,10 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu) 
     casacore::HDF5Group hdf5_group(hdf5_file, hdu, true);
     casacore::Record attributes;
     try {
-        attributes = HDF5Attributes::DoReadAttributes(hdf5_group.getHid());
+        attributes = Hdf5Attributes::ReadAttributes(hdf5_group.getHid());
         hdf5_group.close();
         hdf5_file.close();
-        HDF5Attributes::ConvertToFits(attributes);
+        Hdf5Attributes::ConvertToFits(attributes);
         valid = SetupCoordSys(attributes);
         SetupImageInfo(attributes);
     } catch (casacore::HDF5Error& err) {
@@ -164,7 +161,7 @@ bool CartaHdf5Image::SetupCoordSys(casacore::Record& attributes) {
     if (attributes.empty())
         return false; // should not have gotten past the file browser
 
-    bool coordsys_set(false);
+    bool coord_sys_set(false);
     try {
         // convert attributes to FITS keyword strings
         casacore::FitsKeywordList fits_kw_list = casacore::FITSKeywordUtil::makeKeywordList();
@@ -199,11 +196,11 @@ bool CartaHdf5Image::SetupCoordSys(casacore::Record& attributes) {
 
         // Set coord system in Image
         setCoordinateInfo(coordinate_system);
-        coordsys_set = true;
+        coord_sys_set = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "ERROR setting up hdf5 coordinate system: " << err.getMesg() << std::endl;
     }
-    return coordsys_set;
+    return coord_sys_set;
 }
 
 void CartaHdf5Image::SetupImageInfo(casacore::Record& attributes) {
@@ -219,13 +216,13 @@ void CartaHdf5Image::SetupImageInfo(casacore::Record& attributes) {
         // restoring beam
         casacore::Quantity bmaj_quant, bmin_quant, pa_quant;
         double bmaj(0.0), bmin(0.0), bpa(0.0);
-        if (HDF5Attributes::GetDoubleAttribute(bmaj, attributes, "BMAJ")) {
+        if (Hdf5Attributes::GetDoubleAttribute(bmaj, attributes, "BMAJ")) {
             bmaj_quant = casacore::Quantity(bmaj, "deg");
         }
-        if (HDF5Attributes::GetDoubleAttribute(bmin, attributes, "BMIN")) {
+        if (Hdf5Attributes::GetDoubleAttribute(bmin, attributes, "BMIN")) {
             bmin_quant = casacore::Quantity(bmin, "deg");
         }
-        if (HDF5Attributes::GetDoubleAttribute(bpa, attributes, "BPA")) {
+        if (Hdf5Attributes::GetDoubleAttribute(bpa, attributes, "BPA")) {
             pa_quant = casacore::Quantity(bpa, "deg");
         }
         image_info.setRestoringBeam(bmaj_quant, bmin_quant, pa_quant);
