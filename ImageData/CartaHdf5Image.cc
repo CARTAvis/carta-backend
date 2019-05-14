@@ -152,26 +152,35 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu, 
 
 casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info) {
     // convert header_entries to Record
+    std::vector<std::string> skip_entries{"SIMPLE", "SCHEMA_VERSION", "HDF5_CONVERTER", "HDF5_CONVERTER_VERSION"};
+    std::vector<std::string> float_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN", "DATAMAX"};
+    std::vector<std::string> substr_entries{"CRVAL", "CRPIX", "CDELT", "CROTA"};
+
     casacore::Record header_record;
     for (int i = 0; i < info->header_entries_size(); ++i) {
         const CARTA::HeaderEntry header_entry = info->header_entries(i);
         const std::string entry_name = header_entry.name();
-	if (entry_name == "SIMPLE") {
-            continue; // added in FITS util
+        const std::string entry_name_substr = entry_name.substr(0,5);
+
+        if (std::find(skip_entries.begin(), skip_entries.end(), entry_name) != skip_entries.end()) {
+            continue;
         }
+
         switch (header_entry.entry_type()) {
             case CARTA::EntryType::STRING: {
                 if ((entry_name == "EXTEND") || (entry_name == "BLOCKED")) { // bool
                     header_record.define(entry_name, (header_entry.value() == "T" ? true : false));
-		} else if ((entry_name == "BITPIX") || (entry_name == "NAXIS")) { // int
-                    header_record.define(entry_name, std::stoi(header_entry.value()));
-		} else if (ShouldBeFloat(entry_name)) { // float
-                    header_record.define(entry_name, std::stof(header_entry.value()));
+                } else if ((entry_name == "BITPIX") || (entry_name_substr == "NAXIS")) {
+                    header_record.define(entry_name, std::stoi(header_entry.value())); // int
+                } else if (std::find(float_entries.begin(), float_entries.end(), entry_name) != float_entries.end()) {
+                    header_record.define(entry_name, std::stof(header_entry.value())); // float
+                } else if (std::find(substr_entries.begin(), substr_entries.end(), entry_name_substr) != substr_entries.end()) {
+                    header_record.define(entry_name, std::stof(header_entry.value())); // float
                 } else { // string
-                    casacore::String entry_value = header_entry.value();
-		    entry_value = (entry_value == "Kelvin" ? "K" : entry_value);
-		    if (entry_name == "DATE_OBS") { // date
-			casacore::String fits_date;
+                    std::string entry_value = header_entry.value();
+                    entry_value = (entry_value == "Kelvin" ? "K" : entry_value);
+                    if (entry_name == "DATE_OBS") { // date
+                        casacore::String fits_date;
                         casacore::FITSDateUtil::convertDateString(fits_date, entry_value);
                         header_record.define(entry_name, fits_date);
                     } else {
@@ -191,13 +200,6 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
         }
     }
     return header_record;
-}
-
-bool CartaHdf5Image::ShouldBeFloat(const std::string& entry_name) {
-    casacore::String name(entry_name);
-    return ((name == "EQUINOX") || (name == "EPOCH") || (name == "LONPOLE") || (name == "LATPOLE") || (name == "RESTFRQ") ||
-            (name == "OBSFREQ") || (name == "MJD-OBS") || (name == "DATAMIN") || (name == "DATAMAX") || (name.startsWith("CRVAL")) ||
-            (name.startsWith("CRPIX")) || (name.startsWith("CDELT")) || (name.startsWith("CROTA")));
 }
 
 bool CartaHdf5Image::SetupCoordSys(casacore::Record& header) {

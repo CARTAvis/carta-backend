@@ -15,6 +15,7 @@ casacore::Record Hdf5Attributes::ReadAttributes(hid_t group_hid) {
     // they are read back in the same order as written.
     for (int index = 0; index < num_fields; ++index) {
         casacore::HDF5HidAttribute id(H5Aopen_idx(group_hid, index));
+        AlwaysAssert(id >= 0, casacore::AipsError);
         AlwaysAssert(id.getHid() >= 0, casacore::AipsError);
         unsigned int name_size = H5Aget_name(id, sizeof(cname), cname);
         AlwaysAssert(name_size < sizeof(cname), casacore::AipsError);
@@ -31,6 +32,7 @@ casacore::Record Hdf5Attributes::ReadAttributes(hid_t group_hid) {
             casacore::HDF5HidDataType dtid(H5Aget_type(id));
             ReadScalar(id, dtid, name, rec);
         }
+        H5Aclose(id);
     }
     return rec;
 }

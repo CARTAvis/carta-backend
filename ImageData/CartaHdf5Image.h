@@ -61,7 +61,6 @@ private:
 
     bool Setup(const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info);
     casacore::Record ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info);
-    bool ShouldBeFloat(const std::string& entry_name); // info string entry should be float entry
     bool SetupCoordSys(casacore::Record& header);
     void SetupImageInfo(casacore::Record& header);
 
