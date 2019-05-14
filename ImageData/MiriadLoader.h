@@ -10,7 +10,7 @@ namespace carta {
 class MiriadLoader : public FileLoader {
 public:
     MiriadLoader(const std::string& file);
-    void OpenFile(const std::string& hdu) override;
+    void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
@@ -25,7 +25,7 @@ private:
 
 MiriadLoader::MiriadLoader(const std::string& filename) : _filename(filename) {}
 
-void MiriadLoader::OpenFile(const std::string& hdu /*hdu*/) {
+void MiriadLoader::OpenFile(const std::string& /*hdu*/, const CARTA::FileInfoExtended* /*info*/) {
     _image = std::unique_ptr<casacore::MIRIADImage>(new casacore::MIRIADImage(_filename));
     _num_dims = _image->shape().size();
 }

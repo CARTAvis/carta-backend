@@ -16,7 +16,6 @@ public:
     // These attributes may be string type instead of numerical type
     static bool GetIntAttribute(casacore::Int64& val, const casacore::Record& rec, const casacore::String& field);
     static bool GetDoubleAttribute(casacore::Double& val, const casacore::Record& rec, const casacore::String& field);
-    static void ConvertToFits(casacore::Record& in);
 
 private:
     // Read a scalar value (int, float, string) and add it to the record.

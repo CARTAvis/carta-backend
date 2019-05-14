@@ -5,8 +5,9 @@
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
-#include <casacore/fits/FITS/FITSKeywordUtil.h>        // convert Record to keyword list
 #include <casacore/fits/FITS/fits.h>                   // keyword list
+#include <casacore/fits/FITS/FITSKeywordUtil.h>        // convert Record to keyword list
+#include <casacore/fits/FITS/FITSDateUtil.h>           // convert date string to fits format
 #include <casacore/images/Images/ImageFITSConverter.h> // get coord system
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
@@ -14,8 +15,8 @@
 
 using namespace carta;
 
-CartaHdf5Image::CartaHdf5Image(
-    const std::string& filename, const std::string& array_name, const std::string& hdu, casacore::MaskSpecifier mask_spec)
+CartaHdf5Image::CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu,
+                               const CARTA::FileInfoExtended* info, casacore::MaskSpecifier mask_spec)
     : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)),
       _valid(false),
       _pixel_mask(nullptr),
@@ -24,7 +25,7 @@ CartaHdf5Image::CartaHdf5Image(
     _pixel_mask = new casacore::ArrayLattice<bool>(_lattice.shape());
     _pixel_mask->set(true);
     _shape = _lattice.shape();
-    _valid = Setup(filename, hdu);
+    _valid = Setup(filename, hdu, info);
 }
 
 CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other)
@@ -136,36 +137,81 @@ casacore::Bool CartaHdf5Image::doGetMaskSlice(casacore::Array<bool>& buffer, con
 
 // Set up image CoordinateSystem, ImageInfo
 
-bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu) {
+bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info) {
     // Setup coordinate system, image info
     bool valid(false);
-    casacore::HDF5File hdf5_file(filename);
-    casacore::HDF5Group hdf5_group(hdf5_file, hdu, true);
-    casacore::Record attributes;
     try {
-        attributes = Hdf5Attributes::ReadAttributes(hdf5_group.getHid());
-        hdf5_group.close();
-        hdf5_file.close();
-        Hdf5Attributes::ConvertToFits(attributes);
-        valid = SetupCoordSys(attributes);
-        SetupImageInfo(attributes);
-    } catch (casacore::HDF5Error& err) {
-        hdf5_group.close();
-        hdf5_file.close();
+        casacore::Record header = ConvertInfoToCasacoreRecord(info);
+        valid = SetupCoordSys(header);
+        SetupImageInfo(header);
+    } catch (casacore::AipsError& err) {
+        std::cerr << "Error opening HDF5 image: " << err.getMesg() << std::endl;
     }
     return valid;
 }
 
-bool CartaHdf5Image::SetupCoordSys(casacore::Record& attributes) {
-    // Use header attributes to set up Image CoordinateSystem
-    if (attributes.empty())
+casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info) {
+    // convert header_entries to Record
+    std::vector<std::string> skip_entries{"SIMPLE", "SCHEMA_VERSION", "HDF5_CONVERTER", "HDF5_CONVERTER_VERSION"};
+    std::vector<std::string> float_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN", "DATAMAX"};
+    std::vector<std::string> substr_entries{"CRVAL", "CRPIX", "CDELT", "CROTA"};
+
+    casacore::Record header_record;
+    for (int i = 0; i < info->header_entries_size(); ++i) {
+        const CARTA::HeaderEntry header_entry = info->header_entries(i);
+        const std::string entry_name = header_entry.name();
+        const std::string entry_name_substr = entry_name.substr(0,5);
+
+        if (std::find(skip_entries.begin(), skip_entries.end(), entry_name) != skip_entries.end()) {
+            continue;
+        }
+
+        switch (header_entry.entry_type()) {
+            case CARTA::EntryType::STRING: {
+                if ((entry_name == "EXTEND") || (entry_name == "BLOCKED")) { // bool
+                    header_record.define(entry_name, (header_entry.value() == "T" ? true : false));
+                } else if ((entry_name == "BITPIX") || (entry_name_substr == "NAXIS")) {
+                    header_record.define(entry_name, std::stoi(header_entry.value())); // int
+                } else if (std::find(float_entries.begin(), float_entries.end(), entry_name) != float_entries.end()) {
+                    header_record.define(entry_name, std::stof(header_entry.value())); // float
+                } else if (std::find(substr_entries.begin(), substr_entries.end(), entry_name_substr) != substr_entries.end()) {
+                    header_record.define(entry_name, std::stof(header_entry.value())); // float
+                } else { // string
+                    std::string entry_value = header_entry.value();
+                    entry_value = (entry_value == "Kelvin" ? "K" : entry_value);
+                    if (entry_name == "DATE_OBS") { // date
+                        casacore::String fits_date;
+                        casacore::FITSDateUtil::convertDateString(fits_date, entry_value);
+                        header_record.define(entry_name, fits_date);
+                    } else {
+                        header_record.define(entry_name, entry_value);
+                    }
+                }
+                break;
+            }
+            case CARTA::EntryType::FLOAT:
+                header_record.define(header_entry.name(), static_cast<float>(header_entry.numeric_value()));
+                break;
+            case CARTA::EntryType::INT:
+                header_record.define(header_entry.name(), static_cast<int>(header_entry.numeric_value()));
+                break;
+            default:
+                header_record.define(header_entry.name(), header_entry.value());
+        }
+    }
+    return header_record;
+}
+
+bool CartaHdf5Image::SetupCoordSys(casacore::Record& header) {
+    // Use header to set up Image CoordinateSystem
+    if (header.empty())
         return false; // should not have gotten past the file browser
 
     bool coord_sys_set(false);
     try {
-        // convert attributes to FITS keyword strings
+        // convert header to FITS keyword strings
         casacore::FitsKeywordList fits_kw_list = casacore::FITSKeywordUtil::makeKeywordList();
-        casacore::FITSKeywordUtil::addKeywords(fits_kw_list, attributes);
+        casacore::FITSKeywordUtil::addKeywords(fits_kw_list, header);
         fits_kw_list.end(); // add end card to end of list
         if (fits_kw_list.isempty())
             return false;
@@ -203,26 +249,26 @@ bool CartaHdf5Image::SetupCoordSys(casacore::Record& attributes) {
     return coord_sys_set;
 }
 
-void CartaHdf5Image::SetupImageInfo(casacore::Record& attributes) {
+void CartaHdf5Image::SetupImageInfo(casacore::Record& header) {
     // Holds object name and restoring beam
     casacore::ImageInfo image_info;
 
     try {
         // object
-        if (attributes.isDefined("OBJECT")) {
-            image_info.setObjectName(attributes.asString("OBJECT"));
+        if (header.isDefined("OBJECT")) {
+            image_info.setObjectName(header.asString("OBJECT"));
         }
 
         // restoring beam
         casacore::Quantity bmaj_quant, bmin_quant, pa_quant;
         double bmaj(0.0), bmin(0.0), bpa(0.0);
-        if (Hdf5Attributes::GetDoubleAttribute(bmaj, attributes, "BMAJ")) {
+        if (Hdf5Attributes::GetDoubleAttribute(bmaj, header, "BMAJ")) {
             bmaj_quant = casacore::Quantity(bmaj, "deg");
         }
-        if (Hdf5Attributes::GetDoubleAttribute(bmin, attributes, "BMIN")) {
+        if (Hdf5Attributes::GetDoubleAttribute(bmin, header, "BMIN")) {
             bmin_quant = casacore::Quantity(bmin, "deg");
         }
-        if (Hdf5Attributes::GetDoubleAttribute(bpa, attributes, "BPA")) {
+        if (Hdf5Attributes::GetDoubleAttribute(bpa, header, "BPA")) {
             pa_quant = casacore::Quantity(bpa, "deg");
         }
         image_info.setRestoringBeam(bmaj_quant, bmin_quant, pa_quant);
