@@ -9,6 +9,9 @@
 #include <casacore/images/Regions/WCExtension.h>
 #include <casacore/images/Regions/WCPolygon.h>
 #include <casacore/images/Regions/WCRegion.h>
+#include <casacore/lattices/LRegions/LCBox.h>
+#include <casacore/lattices/LRegions/LCPolygon.h>
+#include <casacore/lattices/LRegions/LCEllipsoid.h>
 
 #include "../InterfaceConstants.h"
 
@@ -462,6 +465,40 @@ casacore::IPosition Region::XyShape() {
             xy_shape = region->shape().keepAxes(_xy_axes);
     }
     return xy_shape;
+}
+
+const casacore::ArrayLattice<casacore::Bool>* Region::XyMask() {
+    // returns boolean mask of xy region
+    if (_xy_region != nullptr) {        
+        switch (_type) {
+        case CARTA::POINT: {
+            auto region = static_cast<casacore::LCBox*>(_xy_region->toLCRegion(_coord_sys, _image_shape));
+            if (region != nullptr) {
+                return &region->getMask();
+            }
+            break;
+        }
+        case CARTA::RECTANGLE:
+        case CARTA::POLYGON: {
+            auto region = static_cast<casacore::LCPolygon*>(_xy_region->toLCRegion(_coord_sys, _image_shape));
+            if (region != nullptr) {
+                return &region->getMask();
+            }
+            break;
+        }
+        case CARTA::ELLIPSE: {
+            auto region = static_cast<casacore::LCEllipsoid*>(_xy_region->toLCRegion(_coord_sys, _image_shape));
+            if (region != nullptr) {
+                return &region->getMask();
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    }
+    
+    return nullptr;
 }
 
 // ***********************************
