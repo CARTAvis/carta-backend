@@ -11,10 +11,12 @@ class AnimationObject {
 
     int _file_id;
     CARTA::AnimationFrame _start_frame;
-    CARTA::AnimationFrame _end_frame;
+    CARTA::AnimationFrame _first_frame;
+    CARTA::AnimationFrame _last_frame;
     CARTA::AnimationFrame _delta_frame;
     CARTA::AnimationFrame _current_frame;
     CARTA::AnimationFrame _stop_frame;
+    int _frame_rate;
     std::chrono::microseconds _frame_interval;
     std::chrono::time_point<std::chrono::high_resolution_clock> _t_start;
     std::chrono::time_point<std::chrono::high_resolution_clock> _t_last;
@@ -28,23 +30,25 @@ class AnimationObject {
     int _wait_duration_ms;
 
 public:
-    AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& end_frame, CARTA::AnimationFrame& delta_frame,
-        int frame_interval, bool looping, bool reverse_at_end, CARTA::CompressionType compression_type, float compression_quality,
-        bool always_wait)
+    AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
+        CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, CARTA::CompressionType compression_type,
+        float compression_quality, bool always_wait)
         : _file_id(file_id),
           _start_frame(start_frame),
-          _end_frame(end_frame),
+          _first_frame(first_frame),
+          _last_frame(last_frame),
           _delta_frame(delta_frame),
           _looping(looping),
           _reverse_at_end(reverse_at_end),
+          _frame_rate(frame_rate),
           _always_wait(always_wait) {
         _compression_type = compression_type;
         _compression_quality = compression_quality;
         _current_frame = start_frame;
-        _frame_interval = std::chrono::microseconds(1000) * frame_interval;
+        _frame_interval = std::chrono::microseconds(int64_t(1.0e6 / frame_rate));
         _going_forward = true;
         _wait_duration_ms = 100;
-	_stop_called= false;
+        _stop_called = false;
     }
 };
 

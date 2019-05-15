@@ -848,30 +848,30 @@ void Session::SendLogEvent(const std::string& message, std::vector<std::string> 
 }
 
 void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id) {
-    CARTA::AnimationFrame start_frame, end_frame, delta_frame;
+    CARTA::AnimationFrame start_frame, first_frame, last_frame, delta_frame;
     int file_id;
-    uint32_t frame_interval;
+    uint32_t frame_rate;
     bool looping, reverse_at_end, always_wait;
     CARTA::CompressionType compression_type;
     float compression_quality;
 
     start_frame = msg.start_frame();
-    end_frame = msg.end_frame();
+    first_frame = msg.first_frame();
+    last_frame = msg.last_frame();
     delta_frame = msg.delta_frame();
     file_id = msg.file_id();
-    frame_interval = msg.frame_interval();
+    frame_rate = msg.frame_rate();
     looping = msg.looping();
     reverse_at_end = msg.reverse();
     compression_type = msg.compression_type();
     compression_quality = msg.compression_quality();
     always_wait = false;
 
-    fprintf(stderr,"%p build animation file_id=%d, loop=%d, reverse= %d\n",
-	    this, file_id, looping, reverse_at_end);
-    fprintf(stderr,"\tstart frame chan=%d, stokes= %d\n",
-	    start_frame.channel(), start_frame.stokes());
-    
-    _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, end_frame, delta_frame, frame_interval, looping, reverse_at_end, compression_type, compression_quality, always_wait));
+    fprintf(stderr, "%p build animation file_id=%d, loop=%d, reverse= %d\n", this, file_id, looping, reverse_at_end);
+    fprintf(stderr, "\tstart frame chan=%d, stokes= %d\n", start_frame.channel(), start_frame.stokes());
+
+    _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
+        frame_rate, looping, reverse_at_end, compression_type, compression_quality, always_wait));
 
     CARTA::StartAnimationAck ack_message;
     ack_message.set_success(true);
@@ -885,10 +885,9 @@ bool Session::ExecuteAnimationFrame() {
         exit(1);
     }
     if (_animation_object->_stop_called) {
-      
-        fprintf(stderr,"%p stopping at %d, %d,\n", this,
-	      _animation_object->_stop_frame.channel(),  _animation_object->_stop_frame.stokes()  );
-	
+        fprintf(
+            stderr, "%p stopping at %d, %d,\n", this, _animation_object->_stop_frame.channel(), _animation_object->_stop_frame.stokes());
+
         CARTA::AnimationFrame curr_frame = _animation_object->_stop_frame;
 
         auto file_id(_animation_object->_file_id);
@@ -897,7 +896,7 @@ bool Session::ExecuteAnimationFrame() {
                 std::string err_message;
                 auto channel = curr_frame.channel();
                 auto stokes = curr_frame.stokes();
-		fprintf(stderr,"%p animate chan=%d, stokes=%d\n", this, channel, stokes);
+                fprintf(stderr, "%p animate chan=%d, stokes=%d\n", this, channel, stokes);
                 bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
                 bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
                 if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
@@ -938,7 +937,7 @@ bool Session::ExecuteAnimationFrame() {
                 std::string err_message;
                 auto channel = curr_frame.channel();
                 auto stokes = curr_frame.stokes();
-		fprintf(stderr,"%p animate chan=%d, stokes=%d\n", this, channel, stokes);
+                fprintf(stderr, "%p animate chan=%d, stokes=%d\n", this, channel, stokes);
                 bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
                 bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
                 if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
@@ -965,13 +964,13 @@ bool Session::ExecuteAnimationFrame() {
             tmp_frame.set_channel(curr_frame.channel() + delta_frame.channel());
             tmp_frame.set_stokes(curr_frame.stokes() + delta_frame.stokes());
 
-            if ((tmp_frame.channel() > _animation_object->_end_frame.channel()) ||
-                (tmp_frame.stokes() > _animation_object->_end_frame.stokes())) {
+            if ((tmp_frame.channel() > _animation_object->_last_frame.channel()) ||
+                (tmp_frame.stokes() > _animation_object->_last_frame.stokes())) {
                 if (_animation_object->_reverse_at_end) {
                     _animation_object->_going_forward = false;
                 } else if (_animation_object->_looping) {
-                    tmp_frame.set_channel(_animation_object->_start_frame.channel());
-                    tmp_frame.set_stokes(_animation_object->_start_frame.stokes());
+                    tmp_frame.set_channel(_animation_object->_first_frame.channel());
+                    tmp_frame.set_stokes(_animation_object->_first_frame.stokes());
                     _animation_object->_current_frame = tmp_frame;
                 } else {
                     recycle_task = false;
@@ -983,13 +982,13 @@ bool Session::ExecuteAnimationFrame() {
             tmp_frame.set_channel(curr_frame.channel() - _animation_object->_delta_frame.channel());
             tmp_frame.set_stokes(curr_frame.stokes() - _animation_object->_delta_frame.stokes());
 
-            if ((tmp_frame.channel() < _animation_object->_start_frame.channel()) ||
-                (tmp_frame.stokes() < _animation_object->_start_frame.stokes())) {
+            if ((tmp_frame.channel() < _animation_object->_first_frame.channel()) ||
+                (tmp_frame.stokes() < _animation_object->_first_frame.stokes())) {
                 if (_animation_object->_reverse_at_end) {
                     _animation_object->_going_forward = true;
                 } else if (_animation_object->_looping) {
-                    tmp_frame.set_channel(_animation_object->_end_frame.channel());
-                    tmp_frame.set_stokes(_animation_object->_end_frame.stokes());
+                    tmp_frame.set_channel(_animation_object->_last_frame.channel());
+                    tmp_frame.set_stokes(_animation_object->_last_frame.stokes());
                     _animation_object->_current_frame = tmp_frame;
                 } else {
                     recycle_task = false;
@@ -1017,7 +1016,7 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
         return;
     }
 
-    std::fprintf(stderr,"%p Session::StopAnimation called\n", this );
+    std::fprintf(stderr, "%p Session::StopAnimation called\n", this);
     _animation_object->_stop_frame = frame;
     _animation_object->_stop_called = true;
 }
