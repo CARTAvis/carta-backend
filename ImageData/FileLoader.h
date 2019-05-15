@@ -7,6 +7,8 @@
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
 
+#include <carta-protobuf/defs.pb.h>
+
 namespace carta {
 
 namespace FileInfo {
@@ -93,7 +95,7 @@ public:
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
     // Do anything required to open the file (set up cache size, etc)
-    virtual void OpenFile(const std::string& hdu) = 0;
+    virtual void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) = 0;
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Return a casacore image type representing the data stored in the

@@ -10,7 +10,7 @@ namespace carta {
 class CasaLoader : public FileLoader {
 public:
     CasaLoader(const std::string& filename);
-    void OpenFile(const std::string& hdu) override;
+    void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
@@ -25,7 +25,7 @@ private:
 
 CasaLoader::CasaLoader(const std::string& filename) : _filename(filename) {}
 
-void CasaLoader::OpenFile(const std::string& /*hdu*/) {
+void CasaLoader::OpenFile(const std::string& /*hdu*/, const CARTA::FileInfoExtended* /*info*/) {
     _image = std::unique_ptr<casacore::PagedImage<float>>(new casacore::PagedImage<float>(_filename));
     _num_dims = _image->shape().size();
 }
