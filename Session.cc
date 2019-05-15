@@ -881,8 +881,37 @@ bool Session::ExecuteAnimationFrame() {
         exit(1);
     }
     if (_animation_object->_stop_called) {
-        // Note: not checking for the stop frame yet, since need clarity on logic
-        // ... so just stop now!
+        fprintf(stderr,"%p stopping at %d, %d,\n", this,
+	      _animation_object->_stop_frame.channel(),  _animation_object->_stop_frame.stokes()  );
+        CARTA::AnimationFrame curr_frame = _animation_object->_stop_frame;
+        CARTA::AnimationFrame delta_frame = _animation_object->_delta_frame;
+
+        auto file_id(_animation_object->_file_id);
+        if (_frames.count(file_id)) {
+            try {
+                std::string err_message;
+                auto channel = curr_frame.channel();
+                auto stokes = curr_frame.stokes();
+                bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
+                bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
+                if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
+                    // RESPONSE: updated image raster/histogram
+                    SendRasterImageData(file_id, true); // true = send histogram
+                    // RESPONSE: region data (includes image, cursor, and set regions)
+                    UpdateRegionData(file_id, channel_changed, stokes_changed);
+                } else {
+                    if (!err_message.empty())
+                        SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
+                }
+            } catch (std::out_of_range& range_error) {
+                string error = fmt::format("File id {} closed", file_id);
+                SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
+            }
+        } else {
+            string error = fmt::format("File id {} not found", file_id);
+            SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
+        }
+        _animation_object->_stop_called = false;
         return false;
     }
 
