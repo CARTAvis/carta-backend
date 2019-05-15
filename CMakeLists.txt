@@ -10,6 +10,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 
+# Needed by clang-tidy and other clang tools
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
@@ -18,33 +21,55 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
-set(LINK_LIBS ${LINK_LIBS} carta-protobuf ${PROTOBUF_LIBRARY} fmt uWS ssl crypto z zfp tbb casa_casa casa_coordinates casa_tables casa_images casa_lattices casa_fits casa_measures casa_mirlib casa_scimath ${HDF5_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+set(LINK_LIBS
+        ${LINK_LIBS}
+        carta-protobuf
+        ${PROTOBUF_LIBRARY}
+        fmt
+        uWS
+        ssl
+        crypto
+        z
+        zfp
+        tbb
+        casa_casa
+        casa_coordinates
+        casa_tables
+        casa_images
+        casa_lattices
+        casa_fits
+        casa_measures
+        casa_mirlib
+        casa_scimath
+        ${HDF5_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT})
+
 set(SOURCE_FILES
-  main.cc
-  Session.cc
-  Frame.cc
-  compression.cc
-  ImageData/HDF5Attributes.cc
-  ImageData/FileLoader.cc
-  ImageData/CartaHdf5Image.cc
-  FileInfoLoader.cc
-  Region/Region.cc
-  Region/RegionStats.cc
-  Region/RegionProfiler.cc
-  Region/Histogram.cc
-  OnMessageTask.cc
-  FileSettings.cc
-  util.cc
-  FileListHandler.cc
-  Tile.cc)
+        Main.cc
+        Session.cc
+        Frame.cc
+        Compression.cc
+        ImageData/Hdf5Attributes.cc
+        ImageData/FileLoader.cc
+        ImageData/CartaHdf5Image.cc
+        FileInfoLoader.cc
+        Region/Region.cc
+        Region/RegionStats.cc
+        Region/RegionProfiler.cc
+        Region/Histogram.cc
+        OnMessageTask.cc
+        FileSettings.cc
+        Util.cc
+        FileListHandler.cc
+        Tile.cc)
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  target_link_libraries(carta_backend uv ${LINK_LIBS})
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  target_link_libraries(carta_backend ${LINK_LIBS})
-endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(carta_backend uv ${LINK_LIBS})
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    target_link_libraries(carta_backend ${LINK_LIBS})
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Tests
 option(test "Build all tests." OFF)

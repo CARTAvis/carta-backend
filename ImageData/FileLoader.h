@@ -7,18 +7,20 @@
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
 
+#include <carta-protobuf/defs.pb.h>
+
 namespace carta {
 
 namespace FileInfo {
 
 struct ImageStats {
-    float minVal;
-    float maxVal;
+    float min_val;
+    float max_val;
     float mean;
     std::vector<float> percentiles;
-    std::vector<float> percentileRanks;
-    std::vector<int> histogramBins;
-    int64_t nanCount;
+    std::vector<float> percentile_ranks;
+    std::vector<int> histogram_bins;
+    int64_t nan_count;
     bool valid;
 };
 
@@ -34,40 +36,40 @@ enum class Data : uint32_t {
     ZYX,
     ZYXW,
     // Alias to swizzled dataset
-    Swizzled,
+    SWIZZLED,
     // Statistics tables
-    Stats,
-    Ranks,
-    Stats2D,
-    S2DMin,
-    S2DMax,
-    S2DMean,
-    S2DNans,
-    S2DHist,
-    S2DPercent,
-    Stats3D,
-    S3DMin,
-    S3DMax,
-    S3DMean,
-    S3DNans,
-    S3DHist,
-    S3DPercent,
+    STATS,
+    RANKS,
+    STATS_2D,
+    STATS_2D_MIN,
+    STATS_2D_MAX,
+    STATS_2D_MEAN,
+    STATS_2D_NANS,
+    STATS_2D_HIST,
+    STATS_2D_PERCENT,
+    STATS_3D,
+    STATS_3D_MIN,
+    STATS_3D_MAX,
+    STATS_3D_MEAN,
+    STATS_3D_NANS,
+    STATS_3D_HIST,
+    STATS_3D_PERCENT,
     // Mask
-    Mask
+    MASK
 };
 
 inline casacore::ImageOpener::ImageTypes fileType(const std::string& file) {
     return casacore::ImageOpener::imageType(file);
 }
 
-inline casacore::uInt getFITShdu(const std::string& hdu) {
+inline casacore::uInt GetFitsHdu(const std::string& hdu) {
     // convert from string to casacore unsigned int
-    casacore::uInt hdunum(0);
+    casacore::uInt hdu_num(0);
     if (!hdu.empty() && hdu != "0") {
-        casacore::String ccHdu(hdu);
-        ccHdu.fromString(hdunum, true);
+        casacore::String cc_hdu(hdu);
+        cc_hdu.fromString(hdu_num, true);
     }
-    return hdunum;
+    return hdu_num;
 }
 
 } // namespace FileInfo
@@ -75,52 +77,52 @@ inline casacore::uInt getFITShdu(const std::string& hdu) {
 class FileLoader {
 public:
     // Replaced Lattice with Image Interface - changed back
-    using image_ref = casacore::ImageInterface<float>&;
-    using ipos = casacore::IPosition;
+    using ImageRef = casacore::ImageInterface<float>*;
+    using IPos = casacore::IPosition;
 
     virtual ~FileLoader() = default;
 
-    static FileLoader* getLoader(const std::string& file);
+    static FileLoader* GetLoader(const std::string& filename);
     // return coordinates for axis types
-    virtual void findCoords(int& spectralAxis, int& stokesAxis);
+    virtual void FindCoords(int& spectral_axis, int& stokes_axis);
 
     // get shape and axis information from image
-    virtual bool findShape(ipos& shape, size_t& nchannels, size_t& nstokes, int& spectralAxis, int& stokesAxis);
+    virtual bool FindShape(IPos& shape, size_t& num_channels, size_t& num_stokes, int& spectral_axis, int& stokes_axis);
 
     // Load image statistics, if they exist, from the file
-    virtual void loadImageStats(bool loadPercentiles = false);
+    virtual void LoadImageStats(bool load_percentiles = false);
     // Retrieve stats for a particular channel or all channels
-    virtual FileInfo::ImageStats& getImageStats(int currStokes, int channel);
+    virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
     // Do anything required to open the file (set up cache size, etc)
-    virtual void openFile(const std::string& file, const std::string& hdu) = 0;
+    virtual void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) = 0;
     // Check to see if the file has a particular HDU/group/table/etc
-    virtual bool hasData(FileInfo::Data ds) const = 0;
+    virtual bool HasData(FileInfo::Data ds) const = 0;
     // Return a casacore image type representing the data stored in the
     // specified HDU/group/table/etc.
-    virtual image_ref loadData(FileInfo::Data ds) = 0;
-    virtual bool getCursorSpectralData(std::vector<float>& data, int stokes, int cursorX, int cursorY);
-    virtual bool getPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
+    virtual ImageRef LoadData(FileInfo::Data ds) = 0;
+    virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y);
+    virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
 
 protected:
-    virtual const casacore::CoordinateSystem& getCoordSystem() = 0;
+    virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
 
     // Dimension values used by stats functions
-    size_t nchannels, nstokes, ndims;
+    size_t _num_channels, _num_stokes, _num_dims;
     // Storage for channel and cube statistics
-    std::vector<std::vector<carta::FileInfo::ImageStats>> channelStats;
-    std::vector<carta::FileInfo::ImageStats> cubeStats;
+    std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
+    std::vector<carta::FileInfo::ImageStats> _cube_stats;
     // Return the shape of the specified stats dataset
-    virtual const ipos getStatsDataShape(FileInfo::Data ds);
+    virtual const IPos GetStatsDataShape(FileInfo::Data ds);
     // Return stats data as a casacore::Array of type casacore::Float or casacore::Int64
-    virtual casacore::ArrayBase* getStatsData(FileInfo::Data ds);
+    virtual casacore::ArrayBase* GetStatsData(FileInfo::Data ds);
     // Functions for loading individual types of statistics
-    virtual void loadStats2DBasic(FileInfo::Data ds);
-    virtual void loadStats2DHist();
-    virtual void loadStats2DPercent();
-    virtual void loadStats3DBasic(FileInfo::Data ds);
-    virtual void loadStats3DHist();
-    virtual void loadStats3DPercent();
+    virtual void LoadStats2DBasic(FileInfo::Data ds);
+    virtual void LoadStats2DHist();
+    virtual void LoadStats2DPercent();
+    virtual void LoadStats3DBasic(FileInfo::Data ds);
+    virtual void LoadStats3DHist();
+    virtual void LoadStats3DPercent();
 };
 
 } // namespace carta
