@@ -866,8 +866,12 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     compression_quality = msg.compression_quality();
     always_wait = false;
 
-    _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, end_frame, delta_frame, frame_interval,
-        looping, reverse_at_end, compression_type, compression_quality, always_wait));
+    fprintf(stderr,"%p build animation file_id=%d, loop=%d, reverse= %d\n",
+	    this, file_id, looping, reverse_at_end);
+    fprintf(stderr,"\tstart frame chan=%d, stokes= %d\n",
+	    start_frame.channel(), start_frame.stokes());
+    
+    _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, end_frame, delta_frame, frame_interval, looping, reverse_at_end, compression_type, compression_quality, always_wait));
 
     CARTA::StartAnimationAck ack_message;
     ack_message.set_success(true);
@@ -881,10 +885,11 @@ bool Session::ExecuteAnimationFrame() {
         exit(1);
     }
     if (_animation_object->_stop_called) {
+      
         fprintf(stderr,"%p stopping at %d, %d,\n", this,
 	      _animation_object->_stop_frame.channel(),  _animation_object->_stop_frame.stokes()  );
+	
         CARTA::AnimationFrame curr_frame = _animation_object->_stop_frame;
-        CARTA::AnimationFrame delta_frame = _animation_object->_delta_frame;
 
         auto file_id(_animation_object->_file_id);
         if (_frames.count(file_id)) {
@@ -892,6 +897,7 @@ bool Session::ExecuteAnimationFrame() {
                 std::string err_message;
                 auto channel = curr_frame.channel();
                 auto stokes = curr_frame.stokes();
+		fprintf(stderr,"%p animate chan=%d, stokes=%d\n", this, channel, stokes);
                 bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
                 bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
                 if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
@@ -932,6 +938,7 @@ bool Session::ExecuteAnimationFrame() {
                 std::string err_message;
                 auto channel = curr_frame.channel();
                 auto stokes = curr_frame.stokes();
+		fprintf(stderr,"%p animate chan=%d, stokes=%d\n", this, channel, stokes);
                 bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
                 bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
                 if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
@@ -1010,6 +1017,7 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
         return;
     }
 
+    std::fprintf(stderr,"%p Session::StopAnimation called\n", this );
     _animation_object->_stop_frame = frame;
     _animation_object->_stop_called = true;
 }
