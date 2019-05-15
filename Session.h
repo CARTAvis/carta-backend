@@ -71,6 +71,7 @@ public:
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
+    bool ExecuteAnimationFrame_inner(bool stopped);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void AddViewSetting(CARTA::SetImageView message, uint32_t request_id) {
         _file_settings.AddViewSetting(message, request_id);
