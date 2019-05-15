@@ -207,7 +207,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
         string abs_filename(root_path.resolvedName());
 
         // create Frame for open file
-        auto frame = std::unique_ptr<Frame>(new Frame(_id, abs_filename, hdu));
+        auto frame = std::unique_ptr<Frame>(new Frame(_id, abs_filename, hdu, _selected_file_info_extended));
         if (frame->IsValid()) {
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
             _frames[file_id] = move(frame);

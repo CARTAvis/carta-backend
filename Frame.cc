@@ -9,9 +9,8 @@
 #include "Util.h"
 
 using namespace carta;
-using namespace std;
 
-Frame::Frame(uint32_t session_id, const string& filename, const string& hdu, int default_channel)
+Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, int default_channel)
     : _session_id(session_id),
       _valid(true),
       _connected(true),
@@ -32,7 +31,7 @@ Frame::Frame(uint32_t session_id, const string& filename, const string& hdu, int
     }
 
     try {
-        _loader->OpenFile(hdu);
+        _loader->OpenFile(hdu, info);
     } catch (casacore::AipsError& err) {
         Log(session_id, "Problem loading file {}: {}", filename, err.getMesg());
         _valid = false;
@@ -135,8 +134,8 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
         region_set = region->UpdateRegionParameters(name, type, points, rotation);
     } else { // map new Region to region id
         const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-        auto region =
-            unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
+        auto region = std::unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis,
+                                                                       _stokes_axis, coord_sys));
         if (region->IsValid()) {
             _regions[region_id] = move(region);
             region_set = true;
@@ -848,13 +847,13 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 
 int Frame::CalcAutoNumBins(int region_id) {
     // automatic bin size for histogram when num_bins == AUTO_BIN_SIZE
-    int auto_num_bins = int(max(sqrt(_image_shape(0) * _image_shape(1)), 2.0)); // default: use image plane
+    int auto_num_bins = int(std::max(sqrt(_image_shape(0) * _image_shape(1)), 2.0)); // default: use image plane
     if ((region_id != IMAGE_REGION_ID) && (region_id != CUBE_REGION_ID)) {
         if (_regions.count(region_id)) {
             auto& region = _regions[region_id];
             casacore::IPosition region_shape(region->XyShape()); // bounding box
             if (region_shape.size() > 0) {
-                auto_num_bins = (int(max(sqrt(region_shape(0) * region_shape(1)), 2.0)));
+                auto_num_bins = (int(std::max(sqrt(region_shape(0) * region_shape(1)), 2.0)));
             }
         }
     }
