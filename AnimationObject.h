@@ -44,6 +44,7 @@ public:
         _frame_interval = std::chrono::microseconds(1000) * frame_interval;
         _going_forward = true;
         _wait_duration_ms = 100;
+	_stop_called= false;
     }
 };
 
