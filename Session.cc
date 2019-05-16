@@ -64,6 +64,7 @@ void Session::DisconnectCalled() {
     for (auto& frame : _frames) {
         frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
+	_base_context.cancel_group_execution();
 }
 
 // ********************************************************************************

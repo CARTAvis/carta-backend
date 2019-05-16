@@ -29,6 +29,8 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
 
+#include <tbb/task.h>
+
 #include "AnimationObject.h"
 #include "EventHeader.h"
 #include "FileListHandler.h"
@@ -107,8 +109,11 @@ public:
     static int NumberOfSessions() {
         return _num_sessions;
     }
-
-    // TODO: should these be public?
+	tbb::task_group_context& context() {
+		return _base_context;
+	}
+	
+    // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
@@ -168,7 +173,8 @@ private:
     // Outgoing messages
     uS::Async* _outgoing_async; // Notification mechanism when messages are ready
     tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
-
+	tbb::task_group_context _base_context;
+	
     int _ref_count;
     bool _connected;
     static int _num_sessions;
