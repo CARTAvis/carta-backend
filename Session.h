@@ -173,6 +173,8 @@ private:
     // Outgoing messages
     uS::Async* _outgoing_async; // Notification mechanism when messages are ready
     tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
+
+	// TBB context that enables all tasks associated with a session to be cancelled.
 	tbb::task_group_context _base_context;
 	
     int _ref_count;
