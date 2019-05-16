@@ -10,7 +10,8 @@
 
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, int default_channel)
+Frame::Frame(
+    uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, int default_channel)
     : _session_id(session_id),
       _valid(true),
       _connected(true),
@@ -134,8 +135,8 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
         region_set = region->UpdateRegionParameters(name, type, points, rotation);
     } else { // map new Region to region id
         const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-        auto region = std::unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis,
-                                                                       _stokes_axis, coord_sys));
+        auto region = std::unique_ptr<carta::Region>(
+            new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
         if (region->IsValid()) {
             _regions[region_id] = move(region);
             region_set = true;
@@ -535,45 +536,69 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     if (mean_filter) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        auto range = tbb::blocked_range2d<size_t>(0, num_rows_region, 0, row_length_region);
-        auto loop = [&](const tbb::blocked_range2d<size_t>& r) {
-            for (size_t j = r.rows().begin(); j != r.rows().end(); ++j) {
-                for (size_t i = r.cols().begin(); i != r.cols().end(); ++i) {
-                    float pixel_sum = 0;
-                    int pixel_count = 0;
-                    size_t image_row = y + (j * mip);
-                    for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-                        size_t image_col = x + (i * mip);
-                        for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-                            float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
-                            if (isfinite(pix_val)) {
-                                pixel_count++;
-                                pixel_sum += pix_val;
-                            }
-                            image_col++;
+        for (auto j = 0; j < num_rows_region; j++) {
+            for (auto i = 0; i < row_length_region; i++) {
+                float pixel_sum = 0;
+                int pixel_count = 0;
+                size_t image_row = y + (j * mip);
+                for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
+                    size_t image_col = x + (i * mip);
+                    for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
+                        float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
+                        if (isfinite(pix_val)) {
+                            pixel_count++;
+                            pixel_sum += pix_val;
                         }
-                        image_row++;
+                        image_col++;
                     }
-                    image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+                    image_row++;
                 }
+                image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
             }
-        };
-        tbb::parallel_for(range, loop);
+        }
     } else {
         // Nearest neighbour filtering
-        auto range = tbb::blocked_range2d<size_t>(0, num_rows_region, 0, row_length_region);
-        auto loop = [&](const tbb::blocked_range2d<size_t>& r) {
-            for (auto j = 0; j < num_rows_region; j++) {
-                for (auto i = 0; i < row_length_region; i++) {
-                    auto image_row = y + j * mip;
-                    auto image_col = x + i * mip;
-                    image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
-                }
+        for (auto j = 0; j < num_rows_region; j++) {
+            for (auto i = 0; i < row_length_region; i++) {
+                auto image_row = y + j * mip;
+                auto image_col = x + i * mip;
+                image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
             }
-        };
-        tbb::parallel_for(range, loop);
+        }
     }
     return true;
+}
+
+// Tile data
+bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile) {
+    raster_tile_data.set_channel(CurrentChannel());
+    raster_tile_data.set_compression_type(CARTA::CompressionType::NONE);
+    if (raster_tile_data.tiles_size()) {
+        raster_tile_data.clear_tiles();
+    }
+    CARTA::TileData* tile_ptr = raster_tile_data.add_tiles();
+    tile_ptr->set_layer(tile.layer);
+    tile_ptr->set_x(tile.x);
+    tile_ptr->set_y(tile.y);
+
+    std::vector<float> data;
+    if (GetRasterTileData(data, tile)) {
+        tile_ptr->set_image_data(data.data(), sizeof(float) *data.size());
+        return true;
+    }
+    return false;
+}
+
+bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile) {
+    int32_t tile_size = 256;
+    int32_t mip = Tile::LayerToMip(tile.layer, _image_shape(0), _image_shape(1), tile_size, tile_size);
+    int32_t tile_size_original = tile_size * mip;
+    CARTA::ImageBounds bounds;
+    bounds.set_x_min(tile.x * tile_size_original);
+    bounds.set_x_max((tile.x + 1) * tile_size_original);
+    bounds.set_y_min(tile.y * tile_size_original);
+    bounds.set_y_max((tile.y + 1) * tile_size_original);
+    return GetRasterData(tile_data, bounds, mip, true);
 }
 
 // ****************************************************

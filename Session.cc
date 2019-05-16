@@ -12,6 +12,7 @@
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/error.pb.h>
+#include <carta-protobuf/raster_tile.pb.h>
 
 #include "EventHeader.h"
 #include "FileInfoLoader.h"
@@ -271,6 +272,24 @@ void Session::OnSetImageView(const CARTA::SetImageView& message) {
             std::string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
         }
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
+    auto file_id = message.file_id();
+    if (!message.tiles().empty() && _frames.count(file_id)) {
+        size_t n = message.tiles_size();
+        tbb::parallel_for(size_t(0), n, [&](size_t i) {
+            const auto& encoded_coordinate = message.tiles(i);
+            CARTA::RasterTileData raster_tile_data;
+            raster_tile_data.set_file_id(file_id);
+            auto tile = Tile::Decode(encoded_coordinate);
+            _frames.at(file_id)->FillRasterTileData(raster_tile_data, tile);
+            SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
+        });
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);

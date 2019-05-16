@@ -28,6 +28,7 @@
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
+#include <carta-protobuf/tiles.pb.h>
 
 #include "AnimationObject.h"
 #include "EventHeader.h"
@@ -49,6 +50,7 @@ public:
     void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnSetImageView(const CARTA::SetImageView& message);
+    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     void OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id);

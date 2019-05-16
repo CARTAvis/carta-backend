@@ -19,6 +19,7 @@
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
+#include <carta-protobuf/raster_tile.pb.h>
 
 #include "ImageData/FileLoader.h"
 #include "InterfaceConstants.h"
@@ -71,6 +72,7 @@ public:
     // fill data, profiles, stats messages
     // For some messages, only fill if requirements are for current channel/stokes
     bool FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::string& message);
+    bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile);
     bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool check_current_stokes = false);
     bool FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& profile_data, bool check_current_stokes = false);
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool check_current_chan = false);
@@ -110,7 +112,7 @@ private:
     void SetImageCache();
     // downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
-
+    bool GetRasterTileData(std::vector<float>& tile_data, const Tile& tile);
     // fill vector for given channel and stokes
     void GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes);
     // get slicer for xy matrix with given channel and stokes

@@ -1,6 +1,7 @@
 #ifndef CARTA_BACKEND__TILE_H_
 #define CARTA_BACKEND__TILE_H_
 
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 
@@ -24,6 +25,15 @@ struct Tile {
         int32_t y = (((encoded_value << 7) >> 19) + 4096) % 4096;
         return Tile{x, y, layer};
     }
+
+    static int32_t LayerToMip(int32_t layer, int32_t image_width, int32_t image_height, int32_t tile_width, int32_t tile_height) {
+        double total_tiles_x = ceil((double)(image_width) / tile_width);
+        double total_tiles_y = ceil((double)(image_height) / tile_height);
+        double max_mip = std::max(total_tiles_x, total_tiles_y);
+        double total_layers = ceil(log2(max_mip));
+        return pow(2.0, total_layers - layer);
+    }
+
 };
 
 #endif // CARTA_BACKEND__TILE_H_

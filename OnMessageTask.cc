@@ -60,6 +60,13 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
+        case CARTA::EventType::ADD_REQUIRED_TILES: {
+            CARTA::AddRequiredTiles message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnAddRequiredTiles(message);
+            }
+            break;
+        }
         case CARTA::EventType::SET_STATS_REQUIREMENTS: {
             CARTA::SetStatsRequirements message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
