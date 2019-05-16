@@ -121,12 +121,18 @@ void Session::ResetFileInfo(bool create) {
 // *********************************************************************************
 // CARTA ICD implementation
 
-void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint32_t request_id) {
+void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t icd_version, uint32_t request_id) {
     auto session_id = message.session_id();
     bool success(false);
     std::string error;
     CARTA::SessionType type(CARTA::SessionType::NEW);
-    // check session id
+	
+	if (icd_version != carta::ICD_VERSION) {
+		fprintf(stderr,"%p : Existing due to wrong ICD version number. Expected %d, got %d.\n", this, carta::ICD_VERSION, icd_version);
+		exit(1);
+	}
+
+	// check session id
     if (!session_id) {
         session_id = _id;
         success = true;

@@ -94,6 +94,13 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             OnMessageTask* tsk = nullptr;
 
             switch (head.type) {
+			    case CARTA::EventType::REGISTER_VIEWER: {
+					CARTA::RegisterViewer message;
+					if (message.ParseFromArray(event_buf, event_length)) {
+						session->OnRegisterViewer(message, head.icd_version, head.request_id);
+					}
+					break;
+			    }
                 case CARTA::EventType::SET_IMAGE_CHANNELS: {
                     CARTA::SetImageChannels message;
                     message.ParseFromArray(event_buf, event_length);

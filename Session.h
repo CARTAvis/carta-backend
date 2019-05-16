@@ -43,7 +43,7 @@ public:
     ~Session();
 
     // CARTA ICD
-    void OnRegisterViewer(const CARTA::RegisterViewer& message, uint32_t request_id);
+    void OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t icd_version, uint32_t request_id);
     void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
