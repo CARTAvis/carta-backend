@@ -214,7 +214,9 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
 
         switch (header_entry.entry_type()) {
             case CARTA::EntryType::STRING: {
-                header_record.define(entry_name, header_entry.value());
+                casacore::String entry_value = header_entry.value();
+                entry_value.gsub("'", ""); // remove quote : error converting to FITS card if final quote removed
+                header_record.define(entry_name, entry_value);
             } break;
             case CARTA::EntryType::INT: {
                 if (entry_name == "SIMPLE") { // FITSKeywordUtil adds this
