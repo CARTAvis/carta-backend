@@ -1016,3 +1016,9 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     _animation_object->_stop_frame = frame;
     _animation_object->_stop_called = true;
 }
+
+
+void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
+	// Placeholder for flow control handler
+	message = message;
+}

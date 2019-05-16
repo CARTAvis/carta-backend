@@ -143,7 +143,13 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     session->StopAnimation(message.file_id(), message.end_frame());
                     break;
                 }
-                default: { tsk = new (tbb::task::allocate_root()) MultiMessageTask(session, head, event_length, event_buf); }
+				case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
+					 CARTA::AnimationFlowControl message;
+					 message.ParseFromArray(event_buf, event_length);
+					 session->HandleAnimationFlowControlEvt(message);
+					 break;
+				 }	
+                 default: { tsk = new (tbb::task::allocate_root()) MultiMessageTask(session, head, event_length, event_buf); }
             }
             if (tsk)
                 tbb::task::enqueue(*tsk);
