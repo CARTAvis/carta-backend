@@ -15,6 +15,7 @@ class AnimationObject {
     CARTA::AnimationFrame _last_frame;
     CARTA::AnimationFrame _delta_frame;
     CARTA::AnimationFrame _current_frame;
+    CARTA::AnimationFrame _next_frame;
     CARTA::AnimationFrame _stop_frame;
     int _frame_rate;
     std::chrono::microseconds _frame_interval;
@@ -44,7 +45,8 @@ public:
           _always_wait(always_wait) {
         _compression_type = compression_type;
         _compression_quality = compression_quality;
-        _current_frame = start_frame;
+	_current_frame = start_frame;
+        _next_frame = start_frame;
         _frame_interval = std::chrono::microseconds(int64_t(1.0e6 / frame_rate));
         _going_forward = true;
         _wait_duration_ms = 100;
