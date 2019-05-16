@@ -880,80 +880,84 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
 }
 
 
-bool Session::ExecuteAnimationFrame_inner(bool stopped) {
-  CARTA::AnimationFrame curr_frame;
-  if ( stopped ) {
-    _animation_object->_stop_called = false;
-    fprintf(stderr,"S sf-c=%d, cf-c=%d\n",
-            _animation_object->_stop_frame.channel(),
-            _animation_object->_current_frame.channel());
-    if(!((_animation_object->_stop_frame.channel() == _animation_object->_current_frame.channel()) &&
-         (_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
-      curr_frame = _animation_object->_stop_frame;
-    } else {
-      fprintf(stderr,"Stop false\n");
-      return false;
-    }
-  } else
-    curr_frame = _animation_object->_current_frame;
-  auto file_id(_animation_object->_file_id);
-        if (_frames.count(file_id)) {
-            try {
-                std::string err_message;
-                auto channel = curr_frame.channel();
-                auto stokes = curr_frame.stokes();
-                fprintf(stderr, "%p animate chan=%d, stokes=%d\n", this, channel, stokes);
-                bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
-                bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
-                if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
-                    // RESPONSE: updated image raster/histogram
-                    SendRasterImageData(file_id, true); // true = send histogram
-                    // RESPONSE: region data (includes image, cursor, and set regions)
-                    UpdateRegionData(file_id, channel_changed, stokes_changed);
-                } else {
-                    if (!err_message.empty())
-                        SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
-                }
-            } catch (std::out_of_range& range_error) {
-                string error = fmt::format("File id {} closed", file_id);
-                SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
-            }
-        } else {
-            string error = fmt::format("File id {} not found", file_id);
-            SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
-        }
-        _animation_object->_stop_called = false;
-        return false;
+void Session::ExecuteAnimationFrame_inner(bool stopped) {
+	CARTA::AnimationFrame curr_frame;
+	if ( stopped ) {
+		_animation_object->_stop_called = false;
+		fprintf(stderr,"S sf-c=%d, cf-c=%d\n",
+				_animation_object->_stop_frame.channel(),
+				_animation_object->_current_frame.channel());
+		if(((_animation_object->_stop_frame.channel() == _animation_object->_current_frame.channel()) &&
+			(_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
+			return;
+		} else {
+			curr_frame = _animation_object->_stop_frame;
+		}
+	} else
+		curr_frame = _animation_object->_next_frame;
+	auto file_id(_animation_object->_file_id);
+	if (_frames.count(file_id)) {
+		try {
+			std::string err_message;
+			auto channel = curr_frame.channel();
+			auto stokes = curr_frame.stokes();
+			fprintf(stderr, "%p animate chan=%d, stokes=%d\n", this, channel, stokes);
+			bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
+			bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
+			
+			_animation_object->_current_frame = curr_frame;
+			if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
+				// RESPONSE: updated image raster/histogram
+				SendRasterImageData(file_id, true); // true = send histogram
+				// RESPONSE: region data (includes image, cursor, and set regions)
+				UpdateRegionData(file_id, channel_changed, stokes_changed);
+			} else {
+				if (!err_message.empty())
+					SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
+			}
+		} catch (std::out_of_range& range_error) {
+			string error = fmt::format("File id {} closed", file_id);
+			SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
+		}
+	} else {
+		string error = fmt::format("File id {} not found", file_id);
+		SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
+	}
+	
+	return;
 }
 
 bool Session::ExecuteAnimationFrame() {
-  CARTA::AnimationFrame curr_frame;
-  bool recycle_task = true;
-
-  if ( _animation_object->_stop_called ) {
-    return ExecuteAnimationFrame_inner( true );
-  }
+	CARTA::AnimationFrame curr_frame;
+	bool recycle_task = true;
+	
+	if ( _animation_object->_stop_called ) {
+		ExecuteAnimationFrame_inner( true );
+		return false;
+	}
 
     auto wait_duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(
-        _animation_object->_t_last + _animation_object->_frame_interval - std::chrono::high_resolution_clock::now());
+																				  _animation_object->_t_last + _animation_object->_frame_interval - std::chrono::high_resolution_clock::now());
 
     if ((wait_duration_ms.count() < _animation_object->_wait_duration_ms) || _animation_object->_always_wait) {
         // Wait for time to execute next frame processing.
         std::this_thread::sleep_for(wait_duration_ms);
 
         if ( _animation_object->_stop_called ) {
-          return ExecuteAnimationFrame_inner( true );
+          ExecuteAnimationFrame_inner( true );
+          return false;
         }
-        curr_frame = _animation_object->_current_frame;
+		
+        curr_frame = _animation_object->_next_frame;
         ExecuteAnimationFrame_inner( false );
-
+		
         CARTA::AnimationFrame tmp_frame;
         CARTA::AnimationFrame delta_frame = _animation_object->_delta_frame;
 
         if (_animation_object->_going_forward) {
             tmp_frame.set_channel(curr_frame.channel() + delta_frame.channel());
             tmp_frame.set_stokes(curr_frame.stokes() + delta_frame.stokes());
-
+			
             if ((tmp_frame.channel() > _animation_object->_last_frame.channel()) ||
                 (tmp_frame.stokes() > _animation_object->_last_frame.stokes())) {
                 if (_animation_object->_reverse_at_end) {
@@ -961,12 +965,12 @@ bool Session::ExecuteAnimationFrame() {
                 } else if (_animation_object->_looping) {
                     tmp_frame.set_channel(_animation_object->_first_frame.channel());
                     tmp_frame.set_stokes(_animation_object->_first_frame.stokes());
-                    _animation_object->_current_frame = tmp_frame;
+                    _animation_object->_next_frame = tmp_frame;
                 } else {
                     recycle_task = false;
                 }
             } else {
-                _animation_object->_current_frame = tmp_frame;
+                _animation_object->_next_frame = tmp_frame;
             }
         } else { // going backwards;
             tmp_frame.set_channel(curr_frame.channel() - _animation_object->_delta_frame.channel());
@@ -979,18 +983,20 @@ bool Session::ExecuteAnimationFrame() {
                 } else if (_animation_object->_looping) {
                     tmp_frame.set_channel(_animation_object->_last_frame.channel());
                     tmp_frame.set_stokes(_animation_object->_last_frame.stokes());
-                    _animation_object->_current_frame = tmp_frame;
+                    _animation_object->_next_frame = tmp_frame;
                 } else {
                     recycle_task = false;
                 }
             } else {
-                _animation_object->_current_frame = tmp_frame;
+                _animation_object->_next_frame = tmp_frame;
             }
         }
         _animation_object->_t_last = std::chrono::high_resolution_clock::now();
     }
     return recycle_task;
 }
+
+
 
 void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     if (!_animation_object) {
