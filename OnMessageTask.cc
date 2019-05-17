@@ -10,13 +10,6 @@
 
 tbb::task* MultiMessageTask::execute() {
     switch (_header.type) {
-        case CARTA::EventType::REGISTER_VIEWER: {
-            CARTA::RegisterViewer message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnRegisterViewer(message, _header.request_id);
-            }
-            break;
-        }
         case CARTA::EventType::FILE_LIST_REQUEST: {
             CARTA::FileListRequest message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
@@ -35,14 +28,6 @@ tbb::task* MultiMessageTask::execute() {
             CARTA::OpenFile message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnOpenFile(message, _header.request_id);
-            }
-            break;
-        }
-        case CARTA::EventType::CLOSE_FILE: {
-            CARTA::CloseFile message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->_file_settings.ClearSettings(message.file_id());
-                _session->OnCloseFile(message);
             }
             break;
         }
@@ -128,7 +113,8 @@ tbb::task* SetHistogramRequirementsTask::execute() {
 }
 
 tbb::task* AnimationTask::execute() {
-    if (_session->ExecuteAnimationFrame()) {
+
+	if (_session->ExecuteAnimationFrame()) {
         increment_ref_count();
         recycle_as_safe_continuation();
     }

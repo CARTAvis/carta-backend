@@ -889,6 +889,7 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
 
 void Session::ExecuteAnimationFrame_inner(bool stopped) {
 	CARTA::AnimationFrame curr_frame;
+
 	if ( stopped ) {
 		_animation_object->_stop_called = false;
 		fprintf(stderr,"S sf-c=%d, cf-c=%d\n",
@@ -908,7 +909,8 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
 			std::string err_message;
 			auto channel = curr_frame.channel();
 			auto stokes = curr_frame.stokes();
-			fprintf(stderr, "%p animate chan=%d, stokes=%d\n", this, channel, stokes);
+			fprintf(stderr, "%p animate chan=%d, stokes=%d\n",
+					this, channel, stokes);
 			bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
 			bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
 			
@@ -937,8 +939,10 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
 bool Session::ExecuteAnimationFrame() {
 	CARTA::AnimationFrame curr_frame;
 	bool recycle_task = true;
-	
-	if ( _animation_object->_stop_called ) {
+
+	if (!_animation_object->_file_open) return false;
+
+	if (_animation_object->_stop_called) {
 		ExecuteAnimationFrame_inner( true );
 		return false;
 	}
@@ -950,7 +954,7 @@ bool Session::ExecuteAnimationFrame() {
         // Wait for time to execute next frame processing.
         std::this_thread::sleep_for(wait_duration_ms);
 
-        if ( _animation_object->_stop_called ) {
+		if (_animation_object->_stop_called) {
           ExecuteAnimationFrame_inner( true );
           return false;
         }
@@ -1028,4 +1032,9 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
 void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
 	// Placeholder for flow control handler
 	message = message;
+}
+
+void Session::CheckCancelAnimationOnFileClose(int file_id) {
+	if (!_animation_object) return;
+	_animation_object->_file_open = false;
 }

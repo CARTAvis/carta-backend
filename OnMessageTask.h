@@ -95,12 +95,11 @@ public:
 };
 
 class AnimationTask : public OnMessageTask {
-    std::tuple<uint8_t, uint32_t, std::vector<char>> _msg;
     tbb::task* execute() override;
 
 public:
     AnimationTask(Session* session, uint32_t request_id, CARTA::StartAnimation msg) : OnMessageTask(session) {
-        session->BuildAnimationObject(msg, request_id);
+		session->BuildAnimationObject(msg, request_id);
     }
     ~AnimationTask() = default;
 };

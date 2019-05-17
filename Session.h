@@ -38,8 +38,10 @@
 #include "Frame.h"
 #include "Util.h"
 
+
 class Session {
-public:
+
+ public:
     Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async, FileListHandler* file_list_handler,
         bool verbose = false);
     ~Session();
@@ -76,6 +78,7 @@ public:
     void ExecuteAnimationFrame_inner(bool stopped);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
 	void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
+	void CheckCancelAnimationOnFileClose(int file_id);
     void AddViewSetting(CARTA::SetImageView message, uint32_t request_id) {
         _file_settings.AddViewSetting(message, request_id);
     }
@@ -143,6 +146,7 @@ private:
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
+	
     uWS::WebSocket<uWS::SERVER>* _socket;
     std::string _api_key;
     std::string _root_folder;

@@ -29,7 +29,7 @@ class AnimationObject {
     float _compression_quality;
     volatile bool _stop_called;
     int _wait_duration_ms;
-
+	int _file_open;
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
         CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, CARTA::CompressionType compression_type,
@@ -45,12 +45,13 @@ public:
           _always_wait(always_wait) {
         _compression_type = compression_type;
         _compression_quality = compression_quality;
-	_current_frame = start_frame;
+		_current_frame = start_frame;
         _next_frame = start_frame;
         _frame_interval = std::chrono::microseconds(int64_t(1.0e6 / frame_rate));
         _going_forward = true;
         _wait_duration_ms = 100;
         _stop_called = false;
+		_file_open = true;
     }
 };
 
