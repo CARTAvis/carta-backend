@@ -209,11 +209,11 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu, 
 casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info) {
     // convert specified keywords to bool, int, or double
     std::vector<std::string> skip_entries{"SIMPLE", "SCHEMA_VERSION", "HDF5_CONVERTER", "HDF5_CONVERTER_VERSION"};
-    std::vector<std::string> int_entries{"BITPIX", "WCSAXES", "A_ORDER", "B_ORDER"};
+    std::vector<std::string> int_entries{"BITPIX", "WCSAXES", "A_ORDER", "B_ORDER", "BSCALE", "BZERO", "VELREF"};
     std::vector<std::string> double_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN", "DATAMAX",
                                            "BMAJ", "BMIN", "BPA"};
-    std::vector<std::string> substr_entries{"CRVAL", "CRPIX", "CDELT", "CROTA"};
-    std::vector<std::string> prefix_entries{"A_", "B_", "CD"};
+    std::vector<std::string> substr_entries{"CRVAL", "CRPIX", "CDELT", "CROTA", "OBSGE"};
+    std::vector<std::string> prefix_entries{"A_", "B_", "CD", "PC"};
 
     // convert header_entries to Record string, int or double field
     casacore::Record header_record;
