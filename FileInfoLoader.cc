@@ -226,21 +226,21 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         std::string coord_type_3 = (attributes.isDefined("CTYPE3") ? attributes.asString("CTYPE3") : "");
         std::string coord_type_4 = (attributes.isDefined("CTYPE4") ? attributes.asString("CTYPE4") : "");
         std::string rade_sys = (attributes.isDefined("RADESYS") ? attributes.asString("RADESYS") : "");
-        std::string equinox = (attributes.isDefined("EQUINOX") ? std::to_string(attributes.asDouble("EQUINOX")) : "");
+        std::string equinox = GetStringAttribute(attributes, "EQUINOX");
         std::string spec_sys = (attributes.isDefined("SPECSYS") ? attributes.asString("SPECSYS") : "");
         std::string bunit = (attributes.isDefined("BUNIT") ? attributes.asString("BUNIT") : "");
-        std::string crpix1 = (attributes.isDefined("CRPIX1") ? std::to_string(attributes.asDouble("CRPIX1")) : "");
-        std::string crpix2 = (attributes.isDefined("CRPIX2") ? std::to_string(attributes.asDouble("CRPIX2")) : "");
+        std::string crpix1 = GetStringAttribute(attributes, "CRPIX1");
+        std::string crpix2 = GetStringAttribute(attributes, "CRPIX2");
         std::string cunit1 = (attributes.isDefined("CUNIT1") ? attributes.asString("CUNIT1") : "");
         std::string cunit2 = (attributes.isDefined("CUNIT2") ? attributes.asString("CUNIT2") : "");
         // Get numeric values
-        double crval1 = (attributes.isDefined("CRVAL1") ? attributes.asDouble("CRVAL1") : 0.0);
-        double crval2 = (attributes.isDefined("CRVAL2") ? attributes.asDouble("CRVAL2") : 0.0);
-        double cdelt1 = (attributes.isDefined("CDELT1") ? attributes.asDouble("CDELT1") : 0.0);
-        double cdelt2 = (attributes.isDefined("CDELT2") ? attributes.asDouble("CDELT2") : 0.0);
-        double bmaj = (attributes.isDefined("BMAJ") ? attributes.asDouble("BMAJ") : 0.0);
-        double bmin = (attributes.isDefined("BMIN") ? attributes.asDouble("BMIN") : 0.0);
-        double bpa = (attributes.isDefined("BPA") ? attributes.asDouble("BPA") : 0.0);
+        double crval1 = GetDoubleAttribute(attributes, "CRVAL1");
+        double crval2 = GetDoubleAttribute(attributes, "CRVAL2");
+        double cdelt1 = GetDoubleAttribute(attributes, "CDELT1");
+        double cdelt2 = GetDoubleAttribute(attributes, "CDELT2");
+        double bmaj = GetDoubleAttribute(attributes, "BMAJ");
+        double bmin = GetDoubleAttribute(attributes, "BMIN");
+        double bpa = GetDoubleAttribute(attributes, "BPA");
 
         // shape, chan, stokes entries first
         int chan_axis, stokes_axis;
@@ -272,6 +272,48 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         return false;
     }
     return true;
+}
+
+std::string FileInfoLoader::GetStringAttribute(casacore::Record& record, std::string field) {
+    // return attribute as string
+    std::string value;
+    if (record.isDefined(field)) {
+        switch (record.type(record.fieldNumber(field))) { // Hdf5Attributes only uses these types
+            case casacore::TpString: {
+                value = record.asString(field);
+            } break;
+            case casacore::TpInt64: {
+       	        value = std::to_string(record.asInt64(field));
+            } break;
+            case casacore::TpDouble: {
+       	        value = std::to_string(record.asDouble(field));
+            } break;
+            default:
+                break;
+        }
+    }
+    return value;
+}
+
+double FileInfoLoader::GetDoubleAttribute(casacore::Record& record, std::string field) {
+    // return attribute as double
+    double value(0.0);
+    if (record.isDefined(field)) {
+        switch (record.type(record.fieldNumber(field))) { // Hdf5Attributes only uses these types
+            case casacore::TpString: {
+                value = stod(record.asString(field));
+            } break;
+            case casacore::TpInt64: {
+       	        value = static_cast<double>(record.asInt64(field));
+            } break;
+            case casacore::TpDouble: {
+       	        value = record.asDouble(field);
+            } break;
+            default:
+                break;
+        }
+    }
+    return value;
 }
 
 // FITS

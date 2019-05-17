@@ -15,8 +15,6 @@ public:
 private:
     // Read a scalar value (int, float, string) and add it to the record.
     static void ReadScalar(hid_t attr_id, hid_t data_type_id, const casacore::String& name, casacore::RecordInterface& rec);
-    // Convert keywords from string to proper type
-    static void ConvertAttributeStrings(casacore::Record& attributes);
 };
 
 #endif // CARTA_BACKEND_IMAGEDATA_HDF5ATTRIBUTES_H_
