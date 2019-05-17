@@ -95,8 +95,6 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             int event_length = length - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
 
-			std::cerr << "Got event of type " << head.type << endl;
-			
             switch (head.type) {
 			    case CARTA::EventType::REGISTER_VIEWER: {
 					CARTA::RegisterViewer message;

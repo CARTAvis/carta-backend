@@ -874,9 +874,6 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     compression_quality = msg.compression_quality();
     always_wait = false;
 
-    fprintf(stderr, "%p build animation file_id=%d, loop=%d, reverse= %d\n", this, file_id, looping, reverse_at_end);
-    fprintf(stderr, "\tstart frame chan=%d, stokes= %d\n", start_frame.channel(), start_frame.stokes());
-
     _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
         frame_rate, looping, reverse_at_end, compression_type, compression_quality, always_wait));
 
@@ -892,9 +889,6 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
 
 	if ( stopped ) {
 		_animation_object->_stop_called = false;
-		fprintf(stderr,"S sf-c=%d, cf-c=%d\n",
-				_animation_object->_stop_frame.channel(),
-				_animation_object->_current_frame.channel());
 		if(((_animation_object->_stop_frame.channel() == _animation_object->_current_frame.channel()) &&
 			(_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
 			return;
@@ -909,8 +903,7 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
 			std::string err_message;
 			auto channel = curr_frame.channel();
 			auto stokes = curr_frame.stokes();
-			fprintf(stderr, "%p animate chan=%d, stokes=%d\n",
-					this, channel, stokes);
+
 			bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
 			bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
 			
@@ -1025,7 +1018,6 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
         return;
     }
 
-    std::fprintf(stderr, "%p Session::StopAnimation called\n", this);
     _animation_object->_stop_frame = frame;
     _animation_object->_stop_called = true;
 }
