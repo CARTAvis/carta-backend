@@ -9,8 +9,8 @@
 #include "Util.h"
 
 tbb::task* MultiMessageTask::execute() {
-    switch (_header.type) {
-        case CARTA::EventType::FILE_LIST_REQUEST: {
+    switch (_header.type) {	
+	    case CARTA::EventType::FILE_LIST_REQUEST: {
             CARTA::FileListRequest message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnFileListRequest(message, _header.request_id);
@@ -118,6 +118,11 @@ tbb::task* AnimationTask::execute() {
         increment_ref_count();
         recycle_as_safe_continuation();
     }
-
+	else {
+		if (_session->waiting_flow_event()) {
+			_session->setWaitingTask_ptr( this );
+		}
+	}
+	
     return nullptr;
 }

@@ -115,6 +115,9 @@ class Session {
 	tbb::task_group_context& context() {
 		return _base_context;
 	}
+	void setWaitingTask_ptr(tbb::task* tsk) { _animation_object->_waiting_task = tsk; }
+	tbb::task* getWaitingTask_ptr() { return _animation_object->_waiting_task; }
+	bool waiting_flow_event() { return  _animation_object->_waiting_flow_event; }
 	
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;

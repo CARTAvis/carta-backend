@@ -30,7 +30,9 @@ class AnimationObject {
     volatile bool _stop_called;
     int _wait_duration_ms;
 	int _file_open;
-public:
+	bool _waiting_flow_event;
+	tbb::task * _waiting_task;
+ public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
         CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, CARTA::CompressionType compression_type,
         float compression_quality, bool always_wait)
@@ -52,7 +54,16 @@ public:
         _wait_duration_ms = 100;
         _stop_called = false;
 		_file_open = true;
+		_waiting_flow_event= false;
+		_waiting_task= nullptr;
     }
+	tbb::task* waiting_task_ptr() { return _waiting_task; }
+	void set_waiting_task_ptr(tbb::task* tsk) { _waiting_task = tsk; }
 };
+
+namespace CARTA {
+	const int AnimationFlowWindowSize = 5;
+}
+
 
 #endif // CARTA_BACKEND__ANIMATIONOBJECT_H_

@@ -95,6 +95,8 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             int event_length = length - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
 
+			std::cerr << "Got event of type " << head.type << endl;
+			
             switch (head.type) {
 			    case CARTA::EventType::REGISTER_VIEWER: {
 					CARTA::RegisterViewer message;
@@ -158,17 +160,17 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
 					 session->HandleAnimationFlowControlEvt(message);
 					 break;
 				 }
-			case CARTA::EventType::CLOSE_FILE: {
-				CARTA::CloseFile message;
-				if (message.ParseFromArray(event_buf, event_length)) {
-					session->CheckCancelAnimationOnFileClose(message.file_id());
-					session->_file_settings.ClearSettings(message.file_id());
-					session->OnCloseFile(message);
-				}
-				break;
-			}	
-			default: {
-				tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf); }
+			     case CARTA::EventType::CLOSE_FILE: {
+					 CARTA::CloseFile message;
+					 if (message.ParseFromArray(event_buf, event_length)) {
+						 session->CheckCancelAnimationOnFileClose(message.file_id());
+						 session->_file_settings.ClearSettings(message.file_id());
+						 session->OnCloseFile(message);
+					 }
+					 break;
+				 }
+			     default: {
+					 tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf); }
             }
 
             if (tsk) tbb::task::enqueue(*tsk);

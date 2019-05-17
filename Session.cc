@@ -940,7 +940,8 @@ bool Session::ExecuteAnimationFrame() {
 	CARTA::AnimationFrame curr_frame;
 	bool recycle_task = true;
 
-	if (!_animation_object->_file_open) return false;
+	if (!_animation_object->_file_open && _animation_object->_waiting_flow_event)
+		return false;
 
 	if (_animation_object->_stop_called) {
 		ExecuteAnimationFrame_inner( true );
@@ -950,7 +951,8 @@ bool Session::ExecuteAnimationFrame() {
     auto wait_duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(
 																				  _animation_object->_t_last + _animation_object->_frame_interval - std::chrono::high_resolution_clock::now());
 
-    if ((wait_duration_ms.count() < _animation_object->_wait_duration_ms) || _animation_object->_always_wait) {
+    if ((wait_duration_ms.count() < _animation_object->_wait_duration_ms)
+		|| _animation_object->_always_wait) {
         // Wait for time to execute next frame processing.
         std::this_thread::sleep_for(wait_duration_ms);
 
@@ -1030,8 +1032,35 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
 
 
 void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
-	// Placeholder for flow control handler
-	message = message;
+	int gap;
+	
+	if (_animation_object->_going_forward) {
+		if (_animation_object->_delta_frame.channel()) {
+			gap = _animation_object->_current_frame.channel() + _animation_object->_delta_frame.channel();
+		} else {
+			gap = _animation_object->_current_frame.stokes() + _animation_object->_delta_frame.stokes();
+		}
+	}
+	else { // going in reverse.
+		if (_animation_object->_delta_frame.channel()) {
+			gap = _animation_object->_current_frame.channel() - _animation_object->_delta_frame.channel();
+		} else {
+			gap = _animation_object->_current_frame.stokes() - _animation_object->_delta_frame.stokes();
+		}
+	}
+	
+	if (_animation_object->_waiting_flow_event) {
+		if (gap <= 2*CARTA::AnimationFlowWindowSize) {
+			_animation_object->_waiting_flow_event = false;
+			tbb::task::enqueue(*(_animation_object->_waiting_task));
+		}
+	}
+	else {
+		// Check if we should pause and wait for next flow message.
+		if (gap > 2*CARTA::AnimationFlowWindowSize) {
+			_animation_object->_waiting_flow_event = true;
+		}
+	}
 }
 
 void Session::CheckCancelAnimationOnFileClose(int file_id) {
