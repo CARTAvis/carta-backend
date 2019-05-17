@@ -148,7 +148,6 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu, 
     try {
         // convert FileInfoExtended entries to casacore Record
         casacore::Record info_header = ConvertInfoToCasacoreRecord(info);
-
         // convert info header record to vector of FITS keyword strings
         casacore::FitsKeywordList fits_kw_list = casacore::FITSKeywordUtil::makeKeywordList();
         casacore::FITSKeywordUtil::addKeywords(fits_kw_list, info_header);
@@ -209,11 +208,16 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu, 
 casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info) {
     // convert specified keywords to bool, int, or double
     std::vector<std::string> skip_entries{"SIMPLE", "SCHEMA_VERSION", "HDF5_CONVERTER", "HDF5_CONVERTER_VERSION"};
-    std::vector<std::string> int_entries{"BITPIX", "WCSAXES", "A_ORDER", "B_ORDER", "BSCALE", "BZERO", "VELREF"};
+    std::vector<std::string> int_entries{"BITPIX", "WCSAXES", "A_ORDER", "B_ORDER", "VELREF"};
     std::vector<std::string> double_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN", "DATAMAX",
-                                           "BMAJ", "BMIN", "BPA"};
+                                           "BMAJ", "BMIN", "BPA", "BSCALE", "BZERO"};
     std::vector<std::string> substr_entries{"CRVAL", "CRPIX", "CDELT", "CROTA", "OBSGE"};
-    std::vector<std::string> prefix_entries{"A_", "B_", "CD", "PC"};
+    std::vector<std::string> prefix_entries{"A_", "B_", "CD", "PC", "PV"};
+
+    // In FITS card conversion, ending quote is lost in 80-char limit so need to shorten value string
+    int MAX_STRING_VALUE_LENGTH = 66;
+    const char* single_quote = "'";
+
 
     // convert header_entries to Record string, int or double field
     casacore::Record header_record;
@@ -250,11 +254,14 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
                         casacore::FITSDateUtil::convertDateString(fits_date, entry_value);
                         header_record.define(entry_name, fits_date);
                     } else {
+                        // shorten value string
+                        if (!entry_value.empty() && (entry_value.firstchar() == single_quote[0]) &&
+                            (entry_value.length() > MAX_STRING_VALUE_LENGTH)) {
+                            entry_value.resize(MAX_STRING_VALUE_LENGTH);
+                        }
                         header_record.define(entry_name, entry_value); // string
                     }
                 }
-                //entry_value.gsub("'", ""); // remove quote : error converting to FITS card if final quote removed
-                //header_record.define(entry_name, entry_value);
             } break;
             case CARTA::EntryType::INT: {
                 if ((entry_name == "EXTEND") || (entry_name == "BLOCKED")) { // convert to bool
