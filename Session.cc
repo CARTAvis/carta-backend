@@ -1033,19 +1033,20 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
 
 void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
 	int gap;
+
 	
 	if (_animation_object->_going_forward) {
 		if (_animation_object->_delta_frame.channel()) {
-			gap = _animation_object->_current_frame.channel() + _animation_object->_delta_frame.channel();
+				gap = _animation_object->_current_frame.channel() - (message.received_frame()).channel();
 		} else {
-			gap = _animation_object->_current_frame.stokes() + _animation_object->_delta_frame.stokes();
+				gap = _animation_object->_current_frame.stokes() - (message.received_frame()).channel();
 		}
 	}
 	else { // going in reverse.
 		if (_animation_object->_delta_frame.channel()) {
-			gap = _animation_object->_current_frame.channel() - _animation_object->_delta_frame.channel();
+				gap = (message.received_frame()).stokes() -_animation_object->_current_frame.channel();
 		} else {
-			gap = _animation_object->_current_frame.stokes() - _animation_object->_delta_frame.stokes();
+				gap = (message.received_frame()).stokes() - _animation_object->_delta_frame.stokes();
 		}
 	}
 	
