@@ -534,37 +534,45 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     bool write_lock(false);
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
 
-    if (mean_filter) {
+    if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        for (auto j = 0; j < num_rows_region; j++) {
-            for (auto i = 0; i < row_length_region; i++) {
-                float pixel_sum = 0;
-                int pixel_count = 0;
-                size_t image_row = y + (j * mip);
-                for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-                    size_t image_col = x + (i * mip);
-                    for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-                        float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
-                        if (isfinite(pix_val)) {
-                            pixel_count++;
-                            pixel_sum += pix_val;
+        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
+        auto loop = [&](const tbb::blocked_range<size_t>& r) {
+            for (size_t j = r.begin(); j != r.end(); ++j) {
+                for (size_t i = 0; i != row_length_region; ++i) {
+                    float pixel_sum = 0;
+                    int pixel_count = 0;
+                    size_t image_row = y + (j * mip);
+                    for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
+                        size_t image_col = x + (i * mip);
+                        for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
+                            float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
+                            if (isfinite(pix_val)) {
+                                pixel_count++;
+                                pixel_sum += pix_val;
+                            }
+                            image_col++;
                         }
-                        image_col++;
+                        image_row++;
                     }
-                    image_row++;
+                    image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
                 }
-                image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
             }
-        }
+        };
+        tbb::parallel_for(range, loop);
     } else {
         // Nearest neighbour filtering
-        for (auto j = 0; j < num_rows_region; j++) {
-            for (auto i = 0; i < row_length_region; i++) {
-                auto image_row = y + j * mip;
-                auto image_col = x + i * mip;
-                image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
+        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
+        auto loop = [&](const tbb::blocked_range<size_t>& r) {
+            for (size_t j = r.begin(); j != r.end(); ++j) {
+                for (auto i = 0; i < row_length_region; i++) {
+                    auto image_row = y + j * mip;
+                    auto image_col = x + i * mip;
+                    image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
+                }
             }
-        }
+        };
+        tbb::parallel_for(range, loop);
     }
     return true;
 }
@@ -583,7 +591,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
 
     std::vector<float> data;
     if (GetRasterTileData(data, tile)) {
-        tile_ptr->set_image_data(data.data(), sizeof(float) *data.size());
+        tile_ptr->set_image_data(data.data(), sizeof(float) * data.size());
         return true;
     }
     return false;
