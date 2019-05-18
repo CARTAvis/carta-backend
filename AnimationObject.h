@@ -29,9 +29,9 @@ class AnimationObject {
     float _compression_quality;
     volatile bool _stop_called;
     int _wait_duration_ms;
-	int _file_open;
-	bool _waiting_flow_event;
-	tbb::task * _waiting_task;
+    volatile int _file_open;
+    volatile bool _waiting_flow_event;
+    tbb::task * _waiting_task;
  public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
         CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, CARTA::CompressionType compression_type,
