@@ -152,23 +152,21 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     session->StopAnimation(message.file_id(), message.end_frame());
                     break;
                 }
-				case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
-					 CARTA::AnimationFlowControl message;
-					 message.ParseFromArray(event_buf, event_length);
-					 session->HandleAnimationFlowControlEvt(message);
-					 break;
-				 }
-			     case CARTA::EventType::CLOSE_FILE: {
-					 CARTA::CloseFile message;
-					 if (message.ParseFromArray(event_buf, event_length)) {
-						 session->CheckCancelAnimationOnFileClose(message.file_id());
-						 session->_file_settings.ClearSettings(message.file_id());
-						 session->OnCloseFile(message);
-					 }
-					 break;
-				 }
-			     default: {
-					 tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf); }
+	        case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
+		    CARTA::AnimationFlowControl message;
+		    message.ParseFromArray(event_buf, event_length);
+		    session->HandleAnimationFlowControlEvt(message);
+		    break;
+		}
+	        case CARTA::EventType::FILE_INFO_REQUEST: {
+		     CARTA::FileInfoRequest message;
+		     if (message.ParseFromArray(event_buf, event_length)) {
+		         session->OnFileInfoRequest(message, head.request_id);
+		     }
+		     break;
+		 }
+	         default: {
+		   tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf); }
             }
 
             if (tsk) tbb::task::enqueue(*tsk);
@@ -176,15 +174,17 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (strncmp(raw_message, "PING", 4) == 0) {
-            ws->send("PONG");
+	  ws->send("PONG");
         }
     }
 }
+
 
 void ExitBackend(int s) {
     fmt::print("Exiting backend.\n");
     exit(0);
 }
+
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {

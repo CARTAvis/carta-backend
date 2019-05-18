@@ -66,6 +66,15 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
+        case CARTA::EventType::CLOSE_FILE: {
+	    CARTA::CloseFile message;
+	    if (message.ParseFromArray(_event_buffer, _event_length)) {
+	        _session->CheckCancelAnimationOnFileClose(message.file_id());
+		_session->_file_settings.ClearSettings(message.file_id());
+		_session->OnCloseFile(message);
+	    }
+	    break;
+	}
         default: {
             std::cerr << " Bad event type in MultiMessageType:execute : (" << this << ") ";
             std::fprintf(stderr, "(%u)\n", _header.type);
