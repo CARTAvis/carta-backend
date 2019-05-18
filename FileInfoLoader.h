@@ -48,6 +48,8 @@ private:
         const casacore::String& axis_type_3, const casacore::String& axis_type_4, int& chan_axis, int& stokes_axis);
 
     // FITS keyword conversion
+    std::string GetStringAttribute(casacore::Record& rec, std::string field);
+    double GetDoubleAttribute(casacore::Record& rec, std::string field);
     void ConvertAxisName(std::string& axis_name, std::string& projection, casacore::MDirection::Types type);
     void MakeRadeSysStr(std::string& rade_sys, const std::string& equinox);
     void GetRadeSysFromEquinox(std::string& rade_sys, std::string& equinox);

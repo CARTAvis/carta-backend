@@ -61,8 +61,6 @@ private:
 
     bool Setup(const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info);
     casacore::Record ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info);
-    bool SetupCoordSys(casacore::Record& header);
-    void SetupImageInfo(casacore::Record& header);
 
     bool _valid;
     casacore::MaskSpecifier _mask_spec;
