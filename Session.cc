@@ -872,7 +872,7 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     reverse_at_end = msg.reverse();
     compression_type = msg.compression_type();
     compression_quality = msg.compression_quality();
-    always_wait = false;
+    always_wait = true;
 
     _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
         frame_rate, looping, reverse_at_end, compression_type, compression_quality, always_wait));
@@ -933,16 +933,16 @@ bool Session::ExecuteAnimationFrame() {
 	CARTA::AnimationFrame curr_frame;
 	bool recycle_task = true;
 
-	if (!_animation_object->_file_open && _animation_object->_waiting_flow_event)
-		return false;
+	if (!_animation_object->_file_open) return false;
+
+	if (_animation_object->_waiting_flow_event) return false;
 
 	if (_animation_object->_stop_called) {
 		ExecuteAnimationFrame_inner( true );
 		return false;
 	}
 
-    auto wait_duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(
-																				  _animation_object->_t_last + _animation_object->_frame_interval - std::chrono::high_resolution_clock::now());
+	auto wait_duration_ms = std::chrono::duration_cast<std::chrono::microseconds>(_animation_object->_t_last + _animation_object->_frame_interval - std::chrono::high_resolution_clock::now());
 
     if ((wait_duration_ms.count() < _animation_object->_wait_duration_ms)
 		|| _animation_object->_always_wait) {
@@ -1025,34 +1025,31 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
 
 void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
 	int gap;
-
 	
 	if (_animation_object->_going_forward) {
-		if (_animation_object->_delta_frame.channel()) {
-				gap = _animation_object->_current_frame.channel() - (message.received_frame()).channel();
-		} else {
-				gap = _animation_object->_current_frame.stokes() - (message.received_frame()).channel();
-		}
-	}
-	else { // going in reverse.
-		if (_animation_object->_delta_frame.channel()) {
-				gap = (message.received_frame()).stokes() -_animation_object->_current_frame.channel();
-		} else {
-				gap = (message.received_frame()).stokes() - _animation_object->_delta_frame.stokes();
-		}
+	    if (_animation_object->_delta_frame.channel()) {
+	        gap = _animation_object->_current_frame.channel() - (message.received_frame()).channel();
+	    } else {
+	        gap = _animation_object->_current_frame.stokes() - (message.received_frame()).channel();
+	    }
+	} else { // going in reverse.
+	    if (_animation_object->_delta_frame.channel()) {
+	        gap = (message.received_frame()).stokes() -_animation_object->_current_frame.channel();
+	    } else {
+	        gap = (message.received_frame()).stokes() - _animation_object->_delta_frame.stokes();
+	    }
 	}
 	
 	if (_animation_object->_waiting_flow_event) {
-		if (gap <= 2*CARTA::AnimationFlowWindowSize) {
-			_animation_object->_waiting_flow_event = false;
-			tbb::task::enqueue(*(_animation_object->_waiting_task));
-		}
-	}
-	else {
-		// Check if we should pause and wait for next flow message.
-		if (gap > 2*CARTA::AnimationFlowWindowSize) {
-			_animation_object->_waiting_flow_event = true;
-		}
+	    if (gap <= 2*CARTA::AnimationFlowWindowSize) {
+	        _animation_object->_waiting_flow_event = false;
+	        tbb::task::enqueue(*(_animation_object->_waiting_task));
+	    }
+	} else {
+	    // Check if we should pause and wait for next flow message.
+	    if (gap > 2*CARTA::AnimationFlowWindowSize) {
+	      _animation_object->_waiting_flow_event = true;
+	    }
 	}
 }
 
