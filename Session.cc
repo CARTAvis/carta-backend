@@ -1005,7 +1005,6 @@ bool Session::ExecuteAnimationFrame() {
 
 void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     if (!_animation_object) {
-        std::fprintf(stderr, "%p Session::StopAnimation called with null AnimationObject\n", this);
         return;
     }
 
