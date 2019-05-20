@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
+#include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
 
@@ -94,12 +95,20 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             OnMessageTask* tsk = nullptr;
 
             switch (head.type) {
+                case CARTA::EventType::REGISTER_VIEWER: {
+                    CARTA::RegisterViewer message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnRegisterViewer(message, head.icd_version, head.request_id);
+                    }
+                    break;
+                }
                 case CARTA::EventType::SET_IMAGE_CHANNELS: {
                     CARTA::SetImageChannels message;
                     message.ParseFromArray(event_buf, event_length);
                     session->ImageChannelLock();
                     if (!session->ImageChannelTaskTestAndSet()) {
-                        tsk = new (tbb::task::allocate_root()) SetImageChannelsTask(session, make_pair(message, head.request_id));
+                        tsk = new (tbb::task::allocate_root(session->context()))
+                            SetImageChannelsTask(session, make_pair(message, head.request_id));
                     } else {
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
@@ -111,14 +120,14 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::SetImageView message;
                     message.ParseFromArray(event_buf, event_length);
                     session->AddViewSetting(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root()) SetImageViewTask(session, message.file_id());
+                    tsk = new (tbb::task::allocate_root(session->context())) SetImageViewTask(session, message.file_id());
                     break;
                 }
                 case CARTA::EventType::SET_CURSOR: {
                     CARTA::SetCursor message;
                     message.ParseFromArray(event_buf, event_length);
                     session->AddCursorSetting(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root()) SetCursorTask(session, message.file_id());
+                    tsk = new (tbb::task::allocate_root(session->context())) SetCursorTask(session, message.file_id());
                     break;
                 }
                 case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS: {
@@ -127,14 +136,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.histograms_size() == 0) {
                         session->CancelSetHistRequirements();
                     } else {
-                        tsk = new (tbb::task::allocate_root()) SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                        tsk = new (tbb::task::allocate_root(session->context()))
+                            SetHistogramRequirementsTask(session, head, event_length, event_buf);
                     }
                     break;
                 }
                 case CARTA::EventType::START_ANIMATION: {
                     CARTA::StartAnimation message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root()) AnimationTask(session, head.request_id, message);
+                    tsk = new (tbb::task::allocate_root(session->context())) AnimationTask(session, head.request_id, message);
                     break;
                 }
                 case CARTA::EventType::STOP_ANIMATION: {
@@ -143,8 +153,24 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     session->StopAnimation(message.file_id(), message.end_frame());
                     break;
                 }
-                default: { tsk = new (tbb::task::allocate_root()) MultiMessageTask(session, head, event_length, event_buf); }
+                case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
+                    CARTA::AnimationFlowControl message;
+                    message.ParseFromArray(event_buf, event_length);
+                    session->HandleAnimationFlowControlEvt(message);
+                    break;
+                }
+                case CARTA::EventType::FILE_INFO_REQUEST: {
+                    CARTA::FileInfoRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnFileInfoRequest(message, head.request_id);
+                    }
+                    break;
+                }
+                default: {
+                    tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf);
+                }
             }
+
             if (tsk)
                 tbb::task::enqueue(*tsk);
         }

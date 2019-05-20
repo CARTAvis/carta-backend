@@ -95,7 +95,6 @@ public:
 };
 
 class AnimationTask : public OnMessageTask {
-    std::tuple<uint8_t, uint32_t, std::vector<char>> _msg;
     tbb::task* execute() override;
 
 public:
