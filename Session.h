@@ -38,10 +38,8 @@
 #include "Frame.h"
 #include "Util.h"
 
-
 class Session {
-
- public:
+public:
     Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async, FileListHandler* file_list_handler,
         bool verbose = false);
     ~Session();
@@ -62,7 +60,8 @@ class Session {
     void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);
     void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
 
-    void SendPendingMessages();    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
+    void SendPendingMessages();
+    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         _set_channel_queue.push(std::make_pair(message, request_id));
     }
 
@@ -77,8 +76,8 @@ class Session {
     bool ExecuteAnimationFrame();
     void ExecuteAnimationFrame_inner(bool stopped);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
-	void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
-	void CheckCancelAnimationOnFileClose(int file_id);
+    void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
+    void CheckCancelAnimationOnFileClose(int file_id);
     void AddViewSetting(CARTA::SetImageView message, uint32_t request_id) {
         _file_settings.AddViewSetting(message, request_id);
     }
@@ -94,7 +93,7 @@ class Session {
     bool ImageChannelTaskTestAndSet() {
         if (_image_channel_task_active) {
             return true;
-	} else {
+        } else {
             _image_channel_task_active = true;
             return false;
         }
@@ -112,13 +111,19 @@ class Session {
     static int NumberOfSessions() {
         return _num_sessions;
     }
-	tbb::task_group_context& context() {
-		return _base_context;
-	}
-	void setWaitingTask_ptr(tbb::task* tsk) { _animation_object->_waiting_task = tsk; }
-	tbb::task* getWaitingTask_ptr() { return _animation_object->_waiting_task; }
-	bool waiting_flow_event() { return  _animation_object->_waiting_flow_event; }
-	
+    tbb::task_group_context& context() {
+        return _base_context;
+    }
+    void setWaitingTask_ptr(tbb::task* tsk) {
+        _animation_object->_waiting_task = tsk;
+    }
+    tbb::task* getWaitingTask_ptr() {
+        return _animation_object->_waiting_task;
+    }
+    bool waiting_flow_event() {
+        return _animation_object->_waiting_flow_event;
+    }
+
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
@@ -149,7 +154,6 @@ private:
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
-	
     uWS::WebSocket<uWS::SERVER>* _socket;
     std::string _api_key;
     std::string _root_folder;
@@ -164,8 +168,8 @@ private:
 
     // Frame
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
-    std::mutex _frame_mutex; // lock frames to create/destroy
-    bool _new_frame;         // flag to send histogram with data
+    std::mutex _frame_mutex;                                 // lock frames to create/destroy
+    bool _new_frame;                                         // flag to send histogram with data
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
@@ -178,12 +182,12 @@ private:
     tbb::atomic<float> _histogram_progress;
 
     // Outgoing messages
-    uS::Async* _outgoing_async; // Notification mechanism when messages are ready
+    uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
     tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
 
-	// TBB context that enables all tasks associated with a session to be cancelled.
-	tbb::task_group_context _base_context;
-	
+    // TBB context that enables all tasks associated with a session to be cancelled.
+    tbb::task_group_context _base_context;
+
     int _ref_count;
     bool _connected;
     static int _num_sessions;

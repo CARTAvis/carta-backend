@@ -8,8 +8,8 @@
 #include <signal.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
-#include <tbb/task_scheduler_init.h>
 #include <tbb/task.h>
+#include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
 
 #include <casacore/casa/Inputs/Input.h>
@@ -36,7 +36,6 @@ uWS::Hub websocket_hub;
 // command-line arguments
 string root_folder("/"), base_folder("."), version_id("1.1");
 bool verbose, use_permissions;
-
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
@@ -96,19 +95,20 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             OnMessageTask* tsk = nullptr;
 
             switch (head.type) {
-			    case CARTA::EventType::REGISTER_VIEWER: {
-					CARTA::RegisterViewer message;
-					if (message.ParseFromArray(event_buf, event_length)) {
-						session->OnRegisterViewer(message, head.icd_version, head.request_id);
-					}
-					break;
-			    }
+                case CARTA::EventType::REGISTER_VIEWER: {
+                    CARTA::RegisterViewer message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnRegisterViewer(message, head.icd_version, head.request_id);
+                    }
+                    break;
+                }
                 case CARTA::EventType::SET_IMAGE_CHANNELS: {
                     CARTA::SetImageChannels message;
                     message.ParseFromArray(event_buf, event_length);
                     session->ImageChannelLock();
                     if (!session->ImageChannelTaskTestAndSet()) {
-                        tsk = new (tbb::task::allocate_root(session->context())) SetImageChannelsTask(session, make_pair(message, head.request_id));
+                        tsk = new (tbb::task::allocate_root(session->context()))
+                            SetImageChannelsTask(session, make_pair(message, head.request_id));
                     } else {
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
@@ -136,7 +136,8 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.histograms_size() == 0) {
                         session->CancelSetHistRequirements();
                     } else {
-                        tsk = new (tbb::task::allocate_root(session->context())) SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                        tsk = new (tbb::task::allocate_root(session->context()))
+                            SetHistogramRequirementsTask(session, head, event_length, event_buf);
                     }
                     break;
                 }
@@ -152,39 +153,38 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     session->StopAnimation(message.file_id(), message.end_frame());
                     break;
                 }
-	        case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
-		    CARTA::AnimationFlowControl message;
-		    message.ParseFromArray(event_buf, event_length);
-		    session->HandleAnimationFlowControlEvt(message);
-		    break;
-		}
-	        case CARTA::EventType::FILE_INFO_REQUEST: {
-		     CARTA::FileInfoRequest message;
-		     if (message.ParseFromArray(event_buf, event_length)) {
-		         session->OnFileInfoRequest(message, head.request_id);
-		     }
-		     break;
-		 }
-	         default: {
-		   tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf); }
+                case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
+                    CARTA::AnimationFlowControl message;
+                    message.ParseFromArray(event_buf, event_length);
+                    session->HandleAnimationFlowControlEvt(message);
+                    break;
+                }
+                case CARTA::EventType::FILE_INFO_REQUEST: {
+                    CARTA::FileInfoRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnFileInfoRequest(message, head.request_id);
+                    }
+                    break;
+                }
+                default: {
+                    tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf);
+                }
             }
 
-            if (tsk) tbb::task::enqueue(*tsk);
-
+            if (tsk)
+                tbb::task::enqueue(*tsk);
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (strncmp(raw_message, "PING", 4) == 0) {
-	  ws->send("PONG");
+            ws->send("PONG");
         }
     }
 }
-
 
 void ExitBackend(int s) {
     fmt::print("Exiting backend.\n");
     exit(0);
 }
-
 
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {

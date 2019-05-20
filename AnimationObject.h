@@ -31,8 +31,9 @@ class AnimationObject {
     int _wait_duration_ms;
     volatile int _file_open;
     volatile bool _waiting_flow_event;
-    tbb::task * _waiting_task;
- public:
+    tbb::task* _waiting_task;
+
+public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
         CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, CARTA::CompressionType compression_type,
         float compression_quality, bool always_wait)
@@ -47,23 +48,26 @@ class AnimationObject {
           _always_wait(always_wait) {
         _compression_type = compression_type;
         _compression_quality = compression_quality;
-		_current_frame = start_frame;
+        _current_frame = start_frame;
         _next_frame = start_frame;
         _frame_interval = std::chrono::microseconds(int64_t(1.0e6 / frame_rate));
         _going_forward = true;
         _wait_duration_ms = 100;
         _stop_called = false;
-		_file_open = true;
-		_waiting_flow_event= false;
-		_waiting_task= nullptr;
+        _file_open = true;
+        _waiting_flow_event = false;
+        _waiting_task = nullptr;
     }
-	tbb::task* waiting_task_ptr() { return _waiting_task; }
-	void set_waiting_task_ptr(tbb::task* tsk) { _waiting_task = tsk; }
+    tbb::task* waiting_task_ptr() {
+        return _waiting_task;
+    }
+    void set_waiting_task_ptr(tbb::task* tsk) {
+        _waiting_task = tsk;
+    }
 };
 
 namespace CARTA {
-	const int AnimationFlowWindowSize = 5;
+const int AnimationFlowWindowSize = 5;
 }
-
 
 #endif // CARTA_BACKEND__ANIMATIONOBJECT_H_

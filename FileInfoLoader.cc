@@ -283,10 +283,10 @@ std::string FileInfoLoader::GetStringAttribute(casacore::Record& record, std::st
                 value = record.asString(field);
             } break;
             case casacore::TpInt64: {
-       	        value = std::to_string(record.asInt64(field));
+                value = std::to_string(record.asInt64(field));
             } break;
             case casacore::TpDouble: {
-       	        value = std::to_string(record.asDouble(field));
+                value = std::to_string(record.asDouble(field));
             } break;
             default:
                 break;
@@ -304,10 +304,10 @@ double FileInfoLoader::GetDoubleAttribute(casacore::Record& record, std::string 
                 value = stod(record.asString(field));
             } break;
             case casacore::TpInt64: {
-       	        value = static_cast<double>(record.asInt64(field));
+                value = static_cast<double>(record.asInt64(field));
             } break;
             case casacore::TpDouble: {
-       	        value = record.asDouble(field);
+                value = record.asDouble(field);
             } break;
             default:
                 break;
