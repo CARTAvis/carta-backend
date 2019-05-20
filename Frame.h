@@ -36,7 +36,8 @@ struct ViewSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info,
+        int default_channel = DEFAULT_CHANNEL);
     ~Frame();
 
     // frame info
@@ -171,7 +172,7 @@ private:
 
     // Region
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID
-    bool _cursor_set; // cursor region set by frontend, not internally
+    bool _cursor_set;                                                 // cursor region set by frontend, not internally
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

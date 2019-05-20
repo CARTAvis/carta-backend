@@ -5,9 +5,10 @@
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
-#include <casacore/fits/FITS/fits.h>                   // keyword list
-#include <casacore/fits/FITS/FITSKeywordUtil.h>        // convert Record to keyword list
-#include <casacore/images/Images/ImageFITSConverter.h> // get coord system
+#include <casacore/fits/FITS/FITSDateUtil.h>
+#include <casacore/fits/FITS/FITSKeywordUtil.h>
+#include <casacore/fits/FITS/fits.h>
+#include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 #include "Hdf5Attributes.h"
@@ -15,7 +16,7 @@
 using namespace carta;
 
 CartaHdf5Image::CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu,
-                               const CARTA::FileInfoExtended* info, casacore::MaskSpecifier mask_spec)
+    const CARTA::FileInfoExtended* info, casacore::MaskSpecifier mask_spec)
     : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)),
       _valid(false),
       _pixel_mask(nullptr),
@@ -147,7 +148,6 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu, 
     try {
         // convert FileInfoExtended entries to casacore Record
         casacore::Record info_header = ConvertInfoToCasacoreRecord(info);
-
         // convert info header record to vector of FITS keyword strings
         casacore::FitsKeywordList fits_kw_list = casacore::FITSKeywordUtil::makeKeywordList();
         casacore::FITSKeywordUtil::addKeywords(fits_kw_list, info_header);
@@ -206,22 +206,63 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu, 
 }
 
 casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info) {
+    // convert specified keywords to bool, int, or double
+    std::vector<std::string> skip_entries{"SIMPLE", "SCHEMA_VERSION", "HDF5_CONVERTER", "HDF5_CONVERTER_VERSION"};
+    std::vector<std::string> int_entries{"BITPIX", "WCSAXES", "A_ORDER", "B_ORDER", "VELREF"};
+    std::vector<std::string> double_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN", "DATAMAX",
+        "BMAJ", "BMIN", "BPA", "BSCALE", "BZERO"};
+    std::vector<std::string> substr_entries{"CRVAL", "CRPIX", "CDELT", "CROTA", "OBSGE"};
+    std::vector<std::string> prefix_entries{"A_", "B_", "CD", "PC", "PV"};
+
+    // In FITS card conversion, ending quote is lost in 80-char limit so need to shorten value string
+    int MAX_STRING_VALUE_LENGTH = 66;
+    const char* single_quote = "'";
+
     // convert header_entries to Record string, int or double field
     casacore::Record header_record;
     for (int i = 0; i < info->header_entries_size(); ++i) {
         const CARTA::HeaderEntry header_entry = info->header_entries(i);
         const std::string entry_name = header_entry.name();
+        const std::string entry_name_substr = entry_name.substr(0, 5); // 5-letter substring
+        const std::string entry_name_prefix = entry_name.substr(0, 2); // 2-letter prefix
+
+        if (std::find(skip_entries.begin(), skip_entries.end(), entry_name) != skip_entries.end()) {
+            continue;
+        }
 
         switch (header_entry.entry_type()) {
             case CARTA::EntryType::STRING: {
                 casacore::String entry_value = header_entry.value();
-                entry_value.gsub("'", ""); // remove quote : error converting to FITS card if final quote removed
-                header_record.define(entry_name, entry_value);
+                if ((entry_name == "EXTEND") || (entry_name == "BLOCKED")) { // bool
+                    header_record.define(entry_name, (entry_value == "T" ? true : false));
+                } else if ((std::find(int_entries.begin(), int_entries.end(), entry_name) != int_entries.end()) ||
+                           (entry_name_substr == "NAXIS")) {
+                    header_record.define(entry_name, std::stoi(entry_value)); // int
+                } else if (std::find(double_entries.begin(), double_entries.end(), entry_name) != double_entries.end()) {
+                    header_record.define(entry_name, std::stod(entry_value)); // double
+                } else if (std::find(substr_entries.begin(), substr_entries.end(), entry_name_substr) != substr_entries.end()) {
+                    header_record.define(entry_name, std::stod(entry_value)); // double
+                } else if (std::find(prefix_entries.begin(), prefix_entries.end(), entry_name_prefix) != prefix_entries.end()) {
+                    header_record.define(entry_name, std::stod(entry_value)); // double
+                } else {                                                      // keep as string
+                    // convert units
+                    entry_value = (entry_value == "Kelvin" ? "K" : entry_value);
+                    // convert date
+                    if (entry_name == "DATE-OBS") { // date
+                        casacore::String fits_date;
+                        casacore::FITSDateUtil::convertDateString(fits_date, entry_value);
+                        header_record.define(entry_name, fits_date);
+                    } else {
+                        // shorten value string
+                        if (!entry_value.empty() && (entry_value.firstchar() == single_quote[0]) &&
+                            (entry_value.length() > MAX_STRING_VALUE_LENGTH)) {
+                            entry_value.resize(MAX_STRING_VALUE_LENGTH);
+                        }
+                        header_record.define(entry_name, entry_value); // string
+                    }
+                }
             } break;
             case CARTA::EntryType::INT: {
-                if (entry_name == "SIMPLE") { // FITSKeywordUtil adds this
-                    continue;
-                }
                 if ((entry_name == "EXTEND") || (entry_name == "BLOCKED")) { // convert to bool
                     bool val = (header_entry.numeric_value() == 0.0 ? false : true);
                     header_record.define(entry_name, val);
@@ -229,10 +270,13 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
                     header_record.define(entry_name, static_cast<int>(header_entry.numeric_value()));
                 }
             } break;
-            default:
+            case CARTA::EntryType::FLOAT: {
                 header_record.define(entry_name, header_entry.numeric_value()); // double
+            } break;
+            default:
+                break;
         }
     }
+
     return header_record;
 }
-
