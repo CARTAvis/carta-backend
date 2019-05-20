@@ -129,7 +129,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     CARTA::SessionType type(CARTA::SessionType::NEW);
 
     if (icd_version != carta::ICD_VERSION) {
-        fprintf(stderr, "%p : Existing due to wrong ICD version number. Expected %d, got %d.\n", this, carta::ICD_VERSION, icd_version);
+        fprintf(stderr, "%p : Exiting due to wrong ICD version number. Expected %d, got %d.\n", this, carta::ICD_VERSION, icd_version);
         exit(1);
     }
 
