@@ -806,11 +806,19 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                         region->FillSpectralProfileData(profile_data, i, spectral_data);
                     }
                 } else { // statistics
-                    casacore::SubImage<float> sub_image;
-                    std::unique_lock<std::mutex> guard(_image_mutex);
-                    GetRegionSubImage(region_id, sub_image, profile_stokes);
-                    region->FillSpectralProfileData(profile_data, i, sub_image);
-                    guard.unlock();
+                    std::vector<std::vector<double>> stats_values;
+                    bool have_spectral_data =
+                        _loader->GetRegionSpectralData(stats_values, profile_stokes, region->XyMask());
+                    
+                    if (have_spectral_data) {
+                        region->FillSpectralProfileData(profile_data, i, stats_values);
+                    } else {
+                        casacore::SubImage<float> sub_image;
+                        std::unique_lock<std::mutex> guard(_image_mutex);
+                        GetRegionSubImage(region_id, sub_image, profile_stokes);
+                        region->FillSpectralProfileData(profile_data, i, sub_image);
+                        guard.unlock();
+                    }
                 }
             }
         }

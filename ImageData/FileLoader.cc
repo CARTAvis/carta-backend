@@ -401,3 +401,8 @@ bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     // Must be implemented in subclasses
     return false;
 }
+
+bool FileLoader::GetRegionSpectralData(std::vector<std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask) {
+    // Must be implemented in subclasses
+    return false;
+}
