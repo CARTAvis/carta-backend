@@ -29,6 +29,8 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
 
+#include <tbb/task.h>
+
 #include "AnimationObject.h"
 #include "EventHeader.h"
 #include "FileListHandler.h"
@@ -43,7 +45,7 @@ public:
     ~Session();
 
     // CARTA ICD
-    void OnRegisterViewer(const CARTA::RegisterViewer& message, uint32_t request_id);
+    void OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t icd_version, uint32_t request_id);
     void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
@@ -58,7 +60,8 @@ public:
     void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);
     void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
 
-    void SendPendingMessages();    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
+    void SendPendingMessages();
+    void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         _set_channel_queue.push(std::make_pair(message, request_id));
     }
 
@@ -71,7 +74,10 @@ public:
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
+    void ExecuteAnimationFrame_inner(bool stopped);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
+    void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
+    void CheckCancelAnimationOnFileClose(int file_id);
     void AddViewSetting(CARTA::SetImageView message, uint32_t request_id) {
         _file_settings.AddViewSetting(message, request_id);
     }
@@ -87,7 +93,7 @@ public:
     bool ImageChannelTaskTestAndSet() {
         if (_image_channel_task_active) {
             return true;
-	} else {
+        } else {
             _image_channel_task_active = true;
             return false;
         }
@@ -105,8 +111,20 @@ public:
     static int NumberOfSessions() {
         return _num_sessions;
     }
+    tbb::task_group_context& context() {
+        return _base_context;
+    }
+    void setWaitingTask_ptr(tbb::task* tsk) {
+        _animation_object->_waiting_task = tsk;
+    }
+    tbb::task* getWaitingTask_ptr() {
+        return _animation_object->_waiting_task;
+    }
+    bool waiting_flow_event() {
+        return _animation_object->_waiting_flow_event;
+    }
 
-    // TODO: should these be public?
+    // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
@@ -150,8 +168,8 @@ private:
 
     // Frame
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
-    std::mutex _frame_mutex; // lock frames to create/destroy
-    bool _new_frame;         // flag to send histogram with data
+    std::mutex _frame_mutex;                                 // lock frames to create/destroy
+    bool _new_frame;                                         // flag to send histogram with data
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
@@ -164,8 +182,11 @@ private:
     tbb::atomic<float> _histogram_progress;
 
     // Outgoing messages
-    uS::Async* _outgoing_async; // Notification mechanism when messages are ready
+    uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
     tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
+
+    // TBB context that enables all tasks associated with a session to be cancelled.
+    tbb::task_group_context _base_context;
 
     int _ref_count;
     bool _connected;

@@ -5,9 +5,9 @@
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/Projection.h>
 #include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
-#include <casacore/fits/FITS/fits.h>
 #include <casacore/fits/FITS/FITSDateUtil.h>
 #include <casacore/fits/FITS/FITSKeywordUtil.h>
+#include <casacore/fits/FITS/fits.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
@@ -16,7 +16,7 @@
 using namespace carta;
 
 CartaHdf5Image::CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu,
-                               const CARTA::FileInfoExtended* info, casacore::MaskSpecifier mask_spec)
+    const CARTA::FileInfoExtended* info, casacore::MaskSpecifier mask_spec)
     : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)),
       _valid(false),
       _pixel_mask(nullptr),
@@ -210,7 +210,7 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
     std::vector<std::string> skip_entries{"SIMPLE", "SCHEMA_VERSION", "HDF5_CONVERTER", "HDF5_CONVERTER_VERSION"};
     std::vector<std::string> int_entries{"BITPIX", "WCSAXES", "A_ORDER", "B_ORDER", "VELREF"};
     std::vector<std::string> double_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN", "DATAMAX",
-                                           "BMAJ", "BMIN", "BPA", "BSCALE", "BZERO"};
+        "BMAJ", "BMIN", "BPA", "BSCALE", "BZERO"};
     std::vector<std::string> substr_entries{"CRVAL", "CRPIX", "CDELT", "CROTA", "OBSGE"};
     std::vector<std::string> prefix_entries{"A_", "B_", "CD", "PC", "PV"};
 
@@ -218,14 +218,13 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
     int MAX_STRING_VALUE_LENGTH = 66;
     const char* single_quote = "'";
 
-
     // convert header_entries to Record string, int or double field
     casacore::Record header_record;
     for (int i = 0; i < info->header_entries_size(); ++i) {
         const CARTA::HeaderEntry header_entry = info->header_entries(i);
         const std::string entry_name = header_entry.name();
-        const std::string entry_name_substr = entry_name.substr(0,5); // 5-letter substring
-        const std::string entry_name_prefix = entry_name.substr(0,2); // 2-letter prefix
+        const std::string entry_name_substr = entry_name.substr(0, 5); // 5-letter substring
+        const std::string entry_name_prefix = entry_name.substr(0, 2); // 2-letter prefix
 
         if (std::find(skip_entries.begin(), skip_entries.end(), entry_name) != skip_entries.end()) {
             continue;
@@ -245,7 +244,7 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
                     header_record.define(entry_name, std::stod(entry_value)); // double
                 } else if (std::find(prefix_entries.begin(), prefix_entries.end(), entry_name_prefix) != prefix_entries.end()) {
                     header_record.define(entry_name, std::stod(entry_value)); // double
-                } else { // keep as string
+                } else {                                                      // keep as string
                     // convert units
                     entry_value = (entry_value == "Kelvin" ? "K" : entry_value);
                     // convert date
@@ -274,7 +273,7 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
             case CARTA::EntryType::FLOAT: {
                 header_record.define(entry_name, header_entry.numeric_value()); // double
             } break;
-	    default:
+            default:
                 break;
         }
     }
