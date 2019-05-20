@@ -135,8 +135,8 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
         region_set = region->UpdateRegionParameters(name, type, points, rotation);
     } else { // map new Region to region id
         const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-        auto region =
-            unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
+        auto region = unique_ptr<carta::Region>(
+            new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
         if (region->IsValid()) {
             _regions[region_id] = move(region);
             region_set = true;
@@ -807,9 +807,8 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                     }
                 } else { // statistics
                     std::vector<std::vector<double>> stats_values;
-                    bool have_spectral_data =
-                        _loader->GetRegionSpectralData(stats_values, profile_stokes, region->XyMask());
-                    
+                    bool have_spectral_data = _loader->GetRegionSpectralData(stats_values, profile_stokes, region->XyMask());
+
                     if (have_spectral_data) {
                         region->FillSpectralProfileData(profile_data, i, stats_values);
                     } else {

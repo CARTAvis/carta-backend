@@ -10,9 +10,9 @@
 #include <casacore/images/Regions/WCPolygon.h>
 #include <casacore/images/Regions/WCRegion.h>
 #include <casacore/lattices/LRegions/LCBox.h>
-#include <casacore/lattices/LRegions/LCPolygon.h>
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCExtension.h>
+#include <casacore/lattices/LRegions/LCPolygon.h>
 
 #include "../InterfaceConstants.h"
 
@@ -476,39 +476,39 @@ casacore::IPosition Region::XyShape() {
 const casacore::ArrayLattice<casacore::Bool>* Region::XyMask() {
     // returns boolean mask of xy region
     casacore::ArrayLattice<casacore::Bool>* mask;
-    
+
     if (_xy_region != nullptr) {
         // get extended region
         auto extended_region = static_cast<casacore::LCExtension*>(_xy_region->toLCRegion(_coord_sys, _image_shape));
-    
+
         // get original region
         switch (_type) {
-        case CARTA::POINT: {
-            auto region = static_cast<const casacore::LCBox&>(extended_region->region());
-            mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
-            break;
-        }
-        case CARTA::RECTANGLE:
-        case CARTA::POLYGON: {
-            auto region = static_cast<const casacore::LCPolygon&>(extended_region->region());
-            mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
-            break;
-        }
-        case CARTA::ELLIPSE: {
-            auto region = static_cast<const casacore::LCEllipsoid&>(extended_region->region());
-            mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
-            break;
-        }
-        default:
-            break;
+            case CARTA::POINT: {
+                auto region = static_cast<const casacore::LCBox&>(extended_region->region());
+                mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
+                break;
+            }
+            case CARTA::RECTANGLE:
+            case CARTA::POLYGON: {
+                auto region = static_cast<const casacore::LCPolygon&>(extended_region->region());
+                mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
+                break;
+            }
+            case CARTA::ELLIPSE: {
+                auto region = static_cast<const casacore::LCEllipsoid&>(extended_region->region());
+                mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
+                break;
+            }
+            default:
+                break;
         }
     }
-    
+
     if (_xy_mask) {
         delete _xy_mask;
     }
     _xy_mask = mask;
-    
+
     return _xy_mask;
 }
 
@@ -648,29 +648,30 @@ void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, i
     }
 }
 
-void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<std::vector<double>>& stats_values) {
+void Region::FillSpectralProfileData(
+    CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<std::vector<double>>& stats_values) {
     // TODO decide how this interacts with the calculation in the loader
-//     // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
-//     CARTA::SetSpectralRequirements_SpectralConfig config;
-//     if (_profiler->GetSpectralConfig(config, profile_index)) {
-//         std::string profile_coord(config.coordinate());
-//         std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
-//         size_t nstats = requested_stats.size();
-//         for (size_t i = 0; i < nstats; ++i) {
-//             // one SpectralProfile per stats type
-//             auto new_profile = profile_data.add_profiles();
-//             new_profile->set_coordinate(profile_coord);
-//             auto stat_type = static_cast<CARTA::StatsType>(requested_stats[i]);
-//             new_profile->set_stats_type(stat_type);
-//             // convert to float for spectral profile
-//             std::vector<float> values;
-//             if (stats_values.empty() || stats_values[i].empty()) { // region outside image or NaNs
-//                 new_profile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
-//             } else {
-//                 *new_profile->mutable_double_vals() = {stats_values[i].begin(), stats_values[i].end()};
-//             }
-//         }
-//     }
+    //     // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
+    //     CARTA::SetSpectralRequirements_SpectralConfig config;
+    //     if (_profiler->GetSpectralConfig(config, profile_index)) {
+    //         std::string profile_coord(config.coordinate());
+    //         std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
+    //         size_t nstats = requested_stats.size();
+    //         for (size_t i = 0; i < nstats; ++i) {
+    //             // one SpectralProfile per stats type
+    //             auto new_profile = profile_data.add_profiles();
+    //             new_profile->set_coordinate(profile_coord);
+    //             auto stat_type = static_cast<CARTA::StatsType>(requested_stats[i]);
+    //             new_profile->set_stats_type(stat_type);
+    //             // convert to float for spectral profile
+    //             std::vector<float> values;
+    //             if (stats_values.empty() || stats_values[i].empty()) { // region outside image or NaNs
+    //                 new_profile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
+    //             } else {
+    //                 *new_profile->mutable_double_vals() = {stats_values[i].begin(), stats_values[i].end()};
+    //             }
+    //         }
+    //     }
 }
 
 void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, casacore::ImageInterface<float>& image) {

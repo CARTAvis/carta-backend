@@ -84,7 +84,8 @@ public:
     std::string GetSpectralCoordinate(int profile_index);
     bool GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
-    void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<std::vector<double>>& stats_values);
+    void FillSpectralProfileData(
+        CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<std::vector<double>>& stats_values);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, casacore::ImageInterface<float>& image);
 
     // Stats: pass through to RegionStats
@@ -129,7 +130,7 @@ private:
 
     // stored 2D region
     casacore::WCRegion* _xy_region;
-    
+
     // stored 2D mask
     casacore::ArrayLattice<casacore::Bool>* _xy_mask;
 

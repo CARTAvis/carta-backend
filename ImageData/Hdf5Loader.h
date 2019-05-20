@@ -19,7 +19,8 @@ public:
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) override;
-    bool GetRegionSpectralData(std::vector<std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask) override;
+    bool GetRegionSpectralData(
+        std::vector<std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask) override;
 
 protected:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
@@ -300,12 +301,13 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return data_ok;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(std::vector<std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask) {
+bool Hdf5Loader::GetRegionSpectralData(
+    std::vector<std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask) {
     bool data_ok(false);
-    
+
     // TODO!
     std::cerr << "Mask shape is " << mask->shape() << std::endl;
-    
+
     return data_ok;
 }
 

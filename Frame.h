@@ -167,7 +167,7 @@ private:
 
     // Region
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID
-    bool _cursor_set; // cursor region set by frontend, not internally
+    bool _cursor_set;                                                 // cursor region set by frontend, not internally
 };
 
 #endif // CARTA_BACKEND__FRAME_H_
