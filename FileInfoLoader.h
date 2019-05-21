@@ -6,6 +6,8 @@
 #include <string>
 
 #include <casacore/casa/Arrays/IPosition.h>
+#include <casacore/fits/FITS/hdu.h> // must come before fitsio.h
+#include <casacore/fits/FITS/fitsio.h>
 #include <casacore/fits/FITS/FITSError.h>
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/measures/Measures/MDirection.h>
@@ -33,6 +35,7 @@ private:
 
     // FileInfo
     bool GetHduList(CARTA::FileInfo* file_info, const std::string& filename);
+    void GetFitsExtensionInfo(casacore::FitsInput& fits_input, std::string& xtension_type, std::string& ext_name);
 
     // ExtFileInfo
     bool FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message);

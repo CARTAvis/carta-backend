@@ -13,8 +13,6 @@
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/fits/FITS/FITSTable.h>
-#include <casacore/fits/FITS/fitsio.h>
-#include <casacore/fits/FITS/hdu.h>
 #include <casacore/images/Images/FITSImage.h>
 #include <casacore/images/Images/ImageSummary.h>
 #include <casacore/images/Images/MIRIADImage.h>
@@ -94,11 +92,33 @@ bool FileInfoLoader::GetHduList(CARTA::FileInfo* file_info, const std::string& f
     } else if (file_info->type() == CARTA::FITS) {
         casacore::FitsInput fits_input(filename.c_str(), casacore::FITS::Disk, 10, FileInfoFitsErrHandler);
         if (fits_input.err() == casacore::FitsIO::OK) { // check for cfitsio error
+            // get each header data unit
             int num_hdu(fits_input.getnumhdu());
             hdu_ok = (num_hdu > 0);
             if (hdu_ok) {
-                for (int hdu = 0; hdu < num_hdu; ++hdu)
-                    file_info->add_hdu_list(casacore::String::toString(hdu));
+                for (int hdu = 0; hdu < num_hdu; ++hdu) {
+                    // add hdu to file info
+                    std::string hdu_name = std::to_string(hdu);
+                    std::string xtension_type, ext_name;
+		    if (fits_input.rectype() == casacore::FITS::HDURecord) {
+                        switch (fits_input.hdutype()) {
+                            case casacore::FITS::PrimaryArrayHDU: {
+                                file_info->add_hdu_list(hdu_name);
+                            } break;
+                            case casacore::FITS::ImageExtensionHDU: {
+                                // append hdu extension name after colon (used to parse hdu number later)
+                                GetFitsExtensionInfo(fits_input, xtension_type, ext_name);
+			        if (xtension_type.substr(0, 5) == "IMAGE") {
+                                    hdu_name += ": " + ext_name;
+                                    file_info->add_hdu_list(hdu_name);
+                                }
+                            } break;
+                            default:
+                                break;
+                        }
+                    }
+                    fits_input.skip_hdu(); // next hdu
+                }
             }
         }
     } else {
@@ -106,6 +126,39 @@ bool FileInfoLoader::GetHduList(CARTA::FileInfo* file_info, const std::string& f
         hdu_ok = true;
     }
     return hdu_ok;
+}
+
+void FileInfoLoader::GetFitsExtensionInfo(casacore::FitsInput& fits_input, std::string& xtension_type, std::string& ext_name) {
+    // return EXTNAME and XTENSION values from image extension header
+    switch (fits_input.datatype()) {
+        case casacore::FITS::CHAR: {
+            casacore::ImageExtension<unsigned char> header_unit = casacore::ImageExtension<unsigned char>(fits_input);
+            ext_name = header_unit.extname();
+            xtension_type = header_unit.xtension();
+        }   break;
+        case casacore::FITS::SHORT: {
+            casacore::ImageExtension<short> header_unit = casacore::ImageExtension<short>(fits_input);
+            ext_name = header_unit.extname();
+            xtension_type = header_unit.xtension();
+        }   break;
+        case casacore::FITS::LONG: {
+            casacore::ImageExtension<int> header_unit = casacore::ImageExtension<int>(fits_input);
+            ext_name = header_unit.extname();
+            xtension_type = header_unit.xtension();
+        }   break;
+        case casacore::FITS::FLOAT: {
+            casacore::ImageExtension<float> header_unit = casacore::ImageExtension<float>(fits_input);
+            ext_name = header_unit.extname();
+            xtension_type = header_unit.xtension();
+        }   break;
+        case casacore::FITS::DOUBLE: {
+            casacore::ImageExtension<double> header_unit = casacore::ImageExtension<double>(fits_input);
+            ext_name = header_unit.extname();
+            xtension_type = header_unit.xtension();
+        }   break;
+        default:
+            break;
+    }
 }
 
 //#################################################################################
@@ -324,6 +377,7 @@ bool FileInfoLoader::FillFitsExtFileInfo(CARTA::FileInfoExtended* ext_info, stri
         casacore::uInt hdu_num;
         try {
             casacore::String cc_hdu(hdu);
+            cc_hdu = cc_hdu.before(":"); // if extension info was added
             cc_hdu.fromString(hdu_num, true);
         } catch (casacore::AipsError& err) {
             message = "Invalid hdu for FITS image.";
