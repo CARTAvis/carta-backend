@@ -604,6 +604,9 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data,
     }
     raster_tile_data.set_channel(channel);
     raster_tile_data.set_stokes(stokes);
+    raster_tile_data.set_compression_type(compression_type);
+    raster_tile_data.set_compression_quality(compression_quality);
+
     if (raster_tile_data.tiles_size()) {
         raster_tile_data.clear_tiles();
     }
@@ -623,7 +626,6 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data,
         tile_ptr->set_width(tile_width);
         tile_ptr->set_height(tile_height);
         if (compression_type == CARTA::CompressionType::NONE) {
-            raster_tile_data.set_compression_type(CARTA::CompressionType::NONE);
             tile_ptr->set_image_data(tile_image_data.data(), sizeof(float) * tile_image_data.size());
             return true;
         } else if (compression_type == CARTA::CompressionType::ZFP) {
