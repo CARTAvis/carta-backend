@@ -221,7 +221,7 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
     std::vector<std::string> prefix_entries{"A_", "B_", "CD", "PC", "PV"};
 
     // In FITS card conversion, ending quote is lost in 80-char limit so need to shorten value string
-    int MAX_STRING_VALUE_LENGTH = 66;
+    int max_string_value_length(66);
     const char* single_quote = "'";
 
     // convert header_entries to Record string, int or double field
@@ -259,9 +259,9 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
                         header_record.define(entry_name, fits_date);
                     } else {
                         // shorten value string
-                        if (!entry_value.empty() && (entry_value.firstchar() == single_quote[0]) &&
-                            (entry_value.length() > MAX_STRING_VALUE_LENGTH)) {
-                            entry_value.resize(MAX_STRING_VALUE_LENGTH);
+                        if ((!entry_value.empty()) && (entry_value.firstchar() == single_quote[0]) &&
+                            (entry_value.length() > max_string_value_length)) {
+                            entry_value.resize(max_string_value_length);
                         }
                         header_record.define(entry_name, entry_value); // string
                     }
