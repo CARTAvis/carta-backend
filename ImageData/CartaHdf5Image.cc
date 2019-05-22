@@ -218,13 +218,13 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
     std::vector<std::string> skip_entries{"SIMPLE", "SCHEMA_VERSION", "HDF5_CONVERTER", "HDF5_CONVERTER_VERSION"};
     // Reserved FITS keywords https://fits.gsfc.nasa.gov/standard40/fits_standard40aa-le.pdf
     std::vector<std::string> bool_entries{"EXTEND", "BLOCKED", "GROUPS"};
-    std::vector<std::string> int_entries{"BITPIX", "BLANK", "WCSAXES", "A_ORDER", "B_ORDER", "VELREF", "EXTLEVEL", "EXTVER", "GCOUNT",
-        "PCOUNT", "TFIELDS", "THEAP"};
-    std::vector<std::string> double_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN",
-        "DATAMAX", "BMAJ", "BMIN", "BPA", "BSCALE", "BZERO"};
+    std::vector<std::string> int_entries{
+        "BITPIX", "BLANK", "WCSAXES", "A_ORDER", "B_ORDER", "VELREF", "EXTLEVEL", "EXTVER", "GCOUNT", "PCOUNT", "TFIELDS", "THEAP"};
+    std::vector<std::string> double_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN", "DATAMAX",
+        "BMAJ", "BMIN", "BPA", "BSCALE", "BZERO"};
     std::vector<std::string> substr_int_entries{"NAXIS", "TBCOL"};
-    std::vector<std::string> substr_dbl_entries{"CRVAL", "CRPIX", "CDELT", "CROTA", "OBSGE", "PSCAL", "PZERO", "TSCAL", "TZERO", "TDMIN",
-        "TDMAX", "TLMIN", "TLMAX"};
+    std::vector<std::string> substr_dbl_entries{
+        "CRVAL", "CRPIX", "CDELT", "CROTA", "OBSGE", "PSCAL", "PZERO", "TSCAL", "TZERO", "TDMIN", "TDMAX", "TLMIN", "TLMAX"};
     std::vector<std::string> prefix_entries{"A_", "B_", "CD", "PC", "PV"};
 
     // In FITS card conversion, ending quote is lost in 80-char limit so need to shorten value string
@@ -249,10 +249,12 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
                 if (std::find(bool_entries.begin(), bool_entries.end(), entry_name) != bool_entries.end()) {
                     header_record.define(entry_name, (entry_value == "T" ? true : false)); // bool
                 } else if ((std::find(int_entries.begin(), int_entries.end(), entry_name) != int_entries.end()) ||
-                    (std::find(substr_int_entries.begin(), substr_int_entries.end(), entry_name_substr) != substr_int_entries.end())) {
+                           (std::find(substr_int_entries.begin(), substr_int_entries.end(), entry_name_substr) !=
+                               substr_int_entries.end())) {
                     header_record.define(entry_name, std::stoi(entry_value)); // int
                 } else if ((std::find(double_entries.begin(), double_entries.end(), entry_name) != double_entries.end()) ||
-                    (std::find(substr_dbl_entries.begin(), substr_dbl_entries.end(), entry_name_substr) != substr_dbl_entries.end())) {
+                           (std::find(substr_dbl_entries.begin(), substr_dbl_entries.end(), entry_name_substr) !=
+                               substr_dbl_entries.end())) {
                     header_record.define(entry_name, std::stod(entry_value)); // double
                 } else if (std::find(prefix_entries.begin(), prefix_entries.end(), entry_name_prefix) != prefix_entries.end()) {
                     header_record.define(entry_name, std::stod(entry_value)); // double
