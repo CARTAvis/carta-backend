@@ -2,6 +2,7 @@
 #define CARTA_BACKEND__ANIMATIONOBJECT_H_
 
 #include <chrono>
+#include <tbb/task.h>
 
 #include <carta-protobuf/animation.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
@@ -32,7 +33,8 @@ class AnimationObject {
     volatile int _file_open;
     volatile bool _waiting_flow_event;
     tbb::task* _waiting_task;
-
+    tbb::task_group_context _tbb_context;
+    
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
         CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, CARTA::CompressionType compression_type,
@@ -63,6 +65,9 @@ public:
     }
     void set_waiting_task_ptr(tbb::task* tsk) {
         _waiting_task = tsk;
+    }
+    void cancel_execution() {
+      _tbb_context.cancel_group_execution();
     }
 };
 

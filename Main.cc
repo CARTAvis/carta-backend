@@ -136,7 +136,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.histograms_size() == 0) {
                         session->CancelSetHistRequirements();
                     } else {
-                        tsk = new (tbb::task::allocate_root(session->context()))
+		      tsk = new (tbb::task::allocate_root(session->HistoContext()))
                             SetHistogramRequirementsTask(session, head, event_length, event_buf);
                     }
                     break;
@@ -144,7 +144,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::START_ANIMATION: {
                     CARTA::StartAnimation message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->context())) AnimationTask(session, head.request_id, message);
+                    tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session, head.request_id, message);
                     break;
                 }
                 case CARTA::EventType::STOP_ANIMATION: {
