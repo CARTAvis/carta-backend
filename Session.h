@@ -70,7 +70,16 @@ public:
         OnSetImageChannels(request.first);
     }
     void CancelSetHistRequirements() {
-        _histogram_progress.fetch_and_store(HISTOGRAM_CANCEL);
+      _histo_context.cancel_group_execution();
+    }
+    tbb::task_group_context& HistoContext() {
+      return _histo_context;
+    }
+    tbb::task_group_context& AnimationContext() {
+      return _animation_context;
+    }
+    void CancelAnimation() {
+      _animation_object->cancel_execution();
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
@@ -187,6 +196,11 @@ private:
 
     // TBB context that enables all tasks associated with a session to be cancelled.
     tbb::task_group_context _base_context;
+
+    // TBB context to cancel histogram calculations.
+    tbb::task_group_context _histo_context;
+
+    tbb::task_group_context _animation_context;
 
     int _ref_count;
     bool _connected;

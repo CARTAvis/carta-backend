@@ -65,6 +65,8 @@ void Session::DisconnectCalled() {
         frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
     _base_context.cancel_group_execution();
+    _histo_context.cancel_group_execution();
+    if (_animation_object) _animation_object->cancel_execution();
 }
 
 // ********************************************************************************
@@ -519,6 +521,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
         try {
             if (message.histograms_size() == 0) { // cancel!
                 _histogram_progress.fetch_and_store(HISTOGRAM_CANCEL);
+		_histo_context.cancel_group_execution();
                 SendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
                 return data_sent;
             } else {
@@ -572,9 +575,9 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         cube_max = std::max(cube_max, chan_max);
 
                         // check for cancel
-                        if (_histogram_progress == HISTOGRAM_CANCEL)
-                            break;
-
+			if (_histo_context.is_group_execution_cancelled())
+			  break;
+			
                         // check for progress update
                         auto t_end = std::chrono::high_resolution_clock::now();
                         auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
@@ -589,11 +592,11 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         }
                     }
                     // save min,max in cube region
-                    if (_histogram_progress > HISTOGRAM_CANCEL)
-                        _frames.at(file_id)->SetRegionMinMax(region_id, channel, stokes, cube_min, cube_max);
+                    if (!_histo_context.is_group_execution_cancelled())
+		      _frames.at(file_id)->SetRegionMinMax(region_id, channel, stokes, cube_min, cube_max);
 
                     // check cancel and proceed
-                    if (_histogram_progress > HISTOGRAM_CANCEL) {
+                    if (!_histo_context.is_group_execution_cancelled()) {
                         // send progress message: half done
                         float progress = 0.50;
                         histogram_message.set_progress(progress);
@@ -613,8 +616,8 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             }
 
                             // check for cancel
-                            if (_histogram_progress == HISTOGRAM_CANCEL)
-                                break;
+			    if(!_histo_context.is_group_execution_cancelled())
+			      break;
 
                             // check for progress update
                             auto t_end = std::chrono::high_resolution_clock::now();
@@ -634,8 +637,8 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                                 t_start = t_end;
                             }
                         }
-                        if (_histogram_progress > HISTOGRAM_CANCEL) {
-                            // send completed cube histogram
+                        if (!_histo_context.is_group_execution_cancelled()) {
+			  // send completed cube histogram
                             progress = HISTOGRAM_COMPLETE;
                             CARTA::RegionHistogramData final_histogram_message;
                             CreateCubeHistogramMessage(final_histogram_message, file_id, stokes, progress);
@@ -903,6 +906,9 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
             auto channel = curr_frame.channel();
             auto stokes = curr_frame.stokes();
 
+	    if ((_animation_object->_tbb_context).is_group_execution_cancelled())
+	      return;
+	    
             bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
             bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
 
@@ -1054,4 +1060,5 @@ void Session::CheckCancelAnimationOnFileClose(int file_id) {
     if (!_animation_object)
         return;
     _animation_object->_file_open = false;
+    _animation_object->cancel_execution();
 }

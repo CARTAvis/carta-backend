@@ -90,6 +90,7 @@ tbb::task* SetImageChannelsTask::execute() {
 
     _session->ExecuteSetChannelEvt(_request_pair);
     _session->ImageChannelLock();
+
     if (!(tester = _session->_set_channel_queue.try_pop(_request_pair)))
         _session->ImageChannelTaskSetIdle();
     _session->ImageChannelUnlock();
@@ -128,7 +129,9 @@ tbb::task* AnimationTask::execute() {
     } else {
         if (_session->waiting_flow_event()) {
             _session->setWaitingTask_ptr(this);
-        }
+        } else {
+	  _session->CancelAnimation();
+	}
     }
 
     return nullptr;
