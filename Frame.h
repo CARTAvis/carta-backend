@@ -37,7 +37,7 @@ struct ViewSettings {
 class Frame {
 public:
     Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info,
-        int default_channel = DEFAULT_CHANNEL);
+          int default_channel = DEFAULT_CHANNEL);
     ~Frame();
 
     // frame info
@@ -51,7 +51,7 @@ public:
 
     // Create and remove regions
     bool SetRegion(int region_id, const std::string& name, CARTA::RegionType type, std::vector<CARTA::Point>& points, float rotation,
-        std::string& message);
+                   std::string& message);
     bool SetCursorRegion(int region_id, const CARTA::Point& point);
     inline bool IsCursorSet() { // set by frontend, not default
         return _cursor_set;
@@ -73,7 +73,12 @@ public:
     // fill data, profiles, stats messages
     // For some messages, only fill if requirements are for current channel/stokes
     bool FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::string& message);
-    bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile);
+    bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data,
+                            const Tile& tile,
+                            int channel,
+                            int stokes,
+                            CARTA::CompressionType compression_type,
+                            float compression_quality);
     bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool check_current_stokes = false);
     bool FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& profile_data, bool check_current_stokes = false);
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool check_current_chan = false);
@@ -107,6 +112,9 @@ private:
     // validate channel, stokes index values
     bool CheckChannel(int channel);
     bool CheckStokes(int stokes);
+
+    // Check whether channels have changed
+    bool ChannelsChanged(int channel, int stokes);
 
     // Image data
     // save image region data for current channel, stokes
