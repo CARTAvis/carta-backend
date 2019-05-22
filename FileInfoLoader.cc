@@ -100,7 +100,7 @@ bool FileInfoLoader::GetHduList(CARTA::FileInfo* file_info, const std::string& f
                     // add hdu to file info
                     std::string hdu_name = std::to_string(hdu);
                     std::string xtension_type, ext_name;
-		    if (fits_input.rectype() == casacore::FITS::HDURecord) {
+                    if (fits_input.rectype() == casacore::FITS::HDURecord) {
                         switch (fits_input.hdutype()) {
                             case casacore::FITS::PrimaryArrayHDU: {
                                 file_info->add_hdu_list(hdu_name);
@@ -108,7 +108,7 @@ bool FileInfoLoader::GetHduList(CARTA::FileInfo* file_info, const std::string& f
                             case casacore::FITS::ImageExtensionHDU: {
                                 // append hdu extension name after colon (used to parse hdu number later)
                                 GetFitsExtensionInfo(fits_input, xtension_type, ext_name);
-			        if (xtension_type.substr(0, 5) == "IMAGE") {
+                                if (xtension_type.substr(0, 5) == "IMAGE") {
                                     hdu_name += ": " + ext_name;
                                     file_info->add_hdu_list(hdu_name);
                                 }
@@ -397,10 +397,13 @@ bool FileInfoLoader::FillFitsExtFileInfo(CARTA::FileInfoExtended* ext_info, stri
             }
         } catch (casacore::AipsError& err) {
             message = err.getMesg();
-            if (message.find("diagonal") != std::string::npos) // "ArrayBase::diagonal() - diagonal out of range"
+            if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"
                 message = "Failed to open image at specified HDU.";
-            else if (message.find("No image at specified location") != std::string::npos)
+            } else if (message.find("No image at specified location") != std::string::npos) {
                 message = "No image at specified HDU.";
+            } else {
+                message = "Failed to open image at specified HDU: " + message;
+            }
             return false;
         }
         ext_info->set_dimensions(num_dim);
