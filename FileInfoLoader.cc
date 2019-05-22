@@ -1147,8 +1147,9 @@ std::string FileInfoLoader::MakeValueStr(const std::string& type, double val, co
                       (upper_type.find("LAT") != std::string::npos));
         if (is_ra || is_angle) {
             casacore::MVAngle::formatTypes format(casacore::MVAngle::ANGLE);
-            if (is_ra)
+            if (is_ra) {
                 format = casacore::MVAngle::TIME;
+            }
             casacore::Quantity quant1(val, unit);
             casacore::MVAngle mva(quant1);
             val_str = mva.string(format, 10);
