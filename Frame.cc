@@ -590,22 +590,32 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     tile_ptr->set_y(tile.y);
 
     std::vector<float> data;
-    if (GetRasterTileData(data, tile)) {
+    int tile_width;
+    int tile_height;
+    if (GetRasterTileData(data, tile, tile_width, tile_height)) {
         tile_ptr->set_image_data(data.data(), sizeof(float) * data.size());
+        tile_ptr->set_width(tile_width);
+        tile_ptr->set_height(tile_height);
         return true;
     }
     return false;
 }
 
-bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile) {
-    int32_t tile_size = 256;
-    int32_t mip = Tile::LayerToMip(tile.layer, _image_shape(0), _image_shape(1), tile_size, tile_size);
-    int32_t tile_size_original = tile_size * mip;
+bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height) {
+    int tile_size = 256;
+    int mip = Tile::LayerToMip(tile.layer, _image_shape(0), _image_shape(1), tile_size, tile_size);
+    int tile_size_original = tile_size * mip;
     CARTA::ImageBounds bounds;
-    bounds.set_x_min(tile.x * tile_size_original);
-    bounds.set_x_max((tile.x + 1) * tile_size_original);
-    bounds.set_y_min(tile.y * tile_size_original);
-    bounds.set_y_max((tile.y + 1) * tile_size_original);
+    // crop to image size
+    bounds.set_x_min(std::max(0, tile.x * tile_size_original));
+    bounds.set_x_max(std::min((int)_image_shape(0), (tile.x + 1) * tile_size_original));
+    bounds.set_y_min(std::max(0, tile.y * tile_size_original));
+    bounds.set_y_max(std::min((int) _image_shape(1), (tile.y + 1) * tile_size_original));
+
+    const int req_height = bounds.y_max() - bounds.y_min();
+    const int req_width = bounds.x_max() - bounds.x_min();
+    width = req_width/ mip;
+    height = req_height / mip;
     return GetRasterData(tile_data, bounds, mip, true);
 }
 
