@@ -561,7 +561,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                         size_t image_col = x + (i * mip);
                         for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
                             float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
-                            if (isfinite(pix_val)) {
+                            if (std::isfinite(pix_val)) {
                                 pixel_count++;
                                 pixel_sum += pix_val;
                             }
