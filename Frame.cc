@@ -3,6 +3,8 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
+#include <thread>
+
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 
 #include "Compression.h"
@@ -80,6 +82,7 @@ bool Frame::IsValid() {
 void Frame::DisconnectCalled() {
     _connected = false; // set a false flag to interrupt the running jobs
     while (_z_profile_count) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     } // wait for the jobs finished
 }
 

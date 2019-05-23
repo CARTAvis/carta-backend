@@ -88,6 +88,13 @@ public:
 
     // set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
+    
+    void IncreaseZProfileCountBy(int count) {
+        _z_profile_count += count;
+    }
+    void DecreaseZProfileCountBy(int count) {
+        _z_profile_count -= count;
+    }
 
 private:
     // Internal regions: image, cursor

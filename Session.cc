@@ -216,6 +216,10 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
         // create Frame for open file
         auto frame = std::unique_ptr<Frame>(new Frame(_id, abs_filename, hdu, _selected_file_info_extended));
         if (frame->IsValid()) {
+            // Check if the old _frames[file_id] object exists. If so, delete it.
+            if (_frames.count(file_id) > 0) {
+                DeleteFrame(file_id);
+            }
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
             _frames[file_id] = move(frame);
             lock.unlock();
@@ -248,19 +252,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
-    auto file_id = message.file_id();
-    std::unique_lock<std::mutex> lock(_frame_mutex);
-    if (file_id == ALL_FILES) {
-        for (auto& frame : _frames) {
-            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-            frame.second.reset();             // delete Frame
-        }
-        _frames.clear();
-    } else if (_frames.count(file_id)) {
-        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-        _frames[file_id].reset();
-        _frames.erase(file_id);
-    }
+    DeleteFrame(message.file_id());
 }
 
 void Session::OnSetImageView(const CARTA::SetImageView& message) {
@@ -373,10 +365,12 @@ void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
     SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
     // update data streams if requirements set
     if (success && _frames.at(file_id)->RegionChanged(region_id)) {
+        _frames.at(file_id)->IncreaseZProfileCountBy(4);
         SendSpatialProfileData(file_id, region_id);
         SendSpectralProfileData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
         SendRegionStatsData(file_id, region_id);
+        _frames.at(file_id)->DecreaseZProfileCountBy(4);
     }
 }
 
@@ -1054,4 +1048,19 @@ void Session::CheckCancelAnimationOnFileClose(int file_id) {
     if (!_animation_object)
         return;
     _animation_object->_file_open = false;
+}
+
+void Session::DeleteFrame(int file_id) {
+    std::unique_lock<std::mutex> lock(_frame_mutex);
+    if (file_id == ALL_FILES) {
+        for (auto& frame : _frames) {
+            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+            frame.second.reset();             // delete Frame
+        }
+        _frames.clear();
+    } else if (_frames.count(file_id)) {
+        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        _frames[file_id].reset();
+        _frames.erase(file_id);
+    }
 }
