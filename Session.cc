@@ -246,6 +246,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     ack.set_success(success);
     ack.set_message(err_message);
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
+    UpdateRegionData(file_id, true, false);
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
@@ -322,8 +323,9 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
             bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
             if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
-                // RESPONSE: updated image raster/histogram
-                SendRasterImageData(file_id, true); // true = send histogram
+                // TODO: check this data flow
+                // Don't send raster data (will be handled by tiles)
+                // SendRasterImageData(file_id, true); // true = send histogram
                 // RESPONSE: region data (includes image, cursor, and set regions)
                 UpdateRegionData(file_id, channel_changed, stokes_changed);
             } else {
