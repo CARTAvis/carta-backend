@@ -735,7 +735,10 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool check_cur
                 return data_sent; // do not send profile unless frontend set cursor
             }
             CARTA::SpectralProfileData spectral_profile_data;
-            if (_frames.at(file_id)->FillSpectralProfileData(region_id, spectral_profile_data, check_current_stokes)) {
+            _frames.at(file_id)->IncreaseZProfileCountBy(1);
+            bool profile_ok = _frames.at(file_id)->FillSpectralProfileData(region_id, spectral_profile_data, check_current_stokes);
+            _frames.at(file_id)->DecreaseZProfileCountBy(1);
+            if (profile_ok) {
                 spectral_profile_data.set_file_id(file_id);
                 spectral_profile_data.set_region_id(region_id);
                 SendFileEvent(file_id, CARTA::EventType::SPECTRAL_PROFILE_DATA, 0, spectral_profile_data);

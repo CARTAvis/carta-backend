@@ -762,17 +762,14 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
 
 bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& profile_data, bool check_current_stokes) {
     // fill spectral profile message with requested statistics (or values for a point region)
-    IncreaseZProfileCount();
     bool profile_ok(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         if (!region->IsValid()) {
-            DecreaseZProfileCount();
             return false;
         }
         size_t num_profiles(region->NumSpectralProfiles());
         if (num_profiles == 0) {
-            DecreaseZProfileCount();
             return false; // not requested
         }
 
@@ -786,7 +783,6 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
             if (region->GetSpectralConfigStokes(profile_stokes, i)) {
                 // only send if using current stokes, which changed
                 if (check_current_stokes && (profile_stokes != CURRENT_STOKES)) {
-                    DecreaseZProfileCount();
                     return false;
                 }
                 if (profile_stokes == CURRENT_STOKES)
@@ -819,7 +815,6 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
         }
         profile_ok = true;
     }
-    DecreaseZProfileCount();
     return profile_ok;
 }
 

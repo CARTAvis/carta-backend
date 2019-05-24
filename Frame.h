@@ -137,13 +137,6 @@ private:
     // get spectral profile data from subimage
     bool GetSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image, int check_per_channels = ALL_CHANNELS);
 
-    void IncreaseZProfileCount() {
-        ++_z_profile_count;
-    }
-    void DecreaseZProfileCount() {
-        --_z_profile_count;
-    }
-
     // setup
     uint32_t _session_id;
     bool _valid;
@@ -151,7 +144,7 @@ private:
     // communication
     bool _connected;
 
-    // spectral profile counter
+    // spectral profile counter, which is used to determine whether the Frame object can be destroyed (_z_profile_count == 0 ?).
     tbb::atomic<int> _z_profile_count;
 
     // image loader, stats from image file
