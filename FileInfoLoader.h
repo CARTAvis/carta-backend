@@ -35,7 +35,8 @@ private:
 
     // FileInfo
     bool GetHduList(CARTA::FileInfo* file_info, const std::string& filename);
-    void GetFitsExtensionInfo(casacore::FitsInput& fits_input, std::string& xtension_type, std::string& ext_name);
+    bool IsImageHdu(casacore::FITS::HDUType hdu_type);
+    void GetFitsHeaderInfo(casacore::FitsInput& fits_input, int& ndim, std::string& ext_name);
 
     // ExtFileInfo
     bool FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message);

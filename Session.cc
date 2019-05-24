@@ -208,7 +208,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
         if (hdu.empty()) { // use first
             hdu = _selected_file_info->hdu_list(0);
         } else {
-            size_t description_start = hdu.find(":");
+            size_t description_start = hdu.find(" "); // strip ExtName
             if (description_start != std::string::npos) {
                 hdu = hdu.substr(0, description_start);
             }
