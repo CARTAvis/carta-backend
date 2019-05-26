@@ -1094,8 +1094,17 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
 }
 
 void Session::CheckCancelAnimationOnFileClose(int file_id) {
+    std::cerr << "Cancelling animation ??\n";
     if (!_animation_object)
         return;
+    std::cerr << "Cancelling animation\n";
     _animation_object->_file_open = false;
     _animation_object->cancel_execution();
+}
+
+void Session::cancelExistingAnimation() {
+    if (_animation_object) {
+        _animation_object->cancel_execution();
+        _animation_object = nullptr;
+    }
 }
