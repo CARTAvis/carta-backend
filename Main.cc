@@ -141,10 +141,21 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::CLOSE_FILE: {
+                    CARTA::CloseFile message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->CheckCancelAnimationOnFileClose(message.file_id());
+                        session->_file_settings.ClearSettings(message.file_id());
+                        session->OnCloseFile(message);
+                    }
+                    break;
+                }
                 case CARTA::EventType::START_ANIMATION: {
                     CARTA::StartAnimation message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session, head.request_id, message);
+                    session->cancelExistingAnimation();
+                    session->BuildAnimationObject(message, head.request_id);
+                    tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     break;
                 }
                 case CARTA::EventType::STOP_ANIMATION: {
