@@ -834,6 +834,7 @@ void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_ch
     if (_frames.count(file_id)) {
         std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
         for (auto region_id : regions) {
+	  // CHECK FOR CHANCEL HERE ??
             if (channel_changed) {
                 SendSpatialProfileData(file_id, region_id);
                 SendRegionHistogramData(file_id, region_id, channel_changed); // if using current channel
@@ -1094,10 +1095,8 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
 }
 
 void Session::CheckCancelAnimationOnFileClose(int file_id) {
-    std::cerr << "Cancelling animation ??\n";
     if (!_animation_object)
         return;
-    std::cerr << "Cancelling animation\n";
     _animation_object->_file_open = false;
     _animation_object->cancel_execution();
 }
