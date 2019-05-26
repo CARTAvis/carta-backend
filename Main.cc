@@ -36,6 +36,7 @@ uWS::Hub websocket_hub;
 // command-line arguments
 string root_folder("/"), base_folder("."), version_id("1.1");
 bool verbose, use_permissions;
+int wait_at_exit= -1;
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
@@ -244,7 +245,8 @@ int main(int argc, const char* argv[]) {
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
 
-            if (inp.getInt("exit_after")) {
+            wait_at_exit = inp.getInt("exit_after");
+	    if ( wait_at_exit > -1 ) {
                 tmp = inp.getInt("exit_after");
                 Session::SetExitTimeout(tmp);
             }
