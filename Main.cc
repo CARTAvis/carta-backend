@@ -219,7 +219,10 @@ int main(int argc, const char* argv[]) {
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
 
-            Session::SetExitTimeout(inp.getInt("exit_after"));
+            if (inp.getInt("exit_after")) {
+                tmp = inp.getInt("exit_after");
+                Session::SetExitTimeout(tmp);
+            }
         }
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
