@@ -127,11 +127,11 @@ tbb::task* AnimationTask::execute() {
         increment_ref_count();
         recycle_as_safe_continuation();
     } else {
-        if (_session->waiting_flow_event()) {
+        if (_session->waitingFlowEvent()) {
             _session->setWaitingTask_ptr(this);
         } else {
-	  _session->CancelAnimation();
-	}
+            _session->CancelAnimation();
+        }
     }
 
     return nullptr;
