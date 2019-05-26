@@ -834,7 +834,7 @@ void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_ch
     if (_frames.count(file_id)) {
         std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
         for (auto region_id : regions) {
-	  // CHECK FOR CHANCEL HERE ??
+            // CHECK FOR CHANCEL HERE ??
             if (channel_changed) {
                 SendSpatialProfileData(file_id, region_id);
                 SendRegionHistogramData(file_id, region_id, channel_changed); // if using current channel
