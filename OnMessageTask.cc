@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include "EventHeader.h"
 #include "Util.h"
@@ -66,10 +67,8 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
-       
         default: {
-            std::cerr << " Bad event type in MultiMessageType:execute : (" << this << ") ";
-            std::fprintf(stderr, "(%u)\n", _header.type);
+            fmt::print("Bad event type in MultiMessageType:execute : ({})", _header.type);
             break;
         }
     }
