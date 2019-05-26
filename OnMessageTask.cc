@@ -96,8 +96,8 @@ tbb::task* SetImageChannelsTask::execute() {
     _session->ImageChannelUnlock();
 
     if (tester) {
-        tbb::increment_ref_count();
-        tbb::recycle_as_safe_continuation();
+        increment_ref_count();
+        recycle_as_safe_continuation();
     }
 
     return nullptr;
@@ -124,8 +124,8 @@ tbb::task* SetHistogramRequirementsTask::execute() {
 
 tbb::task* AnimationTask::execute() {
     if (_session->ExecuteAnimationFrame()) {
-        tbb::increment_ref_count();
-        tbb::recycle_as_safe_continuation();
+        increment_ref_count();
+        recycle_as_safe_continuation();
     } else {
         if (_session->waitingFlowEvent()) {
             _session->setWaitingTask_ptr(this);
