@@ -11,6 +11,7 @@
 #include <carta-protobuf/spectral_profile.pb.h>
 
 #include "../InterfaceConstants.h"
+#include "../Util.h"
 #include "RegionProfiler.h"
 #include "RegionStats.h"
 
@@ -54,7 +55,7 @@ public:
     };
 
     // get image region for requested stokes and (optionally) single channel
-    bool GetRegion(casacore::ImageRegion& region, int stokes, int channel = ALL_CHANNELS);
+    bool GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange channel_range = {0, ALL_CHANNELS});
     // get data from subimage (LCRegion applied to Image by Frame)
     bool GetData(std::vector<float>& data, casacore::ImageInterface<float>& image);
 
@@ -108,8 +109,8 @@ private:
     casacore::WCRegion* MakePolygonRegion(const std::vector<CARTA::Point>& points);
 
     // Extend xy region to make LCRegion
-    bool MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int channel = ALL_CHANNELS); // for extended region
-    casacore::WCRegion* MakeExtendedRegion(int stokes, int channel = ALL_CHANNELS);             // x/y region extended chan/stokes
+    bool MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRange channel_range = {0, ALL_CHANNELS}); // for extended region
+    casacore::WCRegion* MakeExtendedRegion(int stokes, ChannelRange chanel_range = {0, ALL_CHANNELS});              // x/y region extended chan/stokes
 
     // region definition (ICD SET_REGION parameters)
     std::string _name;

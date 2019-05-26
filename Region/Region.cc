@@ -164,13 +164,13 @@ bool Region::PointsChanged(const std::vector<CARTA::Point>& new_points) {
 // ***********************************
 // Image Region with parameters applied
 
-bool Region::GetRegion(casacore::ImageRegion& region, int stokes, int channel) {
+bool Region::GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange channel_range) {
     // Return ImageRegion for given stokes and region parameters.
     bool region_ok(false);
     if (!IsValid() || (_xy_region == nullptr) || (stokes < 0))
         return region_ok;
 
-    casacore::WCRegion* wc_region = MakeExtendedRegion(stokes, channel);
+    casacore::WCRegion* wc_region = MakeExtendedRegion(stokes, channel_range);
     if (wc_region != nullptr) {
         region = casacore::ImageRegion(wc_region);
         region_ok = true;
@@ -375,7 +375,7 @@ casacore::WCRegion* Region::MakePolygonRegion(const std::vector<CARTA::Point>& p
     return polygon;
 }
 
-bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int channel) {
+bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRange channel_range) {
     // Create extension box for stored channel range and given stokes.
     // This can change for different profile/histogram/stats requirements so not stored
     bool extension_ok(false);
@@ -383,11 +383,14 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int chann
         return extension_ok; // not needed
 
     try {
-        double min_chan(channel), max_chan(channel);
-        if (channel == ALL_CHANNELS) { // extend 0 to nchan
-            min_chan = 0;
+        double min_chan(channel_range.from), max_chan(channel_range.to);
+        if (channel_range.from == ALL_CHANNELS) { // extend to nchan
+            min_chan = _image_shape(_spectral_axis);
+        }
+        if (channel_range.to == ALL_CHANNELS) { // extend to nchan
             max_chan = _image_shape(_spectral_axis);
         }
+        assert(max_chan >= min_chan);
 
         // Convert pixel coordinates to world coordinates;
         // Must be same number of axes as in coord system
@@ -432,7 +435,7 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int chann
     return extension_ok;
 }
 
-casacore::WCRegion* Region::MakeExtendedRegion(int stokes, int channel) {
+casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_range) {
     // Return 2D wcregion extended by chan, stokes; xyregion if 2D
     if (_num_dims == 2) {
         return _xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
@@ -442,7 +445,7 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, int channel) {
     try {
         // create extension box for channel/stokes
         casacore::WCBox ext_box;
-        if (!MakeExtensionBox(ext_box, stokes, channel))
+        if (!MakeExtensionBox(ext_box, stokes, channel_range))
             return region; // nullptr, extension box failed
 
         // apply extension box with extension axes to xy region

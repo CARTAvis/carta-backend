@@ -125,7 +125,7 @@ private:
     // get lattice slicer for profiles: get full axis if set to -1, else single value for that axis
     void GetImageSlicer(casacore::Slicer& image_slicer, int x, int y, int channel, int stokes);
     // make Lattice sublattice from Region given channel and stokes
-    bool GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_image, int stokes, int channel = ALL_CHANNELS);
+    bool GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_image, int stokes, ChannelRange = {0, ALL_CHANNELS});
 
     // histogram helper
     int CalcAutoNumBins(int region_id); // calculate automatic bin size for region
