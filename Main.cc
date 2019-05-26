@@ -177,6 +177,20 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::FILE_LIST_REQUEST: {
+                    CARTA::FileListRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnFileListRequest(message, head.request_id);
+                    }
+                    break;
+                }
+                case CARTA::EventType::OPEN_FILE: {
+                    CARTA::OpenFile message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnOpenFile(message, head.request_id);
+                    }
+                    break;
+                }
                 default: {
                     tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf);
                 }

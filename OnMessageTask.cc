@@ -11,27 +11,6 @@
 
 tbb::task* MultiMessageTask::execute() {
     switch (_header.type) {
-        case CARTA::EventType::FILE_LIST_REQUEST: {
-            CARTA::FileListRequest message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnFileListRequest(message, _header.request_id);
-            }
-            break;
-        }
-        case CARTA::EventType::FILE_INFO_REQUEST: {
-            CARTA::FileInfoRequest message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnFileInfoRequest(message, _header.request_id);
-            }
-            break;
-        }
-        case CARTA::EventType::OPEN_FILE: {
-            CARTA::OpenFile message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnOpenFile(message, _header.request_id);
-            }
-            break;
-        }
         case CARTA::EventType::SET_SPATIAL_REQUIREMENTS: {
             CARTA::SetSpatialRequirements message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
