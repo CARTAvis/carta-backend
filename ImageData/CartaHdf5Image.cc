@@ -22,18 +22,17 @@ CartaHdf5Image::CartaHdf5Image(const std::string& filename, const std::string& a
       _pixel_mask(nullptr),
       _mask_spec(mask_spec) {
     _lattice = casacore::HDF5Lattice<float>(filename, array_name, hdu);
-    _pixel_mask = new casacore::ArrayLattice<bool>(_lattice.shape());
-    _pixel_mask->set(true);
     _shape = _lattice.shape();
+    _pixel_mask = new casacore::ArrayLattice<bool>();
     _valid = Setup(filename, hdu, info);
 }
 
 CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other)
     : casacore::ImageInterface<float>(other),
       _valid(other._valid),
+      _pixel_mask(nullptr),
       _mask_spec(other._mask_spec),
       _lattice(other._lattice),
-      _pixel_mask(nullptr),
       _shape(other._shape) {
     if (other._pixel_mask != nullptr) {
         _pixel_mask = other._pixel_mask->clone();
@@ -91,31 +90,39 @@ casacore::Bool CartaHdf5Image::hasPixelMask() const {
 }
 
 const casacore::Lattice<bool>& CartaHdf5Image::pixelMask() const {
-    if (!hasPixelMask()) {
-        throw(casacore::AipsError("CartaHdf5Image::pixelMask - no pixelmask used"));
-    }
-    return *_pixel_mask;
+    return pixelMask();
 }
 
 casacore::Lattice<bool>& CartaHdf5Image::pixelMask() {
     if (!hasPixelMask()) {
-        throw(casacore::AipsError("CartaHdf5Image::pixelMask - no pixelmask used"));
+        _pixel_mask = new casacore::ArrayLattice<bool>();
+    }
+
+    if (_pixel_mask->shape().empty()) {
+        // get mask for entire image
+        casacore::Array<bool> array_mask;
+        casacore::IPosition start(_shape.size(), 0);
+        casacore::IPosition end(_shape);
+        casacore::Slicer slicer(start, end);
+        doGetMaskSlice(array_mask, slicer);
+        // replace pixel mask
+        delete _pixel_mask;
+        _pixel_mask = new casacore::ArrayLattice<bool>(array_mask);
     }
     return *_pixel_mask;
 }
 
 casacore::Bool CartaHdf5Image::doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) {
-    // set buffer to mask for section of image
-    if (!hasPixelMask()) {
-        buffer.resize(section.length()); // section shape
-        buffer = true;                   // use entire section
-        return false;
+    // Set buffer to mask for section of image
+    // Slice pixel mask if it is set
+    if (hasPixelMask() && !_pixel_mask->shape().empty()) {
+        return _pixel_mask->getSlice(buffer, section);
     }
 
+    // Set pixel mask for section only
     // Get section of data
     casacore::SubLattice<float> sublattice(_lattice, section);
     casacore::ArrayLattice<bool> mask_lattice(sublattice.shape());
-
     // Set up iterators
     unsigned int max_pix(sublattice.advisedMaxPixels());
     casacore::IPosition cursor_shape(sublattice.doNiceCursorShape(max_pix));
@@ -211,17 +218,17 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
     std::vector<std::string> skip_entries{"SIMPLE", "SCHEMA_VERSION", "HDF5_CONVERTER", "HDF5_CONVERTER_VERSION"};
     // Reserved FITS keywords https://fits.gsfc.nasa.gov/standard40/fits_standard40aa-le.pdf
     std::vector<std::string> bool_entries{"EXTEND", "BLOCKED", "GROUPS"};
-    std::vector<std::string> int_entries{"BITPIX", "BLANK", "WCSAXES", "A_ORDER", "B_ORDER", "VELREF", "EXTLEVEL", "EXTVER", "GCOUNT",
-        "PCOUNT", "TFIELDS", "THEAP"};
-    std::vector<std::string> double_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN",
-        "DATAMAX", "BMAJ", "BMIN", "BPA", "BSCALE", "BZERO"};
+    std::vector<std::string> int_entries{
+        "BITPIX", "BLANK", "WCSAXES", "A_ORDER", "B_ORDER", "VELREF", "EXTLEVEL", "EXTVER", "GCOUNT", "PCOUNT", "TFIELDS", "THEAP"};
+    std::vector<std::string> double_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN", "DATAMAX",
+        "BMAJ", "BMIN", "BPA", "BSCALE", "BZERO"};
     std::vector<std::string> substr_int_entries{"NAXIS", "TBCOL"};
-    std::vector<std::string> substr_dbl_entries{"CRVAL", "CRPIX", "CDELT", "CROTA", "OBSGE", "PSCAL", "PZERO", "TSCAL", "TZERO", "TDMIN",
-        "TDMAX", "TLMIN", "TLMAX"};
+    std::vector<std::string> substr_dbl_entries{
+        "CRVAL", "CRPIX", "CDELT", "CROTA", "OBSGE", "PSCAL", "PZERO", "TSCAL", "TZERO", "TDMIN", "TDMAX", "TLMIN", "TLMAX"};
     std::vector<std::string> prefix_entries{"A_", "B_", "CD", "PC", "PV"};
 
     // In FITS card conversion, ending quote is lost in 80-char limit so need to shorten value string
-    int MAX_STRING_VALUE_LENGTH = 66;
+    int max_string_value_length(66);
     const char* single_quote = "'";
 
     // convert header_entries to Record string, int or double field
@@ -242,10 +249,12 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
                 if (std::find(bool_entries.begin(), bool_entries.end(), entry_name) != bool_entries.end()) {
                     header_record.define(entry_name, (entry_value == "T" ? true : false)); // bool
                 } else if ((std::find(int_entries.begin(), int_entries.end(), entry_name) != int_entries.end()) ||
-                    (std::find(substr_int_entries.begin(), substr_int_entries.end(), entry_name_substr) != substr_int_entries.end())) {
+                           (std::find(substr_int_entries.begin(), substr_int_entries.end(), entry_name_substr) !=
+                               substr_int_entries.end())) {
                     header_record.define(entry_name, std::stoi(entry_value)); // int
                 } else if ((std::find(double_entries.begin(), double_entries.end(), entry_name) != double_entries.end()) ||
-                    (std::find(substr_dbl_entries.begin(), substr_dbl_entries.end(), entry_name_substr) != substr_dbl_entries.end())) {
+                           (std::find(substr_dbl_entries.begin(), substr_dbl_entries.end(), entry_name_substr) !=
+                               substr_dbl_entries.end())) {
                     header_record.define(entry_name, std::stod(entry_value)); // double
                 } else if (std::find(prefix_entries.begin(), prefix_entries.end(), entry_name_prefix) != prefix_entries.end()) {
                     header_record.define(entry_name, std::stod(entry_value)); // double
@@ -259,9 +268,9 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
                         header_record.define(entry_name, fits_date);
                     } else {
                         // shorten value string
-                        if (!entry_value.empty() && (entry_value.firstchar() == single_quote[0]) &&
-                            (entry_value.length() > MAX_STRING_VALUE_LENGTH)) {
-                            entry_value.resize(MAX_STRING_VALUE_LENGTH);
+                        if ((!entry_value.empty()) && (entry_value.firstchar() == single_quote[0]) &&
+                            (entry_value.length() > max_string_value_length)) {
+                            entry_value.resize(max_string_value_length);
                         }
                         header_record.define(entry_name, entry_value); // string
                     }
