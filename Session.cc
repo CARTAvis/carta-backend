@@ -1,5 +1,6 @@
 #include "Session.h"
 
+#include <signal.h>
 #include <chrono>
 #include <limits>
 #include <memory>
@@ -22,6 +23,8 @@
     {}
 
 int Session::_num_sessions = 0;
+int Session::_exit_after_num_seconds = 5;
+bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async,
@@ -46,6 +49,25 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
 }
 
+static int __exit_backend_timer = 0;
+
+void ExitNoSessions(int s) {
+    if (Session::NumberOfSessions() > 0) {
+        struct sigaction sig_handler;
+        sig_handler.sa_handler = nullptr;
+        sigemptyset(&sig_handler.sa_mask);
+        sig_handler.sa_flags = 0;
+        sigaction(SIGINT, &sig_handler, nullptr);
+    } else {
+        --__exit_backend_timer;
+        if (!__exit_backend_timer) {
+            std::cout << "No remaining sessions timeout." << std::endl;
+            exit(0);
+        }
+        alarm(1);
+    }
+}
+
 Session::~Session() {
     std::unique_lock<std::mutex> lock(_frame_mutex);
     for (auto& frame : _frames) {
@@ -55,8 +77,22 @@ Session::~Session() {
     _outgoing_async->close();
     --_num_sessions;
     DEBUG(fprintf(stderr, "%p  ~Session (%d)\n", this, _num_sessions));
-    if (!_num_sessions)
+    if (!_num_sessions) {
         std::cout << "No remaining sessions." << std::endl;
+        if (_exit_when_all_sessions_closed) {
+            if (_exit_after_num_seconds == 0) {
+                std::cout << "Existing due to no sessions remaining" << std::endl;
+                exit(0);
+            }
+            __exit_backend_timer = _exit_after_num_seconds;
+            struct sigaction sig_handler;
+            sig_handler.sa_handler = ExitNoSessions;
+            sigemptyset(&sig_handler.sa_mask);
+            sig_handler.sa_flags = 0;
+            sigaction(SIGALRM, &sig_handler, nullptr);
+            alarm(1);
+        }
+    }
 }
 
 void Session::DisconnectCalled() {
@@ -66,7 +102,8 @@ void Session::DisconnectCalled() {
     }
     _base_context.cancel_group_execution();
     _histo_context.cancel_group_execution();
-    if (_animation_object) _animation_object->cancel_execution();
+    if (_animation_object)
+        _animation_object->cancel_execution();
 }
 
 // ********************************************************************************
@@ -521,7 +558,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
         try {
             if (message.histograms_size() == 0) { // cancel!
                 _histogram_progress.fetch_and_store(HISTOGRAM_CANCEL);
-		_histo_context.cancel_group_execution();
+                _histo_context.cancel_group_execution();
                 SendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
                 return data_sent;
             } else {
@@ -575,9 +612,9 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         cube_max = std::max(cube_max, chan_max);
 
                         // check for cancel
-			if (_histo_context.is_group_execution_cancelled())
-			  break;
-			
+                        if (_histo_context.is_group_execution_cancelled())
+                            break;
+
                         // check for progress update
                         auto t_end = std::chrono::high_resolution_clock::now();
                         auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
@@ -593,7 +630,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                     }
                     // save min,max in cube region
                     if (!_histo_context.is_group_execution_cancelled())
-		      _frames.at(file_id)->SetRegionMinMax(region_id, channel, stokes, cube_min, cube_max);
+                        _frames.at(file_id)->SetRegionMinMax(region_id, channel, stokes, cube_min, cube_max);
 
                     // check cancel and proceed
                     if (!_histo_context.is_group_execution_cancelled()) {
@@ -616,8 +653,8 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             }
 
                             // check for cancel
-			    if(!_histo_context.is_group_execution_cancelled())
-			      break;
+                            if (!_histo_context.is_group_execution_cancelled())
+                                break;
 
                             // check for progress update
                             auto t_end = std::chrono::high_resolution_clock::now();
@@ -638,7 +675,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             }
                         }
                         if (!_histo_context.is_group_execution_cancelled()) {
-			  // send completed cube histogram
+                            // send completed cube histogram
                             progress = HISTOGRAM_COMPLETE;
                             CARTA::RegionHistogramData final_histogram_message;
                             CreateCubeHistogramMessage(final_histogram_message, file_id, stokes, progress);
@@ -906,9 +943,9 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
             auto channel = curr_frame.channel();
             auto stokes = curr_frame.stokes();
 
-	    if ((_animation_object->_tbb_context).is_group_execution_cancelled())
-	      return;
-	    
+            if ((_animation_object->_tbb_context).is_group_execution_cancelled())
+                return;
+
             bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
             bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
 

@@ -136,7 +136,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.histograms_size() == 0) {
                         session->CancelSetHistRequirements();
                     } else {
-		      tsk = new (tbb::task::allocate_root(session->HistoContext()))
+                        tsk = new (tbb::task::allocate_root(session->HistoContext()))
                             SetHistogramRequirementsTask(session, head, event_length, event_buf);
                     }
                     break;
@@ -201,6 +201,7 @@ int main(int argc, const char* argv[]) {
         int thread_count(tbb::task_scheduler_init::default_num_threads());
         { // get values then let Input go out of scope
             casacore::Input inp;
+            int tmp;
             inp.version(version_id);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
@@ -208,6 +209,7 @@ int main(int argc, const char* argv[]) {
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
+            inp.create("exit_after", to_string(tmp), "number of seconds to stay alive afer last sessions exists", "Int");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
@@ -216,6 +218,8 @@ int main(int argc, const char* argv[]) {
             thread_count = inp.getInt("threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
+
+            Session::SetExitTimeout(inp.getInt("exit_after"));
         }
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {

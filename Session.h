@@ -70,16 +70,16 @@ public:
         OnSetImageChannels(request.first);
     }
     void CancelSetHistRequirements() {
-      _histo_context.cancel_group_execution();
+        _histo_context.cancel_group_execution();
     }
     tbb::task_group_context& HistoContext() {
-      return _histo_context;
+        return _histo_context;
     }
     tbb::task_group_context& AnimationContext() {
-      return _animation_context;
+        return _animation_context;
     }
     void CancelAnimation() {
-      _animation_object->cancel_execution();
+        _animation_object->cancel_execution();
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
@@ -129,8 +129,12 @@ public:
     tbb::task* getWaitingTask_ptr() {
         return _animation_object->_waiting_task;
     }
-    bool waiting_flow_event() {
+    bool waitingFlowEvent() {
         return _animation_object->_waiting_flow_event;
+    }
+    static void SetExitTimeout(int secs) {
+        _exit_after_num_seconds = secs;
+        _exit_when_all_sessions_closed = true;
     }
 
     // TODO: should these be public? NO!!!!!!!!
@@ -205,6 +209,8 @@ private:
     int _ref_count;
     bool _connected;
     static int _num_sessions;
+    static int _exit_after_num_seconds;
+    static bool _exit_when_all_sessions_closed;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_
