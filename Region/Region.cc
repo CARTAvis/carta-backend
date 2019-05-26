@@ -384,13 +384,14 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
 
     try {
         double min_chan(channel_range.from), max_chan(channel_range.to);
+        double all_channels = _image_shape(_spectral_axis);
         if (channel_range.from == ALL_CHANNELS) { // extend to nchan
-            min_chan = _image_shape(_spectral_axis);
+            min_chan = all_channels;
         }
         if (channel_range.to == ALL_CHANNELS) { // extend to nchan
-            max_chan = _image_shape(_spectral_axis);
+            max_chan = all_channels;
         }
-        assert(max_chan >= min_chan);
+        assert(max_chan >= min_chan && all_channels >= max_chan >= 0 && all_channels >= min_chan >= 0);
 
         // Convert pixel coordinates to world coordinates;
         // Must be same number of axes as in coord system
