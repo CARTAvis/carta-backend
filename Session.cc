@@ -40,7 +40,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _new_frame(false),
       _image_channel_task_active(false),
       _file_settings(this) {
-    _histogram_progress.fetch_and_store(HISTOGRAM_COMPLETE);
+    _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
@@ -557,7 +557,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
     if (_frames.count(file_id)) {
         try {
             if (message.histograms_size() == 0) { // cancel!
-                _histogram_progress.fetch_and_store(HISTOGRAM_CANCEL);
+                _histogram_progress = HISTOGRAM_CANCEL;
                 _histo_context.cancel_group_execution();
                 SendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
                 return data_sent;
@@ -598,7 +598,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         data_sent = true;
                     }
                 } else { // calculate cube histogram
-                    _histogram_progress.fetch_and_store(HISTOGRAM_START);
+                    _histogram_progress = HISTOGRAM_START;
                     auto t_start = std::chrono::high_resolution_clock::now();
                     // determine cube min and max values
                     float cube_min(FLT_MAX), cube_max(FLT_MIN);
@@ -692,10 +692,10 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             // send completed histogram message
                             SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, final_histogram_message);
                             data_sent = true;
-                            _histogram_progress.fetch_and_store(HISTOGRAM_COMPLETE);
+                            _histogram_progress = HISTOGRAM_COMPLETE;
                         }
                     }
-                    _histogram_progress.fetch_and_store(HISTOGRAM_COMPLETE);
+                    _histogram_progress = HISTOGRAM_COMPLETE;
                 }
             }
         } catch (std::out_of_range& range_error) {
@@ -711,7 +711,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
 
 void Session::CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress) {
     // update progress and make new message
-    _histogram_progress.fetch_and_store(progress);
+    _histogram_progress = progress;
     msg.set_file_id(file_id);
     msg.set_region_id(CUBE_REGION_ID);
     msg.set_stokes(stokes);

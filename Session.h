@@ -191,8 +191,8 @@ private:
     std::mutex _image_channel_mutex;
     bool _image_channel_task_active;
 
-    // Cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
-    tbb::atomic<float> _histogram_progress;
+    // Cube histogram progress: 0.0 to 1.0 (complete)
+    float _histogram_progress;
 
     // Outgoing messages
     uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
