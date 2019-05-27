@@ -806,10 +806,9 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                         region->FillSpectralProfileData(profile_data, i, spectral_data);
                     }
                 } else { // statistics
-                    std::vector<std::vector<double>> stats_values;
-                    bool have_spectral_data = _loader->GetRegionSpectralData(stats_values, profile_stokes, region->XyMask());
-
-                    if (have_spectral_data) {
+                    std::map<CARTA::StatsType, std::vector<double>> stats_values;
+                    bool loader_spectral_data = _loader->GetRegionSpectralData(stats_values, profile_stokes, region->XyMask(), region->StatsRequirements());
+                    if (loader_spectral_data) {
                         region->FillSpectralProfileData(profile_data, i, stats_values);
                     } else {
                         casacore::SubImage<float> sub_image;

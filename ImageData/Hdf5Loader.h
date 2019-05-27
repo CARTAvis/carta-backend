@@ -20,7 +20,7 @@ public:
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) override;
     bool GetRegionSpectralData(
-        std::vector<std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask) override;
+        std::map<CARTA::StatsType, std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask, const std::vector<int>& stats_types) override;
 
 protected:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
@@ -302,7 +302,7 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
 }
 
 bool Hdf5Loader::GetRegionSpectralData(
-    std::vector<std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask) {
+    std::map<CARTA::StatsType, std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask, const std::vector<int>& stats_types) {
     bool data_ok(false);
 
     // TODO!

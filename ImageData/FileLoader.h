@@ -101,7 +101,7 @@ public:
     virtual ImageRef LoadData(FileInfo::Data ds) = 0;
     virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y);
     virtual bool GetRegionSpectralData(
-        std::vector<std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask);
+        std::map<CARTA::StatsType, std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask, const std::vector<int>& stats_types);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
 
 protected:

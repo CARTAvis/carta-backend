@@ -143,6 +143,10 @@ void RegionStats::CalcHistogram(
 
 // ***** Statistics *****
 
+const std::vector<int>& RegionStats::StatsRequirements() const {
+    return _stats_reqs;
+}
+
 void RegionStats::SetStatsRequirements(const std::vector<int>& stats_types) {
     _stats_reqs = stats_types;
 }
