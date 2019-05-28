@@ -316,13 +316,36 @@ bool Hdf5Loader::GetRegionSpectralData(
     int y_max = y_min + num_y;
     
     std::vector<double> sum(num_z);
+    std::vector<double> mean(num_z);
     std::vector<double> min(num_z);
     std::vector<double> max(num_z);
     std::vector<double> std_dev(num_z);
     std::vector<int64_t> nan_count(num_z);
     std::vector<int64_t> valid_count(num_z);
     
-    
+//     int slice_size = num_y * num_z;
+        
+    for (size_t x = 0; x < num_x; x++) {
+
+        // Read data for one x slice from swizzled dataset
+        
+        // get mask row for this x and all y
+
+        for (size_t y = 0; y < num_y; y++) {
+            // skip all Z values for masked pixels
+            // TODO make this use the cached mask row
+            if (!mask.getAt(casacore::IPosition(2, x, y))) {
+                continue;
+            }
+            for (size_t z = 0; z < num_z; z++) {
+                // increment tallies
+            }
+        }
+    }
+
+    for (size_t z = 0; z < num_z; z++) {
+        // calculate final stats for each z and put in return map (alias the map to begin with?)
+    }
 
     return data_ok;
 }
