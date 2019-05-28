@@ -11,12 +11,14 @@
 #include <casacore/images/Regions/RegionHandlerHDF5.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
+#include <carta-protobuf/defs.pb.h>
+
 namespace carta {
 
 class CartaHdf5Image : public casacore::ImageInterface<float> {
 public:
     // Construct an image from a pre-existing file.
-    CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu,
+    CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu, const CARTA::FileInfoExtended* info,
         casacore::MaskSpecifier = casacore::MaskSpecifier());
     // Copy constructor
     CartaHdf5Image(const CartaHdf5Image& other);
@@ -44,6 +46,7 @@ public:
     casacore::ImageInterface<float>* cloneII() const override;
     void resize(const casacore::TiledShape& newShape) override;
 
+    // implement functions in other casacore Image classes
     casacore::Bool isMasked() const override;
     casacore::Bool hasPixelMask() const override;
     const casacore::Lattice<bool>& pixelMask() const override;
@@ -57,9 +60,8 @@ private:
         return im->Lattice().file();
     }
 
-    bool Setup(const std::string& filename, const std::string& hdu);
-    bool SetupCoordSys(casacore::Record& attributes);
-    void SetupImageInfo(casacore::Record& attributes);
+    bool Setup(const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info);
+    casacore::Record ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info);
 
     bool _valid;
     casacore::MaskSpecifier _mask_spec;

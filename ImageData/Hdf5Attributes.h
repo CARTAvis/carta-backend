@@ -9,14 +9,8 @@
 
 class Hdf5Attributes {
 public:
-    // HDF5Record::doReadRecord modified to not iterate through links
-    // (links get HDF5Error "Could not open group XXX in parent")
+    // casacore::HDF5Record::doReadRecord modified to not iterate through links
     static casacore::Record ReadAttributes(hid_t group_hid);
-
-    // These attributes may be string type instead of numerical type
-    static bool GetIntAttribute(casacore::Int64& val, const casacore::Record& rec, const casacore::String& field);
-    static bool GetDoubleAttribute(casacore::Double& val, const casacore::Record& rec, const casacore::String& field);
-    static void ConvertToFits(casacore::Record& in);
 
 private:
     // Read a scalar value (int, float, string) and add it to the record.

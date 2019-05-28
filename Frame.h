@@ -14,6 +14,7 @@
 #include <tbb/atomic.h>
 #include <tbb/queuing_rw_mutex.h>
 
+#include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
@@ -33,7 +34,8 @@ struct ViewSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info,
+        int default_channel = DEFAULT_CHANNEL);
     ~Frame();
 
     // frame info

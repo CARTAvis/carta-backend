@@ -4,48 +4,13 @@
 #include <cstring>
 
 #include <fmt/format.h>
+#include <fmt/ostream.h>
 
 #include "EventHeader.h"
 #include "Util.h"
 
 tbb::task* MultiMessageTask::execute() {
     switch (_header.type) {
-        case CARTA::EventType::REGISTER_VIEWER: {
-            CARTA::RegisterViewer message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnRegisterViewer(message, _header.request_id);
-            }
-            break;
-        }
-        case CARTA::EventType::FILE_LIST_REQUEST: {
-            CARTA::FileListRequest message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnFileListRequest(message, _header.request_id);
-            }
-            break;
-        }
-        case CARTA::EventType::FILE_INFO_REQUEST: {
-            CARTA::FileInfoRequest message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnFileInfoRequest(message, _header.request_id);
-            }
-            break;
-        }
-        case CARTA::EventType::OPEN_FILE: {
-            CARTA::OpenFile message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnOpenFile(message, _header.request_id);
-            }
-            break;
-        }
-        case CARTA::EventType::CLOSE_FILE: {
-            CARTA::CloseFile message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->_file_settings.ClearSettings(message.file_id());
-                _session->OnCloseFile(message);
-            }
-            break;
-        }
         case CARTA::EventType::SET_SPATIAL_REQUIREMENTS: {
             CARTA::SetSpatialRequirements message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
@@ -82,8 +47,7 @@ tbb::task* MultiMessageTask::execute() {
             break;
         }
         default: {
-            std::cerr << " Bad event type in MultiMessageType:execute : (" << this << ") ";
-            std::fprintf(stderr, "(%u)\n", _header.type);
+            fmt::print("Bad event type in MultiMessageType:execute : ({})", _header.type);
             break;
         }
     }
@@ -96,6 +60,7 @@ tbb::task* SetImageChannelsTask::execute() {
 
     _session->ExecuteSetChannelEvt(_request_pair);
     _session->ImageChannelLock();
+
     if (!(tester = _session->_set_channel_queue.try_pop(_request_pair)))
         _session->ImageChannelTaskSetIdle();
     _session->ImageChannelUnlock();
@@ -131,6 +96,12 @@ tbb::task* AnimationTask::execute() {
     if (_session->ExecuteAnimationFrame()) {
         increment_ref_count();
         recycle_as_safe_continuation();
+    } else {
+        if (_session->waitingFlowEvent()) {
+            _session->setWaitingTask_ptr(this);
+        } else {
+            _session->CancelAnimation();
+        }
     }
 
     return nullptr;

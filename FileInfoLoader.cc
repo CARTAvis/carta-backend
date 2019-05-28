@@ -148,7 +148,6 @@ bool FileInfoLoader::FillFileExtInfo(CARTA::FileInfoExtended* ext_info, std::str
 bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message) {
     // Add extended info for HDF5 file
     try {
-        // read attributes into casacore Record
         casacore::HDF5File hdf_file(_filename);
         if (hdu.empty()) { // use first
             hdu = casacore::HDF5Group::linkNames(hdf_file)[0];
@@ -156,6 +155,7 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         casacore::HDF5Group hdf_group(hdf_file, hdu, true);
         casacore::Record attributes;
         try {
+            // read attributes into casacore Record
             attributes = Hdf5Attributes::ReadAttributes(hdf_group.getHid());
         } catch (casacore::HDF5Error& err) {
             message = "Error reading HDF5 attributes: " + err.getMesg();
@@ -195,6 +195,13 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
                     *header_entry->mutable_value() = attributes.asString(field);
                     header_entry->set_entry_type(CARTA::EntryType::STRING);
                 } break;
+                case casacore::TpBool: {
+                    casacore::Bool value_bool = attributes.asBool(field);
+                    *header_entry->mutable_value() = fmt::format("{}", value_bool);
+                    header_entry->set_entry_type(CARTA::EntryType::INT);
+                    header_entry->set_numeric_value(value_bool);
+                } break;
+                case casacore::TpInt:
                 case casacore::TpInt64: {
                     casacore::Int64 value_int = attributes.asInt64(field);
                     *header_entry->mutable_value() = fmt::format("{}", value_int);
@@ -214,52 +221,30 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
 
         // If in header, get values for computed entries:
         // Get string values
-        std::string coord_type_x, coord_type_y, coord_type3, coord_type4;
-        std::string rade_sys, equinox, spec_sys, bunit, crpix1, crpix2, cunit1, cunit2;
-
-        if (attributes.isDefined("CTYPE1"))
-            coord_type_x = attributes.asString("CTYPE1");
-        if (attributes.isDefined("CTYPE2"))
-            coord_type_y = attributes.asString("CTYPE2");
-        if (attributes.isDefined("CTYPE3"))
-            coord_type3 = attributes.asString("CTYPE3");
-        if (attributes.isDefined("CTYPE4"))
-            coord_type4 = attributes.asString("CTYPE4");
-        if (attributes.isDefined("RADESYS"))
-            rade_sys = attributes.asString("RADESYS");
-        if (attributes.isDefined("SPECSYS"))
-            spec_sys = attributes.asString("SPECSYS");
-        if (attributes.isDefined("BUNIT"))
-            bunit = attributes.asString("BUNIT");
-        if (attributes.isDefined("CUNIT1"))
-            cunit1 = attributes.asString("CUNIT1");
-        if (attributes.isDefined("CUNIT2"))
-            cunit2 = attributes.asString("CUNIT2");
-        // Convert numeric values to string
-        double val;
-        bool ok;
-        ok = Hdf5Attributes::GetDoubleAttribute(val, attributes, "EQUINOX");
-        if (ok)
-            equinox = casacore::String::toString(val);
-        ok = Hdf5Attributes::GetDoubleAttribute(val, attributes, "CRPIX1");
-        if (ok)
-            crpix1 = casacore::String::toString(val);
-        ok = Hdf5Attributes::GetDoubleAttribute(val, attributes, "CRPIX2");
-        if (ok)
-            crpix2 = casacore::String::toString(val);
-
+        std::string coord_type_x = (attributes.isDefined("CTYPE1") ? attributes.asString("CTYPE1") : "");
+        std::string coord_type_y = (attributes.isDefined("CTYPE2") ? attributes.asString("CTYPE2") : "");
+        std::string coord_type_3 = (attributes.isDefined("CTYPE3") ? attributes.asString("CTYPE3") : "");
+        std::string coord_type_4 = (attributes.isDefined("CTYPE4") ? attributes.asString("CTYPE4") : "");
+        std::string rade_sys = (attributes.isDefined("RADESYS") ? attributes.asString("RADESYS") : "");
+        std::string equinox = GetStringAttribute(attributes, "EQUINOX");
+        std::string spec_sys = (attributes.isDefined("SPECSYS") ? attributes.asString("SPECSYS") : "");
+        std::string bunit = (attributes.isDefined("BUNIT") ? attributes.asString("BUNIT") : "");
+        std::string crpix1 = GetStringAttribute(attributes, "CRPIX1");
+        std::string crpix2 = GetStringAttribute(attributes, "CRPIX2");
+        std::string cunit1 = (attributes.isDefined("CUNIT1") ? attributes.asString("CUNIT1") : "");
+        std::string cunit2 = (attributes.isDefined("CUNIT2") ? attributes.asString("CUNIT2") : "");
         // Get numeric values
-        double crval1 = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "CRVAL1") ? val : 0.0);
-        double crval2 = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "CRVAL2") ? val : 0.0);
-        double cdelt1 = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "CDELT1") ? val : 0.0);
-        double cdelt2 = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "CDELT2") ? val : 0.0);
-        double bmaj = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "BMAJ") ? val : 0.0);
-        double bmin = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "BMIN") ? val : 0.0);
-        double bpa = (Hdf5Attributes::GetDoubleAttribute(val, attributes, "BPA") ? val : 0.0);
+        double crval1 = GetDoubleAttribute(attributes, "CRVAL1");
+        double crval2 = GetDoubleAttribute(attributes, "CRVAL2");
+        double cdelt1 = GetDoubleAttribute(attributes, "CDELT1");
+        double cdelt2 = GetDoubleAttribute(attributes, "CDELT2");
+        double bmaj = GetDoubleAttribute(attributes, "BMAJ");
+        double bmin = GetDoubleAttribute(attributes, "BMIN");
+        double bpa = GetDoubleAttribute(attributes, "BPA");
 
         // shape, chan, stokes entries first
         int chan_axis, stokes_axis;
-        FindChanStokesAxis(data_shape, coord_type_x, coord_type_y, coord_type3, coord_type4, chan_axis, stokes_axis);
+        FindChanStokesAxis(data_shape, coord_type_x, coord_type_y, coord_type_3, coord_type_4, chan_axis, stokes_axis);
         AddShapeEntries(ext_info, data_shape, chan_axis, stokes_axis);
         ext_info->add_stokes_vals(""); // not in header
 
@@ -287,6 +272,48 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         return false;
     }
     return true;
+}
+
+std::string FileInfoLoader::GetStringAttribute(casacore::Record& record, std::string field) {
+    // return attribute as string
+    std::string value;
+    if (record.isDefined(field)) {
+        switch (record.type(record.fieldNumber(field))) { // Hdf5Attributes only uses these types
+            case casacore::TpString: {
+                value = record.asString(field);
+            } break;
+            case casacore::TpInt64: {
+                value = std::to_string(record.asInt64(field));
+            } break;
+            case casacore::TpDouble: {
+                value = std::to_string(record.asDouble(field));
+            } break;
+            default:
+                break;
+        }
+    }
+    return value;
+}
+
+double FileInfoLoader::GetDoubleAttribute(casacore::Record& record, std::string field) {
+    // return attribute as double
+    double value(0.0);
+    if (record.isDefined(field)) {
+        switch (record.type(record.fieldNumber(field))) { // Hdf5Attributes only uses these types
+            case casacore::TpString: {
+                value = stod(record.asString(field));
+            } break;
+            case casacore::TpInt64: {
+                value = static_cast<double>(record.asInt64(field));
+            } break;
+            case casacore::TpDouble: {
+                value = record.asDouble(field);
+            } break;
+            default:
+                break;
+        }
+    }
+    return value;
 }
 
 // FITS
