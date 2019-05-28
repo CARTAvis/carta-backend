@@ -362,14 +362,15 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
             bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
             if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
-                // TODO: check this data flow
-                // Don't send raster data (will be handled by tiles)
-                // SendRasterImageData(file_id, true); // true = send histogram
                 // RESPONSE: region data (includes image, cursor, and set regions)
                 UpdateRegionData(file_id, channel_changed, stokes_changed);
             } else {
                 if (!err_message.empty())
                     SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
+            }
+            // Send any required tiles if they have been requested
+            if (message.has_required_tiles()) {
+                OnAddRequiredTiles(message.required_tiles());
             }
         } catch (std::out_of_range& range_error) {
             string error = fmt::format("File id {} closed", file_id);
