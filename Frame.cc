@@ -805,10 +805,17 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                         region->FillSpectralProfileData(profile_data, i, spectral_data);
                     }
                 } else { // statistics
-                    casacore::SubImage<float> sub_image;
+                    //casacore::SubImage<float> sub_image;
+                    //std::unique_lock<std::mutex> guard(_image_mutex);
+                    //GetRegionSubImage(region_id, sub_image, profile_stokes);
+                    //region->FillSpectralProfileData(profile_data, i, sub_image);
+                    //================== new method ==============================
                     std::unique_lock<std::mutex> guard(_image_mutex);
-                    GetRegionSubImage(region_id, sub_image, profile_stokes);
-                    region->FillSpectralProfileData(profile_data, i, sub_image);
+                    std::vector<std::vector<double>> stats_values;
+                    bool have_spectral_data(GetRegionalSpectralData(stats_values, region_id, i, profile_stokes, 100));
+                    if (have_spectral_data) {
+                        region->FillSpectralProfileData(profile_data, i, stats_values);
+                    }
                     guard.unlock();
                 }
             }
@@ -1005,6 +1012,9 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, i
 
 bool Frame::GetSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image, int check_per_channels) {
     bool data_ok(false);
+    if (check_per_channels == ALL_CHANNELS) {
+        check_per_channels = NumChannels();
+    }
     casacore::IPosition sub_image_shape = sub_image.shape();
     data.resize(sub_image_shape.product());
     if ((check_per_channels > 0) && (sub_image_shape.size() > 2) && (_spectral_axis >= 0)) { // stoppable spectral profile process
@@ -1049,4 +1059,46 @@ bool Frame::GetSpectralData(std::vector<float>& data, casacore::SubImage<float>&
         }
     }
     return data_ok;
+}
+
+bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
+    int profile_stokes, int check_per_channels) {
+    if (check_per_channels == ALL_CHANNELS) {
+        check_per_channels = NumChannels();
+    }
+    auto& region = _regions[region_id];
+    int profile_size = NumChannels();
+    int upper_bound =
+        (profile_size % check_per_channels == 0 ? profile_size / check_per_channels : profile_size / check_per_channels + 1);
+    // get the size of statistical requirements
+    CARTA::SetSpectralRequirements_SpectralConfig config;
+    region->GetSpectralConfig(config, profile_index);
+    int stats_size = config.stats_types().size();
+    // initialize the size of statistical results
+    std::vector<std::vector<double>> results(stats_size);
+    for (int i = 0; i < stats_size; ++i) {
+        results[i].resize(profile_size);
+    }
+    int start, count, end;
+    int copy_start = 0;
+    casacore::SubImage<float> sub_image;
+    for (int i = 0; i < upper_bound; ++i) {
+        if (!_connected) {
+            std::cerr << "Exiting zprofile (statistics) before complete" << std::endl;
+            return false;
+        }
+        start = i * check_per_channels;
+        count = (check_per_channels * (i + 1) < profile_size ? check_per_channels : profile_size - i * check_per_channels);
+        end = start + count - 1;
+        GetRegionSubImage(region_id, sub_image, profile_stokes, {start, end});
+        std::vector<std::vector<double>> buffer;
+        for (int j = 0; j < stats_size; ++j) {
+            if (region->GetSpectralProfileData(buffer, profile_index, sub_image)) {
+                memcpy(&results[j][copy_start], &buffer[j][0], count * sizeof(double));
+                copy_start += check_per_channels;
+            }
+        }
+    }
+    stats_values = std::move(results);
+    return true;
 }
