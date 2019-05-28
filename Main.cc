@@ -137,7 +137,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.histograms_size() == 0) {
                         session->CancelSetHistRequirements();
                     } else {
-		        session->resetHistContext();
+                        session->ResetHistContext();
                         tsk = new (tbb::task::allocate_root(session->HistContext()))
                             SetHistogramRequirementsTask(session, head, event_length, event_buf);
                     }

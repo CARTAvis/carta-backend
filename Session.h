@@ -72,7 +72,7 @@ public:
     void CancelSetHistRequirements() {
         _histo_context.cancel_group_execution();
     }
-    void restetHistContext() {
+    void ResetHistContext() {
       _histo_context.reset();
     }
     tbb::task_group_context& HistContext() {
