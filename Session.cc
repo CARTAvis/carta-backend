@@ -1,5 +1,6 @@
 #include "Session.h"
 
+#include <signal.h>
 #include <chrono>
 #include <limits>
 #include <memory>
@@ -22,6 +23,8 @@
     {}
 
 int Session::_num_sessions = 0;
+int Session::_exit_after_num_seconds = 5;
+bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async,
@@ -37,13 +40,32 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _new_frame(false),
       _image_channel_task_active(false),
       _file_settings(this) {
-    _histogram_progress.fetch_and_store(HISTOGRAM_COMPLETE);
+    _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
+}
+
+static int __exit_backend_timer = 0;
+
+void ExitNoSessions(int s) {
+    if (Session::NumberOfSessions() > 0) {
+        struct sigaction sig_handler;
+        sig_handler.sa_handler = nullptr;
+        sigemptyset(&sig_handler.sa_mask);
+        sig_handler.sa_flags = 0;
+        sigaction(SIGINT, &sig_handler, nullptr);
+    } else {
+        --__exit_backend_timer;
+        if (!__exit_backend_timer) {
+            std::cout << "No remaining sessions timeout." << std::endl;
+            exit(0);
+        }
+        alarm(1);
+    }
 }
 
 Session::~Session() {
@@ -55,8 +77,22 @@ Session::~Session() {
     _outgoing_async->close();
     --_num_sessions;
     DEBUG(fprintf(stderr, "%p  ~Session (%d)\n", this, _num_sessions));
-    if (!_num_sessions)
+    if (!_num_sessions) {
         std::cout << "No remaining sessions." << std::endl;
+        if (_exit_when_all_sessions_closed) {
+            if (_exit_after_num_seconds == 0) {
+                std::cout << "Existing due to no sessions remaining" << std::endl;
+                exit(0);
+            }
+            __exit_backend_timer = _exit_after_num_seconds;
+            struct sigaction sig_handler;
+            sig_handler.sa_handler = ExitNoSessions;
+            sigemptyset(&sig_handler.sa_mask);
+            sig_handler.sa_flags = 0;
+            sigaction(SIGALRM, &sig_handler, nullptr);
+            alarm(1);
+        }
+    }
 }
 
 void Session::DisconnectCalled() {
@@ -65,6 +101,9 @@ void Session::DisconnectCalled() {
         frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
     _base_context.cancel_group_execution();
+    _histo_context.cancel_group_execution();
+    if (_animation_object)
+        _animation_object->cancel_execution();
 }
 
 // ********************************************************************************
@@ -518,7 +557,8 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
     if (_frames.count(file_id)) {
         try {
             if (message.histograms_size() == 0) { // cancel!
-                _histogram_progress.fetch_and_store(HISTOGRAM_CANCEL);
+                _histogram_progress = HISTOGRAM_CANCEL;
+                _histo_context.cancel_group_execution();
                 SendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
                 return data_sent;
             } else {
@@ -558,7 +598,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         data_sent = true;
                     }
                 } else { // calculate cube histogram
-                    _histogram_progress.fetch_and_store(HISTOGRAM_START);
+                    _histogram_progress = HISTOGRAM_START;
                     auto t_start = std::chrono::high_resolution_clock::now();
                     // determine cube min and max values
                     float cube_min(FLT_MAX), cube_max(FLT_MIN);
@@ -572,7 +612,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         cube_max = std::max(cube_max, chan_max);
 
                         // check for cancel
-                        if (_histogram_progress == HISTOGRAM_CANCEL)
+                        if (_histo_context.is_group_execution_cancelled())
                             break;
 
                         // check for progress update
@@ -589,11 +629,11 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         }
                     }
                     // save min,max in cube region
-                    if (_histogram_progress > HISTOGRAM_CANCEL)
+                    if (!_histo_context.is_group_execution_cancelled())
                         _frames.at(file_id)->SetRegionMinMax(region_id, channel, stokes, cube_min, cube_max);
 
                     // check cancel and proceed
-                    if (_histogram_progress > HISTOGRAM_CANCEL) {
+                    if (!_histo_context.is_group_execution_cancelled()) {
                         // send progress message: half done
                         float progress = 0.50;
                         histogram_message.set_progress(progress);
@@ -613,7 +653,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             }
 
                             // check for cancel
-                            if (_histogram_progress == HISTOGRAM_CANCEL)
+                            if (!_histo_context.is_group_execution_cancelled())
                                 break;
 
                             // check for progress update
@@ -634,7 +674,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                                 t_start = t_end;
                             }
                         }
-                        if (_histogram_progress > HISTOGRAM_CANCEL) {
+                        if (!_histo_context.is_group_execution_cancelled()) {
                             // send completed cube histogram
                             progress = HISTOGRAM_COMPLETE;
                             CARTA::RegionHistogramData final_histogram_message;
@@ -652,10 +692,10 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             // send completed histogram message
                             SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, final_histogram_message);
                             data_sent = true;
-                            _histogram_progress.fetch_and_store(HISTOGRAM_COMPLETE);
+                            _histogram_progress = HISTOGRAM_COMPLETE;
                         }
                     }
-                    _histogram_progress.fetch_and_store(HISTOGRAM_COMPLETE);
+                    _histogram_progress = HISTOGRAM_COMPLETE;
                 }
             }
         } catch (std::out_of_range& range_error) {
@@ -671,7 +711,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
 
 void Session::CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress) {
     // update progress and make new message
-    _histogram_progress.fetch_and_store(progress);
+    _histogram_progress = progress;
     msg.set_file_id(file_id);
     msg.set_region_id(CUBE_REGION_ID);
     msg.set_stokes(stokes);
@@ -794,6 +834,7 @@ void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_ch
     if (_frames.count(file_id)) {
         std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
         for (auto region_id : regions) {
+            // CHECK FOR CANCEL HERE ??
             if (channel_changed) {
                 SendSpatialProfileData(file_id, region_id);
                 SendRegionHistogramData(file_id, region_id, channel_changed); // if using current channel
@@ -902,6 +943,9 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
             std::string err_message;
             auto channel = curr_frame.channel();
             auto stokes = curr_frame.stokes();
+
+            if ((_animation_object->_tbb_context).is_group_execution_cancelled())
+                return;
 
             bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
             bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
@@ -1054,4 +1098,12 @@ void Session::CheckCancelAnimationOnFileClose(int file_id) {
     if (!_animation_object)
         return;
     _animation_object->_file_open = false;
+    _animation_object->cancel_execution();
+}
+
+void Session::cancelExistingAnimation() {
+    if (_animation_object) {
+        _animation_object->cancel_execution();
+        _animation_object = nullptr;
+    }
 }
