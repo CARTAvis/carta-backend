@@ -36,7 +36,6 @@ static uWS::Hub websocket_hub;
 // command-line arguments
 static string root_folder("/"), base_folder("."), version_id("1.1");
 static bool verbose, use_permissions;
-static int wait_at_exit= -1;
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
@@ -49,7 +48,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     Session* session;
 
     outgoing->start([](uS::Async* async) -> void {
-        Session* current_session = ((Session*)async->getData());
+        Session* current_session = ((Session*) async->getData());
         current_session->SendPendingMessages();
     });
 
@@ -65,7 +64,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
-    Session* session = (Session*)ws->getUserData();
+    Session* session = (Session*) ws->getUserData();
 
     if (session) {
         auto uuid = session->_id;
@@ -82,7 +81,7 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length, uWS::OpCode op_code) {
-    Session* session = (Session*)ws->getUserData();
+    Session* session = (Session*) ws->getUserData();
     if (!session) {
         fmt::print("Missing session!\n");
         return;
@@ -108,7 +107,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     message.ParseFromArray(event_buf, event_length);
                     session->ImageChannelLock();
                     if (!session->ImageChannelTaskTestAndSet()) {
-                        tsk = new (tbb::task::allocate_root(session->context()))
+                        tsk = new(tbb::task::allocate_root(session->context()))
                             SetImageChannelsTask(session, make_pair(message, head.request_id));
                     } else {
                         // has its own queue to keep channels in order during animation
@@ -121,14 +120,14 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::SetImageView message;
                     message.ParseFromArray(event_buf, event_length);
                     session->AddViewSetting(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root(session->context())) SetImageViewTask(session, message.file_id());
+                    tsk = new(tbb::task::allocate_root(session->context())) SetImageViewTask(session, message.file_id());
                     break;
                 }
                 case CARTA::EventType::SET_CURSOR: {
                     CARTA::SetCursor message;
                     message.ParseFromArray(event_buf, event_length);
                     session->AddCursorSetting(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root(session->context())) SetCursorTask(session, message.file_id());
+                    tsk = new(tbb::task::allocate_root(session->context())) SetCursorTask(session, message.file_id());
                     break;
                 }
                 case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS: {
@@ -138,7 +137,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         session->CancelSetHistRequirements();
                     } else {
                         session->ResetHistContext();
-                        tsk = new (tbb::task::allocate_root(session->HistContext()))
+                        tsk = new(tbb::task::allocate_root(session->HistContext()))
                             SetHistogramRequirementsTask(session, head, event_length, event_buf);
                     }
                     break;
@@ -157,7 +156,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     message.ParseFromArray(event_buf, event_length);
                     session->cancelExistingAnimation();
                     session->BuildAnimationObject(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                    tsk = new(tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     break;
                 }
                 case CARTA::EventType::STOP_ANIMATION: {
@@ -194,12 +193,13 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     break;
                 }
                 default: {
-                    tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf);
+                    tsk = new(tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf);
                 }
             }
 
-            if (tsk)
+            if (tsk) {
                 tbb::task::enqueue(*tsk);
+            }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (strncmp(raw_message, "PING", 4) == 0) {
@@ -228,7 +228,6 @@ int main(int argc, const char* argv[]) {
         int thread_count(tbb::task_scheduler_init::default_num_threads());
         { // get values then let Input go out of scope
             casacore::Input inp;
-            int tmp;
             inp.version(version_id);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
@@ -236,7 +235,7 @@ int main(int argc, const char* argv[]) {
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
-            inp.create("exit_after", to_string(tmp), "number of seconds to stay alive afer last sessions exists", "Int");
+            inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
@@ -246,10 +245,10 @@ int main(int argc, const char* argv[]) {
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
 
-            wait_at_exit = inp.getInt("exit_after");
-	    if ( wait_at_exit > -1 ) {
-                tmp = inp.getInt("exit_after");
-                Session::SetExitTimeout(tmp);
+            bool has_exit_after_arg = inp.getString("exit_after").size();
+            if (has_exit_after_arg) {
+                int wait_time = inp.getInt("exit_after");
+                Session::SetExitTimeout(wait_time);
             }
         }
 
@@ -273,7 +272,7 @@ int main(int argc, const char* argv[]) {
         websocket_hub.onDisconnection(&OnDisconnect);
         if (websocket_hub.listen(port)) {
             fmt::print("Listening on port {} with root folder {}, base folder {}, and {} threads in thread pool\n", port, root_folder,
-                base_folder, thread_count);
+                       base_folder, thread_count);
             websocket_hub.run();
         } else {
             fmt::print("Error listening on port {}\n", port);
