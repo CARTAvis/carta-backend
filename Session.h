@@ -72,7 +72,7 @@ public:
     void CancelSetHistRequirements() {
         _histo_context.cancel_group_execution();
     }
-    tbb::task_group_context& HistoContext() {
+    tbb::task_group_context& HistContext() {
         return _histo_context;
     }
     tbb::task_group_context& AnimationContext() {
