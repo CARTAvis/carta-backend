@@ -49,6 +49,7 @@ public:
         return _control_points;
     };
     casacore::IPosition XyShape();
+    casacore::IPosition XyOrigin();
     const casacore::ArrayLattice<casacore::Bool>* XyMask();
     inline bool XyRegionValid() {
         return (_xy_region != nullptr);

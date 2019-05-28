@@ -807,7 +807,7 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                     }
                 } else { // statistics
                     std::map<CARTA::StatsType, std::vector<double>> stats_values;
-                    bool loader_spectral_data = _loader->GetRegionSpectralData(stats_values, profile_stokes, region->XyMask(), region->StatsRequirements());
+                    bool loader_spectral_data = _loader->GetRegionSpectralData(stats_values, profile_stokes, region->XyMask(), region->XyOrigin(), region->StatsRequirements());
                     if (loader_spectral_data) {
                         region->FillSpectralProfileData(profile_data, i, stats_values);
                     } else {

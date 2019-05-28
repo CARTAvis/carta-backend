@@ -473,6 +473,17 @@ casacore::IPosition Region::XyShape() {
     return xy_shape;
 }
 
+casacore::IPosition Region::XyOrigin() {
+    // returns bottom-left position of bounding box of xy region
+    casacore::IPosition xy_origin;
+    if (_xy_region != nullptr) {
+        auto extended_region = static_cast<casacore::LCExtension*>(_xy_region->toLCRegion(_coord_sys, _image_shape));
+        if (extended_region != nullptr)
+            xy_origin = extended_region->region().expand(casacore::IPosition(2, 0, 0));
+    }
+    return xy_origin;
+}
+
 const casacore::ArrayLattice<casacore::Bool>* Region::XyMask() {
     // returns boolean mask of xy region
     casacore::ArrayLattice<casacore::Bool>* mask;
