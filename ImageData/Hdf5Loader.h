@@ -20,7 +20,7 @@ public:
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) override;
     bool GetRegionSpectralData(
-        std::map<CARTA::StatsType, std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask, casacore::IPosition origin, const std::vector<int>& stats_types) override;
+        std::map<CARTA::StatsType, std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin, const std::vector<int>& stats_types) override;
 
 protected:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
@@ -303,7 +303,9 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
 }
 
 bool Hdf5Loader::GetRegionSpectralData(
-    std::map<CARTA::StatsType, std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask, casacore::IPosition origin, const std::vector<int>& stats_types) {
+    std::map<CARTA::StatsType, std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin, const std::vector<int>& stats_types) {
+    
+    // TODO: requested stats are not checked yet, but they could be.
     
     bool data_ok(false);
     
@@ -316,36 +318,83 @@ bool Hdf5Loader::GetRegionSpectralData(
     int y_min = origin(1);
     int y_max = y_min + num_y;
     
-    std::vector<double> sum(num_z);
-    std::vector<double> mean(num_z);
-    std::vector<double> min(num_z);
-    std::vector<double> max(num_z);
-    std::vector<double> std_dev(num_z);
-    std::vector<int64_t> nan_count(num_z);
-    std::vector<int64_t> valid_count(num_z);
-    
-//     int slice_size = num_y * num_z;
-        
+    // TODO some of these are to be implemented
+    data.emplace(CARTA::StatsType::NumPixels, num_z);
+    data.emplace(CARTA::StatsType::NanCount, num_z);
+    data.emplace(CARTA::StatsType::Sum, num_z);
+//     data.emplace(CARTA::StatsType::FluxDensity, num_z);
+    data.emplace(CARTA::StatsType::Mean, num_z);
+//     data.emplace(CARTA::StatsType::RMS, num_z);
+//     data.emplace(CARTA::StatsType::Sigma, num_z);
+    data.emplace(CARTA::StatsType::SumSq, num_z);
+    data.emplace(CARTA::StatsType::Min, num_z);
+    data.emplace(CARTA::StatsType::Max, num_z);
+//     data.emplace(CARTA::StatsType::Blc, num_z);
+//     data.emplace(CARTA::StatsType::Trc, num_z);
+//     data.emplace(CARTA::StatsType::MinPos, num_z);
+//     data.emplace(CARTA::StatsType::MaxPos, num_z);
+//     data.emplace(CARTA::StatsType::Blcf, num_z);
+//     data.emplace(CARTA::StatsType::Trcf, num_z);
+//     data.emplace(CARTA::StatsType::MinPosf, num_z);
+//     data.emplace(CARTA::StatsType::MaxPosf, num_z);
+            
     for (size_t x = 0; x < num_x; x++) {
 
-        // Read data for one x slice from swizzled dataset
+        casacore::Slicer slicer;
+        if (_num_dims == 4) {
+            slicer = casacore::Slicer(IPos(4, 0, min_y, x, stokes), IPos(4, num_z, num_y, 1, 1));
+        } else if (_num_dims == 3) {
+            slicer = casacore::Slicer(IPos(3, 0, min_y, x), IPos(3, num_z, num_y, 1));
+        }
         
-        // get mask row for this x and all y
+        std::vector<float> slice_data(num_z * num_y);
+        casacore::Array<float> tmp(slicer.length(), slice_data.data(), casacore::StorageInitPolicy::SHARE);
+        
+        try {
+            LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
+        } catch (casacore::AipsError& err) {
+            std::cerr << "AIPS ERROR: " << err.getMesg() << std::endl;
+            return data_ok;
+        }
 
         for (size_t y = 0; y < num_y; y++) {
             // skip all Z values for masked pixels
-            // TODO make this use the cached mask row
-            if (!mask.getAt(casacore::IPosition(2, x, y))) {
+            if (!mask.getAt(IPos(2, x, y))) {
                 continue;
             }
             for (size_t z = 0; z < num_z; z++) {
-                // increment tallies
+                float& v = slice_data[y * num_z + z];
+                
+                // TODO implement the other stats, but check if they were requested
+                data[CARTA::StatsType::Sum][z] += isnan(v) ? 0 : v;
+                data[CARTA::StatsType::SumSq][z] += isnan(v) ? 0 : v * v;
+                data[CARTA::StatsType::Min][z] = fmin(data[CARTA::StatsType::Min][z], v);
+                data[CARTA::StatsType::Max][z] = fmax(data[CARTA::StatsType::Max][z], v);
+                data[CARTA::StatsType::NanCount][z] += isnan(v);
+                data[CARTA::StatsType::NumPixels][z] += !isnan(v);
             }
         }
     }
 
     for (size_t z = 0; z < num_z; z++) {
-        // calculate final stats for each z and put in return map (alias the map to begin with?)
+        // calculate final stats
+        
+        data[CARTA::StatsType::Mean][z] = data[CARTA::StatsType::Sum][z] / data[CARTA::StatsType::NumPixels][z];
+        
+        // if there are no valid values, set all stats to NaN except the value and NaN counts
+        
+        if (!data[CARTA::StatsType::NumPixels][z]) {
+            for (auto& kv : data) {
+                switch(kv.first) {
+                    case CARTA::StatsType::NanCount:
+                    case CARTA::StatsType::NumPixels:
+                        break;
+                    default:
+                        kv.second[z] = NAN;
+                        break;
+                }
+            }
+        }
     }
 
     return data_ok;
