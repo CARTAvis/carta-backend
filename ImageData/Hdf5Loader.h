@@ -318,14 +318,15 @@ bool Hdf5Loader::GetRegionSpectralData(
     int y_min = origin(1);
     int y_max = y_min + num_y;
     
-    // TODO some of these are to be implemented
+    // TODO implement the other stats, but check if they were requested
+
     data.emplace(CARTA::StatsType::NumPixels, num_z);
     data.emplace(CARTA::StatsType::NanCount, num_z);
     data.emplace(CARTA::StatsType::Sum, num_z);
 //     data.emplace(CARTA::StatsType::FluxDensity, num_z);
     data.emplace(CARTA::StatsType::Mean, num_z);
-//     data.emplace(CARTA::StatsType::RMS, num_z);
-//     data.emplace(CARTA::StatsType::Sigma, num_z);
+    data.emplace(CARTA::StatsType::RMS, num_z);
+    data.emplace(CARTA::StatsType::Sigma, num_z);
     data.emplace(CARTA::StatsType::SumSq, num_z);
     data.emplace(CARTA::StatsType::Min, num_z, FLT_MAX);
     data.emplace(CARTA::StatsType::Max, num_z, FLT_MIN);
@@ -342,6 +343,8 @@ bool Hdf5Loader::GetRegionSpectralData(
     auto& nan_count = data[CARTA::StatsType::NanCount];
     auto& sum = data[CARTA::StatsType::Sum];
     auto& mean = data[CARTA::StatsType::Mean];
+    auto& rms = data[CARTA::StatsType::RMS];
+    auto& sigma = data[CARTA::StatsType::Sigma];
     auto& sum_sq = data[CARTA::StatsType::SumSq];
     auto& min = data[CARTA::StatsType::Min];
     auto& max = data[CARTA::StatsType::Max];
@@ -373,9 +376,7 @@ bool Hdf5Loader::GetRegionSpectralData(
             }
             for (size_t z = 0; z < num_z; z++) {
                 float& v = slice_data[y * num_z + z];
-                
-                // TODO implement the other stats, but check if they were requested
-                
+                                
                 if (isfinite(v)) {
                     num_pixels[z] += 1;
                     
@@ -394,11 +395,17 @@ bool Hdf5Loader::GetRegionSpectralData(
             }
         }
     }
+    
+    float mean_sq;
 
     for (size_t z = 0; z < num_z; z++) {
         if (num_pixels[z]) {
             // calculate final stats
             mean[z] = sum[z] / num_pixels[z];
+            
+            mean_sq = sum_sq[z] / num_pixels[z];
+            rms[z] = sqrtf(mean_sq);
+            sigma[z] = sqrtf(mean_sq - (mean[z] * mean[z]));
         } else {
             // if there are no valid values, set all stats to NaN except the value and NaN counts
             for (auto& kv : data) {

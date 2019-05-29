@@ -680,7 +680,7 @@ void Region::FillSpectralProfileData(
             new_profile->set_stats_type(stat_type);
             // convert to float for spectral profile
             std::vector<float> values;
-            if (stats_values.find(stat_type) == stats_values.end() || stats_values[stat_type].empty()) { // region outside image or NaNs
+            if (stats_values.find(stat_type) == stats_values.end()) { // stat not provided
                 new_profile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
             } else {
                 *new_profile->mutable_double_vals() = {stats_values[stat_type].begin(), stats_values[stat_type].end()};
