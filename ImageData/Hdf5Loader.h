@@ -426,6 +426,8 @@ bool Hdf5Loader::GetRegionSpectralData(
             }
         }
     }
+    
+    data_ok = true;
 
     return data_ok;
 }
