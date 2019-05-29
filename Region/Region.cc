@@ -325,9 +325,8 @@ casacore::WCRegion* Region::MakeRectangleRegion(const std::vector<CARTA::Point>&
 
 casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation) {
     // WCEllipse from center x,y, bmaj, bmin, rotation
-    // TRYING
-  std::cout << "Rotation: " << rotation << std::endl;
     casacore::WCEllipsoid* ellipse(nullptr);
+    
     if (points.size() == 2) {
         float cx(points[0].x()), cy(points[0].y());
         float bmaj(points[1].x()), bmin(points[1].y());
@@ -345,63 +344,23 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
         if (!_coord_sys.toWorld(world_coords, pixel_coords))
             return ellipse; // nullptr, conversion failed
 
-	//TRYING SOMETHING
-	casacore::Vector<casacore::Double> pixel_radii_coords(num_axes);
-	casacore::Vector<casacore::Double> world_radii_coords(num_axes);
-	pixel_radii_coords(0) = bmaj;
-	pixel_radii_coords(1) = bmin;
-	if (!_coord_sys.toWorld(world_radii_coords, pixel_radii_coords))
-	  return ellipse;
-	// END TRYING
-
-	//TRYING SOMETHING ELSE
-	casacore::Vector<casacore::Double> pixel_bmaj(1);
-	casacore::Vector<casacore::Double> pixel_bmin(1);
-	pixel_bmaj = bmaj;
-	pixel_bmin = bmin;
-	casacore::Vector<casacore::Double> world_bmaj(1);
-	casacore::Vector<casacore::Double> world_bmin(1);
-	
-	casacore::Vector<casacore::String> name(1); name = "length";
-	casacore::Vector<casacore::String> units(1); units = "rad"; //CHANGE THIS
-	casacore::Vector<casacore::Double> crval(1); // Maybe figure the transformation
-	// from the pixel and world values of the center???
-	
-	
-
         // make Quantities for ellipsoid center
         casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
         casacore::Vector<casacore::Quantum<casacore::Double>> center(2);
         center(0) = casacore::Quantity(world_coords(0), coord_units(0));
         center(1) = casacore::Quantity(world_coords(1), coord_units(1));
-
-	std::cout << "center(0) " << center(0) << std::endl;
-	std::cout << "center(1) " << center(1) << std::endl;
 	
         // make Quantities for ellipsoid radii
         casacore::Vector<casacore::Quantum<casacore::Double>> radii(2);
         radii(0) = casacore::Quantity(bmaj, "pix");
         radii(1) = casacore::Quantity(bmin, "pix");
-
-	std::cout << "radii(0) pix " << radii(0) << std::endl;
-	std::cout << "radii(1) pix " << radii(1) << std::endl;
-	
-	// MORE TRYING SOMETHING
-	casacore::Vector<casacore::Quantum<casacore::Double>> radii_try(2);
-	radii_try(0) = casacore::Quantity(world_radii_coords(0), coord_units(0));
-	radii_try(1) = casacore::Quantity(world_radii_coords(1), coord_units(1));
-	std::cout << "radii(0) " << radii_try(0) << std::endl;
-	std::cout << "radii(1) " << radii_try(1) << std::endl;
-	// END TRYING
-        //MORE TRYING
 	
 	double doubleTheta;
 	doubleTheta = static_cast<double>(theta);
 	
 	casacore::Quantity quantityTheta = casacore::Quantity(doubleTheta, "rad");
 	
-        //ellipse = new casacore::WCEllipsoid(center, radii, _xy_axes, _coord_sys);
-	// Ma:ke sure the major axis is greater than the minor axis
+	// Make sure the major axis is greater than the minor axis
 	casacore::Quantity majorAxis;
 	casacore::Quantity minorAxis;
 	if (radii(0) < radii(1)) {
