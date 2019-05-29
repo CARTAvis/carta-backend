@@ -46,6 +46,7 @@ public:
     casacore::ImageInterface<float>* cloneII() const override;
     void resize(const casacore::TiledShape& newShape) override;
 
+    // implement functions in other casacore Image classes
     casacore::Bool isMasked() const override;
     casacore::Bool hasPixelMask() const override;
     const casacore::Lattice<bool>& pixelMask() const override;

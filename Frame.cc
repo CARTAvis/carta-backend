@@ -10,7 +10,8 @@
 
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, int default_channel)
+Frame::Frame(
+    uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, int default_channel)
     : _session_id(session_id),
       _valid(true),
       _connected(true),
@@ -134,8 +135,8 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
         region_set = region->UpdateRegionParameters(name, type, points, rotation);
     } else { // map new Region to region id
         const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-        auto region = std::unique_ptr<carta::Region>(new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis,
-                                                                       _stokes_axis, coord_sys));
+        auto region = std::unique_ptr<carta::Region>(
+            new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
         if (region->IsValid()) {
             _regions[region_id] = move(region);
             region_set = true;
