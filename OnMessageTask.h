@@ -98,9 +98,7 @@ class AnimationTask : public OnMessageTask {
     tbb::task* execute() override;
 
 public:
-    AnimationTask(Session* session, uint32_t request_id, CARTA::StartAnimation msg) : OnMessageTask(session) {
-        session->BuildAnimationObject(msg, request_id);
-    }
+    AnimationTask(Session* session) : OnMessageTask(session) {}
     ~AnimationTask() = default;
 };
 

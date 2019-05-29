@@ -70,13 +70,26 @@ public:
         OnSetImageChannels(request.first);
     }
     void CancelSetHistRequirements() {
-        _histogram_progress.fetch_and_store(HISTOGRAM_CANCEL);
+        _histo_context.cancel_group_execution();
+    }
+    void ResetHistContext() {
+      _histo_context.reset();
+    }
+    tbb::task_group_context& HistContext() {
+        return _histo_context;
+    }
+    tbb::task_group_context& AnimationContext() {
+        return _animation_context;
+    }
+    void CancelAnimation() {
+        _animation_object->cancel_execution();
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
     void ExecuteAnimationFrame_inner(bool stopped);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
+    void cancelExistingAnimation();
     void CheckCancelAnimationOnFileClose(int file_id);
     void AddViewSetting(CARTA::SetImageView message, uint32_t request_id) {
         _file_settings.AddViewSetting(message, request_id);
@@ -120,8 +133,12 @@ public:
     tbb::task* getWaitingTask_ptr() {
         return _animation_object->_waiting_task;
     }
-    bool waiting_flow_event() {
+    bool waitingFlowEvent() {
         return _animation_object->_waiting_flow_event;
+    }
+    static void SetExitTimeout(int secs) {
+        _exit_after_num_seconds = secs;
+        _exit_when_all_sessions_closed = true;
     }
 
     // TODO: should these be public? NO!!!!!!!!
@@ -181,8 +198,8 @@ private:
     std::mutex _image_channel_mutex;
     bool _image_channel_task_active;
 
-    // Cube histogram progress: 0.0 to 1.0 (complete), -1 (cancel)
-    tbb::atomic<float> _histogram_progress;
+    // Cube histogram progress: 0.0 to 1.0 (complete)
+    float _histogram_progress;
 
     // Outgoing messages
     uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
@@ -191,9 +208,16 @@ private:
     // TBB context that enables all tasks associated with a session to be cancelled.
     tbb::task_group_context _base_context;
 
+    // TBB context to cancel histogram calculations.
+    tbb::task_group_context _histo_context;
+
+    tbb::task_group_context _animation_context;
+
     int _ref_count;
     bool _connected;
     static int _num_sessions;
+    static int _exit_after_num_seconds;
+    static bool _exit_when_all_sessions_closed;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_
