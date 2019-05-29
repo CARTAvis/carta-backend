@@ -327,8 +327,8 @@ bool Hdf5Loader::GetRegionSpectralData(
 //     data.emplace(CARTA::StatsType::RMS, num_z);
 //     data.emplace(CARTA::StatsType::Sigma, num_z);
     data.emplace(CARTA::StatsType::SumSq, num_z);
-    data.emplace(CARTA::StatsType::Min, num_z);
-    data.emplace(CARTA::StatsType::Max, num_z);
+    data.emplace(CARTA::StatsType::Min, num_z, FLT_MAX);
+    data.emplace(CARTA::StatsType::Max, num_z, FLT_MIN);
 //     data.emplace(CARTA::StatsType::Blc, num_z);
 //     data.emplace(CARTA::StatsType::Trc, num_z);
 //     data.emplace(CARTA::StatsType::MinPos, num_z);
@@ -337,6 +337,16 @@ bool Hdf5Loader::GetRegionSpectralData(
 //     data.emplace(CARTA::StatsType::Trcf, num_z);
 //     data.emplace(CARTA::StatsType::MinPosf, num_z);
 //     data.emplace(CARTA::StatsType::MaxPosf, num_z);
+    
+    auto& num_pixels = data[CARTA::StatsType::NumPixels];
+    auto& nan_count = data[CARTA::StatsType::NanCount];
+    auto& sum = data[CARTA::StatsType::Sum];
+    auto& mean = data[CARTA::StatsType::Mean];
+    auto& sum_sq = data[CARTA::StatsType::SumSq];
+    auto& min = data[CARTA::StatsType::Min];
+    auto& max = data[CARTA::StatsType::Max];
+    
+    std::vector<float> slice_data(num_z * num_y);
             
     for (size_t x = 0; x < num_x; x++) {
 
@@ -347,7 +357,6 @@ bool Hdf5Loader::GetRegionSpectralData(
             slicer = casacore::Slicer(IPos(3, 0, min_y, x), IPos(3, num_z, num_y, 1));
         }
         
-        std::vector<float> slice_data(num_z * num_y);
         casacore::Array<float> tmp(slicer.length(), slice_data.data(), casacore::StorageInitPolicy::SHARE);
         
         try {
@@ -366,24 +375,32 @@ bool Hdf5Loader::GetRegionSpectralData(
                 float& v = slice_data[y * num_z + z];
                 
                 // TODO implement the other stats, but check if they were requested
-                data[CARTA::StatsType::Sum][z] += isnan(v) ? 0 : v;
-                data[CARTA::StatsType::SumSq][z] += isnan(v) ? 0 : v * v;
-                data[CARTA::StatsType::Min][z] = fmin(data[CARTA::StatsType::Min][z], v);
-                data[CARTA::StatsType::Max][z] = fmax(data[CARTA::StatsType::Max][z], v);
-                data[CARTA::StatsType::NanCount][z] += isnan(v);
-                data[CARTA::StatsType::NumPixels][z] += !isnan(v);
+                
+                if (isfinite(v)) {
+                    num_pixels[z] += 1;
+                    
+                    sum[z] += v;
+                    sum_sq[z] += v * v;
+                    
+                    if (v < min[z]) {
+                        data[min[z] = v;
+                    } else if (v > max[z]) {
+                        max[z] = v;
+                    }
+                    
+                } else {
+                    nan_count[z] += 1;
+                }
             }
         }
     }
 
     for (size_t z = 0; z < num_z; z++) {
-        // calculate final stats
-        
-        data[CARTA::StatsType::Mean][z] = data[CARTA::StatsType::Sum][z] / data[CARTA::StatsType::NumPixels][z];
-        
-        // if there are no valid values, set all stats to NaN except the value and NaN counts
-        
-        if (!data[CARTA::StatsType::NumPixels][z]) {
+        if (num_pixels[z]) {
+            // calculate final stats
+            mean[z] = sum[z] / num_pixels[z];
+        } else {
+            // if there are no valid values, set all stats to NaN except the value and NaN counts
             for (auto& kv : data) {
                 switch(kv.first) {
                     case CARTA::StatsType::NanCount:
