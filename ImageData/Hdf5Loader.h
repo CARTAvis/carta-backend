@@ -319,6 +319,7 @@ bool Hdf5Loader::GetRegionSpectralData(
     int y_max = y_min + num_y;
     
     // TODO implement the other stats, but check if they were requested
+    // TODO to implement flux density we need to reuse the beam area from casacore::ImageStatistics, which will require a patch because it's currently private.
 
     data.emplace(CARTA::StatsType::NumPixels, num_z);
     data.emplace(CARTA::StatsType::NanCount, num_z);
@@ -328,8 +329,8 @@ bool Hdf5Loader::GetRegionSpectralData(
     data.emplace(CARTA::StatsType::RMS, num_z);
     data.emplace(CARTA::StatsType::Sigma, num_z);
     data.emplace(CARTA::StatsType::SumSq, num_z);
-    data.emplace(CARTA::StatsType::Min, num_z, FLT_MAX);
-    data.emplace(CARTA::StatsType::Max, num_z, FLT_MIN);
+    data.emplace(CARTA::StatsType::Min, num_z);
+    data.emplace(CARTA::StatsType::Max, num_z);
 //     data.emplace(CARTA::StatsType::Blc, num_z);
 //     data.emplace(CARTA::StatsType::Trc, num_z);
 //     data.emplace(CARTA::StatsType::MinPos, num_z);
@@ -350,14 +351,19 @@ bool Hdf5Loader::GetRegionSpectralData(
     auto& max = data[CARTA::StatsType::Max];
     
     std::vector<float> slice_data(num_z * num_y);
+    
+    for (size_t z = 0; z < num_z; z++) {
+        min[z] = FLT_MAX;
+        max[z] = FLT_MIN;
+    }
             
     for (size_t x = 0; x < num_x; x++) {
 
         casacore::Slicer slicer;
         if (_num_dims == 4) {
-            slicer = casacore::Slicer(IPos(4, 0, min_y, x, stokes), IPos(4, num_z, num_y, 1, 1));
+            slicer = casacore::Slicer(IPos(4, 0, y_min, x, stokes), IPos(4, num_z, num_y, 1, 1));
         } else if (_num_dims == 3) {
-            slicer = casacore::Slicer(IPos(3, 0, min_y, x), IPos(3, num_z, num_y, 1));
+            slicer = casacore::Slicer(IPos(3, 0, y_min, x), IPos(3, num_z, num_y, 1));
         }
         
         casacore::Array<float> tmp(slicer.length(), slice_data.data(), casacore::StorageInitPolicy::SHARE);
@@ -371,20 +377,20 @@ bool Hdf5Loader::GetRegionSpectralData(
 
         for (size_t y = 0; y < num_y; y++) {
             // skip all Z values for masked pixels
-            if (!mask.getAt(IPos(2, x, y))) {
+            if (!mask->getAt(IPos(2, x, y))) {
                 continue;
             }
             for (size_t z = 0; z < num_z; z++) {
                 float& v = slice_data[y * num_z + z];
                                 
-                if (isfinite(v)) {
+                if (std::isfinite(v)) {
                     num_pixels[z] += 1;
                     
                     sum[z] += v;
                     sum_sq[z] += v * v;
                     
                     if (v < min[z]) {
-                        data[min[z] = v;
+                        min[z] = v;
                     } else if (v > max[z]) {
                         max[z] = v;
                     }
