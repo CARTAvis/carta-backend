@@ -357,13 +357,13 @@ bool Hdf5Loader::GetRegionSpectralData(
         max[z] = FLT_MIN;
     }
             
-    for (size_t x = x_min; x < x_max; x++) {
+    for (size_t x = 0; x < num_x; x++) {
 
         casacore::Slicer slicer;
         if (_num_dims == 4) {
-            slicer = casacore::Slicer(IPos(4, 0, y_min, x, stokes), IPos(4, num_z, num_y, 1, 1));
+            slicer = casacore::Slicer(IPos(4, 0, y_min, x_min, stokes), IPos(4, num_z, num_y, 1, 1));
         } else if (_num_dims == 3) {
-            slicer = casacore::Slicer(IPos(3, 0, y_min, x), IPos(3, num_z, num_y, 1));
+            slicer = casacore::Slicer(IPos(3, 0, y_min, x_min), IPos(3, num_z, num_y, 1));
         }
         
         casacore::Array<float> tmp(slicer.length(), slice_data.data(), casacore::StorageInitPolicy::SHARE);
