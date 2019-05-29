@@ -357,7 +357,7 @@ bool Hdf5Loader::GetRegionSpectralData(
         max[z] = FLT_MIN;
     }
             
-    for (size_t x = 0; x < num_x; x++) {
+    for (size_t x = x_min; x < x_max; x++) {
 
         casacore::Slicer slicer;
         if (_num_dims == 4) {
