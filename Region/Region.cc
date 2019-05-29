@@ -354,11 +354,9 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
         casacore::Vector<casacore::Quantum<casacore::Double>> radii(2);
         radii(0) = casacore::Quantity(bmaj, "pix");
         radii(1) = casacore::Quantity(bmin, "pix");
-	
-	double doubleTheta;
-	doubleTheta = static_cast<double>(theta);
-	
-	casacore::Quantity quantityTheta = casacore::Quantity(doubleTheta, "rad");
+
+	// Convert theta to a Quantity
+	casacore::Quantity quantityTheta = casacore::Quantity(static_cast<double>(theta), "rad");
 	
 	// Make sure the major axis is greater than the minor axis
 	casacore::Quantity majorAxis;
