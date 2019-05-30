@@ -402,8 +402,8 @@ bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(
-    std::map<CARTA::StatsType, std::vector<double>>& data, int stokes, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin, const std::vector<int>& stats_types) {
+std::map<CARTA::StatsType, std::vector<double>>* FileLoader::GetRegionSpectralData(
+     int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) {
     // Must be implemented in subclasses
-    return false;
+    return nullptr;
 }

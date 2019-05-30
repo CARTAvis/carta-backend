@@ -90,7 +90,6 @@ public:
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, casacore::ImageInterface<float>& image);
 
     // Stats: pass through to RegionStats
-    const std::vector<int>& StatsRequirements() const;
     void SetStatsRequirements(const std::vector<int>& stats_types);
     size_t NumStats();
     void FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes);
