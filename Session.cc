@@ -653,7 +653,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             }
 
                             // check for cancel
-                            if (!_histo_context.is_group_execution_cancelled())
+                            if (_histo_context.is_group_execution_cancelled())
                                 break;
 
                             // check for progress update
