@@ -93,6 +93,8 @@ public:
     size_t NumStats();
     void FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes);
 
+    RegionState GetRegionState();
+
 private:
     // bounds checking for Region parameters
     bool SetPoints(const std::vector<CARTA::Point>& points);

@@ -36,6 +36,11 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
     }
 }
 
+RegionState Region::GetRegionState() {
+    RegionState region_state(_name, _type, _control_points, _rotation);
+    return region_state;
+}
+
 Region::~Region() {
     if (_xy_region) {
         delete _xy_region;

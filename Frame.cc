@@ -149,9 +149,11 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
         message = fmt::format("Region parameters failed to validate for region id {}", region_id);
     }
 
-    // set cursor's x-y coordinate cache
-    if (name == "cursor" && type == CARTA::RegionType::POINT)
+    if (name == "cursor" && type == CARTA::RegionType::POINT) { // set current cursor's x-y coordinate
         _cursor_xy = std::make_pair(points[0].x(), points[0].y());
+    } else if (region_id > 0 && RegionChanged(region_id)) { // set current region's states
+        _region_states[region_id].UpdateState(name, type, points, rotation);
+    }
 
     return region_set;
 }
@@ -809,14 +811,15 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                     //std::unique_lock<std::mutex> guard(_image_mutex);
                     //GetRegionSubImage(region_id, sub_image, profile_stokes);
                     //region->FillSpectralProfileData(profile_data, i, sub_image);
+                    //guard.unlock();
                     //================== new method ==============================
-                    std::unique_lock<std::mutex> guard(_image_mutex);
                     std::vector<std::vector<double>> stats_values;
+                    std::unique_lock<std::mutex> guard(_image_mutex);
                     bool have_spectral_data(GetRegionalSpectralData(stats_values, region_id, i, profile_stokes, 100));
+                    guard.unlock();
                     if (have_spectral_data) {
                         region->FillSpectralProfileData(profile_data, i, stats_values);
                     }
-                    guard.unlock();
                 }
             }
         }
@@ -1082,9 +1085,11 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
     int start, count, end;
     int copy_start = 0;
     casacore::SubImage<float> sub_image;
+    // get region state for this process
+    RegionState region_state = region->GetRegionState();
     for (int i = 0; i < upper_bound; ++i) {
-        if (!_connected) {
-            std::cerr << "Exiting zprofile (statistics) before complete" << std::endl;
+        if (!_connected || (_region_states.count(region_id) && _region_states[region_id] != region_state)) {
+            std::cerr << "Exiting zprofile (statistics) before complete, region id:" << region_id << std::endl;
             return false;
         }
         start = i * check_per_channels;
