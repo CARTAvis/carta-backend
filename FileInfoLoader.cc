@@ -92,15 +92,15 @@ bool FileInfoLoader::GetHduList(CARTA::FileInfo* file_info, const std::string& f
     } else if (file_info->type() == CARTA::FITS) {
         casacore::FitsInput fits_input(filename.c_str(), casacore::FITS::Disk, 10, FileInfoFitsErrHandler);
         if (fits_input.err() == casacore::FitsIO::OK) { // check for cfitsio error
-            // get each header data unit
             int num_hdu(fits_input.getnumhdu());
             hdu_ok = (num_hdu > 0);
             if (hdu_ok) {
+                // iterate through each header data unit
                 for (int hdu = 0; hdu < num_hdu; ++hdu) {
-                    // add hdu to file info
                     if (fits_input.rectype() == casacore::FITS::HDURecord) {
                         casacore::FITS::HDUType hdu_type = fits_input.hdutype();
                         if (IsImageHdu(hdu_type)) {
+                            // add hdu to file info
                             std::string hdu_name = std::to_string(hdu);
                             int ndim(0);
                             std::string ext_name;
@@ -132,7 +132,7 @@ bool FileInfoLoader::IsImageHdu(casacore::FITS::HDUType hdu_type) {
 }
 
 void FileInfoLoader::GetFitsHeaderInfo(casacore::FitsInput& fits_input, int& ndim, std::string& ext_name) {
-    // return dims, xtension, and extname from header
+    // return dims and extname from header
     switch (fits_input.hdutype()) {
         case casacore::FITS::PrimaryArrayHDU:
         case casacore::FITS::PrimaryGroupHDU:
