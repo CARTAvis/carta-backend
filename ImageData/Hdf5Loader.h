@@ -308,29 +308,30 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
     if (!HasData(FileInfo::Data::SWIZZLED)) {
         return nullptr;
     }
-    
+
     int num_z = _num_channels;
-    
+
     bool recalculate(false);
-    
+
     if (_region_stats.find(region_id) == _region_stats.end()) { // region stats never calculated
-        _region_stats.emplace(std::piecewise_construct, std::forward_as_tuple(region_id), std::forward_as_tuple(origin, mask->shape(), num_z));
+        _region_stats.emplace(
+            std::piecewise_construct, std::forward_as_tuple(region_id), std::forward_as_tuple(origin, mask->shape(), num_z));
         recalculate = true;
     } else if (!_region_stats[region_id].IsValid(origin, mask->shape())) { // region stats expired
         recalculate = true;
     }
-    
+
     if (recalculate) {
         int num_y = mask->shape()(0);
         int num_x = mask->shape()(1);
-        
+
         int x_min = origin(0);
         int x_max = x_min + num_x;
         int y_min = origin(1);
         int y_max = y_min + num_y;
-        
+
         auto& stats = _region_stats[region_id].stats;
-        
+
         auto& num_pixels = stats[CARTA::StatsType::NumPixels];
         auto& nan_count = stats[CARTA::StatsType::NanCount];
         auto& sum = stats[CARTA::StatsType::Sum];
@@ -340,9 +341,9 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
         auto& sum_sq = stats[CARTA::StatsType::SumSq];
         auto& min = stats[CARTA::StatsType::Min];
         auto& max = stats[CARTA::StatsType::Max];
-                
+
         std::vector<float> slice_data(num_z * num_y);
-        
+
         // Set initial values of stats which will be incremented (we may have expired region data)
         for (size_t z = 0; z < num_z; z++) {
             min[z] = FLT_MAX;
@@ -352,7 +353,7 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
             sum[z] = 0;
             sum_sq[z] = 0;
         }
-        
+
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = 0; x < num_x; x++) {
             casacore::Slicer slicer;
@@ -361,9 +362,9 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
             } else if (_num_dims == 3) {
                 slicer = casacore::Slicer(IPos(3, 0, y_min, x + x_min), IPos(3, num_z, num_y, 1));
             }
-            
+
             casacore::Array<float> tmp(slicer.length(), slice_data.data(), casacore::StorageInitPolicy::SHARE);
-            
+
             try {
                 LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
             } catch (casacore::AipsError& err) {
@@ -378,40 +379,40 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
                 }
                 for (size_t z = 0; z < num_z; z++) {
                     float& v = slice_data[y * num_z + z];
-                                    
+
                     if (std::isfinite(v)) {
                         num_pixels[z] += 1;
-                        
+
                         sum[z] += v;
                         sum_sq[z] += v * v;
-                        
+
                         if (v < min[z]) {
                             min[z] = v;
                         } else if (v > max[z]) {
                             max[z] = v;
                         }
-                        
+
                     } else {
                         nan_count[z] += 1;
                     }
                 }
             }
         }
-        
+
         float mean_sq;
 
         // Calculate final stats
         for (size_t z = 0; z < num_z; z++) {
             if (num_pixels[z]) {
                 mean[z] = sum[z] / num_pixels[z];
-                
+
                 mean_sq = sum_sq[z] / num_pixels[z];
                 rms[z] = sqrtf(mean_sq);
                 sigma[z] = sqrtf(mean_sq - (mean[z] * mean[z]));
             } else {
                 // if there are no valid values, set all stats to NaN except the value and NaN counts
                 for (auto& kv : stats) {
-                    switch(kv.first) {
+                    switch (kv.first) {
                         case CARTA::StatsType::NanCount:
                         case CARTA::StatsType::NumPixels:
                             break;
@@ -422,9 +423,8 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
                 }
             }
         }
-    
     }
-    
+
     return &_region_stats[region_id].stats;
 }
 

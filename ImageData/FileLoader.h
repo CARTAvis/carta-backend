@@ -28,28 +28,19 @@ struct RegionSpectralStats {
     casacore::IPosition origin;
     casacore::IPosition shape;
     std::map<CARTA::StatsType, std::vector<double>> stats;
-    
+
     RegionSpectralStats() {}
-    
+
     RegionSpectralStats(casacore::IPosition origin, casacore::IPosition shape, int num_channels) : origin(origin), shape(shape) {
-        
-        std::vector<CARTA::StatsType> supported_stats = {
-            CARTA::StatsType::NumPixels,
-            CARTA::StatsType::NanCount,
-            CARTA::StatsType::Sum,
-            CARTA::StatsType::Mean,
-            CARTA::StatsType::RMS,
-            CARTA::StatsType::Sigma,
-            CARTA::StatsType::SumSq,
-            CARTA::StatsType::Min,
-            CARTA::StatsType::Max
-        };
-    
+        std::vector<CARTA::StatsType> supported_stats = {CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
+            CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min,
+            CARTA::StatsType::Max};
+
         for (auto& s : supported_stats) {
             stats.emplace(s, num_channels);
         }
     }
-    
+
     bool IsValid(casacore::IPosition origin, casacore::IPosition shape) {
         return (origin.isEqual(this->origin) && shape.isEqual(this->shape));
     }
