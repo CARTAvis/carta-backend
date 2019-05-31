@@ -33,7 +33,6 @@ class AnimationObject {
     int _wait_duration_ms;
     volatile int _file_open;
     volatile bool _waiting_flow_event;
-    tbb::task* _waiting_task;
     tbb::task_group_context _tbb_context;
 
 public:
@@ -59,14 +58,8 @@ public:
         _stop_called = false;
         _file_open = true;
         _waiting_flow_event = false;
-        _waiting_task = nullptr;
         _last_flow_frame = start_frame;
-    }
-    tbb::task* waiting_task_ptr() {
-        return _waiting_task;
-    }
-    void set_waiting_task_ptr(tbb::task* tsk) {
-        _waiting_task = tsk;
+        _stop_frame = start_frame;
     }
     void cancel_execution() {
         _tbb_context.cancel_group_execution();

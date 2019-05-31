@@ -128,13 +128,7 @@ public:
         return _base_context;
     }
     void setWaitingTask(bool set_wait) {
-        //        _animation_object->_waiting_task = tsk;
         _animation_object->_waiting_flow_event = set_wait;
-        //      if (tsk) _animation_object->_waiting_flow_event = true;
-        //	else _animation_object->_waiting_flow_event = false;
-    }
-    tbb::task* getWaitingTask_ptr() {
-        return _animation_object->_waiting_task;
     }
     bool waitingFlowEvent() {
         return _animation_object->_waiting_flow_event;
