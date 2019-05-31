@@ -838,10 +838,12 @@ void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_ch
                 SendRegionStatsData(file_id, region_id);
             }
             if (stokes_changed) {
+                _frames.at(file_id)->IncreaseZProfileCount();
                 SendSpatialProfileData(file_id, region_id, stokes_changed);  // if using current stokes
                 SendSpectralProfileData(file_id, region_id, stokes_changed); // if using current stokes
                 SendRegionStatsData(file_id, region_id);
                 SendRegionHistogramData(file_id, region_id);
+                _frames.at(file_id)->DecreaseZProfileCount();
             }
         }
     }
