@@ -60,7 +60,7 @@ public:
         _file_open = true;
         _waiting_flow_event = false;
         _waiting_task = nullptr;
-	_last_flow_frame = start_frame;
+        _last_flow_frame = start_frame;
     }
     tbb::task* waiting_task_ptr() {
         return _waiting_task;

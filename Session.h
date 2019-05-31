@@ -73,7 +73,7 @@ public:
         _histo_context.cancel_group_execution();
     }
     void ResetHistContext() {
-      _histo_context.reset();
+        _histo_context.reset();
     }
     tbb::task_group_context& HistContext() {
         return _histo_context;
@@ -128,10 +128,10 @@ public:
         return _base_context;
     }
     void setWaitingTask(bool set_wait) {
-      //        _animation_object->_waiting_task = tsk;
-      _animation_object->_waiting_flow_event = set_wait;
-      //      if (tsk) _animation_object->_waiting_flow_event = true;
-      //	else _animation_object->_waiting_flow_event = false;
+        //        _animation_object->_waiting_task = tsk;
+        _animation_object->_waiting_flow_event = set_wait;
+        //      if (tsk) _animation_object->_waiting_flow_event = true;
+        //	else _animation_object->_waiting_flow_event = false;
     }
     tbb::task* getWaitingTask_ptr() {
         return _animation_object->_waiting_task;
