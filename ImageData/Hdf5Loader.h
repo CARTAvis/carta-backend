@@ -378,7 +378,7 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
                     continue;
                 }
                 for (size_t z = 0; z < num_z; z++) {
-                    float& v = slice_data[y * num_z + z];
+                    double v = slice_data[y * num_z + z];
 
                     if (std::isfinite(v)) {
                         num_pixels[z] += 1;
@@ -407,8 +407,8 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
                 mean[z] = sum[z] / num_pixels[z];
 
                 mean_sq = sum_sq[z] / num_pixels[z];
-                rms[z] = sqrtf(mean_sq);
-                sigma[z] = sqrtf(mean_sq - (mean[z] * mean[z]));
+                rms[z] = sqrt(mean_sq);
+                sigma[z] = sqrt(mean_sq - (mean[z] * mean[z]));
             } else {
                 // if there are no valid values, set all stats to NaN except the value and NaN counts
                 for (auto& kv : stats) {
