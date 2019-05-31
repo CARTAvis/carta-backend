@@ -18,6 +18,7 @@
 #include "FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "Util.h"
+#include "OnMessageTask.h"
 
 #define DEBUG(_DB_TEXT_) \
     {}
@@ -1064,32 +1065,40 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     _animation_object->_stop_called = true;
 }
 
-void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
-    int gap;
 
+int Session::calcuteAnimationFlowWindow() {
+  int gap;
+  
     if (_animation_object->_going_forward) {
         if (_animation_object->_delta_frame.channel()) {
-            gap = _animation_object->_current_frame.channel() - (message.received_frame()).channel();
+	  gap = _animation_object->_current_frame.channel() - (_animation_object->_last_flow_frame).channel();
         } else {
-            gap = _animation_object->_current_frame.stokes() - (message.received_frame()).channel();
+	  gap = _animation_object->_current_frame.stokes() - (_animation_object->_last_flow_frame).stokes();
         }
     } else { // going in reverse.
         if (_animation_object->_delta_frame.channel()) {
-            gap = (message.received_frame()).stokes() - _animation_object->_current_frame.channel();
+            gap = (_animation_object->_last_flow_frame).channel() - _animation_object->_current_frame.channel();
         } else {
-            gap = (message.received_frame()).stokes() - _animation_object->_delta_frame.stokes();
+            gap = (_animation_object->_last_flow_frame).stokes() - _animation_object->_delta_frame.stokes();
         }
     }
 
+    return gap;
+}
+
+
+void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
+    int gap;
+
+    _animation_object->_last_flow_frame = message.received_frame();
+
+    gap = calcuteAnimationFlowWindow();
+
     if (_animation_object->_waiting_flow_event) {
-        if (gap <= 2 * CARTA::AnimationFlowWindowSize) {
-            _animation_object->_waiting_flow_event = false;
-            tbb::task::enqueue(*(_animation_object->_waiting_task));
-        }
-    } else {
-        // Check if we should pause and wait for next flow message.
-        if (gap > 2 * CARTA::AnimationFlowWindowSize) {
-            _animation_object->_waiting_flow_event = true;
+        if (gap <= CARTA::AnimationFlowWindowSize) {
+	  _animation_object->_waiting_flow_event = false;
+	  OnMessageTask* tsk = new(tbb::task::allocate_root(_animation_context)) AnimationTask(this);
+	  tbb::task::enqueue(*tsk);
         }
     }
 }

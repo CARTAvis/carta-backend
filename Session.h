@@ -127,8 +127,11 @@ public:
     tbb::task_group_context& context() {
         return _base_context;
     }
-    void setWaitingTask_ptr(tbb::task* tsk) {
-        _animation_object->_waiting_task = tsk;
+    void setWaitingTask(bool set_wait) {
+      //        _animation_object->_waiting_task = tsk;
+      _animation_object->_waiting_flow_event = set_wait;
+      //      if (tsk) _animation_object->_waiting_flow_event = true;
+      //	else _animation_object->_waiting_flow_event = false;
     }
     tbb::task* getWaitingTask_ptr() {
         return _animation_object->_waiting_task;
@@ -136,6 +139,7 @@ public:
     bool waitingFlowEvent() {
         return _animation_object->_waiting_flow_event;
     }
+    int calcuteAnimationFlowWindow();
     static void SetExitTimeout(int secs) {
         _exit_after_num_seconds = secs;
         _exit_when_all_sessions_closed = true;

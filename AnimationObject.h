@@ -18,6 +18,7 @@ class AnimationObject {
     CARTA::AnimationFrame _current_frame;
     CARTA::AnimationFrame _next_frame;
     CARTA::AnimationFrame _stop_frame;
+    CARTA::AnimationFrame _last_flow_frame;
     int _frame_rate;
     std::chrono::microseconds _frame_interval;
     std::chrono::time_point<std::chrono::high_resolution_clock> _t_start;
@@ -59,6 +60,7 @@ public:
         _file_open = true;
         _waiting_flow_event = false;
         _waiting_task = nullptr;
+	_last_flow_frame = start_frame;
     }
     tbb::task* waiting_task_ptr() {
         return _waiting_task;
@@ -72,7 +74,7 @@ public:
 };
 
 namespace CARTA {
-const int AnimationFlowWindowSize = 5;
+const int AnimationFlowWindowSize = 10;
 }
 
 #endif // CARTA_BACKEND__ANIMATIONOBJECT_H_

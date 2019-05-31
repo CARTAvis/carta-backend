@@ -168,7 +168,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
                     CARTA::AnimationFlowControl message;
                     message.ParseFromArray(event_buf, event_length);
-                    session->HandleAnimationFlowControlEvt(message);
+		    session->HandleAnimationFlowControlEvt(message);
                     break;
                 }
                 case CARTA::EventType::FILE_INFO_REQUEST: {

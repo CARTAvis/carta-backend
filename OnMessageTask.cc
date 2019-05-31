@@ -92,14 +92,17 @@ tbb::task* SetHistogramRequirementsTask::execute() {
     return nullptr;
 }
 
+
 tbb::task* AnimationTask::execute() {
     if (_session->ExecuteAnimationFrame()) {
+      if (_session->calcuteAnimationFlowWindow() > CARTA::AnimationFlowWindowSize) {
+	_session->setWaitingTask(true);
+      } else {
         increment_ref_count();
         recycle_as_safe_continuation();
+      }
     } else {
-        if (_session->waitingFlowEvent()) {
-            _session->setWaitingTask_ptr(this);
-        } else {
+        if (!_session->waitingFlowEvent()) {
             _session->CancelAnimation();
         }
     }
