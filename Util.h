@@ -15,6 +15,7 @@
 #include <casacore/casa/OS/File.h>
 
 #include <carta-protobuf/spectral_profile.pb.h>
+#include <carta-protobuf/region_requirements.pb.h>
 
 #include "InterfaceConstants.h"
 
@@ -53,12 +54,7 @@ struct RegionState {
     CARTA::RegionType type;
     std::vector<CARTA::Point> control_points;
     float rotation;
-    RegionState() {
-        name = "";
-        type = CARTA::RegionType::RECTANGLE;
-        control_points = std::vector<CARTA::Point>();
-        rotation = 0;
-    }
+    RegionState() {}
     RegionState(std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
         name = name_;
         type = type_;
@@ -89,6 +85,30 @@ struct RegionState {
         type = type_;
         control_points = control_points_;
         rotation = rotation_;
+    }
+};
+
+struct RegionConfig {
+    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config;
+    RegionConfig() {}
+    RegionConfig(std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config_) {
+        config = config_;
+    }
+    void UpdateConfig(std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config_) {
+        config.clear();
+        config = config_;
+    }
+    bool IsSame(int profile_index, std::vector<int> other_stats) {
+        std::vector<int> requested_stats(config[profile_index].stats_types().begin(), config[profile_index].stats_types().end());
+        if (requested_stats.size() != other_stats.size()) {
+            return false;
+        }
+        for (int i = 0; i < requested_stats.size(); ++i) {
+            if (requested_stats[i] != other_stats[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 };
 

@@ -418,6 +418,7 @@ bool Frame::SetRegionSpectralRequirements(int region_id, const std::vector<CARTA
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         region_ok = region->SetSpectralRequirements(profiles, NumStokes());
+        _region_configs[region_id].UpdateConfig(profiles);
     }
     return region_ok;
 }
@@ -1067,10 +1068,11 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
     int profile_size = NumChannels();
     int upper_bound =
         (profile_size % check_per_channels == 0 ? profile_size / check_per_channels : profile_size / check_per_channels + 1);
-    // get the size of statistical requirements
+    // get statistical requirements
     CARTA::SetSpectralRequirements_SpectralConfig config;
     region->GetSpectralConfig(config, profile_index);
     int stats_size = config.stats_types().size();
+    std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
     // initialize the size of statistical results
     std::vector<std::vector<double>> results(stats_size);
     for (int i = 0; i < stats_size; ++i) {
@@ -1082,8 +1084,9 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
     // get region state for this process
     RegionState region_state = region->GetRegionState();
     for (int i = 0; i < upper_bound; ++i) {
-        if (!_connected || (_region_states.count(region_id) && _region_states[region_id] != region_state)) {
-            std::cerr << "Exiting zprofile (statistics) before complete, region id:" << region_id << std::endl;
+        if (!_connected || (_region_states.count(region_id) && _region_states[region_id] != region_state) ||
+            (_region_configs.count(region_id) && !_region_configs[region_id].IsSame(profile_index, requested_stats)) ) {
+            std::cerr << "Exiting zprofile (statistics) before complete, region id: " << region_id << std::endl;
             return false;
         }
         start = i * check_per_channels;

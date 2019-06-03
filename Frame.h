@@ -134,6 +134,8 @@ private:
     std::pair<int, int> _cursor_xy;
     // current region states
     std::unordered_map<int, RegionState> _region_states;
+    // current region configs
+    std::unordered_map<int, RegionConfig> _region_configs;
     // get cursor's x-y coordinate from subimage
     bool GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, int>& cursor_xy);
     // get spectral profile data from subimage
