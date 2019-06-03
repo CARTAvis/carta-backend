@@ -24,6 +24,28 @@ struct ImageStats {
     bool valid;
 };
 
+struct RegionSpectralStats {
+    casacore::IPosition origin;
+    casacore::IPosition shape;
+    std::map<CARTA::StatsType, std::vector<double>> stats;
+
+    RegionSpectralStats() {}
+
+    RegionSpectralStats(casacore::IPosition origin, casacore::IPosition shape, int num_channels) : origin(origin), shape(shape) {
+        std::vector<CARTA::StatsType> supported_stats = {CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
+            CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min,
+            CARTA::StatsType::Max};
+
+        for (auto& s : supported_stats) {
+            stats.emplace(s, num_channels);
+        }
+    }
+
+    bool IsValid(casacore::IPosition origin, casacore::IPosition shape) {
+        return (origin.isEqual(this->origin) && shape.isEqual(this->shape));
+    }
+};
+
 enum class Data : uint32_t {
     // Main dataset
     Image,
@@ -102,6 +124,8 @@ public:
     // specified HDU/group/table/etc.
     virtual ImageRef LoadData(FileInfo::Data ds) = 0;
     virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y);
+    virtual std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
+        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
 
 protected:
