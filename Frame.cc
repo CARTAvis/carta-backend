@@ -1066,8 +1066,6 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
     }
     auto& region = _regions[region_id];
     int profile_size = NumChannels();
-    int upper_bound =
-        (profile_size % check_per_channels == 0 ? profile_size / check_per_channels : profile_size / check_per_channels + 1);
     // get statistical requirements
     CARTA::SetSpectralRequirements_SpectralConfig config;
     region->GetSpectralConfig(config, profile_index);
@@ -1078,28 +1076,29 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
     for (int i = 0; i < stats_size; ++i) {
         results[i].resize(profile_size);
     }
-    int start, count, end;
-    int copy_start = 0;
     casacore::SubImage<float> sub_image;
     // get region state for this process
     RegionState region_state = region->GetRegionState();
-    for (int i = 0; i < upper_bound; ++i) {
+    int start = 0;
+    int count, end;
+    while (start < profile_size) {
         if (!_connected || (_region_states.count(region_id) && _region_states[region_id] != region_state) ||
             (_region_configs.count(region_id) && !_region_configs[region_id].IsSame(profile_index, requested_stats)) ) {
             std::cerr << "Exiting zprofile (statistics) before complete, region id: " << region_id << std::endl;
             return false;
         }
-        start = i * check_per_channels;
-        count = (check_per_channels * (i + 1) < profile_size ? check_per_channels : profile_size - i * check_per_channels);
-        end = start + count - 1;
+        end = (start + check_per_channels > profile_size ? profile_size - 1 : start + check_per_channels - 1);
+        count = end - start + 1;
         GetRegionSubImage(region_id, sub_image, profile_stokes, {start, end});
         std::vector<std::vector<double>> buffer;
-        for (int j = 0; j < stats_size; ++j) {
-            if (region->GetSpectralProfileData(buffer, profile_index, sub_image)) {
-                memcpy(&results[j][copy_start], &buffer[j][0], count * sizeof(double));
-                copy_start += check_per_channels;
+        if (region->GetSpectralProfileData(buffer, profile_index, sub_image)) {
+            for (int j = 0; j < stats_size; ++j) {
+                memcpy(&results[j][start], &buffer[j][0], count * sizeof(double));
             }
+        } else {
+            return false;
         }
+        start += count;
     }
     stats_values = std::move(results);
     return true;
