@@ -50,6 +50,8 @@ public:
         return _control_points;
     };
     casacore::IPosition XyShape();
+    casacore::IPosition XyOrigin();
+    const casacore::ArrayLattice<casacore::Bool>* XyMask();
     inline bool XyRegionValid() {
         return (_xy_region != nullptr);
     };
@@ -84,6 +86,8 @@ public:
     std::string GetSpectralCoordinate(int profile_index);
     bool GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
+    void FillSpectralProfileData(
+        CARTA::SpectralProfileData& profile_data, int profile_index, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, casacore::ImageInterface<float>& image);
     bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values);
@@ -132,6 +136,9 @@ private:
 
     // stored 2D region
     casacore::WCRegion* _xy_region;
+
+    // stored 2D mask
+    casacore::ArrayLattice<casacore::Bool>* _xy_mask;
 
     // coordinate system
     casacore::CoordinateSystem _coord_sys;

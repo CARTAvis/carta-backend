@@ -808,12 +808,17 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                         region->FillSpectralProfileData(profile_data, i, spectral_data);
                     }
                 } else { // statistics
-                    std::vector<std::vector<double>> stats_values;
-                    std::unique_lock<std::mutex> guard(_image_mutex);
-                    bool have_spectral_data(GetRegionalSpectralData(stats_values, region_id, i, profile_stokes));
-                    guard.unlock();
-                    if (have_spectral_data) {
-                        region->FillSpectralProfileData(profile_data, i, stats_values);
+                    auto stats_values = _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin());
+                    if (stats_values) {
+                        region->FillSpectralProfileData(profile_data, i, *stats_values);
+                    } else {
+                        std::vector<std::vector<double>> stats_values;
+                        std::unique_lock<std::mutex> guard(_image_mutex);
+                        bool have_spectral_data(GetRegionalSpectralData(stats_values, region_id, i, profile_stokes));
+                        guard.unlock();
+                        if (have_spectral_data) {
+                            region->FillSpectralProfileData(profile_data, i, stats_values);
+                        }
                     }
                 }
             }

@@ -73,7 +73,7 @@ public:
         _histo_context.cancel_group_execution();
     }
     void ResetHistContext() {
-      _histo_context.reset();
+        _histo_context.reset();
     }
     tbb::task_group_context& HistContext() {
         return _histo_context;

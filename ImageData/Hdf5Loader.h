@@ -19,6 +19,8 @@ public:
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) override;
+    std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
+        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) override;
 
 protected:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
@@ -28,6 +30,7 @@ private:
     std::string _hdu;
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
+    std::map<int, FileInfo::RegionSpectralStats> _region_stats;
 
     std::string DataSetToString(FileInfo::Data ds) const;
 
@@ -293,11 +296,141 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
             LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
             data_ok = true;
         } catch (casacore::AipsError& err) {
-            std::cerr << "AIPS ERROR: " << err.getMesg() << std::endl;
+            std::cerr << "Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: " << err.getMesg() << std::endl;
         }
     }
 
     return data_ok;
+}
+
+std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralData(
+    int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) {
+    if (!HasData(FileInfo::Data::SWIZZLED)) {
+        return nullptr;
+    }
+
+    int num_y = mask->shape()(0);
+    int num_x = mask->shape()(1);
+    int num_z = _num_channels;
+    
+    // Using the normal dataset may be faster if the region is wider than it is deep.
+    // This is an initial estimate; we need to examine casacore's algorithm in more detail.
+    if (num_y * num_z < num_x) {
+        return nullptr;
+    }
+
+    bool recalculate(false);
+
+    if (_region_stats.find(region_id) == _region_stats.end()) { // region stats never calculated
+        _region_stats.emplace(
+            std::piecewise_construct, std::forward_as_tuple(region_id), std::forward_as_tuple(origin, mask->shape(), num_z));
+        recalculate = true;
+    } else if (!_region_stats[region_id].IsValid(origin, mask->shape())) { // region stats expired
+        recalculate = true;
+    }
+
+    if (recalculate) {
+        int x_min = origin(0);
+        int x_max = x_min + num_x;
+        int y_min = origin(1);
+        int y_max = y_min + num_y;
+
+        auto& stats = _region_stats[region_id].stats;
+
+        auto& num_pixels = stats[CARTA::StatsType::NumPixels];
+        auto& nan_count = stats[CARTA::StatsType::NanCount];
+        auto& sum = stats[CARTA::StatsType::Sum];
+        auto& mean = stats[CARTA::StatsType::Mean];
+        auto& rms = stats[CARTA::StatsType::RMS];
+        auto& sigma = stats[CARTA::StatsType::Sigma];
+        auto& sum_sq = stats[CARTA::StatsType::SumSq];
+        auto& min = stats[CARTA::StatsType::Min];
+        auto& max = stats[CARTA::StatsType::Max];
+
+        std::vector<float> slice_data(num_z * num_y);
+
+        // Set initial values of stats which will be incremented (we may have expired region data)
+        for (size_t z = 0; z < num_z; z++) {
+            min[z] = FLT_MAX;
+            max[z] = FLT_MIN;
+            num_pixels[z] = 0;
+            nan_count[z] = 0;
+            sum[z] = 0;
+            sum_sq[z] = 0;
+        }
+
+        // Load each X slice of the swizzled region bounding box and update Z stats incrementally
+        for (size_t x = 0; x < num_x; x++) {
+            casacore::Slicer slicer;
+            if (_num_dims == 4) {
+                slicer = casacore::Slicer(IPos(4, 0, y_min, x + x_min, stokes), IPos(4, num_z, num_y, 1, 1));
+            } else if (_num_dims == 3) {
+                slicer = casacore::Slicer(IPos(3, 0, y_min, x + x_min), IPos(3, num_z, num_y, 1));
+            }
+
+            casacore::Array<float> tmp(slicer.length(), slice_data.data(), casacore::StorageInitPolicy::SHARE);
+
+            try {
+                LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
+            } catch (casacore::AipsError& err) {
+                std::cerr << "Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: " << err.getMesg() << std::endl;
+                return nullptr;
+            }
+
+            for (size_t y = 0; y < num_y; y++) {
+                // skip all Z values for masked pixels
+                if (!mask->getAt(IPos(2, x, y))) {
+                    continue;
+                }
+                for (size_t z = 0; z < num_z; z++) {
+                    double v = slice_data[y * num_z + z];
+
+                    if (std::isfinite(v)) {
+                        num_pixels[z] += 1;
+
+                        sum[z] += v;
+                        sum_sq[z] += v * v;
+
+                        if (v < min[z]) {
+                            min[z] = v;
+                        } else if (v > max[z]) {
+                            max[z] = v;
+                        }
+
+                    } else {
+                        nan_count[z] += 1;
+                    }
+                }
+            }
+        }
+
+        float mean_sq;
+
+        // Calculate final stats
+        for (size_t z = 0; z < num_z; z++) {
+            if (num_pixels[z]) {
+                mean[z] = sum[z] / num_pixels[z];
+
+                mean_sq = sum_sq[z] / num_pixels[z];
+                rms[z] = sqrt(mean_sq);
+                sigma[z] = sqrt(mean_sq - (mean[z] * mean[z]));
+            } else {
+                // if there are no valid values, set all stats to NaN except the value and NaN counts
+                for (auto& kv : stats) {
+                    switch (kv.first) {
+                        case CARTA::StatsType::NanCount:
+                        case CARTA::StatsType::NumPixels:
+                            break;
+                        default:
+                            kv.second[z] = NAN;
+                            break;
+                    }
+                }
+            }
+        }
+    }
+
+    return &_region_stats[region_id].stats;
 }
 
 } // namespace carta
