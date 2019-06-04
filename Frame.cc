@@ -810,7 +810,7 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                 } else { // statistics
                     std::vector<std::vector<double>> stats_values;
                     std::unique_lock<std::mutex> guard(_image_mutex);
-                    bool have_spectral_data(GetRegionalSpectralData(stats_values, region_id, i, profile_stokes, 100));
+                    bool have_spectral_data(GetRegionalSpectralData(stats_values, region_id, i, profile_stokes));
                     guard.unlock();
                     if (have_spectral_data) {
                         region->FillSpectralProfileData(profile_data, i, stats_values);
@@ -1060,13 +1060,12 @@ bool Frame::GetSpectralData(std::vector<float>& data, casacore::SubImage<float>&
 }
 
 bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
-    int profile_stokes, int check_per_channels) {
-    if (check_per_channels == ALL_CHANNELS) {
-        check_per_channels = NumChannels();
-    }
+    int profile_stokes) {
+    int delta_channels = 10; // the increment of channels for each step
+    int dt_target = 75; // the target time elapse for each step, in the unit of milliseconds
+    int profile_size = NumChannels(); // total number of channels
     auto& region = _regions[region_id];
-    int profile_size = NumChannels();
-    // get statistical requirements
+    // get statistical requirements for this process
     CARTA::SetSpectralRequirements_SpectralConfig config;
     region->GetSpectralConfig(config, profile_index);
     int stats_size = config.stats_types().size();
@@ -1076,18 +1075,22 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
     for (int i = 0; i < stats_size; ++i) {
         results[i].resize(profile_size);
     }
-    casacore::SubImage<float> sub_image;
     // get region state for this process
     RegionState region_state = region->GetRegionState();
+    // get statistical profile data
     int start = 0;
     int count, end;
+    casacore::SubImage<float> sub_image;
     while (start < profile_size) {
+        // start the timer
+        auto tStart = std::chrono::high_resolution_clock::now();
+        // check if frontend queries changed, if so, terminate this loop process
         if (!_connected || (_region_states.count(region_id) && _region_states[region_id] != region_state) ||
-            (_region_configs.count(region_id) && !_region_configs[region_id].IsSame(profile_index, requested_stats)) ) {
+            (_region_configs.count(region_id) && !_region_configs[region_id].IsSame(profile_index, requested_stats))) {
             std::cerr << "Exiting zprofile (statistics) before complete, region id: " << region_id << std::endl;
             return false;
         }
-        end = (start + check_per_channels > profile_size ? profile_size - 1 : start + check_per_channels - 1);
+        end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
         count = end - start + 1;
         GetRegionSubImage(region_id, sub_image, profile_stokes, {start, end});
         std::vector<std::vector<double>> buffer;
@@ -1096,9 +1099,21 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
                 memcpy(&results[j][start], &buffer[j][0], count * sizeof(double));
             }
         } else {
+            std::cerr << "Can not get zprofile (statistics), region id: " << region_id
+                << ", channel range: ["<< start << "," << end << "]" << std::endl;
             return false;
         }
         start += count;
+        // get the time elapse for this step
+        auto tEnd = std::chrono::high_resolution_clock::now();
+        auto dt = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+        // adjust the increment of channels according to the time elapse
+        delta_channels = delta_channels * dt_target / dt;
+        if (delta_channels < 1) {
+            delta_channels = 1;
+        } else if (delta_channels > profile_size) {
+            delta_channels = profile_size;
+        }
     }
     stats_values = std::move(results);
     return true;

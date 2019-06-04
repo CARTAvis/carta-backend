@@ -142,7 +142,7 @@ private:
     bool GetSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image, int check_per_channels = ALL_CHANNELS);
     // get regional spectral profile (statistics) data
     bool GetRegionalSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
-        int profile_stokes, int check_per_channels = ALL_CHANNELS);
+        int profile_stokes);
 
     // setup
     uint32_t _session_id;
