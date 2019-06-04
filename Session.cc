@@ -244,8 +244,14 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
         ResetFileInfo(); // clean up
     } else {
         // Set hdu if empty
-        if (hdu.empty()) // use first
+        if (hdu.empty()) { // use first
             hdu = _selected_file_info->hdu_list(0);
+        } else {
+            size_t description_start = hdu.find(" "); // strip ExtName
+            if (description_start != std::string::npos) {
+                hdu = hdu.substr(0, description_start);
+            }
+        }
         // form path with filename
         casacore::Path root_path(_root_folder);
         root_path.append(directory);
