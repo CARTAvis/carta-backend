@@ -1072,7 +1072,9 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
     auto& region = _regions[region_id];
     // get statistical requirements for this process
     CARTA::SetSpectralRequirements_SpectralConfig config;
-    region->GetSpectralConfig(config, profile_index);
+    if (!region->GetSpectralConfig(config, profile_index)) {
+        return false;
+    }
     int stats_size = config.stats_types().size();
     std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
     // initialize the size of statistical results
@@ -1091,7 +1093,7 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
         auto tStart = std::chrono::high_resolution_clock::now();
         // check if frontend queries changed, if so, terminate this loop process
         if (!_connected || (_region_states.count(region_id) && _region_states[region_id] != region_state) ||
-            (_region_configs.count(region_id) && !_region_configs[region_id].IsSame(profile_index, requested_stats))) {
+            (_region_configs.count(region_id) && !_region_configs[region_id].IsAmong(profile_index, requested_stats))) {
             std::cerr << "Exiting zprofile (statistics) before complete, region id: " << region_id << std::endl;
             return false;
         }
@@ -1105,7 +1107,7 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
             }
         } else {
             std::cerr << "Can not get zprofile (statistics), region id: " << region_id
-                << ", channel range: ["<< start << "," << end << "]" << std::endl;
+                      << ", channel range: ["<< start << "," << end << "]" << std::endl;
             return false;
         }
         start += count;
