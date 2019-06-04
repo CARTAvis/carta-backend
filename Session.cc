@@ -1093,7 +1093,7 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
     gap = calcuteAnimationFlowWindow();
 
     if (_animation_object->_waiting_flow_event) {
-        if (gap <= CARTA::AnimationFlowWindowSize) {
+        if (gap <= currentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
             OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
             tbb::task::enqueue(*tsk);

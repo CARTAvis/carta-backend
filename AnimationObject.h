@@ -7,6 +7,11 @@
 #include <carta-protobuf/animation.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 
+namespace CARTA {
+const int AnimationFlowWindowConstant = 5;
+const int AnimationFlowWindowScaler = 2;
+} // namespace CARTA
+
 class AnimationObject {
     friend class Session;
 
@@ -61,13 +66,12 @@ public:
         _last_flow_frame = start_frame;
         _stop_frame = start_frame;
     }
+    int currentFlowWindowSize() {
+        return (CARTA::AnimationFlowWindowConstant * CARTA::AnimationFlowWindowScaler * _frame_rate);
+    }
     void cancel_execution() {
         _tbb_context.cancel_group_execution();
     }
 };
-
-namespace CARTA {
-const int AnimationFlowWindowSize = 10;
-}
 
 #endif // CARTA_BACKEND__ANIMATIONOBJECT_H_
