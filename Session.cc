@@ -952,7 +952,9 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
             bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
 
             _animation_object->_current_frame = curr_frame;
-            if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
+
+            if (_frames.at(file_id)->SetImageChannels(
+                    channel, stokes, _animation_object->_compression_type, _animation_object->_compression_quality, err_message)) {
                 // RESPONSE: updated image raster/histogram
                 SendRasterImageData(file_id, true); // true = send histogram
                 // RESPONSE: region data (includes image, cursor, and set regions)

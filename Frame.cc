@@ -266,7 +266,8 @@ void Frame::SetViewSettings(
     _view_settings = settings;
 }
 
-bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& message) {
+bool Frame::SetImageChannels_inner(
+    int new_channel, int new_stokes, CARTA::CompressionType comp_type, float comp_quality, std::string& message) {
     bool updated(false);
     if (!_valid || (_regions.count(IMAGE_REGION_ID) == 0)) {
         message = "No file loaded";

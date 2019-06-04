@@ -60,7 +60,14 @@ public:
     // image view, channels
     bool SetImageView(
         const CARTA::ImageBounds& image_bounds, int new_mip, CARTA::CompressionType compression, float quality, int num_subsets);
-    bool SetImageChannels(int new_channel, int new_stokes, std::string& message);
+    bool SetImageChannels_inner(
+        int new_channel, int new_stokes, CARTA::CompressionType comp_type, float comp_quality, std::string& message);
+    bool SetImageChannels(int new_channel, int new_stokes, std::string& message) {
+        SetImageChannels_inner(new_channel, new_stokes, _view_settings.compression_type, _view_settings.quality, message);
+    }
+    bool SetImageChannels(int new_channel, int new_stokes, CARTA::CompressionType comp_type, float comp_quality, std::string& message) {
+        SetImageChannels_inner(new_channel, new_stokes, comp_type, comp_quality, message);
+    }
 
     // set requirements
     bool SetRegionHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histograms);
