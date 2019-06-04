@@ -28,14 +28,14 @@ using namespace std;
 unordered_map<string, vector<string>> permissions_map;
 
 // file list handler for the file browser
-FileListHandler* file_list_handler;
+static FileListHandler* file_list_handler;
 
-uint32_t session_number;
-uWS::Hub websocket_hub;
+static uint32_t session_number;
+static uWS::Hub websocket_hub;
 
 // command-line arguments
-string root_folder("/"), base_folder("."), version_id("1.1");
-bool verbose, use_permissions;
+static string root_folder("/"), base_folder("."), version_id("1.1");
+static bool verbose, use_permissions;
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
@@ -136,15 +136,27 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.histograms_size() == 0) {
                         session->CancelSetHistRequirements();
                     } else {
-                        tsk = new (tbb::task::allocate_root(session->context()))
+                        session->ResetHistContext();
+                        tsk = new (tbb::task::allocate_root(session->HistContext()))
                             SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                    }
+                    break;
+                }
+                case CARTA::EventType::CLOSE_FILE: {
+                    CARTA::CloseFile message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->CheckCancelAnimationOnFileClose(message.file_id());
+                        session->_file_settings.ClearSettings(message.file_id());
+                        session->OnCloseFile(message);
                     }
                     break;
                 }
                 case CARTA::EventType::START_ANIMATION: {
                     CARTA::StartAnimation message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->context())) AnimationTask(session, head.request_id, message);
+                    session->cancelExistingAnimation();
+                    session->BuildAnimationObject(message, head.request_id);
+                    tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     break;
                 }
                 case CARTA::EventType::STOP_ANIMATION: {
@@ -166,13 +178,28 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::FILE_LIST_REQUEST: {
+                    CARTA::FileListRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnFileListRequest(message, head.request_id);
+                    }
+                    break;
+                }
+                case CARTA::EventType::OPEN_FILE: {
+                    CARTA::OpenFile message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnOpenFile(message, head.request_id);
+                    }
+                    break;
+                }
                 default: {
                     tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf);
                 }
             }
 
-            if (tsk)
+            if (tsk) {
                 tbb::task::enqueue(*tsk);
+            }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (strncmp(raw_message, "PING", 4) == 0) {
@@ -208,6 +235,7 @@ int main(int argc, const char* argv[]) {
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
+            inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
@@ -216,6 +244,12 @@ int main(int argc, const char* argv[]) {
             thread_count = inp.getInt("threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
+
+            bool has_exit_after_arg = inp.getString("exit_after").size();
+            if (has_exit_after_arg) {
+                int wait_time = inp.getInt("exit_after");
+                Session::SetExitTimeout(wait_time);
+            }
         }
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
