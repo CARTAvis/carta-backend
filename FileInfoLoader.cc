@@ -137,7 +137,7 @@ void FileInfoLoader::GetFitsHeaderInfo(casacore::FitsInput& fits_input, int& ndi
         case casacore::FITS::PrimaryArrayHDU:
         case casacore::FITS::PrimaryGroupHDU:
         case casacore::FITS::PrimaryTableHDU: {
-            casacore::HeaderDataUnit* header_unit(nullptr); 
+            casacore::HeaderDataUnit* header_unit(nullptr);
             switch (fits_input.datatype()) {
                 case casacore::FITS::CHAR:
                     header_unit = new casacore::PrimaryArray<unsigned char>(fits_input);
@@ -168,27 +168,27 @@ void FileInfoLoader::GetFitsHeaderInfo(casacore::FitsInput& fits_input, int& ndi
                     casacore::ImageExtension<unsigned char> header_unit = casacore::ImageExtension<unsigned char>(fits_input);
                     ndim = header_unit.dims();
                     ext_name = header_unit.extname();
-                }   break;
+                } break;
                 case casacore::FITS::SHORT: {
                     casacore::ImageExtension<short> header_unit = casacore::ImageExtension<short>(fits_input);
                     ndim = header_unit.dims();
                     ext_name = header_unit.extname();
-                }   break;
+                } break;
                 case casacore::FITS::LONG: {
                     casacore::ImageExtension<int> header_unit = casacore::ImageExtension<int>(fits_input);
                     ndim = header_unit.dims();
                     ext_name = header_unit.extname();
-                }   break;
+                } break;
                 case casacore::FITS::FLOAT: {
                     casacore::ImageExtension<float> header_unit = casacore::ImageExtension<float>(fits_input);
                     ndim = header_unit.dims();
                     ext_name = header_unit.extname();
-                }   break;
+                } break;
                 case casacore::FITS::DOUBLE: {
                     casacore::ImageExtension<double> header_unit = casacore::ImageExtension<double>(fits_input);
                     ndim = header_unit.dims();
                     ext_name = header_unit.extname();
-                }   break;
+                } break;
                 default:
                     break;
             }

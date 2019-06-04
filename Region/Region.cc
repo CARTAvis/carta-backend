@@ -335,7 +335,7 @@ casacore::WCRegion* Region::MakeRectangleRegion(const std::vector<CARTA::Point>&
 casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation) {
     // WCEllipse from center x,y, bmaj, bmin, rotation
     casacore::WCEllipsoid* ellipse(nullptr);
-    
+
     if (points.size() == 2) {
         float cx(points[0].x()), cy(points[0].y());
         float bmaj(points[1].x()), bmin(points[1].y());
@@ -358,26 +358,27 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
         casacore::Vector<casacore::Quantum<casacore::Double>> center(2);
         center(0) = casacore::Quantity(world_coords(0), coord_units(0));
         center(1) = casacore::Quantity(world_coords(1), coord_units(1));
-	
+
         // make Quantities for ellipsoid radii
         casacore::Vector<casacore::Quantum<casacore::Double>> radii(2);
         radii(0) = casacore::Quantity(bmaj, "pix");
         radii(1) = casacore::Quantity(bmin, "pix");
 
-	// Convert theta to a Quantity
-	casacore::Quantity quantity_theta = casacore::Quantity(static_cast<double>(theta), "rad");
-	
-	// Make sure the major axis is greater than the minor axis
-	casacore::Quantity major_axis;
-	casacore::Quantity minor_axis;
-	if (radii(0) < radii(1)) {
-	    major_axis = radii(1);
-	    minor_axis = radii(0);
-	  } else {
-	    major_axis = radii(0);
-	    minor_axis = radii(1);
-	  }
-	ellipse = new casacore::WCEllipsoid(center(0), center(1), major_axis, minor_axis, quantity_theta, _xy_axes(0), _xy_axes(1), _coord_sys);
+        // Convert theta to a Quantity
+        casacore::Quantity quantity_theta = casacore::Quantity(static_cast<double>(theta), "rad");
+
+        // Make sure the major axis is greater than the minor axis
+        casacore::Quantity major_axis;
+        casacore::Quantity minor_axis;
+        if (radii(0) < radii(1)) {
+            major_axis = radii(1);
+            minor_axis = radii(0);
+        } else {
+            major_axis = radii(0);
+            minor_axis = radii(1);
+        }
+        ellipse =
+            new casacore::WCEllipsoid(center(0), center(1), major_axis, minor_axis, quantity_theta, _xy_axes(0), _xy_axes(1), _coord_sys);
     }
     return ellipse;
 }
@@ -403,8 +404,9 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int chann
     // Create extension box for stored channel range and given stokes.
     // This can change for different profile/histogram/stats requirements so not stored
     bool extension_ok(false);
-    if (_num_dims < 3)
+    if (_num_dims < 3) {
         return extension_ok; // not needed
+    }
 
     try {
         double min_chan(channel), max_chan(channel);
