@@ -63,10 +63,10 @@ public:
     bool SetImageChannels_inner(
         int new_channel, int new_stokes, CARTA::CompressionType comp_type, float comp_quality, std::string& message);
     bool SetImageChannels(int new_channel, int new_stokes, std::string& message) {
-        SetImageChannels_inner(new_channel, new_stokes, _view_settings.compression_type, _view_settings.quality, message);
+        return SetImageChannels_inner(new_channel, new_stokes, _view_settings.compression_type, _view_settings.quality, message);
     }
     bool SetImageChannels(int new_channel, int new_stokes, CARTA::CompressionType comp_type, float comp_quality, std::string& message) {
-        SetImageChannels_inner(new_channel, new_stokes, comp_type, comp_quality, message);
+        return SetImageChannels_inner(new_channel, new_stokes, comp_type, comp_quality, message);
     }
 
     // set requirements
