@@ -99,14 +99,18 @@ struct RegionConfig {
         config = config_;
     }
     bool IsAmong(int profile_index, std::vector<int> other_stats) {
-        std::vector<int> requested_stats(config[profile_index].stats_types().begin(), config[profile_index].stats_types().end());
-        if (requested_stats.size() != other_stats.size()) {
-            return false;
-        }
-        for (int i = 0; i < requested_stats.size(); ++i) {
-            if (requested_stats[i] != other_stats[i]) {
+        if (config.size() > profile_index) {
+            std::vector<int> requested_stats(config[profile_index].stats_types().begin(), config[profile_index].stats_types().end());
+            if (requested_stats.size() != other_stats.size()) {
                 return false;
             }
+            for (int i = 0; i < requested_stats.size(); ++i) {
+                if (requested_stats[i] != other_stats[i]) {
+                    return false;
+                }
+            }
+        } else {
+            return false;
         }
         return true;
     }

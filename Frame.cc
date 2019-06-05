@@ -1092,9 +1092,16 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
         // start the timer
         auto tStart = std::chrono::high_resolution_clock::now();
         // check if frontend queries changed, if so, terminate this loop process
-        if (!_connected || (_region_states.count(region_id) && _region_states[region_id] != region_state) ||
-            (_region_configs.count(region_id) && !_region_configs[region_id].IsAmong(profile_index, requested_stats))) {
-            std::cerr << "Exiting zprofile (statistics) before complete, region id: " << region_id << std::endl;
+        if (!_connected) {
+            std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+            return false;
+        }
+        if (_region_states.count(region_id) && _region_states[region_id] != region_state) {
+            std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
+            return false;
+        }
+        if (_region_configs.count(region_id) && !_region_configs[region_id].IsAmong(profile_index, requested_stats)) {
+            std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
             return false;
         }
         end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
@@ -1115,10 +1122,11 @@ bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_valu
         auto tEnd = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
         // adjust the increment of channels according to the time elapse
-        delta_channels = delta_channels * dt_target / dt;
+        delta_channels *= dt_target / dt;
         if (delta_channels < 1) {
             delta_channels = 1;
-        } else if (delta_channels > profile_size) {
+        }
+        if (delta_channels > profile_size) {
             delta_channels = profile_size;
         }
     }
