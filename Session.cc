@@ -930,7 +930,6 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
     CARTA::AnimationFrame curr_frame;
 
     if (stopped) {
-        _animation_object->_stop_called = false;
         if (((_animation_object->_stop_frame.channel() == _animation_object->_current_frame.channel()) &&
                 (_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
             return;
