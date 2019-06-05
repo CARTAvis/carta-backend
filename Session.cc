@@ -1117,3 +1117,13 @@ void Session::cancelExistingAnimation() {
         _animation_object = nullptr;
     }
 }
+
+void Session::AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id) {
+    if (!animationRunning()) {
+        _file_settings.AddViewSetting(message, request_id);
+    } else if (_frames.count(message.file_id()) && _animation_object) {
+        _frames.at(message.file_id())
+            ->SetImageView(message.image_bounds(), message.mip(), _animation_object->_compression_type,
+                _animation_object->_compression_quality, message.num_subsets());
+    }
+}

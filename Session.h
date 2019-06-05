@@ -94,9 +94,7 @@ public:
     }
     void cancelExistingAnimation();
     void CheckCancelAnimationOnFileClose(int file_id);
-    void AddViewSetting(CARTA::SetImageView message, uint32_t request_id) {
-        _file_settings.AddViewSetting(message, request_id);
-    }
+    void AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id);
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _file_settings.AddCursorSetting(message, request_id);
     }
