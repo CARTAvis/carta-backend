@@ -136,6 +136,9 @@ public:
     bool waitingFlowEvent() {
         return _animation_object->_waiting_flow_event;
     }
+    bool animationRunning() {
+        return ((_animation_object && !_animation_object->_stop_called) ? true : false);
+    }
     int calcuteAnimationFlowWindow();
     static void SetExitTimeout(int secs) {
         _exit_after_num_seconds = secs;

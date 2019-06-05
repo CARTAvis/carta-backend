@@ -722,6 +722,7 @@ void Session::CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fi
 bool Session::SendRasterImageData(int file_id, bool send_histogram) {
     // return true if data sent
     bool data_sent(false);
+
     if (_frames.count(file_id)) {
         try {
             CARTA::RasterImageData raster_data;

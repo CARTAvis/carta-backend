@@ -3,6 +3,7 @@
 
 #include <tbb/task.h>
 #include <chrono>
+#include <iostream>
 
 #include <carta-protobuf/animation.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
