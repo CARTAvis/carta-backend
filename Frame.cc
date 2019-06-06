@@ -814,7 +814,7 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                     } else {
                         std::vector<std::vector<double>> stats_values;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        bool have_spectral_data(GetRegionalSpectralData(stats_values, region_id, i, profile_stokes));
+                        bool have_spectral_data(GetRegionSpectralData(stats_values, region_id, i, profile_stokes));
                         guard.unlock();
                         if (have_spectral_data) {
                             region->FillSpectralProfileData(profile_data, i, stats_values);
@@ -1064,7 +1064,7 @@ bool Frame::GetSpectralData(std::vector<float>& data, casacore::SubImage<float>&
     return data_ok;
 }
 
-bool Frame::GetRegionalSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
+bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
     int profile_stokes) {
     int delta_channels = 10; // the increment of channels for each step
     int dt_target = 75; // the target time elapse for each step, in the unit of milliseconds
