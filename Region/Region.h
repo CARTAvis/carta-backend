@@ -116,8 +116,8 @@ private:
     casacore::WCRegion* MakePolygonRegion(const std::vector<CARTA::Point>& points);
 
     // Extend xy region to make LCRegion
-    bool MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRange channel_range = {0, ALL_CHANNELS}); // for extended region
-    casacore::WCRegion* MakeExtendedRegion(int stokes, ChannelRange channel_range = {0, ALL_CHANNELS});              // x/y region extended chan/stokes
+    bool MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRange channel_range); // for extended region
+    casacore::WCRegion* MakeExtendedRegion(int stokes, ChannelRange channel_range);             // x/y region extended chan/stokes
 
     // region definition (ICD SET_REGION parameters)
     std::string _name;

@@ -799,9 +799,10 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                     bool have_spectral_data =
                         _loader->GetCursorSpectralData(spectral_data, profile_stokes, cursor_point.x(), cursor_point.y());
                     if (!have_spectral_data) { // load from subimage in 100-channel chunks
+                        ChannelRange all_channels;
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSubImage(region_id, sub_image, profile_stokes);
+                        GetRegionSubImage(region_id, sub_image, profile_stokes, all_channels);
                         have_spectral_data = GetSpectralData(spectral_data, sub_image, 100);
                         guard.unlock();
                     }
