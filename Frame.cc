@@ -1106,7 +1106,7 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         }
         end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
         count = end - start + 1;
-        GetRegionSubImage(region_id, sub_image, profile_stokes, {start, end});
+        GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange(start, end));
         std::vector<std::vector<double>> buffer;
         if (region->GetSpectralProfileData(buffer, profile_index, sub_image)) {
             for (int j = 0; j < stats_size; ++j) {

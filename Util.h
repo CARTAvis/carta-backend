@@ -34,6 +34,14 @@ inline void Log(uint32_t id, const std::string& template_string, Args... args) {
 void ReadPermissions(const std::string& filename, std::unordered_map<std::string, std::vector<std::string>>& permissions_map);
 bool CheckRootBaseFolders(std::string& root, std::string& base);
 
+//
+// Usage of the ChannelRange:
+//
+// ChannelRange() defines all channels
+// ChannelRange(0) defines a single channel range, channel 0, in this example
+// ChannelRange(0, 1) defines the channel range between 0 and 1 (including), in this example
+// ChannelRange(0, 2) defines the channel range between 0 and 2, i.e., [0, 1, 2] in this example
+//
 struct ChannelRange {
     int from, to;
     ChannelRange() {
