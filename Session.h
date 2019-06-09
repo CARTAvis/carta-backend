@@ -89,11 +89,12 @@ public:
     void ExecuteAnimationFrame_inner(bool stopped);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
+    int currentFlowWindowSize() {
+        return _animation_object->currentFlowWindowSize();
+    }
     void cancelExistingAnimation();
     void CheckCancelAnimationOnFileClose(int file_id);
-    void AddViewSetting(CARTA::SetImageView message, uint32_t request_id) {
-        _file_settings.AddViewSetting(message, request_id);
-    }
+    void AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id);
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _file_settings.AddCursorSetting(message, request_id);
     }
@@ -127,15 +128,16 @@ public:
     tbb::task_group_context& context() {
         return _base_context;
     }
-    void setWaitingTask_ptr(tbb::task* tsk) {
-        _animation_object->_waiting_task = tsk;
-    }
-    tbb::task* getWaitingTask_ptr() {
-        return _animation_object->_waiting_task;
+    void setWaitingTask(bool set_wait) {
+        _animation_object->_waiting_flow_event = set_wait;
     }
     bool waitingFlowEvent() {
         return _animation_object->_waiting_flow_event;
     }
+    bool animationRunning() {
+        return ((_animation_object && !_animation_object->_stop_called) ? true : false);
+    }
+    int calcuteAnimationFlowWindow();
     static void SetExitTimeout(int secs) {
         _exit_after_num_seconds = secs;
         _exit_when_all_sessions_closed = true;
