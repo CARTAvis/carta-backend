@@ -13,8 +13,6 @@
 #include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/fits/FITS/FITSTable.h>
-#include <casacore/fits/FITS/fitsio.h>
-#include <casacore/fits/FITS/hdu.h>
 #include <casacore/images/Images/FITSImage.h>
 #include <casacore/images/Images/ImageSummary.h>
 #include <casacore/images/Images/MIRIADImage.h>
@@ -97,8 +95,28 @@ bool FileInfoLoader::GetHduList(CARTA::FileInfo* file_info, const std::string& f
             int num_hdu(fits_input.getnumhdu());
             hdu_ok = (num_hdu > 0);
             if (hdu_ok) {
-                for (int hdu = 0; hdu < num_hdu; ++hdu)
-                    file_info->add_hdu_list(casacore::String::toString(hdu));
+                // iterate through each header data unit
+                for (int hdu = 0; hdu < num_hdu; ++hdu) {
+                    if (fits_input.rectype() == casacore::FITS::HDURecord) {
+                        casacore::FITS::HDUType hdu_type = fits_input.hdutype();
+                        if (IsImageHdu(hdu_type)) {
+                            // add hdu to file info
+                            std::string hdu_name = std::to_string(hdu);
+                            int ndim(0);
+                            std::string ext_name;
+                            GetFitsHeaderInfo(fits_input, ndim, ext_name);
+                            if (ndim > 0) {
+                                if (!ext_name.empty()) {
+                                    hdu_name += " ExtName: " + ext_name;
+                                }
+                                file_info->add_hdu_list(hdu_name);
+                            }
+                            fits_input.skip_all(hdu_type); // skip data to next hdu
+                        } else {
+                            fits_input.skip_hdu();
+                        }
+                    }
+                }
             }
         }
     } else {
@@ -106,6 +124,78 @@ bool FileInfoLoader::GetHduList(CARTA::FileInfo* file_info, const std::string& f
         hdu_ok = true;
     }
     return hdu_ok;
+}
+
+bool FileInfoLoader::IsImageHdu(casacore::FITS::HDUType hdu_type) {
+    return ((hdu_type == casacore::FITS::PrimaryArrayHDU) || (hdu_type == casacore::FITS::PrimaryGroupHDU) ||
+            (hdu_type == casacore::FITS::PrimaryTableHDU) || (hdu_type == casacore::FITS::ImageExtensionHDU));
+}
+
+void FileInfoLoader::GetFitsHeaderInfo(casacore::FitsInput& fits_input, int& ndim, std::string& ext_name) {
+    // return dims and extname from header
+    switch (fits_input.hdutype()) {
+        case casacore::FITS::PrimaryArrayHDU:
+        case casacore::FITS::PrimaryGroupHDU:
+        case casacore::FITS::PrimaryTableHDU: {
+            casacore::HeaderDataUnit* header_unit(nullptr);
+            switch (fits_input.datatype()) {
+                case casacore::FITS::CHAR:
+                    header_unit = new casacore::PrimaryArray<unsigned char>(fits_input);
+                    break;
+                case casacore::FITS::SHORT:
+                    header_unit = new casacore::PrimaryArray<short>(fits_input);
+                    break;
+                case casacore::FITS::LONG:
+                    header_unit = new casacore::PrimaryArray<int>(fits_input);
+                    break;
+                case casacore::FITS::FLOAT:
+                    header_unit = new casacore::PrimaryArray<float>(fits_input);
+                    break;
+                case casacore::FITS::DOUBLE:
+                    header_unit = new casacore::PrimaryArray<double>(fits_input);
+                    break;
+                default:
+                    break;
+            }
+            if (header_unit != nullptr) {
+                ndim = header_unit->dims();
+                delete header_unit;
+            }
+        } break;
+        case casacore::FITS::ImageExtensionHDU: {
+            switch (fits_input.datatype()) {
+                case casacore::FITS::CHAR: {
+                    casacore::ImageExtension<unsigned char> header_unit = casacore::ImageExtension<unsigned char>(fits_input);
+                    ndim = header_unit.dims();
+                    ext_name = header_unit.extname();
+                } break;
+                case casacore::FITS::SHORT: {
+                    casacore::ImageExtension<short> header_unit = casacore::ImageExtension<short>(fits_input);
+                    ndim = header_unit.dims();
+                    ext_name = header_unit.extname();
+                } break;
+                case casacore::FITS::LONG: {
+                    casacore::ImageExtension<int> header_unit = casacore::ImageExtension<int>(fits_input);
+                    ndim = header_unit.dims();
+                    ext_name = header_unit.extname();
+                } break;
+                case casacore::FITS::FLOAT: {
+                    casacore::ImageExtension<float> header_unit = casacore::ImageExtension<float>(fits_input);
+                    ndim = header_unit.dims();
+                    ext_name = header_unit.extname();
+                } break;
+                case casacore::FITS::DOUBLE: {
+                    casacore::ImageExtension<double> header_unit = casacore::ImageExtension<double>(fits_input);
+                    ndim = header_unit.dims();
+                    ext_name = header_unit.extname();
+                } break;
+                default:
+                    break;
+            }
+        } break;
+        default:
+            break;
+    }
 }
 
 //#################################################################################
@@ -324,6 +414,7 @@ bool FileInfoLoader::FillFitsExtFileInfo(CARTA::FileInfoExtended* ext_info, stri
         casacore::uInt hdu_num;
         try {
             casacore::String cc_hdu(hdu);
+            cc_hdu = cc_hdu.before(" "); // strip ExtName
             cc_hdu.fromString(hdu_num, true);
         } catch (casacore::AipsError& err) {
             message = "Invalid hdu for FITS image.";
@@ -343,10 +434,13 @@ bool FileInfoLoader::FillFitsExtFileInfo(CARTA::FileInfoExtended* ext_info, stri
             }
         } catch (casacore::AipsError& err) {
             message = err.getMesg();
-            if (message.find("diagonal") != std::string::npos) // "ArrayBase::diagonal() - diagonal out of range"
+            if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"
                 message = "Failed to open image at specified HDU.";
-            else if (message.find("No image at specified location") != std::string::npos)
+            } else if (message.find("No image at specified location") != std::string::npos) {
                 message = "No image at specified HDU.";
+            } else {
+                message = "Failed to open image at specified HDU: " + message;
+            }
             return false;
         }
         ext_info->set_dimensions(num_dim);
@@ -1090,8 +1184,9 @@ std::string FileInfoLoader::MakeValueStr(const std::string& type, double val, co
                       (upper_type.find("LAT") != std::string::npos));
         if (is_ra || is_angle) {
             casacore::MVAngle::formatTypes format(casacore::MVAngle::ANGLE);
-            if (is_ra)
+            if (is_ra) {
                 format = casacore::MVAngle::TIME;
+            }
             casacore::Quantity quant1(val, unit);
             casacore::MVAngle mva(quant1);
             val_str = mva.string(format, 10);

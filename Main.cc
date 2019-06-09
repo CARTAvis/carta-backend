@@ -120,6 +120,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::SetImageView message;
                     message.ParseFromArray(event_buf, event_length);
                     session->AddViewSetting(message, head.request_id);
+
                     if (!session->animationRunning())
                         tsk = new (tbb::task::allocate_root(session->context())) SetImageViewTask(session, message.file_id());
                     break;
