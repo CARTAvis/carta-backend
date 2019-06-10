@@ -7,8 +7,8 @@
 
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/fits/FITS/FITSError.h>
-#include <casacore/fits/FITS/hdu.h> // hdu.h must come before fitsio.h
 #include <casacore/fits/FITS/fitsio.h>
+#include <casacore/fits/FITS/hdu.h> // hdu.h must come before fitsio.h
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/MFrequency.h>
