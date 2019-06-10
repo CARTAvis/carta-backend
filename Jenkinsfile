@@ -36,9 +36,19 @@ pipeline {
                         sh "source ~/emsdk/emsdk_env.sh && ./run-travis.sh # run the tests"
                       }
                     }
+            }
+        }
+        stage('MacOS run e2e tests') {
+            steps {
+                    sh "export PATH=/usr/local/bin:$PATH"
+                    dir ('build') {
+                      sh "cp ../../permissions.txt . && cp ../../e2e.sh . && ./e2e.sh"
+                    }
                     echo "Finished !!"
             }
         }
+
+
     }
   post {
     success {
