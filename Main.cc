@@ -45,12 +45,13 @@ static string token;
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     // Check for authorization token
     if (!token.empty()) {
+        token = "wrong";
         string expected_auth_header = fmt::format("CARTA-Authorization={}", token);
         auto cookie_header = http_request.getHeader("cookie");
         string auth_header_string(cookie_header.value, cookie_header.valueLength);
         if (auth_header_string.find(expected_auth_header) == string::npos) {
             Log(0, "Invalid authorization token header, closing socket");
-            ws->close(4003, "Invalid authorization token");
+            ws->close(403, "Invalid authorization token");
             return;
         }
     }
@@ -238,16 +239,16 @@ void ExitBackend(int s) {
 void ReadJSONfile(string fname) {
     std::ifstream config_file(fname);
     if (!config_file.is_open()) {
-      std::cerr << "Failed to open config file " << fname << std::endl;
-      exit(1);
+        std::cerr << "Failed to open config file " << fname << std::endl;
+        exit(1);
     }
     Json::Value json_config;
     Json::Reader reader;
     reader.parse(config_file, json_config);
     token = json_config["token"].asString();
     if (token.empty()) {
-      std::cerr<< "Bad config file.\n";
-      exit(1);
+        std::cerr << "Bad config file.\n";
+        exit(1);
     }
 }
 
