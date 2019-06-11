@@ -45,7 +45,6 @@ static string token;
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     // Check for authorization token
     if (!token.empty()) {
-        token = "wrong";
         string expected_auth_header = fmt::format("CARTA-Authorization={}", token);
         auto cookie_header = http_request.getHeader("cookie");
         string auth_header_string(cookie_header.value, cookie_header.valueLength);
