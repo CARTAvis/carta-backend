@@ -245,6 +245,10 @@ void ReadJSONfile(string fname) {
     Json::Reader reader;
     reader.parse(config_file, json_config);
     token = json_config["token"].asString();
+    if (token.empty()) {
+      std::cerr<< "Bad config file.\n";
+      exit(1);
+    }
 }
 
 // Entry point. Parses command line arguments and starts server listening
