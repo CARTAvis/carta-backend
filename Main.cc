@@ -237,6 +237,10 @@ void ExitBackend(int s) {
 
 void ReadJSONfile(string fname) {
     std::ifstream config_file(fname);
+    if (!config_file.is_open()) {
+      std::cerr << "Failed to open config file " << fname << std::endl;
+      exit(1);
+    }
     Json::Value json_config;
     Json::Reader reader;
     reader.parse(config_file, json_config);
