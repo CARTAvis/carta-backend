@@ -140,6 +140,7 @@ public:
         _exit_after_num_seconds = secs;
         _exit_when_all_sessions_closed = true;
     }
+    static void SetInitExitTimeout(int secs);
 
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
