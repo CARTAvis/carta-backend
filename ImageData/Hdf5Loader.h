@@ -312,7 +312,7 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
     int num_y = mask->shape()(0);
     int num_x = mask->shape()(1);
     int num_z = _num_channels;
-    
+
     // Using the normal dataset may be faster if the region is wider than it is deep.
     // This is an initial estimate; we need to examine casacore's algorithm in more detail.
     if (num_y * num_z < num_x) {

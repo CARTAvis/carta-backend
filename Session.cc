@@ -17,6 +17,7 @@
 #include "EventHeader.h"
 #include "FileInfoLoader.h"
 #include "InterfaceConstants.h"
+#include "OnMessageTask.h"
 #include "Util.h"
 
 #define DEBUG(_DB_TEXT_) \
@@ -244,8 +245,14 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
         ResetFileInfo(); // clean up
     } else {
         // Set hdu if empty
-        if (hdu.empty()) // use first
+        if (hdu.empty()) { // use first
             hdu = _selected_file_info->hdu_list(0);
+        } else {
+            size_t description_start = hdu.find(" "); // strip ExtName
+            if (description_start != std::string::npos) {
+                hdu = hdu.substr(0, description_start);
+            }
+        }
         // form path with filename
         casacore::Path root_path(_root_folder);
         root_path.append(directory);
@@ -715,6 +722,7 @@ void Session::CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fi
 bool Session::SendRasterImageData(int file_id, bool send_histogram) {
     // return true if data sent
     bool data_sent(false);
+
     if (_frames.count(file_id)) {
         try {
             CARTA::RasterImageData raster_data;
@@ -927,7 +935,6 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
     CARTA::AnimationFrame curr_frame;
 
     if (stopped) {
-        _animation_object->_stop_called = false;
         if (((_animation_object->_stop_frame.channel() == _animation_object->_current_frame.channel()) &&
                 (_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
             return;
@@ -950,7 +957,9 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
             bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
 
             _animation_object->_current_frame = curr_frame;
-            if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
+
+            if (_frames.at(file_id)->SetImageChannels(
+                    channel, stokes, _animation_object->_compression_type, _animation_object->_compression_quality, err_message)) {
                 // RESPONSE: updated image raster/histogram
                 SendRasterImageData(file_id, true); // true = send histogram
                 // RESPONSE: region data (includes image, cursor, and set regions)
@@ -1063,32 +1072,38 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     _animation_object->_stop_called = true;
 }
 
-void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
+int Session::calcuteAnimationFlowWindow() {
     int gap;
 
     if (_animation_object->_going_forward) {
         if (_animation_object->_delta_frame.channel()) {
-            gap = _animation_object->_current_frame.channel() - (message.received_frame()).channel();
+            gap = _animation_object->_current_frame.channel() - (_animation_object->_last_flow_frame).channel();
         } else {
-            gap = _animation_object->_current_frame.stokes() - (message.received_frame()).channel();
+            gap = _animation_object->_current_frame.stokes() - (_animation_object->_last_flow_frame).stokes();
         }
     } else { // going in reverse.
         if (_animation_object->_delta_frame.channel()) {
-            gap = (message.received_frame()).stokes() - _animation_object->_current_frame.channel();
+            gap = (_animation_object->_last_flow_frame).channel() - _animation_object->_current_frame.channel();
         } else {
-            gap = (message.received_frame()).stokes() - _animation_object->_delta_frame.stokes();
+            gap = (_animation_object->_last_flow_frame).stokes() - _animation_object->_delta_frame.stokes();
         }
     }
 
+    return gap;
+}
+
+void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message) {
+    int gap;
+
+    _animation_object->_last_flow_frame = message.received_frame();
+
+    gap = calcuteAnimationFlowWindow();
+
     if (_animation_object->_waiting_flow_event) {
-        if (gap <= 2 * CARTA::AnimationFlowWindowSize) {
+        if (gap <= currentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
-            tbb::task::enqueue(*(_animation_object->_waiting_task));
-        }
-    } else {
-        // Check if we should pause and wait for next flow message.
-        if (gap > 2 * CARTA::AnimationFlowWindowSize) {
-            _animation_object->_waiting_flow_event = true;
+            OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
+            tbb::task::enqueue(*tsk);
         }
     }
 }
@@ -1119,5 +1134,15 @@ void Session::DeleteFrame(int file_id) {
         _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
+    }
+}
+
+void Session::AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id) {
+    if (!animationRunning()) {
+        _file_settings.AddViewSetting(message, request_id);
+    } else if (_frames.count(message.file_id()) && _animation_object) {
+        _frames.at(message.file_id())
+            ->SetImageView(message.image_bounds(), message.mip(), _animation_object->_compression_type,
+                _animation_object->_compression_quality, message.num_subsets());
     }
 }

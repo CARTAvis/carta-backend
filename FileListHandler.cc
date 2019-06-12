@@ -24,13 +24,15 @@ void FileListHandler::OnFileListRequest(
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == _filelist_folder) {
         return;
-    } else {
-        _filelist_folder = folder;
     }
 
+    _filelist_folder = folder;
+
     // resolve empty folder string or current dir "."
-    if (folder.empty() || folder.compare(".") == 0)
+    if (folder.empty() || folder.compare(".") == 0) {
         folder = _root_folder;
+    }
+
     // resolve $BASE keyword in folder string
     if (folder.find("$BASE") != std::string::npos) {
         casacore::String folder_string(folder);
@@ -55,8 +57,9 @@ void FileListHandler::GetRelativePath(std::string& folder) {
         if (folder.front() == '/')
             folder.replace(0, 1, ""); // remove leading '/'
     }
-    if (folder.empty())
+    if (folder.empty()) {
         folder = ".";
+    }
 }
 
 void FileListHandler::GetFileList(CARTA::FileListResponse& fileList, string folder, ResultMsg& result_msg) {
@@ -165,28 +168,28 @@ bool FileListHandler::CheckPermissionForDirectory(std::string prefix) {
             return CheckPermissionForEntry("/");
         }
         return false;
-    } else {
-        // trim trailing and leading slash
-        if (prefix[prefix.length() - 1] == '/') {
-            prefix = prefix.substr(0, prefix.length() - 1);
-        }
-        if (prefix[0] == '/') {
-            prefix = prefix.substr(1);
-        }
-        while (prefix.length() > 0) {
-            if (_permissions_map.count(prefix)) {
-                return CheckPermissionForEntry(prefix);
-            }
-            auto last_slash = prefix.find_last_of('/');
-
-            if (last_slash == string::npos) {
-                return false;
-            } else {
-                prefix = prefix.substr(0, last_slash);
-            }
-        }
-        return false;
     }
+
+    // trim trailing and leading slash
+    if (prefix[prefix.length() - 1] == '/') {
+        prefix = prefix.substr(0, prefix.length() - 1);
+    }
+    if (prefix[0] == '/') {
+        prefix = prefix.substr(1);
+    }
+    while (prefix.length() > 0) {
+        if (_permissions_map.count(prefix)) {
+            return CheckPermissionForEntry(prefix);
+        }
+
+        auto last_slash = prefix.find_last_of('/');
+        if (last_slash == string::npos) {
+            return false;
+        }
+
+        prefix = prefix.substr(0, last_slash);
+    }
+    return false;
 }
 
 bool FileListHandler::CheckPermissionForEntry(const string& entry) {
