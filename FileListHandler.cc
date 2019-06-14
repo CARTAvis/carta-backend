@@ -6,81 +6,81 @@
 #include "FileInfoLoader.h"
 
 // Default constructor
-FileListHandler::FileListHandler(
-    std::unordered_map<std::string, std::vector<std::string>>& permissionsMap, bool enforcePermissions, std::string root, std::string base)
-    : permissionsMap(permissionsMap),
-      permissionsEnabled(enforcePermissions),
-      rootFolder(root),
-      baseFolder(base),
-      filelistFolder("nofolder") {}
+FileListHandler::FileListHandler(std::unordered_map<std::string, std::vector<std::string>>& permissions_map, bool enforce_permissions,
+    const std::string& root, const std::string& base)
+    : _permissions_map(permissions_map),
+      _permissions_enabled(enforce_permissions),
+      _root_folder(root),
+      _base_folder(base),
+      _filelist_folder("nofolder") {}
 
-FileListHandler::~FileListHandler() {}
-
-void FileListHandler::onFileListRequest(std::string api_key, const CARTA::FileListRequest& request, uint32_t requestId,
-    CARTA::FileListResponse& response, ResultMsg& resultMsg) {
+void FileListHandler::OnFileListRequest(
+    std::string api_key, const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg) {
     // use tbb scoped lock so that it only processes the file list a time for one user
-    tbb::mutex::scoped_lock lock(fileListMutex);
-    apiKey = api_key; // different users may have different api keys, so it is necessary to lock this variable setting to avoid using the
-                      // wrong key
+    tbb::mutex::scoped_lock lock(_file_list_mutex);
+    _api_key = api_key; // different users may have different api keys, so it is necessary to lock this variable setting to avoid using the
+                        // wrong key
     string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
-    if (folder == filelistFolder) {
+    if (folder == _filelist_folder) {
         return;
-    } else {
-        filelistFolder = folder;
     }
+
+    _filelist_folder = folder;
 
     // resolve empty folder string or current dir "."
-    if (folder.empty() || folder.compare(".") == 0)
-        folder = rootFolder;
+    if (folder.empty() || folder.compare(".") == 0) {
+        folder = _root_folder;
+    }
+
     // resolve $BASE keyword in folder string
     if (folder.find("$BASE") != std::string::npos) {
-        casacore::String folderString(folder);
-        folderString.gsub("$BASE", baseFolder);
-        folder = folderString;
+        casacore::String folder_string(folder);
+        folder_string.gsub("$BASE", _base_folder);
+        folder = folder_string;
     }
-    // strip rootFolder from folder
-    getRelativePath(folder);
+    // strip root_folder from folder
+    GetRelativePath(folder);
 
     // get file list response and result message if any
-    getFileList(response, folder, resultMsg);
+    GetFileList(response, folder, result_msg);
 
-    filelistFolder = "nofolder"; // ready for next file list request
+    _filelist_folder = "nofolder"; // ready for next file list request
 }
 
-void FileListHandler::getRelativePath(std::string& folder) {
+void FileListHandler::GetRelativePath(std::string& folder) {
     // Remove root folder path from given folder string
     if (folder.find("./") == 0) {
         folder.replace(0, 2, ""); // remove leading "./"
-    } else if (folder.find(rootFolder) == 0) {
-        folder.replace(0, rootFolder.length(), ""); // remove root folder path
+    } else if (folder.find(_root_folder) == 0) {
+        folder.replace(0, _root_folder.length(), ""); // remove root folder path
         if (folder.front() == '/')
             folder.replace(0, 1, ""); // remove leading '/'
     }
-    if (folder.empty())
+    if (folder.empty()) {
         folder = ".";
+    }
 }
 
-void FileListHandler::getFileList(CARTA::FileListResponse& fileList, string folder, ResultMsg& resultMsg) {
+void FileListHandler::GetFileList(CARTA::FileListResponse& fileList, string folder, ResultMsg& result_msg) {
     // fill FileListResponse
-    std::string requestedFolder = ((folder.compare(".") == 0) ? rootFolder : folder);
-    casacore::Path requestedPath(rootFolder);
-    if (requestedFolder == rootFolder) {
+    std::string requested_folder = ((folder.compare(".") == 0) ? _root_folder : folder);
+    casacore::Path requested_path(_root_folder);
+    if (requested_folder == _root_folder) {
         // set directory in response; parent is null
         fileList.set_directory(".");
     } else { // append folder to root folder
-        casacore::Path requestedPath(rootFolder);
-        requestedPath.append(folder);
+        requested_path.append(folder);
         // set directory and parent in response
-        std::string parentDir(requestedPath.dirName());
-        getRelativePath(parentDir);
+        std::string parent_dir(requested_path.dirName());
+        GetRelativePath(parent_dir);
         fileList.set_directory(folder);
-        fileList.set_parent(parentDir);
+        fileList.set_parent(parent_dir);
         try {
-            requestedFolder = requestedPath.resolvedName();
+            requested_folder = requested_path.resolvedName();
         } catch (casacore::AipsError& err) {
             try {
-                requestedFolder = requestedPath.absoluteName();
+                requested_folder = requested_path.absoluteName();
             } catch (casacore::AipsError& err) {
                 fileList.set_success(false);
                 fileList.set_message("Cannot resolve directory path.");
@@ -88,52 +88,52 @@ void FileListHandler::getFileList(CARTA::FileListResponse& fileList, string fold
             }
         }
     }
-    casacore::File folderPath(requestedFolder);
+    casacore::File folder_path(requested_folder);
     string message;
 
     try {
-        if (folderPath.exists() && folderPath.isDirectory() && checkPermissionForDirectory(folder)) {
+        if (folder_path.exists() && folder_path.isDirectory() && CheckPermissionForDirectory(folder)) {
             // Iterate through directory to generate file list
-            casacore::Directory startDir(folderPath);
-            casacore::DirectoryIterator dirIter(startDir);
-            while (!dirIter.pastEnd()) {
-                casacore::File ccfile(dirIter.file());            // directory is also a File
-                casacore::String name(ccfile.path().baseName());  // in case it is a link
-                if (ccfile.exists() && name.firstchar() != '.') { // ignore hidden files/folders
-                    casacore::String fullpath(ccfile.path().absoluteName());
+            casacore::Directory start_dir(folder_path);
+            casacore::DirectoryIterator dir_iter(start_dir);
+            while (!dir_iter.pastEnd()) {
+                casacore::File cc_file(dir_iter.file());           // directory is also a File
+                casacore::String name(cc_file.path().baseName());  // in case it is a link
+                if (cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
+                    casacore::String fullpath(cc_file.path().absoluteName());
                     try {
-                        bool addImage(false);
-                        if (ccfile.isDirectory(true) && ccfile.isExecutable() && ccfile.isReadable()) {
-                            casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
-                            if ((imType == casacore::ImageOpener::AIPSPP) || (imType == casacore::ImageOpener::MIRIAD))
-                                addImage = true;
-                            else if (imType == casacore::ImageOpener::UNKNOWN) {
+                        bool add_image(false);
+                        if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
+                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(fullpath);
+                            if ((image_type == casacore::ImageOpener::AIPSPP) || (image_type == casacore::ImageOpener::MIRIAD))
+                                add_image = true;
+                            else if (image_type == casacore::ImageOpener::UNKNOWN) {
                                 // Check if it is a directory and the user has permission to access it
-                                casacore::String dirname(ccfile.path().baseName());
-                                string pathNameRelative = (folder.length() && folder != "/") ? folder + "/" + string(dirname) : dirname;
-                                if (checkPermissionForDirectory(pathNameRelative))
-                                    fileList.add_subdirectories(dirname);
+                                casacore::String dir_name(cc_file.path().baseName());
+                                string path_name_relative = (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
+                                if (CheckPermissionForDirectory(path_name_relative))
+                                    fileList.add_subdirectories(dir_name);
                             } else {
-                                std::string imageTypeMsg =
-                                    fmt::format("{}: image type {} not supported", ccfile.path().baseName(), getType(imType));
-                                resultMsg = {imageTypeMsg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                                std::string image_type_msg =
+                                    fmt::format("{}: image type {} not supported", cc_file.path().baseName(), GetType(image_type));
+                                result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                             }
-                        } else if (ccfile.isRegular(true) && ccfile.isReadable()) {
-                            casacore::ImageOpener::ImageTypes imType = casacore::ImageOpener::imageType(fullpath);
-                            if ((imType == casacore::ImageOpener::FITS) || (imType == casacore::ImageOpener::HDF5))
-                                addImage = true;
+                        } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
+                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(fullpath);
+                            if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5))
+                                add_image = true;
                         }
 
-                        if (addImage) { // add image to file list
-                            auto fileInfo = fileList.add_files();
-                            fileInfo->set_name(name);
-                            bool ok = fillFileInfo(fileInfo, fullpath);
+                        if (add_image) { // add image to file list
+                            auto file_info = fileList.add_files();
+                            file_info->set_name(name);
+                            FillFileInfo(file_info, fullpath);
                         }
                     } catch (casacore::AipsError& err) { // RegularFileIO error
                         // skip it
                     }
                 }
-                dirIter++;
+                dir_iter++;
             }
         } else {
             fileList.set_success(false);
@@ -141,7 +141,7 @@ void FileListHandler::getFileList(CARTA::FileListResponse& fileList, string fold
             return;
         }
     } catch (casacore::AipsError& err) {
-        resultMsg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};
+        result_msg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};
         fileList.set_success(false);
         fileList.set_message(err.getMesg());
         return;
@@ -152,9 +152,9 @@ void FileListHandler::getFileList(CARTA::FileListResponse& fileList, string fold
 // Checks whether the user's API key is valid for a particular directory.
 // This function is called recursively, starting with the requested directory, and then working
 // its way up parent directories until it finds a matching directory in the permissions map.
-bool FileListHandler::checkPermissionForDirectory(std::string prefix) {
+bool FileListHandler::CheckPermissionForDirectory(std::string prefix) {
     // skip permissions map if we're not running with permissions enabled
-    if (!permissionsEnabled) {
+    if (!_permissions_enabled) {
         return true;
     }
 
@@ -164,76 +164,76 @@ bool FileListHandler::checkPermissionForDirectory(std::string prefix) {
     }
     // Check for root folder permissions
     if (!prefix.length() || prefix == "/") {
-        if (permissionsMap.count("/")) {
-            return checkPermissionForEntry("/");
-        }
-        return false;
-    } else {
-        // trim trailing and leading slash
-        if (prefix[prefix.length() - 1] == '/') {
-            prefix = prefix.substr(0, prefix.length() - 1);
-        }
-        if (prefix[0] == '/') {
-            prefix = prefix.substr(1);
-        }
-        while (prefix.length() > 0) {
-            if (permissionsMap.count(prefix)) {
-                return checkPermissionForEntry(prefix);
-            }
-            auto lastSlash = prefix.find_last_of('/');
-
-            if (lastSlash == string::npos) {
-                return false;
-            } else {
-                prefix = prefix.substr(0, lastSlash);
-            }
+        if (_permissions_map.count("/")) {
+            return CheckPermissionForEntry("/");
         }
         return false;
     }
+
+    // trim trailing and leading slash
+    if (prefix[prefix.length() - 1] == '/') {
+        prefix = prefix.substr(0, prefix.length() - 1);
+    }
+    if (prefix[0] == '/') {
+        prefix = prefix.substr(1);
+    }
+    while (prefix.length() > 0) {
+        if (_permissions_map.count(prefix)) {
+            return CheckPermissionForEntry(prefix);
+        }
+
+        auto last_slash = prefix.find_last_of('/');
+        if (last_slash == string::npos) {
+            return false;
+        }
+
+        prefix = prefix.substr(0, last_slash);
+    }
+    return false;
 }
 
-bool FileListHandler::checkPermissionForEntry(string entry) {
+bool FileListHandler::CheckPermissionForEntry(const string& entry) {
     // skip permissions map if we're not running with permissions enabled
-    if (!permissionsEnabled) {
+    if (!_permissions_enabled) {
         return true;
     }
-    if (!permissionsMap.count(entry)) {
+    if (!_permissions_map.count(entry)) {
         return false;
     }
-    auto& keys = permissionsMap[entry];
-    return (find(keys.begin(), keys.end(), "*") != keys.end()) || (find(keys.begin(), keys.end(), apiKey) != keys.end());
+    auto& keys = _permissions_map[entry];
+    return (find(keys.begin(), keys.end(), "*") != keys.end()) || (find(keys.begin(), keys.end(), _api_key) != keys.end());
 }
 
-std::string FileListHandler::getType(casacore::ImageOpener::ImageTypes type) { // convert enum to string
-    std::string typeStr;
+std::string FileListHandler::GetType(casacore::ImageOpener::ImageTypes type) { // convert enum to string
+    std::string type_str;
     switch (type) {
         case casacore::ImageOpener::GIPSY:
-            typeStr = "Gipsy";
+            type_str = "Gipsy";
             break;
         case casacore::ImageOpener::CAIPS:
-            typeStr = "Classic AIPS";
+            type_str = "Classic AIPS";
             break;
         case casacore::ImageOpener::NEWSTAR:
-            typeStr = "Newstar";
+            type_str = "Newstar";
             break;
         case casacore::ImageOpener::IMAGECONCAT:
-            typeStr = "ImageConcat";
+            type_str = "ImageConcat";
             break;
         case casacore::ImageOpener::IMAGEEXPR:
-            typeStr = "ImageExpr";
+            type_str = "ImageExpr";
             break;
         case casacore::ImageOpener::COMPLISTIMAGE:
-            typeStr = "ComponentListImage";
+            type_str = "ComponentListImage";
             break;
         default:
-            typeStr = "Unknown";
+            type_str = "Unknown";
             break;
     }
-    return typeStr;
+    return type_str;
 }
 
-bool FileListHandler::fillFileInfo(CARTA::FileInfo* fileInfo, const string& filename) {
+bool FileListHandler::FillFileInfo(CARTA::FileInfo* file_info, const string& filename) {
     // fill FileInfo submessage
-    FileInfoLoader infoLoader(filename);
-    return infoLoader.fillFileInfo(fileInfo);
+    FileInfoLoader info_loader(filename);
+    return info_loader.FillFileInfo(file_info);
 }
