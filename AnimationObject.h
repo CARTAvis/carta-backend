@@ -3,9 +3,15 @@
 
 #include <tbb/task.h>
 #include <chrono>
+#include <iostream>
 
 #include <carta-protobuf/animation.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
+
+namespace CARTA {
+const int AnimationFlowWindowConstant = 5;
+const int AnimationFlowWindowScaler = 2;
+} // namespace CARTA
 
 class AnimationObject {
     friend class Session;
@@ -18,6 +24,7 @@ class AnimationObject {
     CARTA::AnimationFrame _current_frame;
     CARTA::AnimationFrame _next_frame;
     CARTA::AnimationFrame _stop_frame;
+    CARTA::AnimationFrame _last_flow_frame;
     int _frame_rate;
     std::chrono::microseconds _frame_interval;
     std::chrono::time_point<std::chrono::high_resolution_clock> _t_start;
@@ -32,7 +39,6 @@ class AnimationObject {
     int _wait_duration_ms;
     volatile int _file_open;
     volatile bool _waiting_flow_event;
-    tbb::task* _waiting_task;
     tbb::task_group_context _tbb_context;
 
 public:
@@ -58,21 +64,15 @@ public:
         _stop_called = false;
         _file_open = true;
         _waiting_flow_event = false;
-        _waiting_task = nullptr;
+        _last_flow_frame = start_frame;
+        _stop_frame = start_frame;
     }
-    tbb::task* waiting_task_ptr() {
-        return _waiting_task;
-    }
-    void set_waiting_task_ptr(tbb::task* tsk) {
-        _waiting_task = tsk;
+    int currentFlowWindowSize() {
+        return (CARTA::AnimationFlowWindowConstant * CARTA::AnimationFlowWindowScaler * _frame_rate);
     }
     void cancel_execution() {
         _tbb_context.cancel_group_execution();
     }
 };
-
-namespace CARTA {
-const int AnimationFlowWindowSize = 5;
-}
 
 #endif // CARTA_BACKEND__ANIMATIONOBJECT_H_

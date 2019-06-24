@@ -276,8 +276,12 @@ void Frame::SetViewSettings(
     _view_settings = settings;
 }
 
-bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& message) {
+bool Frame::SetImageChannels_inner(
+    int new_channel, int new_stokes, CARTA::CompressionType comp_type, float comp_quality, std::string& message) {
     bool updated(false);
+
+    _view_settings.compression_type = comp_type;
+    _view_settings.quality = comp_quality;
     if (!_valid || (_regions.count(IMAGE_REGION_ID) == 0)) {
         message = "No file loaded";
     } else {
@@ -902,11 +906,16 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                         region->FillSpectralProfileData(profile_data, i, spectral_data);
                     }
                 } else { // statistics
-                    casacore::SubImage<float> sub_image;
-                    std::unique_lock<std::mutex> guard(_image_mutex);
-                    GetRegionSubImage(region_id, sub_image, profile_stokes);
-                    region->FillSpectralProfileData(profile_data, i, sub_image);
-                    guard.unlock();
+                    auto stats_values = _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin());
+                    if (stats_values) {
+                        region->FillSpectralProfileData(profile_data, i, *stats_values);
+                    } else {
+                        casacore::SubImage<float> sub_image;
+                        std::unique_lock<std::mutex> guard(_image_mutex);
+                        GetRegionSubImage(region_id, sub_image, profile_stokes);
+                        region->FillSpectralProfileData(profile_data, i, sub_image);
+                        guard.unlock();
+                    }
                 }
             }
         }
