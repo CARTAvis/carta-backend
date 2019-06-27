@@ -24,6 +24,19 @@ struct ImageStats {
     bool valid;
 };
 
+struct RegionStatsId {
+    int region_id;
+    int stokes;
+
+    RegionStatsId() {}
+
+    RegionStatsId(int region_id, int stokes) : region_id(region_id), stokes(stokes) {}
+
+    bool operator<(const RegionStatsId& rhs) const {
+        return (region_id < rhs.region_id) || ((region_id == rhs.region_id) && (stokes < rhs.stokes));
+    }
+};
+
 struct RegionSpectralStats {
     casacore::IPosition origin;
     casacore::IPosition shape;
