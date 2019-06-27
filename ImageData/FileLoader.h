@@ -50,7 +50,7 @@ struct RegionSpectralStats {
             CARTA::StatsType::Max};
 
         for (auto& s : supported_stats) {
-            stats.emplace(s, num_channels);
+            stats.emplace(std::piecewise_construct, std::make_tuple(s), std::make_tuple(num_channels));
         }
     }
 
