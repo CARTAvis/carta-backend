@@ -119,10 +119,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::SET_IMAGE_VIEW: {
                     CARTA::SetImageView message;
                     message.ParseFromArray(event_buf, event_length);
-                    session->AddViewSetting(message, head.request_id);
-
-                    if (!session->animationRunning())
-                        tsk = new (tbb::task::allocate_root(session->context())) SetImageViewTask(session, message.file_id());
+                    session->OnSetImageView(message);
                     break;
                 }
                 case CARTA::EventType::SET_CURSOR: {
@@ -156,7 +153,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::START_ANIMATION: {
                     CARTA::StartAnimation message;
                     message.ParseFromArray(event_buf, event_length);
-                    session->cancelExistingAnimation();
+                    session->CancelExistingAnimation();
                     session->BuildAnimationObject(message, head.request_id);
                     tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     break;

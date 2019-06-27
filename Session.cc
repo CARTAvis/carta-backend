@@ -312,23 +312,10 @@ void Session::OnCloseFile(const CARTA::CloseFile& message) {
 }
 
 void Session::OnSetImageView(const CARTA::SetImageView& message) {
-    auto file_id = message.file_id();
-    if (_frames.count(file_id)) {
-        try {
-            if (_frames.at(file_id)->SetImageView(message.image_bounds(), message.mip(), message.compression_type(),
-                    message.compression_quality(), message.num_subsets())) {
-                SendRasterImageData(file_id, _new_frame); // send histogram only if new frame
-                _new_frame = false;
-            } else {
-                SendLogEvent("Image view not processed", {"view"}, CARTA::ErrorSeverity::DEBUG);
-            }
-        } catch (std::out_of_range& range_error) {
-            std::string error = fmt::format("File id {} closed", file_id);
-            SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
-        }
-    } else {
-        string error = fmt::format("File id {} not found", file_id);
-        SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
+    if (_frames.count(message.file_id())) {
+        _frames.at(message.file_id())
+            ->SetImageView(message.image_bounds(), message.mip(), message.compression_type(),
+                           message.compression_quality(), message.num_subsets());
     }
 }
 
@@ -939,8 +926,6 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     int file_id;
     uint32_t frame_rate;
     bool looping, reverse_at_end, always_wait;
-    CARTA::CompressionType compression_type;
-    float compression_quality;
 
     start_frame = msg.start_frame();
     first_frame = msg.first_frame();
@@ -950,12 +935,12 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     frame_rate = msg.frame_rate();
     looping = msg.looping();
     reverse_at_end = msg.reverse();
-    compression_type = msg.compression_type();
-    compression_quality = msg.compression_quality();
     always_wait = true;
 
+    OnSetImageView(msg.imageview());
+
     _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
-        frame_rate, looping, reverse_at_end, compression_type, compression_quality, always_wait));
+        frame_rate, looping, reverse_at_end, always_wait));
 
     CARTA::StartAnimationAck ack_message;
     ack_message.set_success(true);
@@ -963,7 +948,7 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
 }
 
-void Session::ExecuteAnimationFrame_inner(bool stopped) {
+void Session::ExecuteAnimationFrameInner(bool stopped) {
     CARTA::AnimationFrame curr_frame;
 
     if (stopped) {
@@ -990,8 +975,7 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
 
             _animation_object->_current_frame = curr_frame;
 
-            if (_frames.at(file_id)->SetImageChannels(
-                    channel, stokes, _animation_object->_compression_type, _animation_object->_compression_quality, err_message)) {
+            if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
                 // RESPONSE: updated image raster/histogram
                 SendRasterImageData(file_id, true); // true = send histogram
                 // RESPONSE: region data (includes image, cursor, and set regions)
@@ -1008,8 +992,6 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
     }
-
-    return;
 }
 
 bool Session::ExecuteAnimationFrame() {
@@ -1023,7 +1005,7 @@ bool Session::ExecuteAnimationFrame() {
         return false;
 
     if (_animation_object->_stop_called) {
-        ExecuteAnimationFrame_inner(true);
+        ExecuteAnimationFrameInner(true);
         return false;
     }
 
@@ -1035,12 +1017,12 @@ bool Session::ExecuteAnimationFrame() {
         std::this_thread::sleep_for(wait_duration_ms);
 
         if (_animation_object->_stop_called) {
-            ExecuteAnimationFrame_inner(true);
+            ExecuteAnimationFrameInner(true);
             return false;
         }
 
         curr_frame = _animation_object->_next_frame;
-        ExecuteAnimationFrame_inner(false);
+        ExecuteAnimationFrameInner(false);
 
         CARTA::AnimationFrame tmp_frame;
         CARTA::AnimationFrame delta_frame = _animation_object->_delta_frame;
@@ -1104,7 +1086,7 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     _animation_object->_stop_called = true;
 }
 
-int Session::calcuteAnimationFlowWindow() {
+int Session::CalcuteAnimationFlowWindow() {
     int gap;
 
     if (_animation_object->_going_forward) {
@@ -1129,10 +1111,10 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
 
     _animation_object->_last_flow_frame = message.received_frame();
 
-    gap = calcuteAnimationFlowWindow();
+    gap = CalcuteAnimationFlowWindow();
 
     if (_animation_object->_waiting_flow_event) {
-        if (gap <= currentFlowWindowSize()) {
+        if (gap <= CurrentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
             OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
             tbb::task::enqueue(*tsk);
@@ -1147,19 +1129,9 @@ void Session::CheckCancelAnimationOnFileClose(int file_id) {
     _animation_object->cancel_execution();
 }
 
-void Session::cancelExistingAnimation() {
+void Session::CancelExistingAnimation() {
     if (_animation_object) {
         _animation_object->cancel_execution();
         _animation_object = nullptr;
-    }
-}
-
-void Session::AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id) {
-    if (!animationRunning()) {
-        _file_settings.AddViewSetting(message, request_id);
-    } else if (_frames.count(message.file_id()) && _animation_object) {
-        _frames.at(message.file_id())
-            ->SetImageView(message.image_bounds(), message.mip(), _animation_object->_compression_type,
-                _animation_object->_compression_quality, message.num_subsets());
     }
 }

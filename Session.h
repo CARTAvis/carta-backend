@@ -88,15 +88,14 @@ public:
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
-    void ExecuteAnimationFrame_inner(bool stopped);
+    void ExecuteAnimationFrameInner(bool stopped);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
-    int currentFlowWindowSize() {
+    int CurrentFlowWindowSize() {
         return _animation_object->currentFlowWindowSize();
     }
-    void cancelExistingAnimation();
+    void CancelExistingAnimation();
     void CheckCancelAnimationOnFileClose(int file_id);
-    void AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id);
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _file_settings.AddCursorSetting(message, request_id);
     }
@@ -139,7 +138,7 @@ public:
     bool animationRunning() {
         return ((_animation_object && !_animation_object->_stop_called) ? true : false);
     }
-    int calcuteAnimationFlowWindow();
+    int CalcuteAnimationFlowWindow();
     static void SetExitTimeout(int secs) {
         _exit_after_num_seconds = secs;
         _exit_when_all_sessions_closed = true;

@@ -101,7 +101,7 @@ tbb::task* SetHistogramRequirementsTask::execute() {
 
 tbb::task* AnimationTask::execute() {
     if (_session->ExecuteAnimationFrame()) {
-        if (_session->calcuteAnimationFlowWindow() > _session->currentFlowWindowSize()) {
+        if (_session->CalcuteAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
             _session->setWaitingTask(true);
         } else {
             increment_ref_count();
