@@ -805,7 +805,7 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        have_spectral_data = GetSpectralData(spectral_data, sub_image, 100);
+                        have_spectral_data = GetCursorSpectralData(spectral_data, sub_image, 100);
                         guard.unlock();
                     }
                     if (have_spectral_data) {
@@ -1017,7 +1017,7 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, i
     return result;
 }
 
-bool Frame::GetSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image, int check_per_channels) {
+bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image, int check_per_channels) {
     bool data_ok(false);
     if (check_per_channels == ALL_CHANNELS) {
         check_per_channels = NumChannels();
