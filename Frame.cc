@@ -1019,9 +1019,6 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, i
 
 bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image, int check_per_channels) {
     bool data_ok(false);
-    if (check_per_channels == ALL_CHANNELS) {
-        check_per_channels = NumChannels();
-    }
     casacore::IPosition sub_image_shape = sub_image.shape();
     data.resize(sub_image_shape.product());
     if ((check_per_channels > 0) && (sub_image_shape.size() > 2) && (_spectral_axis >= 0)) { // stoppable spectral profile process
@@ -1029,28 +1026,24 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
             casacore::IPosition start(sub_image_shape.size(), 0);
             casacore::IPosition count(sub_image_shape);
             size_t profile_size = NumChannels(); // profile vector size
-            size_t upper_bound =
-                (profile_size % check_per_channels == 0 ? profile_size / check_per_channels : profile_size / check_per_channels + 1);
             // get cursor's x-y coordinate from subimage
             std::pair<int, int> tmp_xy;
             GetSubImageXy(sub_image, tmp_xy);
             // get profile data section by section with a specific length (i.e., checkPerChannels)
-            for (size_t i = 0; i < upper_bound; ++i) {
+            while (start(_spectral_axis) < profile_size) {
                 // check if cursor's position changed during this loop, if so, stop the profile process
                 if (tmp_xy != _cursor_xy || !_connected) {
                     std::cerr << "Exiting zprofile before complete" << std::endl;
                     return false;
                 }
-
-                // modify the start position for slicer
-                start(_spectral_axis) = i * check_per_channels;
                 // modify the count for slicer
                 count(_spectral_axis) =
-                    (check_per_channels * (i + 1) < profile_size ? check_per_channels : profile_size - i * check_per_channels);
+                    (start(_spectral_axis) + check_per_channels < profile_size ? check_per_channels : profile_size - start(_spectral_axis));
                 casacore::Slicer slicer(start, count);
                 casacore::Array<float> buffer;
                 sub_image.doGetSlice(buffer, slicer);
-                memcpy(&data[i * check_per_channels], buffer.data(), count(_spectral_axis) * sizeof(float));
+                memcpy(&data[start(_spectral_axis)], buffer.data(), count(_spectral_axis) * sizeof(float));
+                start(_spectral_axis) += check_per_channels;
             }
             data_ok = true;
         } catch (casacore::AipsError& err) {
