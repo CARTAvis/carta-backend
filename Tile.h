@@ -33,7 +33,6 @@ struct Tile {
         double total_layers = ceil(log2(max_mip));
         return pow(2.0, total_layers - layer);
     }
-
 };
 
 #endif // CARTA_BACKEND__TILE_H_

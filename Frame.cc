@@ -129,7 +129,7 @@ bool Frame::ChannelsChanged(int channel, int stokes) {
 // Set regions
 
 bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType type, std::vector<CARTA::Point>& points, float rotation,
-                      std::string& message) {
+    std::string& message) {
     // Create or update Region
     bool region_set(false);
 
@@ -496,7 +496,7 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
                     nan_encodings[i] =
                         GetNanEncodingsBlock(image_data, subset_element_start, row_length, subset_row_end - subset_row_start);
                     Compress(image_data, subset_element_start, compression_buffers[i], compressed_sizes[i], row_length,
-                             subset_row_end - subset_row_start, precision);
+                        subset_row_end - subset_row_start, precision);
                 }
             };
             tbb::parallel_for(range, loop);
@@ -504,7 +504,7 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
             // Complete message
             for (auto i = 0; i < num_subsets_setting; i++) {
                 raster_image_data.add_image_data(compression_buffers[i].data(), compressed_sizes[i]);
-                raster_image_data.add_nan_encodings((char*) nan_encodings[i].data(), nan_encodings[i].size() * sizeof(int));
+                raster_image_data.add_nan_encodings((char*)nan_encodings[i].data(), nan_encodings[i].size() * sizeof(int));
             }
             raster_data_ok = true;
         } else {
@@ -593,14 +593,10 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 }
 
 // Tile data
-bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data,
-                               const Tile& tile,
-                               int channel,
-                               int stokes,
-                               CARTA::CompressionType compression_type,
-                               float compression_quality) {
+bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int channel, int stokes,
+    CARTA::CompressionType compression_type, float compression_quality) {
     // Early exit if channel has changed
-    if (ChannelsChanged(channel, stokes)){
+    if (ChannelsChanged(channel, stokes)) {
         return false;
     }
     raster_tile_data.set_channel(channel);
@@ -645,7 +641,6 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data,
 
             return !(ChannelsChanged(channel, stokes));
         }
-
     }
     return false;
 }
@@ -657,9 +652,9 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
     CARTA::ImageBounds bounds;
     // crop to image size
     bounds.set_x_min(std::max(0, tile.x * tile_size_original));
-    bounds.set_x_max(std::min((int) _image_shape(0), (tile.x + 1) * tile_size_original));
+    bounds.set_x_max(std::min((int)_image_shape(0), (tile.x + 1) * tile_size_original));
     bounds.set_y_min(std::max(0, tile.y * tile_size_original));
-    bounds.set_y_max(std::min((int) _image_shape(1), (tile.y + 1) * tile_size_original));
+    bounds.set_y_max(std::min((int)_image_shape(1), (tile.y + 1) * tile_size_original));
 
     const int req_height = bounds.y_max() - bounds.y_min();
     const int req_width = bounds.x_max() - bounds.x_min();

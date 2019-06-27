@@ -107,7 +107,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     message.ParseFromArray(event_buf, event_length);
                     session->ImageChannelLock();
                     if (!session->ImageChannelTaskTestAndSet()) {
-                        tsk = new (tbb::task::allocate_root(session->context()))
+                        tsk = new (tbb::task::allocate_root(session->Context()))
                             SetImageChannelsTask(session, make_pair(message, head.request_id));
                     } else {
                         // has its own queue to keep channels in order during animation
@@ -126,7 +126,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::SetCursor message;
                     message.ParseFromArray(event_buf, event_length);
                     session->AddCursorSetting(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root(session->context())) SetCursorTask(session, message.file_id());
+                    tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
                     break;
                 }
                 case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS: {
@@ -192,7 +192,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     break;
                 }
                 default: {
-                    tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf);
+                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, event_buf);
                 }
             }
 

@@ -103,9 +103,9 @@ void Session::DisconnectCalled() {
         frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
     _base_context.cancel_group_execution();
-    _histo_context.cancel_group_execution();
+    _histogram_context.cancel_group_execution();
     if (_animation_object)
-        _animation_object->cancel_execution();
+        _animation_object->CancelExecution();
 }
 
 // ********************************************************************************
@@ -314,8 +314,8 @@ void Session::OnCloseFile(const CARTA::CloseFile& message) {
 void Session::OnSetImageView(const CARTA::SetImageView& message) {
     if (_frames.count(message.file_id())) {
         _frames.at(message.file_id())
-            ->SetImageView(message.image_bounds(), message.mip(), message.compression_type(),
-                           message.compression_quality(), message.num_subsets());
+            ->SetImageView(
+                message.image_bounds(), message.mip(), message.compression_type(), message.compression_quality(), message.num_subsets());
     }
 }
 
@@ -334,11 +334,9 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
             auto tile = Tile::Decode(encoded_coordinate);
             if (_frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
                 SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
-            }
-            else {
+            } else {
                 fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
             }
-
         });
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -583,7 +581,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
         try {
             if (message.histograms_size() == 0) { // cancel!
                 _histogram_progress = HISTOGRAM_CANCEL;
-                _histo_context.cancel_group_execution();
+                _histogram_context.cancel_group_execution();
                 SendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
                 return data_sent;
             } else {
@@ -637,7 +635,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         cube_max = std::max(cube_max, chan_max);
 
                         // check for cancel
-                        if (_histo_context.is_group_execution_cancelled())
+                        if (_histogram_context.is_group_execution_cancelled())
                             break;
 
                         // check for progress update
@@ -654,11 +652,11 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         }
                     }
                     // save min,max in cube region
-                    if (!_histo_context.is_group_execution_cancelled())
+                    if (!_histogram_context.is_group_execution_cancelled())
                         _frames.at(file_id)->SetRegionMinMax(region_id, channel, stokes, cube_min, cube_max);
 
                     // check cancel and proceed
-                    if (!_histo_context.is_group_execution_cancelled()) {
+                    if (!_histogram_context.is_group_execution_cancelled()) {
                         // send progress message: half done
                         float progress = 0.50;
                         histogram_message.set_progress(progress);
@@ -678,7 +676,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             }
 
                             // check for cancel
-                            if (_histo_context.is_group_execution_cancelled())
+                            if (_histogram_context.is_group_execution_cancelled())
                                 break;
 
                             // check for progress update
@@ -699,7 +697,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                                 t_start = t_end;
                             }
                         }
-                        if (!_histo_context.is_group_execution_cancelled()) {
+                        if (!_histogram_context.is_group_execution_cancelled()) {
                             // send completed cube histogram
                             progress = HISTOGRAM_COMPLETE;
                             CARTA::RegionHistogramData final_histogram_message;
@@ -939,8 +937,8 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
 
     OnSetImageView(msg.imageview());
 
-    _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
-        frame_rate, looping, reverse_at_end, always_wait));
+    _animation_object = std::unique_ptr<AnimationObject>(
+        new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame, frame_rate, looping, reverse_at_end, always_wait));
 
     CARTA::StartAnimationAck ack_message;
     ack_message.set_success(true);
@@ -1086,7 +1084,7 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     _animation_object->_stop_called = true;
 }
 
-int Session::CalcuteAnimationFlowWindow() {
+int Session::CalculateAnimationFlowWindow() {
     int gap;
 
     if (_animation_object->_going_forward) {
@@ -1111,7 +1109,7 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
 
     _animation_object->_last_flow_frame = message.received_frame();
 
-    gap = CalcuteAnimationFlowWindow();
+    gap = CalculateAnimationFlowWindow();
 
     if (_animation_object->_waiting_flow_event) {
         if (gap <= CurrentFlowWindowSize()) {
@@ -1126,12 +1124,12 @@ void Session::CheckCancelAnimationOnFileClose(int file_id) {
     if (!_animation_object)
         return;
     _animation_object->_file_open = false;
-    _animation_object->cancel_execution();
+    _animation_object->CancelExecution();
 }
 
 void Session::CancelExistingAnimation() {
     if (_animation_object) {
-        _animation_object->cancel_execution();
+        _animation_object->CancelExecution();
         _animation_object = nullptr;
     }
 }

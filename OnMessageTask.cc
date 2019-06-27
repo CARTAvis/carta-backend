@@ -101,14 +101,14 @@ tbb::task* SetHistogramRequirementsTask::execute() {
 
 tbb::task* AnimationTask::execute() {
     if (_session->ExecuteAnimationFrame()) {
-        if (_session->CalcuteAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
-            _session->setWaitingTask(true);
+        if (_session->CalculateAnimationFlowWindow() > _session->CurrentFlowWindowSize()) {
+            _session->SetWaitingTask(true);
         } else {
             increment_ref_count();
             recycle_as_safe_continuation();
         }
     } else {
-        if (!_session->waitingFlowEvent()) {
+        if (!_session->WaitingFlowEvent()) {
             _session->CancelAnimation();
         }
     }

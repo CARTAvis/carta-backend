@@ -72,19 +72,19 @@ public:
         OnSetImageChannels(request.first);
     }
     void CancelSetHistRequirements() {
-        _histo_context.cancel_group_execution();
+        _histogram_context.cancel_group_execution();
     }
     void ResetHistContext() {
-        _histo_context.reset();
+        _histogram_context.reset();
     }
     tbb::task_group_context& HistContext() {
-        return _histo_context;
+        return _histogram_context;
     }
     tbb::task_group_context& AnimationContext() {
         return _animation_context;
     }
     void CancelAnimation() {
-        _animation_object->cancel_execution();
+        _animation_object->CancelExecution();
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
@@ -92,7 +92,7 @@ public:
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
     int CurrentFlowWindowSize() {
-        return _animation_object->currentFlowWindowSize();
+        return _animation_object->CurrentFlowWindowSize();
     }
     void CancelExistingAnimation();
     void CheckCancelAnimationOnFileClose(int file_id);
@@ -126,19 +126,19 @@ public:
     static int NumberOfSessions() {
         return _num_sessions;
     }
-    tbb::task_group_context& context() {
+    tbb::task_group_context& Context() {
         return _base_context;
     }
-    void setWaitingTask(bool set_wait) {
+    void SetWaitingTask(bool set_wait) {
         _animation_object->_waiting_flow_event = set_wait;
     }
-    bool waitingFlowEvent() {
+    bool WaitingFlowEvent() {
         return _animation_object->_waiting_flow_event;
     }
-    bool animationRunning() {
-        return ((_animation_object && !_animation_object->_stop_called) ? true : false);
+    bool AnimationRunning() {
+        return _animation_object && !_animation_object->_stop_called;
     }
-    int CalcuteAnimationFlowWindow();
+    int CalculateAnimationFlowWindow();
     static void SetExitTimeout(int secs) {
         _exit_after_num_seconds = secs;
         _exit_when_all_sessions_closed = true;
@@ -209,7 +209,7 @@ private:
     tbb::task_group_context _base_context;
 
     // TBB context to cancel histogram calculations.
-    tbb::task_group_context _histo_context;
+    tbb::task_group_context _histogram_context;
 
     tbb::task_group_context _animation_context;
 

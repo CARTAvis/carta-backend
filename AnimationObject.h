@@ -62,10 +62,10 @@ public:
         _last_flow_frame = start_frame;
         _stop_frame = start_frame;
     }
-    int currentFlowWindowSize() {
+    int CurrentFlowWindowSize() {
         return (CARTA::AnimationFlowWindowConstant * CARTA::AnimationFlowWindowScaler * _frame_rate);
     }
-    void cancel_execution() {
+    void CancelExecution() {
         _tbb_context.cancel_group_execution();
     }
 };
