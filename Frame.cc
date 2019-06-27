@@ -805,7 +805,7 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        have_spectral_data = GetCursorSpectralData(spectral_data, sub_image, 100);
+                        have_spectral_data = GetCursorSpectralData(spectral_data, sub_image);
                         guard.unlock();
                     }
                     if (have_spectral_data) {
@@ -1017,20 +1017,24 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, i
     return result;
 }
 
-bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image, int check_per_channels) {
+bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image) {
     bool data_ok(false);
     casacore::IPosition sub_image_shape = sub_image.shape();
     data.resize(sub_image_shape.product());
-    if ((check_per_channels > 0) && (sub_image_shape.size() > 2) && (_spectral_axis >= 0)) { // stoppable spectral profile process
+    if ((sub_image_shape.size() > 2) && (_spectral_axis >= 0)) { // stoppable spectral profile process
         try {
+            size_t delta_channels = 10; // the increment of channels for each step
+            size_t dt_target = 75; // the target time elapse for each step, in the unit of milliseconds
+            size_t profile_size = NumChannels(); // profile vector size
             casacore::IPosition start(sub_image_shape.size(), 0);
             casacore::IPosition count(sub_image_shape);
-            size_t profile_size = NumChannels(); // profile vector size
             // get cursor's x-y coordinate from subimage
             std::pair<int, int> tmp_xy;
             GetSubImageXy(sub_image, tmp_xy);
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             while (start(_spectral_axis) < profile_size) {
+                // start the timer
+                auto tStart = std::chrono::high_resolution_clock::now();
                 // check if cursor's position changed during this loop, if so, stop the profile process
                 if (tmp_xy != _cursor_xy || !_connected) {
                     std::cerr << "Exiting zprofile before complete" << std::endl;
@@ -1038,12 +1042,23 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
                 }
                 // modify the count for slicer
                 count(_spectral_axis) =
-                    (start(_spectral_axis) + check_per_channels < profile_size ? check_per_channels : profile_size - start(_spectral_axis));
+                    (start(_spectral_axis) + delta_channels < profile_size ? delta_channels : profile_size - start(_spectral_axis));
                 casacore::Slicer slicer(start, count);
                 casacore::Array<float> buffer;
                 sub_image.doGetSlice(buffer, slicer);
                 memcpy(&data[start(_spectral_axis)], buffer.data(), count(_spectral_axis) * sizeof(float));
-                start(_spectral_axis) += check_per_channels;
+                start(_spectral_axis) += count(_spectral_axis);
+                // get the time elapse for this step
+                auto tEnd = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+                // adjust the increment of channels according to the time elapse
+                delta_channels *= dt_target / dt;
+                if (delta_channels < 1) {
+                    delta_channels = 1;
+                }
+                if (delta_channels > profile_size) {
+                    delta_channels = profile_size;
+                }
             }
             data_ok = true;
         } catch (casacore::AipsError& err) {
