@@ -397,7 +397,7 @@ FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int channel)
     return (channel >= 0 ? _channel_stats[current_stokes][channel] : _cube_stats[current_stokes]);
 }
 
-bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) {
+bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) {
     // Must be implemented in subclasses
     return false;
 }

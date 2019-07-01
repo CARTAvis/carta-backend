@@ -18,7 +18,7 @@ public:
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
-    bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) override;
+    bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
     std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) override;
 
@@ -280,17 +280,17 @@ casacore::ArrayBase* Hdf5Loader::GetStatsDataTyped(FileInfo::Data ds) {
     return data;
 }
 
-bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) {
+bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) {
     bool data_ok(false);
     if (HasData(FileInfo::Data::SWIZZLED)) {
         casacore::Slicer slicer;
         if (_num_dims == 4) {
-            slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, _num_channels, 1, 1, 1));
+            slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, _num_channels, count_y, count_x, 1));
         } else if (_num_dims == 3) {
-            slicer = casacore::Slicer(IPos(3, 0, cursor_y, cursor_x), IPos(3, _num_channels, 1, 1));
+            slicer = casacore::Slicer(IPos(3, 0, cursor_y, cursor_x), IPos(3, _num_channels, count_y, count_x));
         }
 
-        data.resize(_num_channels);
+        data.resize(_num_channels * count_y * count_x);
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         try {
             LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
@@ -350,7 +350,7 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
         auto& min = stats[CARTA::StatsType::Min];
         auto& max = stats[CARTA::StatsType::Max];
 
-        std::vector<float> slice_data(num_z * num_y);
+        std::vector<float> slice_data;
 
         // Set initial values of stats which will be incremented (we may have expired region data)
         for (size_t z = 0; z < num_z; z++) {
@@ -364,19 +364,8 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
 
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = 0; x < num_x; x++) {
-            casacore::Slicer slicer;
-            if (_num_dims == 4) {
-                slicer = casacore::Slicer(IPos(4, 0, y_min, x + x_min, stokes), IPos(4, num_z, num_y, 1, 1));
-            } else if (_num_dims == 3) {
-                slicer = casacore::Slicer(IPos(3, 0, y_min, x + x_min), IPos(3, num_z, num_y, 1));
-            }
-
-            casacore::Array<float> tmp(slicer.length(), slice_data.data(), casacore::StorageInitPolicy::SHARE);
-
-            try {
-                LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
-            } catch (casacore::AipsError& err) {
-                std::cerr << "Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: " << err.getMesg() << std::endl;
+            bool have_spectral_data = GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y);
+            if (!have_spectral_data) {
                 return nullptr;
             }
 
