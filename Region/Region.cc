@@ -670,6 +670,18 @@ std::string Region::GetSpectralCoordinate(int profile_index) {
     return _profiler->GetSpectralCoordinate(profile_index);
 }
 
+bool Region::GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image) {
+    // Get SpectralProfile with statistics values according to config stored in RegionProfiler
+    bool have_stats(false);
+    CARTA::SetSpectralRequirements_SpectralConfig config;
+    if (_profiler->GetSpectralConfig(config, profile_index)) {
+        std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
+        // get values from RegionStats
+        have_stats = _stats->CalcStatsValues(stats_values, requested_stats, image);
+    }
+    return have_stats;
+}
+
 void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data) {
     // Fill SpectralProfile with values for point region;
     // This assumes one spectral config with StatsType::Sum
@@ -711,18 +723,7 @@ void Region::FillSpectralProfileData(
     }
 }
 
-bool Region::GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image) {
-    // Get SpectralProfile with statistics values according to config stored in RegionProfiler
-    bool have_stats(false);
-    CARTA::SetSpectralRequirements_SpectralConfig config;
-    if (_profiler->GetSpectralConfig(config, profile_index)) {
-        std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
-        // get values from RegionStats
-        have_stats = _stats->CalcStatsValues(stats_values, requested_stats, image);
-    }
-    return have_stats;
-}
-
+// TODO: This function can be replaced by the upper one and removed in the future.
 void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values) {
     // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
     CARTA::SetSpectralRequirements_SpectralConfig config;
