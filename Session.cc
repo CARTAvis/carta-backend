@@ -170,22 +170,21 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     CARTA::SessionType type(CARTA::SessionType::NEW);
 
     if (icd_version != carta::ICD_VERSION) {
-        fprintf(stderr, "%p : Exiting due to wrong ICD version number. Expected %d, got %d.\n", this, carta::ICD_VERSION, icd_version);
-        exit(1);
-    }
-
-    // check session id
-    if (!session_id) {
+        error = fmt::format("Invalid ICD version number. Expected {}, got {}", carta::ICD_VERSION, icd_version);
+        success = false;
+    } else if (!session_id) {
         session_id = _id;
         success = true;
     } else {
         type = CARTA::SessionType::RESUMED;
         if (session_id != _id) { // invalid session id
-            error = fmt::format("Cannot resume session id {}", session_id);
+            error = fmt::format("Cannot resume session id {}"
+                , session_id);
         } else {
             success = true;
         }
     }
+
     _api_key = message.api_key();
     // response
     CARTA::RegisterViewerAck ack_message;
