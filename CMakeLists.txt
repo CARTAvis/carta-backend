@@ -60,7 +60,8 @@ set(SOURCE_FILES
         OnMessageTask.cc
         FileSettings.cc
         Util.cc
-        FileListHandler.cc)
+        FileListHandler.cc
+        Tile.cc)
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -72,8 +73,13 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Tests
 option(test "Build all tests." OFF)
-if (test)
-    enable_testing()
-    find_package(GTest)
-    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
-endif (test)
+if(test)
+  enable_testing()
+  find_package(GTest)
+  include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+
+  add_executable(testTileEncoding test/TestTileEncoding.cc)
+  target_link_libraries(testTileEncoding gtest gtest_main Threads::Threads fmt)
+
+  add_test(NAME TestTileEncoding COMMAND testTileEncoding)
+endif(test)
