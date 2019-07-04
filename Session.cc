@@ -13,6 +13,7 @@
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/error.pb.h>
+#include <carta-protobuf/raster_tile.pb.h>
 
 #include "EventHeader.h"
 #include "FileInfoLoader.h"
@@ -102,9 +103,9 @@ void Session::DisconnectCalled() {
         frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
     _base_context.cancel_group_execution();
-    _histo_context.cancel_group_execution();
+    _histogram_context.cancel_group_execution();
     if (_animation_object)
-        _animation_object->cancel_execution();
+        _animation_object->CancelExecution();
 }
 
 // ********************************************************************************
@@ -169,22 +170,21 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     CARTA::SessionType type(CARTA::SessionType::NEW);
 
     if (icd_version != carta::ICD_VERSION) {
-        fprintf(stderr, "%p : Exiting due to wrong ICD version number. Expected %d, got %d.\n", this, carta::ICD_VERSION, icd_version);
-        exit(1);
-    }
-
-    // check session id
-    if (!session_id) {
+        error = fmt::format("Invalid ICD version number. Expected {}, got {}", carta::ICD_VERSION, icd_version);
+        success = false;
+    } else if (!session_id) {
         session_id = _id;
         success = true;
     } else {
         type = CARTA::SessionType::RESUMED;
         if (session_id != _id) { // invalid session id
-            error = fmt::format("Cannot resume session id {}", session_id);
+            error = fmt::format("Cannot resume session id {}"
+                , session_id);
         } else {
             success = true;
         }
     }
+
     _api_key = message.api_key();
     // response
     CARTA::RegisterViewerAck ack_message;
@@ -295,6 +295,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     ack.set_success(success);
     ack.set_message(err_message);
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
+    UpdateRegionData(file_id, true, false);
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
@@ -302,20 +303,32 @@ void Session::OnCloseFile(const CARTA::CloseFile& message) {
 }
 
 void Session::OnSetImageView(const CARTA::SetImageView& message) {
+    if (_frames.count(message.file_id())) {
+        _frames.at(message.file_id())
+            ->SetImageView(
+                message.image_bounds(), message.mip(), message.compression_type(), message.compression_quality(), message.num_subsets());
+    }
+}
+
+void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
     auto file_id = message.file_id();
-    if (_frames.count(file_id)) {
-        try {
-            if (_frames.at(file_id)->SetImageView(message.image_bounds(), message.mip(), message.compression_type(),
-                    message.compression_quality(), message.num_subsets())) {
-                SendRasterImageData(file_id, _new_frame); // send histogram only if new frame
-                _new_frame = false;
+    auto channel = _frames.at(file_id)->CurrentChannel();
+    auto stokes = _frames.at(file_id)->CurrentStokes();
+    if (!message.tiles().empty() && _frames.count(file_id)) {
+        size_t n = message.tiles_size();
+        CARTA::CompressionType compression_type = message.compression_type();
+        float compression_quality = message.compression_quality();
+        tbb::parallel_for(size_t(0), n, [&](size_t i) {
+            const auto& encoded_coordinate = message.tiles(i);
+            CARTA::RasterTileData raster_tile_data;
+            raster_tile_data.set_file_id(file_id);
+            auto tile = Tile::Decode(encoded_coordinate);
+            if (_frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
+                SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
             } else {
-                SendLogEvent("Image view not processed", {"view"}, CARTA::ErrorSeverity::DEBUG);
+                fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
             }
-        } catch (std::out_of_range& range_error) {
-            std::string error = fmt::format("File id {} closed", file_id);
-            SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
-        }
+        });
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
@@ -332,13 +345,15 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
             bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
             if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
-                // RESPONSE: updated image raster/histogram
-                SendRasterImageData(file_id, true); // true = send histogram
                 // RESPONSE: region data (includes image, cursor, and set regions)
                 UpdateRegionData(file_id, channel_changed, stokes_changed);
             } else {
                 if (!err_message.empty())
                     SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
+            }
+            // Send any required tiles if they have been requested
+            if (message.has_required_tiles()) {
+                OnAddRequiredTiles(message.required_tiles());
             }
         } catch (std::out_of_range& range_error) {
             string error = fmt::format("File id {} closed", file_id);
@@ -559,7 +574,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
         try {
             if (message.histograms_size() == 0) { // cancel!
                 _histogram_progress = HISTOGRAM_CANCEL;
-                _histo_context.cancel_group_execution();
+                _histogram_context.cancel_group_execution();
                 SendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
                 return data_sent;
             } else {
@@ -613,7 +628,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         cube_max = std::max(cube_max, chan_max);
 
                         // check for cancel
-                        if (_histo_context.is_group_execution_cancelled())
+                        if (_histogram_context.is_group_execution_cancelled())
                             break;
 
                         // check for progress update
@@ -630,11 +645,11 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         }
                     }
                     // save min,max in cube region
-                    if (!_histo_context.is_group_execution_cancelled())
+                    if (!_histogram_context.is_group_execution_cancelled())
                         _frames.at(file_id)->SetRegionMinMax(region_id, channel, stokes, cube_min, cube_max);
 
                     // check cancel and proceed
-                    if (!_histo_context.is_group_execution_cancelled()) {
+                    if (!_histogram_context.is_group_execution_cancelled()) {
                         // send progress message: half done
                         float progress = 0.50;
                         histogram_message.set_progress(progress);
@@ -654,7 +669,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             }
 
                             // check for cancel
-                            if (_histo_context.is_group_execution_cancelled())
+                            if (_histogram_context.is_group_execution_cancelled())
                                 break;
 
                             // check for progress update
@@ -675,7 +690,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                                 t_start = t_end;
                             }
                         }
-                        if (!_histo_context.is_group_execution_cancelled()) {
+                        if (!_histogram_context.is_group_execution_cancelled()) {
                             // send completed cube histogram
                             progress = HISTOGRAM_COMPLETE;
                             CARTA::RegionHistogramData final_histogram_message;
@@ -907,8 +922,6 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     int file_id;
     uint32_t frame_rate;
     bool looping, reverse_at_end, always_wait;
-    CARTA::CompressionType compression_type;
-    float compression_quality;
 
     start_frame = msg.start_frame();
     first_frame = msg.first_frame();
@@ -918,12 +931,12 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     frame_rate = msg.frame_rate();
     looping = msg.looping();
     reverse_at_end = msg.reverse();
-    compression_type = msg.compression_type();
-    compression_quality = msg.compression_quality();
     always_wait = true;
 
-    _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame,
-        frame_rate, looping, reverse_at_end, compression_type, compression_quality, always_wait));
+    OnSetImageView(msg.imageview());
+
+    _animation_object = std::unique_ptr<AnimationObject>(
+        new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame, frame_rate, looping, reverse_at_end, always_wait));
 
     CARTA::StartAnimationAck ack_message;
     ack_message.set_success(true);
@@ -931,7 +944,7 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
 }
 
-void Session::ExecuteAnimationFrame_inner(bool stopped) {
+void Session::ExecuteAnimationFrameInner(bool stopped) {
     CARTA::AnimationFrame curr_frame;
 
     if (stopped) {
@@ -958,8 +971,7 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
 
             _animation_object->_current_frame = curr_frame;
 
-            if (_frames.at(file_id)->SetImageChannels(
-                    channel, stokes, _animation_object->_compression_type, _animation_object->_compression_quality, err_message)) {
+            if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
                 // RESPONSE: updated image raster/histogram
                 SendRasterImageData(file_id, true); // true = send histogram
                 // RESPONSE: region data (includes image, cursor, and set regions)
@@ -976,8 +988,6 @@ void Session::ExecuteAnimationFrame_inner(bool stopped) {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
     }
-
-    return;
 }
 
 bool Session::ExecuteAnimationFrame() {
@@ -991,7 +1001,7 @@ bool Session::ExecuteAnimationFrame() {
         return false;
 
     if (_animation_object->_stop_called) {
-        ExecuteAnimationFrame_inner(true);
+        ExecuteAnimationFrameInner(true);
         return false;
     }
 
@@ -1003,12 +1013,12 @@ bool Session::ExecuteAnimationFrame() {
         std::this_thread::sleep_for(wait_duration_ms);
 
         if (_animation_object->_stop_called) {
-            ExecuteAnimationFrame_inner(true);
+            ExecuteAnimationFrameInner(true);
             return false;
         }
 
         curr_frame = _animation_object->_next_frame;
-        ExecuteAnimationFrame_inner(false);
+        ExecuteAnimationFrameInner(false);
 
         CARTA::AnimationFrame tmp_frame;
         CARTA::AnimationFrame delta_frame = _animation_object->_delta_frame;
@@ -1072,7 +1082,7 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     _animation_object->_stop_called = true;
 }
 
-int Session::calcuteAnimationFlowWindow() {
+int Session::CalculateAnimationFlowWindow() {
     int gap;
 
     if (_animation_object->_going_forward) {
@@ -1097,10 +1107,10 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
 
     _animation_object->_last_flow_frame = message.received_frame();
 
-    gap = calcuteAnimationFlowWindow();
+    gap = CalculateAnimationFlowWindow();
 
     if (_animation_object->_waiting_flow_event) {
-        if (gap <= currentFlowWindowSize()) {
+        if (gap <= CurrentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
             OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
             tbb::task::enqueue(*tsk);
@@ -1112,12 +1122,12 @@ void Session::CheckCancelAnimationOnFileClose(int file_id) {
     if (!_animation_object)
         return;
     _animation_object->_file_open = false;
-    _animation_object->cancel_execution();
+    _animation_object->CancelExecution();
 }
 
-void Session::cancelExistingAnimation() {
+void Session::CancelExistingAnimation() {
     if (_animation_object) {
-        _animation_object->cancel_execution();
+        _animation_object->CancelExecution();
         _animation_object = nullptr;
     }
 }
@@ -1134,15 +1144,5 @@ void Session::DeleteFrame(int file_id) {
         _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
-    }
-}
-
-void Session::AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id) {
-    if (!animationRunning()) {
-        _file_settings.AddViewSetting(message, request_id);
-    } else if (_frames.count(message.file_id()) && _animation_object) {
-        _frames.at(message.file_id())
-            ->SetImageView(message.image_bounds(), message.mip(), _animation_object->_compression_type,
-                _animation_object->_compression_quality, message.num_subsets());
     }
 }

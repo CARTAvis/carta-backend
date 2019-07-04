@@ -16,6 +16,7 @@
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/raster_image.pb.h>
+#include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
@@ -23,6 +24,7 @@
 #include "ImageData/FileLoader.h"
 #include "InterfaceConstants.h"
 #include "Region/Region.h"
+#include "Tile.h"
 
 struct ViewSettings {
     CARTA::ImageBounds image_bounds;
@@ -60,14 +62,7 @@ public:
     // image view, channels
     bool SetImageView(
         const CARTA::ImageBounds& image_bounds, int new_mip, CARTA::CompressionType compression, float quality, int num_subsets);
-    bool SetImageChannels_inner(
-        int new_channel, int new_stokes, CARTA::CompressionType comp_type, float comp_quality, std::string& message);
-    bool SetImageChannels(int new_channel, int new_stokes, std::string& message) {
-        return SetImageChannels_inner(new_channel, new_stokes, _view_settings.compression_type, _view_settings.quality, message);
-    }
-    bool SetImageChannels(int new_channel, int new_stokes, CARTA::CompressionType comp_type, float comp_quality, std::string& message) {
-        return SetImageChannels_inner(new_channel, new_stokes, comp_type, comp_quality, message);
-    }
+    bool SetImageChannels(int new_channel, int new_stokes, std::string& message);
 
     // set requirements
     bool SetRegionHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histograms);
@@ -78,6 +73,8 @@ public:
     // fill data, profiles, stats messages
     // For some messages, only fill if requirements are for current channel/stokes
     bool FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::string& message);
+    bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int channel, int stokes,
+        CARTA::CompressionType compression_type, float compression_quality);
     bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool check_current_stokes = false);
     bool FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& profile_data, bool check_current_stokes = false);
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool check_current_chan = false);
@@ -119,12 +116,15 @@ private:
     bool CheckChannel(int channel);
     bool CheckStokes(int stokes);
 
+    // Check whether channels have changed
+    bool ChannelsChanged(int channel, int stokes);
+
     // Image data
     // save image region data for current channel, stokes
     void SetImageCache();
     // downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
-
+    bool GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height);
     // fill vector for given channel and stokes
     void GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes);
     // get slicer for xy matrix with given channel and stokes
