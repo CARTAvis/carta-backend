@@ -407,3 +407,12 @@ std::map<CARTA::StatsType, std::vector<double>>* FileLoader::GetRegionSpectralDa
     // Must be implemented in subclasses
     return nullptr;
 }
+
+void FileLoader::SetRegionState(int region_id, std::string name, CARTA::RegionType type,
+    std::vector<CARTA::Point> points, float rotation) {
+    // Must be implemented in subclasses
+}
+
+void FileLoader::SetConnectionFlag(bool connected) {
+    // Must be implemented in subclasses
+}

@@ -81,6 +81,7 @@ bool Frame::IsValid() {
 
 void Frame::DisconnectCalled() {
     _connected = false; // set a false flag to interrupt the running jobs
+    _loader->SetConnectionFlag(false); // set a false flag to interrupt the running jobs in loader
     while (_z_profile_count) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     } // wait for the jobs finished
@@ -149,14 +150,16 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
             region_set = true;
         }
     }
-    if (!region_set) {
-        message = fmt::format("Region parameters failed to validate for region id {}", region_id);
-    }
 
-    if (name == "cursor" && type == CARTA::RegionType::POINT) { // set current cursor's x-y coordinate
-        _cursor_xy = std::make_pair(points[0].x(), points[0].y());
-    } else if (region_id > 0 && RegionChanged(region_id)) { // set current region's states
-        _region_states[region_id].UpdateState(name, type, points, rotation);
+    if (region_set) {
+        if (name == "cursor" && type == CARTA::RegionType::POINT) { // update current cursor's x-y coordinate
+            _cursor_xy = std::make_pair(points[0].x(), points[0].y());
+        } else if (region_id > 0 && RegionChanged(region_id)) { // update current region's states
+            _region_states[region_id].UpdateState(name, type, points, rotation);
+            _loader->SetRegionState(region_id, name, type, points, rotation);
+        }
+    } else {
+        message = fmt::format("Region parameters failed to validate for region id {}", region_id);
     }
 
     return region_set;
@@ -902,10 +905,15 @@ bool Frame::FillSpectralProfileData(int region_id, CARTA::SpectralProfileData& p
                     }
                 } else { // statistics
                     std::unique_lock<std::mutex> guard(_image_mutex);
-                    auto stats_values = _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin());
+                    bool use_swizzled_data(CanUseSiwzzledData(region->XyMask()));
                     guard.unlock();
-                    if (stats_values) {
-                        region->FillSpectralProfileData(profile_data, i, *stats_values);
+                    if (use_swizzled_data) {
+                        std::unique_lock<std::mutex> guard(_image_mutex);
+                        auto stats_values = _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin());
+                        guard.unlock();
+                        if (stats_values) {
+                            region->FillSpectralProfileData(profile_data, i, *stats_values);
+                        }
                     } else {
                         std::vector<std::vector<double>> stats_values;
                         std::unique_lock<std::mutex> guard(_image_mutex);
@@ -1238,5 +1246,23 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         }
     }
     stats_values = std::move(results);
+    return true;
+}
+
+bool Frame::CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask) {
+    if (!_loader->HasData(FileInfo::Data::SWIZZLED)) {
+        return false;
+    }
+
+    int num_y = mask->shape()(0);
+    int num_x = mask->shape()(1);
+    int num_z = NumChannels();
+
+    // Using the normal dataset may be faster if the region is wider than it is deep.
+    // This is an initial estimate; we need to examine casacore's algorithm in more detail.
+    if (num_y * num_z < num_x) {
+        return false;
+    }
+
     return true;
 }

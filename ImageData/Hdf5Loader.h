@@ -8,6 +8,7 @@
 #include "CartaHdf5Image.h"
 #include "FileLoader.h"
 #include "Hdf5Attributes.h"
+#include "../Util.h"
 
 namespace carta {
 
@@ -21,6 +22,9 @@ public:
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
     std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) override;
+    void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
+        std::vector<CARTA::Point> points, float rotation) override;
+    void SetConnectionFlag(bool connected) override;
 
 protected:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
@@ -43,6 +47,9 @@ private:
     casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
 
     casacore::Lattice<float>* LoadSwizzledData(FileInfo::Data ds);
+    // current region states
+    std::unordered_map<int, RegionState> _region_states;
+    bool _connected;
 };
 
 Hdf5Loader::Hdf5Loader(const std::string& filename) : _filename(filename), _hdu("0") {}
@@ -51,6 +58,7 @@ void Hdf5Loader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended*
     // Open hdf5 image with specified hdu
     _image = std::unique_ptr<CartaHdf5Image>(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu, info));
     _hdu = hdu;
+    _connected = true;
 
     // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
     _num_dims = _image->shape().size();
@@ -362,8 +370,19 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
             sum_sq[z] = 0;
         }
 
+        RegionState region_state = _region_states[region_id];
+
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = 0; x < num_x; x++) {
+            if (!_connected) {
+                std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+                return nullptr;
+            }
+            if (_region_states.count(region_id) && _region_states[region_id] != region_state) {
+                std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
+                return nullptr;
+            }
+
             bool have_spectral_data = GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y);
             if (!have_spectral_data) {
                 return nullptr;
@@ -423,6 +442,15 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
     }
 
     return &_region_stats[region_stats_id].stats;
+}
+
+void Hdf5Loader::SetRegionState(int region_id, std::string name, CARTA::RegionType type,
+    std::vector<CARTA::Point> points, float rotation) {
+    _region_states[region_id].UpdateState(name, type, points, rotation);
+}
+
+void Hdf5Loader::SetConnectionFlag(bool connected) {
+    _connected = connected;
 }
 
 } // namespace carta

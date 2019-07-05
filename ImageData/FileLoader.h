@@ -140,6 +140,9 @@ public:
     virtual std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
+    virtual void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
+        std::vector<CARTA::Point> points, float rotation);
+    virtual void SetConnectionFlag(bool connected);
 
 protected:
     virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
