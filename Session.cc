@@ -797,14 +797,17 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool check_cur
             if (region_id == CURSOR_REGION_ID && !_frames.at(file_id)->IsCursorSet()) {
                 return data_sent; // do not send profile unless frontend set cursor
             }
-            CARTA::SpectralProfileData spectral_profile_data;
             _frames.at(file_id)->IncreaseZProfileCount();
-            bool profile_ok = _frames.at(file_id)->FillSpectralProfileData(region_id, spectral_profile_data, check_current_stokes);
+            bool profile_ok = _frames.at(file_id)->FillSpectralProfileData(
+                [&] (CARTA::SpectralProfileData profile_data) {
+                    profile_data.set_file_id(file_id);
+                    profile_data.set_region_id(region_id);
+                    // allow to send partial profile data to the frontend
+                    SendFileEvent(file_id, CARTA::EventType::SPECTRAL_PROFILE_DATA, 0, profile_data);
+                },
+                region_id, check_current_stokes);
             _frames.at(file_id)->DecreaseZProfileCount();
             if (profile_ok) {
-                spectral_profile_data.set_file_id(file_id);
-                spectral_profile_data.set_region_id(region_id);
-                SendFileEvent(file_id, CARTA::EventType::SPECTRAL_PROFILE_DATA, 0, spectral_profile_data);
                 data_sent = true;
             }
         } catch (std::out_of_range& range_error) {
