@@ -919,19 +919,17 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     bool use_swizzled_data(_loader->CanUseSiwzzledData(region->XyMask()));
                     guard.unlock();
                     if (use_swizzled_data) {
-                        std::map<CARTA::StatsType, std::vector<double>>* stats_values;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        bool have_spectral_data =
-                            _loader->GetRegionSpectralData(&stats_values, profile_stokes, region_id, region->XyMask(), region->XyOrigin());
+                        _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin(),
+                            [&] (std::map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
+                                CARTA::SpectralProfileData profile_data;
+                                profile_data.set_stokes(curr_stokes);
+                                profile_data.set_progress(progress);
+                                region->FillSpectralProfileData(profile_data, i, *stats_values);
+                                // send result to Session
+                                cb(profile_data);
+                            });
                         guard.unlock();
-                        if (have_spectral_data) {
-                            CARTA::SpectralProfileData profile_data;
-                            profile_data.set_stokes(curr_stokes);
-                            profile_data.set_progress(1.0);
-                            region->FillSpectralProfileData(profile_data, i, *stats_values);
-                            // send result to Session
-                            cb(profile_data);
-                        }
                     } else {
                         std::vector<std::vector<double>> stats_values;
                         std::unique_lock<std::mutex> guard(_image_mutex);

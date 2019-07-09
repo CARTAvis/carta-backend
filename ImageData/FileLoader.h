@@ -139,8 +139,9 @@ public:
     virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y);
     // check if one can apply swizzled data under such image format and region condition
     virtual bool CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask);
-    virtual bool GetRegionSpectralData(std::map<CARTA::StatsType, std::vector<double>>** stats_values,
-        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin);
+    virtual bool GetRegionSpectralData(
+        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
+        std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
     virtual void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
         std::vector<CARTA::Point> points, float rotation);
