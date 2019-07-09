@@ -30,7 +30,7 @@ private:
     std::string _hdu;
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
-    std::map<int, FileInfo::RegionSpectralStats> _region_stats;
+    std::map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats> _region_stats;
 
     std::string DataSetToString(FileInfo::Data ds) const;
 
@@ -320,12 +320,15 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
     }
 
     bool recalculate(false);
+    auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
 
-    if (_region_stats.find(region_id) == _region_stats.end()) { // region stats never calculated
+    if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
         _region_stats.emplace(
-            std::piecewise_construct, std::forward_as_tuple(region_id), std::forward_as_tuple(origin, mask->shape(), num_z));
+            std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask->shape(), num_z));
         recalculate = true;
-    } else if (!_region_stats[region_id].IsValid(origin, mask->shape())) { // region stats expired
+    } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
+        _region_stats[region_stats_id].origin = origin;
+        _region_stats[region_stats_id].shape = mask->shape();
         recalculate = true;
     }
 
@@ -335,7 +338,7 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
         int y_min = origin(1);
         int y_max = y_min + num_y;
 
-        auto& stats = _region_stats[region_id].stats;
+        auto& stats = _region_stats[region_stats_id].stats;
 
         auto& num_pixels = stats[CARTA::StatsType::NumPixels];
         auto& nan_count = stats[CARTA::StatsType::NanCount];
@@ -430,7 +433,7 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
         }
     }
 
-    return &_region_stats[region_id].stats;
+    return &_region_stats[region_stats_id].stats;
 }
 
 } // namespace carta

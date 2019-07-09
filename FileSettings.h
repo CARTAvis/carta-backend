@@ -19,7 +19,6 @@ class FileSettings {
 public:
     FileSettings(Session* session);
 
-    void AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id);
     void AddCursorSetting(const CARTA::SetCursor& message, uint32_t request_id);
     // TODO: change to event type
     bool ExecuteOne(const std::string& event_name, const uint32_t file_id);

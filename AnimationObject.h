@@ -33,8 +33,6 @@ class AnimationObject {
     bool _reverse_at_end;
     bool _going_forward;
     bool _always_wait;
-    CARTA::CompressionType _compression_type;
-    float _compression_quality;
     volatile bool _stop_called;
     int _wait_duration_ms;
     volatile int _file_open;
@@ -43,8 +41,7 @@ class AnimationObject {
 
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
-        CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, CARTA::CompressionType compression_type,
-        float compression_quality, bool always_wait)
+        CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, bool always_wait)
         : _file_id(file_id),
           _start_frame(start_frame),
           _first_frame(first_frame),
@@ -54,8 +51,6 @@ public:
           _reverse_at_end(reverse_at_end),
           _frame_rate(frame_rate),
           _always_wait(always_wait) {
-        _compression_type = compression_type;
-        _compression_quality = compression_quality;
         _current_frame = start_frame;
         _next_frame = start_frame;
         _frame_interval = std::chrono::microseconds(int64_t(1.0e6 / frame_rate));
@@ -67,10 +62,10 @@ public:
         _last_flow_frame = start_frame;
         _stop_frame = start_frame;
     }
-    int currentFlowWindowSize() {
+    int CurrentFlowWindowSize() {
         return (CARTA::AnimationFlowWindowConstant * CARTA::AnimationFlowWindowScaler * _frame_rate);
     }
-    void cancel_execution() {
+    void CancelExecution() {
         _tbb_context.cancel_group_execution();
     }
 };

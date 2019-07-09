@@ -24,6 +24,19 @@ struct ImageStats {
     bool valid;
 };
 
+struct RegionStatsId {
+    int region_id;
+    int stokes;
+
+    RegionStatsId() {}
+
+    RegionStatsId(int region_id, int stokes) : region_id(region_id), stokes(stokes) {}
+
+    bool operator<(const RegionStatsId& rhs) const {
+        return (region_id < rhs.region_id) || ((region_id == rhs.region_id) && (stokes < rhs.stokes));
+    }
+};
+
 struct RegionSpectralStats {
     casacore::IPosition origin;
     casacore::IPosition shape;
@@ -37,7 +50,7 @@ struct RegionSpectralStats {
             CARTA::StatsType::Max};
 
         for (auto& s : supported_stats) {
-            stats.emplace(s, num_channels);
+            stats.emplace(std::piecewise_construct, std::make_tuple(s), std::make_tuple(num_channels));
         }
     }
 
