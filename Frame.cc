@@ -903,13 +903,13 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        have_spectral_data = GetCursorSpectralData(spectral_data, sub_image,
+                        GetCursorSpectralData(spectral_data, sub_image,
                             [&] (std::vector<float> tmp_spectral_data, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
                                 profile_data.set_progress(progress);
                                 region->FillSpectralProfileData(profile_data, i, tmp_spectral_data);
-                                // send partial result to Session
+                                // send (partial) result to Session
                                 cb(profile_data);
                             });
                         guard.unlock();
@@ -933,13 +933,13 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     } else {
                         std::vector<std::vector<double>> stats_values;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        bool have_spectral_data = GetRegionSpectralData(stats_values, region_id, i, profile_stokes,
+                        GetRegionSpectralData(stats_values, region_id, i, profile_stokes,
                             [&] (std::vector<std::vector<double>> results, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
                                 profile_data.set_progress(progress);
                                 region->FillSpectralProfileData(profile_data, i, results);
-                                // send partial result to Session
+                                // send (partial) result to Session
                                 cb(profile_data);
                             });
                         guard.unlock();
@@ -1148,8 +1148,8 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
     data.resize(sub_image_shape.product(), std::numeric_limits<double>::quiet_NaN());
     if ((sub_image_shape.size() > 2) && (_spectral_axis >= 0)) { // stoppable spectral profile process
         try {
-            size_t delta_channels = 10; // the increment of channels for each step
-            size_t dt_target = 50; // the target time elapse for each step, in the unit of milliseconds
+            size_t delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
+            size_t dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
             size_t profile_size = NumChannels(); // profile vector size
             casacore::IPosition start(sub_image_shape.size(), 0);
             casacore::IPosition count(sub_image_shape);
@@ -1207,8 +1207,8 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
 
 bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
     int profile_stokes, std::function<void(std::vector<std::vector<double>>, float)> cb) {
-    int delta_channels = 10; // the increment of channels for each step
-    int dt_target = 50; // the target time elapse for each step, in the unit of milliseconds
+    int delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
+    int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     int profile_size = NumChannels(); // total number of channels
     auto& region = _regions[region_id];
     // get statistical requirements for this process

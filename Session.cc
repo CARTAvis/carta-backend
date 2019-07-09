@@ -802,7 +802,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool check_cur
                 [&] (CARTA::SpectralProfileData profile_data) {
                     profile_data.set_file_id(file_id);
                     profile_data.set_region_id(region_id);
-                    // allow to send partial profile data to the frontend
+                    // send (partial) profile data to the frontend
                     SendFileEvent(file_id, CARTA::EventType::SPECTRAL_PROFILE_DATA, 0, profile_data);
                 },
                 region_id, check_current_stokes);
