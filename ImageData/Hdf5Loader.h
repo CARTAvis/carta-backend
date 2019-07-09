@@ -388,6 +388,12 @@ bool Hdf5Loader::GetRegionSpectralData(
         }
 
         RegionState region_state = _region_states[region_id];
+        std::map<CARTA::StatsType, std::vector<double>>* stats_values;
+        float progress;
+
+        // start the timer
+        auto tStart = std::chrono::high_resolution_clock::now();
+        int time_step = 0;
 
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = 0; x < num_x; x++) {
@@ -430,6 +436,45 @@ bool Hdf5Loader::GetRegionSpectralData(
                     }
                 }
             }
+
+            // get the time elapse for this step
+            auto tEnd = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+
+            // check whether to send partial results to the frontend
+            if (dt > time_step * TARGET_DELTA_TIME) {
+                float mean_sq;
+
+                // Calculate partial stats
+                for (size_t z = 0; z < num_z; z++) {
+                    if (num_pixels[z]) {
+                        mean[z] = sum[z] / num_pixels[z];
+
+                        mean_sq = sum_sq[z] / num_pixels[z];
+                        rms[z] = sqrt(mean_sq);
+                        sigma[z] = sqrt(mean_sq - (mean[z] * mean[z]));
+                    } else {
+                        // if there are no valid values, set all stats to NaN except the value and NaN counts
+                        for (auto& kv : stats) {
+                            switch (kv.first) {
+                                case CARTA::StatsType::NanCount:
+                                case CARTA::StatsType::NumPixels:
+                                    break;
+                                default:
+                                    kv.second[z] = NAN;
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+                time_step++;
+                progress = x / num_x;
+                stats_values = &_region_stats[region_stats_id].stats;
+
+                // send partial result by the callback function
+                cb(stats_values, progress);
+            }
         }
 
         float mean_sq;
@@ -460,8 +505,8 @@ bool Hdf5Loader::GetRegionSpectralData(
 
     std::map<CARTA::StatsType, std::vector<double>>* stats_values =
         &_region_stats[region_stats_id].stats;
-    
-    // send result by the callback function
+
+    // send final result by the callback function
     cb(stats_values, 1.0);
 
     return true;

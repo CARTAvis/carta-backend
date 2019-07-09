@@ -926,7 +926,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                                 profile_data.set_stokes(curr_stokes);
                                 profile_data.set_progress(progress);
                                 region->FillSpectralProfileData(profile_data, i, *stats_values);
-                                // send result to Session
+                                // send (partial) result to Session
                                 cb(profile_data);
                             });
                         guard.unlock();
