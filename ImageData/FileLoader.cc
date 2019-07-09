@@ -107,6 +107,7 @@ bool FileLoader::FindShape(IPos& shape, size_t& num_channels, size_t& num_stokes
     _num_dims = num_dims;
     _num_channels = num_channels;
     _num_stokes = num_stokes;
+    _channel_size = shape(0) * shape(1);
 
     return true;
 }
@@ -147,11 +148,20 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                case FileInfo::Data::STATS_2D_MEAN: {
+                case FileInfo::Data::STATS_2D_SUM: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].mean = *it++;
+                            _channel_stats[s][c].sum = *it++;
+                        }
+                    }
+                    break;
+                }
+                case FileInfo::Data::STATS_2D_SUMSQ: {
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        for (size_t c = 0; c < _num_channels; c++) {
+                            _channel_stats[s][c].sum_sq = *it++;
                         }
                     }
                     break;
@@ -263,10 +273,17 @@ void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                case FileInfo::Data::STATS_3D_MEAN: {
+                case FileInfo::Data::STATS_3D_SUM: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        _cube_stats[s].mean = *it++;
+                        _cube_stats[s].sum = *it++;
+                    }
+                    break;
+                }
+                case FileInfo::Data::STATS_3D_SUMSQ: {
+                    auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
+                    for (size_t s = 0; s < _num_stokes; s++) {
+                        _cube_stats[s].sum_sq = *it++;
                     }
                     break;
                 }
@@ -352,11 +369,19 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
     }
     _cube_stats.resize(_num_stokes);
 
+    // Remove this check when we drop support for the old schema.
+    // We assume that checking for only one of these datasets is sufficient.
+    bool full(HasData(FileInfo::Data::STATS_2D_SUM));
+    float mean_sq;
+
     if (HasData(FileInfo::Data::STATS)) {
         if (HasData(FileInfo::Data::STATS_2D)) {
             LoadStats2DBasic(FileInfo::Data::STATS_2D_MAX);
             LoadStats2DBasic(FileInfo::Data::STATS_2D_MIN);
-            LoadStats2DBasic(FileInfo::Data::STATS_2D_MEAN);
+            if (full) {
+                LoadStats2DBasic(FileInfo::Data::STATS_2D_SUM);
+                LoadStats2DBasic(FileInfo::Data::STATS_2D_SUMSQ);
+            }
             LoadStats2DBasic(FileInfo::Data::STATS_2D_NANS);
 
             LoadStats2DHist();
@@ -368,7 +393,16 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
             // If we loaded all the 2D stats successfully, assume all channel stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
                 for (size_t c = 0; c < _num_channels; c++) {
-                    _channel_stats[s][c].valid = true;
+                    auto& stats = _channel_stats[s][c];
+                    if (full) {
+                        stats.num_pixels = _channel_size - stats.nan_count;
+                        stats.mean = stats.sum / stats.num_pixels;
+                        mean_sq = stats.sum_sq / stats.num_pixels;
+                        stats.sigma = sqrt(mean_sq - (stats.mean * stats.mean));
+                        stats.rms = sqrt(mean_sq);
+                        stats.full = true;
+                    }
+                    stats.valid = true;
                 }
             }
         }
@@ -376,7 +410,10 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
         if (HasData(FileInfo::Data::STATS_3D)) {
             LoadStats3DBasic(FileInfo::Data::STATS_3D_MAX);
             LoadStats3DBasic(FileInfo::Data::STATS_3D_MIN);
-            LoadStats3DBasic(FileInfo::Data::STATS_3D_MEAN);
+            if (full) {
+                LoadStats2DBasic(FileInfo::Data::STATS_3D_SUM);
+                LoadStats2DBasic(FileInfo::Data::STATS_3D_SUMSQ);
+            }
             LoadStats3DBasic(FileInfo::Data::STATS_3D_NANS);
 
             LoadStats3DHist();
@@ -387,7 +424,16 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
 
             // If we loaded all the 3D stats successfully, assume all cube stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
-                _cube_stats[s].valid = true;
+                auto& stats = _cube_stats[s];
+                if (full) {
+                    stats.num_pixels = (_channel_size * _num_channels) - stats.nan_count;
+                    stats.mean = stats.sum / stats.num_pixels;
+                    mean_sq = stats.sum_sq / stats.num_pixels;
+                    stats.sigma = sqrt(mean_sq - (stats.mean * stats.mean));
+                    stats.rms = sqrt(mean_sq);
+                    stats.full = true;
+                }
+                stats.valid = true;
             }
         }
     }
