@@ -189,7 +189,7 @@ jobs:
         - wget http://alma.asiaa.sinica.edu.tw/_downloads/carta-backend-ICD-test-travis.tar.gz
         - tar -xvf carta-backend-ICD-test-travis.tar.gz
         - cd $HOME/package/bin
-        - sed -i '' 's/carta_backend/carta_backend base=$HOME\/carta-backend-ICD-test-travis/g' run.sh
+        - sed -i '' 's/carta_backend/carta_backend base=$HOME\/carta-backend-ICD-test-travis root=$HOME\/carta-backend-ICD-test-travis/g' run.sh
         - ./run.sh & # run carta_backend in the background
         - cd $HOME/carta-backend-ICD-test-travis
         - cd protobuf
