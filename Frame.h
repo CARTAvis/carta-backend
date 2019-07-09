@@ -152,8 +152,6 @@ private:
     // get regional spectral profile (statistics) data
     bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
         int profile_stokes, std::function<void(std::vector<std::vector<double>>, float)> cb);
-    // check if one can apply swizzled data under such image format and region condition
-    bool CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask);
 
     // setup
     uint32_t _session_id;

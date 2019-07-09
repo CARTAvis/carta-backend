@@ -20,6 +20,7 @@ public:
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
+    bool CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask) override;
     std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) override;
     void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
@@ -311,6 +312,24 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return data_ok;
 }
 
+bool Hdf5Loader::CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask) {
+    if (!HasData(FileInfo::Data::SWIZZLED)) {
+        return false;
+    }
+
+    int num_y = mask->shape()(0);
+    int num_x = mask->shape()(1);
+    int num_z = _num_channels;
+
+    // Using the normal dataset may be faster if the region is wider than it is deep.
+    // This is an initial estimate; we need to examine casacore's algorithm in more detail.
+    if (num_y * num_z < num_x) {
+        return false;
+    }
+
+    return true;
+}
+
 std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralData(
     int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
@@ -321,12 +340,6 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
     int num_x = mask->shape()(1);
     int num_z = _num_channels;
 
-    // Using the normal dataset may be faster if the region is wider than it is deep.
-    // This is an initial estimate; we need to examine casacore's algorithm in more detail.
-    if (num_y * num_z < num_x) {
-        return nullptr;
-    }
-
     bool recalculate(false);
     auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
 
@@ -335,6 +348,8 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
             std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask->shape(), num_z));
         recalculate = true;
     } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
+        // TODO: This check "_region_stats[region_stats_id].IsValid(origin, mask->shape())"
+        //       seems not work for the rotation of an ellipse region
         _region_stats[region_stats_id].origin = origin;
         _region_stats[region_stats_id].shape = mask->shape();
         recalculate = true;

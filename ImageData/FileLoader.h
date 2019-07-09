@@ -137,6 +137,8 @@ public:
     // specified HDU/group/table/etc.
     virtual ImageRef LoadData(FileInfo::Data ds) = 0;
     virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y);
+    // check if one can apply swizzled data under such image format and region condition
+    virtual bool CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask);
     virtual std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;

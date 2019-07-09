@@ -916,7 +916,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     }
                 } else { // statistics
                     std::unique_lock<std::mutex> guard(_image_mutex);
-                    bool use_swizzled_data(CanUseSiwzzledData(region->XyMask()));
+                    bool use_swizzled_data(_loader->CanUseSiwzzledData(region->XyMask()));
                     guard.unlock();
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
@@ -1276,23 +1276,5 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         cb(results, progress);
     }
     stats_values = std::move(results);
-    return true;
-}
-
-bool Frame::CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask) {
-    if (!_loader->HasData(FileInfo::Data::SWIZZLED)) {
-        return false;
-    }
-
-    int num_y = mask->shape()(0);
-    int num_x = mask->shape()(1);
-    int num_z = NumChannels();
-
-    // Using the normal dataset may be faster if the region is wider than it is deep.
-    // This is an initial estimate; we need to examine casacore's algorithm in more detail.
-    if (num_y * num_z < num_x) {
-        return false;
-    }
-
     return true;
 }
