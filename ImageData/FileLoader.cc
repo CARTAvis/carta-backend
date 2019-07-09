@@ -407,10 +407,10 @@ bool FileLoader::CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>
     return false;
 }
 
-std::map<CARTA::StatsType, std::vector<double>>* FileLoader::GetRegionSpectralData(
+bool FileLoader::GetRegionSpectralData(std::map<CARTA::StatsType, std::vector<double>>** stats_values,
     int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) {
     // Must be implemented in subclasses
-    return nullptr;
+    return false;
 }
 
 void FileLoader::SetRegionState(int region_id, std::string name, CARTA::RegionType type,

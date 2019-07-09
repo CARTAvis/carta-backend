@@ -21,7 +21,7 @@ public:
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
     bool CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask) override;
-    std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
+    bool GetRegionSpectralData(std::map<CARTA::StatsType, std::vector<double>>** stats_values,
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) override;
     void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
         std::vector<CARTA::Point> points, float rotation) override;
@@ -330,10 +330,10 @@ bool Hdf5Loader::CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>
     return true;
 }
 
-std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralData(
+bool Hdf5Loader::GetRegionSpectralData(std::map<CARTA::StatsType, std::vector<double>>** stats_values,
     int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
-        return nullptr;
+        return false;
     }
 
     int num_y = mask->shape()(0);
@@ -391,16 +391,16 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
         for (size_t x = 0; x < num_x; x++) {
             if (!_connected) {
                 std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
-                return nullptr;
+                return false;
             }
             if (_region_states.count(region_id) && _region_states[region_id] != region_state) {
                 std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
-                return nullptr;
+                return false;
             }
 
             bool have_spectral_data = GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y);
             if (!have_spectral_data) {
-                return nullptr;
+                return false;
             }
 
             for (size_t y = 0; y < num_y; y++) {
@@ -456,7 +456,8 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
         }
     }
 
-    return &_region_stats[region_stats_id].stats;
+    *stats_values = &_region_stats[region_stats_id].stats;
+    return true;
 }
 
 void Hdf5Loader::SetRegionState(int region_id, std::string name, CARTA::RegionType type,
