@@ -83,6 +83,11 @@ jobs:
         - sudo make install
         - cd ../..
 
+        # install jsoncpp
+        - brew install jsoncpp
+        - mkdir /usr/local/include/jsoncpp
+        - ln -s ../../Cellar/jsoncpp/1.8.4/include/json /usr/local/include/jsoncpp/json
+
         # build carta-backend
         - echo "Building carta-backend" 
         - cd $TRAVIS_BUILD_DIR
@@ -190,7 +195,6 @@ jobs:
         - cd protobuf
         - git submodule init
         - git submodule update
-        - git checkout master
         - npm install
         - ./build_proto.sh
         - cd ..
