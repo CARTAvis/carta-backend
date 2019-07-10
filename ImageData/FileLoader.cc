@@ -134,7 +134,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].max_val = *it++;
+                            _channel_stats[s][c].basic_stats[CARTA::StatsType::Max] = *it++;
                         }
                     }
                     break;
@@ -143,7 +143,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].min_val = *it++;
+                            _channel_stats[s][c].basic_stats[CARTA::StatsType::Min] = *it++;
                         }
                     }
                     break;
@@ -152,7 +152,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].sum = *it++;
+                            _channel_stats[s][c].basic_stats[CARTA::StatsType::Sum] = *it++;
                         }
                     }
                     break;
@@ -161,7 +161,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].sum_sq = *it++;
+                            _channel_stats[s][c].basic_stats[CARTA::StatsType::SumSq] = *it++;
                         }
                     }
                     break;
@@ -170,7 +170,7 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
                         for (size_t c = 0; c < _num_channels; c++) {
-                            _channel_stats[s][c].nan_count = *it++;
+                            _channel_stats[s][c].basic_stats[CARTA::StatsType::NanCount] = *it++;
                         }
                     }
                     break;
@@ -262,35 +262,35 @@ void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
                 case FileInfo::Data::STATS_3D_MAX: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        _cube_stats[s].max_val = *it++;
+                        _cube_stats[s].basic_stats[CARTA::StatsType::Max] = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::STATS_3D_MIN: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        _cube_stats[s].min_val = *it++;
+                        _cube_stats[s].basic_stats[CARTA::StatsType::Min] = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::STATS_3D_SUM: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        _cube_stats[s].sum = *it++;
+                        _cube_stats[s].basic_stats[CARTA::StatsType::Sum] = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::STATS_3D_SUMSQ: {
                     auto it = static_cast<casacore::Array<casacore::Float>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        _cube_stats[s].sum_sq = *it++;
+                        _cube_stats[s].basic_stats[CARTA::StatsType::SumSq] = *it++;
                     }
                     break;
                 }
                 case FileInfo::Data::STATS_3D_NANS: {
                     auto it = static_cast<casacore::Array<casacore::Int64>*>(data)->begin();
                     for (size_t s = 0; s < _num_stokes; s++) {
-                        _cube_stats[s].nan_count = *it++;
+                        _cube_stats[s].basic_stats[CARTA::StatsType::NanCount] = *it++;
                     }
                     break;
                 }
@@ -372,7 +372,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
     // Remove this check when we drop support for the old schema.
     // We assume that checking for only one of these datasets is sufficient.
     bool full(HasData(FileInfo::Data::STATS_2D_SUM));
-    float mean_sq;
+    double mean;
+    double mean_sq;
+    uint64_t num_pixels;
 
     if (HasData(FileInfo::Data::STATS)) {
         if (HasData(FileInfo::Data::STATS_2D)) {
@@ -393,16 +395,20 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
             // If we loaded all the 2D stats successfully, assume all channel stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
                 for (size_t c = 0; c < _num_channels; c++) {
-                    auto& stats = _channel_stats[s][c];
+                    auto& stats = _channel_stats[s][c].basic_stats;
                     if (full) {
-                        stats.num_pixels = _channel_size - stats.nan_count;
-                        stats.mean = stats.sum / stats.num_pixels;
-                        mean_sq = stats.sum_sq / stats.num_pixels;
-                        stats.sigma = sqrt(mean_sq - (stats.mean * stats.mean));
-                        stats.rms = sqrt(mean_sq);
-                        stats.full = true;
+                        num_pixels = _channel_size - stats[CARTA::StatsType::NanCount];
+                        mean = stats[CARTA::StatsType::Sum] / num_pixels;
+                        mean_sq = stats[CARTA::StatsType::SumSq] / num_pixels;
+
+                        stats[CARTA::StatsType::NumPixels] = num_pixels;
+                        stats[CARTA::StatsType::Mean] = mean;
+                        stats[CARTA::StatsType::Sigma] = sqrt(mean_sq - (mean * mean));
+                        stats[CARTA::StatsType::RMS] = sqrt(mean_sq);
+
+                        _channel_stats[s][c].full = true;
                     }
-                    stats.valid = true;
+                    _channel_stats[s][c].valid = true;
                 }
             }
         }
@@ -424,16 +430,20 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
 
             // If we loaded all the 3D stats successfully, assume all cube stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
-                auto& stats = _cube_stats[s];
+                auto& stats = _cube_stats[s].basic_stats;
                 if (full) {
-                    stats.num_pixels = (_channel_size * _num_channels) - stats.nan_count;
-                    stats.mean = stats.sum / stats.num_pixels;
-                    mean_sq = stats.sum_sq / stats.num_pixels;
-                    stats.sigma = sqrt(mean_sq - (stats.mean * stats.mean));
-                    stats.rms = sqrt(mean_sq);
-                    stats.full = true;
+                    num_pixels = (_channel_size * _num_channels) - stats[CARTA::StatsType::NanCount];
+                    mean = stats[CARTA::StatsType::Sum] / num_pixels;
+                    mean_sq = stats[CARTA::StatsType::SumSq] / num_pixels;
+
+                    stats[CARTA::StatsType::NumPixels] = num_pixels;
+                    stats[CARTA::StatsType::Mean] = mean;
+                    stats[CARTA::StatsType::Sigma] = sqrt(mean_sq - (mean * mean));
+                    stats[CARTA::StatsType::RMS] = sqrt(mean_sq);
+
+                    _cube_stats[s].full = true;
                 }
-                stats.valid = true;
+                _cube_stats[s].valid = true;
             }
         }
     }

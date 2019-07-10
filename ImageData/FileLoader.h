@@ -14,17 +14,7 @@ namespace carta {
 namespace FileInfo {
 
 struct ImageStats {
-    float min_val;
-    float max_val;
-    float sum;
-    float sum_sq;
-
-    float mean;
-    float sigma;
-    float rms;
-
-    int64_t nan_count;
-    int64_t num_pixels;
+    std::map<CARTA::StatsType, double> basic_stats;
 
     std::vector<float> percentiles;
     std::vector<float> percentile_ranks;

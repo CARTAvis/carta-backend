@@ -93,6 +93,7 @@ public:
     void SetStatsRequirements(const std::vector<int>& stats_types);
     size_t NumStats();
     void FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes);
+    void FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values);
 
 private:
     // bounds checking for Region parameters
