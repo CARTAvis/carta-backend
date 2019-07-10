@@ -9,6 +9,8 @@
 
 #include <carta-protobuf/defs.pb.h>
 
+#include "../Util.h"
+
 namespace carta {
 
 namespace FileInfo {
@@ -130,7 +132,7 @@ public:
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
     // Do anything required to open the file (set up cache size, etc)
-    virtual void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) = 0;
+    virtual void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info);
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Return a casacore image type representing the data stored in the
@@ -143,9 +145,16 @@ public:
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
         std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
+    virtual void SetConnectionFlag(bool connected);
+    virtual bool IsConnected();
+    virtual void SetCursorXy(int x, int y);
+    virtual bool CmpCursorXy(std::pair<int, int> xy);
     virtual void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
         std::vector<CARTA::Point> points, float rotation);
-    virtual void SetConnectionFlag(bool connected);
+    virtual bool CmpRegionState(int region_id, const RegionState& region_state);
+    virtual void SetRegionSpectralRequirements(int region_id,
+        const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
+    virtual bool CmpRegionSpectralRequirements(int region_id, int profile_index, std::vector<int> requested_stats);
 
 protected:
     virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
@@ -155,6 +164,14 @@ protected:
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
+    // communication
+    bool _connected;
+    // current cursor's x-y coordinate
+    std::pair<int, int> _cursor_xy;
+    // current region states
+    std::unordered_map<int, RegionState> _region_states;
+    // current region configs
+    std::unordered_map<int, RegionConfig> _region_configs;
     // Return the shape of the specified stats dataset
     virtual const IPos GetStatsDataShape(FileInfo::Data ds);
     // Return stats data as a casacore::Array of type casacore::Float or casacore::Int64

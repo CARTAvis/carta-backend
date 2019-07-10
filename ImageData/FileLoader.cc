@@ -7,6 +7,10 @@
 
 using namespace carta;
 
+void FileLoader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) {
+    _connected = true;
+}
+
 FileLoader* FileLoader::GetLoader(const std::string& filename) {
     casacore::ImageOpener::ImageTypes type = FileInfo::fileType(filename);
     switch (type) {
@@ -414,11 +418,36 @@ bool FileLoader::GetRegionSpectralData(
     return false;
 }
 
-void FileLoader::SetRegionState(int region_id, std::string name, CARTA::RegionType type,
-    std::vector<CARTA::Point> points, float rotation) {
-    // Must be implemented in subclasses
+void FileLoader::SetConnectionFlag(bool connected) {
+    _connected = connected;
 }
 
-void FileLoader::SetConnectionFlag(bool connected) {
-    // Must be implemented in subclasses
+bool FileLoader::IsConnected() {
+    return _connected;
+}
+
+void FileLoader::SetCursorXy(int x, int y) {
+    _cursor_xy = std::make_pair(x, y);
+}
+
+bool FileLoader::CmpCursorXy(std::pair<int, int> xy) {
+    return _cursor_xy == xy;
+}
+
+void FileLoader::SetRegionState(int region_id, std::string name, CARTA::RegionType type,
+    std::vector<CARTA::Point> points, float rotation) {
+    _region_states[region_id].UpdateState(name, type, points, rotation);
+}
+
+bool FileLoader::CmpRegionState(int region_id, const RegionState& region_state) {
+    return (_region_states.count(region_id) && _region_states[region_id] == region_state);
+}
+
+void FileLoader::SetRegionSpectralRequirements(int region_id,
+    const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
+    _region_configs[region_id].UpdateConfig(profiles);
+}
+
+bool FileLoader::CmpRegionSpectralRequirements(int region_id, int profile_index, std::vector<int> requested_stats) {
+    return (_region_configs.count(region_id) && _region_configs[region_id].IsAmong(profile_index, requested_stats));
 }

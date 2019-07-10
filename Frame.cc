@@ -16,7 +16,6 @@ Frame::Frame(
     uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, int default_channel)
     : _session_id(session_id),
       _valid(true),
-      _connected(true),
       _z_profile_count(0),
       _cursor_set(false),
       _filename(filename),
@@ -80,7 +79,6 @@ bool Frame::IsValid() {
 }
 
 void Frame::DisconnectCalled() {
-    _connected = false; // set a false flag to interrupt the running jobs
     _loader->SetConnectionFlag(false); // set a false flag to interrupt the running jobs in loader
     while (_z_profile_count) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -153,9 +151,8 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
 
     if (region_set) {
         if (name == "cursor" && type == CARTA::RegionType::POINT) { // update current cursor's x-y coordinate
-            _cursor_xy = std::make_pair(points[0].x(), points[0].y());
+            _loader->SetCursorXy(points[0].x(), points[0].y());
         } else if (region_id > 0 && RegionChanged(region_id)) { // update current region's states
-            _region_states[region_id].UpdateState(name, type, points, rotation);
             _loader->SetRegionState(region_id, name, type, points, rotation);
         }
     } else {
@@ -432,7 +429,7 @@ bool Frame::SetRegionSpectralRequirements(int region_id, const std::vector<CARTA
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         region_ok = region->SetSpectralRequirements(profiles, NumStokes());
-        _region_configs[region_id].UpdateConfig(profiles);
+        _loader->SetRegionSpectralRequirements(region_id, profiles);
     }
     return region_ok;
 }
@@ -1162,7 +1159,7 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
                 // start the timer
                 auto tStart = std::chrono::high_resolution_clock::now();
                 // check if cursor's position changed during this loop, if so, stop the profile process
-                if (tmp_xy != _cursor_xy || !_connected) {
+                if (!_loader->CmpCursorXy(tmp_xy) || !_loader->IsConnected()) {
                     std::cerr << "Exiting zprofile before complete" << std::endl;
                     return false;
                 }
@@ -1234,15 +1231,15 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         // start the timer
         auto tStart = std::chrono::high_resolution_clock::now();
         // check if frontend queries changed, if so, terminate this loop process
-        if (!_connected) {
+        if (!_loader->IsConnected()) {
             std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
             return false;
         }
-        if (_region_states.count(region_id) && _region_states[region_id] != region_state) {
+        if (!_loader->CmpRegionState(region_id, region_state)) {
             std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
             return false;
         }
-        if (_region_configs.count(region_id) && !_region_configs[region_id].IsAmong(profile_index, requested_stats)) {
+        if (!_loader->CmpRegionSpectralRequirements(region_id, profile_index, requested_stats)) {
             std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
             return false;
         }

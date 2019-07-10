@@ -24,9 +24,6 @@ public:
     bool GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
         std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb) override;
-    void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
-        std::vector<CARTA::Point> points, float rotation) override;
-    void SetConnectionFlag(bool connected) override;
 
 protected:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
@@ -49,9 +46,6 @@ private:
     casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
 
     casacore::Lattice<float>* LoadSwizzledData(FileInfo::Data ds);
-    // current region states
-    std::unordered_map<int, RegionState> _region_states;
-    bool _connected;
 };
 
 Hdf5Loader::Hdf5Loader(const std::string& filename) : _filename(filename), _hdu("0") {}
@@ -397,11 +391,11 @@ bool Hdf5Loader::GetRegionSpectralData(
 
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = 0; x < num_x; x++) {
-            if (!_connected) {
+            if (!IsConnected()) {
                 std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
                 return false;
             }
-            if (_region_states.count(region_id) && _region_states[region_id] != region_state) {
+            if (!CmpRegionState(region_id, region_state)) {
                 std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
                 return false;
             }
@@ -510,15 +504,6 @@ bool Hdf5Loader::GetRegionSpectralData(
     cb(stats_values, 1.0);
 
     return true;
-}
-
-void Hdf5Loader::SetRegionState(int region_id, std::string name, CARTA::RegionType type,
-    std::vector<CARTA::Point> points, float rotation) {
-    _region_states[region_id].UpdateState(name, type, points, rotation);
-}
-
-void Hdf5Loader::SetConnectionFlag(bool connected) {
-    _connected = connected;
 }
 
 } // namespace carta

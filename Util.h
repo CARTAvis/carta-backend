@@ -75,6 +75,19 @@ struct RegionState {
         control_points = other.control_points;
         rotation = other.rotation;
     }
+    bool operator==(const RegionState& rhs) {
+        if (name != rhs.name || type != rhs.type || rotation != rhs.rotation || control_points.size() != rhs.control_points.size()) {
+            return false;
+        }
+        for (int i = 0; i < control_points.size(); ++i) {
+            float x(control_points[i].x()), y(control_points[i].y());
+            float rhs_x(rhs.control_points[i].x()), rhs_y(rhs.control_points[i].y());
+            if (x != rhs_x || y != rhs_y) {
+                return false;
+            }
+        }
+        return true;
+    }
     bool operator!=(const RegionState& rhs) {
         if (name != rhs.name || type != rhs.type || rotation != rhs.rotation || control_points.size() != rhs.control_points.size()) {
             return true;

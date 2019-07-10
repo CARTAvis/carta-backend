@@ -138,12 +138,6 @@ private:
     // histogram helper
     int CalcAutoNumBins(int region_id); // calculate automatic bin size for region
 
-    // current cursor's x-y coordinate
-    std::pair<int, int> _cursor_xy;
-    // current region states
-    std::unordered_map<int, RegionState> _region_states;
-    // current region configs
-    std::unordered_map<int, RegionConfig> _region_configs;
     // get cursor's x-y coordinate from subimage
     bool GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, int>& cursor_xy);
     // get spectral profile data from subimage
@@ -156,9 +150,6 @@ private:
     // setup
     uint32_t _session_id;
     bool _valid;
-
-    // communication
-    bool _connected;
 
     // spectral profile counter, which is used to determine whether the Frame object can be destroyed (_z_profile_count == 0 ?).
     tbb::atomic<int> _z_profile_count;
