@@ -20,7 +20,7 @@ public:
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
-    bool CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask) override;
+    bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) override;
     bool GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
         std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb) override;
@@ -307,7 +307,7 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return data_ok;
 }
 
-bool Hdf5Loader::CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask) {
+bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
         return false;
     }

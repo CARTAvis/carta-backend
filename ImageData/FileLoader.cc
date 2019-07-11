@@ -406,7 +406,7 @@ bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return false;
 }
 
-bool FileLoader::CanUseSiwzzledData(const casacore::ArrayLattice<casacore::Bool>* mask) {
+bool FileLoader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) {
     // Must be implemented in subclasses
     return false;
 }

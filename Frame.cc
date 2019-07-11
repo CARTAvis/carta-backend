@@ -913,7 +913,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     }
                 } else { // statistics
                     std::unique_lock<std::mutex> guard(_image_mutex);
-                    bool use_swizzled_data(_loader->CanUseSiwzzledData(region->XyMask()));
+                    bool use_swizzled_data(_loader->UseRegionSpectralData(region->XyMask()));
                     guard.unlock();
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
