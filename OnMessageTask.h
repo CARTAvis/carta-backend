@@ -43,7 +43,9 @@ public:
         _event_length = evt_len;
         _event_buffer = event_buf;
     }
-    ~MultiMessageTask() = default;
+    ~MultiMessageTask() {
+        delete [] _event_buffer;
+    };
 };
 
 class SetImageChannelsTask : public OnMessageTask {
