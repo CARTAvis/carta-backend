@@ -1158,9 +1158,8 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
             while (start(_spectral_axis) < profile_size) {
                 // start the timer
                 auto tStart = std::chrono::high_resolution_clock::now();
-                // check if cursor's position changed during this loop, if so, stop the profile process
-                if (!_loader->IsSameCursorXy(cursor_xy) || !_loader->IsConnected()) {
-                    std::cerr << "Exiting zprofile before complete" << std::endl;
+                // check if frontend's requirements changed
+                if (_loader->Interrupt(cursor_xy)) {
                     return false;
                 }
                 // modify the count for slicer
@@ -1230,17 +1229,8 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     while (start < profile_size) {
         // start the timer
         auto tStart = std::chrono::high_resolution_clock::now();
-        // check if frontend queries changed, if so, terminate this loop process
-        if (!_loader->IsConnected()) {
-            std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
-            return false;
-        }
-        if (!_loader->IsSameRegionState(region_id, region_state)) {
-            std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
-            return false;
-        }
-        if (!_loader->AreSameRegionSpectralRequirements(region_id, profile_index, requested_stats)) {
-            std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
+        // check if frontend's requirements changed
+        if (_loader->Interrupt(region_id, profile_index, region_state, requested_stats)) {
             return false;
         }
         end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);

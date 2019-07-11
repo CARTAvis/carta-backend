@@ -391,12 +391,8 @@ bool Hdf5Loader::GetRegionSpectralData(
 
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = 0; x < num_x; x++) {
-            if (!IsConnected()) {
-                std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
-                return false;
-            }
-            if (!IsSameRegionState(region_id, region_state)) {
-                std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
+            // check if frontend's requirements changed
+            if (Interrupt(region_id, region_state)) {
                 return false;
             }
 

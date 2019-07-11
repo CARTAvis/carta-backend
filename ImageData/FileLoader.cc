@@ -430,7 +430,7 @@ void FileLoader::SetCursorXy(int x, int y) {
     _cursor_xy = CursorXy(x, y);
 }
 
-bool FileLoader::IsSameCursorXy(CursorXy other_cursor_xy) {
+bool FileLoader::IsSameCursorXy(const CursorXy& other_cursor_xy) {
     return (_cursor_xy == other_cursor_xy);
 }
 
@@ -448,6 +448,48 @@ void FileLoader::SetRegionSpectralRequirements(int region_id,
     _region_configs[region_id].UpdateConfig(profiles);
 }
 
-bool FileLoader::AreSameRegionSpectralRequirements(int region_id, int profile_index, std::vector<int> requested_stats) {
+bool FileLoader::AreSameRegionSpectralRequirements(int region_id, int profile_index,
+    const std::vector<int>& requested_stats) {
     return (_region_configs.count(region_id) && _region_configs[region_id].IsAmong(profile_index, requested_stats));
+}
+
+bool FileLoader::Interrupt(const CursorXy& other_cursor_xy) {
+    if (!IsConnected()) {
+        std::cerr << "Closing image, exit zprofile before complete" << std::endl;
+        return true;
+    }
+    if (!IsSameCursorXy(other_cursor_xy)) {
+        std::cerr << "Cursor state changed, exit zprofile before complete" << std::endl;
+        return true;
+    }
+    return false;
+}
+
+bool FileLoader::Interrupt(int region_id, const RegionState& region_state) {
+    if (!IsConnected()) {
+        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    if (!IsSameRegionState(region_id, region_state)) {
+        std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    return false;
+}
+
+bool FileLoader::Interrupt(int region_id, int profile_index, const RegionState& region_state,
+    const std::vector<int>& requested_stats) {
+    if (!IsConnected()) {
+        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    if (!IsSameRegionState(region_id, region_state)) {
+        std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    if (!AreSameRegionSpectralRequirements(region_id, profile_index, requested_stats)) {
+        std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    return false;
 }
