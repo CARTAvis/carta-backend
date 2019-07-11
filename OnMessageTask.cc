@@ -15,6 +15,8 @@ tbb::task* MultiMessageTask::execute() {
             CARTA::SetSpatialRequirements message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetSpatialRequirements(message);
+            } else {
+                fmt::print("Bad SET_SPATIAL_REQUIREMENTS message!\n");
             }
             break;
         }
@@ -22,13 +24,17 @@ tbb::task* MultiMessageTask::execute() {
             CARTA::SetSpectralRequirements message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetSpectralRequirements(message);
+            } else {
+                fmt::print("Bad SET_SPECTRAL_REQUIREMENTS message!\n");
             }
             break;
         }
         case CARTA::EventType::ADD_REQUIRED_TILES: {
             CARTA::AddRequiredTiles message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
+            if (message.ParseFromArray(_event_buffer, _event_length) && message.tiles_size()) {
                 _session->OnAddRequiredTiles(message);
+            } else {
+                fmt::print("Bad ADD_REQUIRED_TILES message!\n");
             }
             break;
         }
@@ -36,6 +42,8 @@ tbb::task* MultiMessageTask::execute() {
             CARTA::SetStatsRequirements message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetStatsRequirements(message);
+            } else {
+                fmt::print("Bad SET_STATS_REQUIREMENTS message!\n");
             }
             break;
         }
@@ -43,6 +51,8 @@ tbb::task* MultiMessageTask::execute() {
             CARTA::SetRegion message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetRegion(message, _header.request_id);
+            } else {
+                fmt::print("Bad SET_REGION message!\n");
             }
             break;
         }
@@ -50,6 +60,8 @@ tbb::task* MultiMessageTask::execute() {
             CARTA::RemoveRegion message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnRemoveRegion(message);
+            } else {
+                fmt::print("Bad REMOVE_REGION message!\n");
             }
             break;
         }
@@ -68,8 +80,9 @@ tbb::task* SetImageChannelsTask::execute() {
     _session->ExecuteSetChannelEvt(_request_pair);
     _session->ImageChannelLock();
 
-    if (!(tester = _session->_set_channel_queue.try_pop(_request_pair)))
+    if (!(tester = _session->_set_channel_queue.try_pop(_request_pair))) {
         _session->ImageChannelTaskSetIdle();
+    }
     _session->ImageChannelUnlock();
 
     if (tester) {
