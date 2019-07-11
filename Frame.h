@@ -139,7 +139,7 @@ private:
     int CalcAutoNumBins(int region_id); // calculate automatic bin size for region
 
     // get cursor's x-y coordinate from subimage
-    bool GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, int>& cursor_xy);
+    bool GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor_xy);
     // get spectral profile data from subimage
     bool GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image,
         std::function<void(std::vector<float>, float)> cb);

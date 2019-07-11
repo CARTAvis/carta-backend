@@ -57,7 +57,29 @@ struct ChannelRange {
     }
 };
 
-struct RegionState {
+volatile struct CursorXy {
+    int x, y;
+    CursorXy() {
+        x = -1;
+        y = -1;
+    }
+    CursorXy(int x_, int y_) {
+        x = x_;
+        y = y_;
+    }
+    void operator=(const CursorXy& other) {
+        x = other.x;
+        y = other.y;
+    }
+    bool operator==(const CursorXy& rhs) {
+        if (x != rhs.x || y != rhs.y) {
+            return false;
+        }
+        return true;
+    }
+};
+
+volatile struct RegionState {
     std::string name;
     CARTA::RegionType type;
     std::vector<CARTA::Point> control_points;
@@ -109,7 +131,7 @@ struct RegionState {
     }
 };
 
-struct RegionConfig {
+volatile struct RegionConfig {
     std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config;
     RegionConfig() {}
     RegionConfig(std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config_) {

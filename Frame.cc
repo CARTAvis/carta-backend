@@ -1125,14 +1125,14 @@ void Frame::SetRegionHistogram(int region_id, int channel, int stokes, CARTA::Hi
     }
 }
 
-bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, std::pair<int, int>& cursor_xy) {
+bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor_xy) {
     bool result(false);
     casacore::IPosition subimage_shape = sub_image.shape();
     casacore::IPosition start(subimage_shape.size(), 0);
     casacore::IPosition count(subimage_shape);
     if (count(0) == 1 && count(1) == 1) { // make sure the subimage is a point region in x-y plane
         casacore::IPosition parent_position = sub_image.getRegionPtr()->convert(start);
-        cursor_xy = std::make_pair(parent_position(0), parent_position(1));
+        cursor_xy = CursorXy(parent_position(0), parent_position(1));
         result = true;
     }
     return result;
@@ -1152,14 +1152,14 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
             casacore::IPosition count(sub_image_shape);
             float progress = 0.0;
             // get cursor's x-y coordinate from subimage
-            std::pair<int, int> tmp_xy;
-            GetSubImageXy(sub_image, tmp_xy);
+            CursorXy cursor_xy;
+            GetSubImageXy(sub_image, cursor_xy);
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             while (start(_spectral_axis) < profile_size) {
                 // start the timer
                 auto tStart = std::chrono::high_resolution_clock::now();
                 // check if cursor's position changed during this loop, if so, stop the profile process
-                if (!_loader->CmpCursorXy(tmp_xy) || !_loader->IsConnected()) {
+                if (!_loader->IsSameCursorXy(cursor_xy) || !_loader->IsConnected()) {
                     std::cerr << "Exiting zprofile before complete" << std::endl;
                     return false;
                 }
@@ -1235,11 +1235,11 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
             std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
             return false;
         }
-        if (!_loader->CmpRegionState(region_id, region_state)) {
+        if (!_loader->IsSameRegionState(region_id, region_state)) {
             std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
             return false;
         }
-        if (!_loader->CmpRegionSpectralRequirements(region_id, profile_index, requested_stats)) {
+        if (!_loader->AreSameRegionSpectralRequirements(region_id, profile_index, requested_stats)) {
             std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
             return false;
         }

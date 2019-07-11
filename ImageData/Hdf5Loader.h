@@ -395,7 +395,7 @@ bool Hdf5Loader::GetRegionSpectralData(
                 std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
                 return false;
             }
-            if (!CmpRegionState(region_id, region_state)) {
+            if (!IsSameRegionState(region_id, region_state)) {
                 std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
                 return false;
             }

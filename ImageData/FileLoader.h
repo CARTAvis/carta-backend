@@ -148,13 +148,13 @@ public:
     virtual void SetConnectionFlag(bool connected);
     virtual bool IsConnected();
     virtual void SetCursorXy(int x, int y);
-    virtual bool CmpCursorXy(std::pair<int, int> xy);
+    virtual bool IsSameCursorXy(CursorXy other_cursor_xy);
     virtual void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
         std::vector<CARTA::Point> points, float rotation);
-    virtual bool CmpRegionState(int region_id, const RegionState& region_state);
+    virtual bool IsSameRegionState(int region_id, const RegionState& region_state);
     virtual void SetRegionSpectralRequirements(int region_id,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
-    virtual bool CmpRegionSpectralRequirements(int region_id, int profile_index, std::vector<int> requested_stats);
+    virtual bool AreSameRegionSpectralRequirements(int region_id, int profile_index, std::vector<int> requested_stats);
 
 protected:
     virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
@@ -165,9 +165,9 @@ protected:
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
     // communication
-    bool _connected;
+    volatile bool _connected;
     // current cursor's x-y coordinate
-    std::pair<int, int> _cursor_xy;
+    CursorXy _cursor_xy;
     // current region states
     std::unordered_map<int, RegionState> _region_states;
     // current region configs
