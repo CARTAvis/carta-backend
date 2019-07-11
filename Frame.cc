@@ -1157,7 +1157,7 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
             // get profile data section by section with a specific length (i.e., checkPerChannels)
             while (start(_spectral_axis) < profile_size) {
                 // start the timer
-                auto tStart = std::chrono::high_resolution_clock::now();
+                auto t_start = std::chrono::high_resolution_clock::now();
                 // check if frontend's requirements changed
                 if (_loader->Interrupt(cursor_xy)) {
                     return false;
@@ -1171,8 +1171,8 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
                 memcpy(&data[start(_spectral_axis)], buffer.data(), count(_spectral_axis) * sizeof(float));
                 start(_spectral_axis) += count(_spectral_axis);
                 // get the time elapse for this step
-                auto tEnd = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+                auto t_end = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
                 // adjust the increment of channels according to the time elapse
                 delta_channels *= dt_target / dt;
                 if (delta_channels < 1) {
@@ -1228,7 +1228,7 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     casacore::SubImage<float> sub_image;
     while (start < profile_size) {
         // start the timer
-        auto tStart = std::chrono::high_resolution_clock::now();
+        auto t_start = std::chrono::high_resolution_clock::now();
         // check if frontend's requirements changed
         if (_loader->Interrupt(region_id, profile_index, region_state, requested_stats)) {
             return false;
@@ -1249,8 +1249,8 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         start += count;
         progress = (float)start / profile_size;
         // get the time elapse for this step
-        auto tEnd = std::chrono::high_resolution_clock::now();
-        auto dt = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+        auto t_end = std::chrono::high_resolution_clock::now();
+        auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
         // adjust the increment of channels according to the time elapse
         delta_channels *= dt_target / dt;
         if (delta_channels < 1) {

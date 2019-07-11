@@ -386,8 +386,8 @@ bool Hdf5Loader::GetRegionSpectralData(
         float progress;
 
         // start the timer
-        auto tStart = std::chrono::high_resolution_clock::now();
-        int time_step = 0;
+        auto t_start = std::chrono::high_resolution_clock::now();
+        auto t_latest = t_start;
 
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = 0; x < num_x; x++) {
@@ -428,11 +428,12 @@ bool Hdf5Loader::GetRegionSpectralData(
             }
 
             // get the time elapse for this step
-            auto tEnd = std::chrono::high_resolution_clock::now();
-            auto dt = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
+            auto t_end = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
 
             // check whether to send partial results to the frontend
-            if (dt > time_step * TARGET_DELTA_TIME) {
+            if (dt > TARGET_DELTA_TIME) {
+                t_latest = t_end;
                 float mean_sq;
 
                 // Calculate partial stats
@@ -458,7 +459,6 @@ bool Hdf5Loader::GetRegionSpectralData(
                     }
                 }
 
-                time_step++;
                 progress = x / num_x;
                 stats_values = &_region_stats[region_stats_id].stats;
 
