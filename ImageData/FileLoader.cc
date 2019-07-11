@@ -7,10 +7,6 @@
 
 using namespace carta;
 
-void FileLoader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) {
-    _connected = true;
-}
-
 FileLoader* FileLoader::GetLoader(const std::string& filename) {
     casacore::ImageOpener::ImageTypes type = FileInfo::fileType(filename);
     switch (type) {

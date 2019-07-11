@@ -54,7 +54,6 @@ void Hdf5Loader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended*
     // Open hdf5 image with specified hdu
     _image = std::unique_ptr<CartaHdf5Image>(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu, info));
     _hdu = hdu;
-    _connected = true;
 
     // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
     _num_dims = _image->shape().size();

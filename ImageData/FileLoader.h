@@ -132,7 +132,7 @@ public:
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
     // Do anything required to open the file (set up cache size, etc)
-    virtual void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info);
+    virtual void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) = 0;
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Return a casacore image type representing the data stored in the
@@ -165,7 +165,7 @@ protected:
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
     // Communication
-    volatile bool _connected;
+    volatile bool _connected = true;
     // Current cursor's x-y coordinate
     CursorXy _cursor_xy;
     // Current region states
