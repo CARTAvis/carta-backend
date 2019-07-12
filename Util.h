@@ -131,13 +131,13 @@ volatile struct RegionState {
     }
 };
 
-volatile struct RegionConfig {
+volatile struct RegionRequest {
     std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config;
-    RegionConfig() {}
-    RegionConfig(std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config_) {
+    RegionRequest() {}
+    RegionRequest(std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config_) {
         config = config_;
     }
-    void UpdateConfig(std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config_) {
+    void UpdateRequest(std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config_) {
         config.clear();
         config = config_;
     }

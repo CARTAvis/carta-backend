@@ -11,6 +11,8 @@
 
 #include "../Util.h"
 
+class Frame;
+
 namespace carta {
 
 namespace FileInfo {
@@ -145,16 +147,7 @@ public:
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
         std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
-    virtual void SetConnectionFlag(bool connected);
-    virtual void SetCursorXy(int x, int y);
-    virtual void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
-        std::vector<CARTA::Point> points, float rotation);
-    virtual void SetRegionSpectralRequirements(int region_id,
-        const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
-    virtual bool Interrupt(const CursorXy& other_cursor_xy);
-    virtual bool Interrupt(int region_id, const RegionState& region_state);
-    virtual bool Interrupt(int region_id, int profile_index, const RegionState& region_state,
-        const std::vector<int>& requested_stats);
+    virtual void SetFramePtr(Frame* frame);
 
 protected:
     virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
@@ -164,14 +157,6 @@ protected:
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
-    // Communication
-    volatile bool _connected = true;
-    // Current cursor's x-y coordinate
-    CursorXy _cursor_xy;
-    // Current region states
-    std::unordered_map<int, RegionState> _region_states;
-    // Current region configs
-    std::unordered_map<int, RegionConfig> _region_configs;
     // Return the shape of the specified stats dataset
     virtual const IPos GetStatsDataShape(FileInfo::Data ds);
     // Return stats data as a casacore::Array of type casacore::Float or casacore::Int64
@@ -183,11 +168,6 @@ protected:
     virtual void LoadStats3DBasic(FileInfo::Data ds);
     virtual void LoadStats3DHist();
     virtual void LoadStats3DPercent();
-    // Functions used to check cursor and region states
-    virtual bool IsConnected();
-    virtual bool IsSameCursorXy(const CursorXy& other_cursor_xy);
-    virtual bool IsSameRegionState(int region_id, const RegionState& region_state);
-    virtual bool AreSameRegionSpectralRequirements(int region_id, int profile_index, const std::vector<int>& requested_stats);
 };
 
 } // namespace carta

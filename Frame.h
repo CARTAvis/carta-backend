@@ -101,6 +101,14 @@ public:
         --_z_profile_count;
     }
 
+    // Get current region states
+    RegionState GetRegionStates(int region_id);
+
+    // Interrupt conditions
+    bool Interrupt(const CursorXy& other_cursor_xy);
+    bool Interrupt(int region_id, const RegionState& region_state);
+    bool Interrupt(int region_id, int profile_index, const RegionState& region_state, const std::vector<int>& requested_stats);
+
 private:
     // Internal regions: image, cursor
     void SetImageRegion(int region_id); // set region for entire plane image or cube
@@ -147,6 +155,20 @@ private:
     bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
         int profile_stokes, std::function<void(std::vector<std::vector<double>>, float)> cb);
 
+    // Functions used to set cursor and region states
+    void SetConnectionFlag(bool connected);
+    void SetCursorXy(int x, int y);
+    void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
+        std::vector<CARTA::Point> points, float rotation);
+    void SetRegionSpectralRequests(int region_id,
+        const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
+
+    // Functions used to check cursor and region states
+    bool IsConnected();
+    bool IsSameCursorXy(const CursorXy& other_cursor_xy);
+    bool IsSameRegionState(int region_id, const RegionState& region_state);
+    bool AreSameRegionSpectralRequests(int region_id, int profile_index, const std::vector<int>& requested_stats);
+
     // setup
     uint32_t _session_id;
     bool _valid;
@@ -177,6 +199,15 @@ private:
     // Region
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID
     bool _cursor_set;                                                 // cursor region set by frontend, not internally
+
+    // Communication
+    volatile bool _connected = true;
+    // Current cursor's x-y coordinate
+    CursorXy _cursor_xy;
+    // Current region states
+    std::unordered_map<int, RegionState> _region_states;
+    // Current region configs
+    std::unordered_map<int, RegionRequest> _region_requests;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

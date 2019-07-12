@@ -30,6 +30,8 @@ Frame::Frame(
         Log(session_id, "Problem loading file {}: loader not implemented", filename);
         _valid = false;
         return;
+    } else {
+        _loader->SetFramePtr(this);
     }
 
     try {
@@ -79,7 +81,7 @@ bool Frame::IsValid() {
 }
 
 void Frame::DisconnectCalled() {
-    _loader->SetConnectionFlag(false); // set a false flag to interrupt the running jobs in loader
+    SetConnectionFlag(false); // set a false flag to interrupt the running jobs in loader
     while (_z_profile_count) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     } // wait for the jobs finished
@@ -151,9 +153,9 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
 
     if (region_set) {
         if (name == "cursor" && type == CARTA::RegionType::POINT) { // update current cursor's x-y coordinate
-            _loader->SetCursorXy(points[0].x(), points[0].y());
+            SetCursorXy(points[0].x(), points[0].y());
         } else if (region_id > 0 && RegionChanged(region_id)) { // update current region's states
-            _loader->SetRegionState(region_id, name, type, points, rotation);
+            SetRegionState(region_id, name, type, points, rotation);
         }
     } else {
         message = fmt::format("Region parameters failed to validate for region id {}", region_id);
@@ -429,7 +431,7 @@ bool Frame::SetRegionSpectralRequirements(int region_id, const std::vector<CARTA
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         region_ok = region->SetSpectralRequirements(profiles, NumStokes());
-        _loader->SetRegionSpectralRequirements(region_id, profiles);
+        SetRegionSpectralRequests(region_id, profiles);
     }
     return region_ok;
 }
@@ -1159,7 +1161,7 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
                 // start the timer
                 auto t_start = std::chrono::high_resolution_clock::now();
                 // check if frontend's requirements changed
-                if (_loader->Interrupt(cursor_xy)) {
+                if (Interrupt(cursor_xy)) {
                     return false;
                 }
                 // modify the count for slicer
@@ -1230,7 +1232,7 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
         // check if frontend's requirements changed
-        if (_loader->Interrupt(region_id, profile_index, region_state, requested_stats)) {
+        if (Interrupt(region_id, profile_index, region_state, requested_stats)) {
             return false;
         }
         end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
@@ -1264,4 +1266,85 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     }
     stats_values = std::move(results);
     return true;
+}
+
+bool Frame::Interrupt(const CursorXy& other_cursor_xy) {
+    if (!IsConnected()) {
+        std::cerr << "Closing image, exit zprofile before complete" << std::endl;
+        return true;
+    }
+    if (!IsSameCursorXy(other_cursor_xy)) {
+        std::cerr << "Cursor state changed, exit zprofile before complete" << std::endl;
+        return true;
+    }
+    return false;
+}
+
+bool Frame::Interrupt(int region_id, const RegionState& region_state) {
+    if (!IsConnected()) {
+        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    if (!IsSameRegionState(region_id, region_state)) {
+        std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    return false;
+}
+
+bool Frame::Interrupt(int region_id, int profile_index, const RegionState& region_state,
+                           const std::vector<int>& requested_stats) {
+    if (!IsConnected()) {
+        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    if (!IsSameRegionState(region_id, region_state)) {
+        std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    if (!AreSameRegionSpectralRequests(region_id, profile_index, requested_stats)) {
+        std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
+        return true;
+    }
+    return false;
+}
+
+bool Frame::IsConnected() {
+    return _connected;
+}
+
+bool Frame::IsSameCursorXy(const CursorXy& other_cursor_xy) {
+    return (_cursor_xy == other_cursor_xy);
+}
+
+bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
+    return (_region_states.count(region_id) && _region_states[region_id] == region_state);
+}
+
+
+bool Frame::AreSameRegionSpectralRequests(int region_id, int profile_index,
+    const std::vector<int>& requested_stats) {
+    return (_region_requests.count(region_id) && _region_requests[region_id].IsAmong(profile_index, requested_stats));
+}
+
+void Frame::SetConnectionFlag(bool connected) {
+    _connected = connected;
+}
+
+void Frame::SetCursorXy(int x, int y) {
+    _cursor_xy = CursorXy(x, y);
+}
+
+void Frame::SetRegionState(int region_id, std::string name, CARTA::RegionType type,
+                                std::vector<CARTA::Point> points, float rotation) {
+    _region_states[region_id].UpdateState(name, type, points, rotation);
+}
+
+void Frame::SetRegionSpectralRequests(int region_id,
+    const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
+    _region_requests[region_id].UpdateRequest(profiles);
+}
+
+RegionState Frame::GetRegionStates(int region_id) {
+    return _region_states[region_id];
 }

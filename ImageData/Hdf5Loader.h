@@ -9,6 +9,7 @@
 #include "FileLoader.h"
 #include "Hdf5Attributes.h"
 #include "../Util.h"
+#include "../Frame.h"
 
 namespace carta {
 
@@ -24,6 +25,7 @@ public:
     bool GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
         std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb) override;
+    void SetFramePtr(Frame* frame) override;
 
 protected:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
@@ -34,6 +36,7 @@ private:
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
     std::map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats> _region_stats;
+    Frame* _frame;
 
     std::string DataSetToString(FileInfo::Data ds) const;
 
@@ -380,7 +383,7 @@ bool Hdf5Loader::GetRegionSpectralData(
             sum_sq[z] = 0;
         }
 
-        RegionState region_state = _region_states[region_id];
+        RegionState region_state = _frame->GetRegionStates(region_id);
         std::map<CARTA::StatsType, std::vector<double>>* stats_values;
         float progress;
 
@@ -391,7 +394,7 @@ bool Hdf5Loader::GetRegionSpectralData(
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = 0; x < num_x; x++) {
             // check if frontend's requirements changed
-            if (Interrupt(region_id, region_state)) {
+            if (_frame != nullptr && _frame->Interrupt(region_id, region_state)) {
                 return false;
             }
 
@@ -499,6 +502,10 @@ bool Hdf5Loader::GetRegionSpectralData(
     cb(stats_values, 1.0);
 
     return true;
+}
+
+void Hdf5Loader::SetFramePtr(Frame* frame) {
+    _frame = frame;
 }
 
 } // namespace carta
