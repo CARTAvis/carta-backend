@@ -350,6 +350,7 @@ bool Hdf5Loader::GetRegionSpectralData(
         //       seems not work for the rotation of an ellipse region
         _region_stats[region_stats_id].origin = origin;
         _region_stats[region_stats_id].shape = mask->shape();
+        _region_stats[region_stats_id].completed = false;
         recalculate = true;
     }
 
@@ -493,6 +494,9 @@ bool Hdf5Loader::GetRegionSpectralData(
                 }
             }
         }
+
+        // the stats calculation is completed
+        _region_stats[region_stats_id].completed = true;
     }
 
     std::map<CARTA::StatsType, std::vector<double>>* stats_values =
