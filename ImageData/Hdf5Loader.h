@@ -346,11 +346,14 @@ bool Hdf5Loader::GetRegionSpectralData(
             std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask->shape(), num_z));
         recalculate = true;
     } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
-        // TODO: This check "_region_stats[region_stats_id].IsValid(origin, mask->shape())"
-        //       seems not work for the rotation of an ellipse region
         _region_stats[region_stats_id].origin = origin;
         _region_stats[region_stats_id].shape = mask->shape();
         _region_stats[region_stats_id].completed = false;
+        _region_stats[region_stats_id].latest_x = 0;
+        recalculate = true;
+    } else if ( // region stats is not expired but previous calculation is not completed
+        _region_stats[region_stats_id].IsValid(origin, mask->shape()) && !_region_stats[region_stats_id].IsCompleted()) {
+        // resume the calculation
         recalculate = true;
     }
 
@@ -374,16 +377,22 @@ bool Hdf5Loader::GetRegionSpectralData(
 
         std::vector<float> slice_data;
 
-        // Set initial values of stats which will be incremented (we may have expired region data)
-        for (size_t z = 0; z < num_z; z++) {
-            min[z] = FLT_MAX;
-            max[z] = FLT_MIN;
-            num_pixels[z] = 0;
-            nan_count[z] = 0;
-            sum[z] = 0;
-            sum_sq[z] = 0;
+        // get the start of X
+        size_t x_start = _region_stats[region_stats_id].latest_x;
+
+        if (x_start == 0) {
+            // Set initial values of stats which will be incremented (we may have expired region data)
+            for (size_t z = 0; z < num_z; z++) {
+                min[z] = FLT_MAX;
+                max[z] = FLT_MIN;
+                num_pixels[z] = 0;
+                nan_count[z] = 0;
+                sum[z] = 0;
+                sum_sq[z] = 0;
+            }
         }
 
+        // get a copy of current region state
         RegionState region_state = _frame->GetRegionState(region_id);
         std::map<CARTA::StatsType, std::vector<double>>* stats_values;
         float progress;
@@ -393,9 +402,11 @@ bool Hdf5Loader::GetRegionSpectralData(
         auto t_latest = t_start;
 
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
-        for (size_t x = 0; x < num_x; x++) {
+        for (size_t x = x_start; x < num_x; x++) {
             // check if frontend's requirements changed
             if (_frame != nullptr && _frame->Interrupt(region_id, region_state)) {
+                // remember the latest x step
+                _region_stats[region_stats_id].latest_x = x;
                 return false;
             }
 

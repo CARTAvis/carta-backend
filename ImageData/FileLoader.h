@@ -46,6 +46,7 @@ struct RegionSpectralStats {
     casacore::IPosition shape;
     std::map<CARTA::StatsType, std::vector<double>> stats;
     volatile bool completed = false;
+    size_t latest_x = 0;
 
     RegionSpectralStats() {}
 
@@ -60,7 +61,10 @@ struct RegionSpectralStats {
     }
 
     bool IsValid(casacore::IPosition origin, casacore::IPosition shape) {
-        return (origin.isEqual(this->origin) && shape.isEqual(this->shape) && completed);
+        return (origin.isEqual(this->origin) && shape.isEqual(this->shape));
+    }
+    bool IsCompleted() {
+        return completed;
     }
 };
 
