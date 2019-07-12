@@ -383,7 +383,7 @@ bool Hdf5Loader::GetRegionSpectralData(
             sum_sq[z] = 0;
         }
 
-        RegionState region_state = _frame->GetRegionStates(region_id);
+        RegionState region_state = _frame->GetRegionState(region_id);
         std::map<CARTA::StatsType, std::vector<double>>* stats_values;
         float progress;
 

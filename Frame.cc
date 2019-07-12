@@ -1345,6 +1345,6 @@ void Frame::SetRegionSpectralRequests(int region_id,
     _region_requests[region_id].UpdateRequest(profiles);
 }
 
-RegionState Frame::GetRegionStates(int region_id) {
+RegionState Frame::GetRegionState(int region_id) {
     return _region_states[region_id];
 }

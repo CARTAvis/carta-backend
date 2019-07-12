@@ -102,7 +102,7 @@ public:
     }
 
     // Get current region states
-    RegionState GetRegionStates(int region_id);
+    RegionState GetRegionState(int region_id);
 
     // Interrupt conditions
     bool Interrupt(const CursorXy& other_cursor_xy);
