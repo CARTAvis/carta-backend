@@ -408,7 +408,7 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
                 }
             }
         }
-        
+
         double sum_z, sum_sq_z;
         uint64_t num_pixels_z;
 
@@ -418,7 +418,7 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
                 sum_z = sum[z];
                 sum_sq_z = sum_sq[z];
                 num_pixels_z = num_pixels[z];
-                
+
                 mean[z] = sum_z / num_pixels_z;
                 rms[z] = sqrt(sum_sq_z / num_pixels_z);
                 sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));

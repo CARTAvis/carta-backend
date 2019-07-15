@@ -48,7 +48,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     Session* session;
 
     outgoing->start([](uS::Async* async) -> void {
-        Session* current_session = ((Session*) async->getData());
+        Session* current_session = ((Session*)async->getData());
         current_session->SendPendingMessages();
     });
 
@@ -64,7 +64,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
-    Session* session = (Session*) ws->getUserData();
+    Session* session = (Session*)ws->getUserData();
 
     if (session) {
         auto uuid = session->_id;
@@ -81,7 +81,7 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length, uWS::OpCode op_code) {
-    Session* session = (Session*) ws->getUserData();
+    Session* session = (Session*)ws->getUserData();
     if (!session) {
         fmt::print("Missing session!\n");
         return;
@@ -109,7 +109,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->ImageChannelLock();
                         if (!session->ImageChannelTaskTestAndSet()) {
-                            tsk = new(tbb::task::allocate_root(session->Context()))
+                            tsk = new (tbb::task::allocate_root(session->Context()))
                                 SetImageChannelsTask(session, make_pair(message, head.request_id));
                         } else {
                             // has its own queue to keep channels in order during animation
@@ -134,7 +134,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::SetCursor message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->AddCursorSetting(message, head.request_id);
-                        tsk = new(tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
+                        tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
                     } else {
                         fmt::print("Bad SET_CURSOR message!\n");
                     }
@@ -147,7 +147,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                             session->CancelSetHistRequirements();
                         } else {
                             session->ResetHistContext();
-                            tsk = new(tbb::task::allocate_root(session->HistContext()))
+                            tsk = new (tbb::task::allocate_root(session->HistContext()))
                                 SetHistogramRequirementsTask(session, head, event_length, event_buf);
                         }
                     } else {
@@ -171,7 +171,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->CancelExistingAnimation();
                         session->BuildAnimationObject(message, head.request_id);
-                        tsk = new(tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                        tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     } else {
                         fmt::print("Bad START_ANIMATION message!\n");
                     }
@@ -226,7 +226,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
                     memcpy(message_buffer, event_buf, event_length);
-                    tsk = new(tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
+                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
                 }
             }
 
@@ -305,7 +305,7 @@ int main(int argc, const char* argv[]) {
         websocket_hub.onDisconnection(&OnDisconnect);
         if (websocket_hub.listen(port)) {
             fmt::print("Listening on port {} with root folder {}, base folder {}, and {} threads in thread pool\n", port, root_folder,
-                       base_folder, thread_count);
+                base_folder, thread_count);
             websocket_hub.run();
         } else {
             fmt::print("Error listening on port {}\n", port);
