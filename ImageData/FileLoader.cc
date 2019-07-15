@@ -372,8 +372,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
     // Remove this check when we drop support for the old schema.
     // We assume that checking for only one of these datasets is sufficient.
     bool full(HasData(FileInfo::Data::STATS_2D_SUM));
-    double mean;
-    double mean_sq;
+    double sum, sum_sq;
     uint64_t num_pixels;
 
     if (HasData(FileInfo::Data::STATS)) {
@@ -398,13 +397,13 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                     auto& stats = _channel_stats[s][c].basic_stats;
                     if (full) {
                         num_pixels = _channel_size - stats[CARTA::StatsType::NanCount];
-                        mean = stats[CARTA::StatsType::Sum] / num_pixels;
-                        mean_sq = stats[CARTA::StatsType::SumSq] / num_pixels;
+                        sum = stats[CARTA::StatsType::Sum];
+                        sum_sq = stats[CARTA::StatsType::SumSq];
 
                         stats[CARTA::StatsType::NumPixels] = num_pixels;
-                        stats[CARTA::StatsType::Mean] = mean;
-                        stats[CARTA::StatsType::Sigma] = sqrt(mean_sq - (mean * mean));
-                        stats[CARTA::StatsType::RMS] = sqrt(mean_sq);
+                        stats[CARTA::StatsType::Mean] = sum / num_pixels;
+                        stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
+                        stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
 
                         _channel_stats[s][c].full = true;
                     }
@@ -433,13 +432,13 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                 auto& stats = _cube_stats[s].basic_stats;
                 if (full) {
                     num_pixels = (_channel_size * _num_channels) - stats[CARTA::StatsType::NanCount];
-                    mean = stats[CARTA::StatsType::Sum] / num_pixels;
-                    mean_sq = stats[CARTA::StatsType::SumSq] / num_pixels;
+                    sum = stats[CARTA::StatsType::Sum];
+                    sum_sq = stats[CARTA::StatsType::SumSq];
 
                     stats[CARTA::StatsType::NumPixels] = num_pixels;
-                    stats[CARTA::StatsType::Mean] = mean;
-                    stats[CARTA::StatsType::Sigma] = sqrt(mean_sq - (mean * mean));
-                    stats[CARTA::StatsType::RMS] = sqrt(mean_sq);
+                    stats[CARTA::StatsType::Mean] = sum / num_pixels;
+                    stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
+                    stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
 
                     _cube_stats[s].full = true;
                 }
