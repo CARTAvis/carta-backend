@@ -409,7 +409,7 @@ bool FileLoader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bo
 
 bool FileLoader::GetRegionSpectralData(
     int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
-    std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb) {
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     // Must be implemented in subclasses
     return false;
 }

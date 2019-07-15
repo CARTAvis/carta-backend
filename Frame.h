@@ -153,7 +153,7 @@ private:
         std::function<void(std::vector<float>, float)> cb);
     // get regional spectral profile (statistics) data
     bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
-        int profile_stokes, std::function<void(std::vector<std::vector<double>>, float)> cb);
+        int profile_stokes, const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
 
     // Functions used to set cursor and region states
     void SetConnectionFlag(bool connected);

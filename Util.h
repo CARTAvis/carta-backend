@@ -57,7 +57,7 @@ struct ChannelRange {
     }
 };
 
-volatile struct CursorXy {
+struct CursorXy {
     int x, y;
     CursorXy() {
         x = -1;
@@ -79,7 +79,7 @@ volatile struct CursorXy {
     }
 };
 
-volatile struct RegionState {
+struct RegionState {
     std::string name;
     CARTA::RegionType type;
     std::vector<CARTA::Point> control_points;
@@ -131,7 +131,7 @@ volatile struct RegionState {
     }
 };
 
-volatile struct RegionRequest {
+struct RegionRequest {
     std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config;
     RegionRequest() {}
     RegionRequest(std::vector<CARTA::SetSpectralRequirements_SpectralConfig> config_) {
