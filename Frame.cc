@@ -1204,7 +1204,7 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
 }
 
 bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
-    int profile_stokes, std::function<void(std::vector<std::vector<double>>, float)> cb) {
+    int profile_stokes, const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback) {
     int delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
     int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
     int profile_size = NumChannels(); // total number of channels
@@ -1228,6 +1228,7 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     int count, end;
     float progress = 0;
     casacore::SubImage<float> sub_image;
+    auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
     while (start < profile_size) {
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
@@ -1253,6 +1254,7 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         // get the time elapse for this step
         auto t_end = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+        auto dt_partial_profile = std::chrono::duration<double, std::milli>(t_end - t_partial_profile_start).count();
         // adjust the increment of channels according to the time elapse
         delta_channels *= dt_target / dt;
         if (delta_channels < 1) {
@@ -1261,8 +1263,11 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         if (delta_channels > profile_size) {
             delta_channels = profile_size;
         }
-        // send partial result by the callback function
-        cb(results, progress);
+        if (dt_partial_profile > TARGET_PARTIAL_TIME || progress >= 1.0f) {
+            // send partial result by the callback function
+            t_partial_profile_start = std::chrono::high_resolution_clock::now();
+            partial_results_callback(results, progress);
+        }
     }
     stats_values = std::move(results);
     return true;

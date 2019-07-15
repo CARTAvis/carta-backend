@@ -24,7 +24,7 @@ public:
     bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) override;
     bool GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
-        std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb) override;
+        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     void SetFramePtr(Frame* frame) override;
 
 protected:
@@ -329,7 +329,7 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bo
 
 bool Hdf5Loader::GetRegionSpectralData(
     int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
-    std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb) {
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
         return false;
     }
@@ -445,9 +445,9 @@ bool Hdf5Loader::GetRegionSpectralData(
             auto t_end = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
 
+            progress = (float)x / num_x;
             // check whether to send partial results to the frontend
-            if (dt > TARGET_DELTA_TIME) {
-                t_latest = t_end;
+            if (dt > TARGET_PARTIAL_TIME && x < num_x) {
                 float mean_sq;
 
                 // Calculate partial stats
@@ -473,11 +473,11 @@ bool Hdf5Loader::GetRegionSpectralData(
                     }
                 }
 
-                progress = x / num_x;
                 stats_values = &_region_stats[region_stats_id].stats;
 
+                t_latest = std::chrono::high_resolution_clock::now();
                 // send partial result by the callback function
-                cb(stats_values, progress);
+                partial_results_callback(stats_values, progress);
             }
         }
 
@@ -514,7 +514,7 @@ bool Hdf5Loader::GetRegionSpectralData(
         &_region_stats[region_stats_id].stats;
 
     // send final result by the callback function
-    cb(stats_values, 1.0);
+    partial_results_callback(stats_values, 1.0f);
 
     return true;
 }

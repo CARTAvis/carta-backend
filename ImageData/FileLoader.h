@@ -150,7 +150,7 @@ public:
     virtual bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask);
     virtual bool GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
-        std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)> cb);
+        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
     virtual void SetFramePtr(Frame* frame);
 
