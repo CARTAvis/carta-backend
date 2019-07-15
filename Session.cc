@@ -824,7 +824,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool check_cur
 bool Session::SendRegionHistogramData(int file_id, int region_id, bool check_current_channel) {
     // return true if data sent
     bool data_sent(false);
-    CARTA::RegionHistogramData* histogram_data = GetRegionHistogramData(file_id, region_id, check_current_channel);
+    std::unique_ptr<CARTA::RegionHistogramData> histogram_data(GetRegionHistogramData(file_id, region_id, check_current_channel));
     if (histogram_data != nullptr) { // RESPONSE
         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, 0, *histogram_data);
         data_sent = true;
