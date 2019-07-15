@@ -172,8 +172,8 @@ void Frame::SetImageRegion(int region_id) {
     point.set_x(_image_shape(0) / 2.0); // center x
     point.set_y(_image_shape(1) / 2.0); // center y
     points[0] = point;
-    point.set_x(_image_shape(0)); // entire width
-    point.set_y(_image_shape(1)); // entire height
+    point.set_x(_image_shape(0) + 1.0); // entire width
+    point.set_y(_image_shape(1) + 1.0); // entire height
     points[1] = point;
     // rotation
     float rotation(0.0);
@@ -929,8 +929,6 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         if (region->NumStats() == 0) {
             return false;
         } // not requested
-
-        std::cerr << "+++ region ID: " << region_id << std::endl;
 
         // If we're using the whole image, try to use loader image stats
         if (region_id == IMAGE_REGION_ID || region_id == CUBE_REGION_ID) {
