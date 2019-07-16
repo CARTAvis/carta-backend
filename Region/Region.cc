@@ -41,6 +41,11 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
     }
 }
 
+RegionState Region::GetRegionState() {
+    RegionState region_state(_name, _type, _control_points, _rotation);
+    return region_state;
+}
+
 Region::~Region() {
     if (_xy_region) {
         delete _xy_region;
@@ -173,13 +178,13 @@ bool Region::PointsChanged(const std::vector<CARTA::Point>& new_points) {
 // ***********************************
 // Image Region with parameters applied
 
-bool Region::GetRegion(casacore::ImageRegion& region, int stokes, int channel) {
+bool Region::GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange channel_range) {
     // Return ImageRegion for given stokes and region parameters.
     bool region_ok(false);
     if (!IsValid() || (_xy_region == nullptr) || (stokes < 0))
         return region_ok;
 
-    casacore::WCRegion* wc_region = MakeExtendedRegion(stokes, channel);
+    casacore::WCRegion* wc_region = MakeExtendedRegion(stokes, channel_range);
     if (wc_region != nullptr) {
         region = casacore::ImageRegion(wc_region);
         region_ok = true;
@@ -400,7 +405,7 @@ casacore::WCRegion* Region::MakePolygonRegion(const std::vector<CARTA::Point>& p
     return polygon;
 }
 
-bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int channel) {
+bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRange channel_range) {
     // Create extension box for stored channel range and given stokes.
     // This can change for different profile/histogram/stats requirements so not stored
     bool extension_ok(false);
@@ -409,11 +414,15 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int chann
     }
 
     try {
-        double min_chan(channel), max_chan(channel);
-        if (channel == ALL_CHANNELS) { // extend 0 to nchan
-            min_chan = 0;
-            max_chan = _image_shape(_spectral_axis);
+        double min_chan(channel_range.from), max_chan(channel_range.to);
+        double all_channels = _image_shape(_spectral_axis);
+        if (channel_range.from == ALL_CHANNELS) { // extend to nchan
+            min_chan = all_channels;
         }
+        if (channel_range.to == ALL_CHANNELS) { // extend to nchan
+            max_chan = all_channels;
+        }
+        assert(max_chan >= min_chan && all_channels >= max_chan >= 0 && all_channels >= min_chan >= 0);
 
         // Convert pixel coordinates to world coordinates;
         // Must be same number of axes as in coord system
@@ -458,7 +467,7 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int chann
     return extension_ok;
 }
 
-casacore::WCRegion* Region::MakeExtendedRegion(int stokes, int channel) {
+casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_range) {
     // Return 2D wcregion extended by chan, stokes; xyregion if 2D
     if (_num_dims == 2) {
         return _xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
@@ -468,7 +477,7 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, int channel) {
     try {
         // create extension box for channel/stokes
         casacore::WCBox ext_box;
-        if (!MakeExtensionBox(ext_box, stokes, channel))
+        if (!MakeExtensionBox(ext_box, stokes, channel_range))
             return region; // nullptr, extension box failed
 
         // apply extension box with extension axes to xy region
@@ -661,6 +670,18 @@ std::string Region::GetSpectralCoordinate(int profile_index) {
     return _profiler->GetSpectralCoordinate(profile_index);
 }
 
+bool Region::GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image) {
+    // Get SpectralProfile with statistics values according to config stored in RegionProfiler
+    bool have_stats(false);
+    CARTA::SetSpectralRequirements_SpectralConfig config;
+    if (_profiler->GetSpectralConfig(config, profile_index)) {
+        std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
+        // get values from RegionStats
+        have_stats = _stats->CalcStatsValues(stats_values, requested_stats, image);
+    }
+    return have_stats;
+}
+
 void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data) {
     // Fill SpectralProfile with values for point region;
     // This assumes one spectral config with StatsType::Sum
@@ -702,17 +723,14 @@ void Region::FillSpectralProfileData(
     }
 }
 
-void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, casacore::ImageInterface<float>& image) {
+// TODO: This function can be replaced by the upper one and removed in the future.
+void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values) {
     // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
-    // using values calculated internally
     CARTA::SetSpectralRequirements_SpectralConfig config;
     if (_profiler->GetSpectralConfig(config, profile_index)) {
         std::string profile_coord(config.coordinate());
         std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
         size_t nstats = requested_stats.size();
-        std::vector<std::vector<double>> stats_values;
-        // get values from RegionStats
-        bool have_stats(_stats->CalcStatsValues(stats_values, requested_stats, image));
         for (size_t i = 0; i < nstats; ++i) {
             // one SpectralProfile per stats type
             auto new_profile = profile_data.add_profiles();
@@ -721,7 +739,7 @@ void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, i
             new_profile->set_stats_type(stat_type);
             // convert to float for spectral profile
             std::vector<float> values;
-            if (!have_stats || stats_values[i].empty()) { // region outside image or NaNs
+            if (stats_values[i].empty()) { // region outside image or NaNs
                 new_profile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
             } else {
                 *new_profile->mutable_double_vals() = {stats_values[i].begin(), stats_values[i].end()};
