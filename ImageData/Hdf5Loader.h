@@ -405,6 +405,9 @@ bool Hdf5Loader::GetRegionSpectralData(
         
         // Lambda to calculate mean, sigma and RMS
         auto calculate_means = [&]() {
+            double sum_z, sum_sq_z;
+            uint64_t num_pixels_z;
+            
             for (size_t z = 0; z < num_z; z++) {
                 if (num_pixels[z]) {
                     sum_z = sum[z];
@@ -477,9 +480,6 @@ bool Hdf5Loader::GetRegionSpectralData(
             progress = (float)x / num_x;
             // check whether to send partial results to the frontend
             if (dt > TARGET_PARTIAL_TIME && x < num_x) {
-                double sum_z, sum_sq_z;
-                uint64_t num_pixels_z;
-
                 // Calculate partial stats
                 calculate_means();
 
@@ -490,9 +490,6 @@ bool Hdf5Loader::GetRegionSpectralData(
                 partial_results_callback(stats_values, progress);
             }
         }
-
-        double sum_z, sum_sq_z;
-        uint64_t num_pixels_z;
 
         // Calculate final stats
         calculate_means();
