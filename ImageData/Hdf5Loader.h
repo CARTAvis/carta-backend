@@ -402,6 +402,33 @@ bool Hdf5Loader::GetRegionSpectralData(
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
         auto t_latest = t_start;
+        
+        // Lambda to calculate mean, sigma and RMS
+        auto calculate_means = [&]() {
+            for (size_t z = 0; z < num_z; z++) {
+                if (num_pixels[z]) {
+                    sum_z = sum[z];
+                    sum_sq_z = sum_sq[z];
+                    num_pixels_z = num_pixels[z];
+
+                    mean[z] = sum_z / num_pixels_z;
+                    rms[z] = sqrt(sum_sq_z / num_pixels_z);
+                    sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
+                } else {
+                    // if there are no valid values, set all stats to NaN except the value and NaN counts
+                    for (auto& kv : stats) {
+                        switch (kv.first) {
+                            case CARTA::StatsType::NanCount:
+                            case CARTA::StatsType::NumPixels:
+                                break;
+                            default:
+                                kv.second[z] = NAN;
+                                break;
+                        }
+                    }
+                }
+            }
+        };
 
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = x_start; x < num_x; x++) {
@@ -450,30 +477,11 @@ bool Hdf5Loader::GetRegionSpectralData(
             progress = (float)x / num_x;
             // check whether to send partial results to the frontend
             if (dt > TARGET_PARTIAL_TIME && x < num_x) {
-                float mean_sq;
+                double sum_z, sum_sq_z;
+                uint64_t num_pixels_z;
 
                 // Calculate partial stats
-                for (size_t z = 0; z < num_z; z++) {
-                    if (num_pixels[z]) {
-                        mean[z] = sum[z] / num_pixels[z];
-
-                        mean_sq = sum_sq[z] / num_pixels[z];
-                        rms[z] = sqrt(mean_sq);
-                        sigma[z] = sqrt(mean_sq - (mean[z] * mean[z]));
-                    } else {
-                        // if there are no valid values, set all stats to NaN except the value and NaN counts
-                        for (auto& kv : stats) {
-                            switch (kv.first) {
-                                case CARTA::StatsType::NanCount:
-                                case CARTA::StatsType::NumPixels:
-                                    break;
-                                default:
-                                    kv.second[z] = NAN;
-                                    break;
-                            }
-                        }
-                    }
-                }
+                calculate_means();
 
                 stats_values = &_region_stats[region_stats_id].stats;
 
@@ -487,29 +495,7 @@ bool Hdf5Loader::GetRegionSpectralData(
         uint64_t num_pixels_z;
 
         // Calculate final stats
-        for (size_t z = 0; z < num_z; z++) {
-            if (num_pixels[z]) {
-                sum_z = sum[z];
-                sum_sq_z = sum_sq[z];
-                num_pixels_z = num_pixels[z];
-
-                mean[z] = sum_z / num_pixels_z;
-                rms[z] = sqrt(sum_sq_z / num_pixels_z);
-                sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
-            } else {
-                // if there are no valid values, set all stats to NaN except the value and NaN counts
-                for (auto& kv : stats) {
-                    switch (kv.first) {
-                        case CARTA::StatsType::NanCount:
-                        case CARTA::StatsType::NumPixels:
-                            break;
-                        default:
-                            kv.second[z] = NAN;
-                            break;
-                    }
-                }
-            }
-        }
+        calculate_means();
 
         // the stats calculation is completed
         _region_stats[region_stats_id].completed = true;
