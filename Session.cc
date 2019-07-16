@@ -178,8 +178,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     } else {
         type = CARTA::SessionType::RESUMED;
         if (session_id != _id) { // invalid session id
-            error = fmt::format("Cannot resume session id {}"
-                , session_id);
+            error = fmt::format("Cannot resume session id {}", session_id);
         } else {
             success = true;
         }

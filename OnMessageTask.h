@@ -44,7 +44,7 @@ public:
         _event_buffer = event_buf;
     }
     ~MultiMessageTask() {
-        delete [] _event_buffer;
+        delete[] _event_buffer;
     };
 };
 
