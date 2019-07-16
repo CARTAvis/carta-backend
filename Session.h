@@ -156,6 +156,9 @@ private:
     bool FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const std::string& folder,
         const std::string& filename, std::string hdu, std::string& message);
 
+    // Delete Frame(s)
+    void DeleteFrame(int file_id);
+
     // Histogram
     CARTA::RegionHistogramData* GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel = false);
     bool SendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t request_id);

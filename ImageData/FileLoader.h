@@ -9,6 +9,10 @@
 
 #include <carta-protobuf/defs.pb.h>
 
+#include "../Util.h"
+
+class Frame;
+
 namespace carta {
 
 namespace FileInfo {
@@ -41,6 +45,8 @@ struct RegionSpectralStats {
     casacore::IPosition origin;
     casacore::IPosition shape;
     std::map<CARTA::StatsType, std::vector<double>> stats;
+    volatile bool completed = false;
+    size_t latest_x = 0;
 
     RegionSpectralStats() {}
 
@@ -56,6 +62,9 @@ struct RegionSpectralStats {
 
     bool IsValid(casacore::IPosition origin, casacore::IPosition shape) {
         return (origin.isEqual(this->origin) && shape.isEqual(this->shape));
+    }
+    bool IsCompleted() {
+        return completed;
     }
 };
 
@@ -136,10 +145,14 @@ public:
     // Return a casacore image type representing the data stored in the
     // specified HDU/group/table/etc.
     virtual ImageRef LoadData(FileInfo::Data ds) = 0;
-    virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y);
-    virtual std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
-        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin);
+    virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y);
+    // check if one can apply swizzled data under such image format and region condition
+    virtual bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask);
+    virtual bool GetRegionSpectralData(
+        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
+        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
+    virtual void SetFramePtr(Frame* frame);
 
 protected:
     virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;

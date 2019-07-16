@@ -119,45 +119,59 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::RegisterViewer message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegisterViewer(message, head.icd_version, head.request_id);
+                    } else {
+                        fmt::print("Bad REGISTER_VIEWER message!\n");
                     }
                     break;
                 }
                 case CARTA::EventType::SET_IMAGE_CHANNELS: {
                     CARTA::SetImageChannels message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->ImageChannelLock();
-                    if (!session->ImageChannelTaskTestAndSet()) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            SetImageChannelsTask(session, make_pair(message, head.request_id));
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->ImageChannelLock();
+                        if (!session->ImageChannelTaskTestAndSet()) {
+                            tsk = new (tbb::task::allocate_root(session->Context()))
+                                SetImageChannelsTask(session, make_pair(message, head.request_id));
+                        } else {
+                            // has its own queue to keep channels in order during animation
+                            session->AddToSetChannelQueue(message, head.request_id);
+                        }
+                        session->ImageChannelUnlock();
                     } else {
-                        // has its own queue to keep channels in order during animation
-                        session->AddToSetChannelQueue(message, head.request_id);
+                        fmt::print("Bad SET_IMAGE_CHANNELS message!\n");
                     }
-                    session->ImageChannelUnlock();
                     break;
                 }
                 case CARTA::EventType::SET_IMAGE_VIEW: {
                     CARTA::SetImageView message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->OnSetImageView(message);
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnSetImageView(message);
+                    } else {
+                        fmt::print("Bad SET_IMAGE_VIEW message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::SET_CURSOR: {
                     CARTA::SetCursor message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->AddCursorSetting(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->AddCursorSetting(message, head.request_id);
+                        tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
+                    } else {
+                        fmt::print("Bad SET_CURSOR message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS: {
                     CARTA::SetHistogramRequirements message;
-                    message.ParseFromArray(event_buf, event_length);
-                    if (message.histograms_size() == 0) {
-                        session->CancelSetHistRequirements();
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        if (message.histograms_size() == 0) {
+                            session->CancelSetHistRequirements();
+                        } else {
+                            session->ResetHistContext();
+                            tsk = new (tbb::task::allocate_root(session->HistContext()))
+                                SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                        }
                     } else {
-                        session->ResetHistContext();
-                        tsk = new (tbb::task::allocate_root(session->HistContext()))
-                            SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                        fmt::print("Bad SET_HISTOGRAM_REQUIREMENTS message!\n");
                     }
                     break;
                 }
@@ -167,33 +181,46 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         session->CheckCancelAnimationOnFileClose(message.file_id());
                         session->_file_settings.ClearSettings(message.file_id());
                         session->OnCloseFile(message);
+                    } else {
+                        fmt::print("Bad CLOSE_FILE message!\n");
                     }
                     break;
                 }
                 case CARTA::EventType::START_ANIMATION: {
                     CARTA::StartAnimation message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->CancelExistingAnimation();
-                    session->BuildAnimationObject(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->CancelExistingAnimation();
+                        session->BuildAnimationObject(message, head.request_id);
+                        tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                    } else {
+                        fmt::print("Bad START_ANIMATION message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::STOP_ANIMATION: {
                     CARTA::StopAnimation message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->StopAnimation(message.file_id(), message.end_frame());
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->StopAnimation(message.file_id(), message.end_frame());
+                    } else {
+                        fmt::print("Bad STOP_ANIMATION message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
                     CARTA::AnimationFlowControl message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->HandleAnimationFlowControlEvt(message);
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->HandleAnimationFlowControlEvt(message);
+                    } else {
+                        fmt::print("Bad ANIMATION_FLOW_CONTROL message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::FILE_INFO_REQUEST: {
                     CARTA::FileInfoRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnFileInfoRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad FILE_INFO_REQUEST message!\n");
                     }
                     break;
                 }
@@ -201,6 +228,8 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::FileListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnFileListRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad FILE_LIST_REQUEST message!\n");
                     }
                     break;
                 }
@@ -208,11 +237,16 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::OpenFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnOpenFile(message, head.request_id);
+                    } else {
+                        fmt::print("Bad OPEN_FILE message!\n");
                     }
                     break;
                 }
                 default: {
-                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, event_buf);
+                    // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
+                    char* message_buffer = new char[event_length];
+                    memcpy(message_buffer, event_buf, event_length);
+                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
                 }
             }
 
