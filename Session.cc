@@ -261,6 +261,10 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
         // create Frame for open file
         auto frame = std::unique_ptr<Frame>(new Frame(_id, abs_filename, hdu, _selected_file_info_extended));
         if (frame->IsValid()) {
+            // Check if the old _frames[file_id] object exists. If so, delete it.
+            if (_frames.count(file_id) > 0) {
+                DeleteFrame(file_id);
+            }
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
             _frames[file_id] = move(frame);
             lock.unlock();
@@ -294,19 +298,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
-    auto file_id = message.file_id();
-    std::unique_lock<std::mutex> lock(_frame_mutex);
-    if (file_id == ALL_FILES) {
-        for (auto& frame : _frames) {
-            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-            frame.second.reset();             // delete Frame
-        }
-        _frames.clear();
-    } else if (_frames.count(file_id)) {
-        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-        _frames[file_id].reset();
-        _frames.erase(file_id);
-    }
+    DeleteFrame(message.file_id());
 }
 
 void Session::OnSetImageView(const CARTA::SetImageView& message) {
@@ -433,10 +425,12 @@ void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
     SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
     // update data streams if requirements set
     if (success && _frames.at(file_id)->RegionChanged(region_id)) {
+        _frames.at(file_id)->IncreaseZProfileCount();
         SendSpatialProfileData(file_id, region_id);
         SendSpectralProfileData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
         SendRegionStatsData(file_id, region_id);
+        _frames.at(file_id)->DecreaseZProfileCount();
     }
 }
 
@@ -802,11 +796,17 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool check_cur
             if (region_id == CURSOR_REGION_ID && !_frames.at(file_id)->IsCursorSet()) {
                 return data_sent; // do not send profile unless frontend set cursor
             }
-            CARTA::SpectralProfileData spectral_profile_data;
-            if (_frames.at(file_id)->FillSpectralProfileData(region_id, spectral_profile_data, check_current_stokes)) {
-                spectral_profile_data.set_file_id(file_id);
-                spectral_profile_data.set_region_id(region_id);
-                SendFileEvent(file_id, CARTA::EventType::SPECTRAL_PROFILE_DATA, 0, spectral_profile_data);
+            _frames.at(file_id)->IncreaseZProfileCount();
+            bool profile_ok = _frames.at(file_id)->FillSpectralProfileData(
+                [&] (CARTA::SpectralProfileData profile_data) {
+                    profile_data.set_file_id(file_id);
+                    profile_data.set_region_id(region_id);
+                    // send (partial) profile data to the frontend
+                    SendFileEvent(file_id, CARTA::EventType::SPECTRAL_PROFILE_DATA, 0, profile_data);
+                },
+                region_id, check_current_stokes);
+            _frames.at(file_id)->DecreaseZProfileCount();
+            if (profile_ok) {
                 data_sent = true;
             }
         } catch (std::out_of_range& range_error) {
@@ -863,10 +863,12 @@ void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_ch
                 SendRegionStatsData(file_id, region_id);
             }
             if (stokes_changed) {
+                _frames.at(file_id)->IncreaseZProfileCount();
                 SendSpatialProfileData(file_id, region_id, stokes_changed);  // if using current stokes
                 SendSpectralProfileData(file_id, region_id, stokes_changed); // if using current stokes
                 SendRegionStatsData(file_id, region_id);
                 SendRegionHistogramData(file_id, region_id);
+                _frames.at(file_id)->DecreaseZProfileCount();
             }
         }
     }
@@ -1129,5 +1131,20 @@ void Session::CancelExistingAnimation() {
     if (_animation_object) {
         _animation_object->CancelExecution();
         _animation_object = nullptr;
+    }
+}
+
+void Session::DeleteFrame(int file_id) {
+    std::unique_lock<std::mutex> lock(_frame_mutex);
+    if (file_id == ALL_FILES) {
+        for (auto& frame : _frames) {
+            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+            frame.second.reset();             // delete Frame
+        }
+        _frames.clear();
+    } else if (_frames.count(file_id)) {
+        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        _frames[file_id].reset();
+        _frames.erase(file_id);
     }
 }
