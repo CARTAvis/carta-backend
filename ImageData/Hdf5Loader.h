@@ -8,6 +8,8 @@
 #include "CartaHdf5Image.h"
 #include "FileLoader.h"
 #include "Hdf5Attributes.h"
+#include "../Util.h"
+#include "../Frame.h"
 
 namespace carta {
 
@@ -18,9 +20,12 @@ public:
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
-    bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) override;
-    std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
-        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) override;
+    bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
+    bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) override;
+    bool GetRegionSpectralData(
+        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
+        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
+    void SetFramePtr(Frame* frame) override;
 
 protected:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
@@ -31,6 +36,7 @@ private:
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
     std::map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats> _region_stats;
+    Frame* _frame;
 
     std::string DataSetToString(FileInfo::Data ds) const;
 
@@ -282,17 +288,17 @@ casacore::ArrayBase* Hdf5Loader::GetStatsDataTyped(FileInfo::Data ds) {
     return data;
 }
 
-bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y) {
+bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) {
     bool data_ok(false);
     if (HasData(FileInfo::Data::SWIZZLED)) {
         casacore::Slicer slicer;
         if (_num_dims == 4) {
-            slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, _num_channels, 1, 1, 1));
+            slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, _num_channels, count_y, count_x, 1));
         } else if (_num_dims == 3) {
-            slicer = casacore::Slicer(IPos(3, 0, cursor_y, cursor_x), IPos(3, _num_channels, 1, 1));
+            slicer = casacore::Slicer(IPos(3, 0, cursor_y, cursor_x), IPos(3, _num_channels, count_y, count_x));
         }
 
-        data.resize(_num_channels);
+        data.resize(_num_channels * count_y * count_x);
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         try {
             LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
@@ -305,10 +311,9 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return data_ok;
 }
 
-std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralData(
-    int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin) {
+bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
-        return nullptr;
+        return false;
     }
 
     int num_y = mask->shape()(0);
@@ -318,8 +323,22 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
     // Using the normal dataset may be faster if the region is wider than it is deep.
     // This is an initial estimate; we need to examine casacore's algorithm in more detail.
     if (num_y * num_z < num_x) {
-        return nullptr;
+        return false;
     }
+
+    return true;
+}
+
+bool Hdf5Loader::GetRegionSpectralData(
+    int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+    if (!HasData(FileInfo::Data::SWIZZLED)) {
+        return false;
+    }
+
+    int num_y = mask->shape()(0);
+    int num_x = mask->shape()(1);
+    int num_z = _num_channels;
 
     bool recalculate(false);
     auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
@@ -331,6 +350,12 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
     } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
         _region_stats[region_stats_id].origin = origin;
         _region_stats[region_stats_id].shape = mask->shape();
+        _region_stats[region_stats_id].completed = false;
+        _region_stats[region_stats_id].latest_x = 0;
+        recalculate = true;
+    } else if ( // region stats is not expired but previous calculation is not completed
+        _region_stats[region_stats_id].IsValid(origin, mask->shape()) && !_region_stats[region_stats_id].IsCompleted()) {
+        // resume the calculation
         recalculate = true;
     }
 
@@ -352,34 +377,44 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
         auto& min = stats[CARTA::StatsType::Min];
         auto& max = stats[CARTA::StatsType::Max];
 
-        std::vector<float> slice_data(num_z * num_y);
+        std::vector<float> slice_data;
 
-        // Set initial values of stats which will be incremented (we may have expired region data)
-        for (size_t z = 0; z < num_z; z++) {
-            min[z] = FLT_MAX;
-            max[z] = FLT_MIN;
-            num_pixels[z] = 0;
-            nan_count[z] = 0;
-            sum[z] = 0;
-            sum_sq[z] = 0;
+        // get the start of X
+        size_t x_start = _region_stats[region_stats_id].latest_x;
+
+        if (x_start == 0) {
+            // Set initial values of stats which will be incremented (we may have expired region data)
+            for (size_t z = 0; z < num_z; z++) {
+                min[z] = FLT_MAX;
+                max[z] = FLT_MIN;
+                num_pixels[z] = 0;
+                nan_count[z] = 0;
+                sum[z] = 0;
+                sum_sq[z] = 0;
+            }
         }
 
+        // get a copy of current region state
+        RegionState region_state = _frame->GetRegionState(region_id);
+        std::map<CARTA::StatsType, std::vector<double>>* stats_values;
+        float progress;
+
+        // start the timer
+        auto t_start = std::chrono::high_resolution_clock::now();
+        auto t_latest = t_start;
+
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
-        for (size_t x = 0; x < num_x; x++) {
-            casacore::Slicer slicer;
-            if (_num_dims == 4) {
-                slicer = casacore::Slicer(IPos(4, 0, y_min, x + x_min, stokes), IPos(4, num_z, num_y, 1, 1));
-            } else if (_num_dims == 3) {
-                slicer = casacore::Slicer(IPos(3, 0, y_min, x + x_min), IPos(3, num_z, num_y, 1));
+        for (size_t x = x_start; x < num_x; x++) {
+            // check if frontend's requirements changed
+            if (_frame != nullptr && _frame->Interrupt(region_id, region_state)) {
+                // remember the latest x step
+                _region_stats[region_stats_id].latest_x = x;
+                return false;
             }
 
-            casacore::Array<float> tmp(slicer.length(), slice_data.data(), casacore::StorageInitPolicy::SHARE);
-
-            try {
-                LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
-            } catch (casacore::AipsError& err) {
-                std::cerr << "Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: " << err.getMesg() << std::endl;
-                return nullptr;
+            bool have_spectral_data = GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y);
+            if (!have_spectral_data) {
+                return false;
             }
 
             for (size_t y = 0; y < num_y; y++) {
@@ -406,6 +441,45 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
                         nan_count[z] += 1;
                     }
                 }
+            }
+
+            // get the time elapse for this step
+            auto t_end = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
+
+            progress = (float)x / num_x;
+            // check whether to send partial results to the frontend
+            if (dt > TARGET_PARTIAL_TIME && x < num_x) {
+                float mean_sq;
+
+                // Calculate partial stats
+                for (size_t z = 0; z < num_z; z++) {
+                    if (num_pixels[z]) {
+                        mean[z] = sum[z] / num_pixels[z];
+
+                        mean_sq = sum_sq[z] / num_pixels[z];
+                        rms[z] = sqrt(mean_sq);
+                        sigma[z] = sqrt(mean_sq - (mean[z] * mean[z]));
+                    } else {
+                        // if there are no valid values, set all stats to NaN except the value and NaN counts
+                        for (auto& kv : stats) {
+                            switch (kv.first) {
+                                case CARTA::StatsType::NanCount:
+                                case CARTA::StatsType::NumPixels:
+                                    break;
+                                default:
+                                    kv.second[z] = NAN;
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+                stats_values = &_region_stats[region_stats_id].stats;
+
+                t_latest = std::chrono::high_resolution_clock::now();
+                // send partial result by the callback function
+                partial_results_callback(stats_values, progress);
             }
         }
 
@@ -436,9 +510,22 @@ std::map<CARTA::StatsType, std::vector<double>>* Hdf5Loader::GetRegionSpectralDa
                 }
             }
         }
+
+        // the stats calculation is completed
+        _region_stats[region_stats_id].completed = true;
     }
 
-    return &_region_stats[region_stats_id].stats;
+    std::map<CARTA::StatsType, std::vector<double>>* stats_values =
+        &_region_stats[region_stats_id].stats;
+
+    // send final result by the callback function
+    partial_results_callback(stats_values, 1.0f);
+
+    return true;
+}
+
+void Hdf5Loader::SetFramePtr(Frame* frame) {
+    _frame = frame;
 }
 
 } // namespace carta
