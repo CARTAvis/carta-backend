@@ -315,8 +315,8 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bo
         return false;
     }
 
-    int num_y = mask->shape()(0);
-    int num_x = mask->shape()(1);
+    int num_x = mask->shape()(0);
+    int num_y = mask->shape()(1);
     int num_z = _num_channels;
 
     // Using the normal dataset may be faster if the region is wider than it is deep.
@@ -334,8 +334,8 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
         return false;
     }
 
-    int num_y = mask->shape()(0);
-    int num_x = mask->shape()(1);
+    int num_x = mask->shape()(0);
+    int num_y = mask->shape()(1);
     int num_z = _num_channels;
 
     bool recalculate(false);
@@ -359,9 +359,7 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
 
     if (recalculate) {
         int x_min = origin(0);
-        int x_max = x_min + num_x;
         int y_min = origin(1);
-        int y_max = y_min + num_y;
 
         auto& stats = _region_stats[region_stats_id].stats;
 
