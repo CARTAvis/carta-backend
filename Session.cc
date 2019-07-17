@@ -63,7 +63,7 @@ void ExitNoSessions(int s) {
     } else {
         --__exit_backend_timer;
         if (!__exit_backend_timer) {
-            std::cout << "No remaining sessions timeout." << std::endl;
+            std::cout << "No sessions timeout." << std::endl;
             exit(0);
         }
         alarm(1);
@@ -95,6 +95,16 @@ Session::~Session() {
             alarm(1);
         }
     }
+}
+
+void Session::SetInitExitTimeout(int secs) {
+    __exit_backend_timer = secs;
+    struct sigaction sig_handler;
+    sig_handler.sa_handler = ExitNoSessions;
+    sigemptyset(&sig_handler.sa_mask);
+    sig_handler.sa_flags = 0;
+    sigaction(SIGALRM, &sig_handler, nullptr);
+    alarm(1);
 }
 
 void Session::DisconnectCalled() {

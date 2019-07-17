@@ -1,3 +1,6 @@
+#include <jsoncpp/json/json.h>
+#include <jsoncpp/json/value.h>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -36,9 +39,21 @@ static uWS::Hub websocket_hub;
 // command-line arguments
 static string root_folder("/"), base_folder("."), version_id("1.1");
 static bool verbose, use_permissions;
+static string token;
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
+    // Check for authorization token
+    if (!token.empty()) {
+        string expected_auth_header = fmt::format("CARTA-Authorization={}", token);
+        auto cookie_header = http_request.getHeader("cookie");
+        string auth_header_string(cookie_header.value, cookie_header.valueLength);
+        if (auth_header_string.find(expected_auth_header) == string::npos) {
+            Log(0, "Invalid authorization token header, closing socket");
+            ws->close(403, "Invalid authorization token");
+            return;
+        }
+    }
     session_number++;
     // protect against overflow
     session_number = max(session_number, 1u);
@@ -64,6 +79,11 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
+    // Skip server-forced disconnects
+    if (code == 4003) {
+        return;
+    }
+
     Session* session = (Session*)ws->getUserData();
 
     if (session) {
@@ -246,6 +266,22 @@ void ExitBackend(int s) {
     exit(0);
 }
 
+void ReadJSONfile(string fname) {
+    std::ifstream config_file(fname);
+    if (!config_file.is_open()) {
+        std::cerr << "Failed to open config file " << fname << std::endl;
+        exit(1);
+    }
+    Json::Value json_config;
+    Json::Reader reader;
+    reader.parse(config_file, json_config);
+    token = json_config["token"].asString();
+    if (token.empty()) {
+        std::cerr << "Bad config file.\n";
+        exit(1);
+    }
+}
+
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
@@ -261,14 +297,18 @@ int main(int argc, const char* argv[]) {
         int thread_count(tbb::task_scheduler_init::default_num_threads());
         { // get values then let Input go out of scope
             casacore::Input inp;
+            string json_fname;
             inp.version(version_id);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
+            inp.create("token", token, "only accept connections with this authorization token", "String");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
+            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
+            inp.create("read_json_file", json_fname, "read in json file with secure token", "String");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
@@ -277,11 +317,22 @@ int main(int argc, const char* argv[]) {
             thread_count = inp.getInt("threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
+            token = inp.getString("token");
 
             bool has_exit_after_arg = inp.getString("exit_after").size();
             if (has_exit_after_arg) {
                 int wait_time = inp.getInt("exit_after");
                 Session::SetExitTimeout(wait_time);
+            }
+            bool has_init_exit_after_arg = inp.getString("init_exit_after").size();
+            if (has_init_exit_after_arg) {
+                int init_wait_time = inp.getInt("init_exit_after");
+                Session::SetInitExitTimeout(init_wait_time);
+            }
+            bool should_read_json_file = inp.getString("read_json_file").size();
+            if (should_read_json_file) {
+                json_fname = inp.getString("read_json_file");
+                ReadJSONfile(json_fname);
             }
         }
 
