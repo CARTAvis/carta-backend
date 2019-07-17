@@ -424,6 +424,7 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
         }
         assert((max_chan >= min_chan) && (all_channels >= max_chan));
         if (max_chan < 0 || min_chan < 0) {
+            std::cerr << "ERROR: max(" << max_chan << ") or min(" << min_chan << ") channel is negative!" << std::endl;
             return extension_ok; // false
         }
 
