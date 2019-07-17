@@ -86,10 +86,11 @@ public:
     std::string GetSpectralCoordinate(int profile_index);
     bool GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
-    void FillSpectralProfileData(
-        CARTA::SpectralProfileData& profile_data, int profile_index, std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values);
+    void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index,
+        std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
-    void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values);
+    void FillSpectralProfileData(
+        CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values);
 
     // Stats: pass through to RegionStats
     void SetStatsRequirements(const std::vector<int>& stats_types);

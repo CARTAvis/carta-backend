@@ -76,8 +76,8 @@ public:
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int channel, int stokes,
         CARTA::CompressionType compression_type, float compression_quality);
     bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool check_current_stokes = false);
-    bool FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb,
-        int region_id, bool check_current_stokes = false);
+    bool FillSpectralProfileData(
+        std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool check_current_stokes = false);
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool check_current_chan = false);
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
 
@@ -93,7 +93,7 @@ public:
 
     // set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
-    
+
     void IncreaseZProfileCount() {
         ++_z_profile_count;
     }
@@ -149,19 +149,17 @@ private:
     // get cursor's x-y coordinate from subimage
     bool GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor_xy);
     // get spectral profile data from subimage
-    bool GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image,
-        std::function<void(std::vector<float>, float)> cb);
+    bool GetCursorSpectralData(
+        std::vector<float>& data, casacore::SubImage<float>& sub_image, std::function<void(std::vector<float>, float)> cb);
     // get regional spectral profile (statistics) data
-    bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
-        int profile_stokes, const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
+    bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index, int profile_stokes,
+        const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
 
     // Functions used to set cursor and region states
     void SetConnectionFlag(bool connected);
     void SetCursorXy(int x, int y);
-    void SetRegionState(int region_id, std::string name, CARTA::RegionType type,
-        std::vector<CARTA::Point> points, float rotation);
-    void SetRegionSpectralRequests(int region_id,
-        const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
+    void SetRegionState(int region_id, std::string name, CARTA::RegionType type, std::vector<CARTA::Point> points, float rotation);
+    void SetRegionSpectralRequests(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
 
     // Functions used to check cursor and region states
     bool IsConnected();

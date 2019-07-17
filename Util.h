@@ -1,12 +1,12 @@
 #ifndef CARTA_BACKEND__UTIL_H_
 #define CARTA_BACKEND__UTIL_H_
 
+#include <cassert>
 #include <chrono>
 #include <fstream>
 #include <regex>
 #include <string>
 #include <unordered_map>
-#include <cassert>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
@@ -14,8 +14,8 @@
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/File.h>
 
-#include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
+#include <carta-protobuf/spectral_profile.pb.h>
 
 #include "InterfaceConstants.h"
 

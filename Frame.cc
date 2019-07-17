@@ -855,8 +855,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
     return profile_ok;
 }
 
-bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb,
-    int region_id, bool check_current_stokes) {
+bool Frame::FillSpectralProfileData(
+    std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool check_current_stokes) {
     // fill spectral profile message with requested statistics (or values for a point region)
     bool profile_ok(false);
     if (_regions.count(region_id)) {
@@ -902,15 +902,14 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        GetCursorSpectralData(spectral_data, sub_image,
-                            [&] (std::vector<float> tmp_spectral_data, float progress) {
-                                CARTA::SpectralProfileData profile_data;
-                                profile_data.set_stokes(curr_stokes);
-                                profile_data.set_progress(progress);
-                                region->FillSpectralProfileData(profile_data, i, tmp_spectral_data);
-                                // send (partial) result to Session
-                                cb(profile_data);
-                            });
+                        GetCursorSpectralData(spectral_data, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
+                            CARTA::SpectralProfileData profile_data;
+                            profile_data.set_stokes(curr_stokes);
+                            profile_data.set_progress(progress);
+                            region->FillSpectralProfileData(profile_data, i, tmp_spectral_data);
+                            // send (partial) result to Session
+                            cb(profile_data);
+                        });
                         guard.unlock();
                     }
                 } else { // statistics
@@ -920,7 +919,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin(),
-                            [&] (std::unordered_map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
+                            [&](std::unordered_map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
                                 profile_data.set_progress(progress);
@@ -932,8 +931,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     } else {
                         std::vector<std::vector<double>> stats_values;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSpectralData(stats_values, region_id, i, profile_stokes,
-                            [&] (std::vector<std::vector<double>> results, float progress) {
+                        GetRegionSpectralData(
+                            stats_values, region_id, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
                                 profile_data.set_progress(progress);
@@ -1157,16 +1156,16 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor
     return result;
 }
 
-bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image,
-    std::function<void(std::vector<float>, float)> cb) {
+bool Frame::GetCursorSpectralData(
+    std::vector<float>& data, casacore::SubImage<float>& sub_image, std::function<void(std::vector<float>, float)> cb) {
     bool data_ok(false);
     casacore::IPosition sub_image_shape = sub_image.shape();
     data.resize(sub_image_shape.product(), std::numeric_limits<double>::quiet_NaN());
     if ((sub_image_shape.size() > 2) && (_spectral_axis >= 0)) { // stoppable spectral profile process
         try {
             size_t delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
-            size_t dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
-            size_t profile_size = NumChannels(); // profile vector size
+            size_t dt_target = TARGET_DELTA_TIME;       // the target time elapse for each step, in the unit of milliseconds
+            size_t profile_size = NumChannels();        // profile vector size
             casacore::IPosition start(sub_image_shape.size(), 0);
             casacore::IPosition count(sub_image_shape);
             float progress = 0.0;
@@ -1220,11 +1219,11 @@ bool Frame::GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<f
     return data_ok;
 }
 
-bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index,
-    int profile_stokes, const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback) {
+bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index, int profile_stokes,
+    const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback) {
     int delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
-    int dt_target = TARGET_DELTA_TIME; // the target time elapse for each step, in the unit of milliseconds
-    int profile_size = NumChannels(); // total number of channels
+    int dt_target = TARGET_DELTA_TIME;       // the target time elapse for each step, in the unit of milliseconds
+    int profile_size = NumChannels();        // total number of channels
     auto& region = _regions[region_id];
     // get statistical requirements for this process
     CARTA::SetSpectralRequirements_SpectralConfig config;
@@ -1262,8 +1261,8 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
                 memcpy(&results[j][start], &buffer[j][0], buffer[j].size() * sizeof(double));
             }
         } else {
-            std::cerr << "Can not get zprofile (statistics), region id: " << region_id
-                      << ", channel range: ["<< start << "," << end << "]" << std::endl;
+            std::cerr << "Can not get zprofile (statistics), region id: " << region_id << ", channel range: [" << start << "," << end << "]"
+                      << std::endl;
             return false;
         }
         start += count;
@@ -1314,8 +1313,7 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
     return false;
 }
 
-bool Frame::Interrupt(int region_id, int profile_index, const RegionState& region_state,
-                           const std::vector<int>& requested_stats) {
+bool Frame::Interrupt(int region_id, int profile_index, const RegionState& region_state, const std::vector<int>& requested_stats) {
     if (!IsConnected()) {
         std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
         return true;
@@ -1343,9 +1341,7 @@ bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
     return (_region_states.count(region_id) && _region_states[region_id] == region_state);
 }
 
-
-bool Frame::AreSameRegionSpectralRequests(int region_id, int profile_index,
-    const std::vector<int>& requested_stats) {
+bool Frame::AreSameRegionSpectralRequests(int region_id, int profile_index, const std::vector<int>& requested_stats) {
     return (_region_requests.count(region_id) && _region_requests[region_id].IsAmong(profile_index, requested_stats));
 }
 
@@ -1357,13 +1353,11 @@ void Frame::SetCursorXy(int x, int y) {
     _cursor_xy = CursorXy(x, y);
 }
 
-void Frame::SetRegionState(int region_id, std::string name, CARTA::RegionType type,
-                                std::vector<CARTA::Point> points, float rotation) {
+void Frame::SetRegionState(int region_id, std::string name, CARTA::RegionType type, std::vector<CARTA::Point> points, float rotation) {
     _region_states[region_id].UpdateState(name, type, points, rotation);
 }
 
-void Frame::SetRegionSpectralRequests(int region_id,
-    const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
+void Frame::SetRegionSpectralRequests(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
     _region_requests[region_id].UpdateRequest(profiles);
 }
 

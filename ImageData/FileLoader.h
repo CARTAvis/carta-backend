@@ -11,7 +11,7 @@
 
 #include "../Util.h"
 
-#define MAX_REGION_COUNT 2<<15
+#define MAX_REGION_COUNT 2 << 15
 
 class Frame;
 
@@ -43,7 +43,7 @@ struct RegionStatsIdHash {
         return std::hash<int>()(k.stokes * MAX_REGION_COUNT + k.region_id);
     }
 };
- 
+
 struct RegionStatsIdEqual {
     bool operator()(const RegionStatsId& lhs, const RegionStatsId& rhs) const {
         return lhs.region_id == rhs.region_id && lhs.stokes == rhs.stokes;
@@ -159,8 +159,7 @@ public:
     virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y);
     // check if one can apply swizzled data under such image format and region condition
     virtual bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask);
-    virtual bool GetRegionSpectralData(
-        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
+    virtual bool GetRegionSpectralData(int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
         const std::function<void(std::unordered_map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
     virtual void SetFramePtr(Frame* frame);
