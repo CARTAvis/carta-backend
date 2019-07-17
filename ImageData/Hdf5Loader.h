@@ -334,8 +334,8 @@ bool Hdf5Loader::GetRegionSpectralData(
         return false;
     }
 
-    int num_y = mask->shape()(0);
-    int num_x = mask->shape()(1);
+    int num_x = mask->shape()(0);
+    int num_y = mask->shape()(1);
     int num_z = _num_channels;
 
     bool recalculate(false);
