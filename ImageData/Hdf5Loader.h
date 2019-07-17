@@ -401,7 +401,7 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
         auto t_latest = t_start;
 
         // Lambda to calculate mean, sigma and RMS
-        auto calculate_means = [&]() {
+        auto calculate_stats = [&]() {
             double sum_z, sum_sq_z;
             uint64_t num_pixels_z;
 
@@ -478,7 +478,7 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
             // check whether to send partial results to the frontend
             if (dt > TARGET_PARTIAL_TIME && x < num_x) {
                 // Calculate partial stats
-                calculate_means();
+                calculate_stats();
 
                 stats_values = &_region_stats[region_stats_id].stats;
 
@@ -489,7 +489,7 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
         }
 
         // Calculate final stats
-        calculate_means();
+        calculate_stats();
 
         // the stats calculation is completed
         _region_stats[region_stats_id].completed = true;
