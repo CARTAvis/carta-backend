@@ -422,7 +422,10 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
         if (channel_range.to == ALL_CHANNELS) { // extend to nchan
             max_chan = all_channels;
         }
-        assert(max_chan >= min_chan && all_channels >= max_chan >= 0 && all_channels >= min_chan >= 0);
+        assert((max_chan >= min_chan) && (all_channels >= max_chan));
+        if (max_chan < 0 || min_chan < 0) {
+            return extension_ok; // false
+        }
 
         // Convert pixel coordinates to world coordinates;
         // Must be same number of axes as in coord system
