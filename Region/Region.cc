@@ -416,7 +416,10 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
     try {
         double min_chan(channel_range.from), max_chan(channel_range.to);
         double all_channels = _image_shape(_spectral_axis);
-        if (channel_range.to == ALL_CHANNELS) { // extend to nchan
+        if (channel_range.from == ALL_CHANNELS) {
+            min_chan = 0;
+        }
+        if (channel_range.to == ALL_CHANNELS) {
             max_chan = all_channels - 1;
         }
         assert((max_chan >= min_chan) && (all_channels > max_chan));
