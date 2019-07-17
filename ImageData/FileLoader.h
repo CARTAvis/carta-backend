@@ -11,6 +11,8 @@
 
 #include "../Util.h"
 
+#define MAX_REGION_COUNT 2<<15
+
 class Frame;
 
 namespace carta {
@@ -38,7 +40,7 @@ struct RegionStatsId {
 
 struct RegionStatsIdHash {
     std::size_t operator()(const RegionStatsId& k) const {
-        return std::hash<float>()(k.region_id + 0.25 * k.stokes);
+        return std::hash<int>()(k.stokes * MAX_REGION_COUNT + k.region_id);
     }
 };
  
