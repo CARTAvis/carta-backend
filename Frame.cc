@@ -673,8 +673,9 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
 // ****************************************************
 // Region histograms, profiles, stats
 
-bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool check_current_chan) {
-    // fill histogram message with histograms for requested channel/num bins
+bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool channel_changed) {
+    // Fill histogram message with histograms for requested channel/num bins.
+    // Do not send cube histogram if channel changed.
     bool histogram_ok(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
@@ -690,13 +691,14 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
             // get histogram requirements for this index
             CARTA::SetHistogramRequirements_HistogramConfig config = region->GetHistogramConfig(i);
             int config_channel(config.channel()), config_num_bins(config.num_bins());
-            // only send if using current channel, which changed
-            if (check_current_chan && (config_channel != CURRENT_CHANNEL)) {
-                return false;
+
+            if ((config_channel == ALL_CHANNELS) && channel_changed) {
+                continue; // do not send
             }
             if (config_channel == CURRENT_CHANNEL) {
                 config_channel = _channel_index;
             }
+
             auto new_histogram = histogram_data->add_histograms();
             new_histogram->set_channel(config_channel);
             // get stored histograms or fill new histograms
@@ -749,8 +751,9 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
     return histogram_ok;
 }
 
-bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool check_current_stokes) {
-    // fill spatial profile message with requested x/y profiles (for a point region)
+bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool stokes_changed) {
+    // Fill spatial profile message with requested x/y profiles (for a point region).
+    // Do not send spatial profile for fixed stokes when stokes changed.
     bool profile_ok(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
@@ -786,12 +789,12 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
             for (size_t i = 0; i < num_profiles; ++i) {
                 // get <axis, stokes> for slicing image data
                 std::pair<int, int> axis_stokes = region->GetSpatialProfileReq(i);
-                // only send if using current stokes, which changed
-                if (check_current_stokes && (axis_stokes.second != CURRENT_STOKES)) {
-                    return false;
-                }
 
+                if (stokes_changed && (axis_stokes.second != CURRENT_STOKES)) {
+                    continue; // do not send fixed stokes profile when stokes changes
+                }
                 int profile_stokes = (axis_stokes.second < 0 ? _stokes_index : axis_stokes.second);
+
                 std::vector<float> profile;
                 int end(0);
                 if ((profile_stokes == _stokes_index) && !_image_cache.empty()) {
@@ -855,8 +858,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
     return profile_ok;
 }
 
-bool Frame::FillSpectralProfileData(
-    std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool check_current_stokes) {
+bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb,
+    int region_id, bool channel_changed, bool stokes_changed) {
     // fill spectral profile message with requested statistics (or values for a point region)
     bool profile_ok(false);
     if (_regions.count(region_id)) {
@@ -875,13 +878,14 @@ bool Frame::FillSpectralProfileData(
         for (size_t i = 0; i < num_profiles; ++i) {
             int profile_stokes;
             if (region->GetSpectralConfigStokes(profile_stokes, i)) {
-                // only send if using current stokes, which changed
-                if (check_current_stokes && (profile_stokes != CURRENT_STOKES)) {
-                    return false;
+                if ((channel_changed || stokes_changed) && (profile_stokes != CURRENT_STOKES)) {
+                    continue; // do not send fixed stokes profile when channel or stokes changes
                 }
-                if (profile_stokes == CURRENT_STOKES) {
-                    profile_stokes = curr_stokes;
+                if ((profile_stokes == CURRENT_STOKES) && (channel_changed && !stokes_changed)) {
+                    continue; // do not send current stokes profile when only channel changes
                 }
+                profile_stokes = curr_stokes;
+
                 // fill SpectralProfiles for this config
                 if (region->IsPoint()) { // values
                     std::vector<float> spectral_data;
@@ -951,8 +955,7 @@ bool Frame::FillSpectralProfileData(
 }
 
 bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data) {
-    // fill stats data message with requested statistics for the region with
-    // current channel and stokes
+    // fill stats data message with requested statistics for the region with current channel and stokes
     bool stats_ok(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];

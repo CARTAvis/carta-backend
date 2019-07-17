@@ -71,14 +71,17 @@ public:
     bool SetRegionStatsRequirements(int region_id, const std::vector<int>& stats_types);
 
     // fill data, profiles, stats messages
-    // For some messages, only fill if requirements are for current channel/stokes
+    // For some messages, prevent sending data when current channel/stokes changes
     bool FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::string& message);
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int channel, int stokes,
         CARTA::CompressionType compression_type, float compression_quality);
-    bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool check_current_stokes = false);
+    bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool stokes_changed = false);
     bool FillSpectralProfileData(
-        std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool check_current_stokes = false);
-    bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool check_current_chan = false);
+        std::function<void(CARTA::SpectralProfileData profile_data)> cb,
+        int region_id,
+        bool channel_changed = false,
+        bool stokes_changed = false);
+    bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool channel_changed = false);
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
 
     // histogram only (not full data message) : get if stored, else can calculate
