@@ -808,7 +808,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool check_cur
             }
             _frames.at(file_id)->IncreaseZProfileCount();
             bool profile_ok = _frames.at(file_id)->FillSpectralProfileData(
-                [&] (CARTA::SpectralProfileData profile_data) {
+                [&](CARTA::SpectralProfileData profile_data) {
                     profile_data.set_file_id(file_id);
                     profile_data.set_region_id(region_id);
                     // send (partial) profile data to the frontend
