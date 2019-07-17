@@ -627,7 +627,7 @@ void Region::FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::I
     _stats->FillStatsData(stats_data, image, channel, stokes);
 }
 
-void Region::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values) {
+void Region::FillStatsData(CARTA::RegionStatsData& stats_data, std::unordered_map<CARTA::StatsType, double>& stats_values) {
     _stats->FillStatsData(stats_data, stats_values);
 }
 
@@ -702,7 +702,7 @@ void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, i
 }
 
 void Region::FillSpectralProfileData(
-    CARTA::SpectralProfileData& profile_data, int profile_index, std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
+    CARTA::SpectralProfileData& profile_data, int profile_index, std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
     // using values calculated externally and passed in as a parameter
     CARTA::SetSpectralRequirements_SpectralConfig config;
@@ -716,12 +716,11 @@ void Region::FillSpectralProfileData(
             new_profile->set_coordinate(profile_coord);
             auto stat_type = static_cast<CARTA::StatsType>(requested_stats[i]);
             new_profile->set_stats_type(stat_type);
-            // convert to float for spectral profile
-            std::vector<float> values;
-            if (stats_values.find(stat_type) == stats_values.end()) { // stat not provided
+            try {
+                auto& values = stats_values.at(stat_type);
+                *new_profile->mutable_double_vals() = {values.begin(), values.end()};
+            } catch (const std::out_of_range& err) {
                 new_profile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
-            } else {
-                *new_profile->mutable_double_vals() = {stats_values[stat_type].begin(), stats_values[stat_type].end()};
             }
         }
     }
@@ -741,8 +740,6 @@ void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, i
             new_profile->set_coordinate(profile_coord);
             auto stat_type = static_cast<CARTA::StatsType>(requested_stats[i]);
             new_profile->set_stats_type(stat_type);
-            // convert to float for spectral profile
-            std::vector<float> values;
             if (stats_values[i].empty()) { // region outside image or NaNs
                 new_profile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
             } else {

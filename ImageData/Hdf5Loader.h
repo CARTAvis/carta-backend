@@ -24,7 +24,7 @@ public:
     bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) override;
     bool GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
-        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
+        const std::function<void(std::unordered_map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     void SetFramePtr(Frame* frame) override;
 
 protected:
@@ -35,7 +35,7 @@ private:
     std::string _hdu;
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
-    std::map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats> _region_stats;
+    std::unordered_map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats, FileInfo::RegionStatsIdHash, FileInfo::RegionStatsIdEqual> _region_stats;
     Frame* _frame;
 
     std::string DataSetToString(FileInfo::Data ds) const;
@@ -316,8 +316,8 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bo
         return false;
     }
 
-    int num_y = mask->shape()(0);
-    int num_x = mask->shape()(1);
+    int num_x = mask->shape()(0);
+    int num_y = mask->shape()(1);
     int num_z = _num_channels;
 
     // Using the normal dataset may be faster if the region is wider than it is deep.
@@ -331,13 +331,13 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bo
 
 bool Hdf5Loader::GetRegionSpectralData(
     int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
-    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+    const std::function<void(std::unordered_map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
         return false;
     }
 
-    int num_y = mask->shape()(0);
-    int num_x = mask->shape()(1);
+    int num_x = mask->shape()(0);
+    int num_y = mask->shape()(1);
     int num_z = _num_channels;
 
     bool recalculate(false);
@@ -396,7 +396,7 @@ bool Hdf5Loader::GetRegionSpectralData(
 
         // get a copy of current region state
         RegionState region_state = _frame->GetRegionState(region_id);
-        std::map<CARTA::StatsType, std::vector<double>>* stats_values;
+        std::unordered_map<CARTA::StatsType, std::vector<double>>* stats_values;
         float progress;
 
         // start the timer
@@ -498,7 +498,7 @@ bool Hdf5Loader::GetRegionSpectralData(
         _region_stats[region_stats_id].completed = true;
     }
 
-    std::map<CARTA::StatsType, std::vector<double>>* stats_values =
+    std::unordered_map<CARTA::StatsType, std::vector<double>>* stats_values =
         &_region_stats[region_stats_id].stats;
 
     // send final result by the callback function

@@ -87,7 +87,7 @@ public:
     bool GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
     void FillSpectralProfileData(
-        CARTA::SpectralProfileData& profile_data, int profile_index, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+        CARTA::SpectralProfileData& profile_data, int profile_index, std::unordered_map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
     void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values);
 
@@ -95,7 +95,7 @@ public:
     void SetStatsRequirements(const std::vector<int>& stats_types);
     size_t NumStats();
     void FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes);
-    void FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values);
+    void FillStatsData(CARTA::RegionStatsData& stats_data, std::unordered_map<CARTA::StatsType, double>& stats_values);
 
     RegionState GetRegionState();
 

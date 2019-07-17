@@ -920,7 +920,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin(),
-                            [&] (std::map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
+                            [&] (std::unordered_map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
                                 profile_data.set_progress(progress);

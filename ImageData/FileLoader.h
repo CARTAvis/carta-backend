@@ -18,7 +18,7 @@ namespace carta {
 namespace FileInfo {
 
 struct ImageStats {
-    std::map<CARTA::StatsType, double> basic_stats;
+    std::unordered_map<CARTA::StatsType, double> basic_stats;
 
     std::vector<float> percentiles;
     std::vector<float> percentile_ranks;
@@ -32,20 +32,26 @@ struct ImageStats {
 struct RegionStatsId {
     int region_id;
     int stokes;
-
     RegionStatsId() {}
-
     RegionStatsId(int region_id, int stokes) : region_id(region_id), stokes(stokes) {}
+};
 
-    bool operator<(const RegionStatsId& rhs) const {
-        return (region_id < rhs.region_id) || ((region_id == rhs.region_id) && (stokes < rhs.stokes));
+struct RegionStatsIdHash {
+    std::size_t operator()(const RegionStatsId& k) const {
+        return std::hash<float>()(k.region_id + 0.25 * k.stokes);
+    }
+};
+ 
+struct RegionStatsIdEqual {
+    bool operator()(const RegionStatsId& lhs, const RegionStatsId& rhs) const {
+        return lhs.region_id == rhs.region_id && lhs.stokes == rhs.stokes;
     }
 };
 
 struct RegionSpectralStats {
     casacore::IPosition origin;
     casacore::IPosition shape;
-    std::map<CARTA::StatsType, std::vector<double>> stats;
+    std::unordered_map<CARTA::StatsType, std::vector<double>> stats;
     volatile bool completed = false;
     size_t latest_x = 0;
 
@@ -153,7 +159,7 @@ public:
     virtual bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask);
     virtual bool GetRegionSpectralData(
         int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
-        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
+        const std::function<void(std::unordered_map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
     virtual void SetFramePtr(Frame* frame);
 

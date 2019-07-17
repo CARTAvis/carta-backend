@@ -207,7 +207,7 @@ void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, const casaco
     }
 }
 
-void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values) {
+void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, std::unordered_map<CARTA::StatsType, double>& stats_values) {
     // Fill stats calculated externally
     for (size_t i = 0; i < _stats_reqs.size(); ++i) {
         // add StatisticsValue to message
@@ -215,12 +215,12 @@ void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CAR
         auto carta_stats_type = static_cast<CARTA::StatsType>(_stats_reqs[i]);
         stats_value->set_stats_type(carta_stats_type);
         double value(0.0);
-        if (stats_values.find(carta_stats_type) == stats_values.end()) { // stat not provided
+        try {
+            value = stats_values.at(carta_stats_type);
+        } catch (const std::out_of_range& err) {
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
                 value = std::numeric_limits<double>::quiet_NaN();
             }
-        } else {
-            value = stats_values[carta_stats_type];
         }
         stats_value->set_value(value);
     }
