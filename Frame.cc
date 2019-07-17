@@ -178,8 +178,8 @@ void Frame::SetImageRegion(int region_id) {
     point.set_x(_image_shape(0) / 2.0); // center x
     point.set_y(_image_shape(1) / 2.0); // center y
     points[0] = point;
-    point.set_x(_image_shape(0)); // entire width
-    point.set_y(_image_shape(1)); // entire height
+    point.set_x(_image_shape(0) + 1.0); // entire width
+    point.set_y(_image_shape(1) + 1.0); // entire height
     points[1] = point;
     // rotation
     float rotation(0.0);
@@ -963,13 +963,27 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
             return false;
         } // not requested
 
-        stats_data.set_channel(_channel_index);
-        stats_data.set_stokes(_stokes_index);
-        casacore::SubImage<float> sub_image;
-        std::lock_guard<std::mutex> guard(_image_mutex);
-        if (GetRegionSubImage(region_id, sub_image, _stokes_index, ChannelRange(_channel_index))) {
-            region->FillStatsData(stats_data, sub_image, _channel_index, _stokes_index);
-            stats_ok = true;
+        // If we're using the whole image, try to use loader image stats
+        if (region_id == IMAGE_REGION_ID || region_id == CUBE_REGION_ID) {
+            int stats_channel = (region_id == CUBE_REGION_ID) ? ALL_CHANNELS : _channel_index;
+            auto& image_stats = _loader->GetImageStats(_stokes_index, stats_channel);
+            if (image_stats.full) {
+                stats_data.set_channel(stats_channel);
+                stats_data.set_stokes(_stokes_index);
+                region->FillStatsData(stats_data, image_stats.basic_stats);
+                stats_ok = true;
+            }
+        }
+
+        if (!stats_ok) {
+            stats_data.set_channel(_channel_index);
+            stats_data.set_stokes(_stokes_index);
+            casacore::SubImage<float> sub_image;
+            std::lock_guard<std::mutex> guard(_image_mutex);
+            if (GetRegionSubImage(region_id, sub_image, _stokes_index, ChannelRange(_channel_index))) {
+                region->FillStatsData(stats_data, sub_image, _channel_index, _stokes_index);
+                stats_ok = true;
+            }
         }
     }
     return stats_ok;
@@ -1045,9 +1059,12 @@ bool Frame::GetImageHistogram(int channel, int stokes, int num_bins, CARTA::Hist
         int image_num_bins(current_stats.histogram_bins.size());
 
         if ((num_bins == AUTO_BIN_SIZE) || (num_bins == image_num_bins)) {
+            double min_val(current_stats.basic_stats[CARTA::StatsType::Min]);
+            double max_val(current_stats.basic_stats[CARTA::StatsType::Max]);
+
             histogram.set_num_bins(image_num_bins);
-            histogram.set_bin_width((current_stats.max_val - current_stats.min_val) / image_num_bins);
-            histogram.set_first_bin_center(current_stats.min_val + (histogram.bin_width() / 2.0));
+            histogram.set_bin_width((max_val - min_val) / image_num_bins);
+            histogram.set_first_bin_center(min_val + (histogram.bin_width() / 2.0));
             *histogram.mutable_bins() = {current_stats.histogram_bins.begin(), current_stats.histogram_bins.end()};
             have_histogram = true;
         }

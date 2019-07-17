@@ -168,14 +168,16 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
         {FileInfo::Data::STATS_2D, "Statistics/XY"},
         {FileInfo::Data::STATS_2D_MIN, "Statistics/XY/MIN"},
         {FileInfo::Data::STATS_2D_MAX, "Statistics/XY/MAX"},
-        {FileInfo::Data::STATS_2D_MEAN, "Statistics/XY/MEAN"},
+        {FileInfo::Data::STATS_2D_SUM, "Statistics/XY/SUM"},
+        {FileInfo::Data::STATS_2D_SUMSQ, "Statistics/XY/SUM_SQ"},
         {FileInfo::Data::STATS_2D_NANS, "Statistics/XY/NAN_COUNT"},
         {FileInfo::Data::STATS_2D_HIST, "Statistics/XY/HISTOGRAM"},
         {FileInfo::Data::STATS_2D_PERCENT, "Statistics/XY/PERCENTILES"},
         {FileInfo::Data::STATS_3D, "Statistics/XYZ"},
         {FileInfo::Data::STATS_3D_MIN, "Statistics/XYZ/MIN"},
         {FileInfo::Data::STATS_3D_MAX, "Statistics/XYZ/MAX"},
-        {FileInfo::Data::STATS_3D_MEAN, "Statistics/XYZ/MEAN"},
+        {FileInfo::Data::STATS_3D_SUM, "Statistics/XYZ/SUM"},
+        {FileInfo::Data::STATS_3D_SUMSQ, "Statistics/XYZ/SUM_SQ"},
         {FileInfo::Data::STATS_3D_NANS, "Statistics/XYZ/NAN_COUNT"},
         {FileInfo::Data::STATS_3D_HIST, "Statistics/XYZ/HISTOGRAM"},
         {FileInfo::Data::STATS_3D_PERCENT, "Statistics/XYZ/PERCENTILES"},
@@ -313,8 +315,8 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bo
         return false;
     }
 
-    int num_y = mask->shape()(0);
-    int num_x = mask->shape()(1);
+    int num_x = mask->shape()(0);
+    int num_y = mask->shape()(1);
     int num_z = _num_channels;
 
     // Using the normal dataset may be faster if the region is wider than it is deep.
@@ -332,8 +334,8 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
         return false;
     }
 
-    int num_y = mask->shape()(0);
-    int num_x = mask->shape()(1);
+    int num_x = mask->shape()(0);
+    int num_y = mask->shape()(1);
     int num_z = _num_channels;
 
     bool recalculate(false);
@@ -357,9 +359,7 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
 
     if (recalculate) {
         int x_min = origin(0);
-        int x_max = x_min + num_x;
         int y_min = origin(1);
-        int y_max = y_min + num_y;
 
         auto& stats = _region_stats[region_stats_id].stats;
 
@@ -398,6 +398,36 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
         auto t_latest = t_start;
+
+        // Lambda to calculate mean, sigma and RMS
+        auto calculate_stats = [&]() {
+            double sum_z, sum_sq_z;
+            uint64_t num_pixels_z;
+
+            for (size_t z = 0; z < num_z; z++) {
+                if (num_pixels[z]) {
+                    sum_z = sum[z];
+                    sum_sq_z = sum_sq[z];
+                    num_pixels_z = num_pixels[z];
+
+                    mean[z] = sum_z / num_pixels_z;
+                    rms[z] = sqrt(sum_sq_z / num_pixels_z);
+                    sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
+                } else {
+                    // if there are no valid values, set all stats to NaN except the value and NaN counts
+                    for (auto& kv : stats) {
+                        switch (kv.first) {
+                            case CARTA::StatsType::NanCount:
+                            case CARTA::StatsType::NumPixels:
+                                break;
+                            default:
+                                kv.second[z] = NAN;
+                                break;
+                        }
+                    }
+                }
+            }
+        };
 
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = x_start; x < num_x; x++) {
@@ -446,30 +476,8 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
             progress = (float)x / num_x;
             // check whether to send partial results to the frontend
             if (dt > TARGET_PARTIAL_TIME && x < num_x) {
-                float mean_sq;
-
                 // Calculate partial stats
-                for (size_t z = 0; z < num_z; z++) {
-                    if (num_pixels[z]) {
-                        mean[z] = sum[z] / num_pixels[z];
-
-                        mean_sq = sum_sq[z] / num_pixels[z];
-                        rms[z] = sqrt(mean_sq);
-                        sigma[z] = sqrt(mean_sq - (mean[z] * mean[z]));
-                    } else {
-                        // if there are no valid values, set all stats to NaN except the value and NaN counts
-                        for (auto& kv : stats) {
-                            switch (kv.first) {
-                                case CARTA::StatsType::NanCount:
-                                case CARTA::StatsType::NumPixels:
-                                    break;
-                                default:
-                                    kv.second[z] = NAN;
-                                    break;
-                            }
-                        }
-                    }
-                }
+                calculate_stats();
 
                 stats_values = &_region_stats[region_stats_id].stats;
 
@@ -479,30 +487,8 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
             }
         }
 
-        float mean_sq;
-
         // Calculate final stats
-        for (size_t z = 0; z < num_z; z++) {
-            if (num_pixels[z]) {
-                mean[z] = sum[z] / num_pixels[z];
-
-                mean_sq = sum_sq[z] / num_pixels[z];
-                rms[z] = sqrt(mean_sq);
-                sigma[z] = sqrt(mean_sq - (mean[z] * mean[z]));
-            } else {
-                // if there are no valid values, set all stats to NaN except the value and NaN counts
-                for (auto& kv : stats) {
-                    switch (kv.first) {
-                        case CARTA::StatsType::NanCount:
-                        case CARTA::StatsType::NumPixels:
-                            break;
-                        default:
-                            kv.second[z] = NAN;
-                            break;
-                    }
-                }
-            }
-        }
+        calculate_stats();
 
         // the stats calculation is completed
         _region_stats[region_stats_id].completed = true;

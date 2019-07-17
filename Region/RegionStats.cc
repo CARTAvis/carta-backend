@@ -188,7 +188,7 @@ void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, const casaco
                 stats_value->set_stats_type(carta_stats_type);
                 double value(0.0);
                 if (!have_stats || results[i].empty()) { // region outside image or NaNs
-                    if (carta_stats_type != CARTA::NumPixels) {
+                    if (carta_stats_type != CARTA::StatsType::NumPixels) {
                         value = std::numeric_limits<double>::quiet_NaN();
                     }
                 } else {
@@ -204,6 +204,25 @@ void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, const casaco
             }
             _stats_valid = true;
         }
+    }
+}
+
+void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values) {
+    // Fill stats calculated externally
+    for (size_t i = 0; i < _stats_reqs.size(); ++i) {
+        // add StatisticsValue to message
+        auto stats_value = stats_data.add_statistics();
+        auto carta_stats_type = static_cast<CARTA::StatsType>(_stats_reqs[i]);
+        stats_value->set_stats_type(carta_stats_type);
+        double value(0.0);
+        if (stats_values.find(carta_stats_type) == stats_values.end()) { // stat not provided
+            if (carta_stats_type != CARTA::StatsType::NumPixels) {
+                value = std::numeric_limits<double>::quiet_NaN();
+            }
+        } else {
+            value = stats_values[carta_stats_type];
+        }
+        stats_value->set_value(value);
     }
 }
 

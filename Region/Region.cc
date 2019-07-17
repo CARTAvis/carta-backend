@@ -627,6 +627,10 @@ void Region::FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::I
     _stats->FillStatsData(stats_data, image, channel, stokes);
 }
 
+void Region::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values) {
+    _stats->FillStatsData(stats_data, stats_values);
+}
+
 // ***********************************
 // RegionProfiler
 

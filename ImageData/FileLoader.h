@@ -18,14 +18,15 @@ namespace carta {
 namespace FileInfo {
 
 struct ImageStats {
-    float min_val;
-    float max_val;
-    float mean;
+    std::map<CARTA::StatsType, double> basic_stats;
+
     std::vector<float> percentiles;
     std::vector<float> percentile_ranks;
     std::vector<int> histogram_bins;
-    int64_t nan_count;
+
     bool valid;
+    // Remove this check when we drop support for the old schema.
+    bool full;
 };
 
 struct RegionStatsId {
@@ -87,14 +88,16 @@ enum class Data : uint32_t {
     STATS_2D,
     STATS_2D_MIN,
     STATS_2D_MAX,
-    STATS_2D_MEAN,
+    STATS_2D_SUM,
+    STATS_2D_SUMSQ,
     STATS_2D_NANS,
     STATS_2D_HIST,
     STATS_2D_PERCENT,
     STATS_3D,
     STATS_3D_MIN,
     STATS_3D_MAX,
-    STATS_3D_MEAN,
+    STATS_3D_SUM,
+    STATS_3D_SUMSQ,
     STATS_3D_NANS,
     STATS_3D_HIST,
     STATS_3D_PERCENT,
@@ -157,7 +160,7 @@ protected:
     virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
 
     // Dimension values used by stats functions
-    size_t _num_channels, _num_stokes, _num_dims;
+    size_t _num_channels, _num_stokes, _num_dims, _channel_size;
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
