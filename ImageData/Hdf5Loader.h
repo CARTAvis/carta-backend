@@ -5,11 +5,11 @@
 
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
+#include "../Frame.h"
+#include "../Util.h"
 #include "CartaHdf5Image.h"
 #include "FileLoader.h"
 #include "Hdf5Attributes.h"
-#include "../Util.h"
-#include "../Frame.h"
 
 namespace carta {
 
@@ -22,8 +22,7 @@ public:
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
     bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) override;
-    bool GetRegionSpectralData(
-        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
+    bool GetRegionSpectralData(int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     void SetFramePtr(Frame* frame) override;
 
@@ -329,8 +328,7 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bo
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(
-    int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
+bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
     const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
         return false;
@@ -402,12 +400,12 @@ bool Hdf5Loader::GetRegionSpectralData(
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
         auto t_latest = t_start;
-        
+
         // Lambda to calculate mean, sigma and RMS
         auto calculate_means = [&]() {
             double sum_z, sum_sq_z;
             uint64_t num_pixels_z;
-            
+
             for (size_t z = 0; z < num_z; z++) {
                 if (num_pixels[z]) {
                     sum_z = sum[z];
@@ -498,8 +496,7 @@ bool Hdf5Loader::GetRegionSpectralData(
         _region_stats[region_stats_id].completed = true;
     }
 
-    std::map<CARTA::StatsType, std::vector<double>>* stats_values =
-        &_region_stats[region_stats_id].stats;
+    std::map<CARTA::StatsType, std::vector<double>>* stats_values = &_region_stats[region_stats_id].stats;
 
     // send final result by the callback function
     partial_results_callback(stats_values, 1.0f);
