@@ -53,7 +53,6 @@ Frame::Frame(
     SetImageRegion(IMAGE_REGION_ID);
     SetDefaultCursor();  // frontend sets requirements for cursor before cursor set
     _cursor_set = false; // only true if set by frontend
-    _valid = true;
 
     // set current channel, stokes, imageCache
     _channel_index = default_channel;
@@ -746,7 +745,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                 }
             }
         }
-        histogram_ok = true;
+        histogram_ok = (histogram_data->histograms_size() > 0); // do not send if no histograms
     }
     return histogram_ok;
 }
@@ -755,15 +754,15 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
     // Fill spatial profile message with requested x/y profiles (for a point region).
     // Do not send spatial profile for fixed stokes when stokes changed.
     bool profile_ok(false);
+    if ((region_id == CURSOR_REGION_ID) && !IsCursorSet()) {
+        return profile_ok; // no profile if frontend has not set cursor
+    }
+
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         if (!region->IsValid() || !region->IsPoint()) {
             return profile_ok;
         }
-        size_t num_profiles(region->NumSpatialProfiles());
-        if (num_profiles == 0) {
-            return profile_ok;
-        } // not requested
 
         // set spatial profile fields
         std::vector<CARTA::Point> control_points = region->GetControlPoints();
@@ -786,7 +785,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
 
         if (point_in_image) {
             // set profiles
-            for (size_t i = 0; i < num_profiles; ++i) {
+            for (size_t i = 0; i < region->NumSpatialProfiles(); ++i) {
                 // get <axis, stokes> for slicing image data
                 std::pair<int, int> axis_stokes = region->GetSpatialProfileReq(i);
 
@@ -878,13 +877,16 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         for (size_t i = 0; i < num_profiles; ++i) {
             int profile_stokes;
             if (region->GetSpectralConfigStokes(profile_stokes, i)) {
+                if (channel_changed && !stokes_changed) {
+                    continue; // do not send spectral profile when only channel changes
+                }
                 if ((channel_changed || stokes_changed) && (profile_stokes != CURRENT_STOKES)) {
                     continue; // do not send fixed stokes profile when channel or stokes changes
                 }
-                if ((profile_stokes == CURRENT_STOKES) && (channel_changed && !stokes_changed)) {
-                    continue; // do not send current stokes profile when only channel changes
+
+                if (profile_stokes == CURRENT_STOKES) {
+                    profile_stokes = curr_stokes;
                 }
-                profile_stokes = curr_stokes;
 
                 // fill SpectralProfiles for this config
                 if (region->IsPoint()) { // values
