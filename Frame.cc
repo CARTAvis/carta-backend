@@ -847,7 +847,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                 new_profile->set_coordinate(region->GetSpatialCoordinate(i));
                 new_profile->set_start(0);
                 new_profile->set_end(end);
-                *new_profile->mutable_values() = {profile.begin(), profile.end()};
+                new_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
             }
             profile_ok = true;
         }

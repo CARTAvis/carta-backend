@@ -63,7 +63,7 @@ void ExitNoSessions(int s) {
     } else {
         --__exit_backend_timer;
         if (!__exit_backend_timer) {
-            std::cout << "No remaining sessions timeout." << std::endl;
+            std::cout << "No sessions timeout." << std::endl;
             exit(0);
         }
         alarm(1);
@@ -95,6 +95,16 @@ Session::~Session() {
             alarm(1);
         }
     }
+}
+
+void Session::SetInitExitTimeout(int secs) {
+    __exit_backend_timer = secs;
+    struct sigaction sig_handler;
+    sig_handler.sa_handler = ExitNoSessions;
+    sigemptyset(&sig_handler.sa_mask);
+    sig_handler.sa_flags = 0;
+    sigaction(SIGALRM, &sig_handler, nullptr);
+    alarm(1);
 }
 
 void Session::DisconnectCalled() {
@@ -851,15 +861,17 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     return data_sent;
 }
 
-void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed) {
-    // Send updated data for all regions with requirements
+void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed, bool send_image_histogram) {
+    // Send updated data for all regions with requirements; do not send image histogram if sent with raster data
     if (_frames.count(file_id)) {
         std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
         for (auto region_id : regions) {
             // CHECK FOR CANCEL HERE ??
             if (channel_changed) {
                 SendSpatialProfileData(file_id, region_id);
-                SendRegionHistogramData(file_id, region_id, channel_changed); // if using current channel
+                if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
+                    SendRegionHistogramData(file_id, region_id, channel_changed); // if using current channel
+                }
                 SendRegionStatsData(file_id, region_id);
             }
             if (stokes_changed) {
@@ -867,7 +879,9 @@ void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_ch
                 SendSpatialProfileData(file_id, region_id, stokes_changed);  // if using current stokes
                 SendSpectralProfileData(file_id, region_id, stokes_changed); // if using current stokes
                 SendRegionStatsData(file_id, region_id);
-                SendRegionHistogramData(file_id, region_id);
+                if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
+                    SendRegionHistogramData(file_id, region_id);
+                }
                 _frames.at(file_id)->DecreaseZProfileCount();
             }
         }
@@ -975,9 +989,10 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
 
             if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
                 // RESPONSE: updated image raster/histogram
-                SendRasterImageData(file_id, true); // true = send histogram
-                // RESPONSE: region data (includes image, cursor, and set regions)
-                UpdateRegionData(file_id, channel_changed, stokes_changed);
+                bool send_histogram(true);
+                SendRasterImageData(file_id, send_histogram);
+                // RESPONSE: region data (includes image, cursor, and any regions set)
+                UpdateRegionData(file_id, channel_changed, stokes_changed, !send_histogram); // already sent
             } else {
                 if (!err_message.empty())
                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);

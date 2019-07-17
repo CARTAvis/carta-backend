@@ -143,6 +143,7 @@ public:
         _exit_after_num_seconds = secs;
         _exit_when_all_sessions_closed = true;
     }
+    static void SetInitExitTimeout(int secs);
 
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
@@ -170,7 +171,7 @@ private:
     bool SendSpectralProfileData(int file_id, int region_id, bool check_current_stokes = false);
     bool SendRegionHistogramData(int file_id, int region_id, bool check_current_channel = false);
     bool SendRegionStatsData(int file_id, int region_id);
-    void UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed);
+    void UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed, bool send_image_histogram = true);
 
     // Send protobuf messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);

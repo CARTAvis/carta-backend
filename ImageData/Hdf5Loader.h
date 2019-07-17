@@ -360,9 +360,7 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
 
     if (recalculate) {
         int x_min = origin(0);
-        int x_max = x_min + num_x;
         int y_min = origin(1);
-        int y_max = y_min + num_y;
 
         auto& stats = _region_stats[region_stats_id].stats;
 
