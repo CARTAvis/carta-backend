@@ -167,11 +167,13 @@ private:
 
     // Send data streams
     bool SendRasterImageData(int file_id, bool send_histogram = false);
-    bool SendSpatialProfileData(int file_id, int region_id, bool check_current_stokes = false);
-    bool SendSpectralProfileData(int file_id, int region_id, bool check_current_stokes = false);
-    bool SendRegionHistogramData(int file_id, int region_id, bool check_current_channel = false);
-    bool SendRegionStatsData(int file_id, int region_id);
-    void UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed, bool send_image_histogram = true);
+    // Only set channel_changed and stokes_changed if they are the only trigger for new data
+    // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
+    bool SendSpatialProfileData(int file_id, int region_id, bool stokes_changed = false);
+    bool SendSpectralProfileData(int file_id, int region_id, bool channel_changed = false, bool stokes_changed = false);
+    bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
+    bool SendRegionStatsData(int file_id, int region_id); // update stats in all cases
+    void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
 
     // Send protobuf messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);

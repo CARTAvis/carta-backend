@@ -304,7 +304,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     ack.set_success(success);
     ack.set_message(err_message);
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
-    UpdateRegionData(file_id, true, false);
+    UpdateRegionData(file_id);
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
@@ -354,8 +354,9 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
             bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
             if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
-                // RESPONSE: region data (includes image, cursor, and set regions)
-                UpdateRegionData(file_id, channel_changed, stokes_changed);
+                // RESPONSE: send data for all regions
+                bool send_histogram(true);
+                UpdateRegionData(file_id, send_histogram, channel_changed, stokes_changed);
             } else {
                 if (!err_message.empty())
                     SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
@@ -436,10 +437,10 @@ void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
     // update data streams if requirements set
     if (success && _frames.at(file_id)->RegionChanged(region_id)) {
         _frames.at(file_id)->IncreaseZProfileCount();
-        SendSpatialProfileData(file_id, region_id);
-        SendSpectralProfileData(file_id, region_id);
-        SendRegionHistogramData(file_id, region_id);
         SendRegionStatsData(file_id, region_id);
+        SendSpatialProfileData(file_id, region_id);
+        SendRegionHistogramData(file_id, region_id);
+        SendSpectralProfileData(file_id, region_id);
         _frames.at(file_id)->DecreaseZProfileCount();
     }
 }
@@ -772,7 +773,7 @@ bool Session::SendRasterImageData(int file_id, bool send_histogram) {
     return data_sent;
 }
 
-bool Session::SendSpatialProfileData(int file_id, int region_id, bool check_current_stokes) {
+bool Session::SendSpatialProfileData(int file_id, int region_id, bool stokes_changed) {
     // return true if data sent
     bool data_sent(false);
     if (_frames.count(file_id)) {
@@ -781,7 +782,7 @@ bool Session::SendSpatialProfileData(int file_id, int region_id, bool check_curr
                 return data_sent; // do not send profile unless frontend set cursor
             }
             CARTA::SpatialProfileData spatial_profile_data;
-            if (_frames.at(file_id)->FillSpatialProfileData(region_id, spatial_profile_data, check_current_stokes)) {
+            if (_frames.at(file_id)->FillSpatialProfileData(region_id, spatial_profile_data, stokes_changed)) {
                 spatial_profile_data.set_file_id(file_id);
                 spatial_profile_data.set_region_id(region_id);
                 SendFileEvent(file_id, CARTA::EventType::SPATIAL_PROFILE_DATA, 0, spatial_profile_data);
@@ -798,7 +799,7 @@ bool Session::SendSpatialProfileData(int file_id, int region_id, bool check_curr
     return data_sent;
 }
 
-bool Session::SendSpectralProfileData(int file_id, int region_id, bool check_current_stokes) {
+bool Session::SendSpectralProfileData(int file_id, int region_id, bool channel_changed, bool stokes_changed) {
     // return true if data sent
     bool data_sent(false);
     if (_frames.count(file_id)) {
@@ -809,12 +810,14 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool check_cur
             _frames.at(file_id)->IncreaseZProfileCount();
             bool profile_ok = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
-                    profile_data.set_file_id(file_id);
-                    profile_data.set_region_id(region_id);
-                    // send (partial) profile data to the frontend
-                    SendFileEvent(file_id, CARTA::EventType::SPECTRAL_PROFILE_DATA, 0, profile_data);
+                    if (profile_data.profiles_size() > 0) { // update needed (not for new channel)
+                        profile_data.set_file_id(file_id);
+                        profile_data.set_region_id(region_id);
+                        // send (partial) profile data to the frontend
+                        SendFileEvent(file_id, CARTA::EventType::SPECTRAL_PROFILE_DATA, 0, profile_data);
+                    }
                 },
-                region_id, check_current_stokes);
+                region_id, channel_changed, stokes_changed);
             _frames.at(file_id)->DecreaseZProfileCount();
             if (profile_ok) {
                 data_sent = true;
@@ -830,10 +833,10 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool check_cur
     return data_sent;
 }
 
-bool Session::SendRegionHistogramData(int file_id, int region_id, bool check_current_channel) {
+bool Session::SendRegionHistogramData(int file_id, int region_id, bool channel_changed) {
     // return true if data sent
     bool data_sent(false);
-    std::unique_ptr<CARTA::RegionHistogramData> histogram_data(GetRegionHistogramData(file_id, region_id, check_current_channel));
+    std::unique_ptr<CARTA::RegionHistogramData> histogram_data(GetRegionHistogramData(file_id, region_id, channel_changed));
     if (histogram_data != nullptr) { // RESPONSE
         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, 0, *histogram_data);
         data_sent = true;
@@ -861,29 +864,24 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     return data_sent;
 }
 
-void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed, bool send_image_histogram) {
-    // Send updated data for all regions with requirements; do not send image histogram if sent with raster data
+void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool channel_changed, bool stokes_changed) {
+    // Send updated data for all regions with requirements; do not send image histogram if already sent with raster data.
+    // Only set channel_changed and stokes_changed if they are the only trigger for new data,
+    // to prevent sending unneeded data streams.
     if (_frames.count(file_id)) {
         std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
         for (auto region_id : regions) {
             // CHECK FOR CANCEL HERE ??
-            if (channel_changed) {
-                SendSpatialProfileData(file_id, region_id);
-                if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
-                    SendRegionHistogramData(file_id, region_id, channel_changed); // if using current channel
-                }
-                SendRegionStatsData(file_id, region_id);
+            _frames.at(file_id)->IncreaseZProfileCount();
+            SendRegionStatsData(file_id, region_id);
+            SendSpatialProfileData(file_id, region_id, stokes_changed);
+            if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
+                SendRegionHistogramData(file_id, region_id, channel_changed);
+            } else if (region_id != IMAGE_REGION_ID) {
+                SendRegionHistogramData(file_id, region_id, channel_changed);
             }
-            if (stokes_changed) {
-                _frames.at(file_id)->IncreaseZProfileCount();
-                SendSpatialProfileData(file_id, region_id, stokes_changed);  // if using current stokes
-                SendSpectralProfileData(file_id, region_id, stokes_changed); // if using current stokes
-                SendRegionStatsData(file_id, region_id);
-                if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
-                    SendRegionHistogramData(file_id, region_id);
-                }
-                _frames.at(file_id)->DecreaseZProfileCount();
-            }
+            SendSpectralProfileData(file_id, region_id, channel_changed, stokes_changed);
+            _frames.at(file_id)->DecreaseZProfileCount();
         }
     }
 }
@@ -991,8 +989,8 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
                 // RESPONSE: updated image raster/histogram
                 bool send_histogram(true);
                 SendRasterImageData(file_id, send_histogram);
-                // RESPONSE: region data (includes image, cursor, and any regions set)
-                UpdateRegionData(file_id, channel_changed, stokes_changed, !send_histogram); // already sent
+                // RESPONSE: data for all regions; no histogram
+                UpdateRegionData(file_id, !send_histogram, channel_changed, stokes_changed);
             } else {
                 if (!err_message.empty())
                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
