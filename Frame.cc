@@ -913,7 +913,7 @@ bool Frame::FillSpectralProfileData(
                         guard.unlock();
                     }
                 } else { // statistics
-                    // do calculations for the image dimensions > 3
+                    // do calculations for the image dimensions >= 3 
                     if (_image_shape.size() < 3) {
                         return profile_ok; // false
                     }
