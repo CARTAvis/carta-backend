@@ -913,8 +913,17 @@ bool Frame::FillSpectralProfileData(
                         guard.unlock();
                     }
                 } else { // statistics
+                    bool use_swizzled_data(false);
                     std::unique_lock<std::mutex> guard(_image_mutex);
-                    bool use_swizzled_data(_loader->UseRegionSpectralData(region->XyMask()));
+                    try {
+                        // check is the region mask valid (outside the lattice or not)
+                        region->XyMask();
+                        // if region mask is valid, then check is swizzled data available
+                        use_swizzled_data = _loader->UseRegionSpectralData(region->XyMask());
+                    } catch (casacore::AipsError& err) {
+                        std::cerr << err.getMesg() << std::endl;
+                        return profile_ok; // false
+                    }
                     guard.unlock();
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
@@ -1254,16 +1263,18 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         }
         end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
         count = end - start + 1;
-        GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange(start, end));
-        std::vector<std::vector<double>> buffer;
-        if (region->GetSpectralProfileData(buffer, profile_index, sub_image)) {
-            for (int j = 0; j < stats_size; ++j) {
-                memcpy(&results[j][start], &buffer[j][0], buffer[j].size() * sizeof(double));
+        // try to get sub-image and its spectral profile
+        if (GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange(start, end))) {
+            std::vector<std::vector<double>> buffer;
+            if (region->GetSpectralProfileData(buffer, profile_index, sub_image)) {
+                for (int j = 0; j < stats_size; ++j) {
+                    memcpy(&results[j][start], &buffer[j][0], buffer[j].size() * sizeof(double));
+                }
+            } else {
+                std::cerr << "Can not get zprofile (statistics), region id: " << region_id
+                    << ", channel range: [" << start << "," << end << "]" << std::endl;
+                return false;
             }
-        } else {
-            std::cerr << "Can not get zprofile (statistics), region id: " << region_id << ", channel range: [" << start << "," << end << "]"
-                      << std::endl;
-            return false;
         }
         start += count;
         progress = (float)start / profile_size;
