@@ -1,4 +1,4 @@
-// RegionProfiler.h: class for creating requested profiles for and axis (x, y, z) and stokes
+// RegionProfiler.h: class for handling requested profiles for an axis (x, y, z) and stokes
 
 #ifndef CARTA_BACKEND_REGION_REGIONPROFILER_H_
 #define CARTA_BACKEND_REGION_REGIONPROFILER_H_
@@ -11,13 +11,22 @@
 
 namespace carta {
 
+struct SpatialProfile {
+    std::string profile;
+    std::pair<int, int> profile_axes; // <axis index, stokes index>
+    bool profile_sent;
+};
+
 class RegionProfiler {
 public:
     // spatial
     bool SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes);
     size_t NumSpatialProfiles();
-    std::pair<int, int> GetSpatialProfileReq(int profile_index);
     std::string GetSpatialCoordinate(int profile_index);
+    std::pair<int, int> GetSpatialProfileAxes(int profile_index);
+    bool GetSpatialProfileSent(int profile_index);
+    void SetSpatialProfileSent(int profile_index, bool sent);
+    void SetAllSpatialProfilesUnsent(); // enable sending new profiles
 
     // spectral
     bool SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int num_stokes);
@@ -30,10 +39,11 @@ public:
 private:
     // parse spatial/coordinate strings into <axisIndex, stokesIndex> pairs
     std::pair<int, int> GetAxisStokes(std::string profile);
+    // determine unsent profiles by diffing current profiles with last profiles
+    void DiffSpatialRequirements(std::vector<SpatialProfile>& last_profiles);
 
-    // spatial
-    std::vector<std::string> _spatial_profiles;
-    std::vector<std::pair<int, int>> _profile_pairs;
+    // spatial profile: map coordinate string to <axis, stokes> pair and whether data has been sent 
+    std::vector<SpatialProfile> _spatial_profiles;
 
     // spectral
     std::vector<int> _spectral_stokes;

@@ -76,8 +76,11 @@ public:
     // Spatial: pass through to RegionProfiler
     bool SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes);
     size_t NumSpatialProfiles();
-    std::pair<int, int> GetSpatialProfileReq(int profile_index);
+    std::pair<int, int> GetSpatialProfileAxes(int profile_index);
     std::string GetSpatialCoordinate(int profile_index);
+    bool GetSpatialProfileSent(int profile_index);
+    void SetSpatialProfileSent(int profile_index, bool sent);
+    void SetAllSpatialProfilesUnsent();
 
     // Spectral: pass through to RegionProfiler
     bool SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int num_stokes);

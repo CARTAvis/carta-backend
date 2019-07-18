@@ -7,22 +7,35 @@ using namespace carta;
 // ***** spatial *****
 
 bool RegionProfiler::SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes) {
+    // Set new spatial requirements for this region
     // process profile strings into pairs <axis, stokes>
+    std::vector<SpatialProfile> last_profiles = _spatial_profiles; // for diff
+    // Replace spatial profiles with requested profiles
     _spatial_profiles.clear();
-    _profile_pairs.clear();
     for (const auto& profile : profiles) {
         if (profile.empty() || profile.size() > 2) // ignore invalid profile string
             continue;
         // convert string to pair<axisIndex, stokesIndex>;
-        std::pair<int, int> axis_stokes = GetAxisStokes(profile);
-        if ((axis_stokes.first < 0) || (axis_stokes.first > 1)) // invalid axis
+        std::pair<int, int> axis_stokes_index = GetAxisStokes(profile);
+        if ((axis_stokes_index.first < 0) || (axis_stokes_index.first > 1)) { // invalid axis
             continue;
-        if (axis_stokes.second > (num_stokes - 1)) // invalid stokes
+        }
+        if (axis_stokes_index.second > (num_stokes - 1)) { // invalid stokes
             continue;
-        _spatial_profiles.push_back(profile);
-        _profile_pairs.push_back(axis_stokes);
+        }
+	SpatialProfile new_spatial_profile;
+	new_spatial_profile.profile = profile;
+	new_spatial_profile.profile_axes = axis_stokes_index;
+	new_spatial_profile.profile_sent = false;
+        _spatial_profiles.push_back(new_spatial_profile);
     }
-    return (profiles.size() == _spatial_profiles.size());
+    bool valid(false);
+    if (profiles.size() == _spatial_profiles.size()) {
+        // Determine diff for required data streams
+        DiffSpatialRequirements(last_profiles);
+	valid = true;
+    }
+    return valid;
 }
 
 std::pair<int, int> RegionProfiler::GetAxisStokes(std::string profile) {
@@ -51,24 +64,58 @@ std::pair<int, int> RegionProfiler::GetAxisStokes(std::string profile) {
     return std::make_pair(axis_index, stokes_index);
 }
 
-size_t RegionProfiler::NumSpatialProfiles() {
-    return _profile_pairs.size();
+void RegionProfiler::DiffSpatialRequirements(std::vector<SpatialProfile>& last_profiles) {
+    // Determine which current profiles are new (have unsent data streams)
+    for (size_t i = 0; i < NumSpatialProfiles(); ++i) {
+        bool found(false);
+        for (size_t j = 0; j < last_profiles.size(); ++j) {
+            if (_spatial_profiles[i].profile == last_profiles[j].profile) {
+                found = true;
+		break;
+            }
+        }
+        _spatial_profiles[i].profile_sent = found;
+    }
 }
 
-std::pair<int, int> RegionProfiler::GetSpatialProfileReq(int profile_index) {
-    if (profile_index < _profile_pairs.size())
-        return _profile_pairs[profile_index];
-    else
+size_t RegionProfiler::NumSpatialProfiles() {
+    return _spatial_profiles.size();
+}
+
+std::pair<int, int> RegionProfiler::GetSpatialProfileAxes(int profile_index) {
+    if (profile_index < _spatial_profiles.size()) {
+        return _spatial_profiles[profile_index].profile_axes;
+    } else {
         return {};
+    }
 }
 
 std::string RegionProfiler::GetSpatialCoordinate(int profile_index) {
-    if (profile_index < _spatial_profiles.size())
-        return _spatial_profiles[profile_index];
-    else
+    if (profile_index < _spatial_profiles.size()) {
+        return _spatial_profiles[profile_index].profile;
+    } else {
         return std::string();
+    }
 }
 
+bool RegionProfiler::GetSpatialProfileSent(int profile_index) {
+    if (profile_index < _spatial_profiles.size()) {
+        return _spatial_profiles[profile_index].profile_sent;
+    } else {
+        return false;
+    }
+}
+
+void RegionProfiler::SetSpatialProfileSent(int profile_index, bool sent) {
+    _spatial_profiles[profile_index].profile_sent = sent;
+}
+
+void RegionProfiler::SetAllSpatialProfilesUnsent() {
+    for (size_t i=0; i<NumSpatialProfiles(); ++i) {
+        _spatial_profiles[i].profile_sent = false;
+    }
+}
+        
 // ***** spectral *****
 
 bool RegionProfiler::SetSpectralRequirements(

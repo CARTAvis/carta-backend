@@ -641,19 +641,52 @@ void Region::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::S
 // spatial
 
 bool Region::SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes) {
+    if (_profiler == nullptr) {
+        return false;
+    }
     return _profiler->SetSpatialRequirements(profiles, num_stokes);
 }
 
 size_t Region::NumSpatialProfiles() {
+    if (_profiler == nullptr) {
+        return 0;
+    }
     return _profiler->NumSpatialProfiles();
 }
 
-std::pair<int, int> Region::GetSpatialProfileReq(int profile_index) {
-    return _profiler->GetSpatialProfileReq(profile_index);
+std::pair<int, int> Region::GetSpatialProfileAxes(int profile_index) {
+    if (_profiler == nullptr) {
+        return {};
+    }
+    return _profiler->GetSpatialProfileAxes(profile_index);
 }
 
 std::string Region::GetSpatialCoordinate(int profile_index) {
+    if (_profiler == nullptr) {
+        return "";
+    }
     return _profiler->GetSpatialCoordinate(profile_index);
+}
+
+bool Region::GetSpatialProfileSent(int profile_index) {
+    if (_profiler == nullptr) {
+        return false;
+    }
+    return _profiler->GetSpatialProfileSent(profile_index);
+}
+
+void Region::SetSpatialProfileSent(int profile_index, bool sent) {
+    if (_profiler == nullptr) {
+        return;
+    }
+    _profiler->SetSpatialProfileSent(profile_index, sent);
+}
+
+void Region::SetAllSpatialProfilesUnsent() {
+    if (_profiler == nullptr) {
+        return;
+    }
+    _profiler->SetAllSpatialProfilesUnsent();
 }
 
 // spectral

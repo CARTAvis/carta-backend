@@ -140,6 +140,9 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
     if (_regions.count(region_id)) { // update Region
         auto& region = _regions[region_id];
         region_set = region->UpdateRegionParameters(name, type, points, rotation);
+        if (region->RegionChanged()) {
+            region->SetAllSpatialProfilesUnsent(); // force new profiles for new region settings
+        }
     } else { // map new Region to region id
         const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
         auto region = std::unique_ptr<carta::Region>(
@@ -153,7 +156,7 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
     if (region_set) {
         if (name == "cursor" && type == CARTA::RegionType::POINT) { // update current cursor's x-y coordinate
             SetCursorXy(points[0].x(), points[0].y());
-        } else if (region_id > 0 && RegionChanged(region_id)) { // update current region's states
+        } else { // update current region's states
             SetRegionState(region_id, name, type, points, rotation);
         }
     } else {
@@ -296,6 +299,9 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                 _stokes_index = new_stokes;
                 SetImageCache();
                 updated = true;
+                for (auto& region : _regions) {
+                    region.second->SetAllSpatialProfilesUnsent(); // force sending new profiles for new chan/stokes
+                }
             } else {
                 message = fmt::format("Channel {} or Stokes {} is invalid in file {}", new_channel, new_stokes, _filename);
             }
@@ -785,73 +791,82 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
 
         if (point_in_image) {
             // set profiles
-            for (size_t i = 0; i < region->NumSpatialProfiles(); ++i) {
-                // get <axis, stokes> for slicing image data
-                std::pair<int, int> axis_stokes = region->GetSpatialProfileReq(i);
+	    size_t nprofiles(region->NumSpatialProfiles());
+            for (size_t i = 0; i < nprofiles; ++i) {
+                if (!region->GetSpatialProfileSent(i)) {
+                    // get <axis, stokes> for slicing image data
+                    std::pair<int, int> axis_stokes = region->GetSpatialProfileAxes(i);
 
-                if (stokes_changed && (axis_stokes.second != CURRENT_STOKES)) {
-                    continue; // do not send fixed stokes profile when stokes changes
-                }
-                int profile_stokes = (axis_stokes.second < 0 ? _stokes_index : axis_stokes.second);
+                    if (stokes_changed && (axis_stokes.second != CURRENT_STOKES)) {
+                        region->SetSpatialProfileSent(i, true);
+                        continue; // do not send fixed stokes profile when stokes changes
+                    }
+                    int profile_stokes = (axis_stokes.second < 0 ? _stokes_index : axis_stokes.second);
 
-                std::vector<float> profile;
-                int end(0);
-                if ((profile_stokes == _stokes_index) && !_image_cache.empty()) {
-                    // use stored channel cache
-                    bool write_lock(false);
-                    switch (axis_stokes.first) {
-                        case 0: { // x
-                            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                            auto x_start = y * num_image_cols;
-                            profile.reserve(_image_shape(0));
-                            for (unsigned int j = 0; j < _image_shape(0); ++j) {
-                                auto idx = x_start + j;
-                                profile.push_back(_image_cache[idx]);
+                    std::vector<float> profile;
+                    int end(0);
+                    if ((profile_stokes == _stokes_index) && !_image_cache.empty()) {
+                        // use stored channel cache
+                        bool write_lock(false);
+                        switch (axis_stokes.first) {
+                            case 0: { // x
+                                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                                auto x_start = y * num_image_cols;
+                                profile.reserve(_image_shape(0));
+                                for (unsigned int j = 0; j < _image_shape(0); ++j) {
+                                    auto idx = x_start + j;
+                                    profile.push_back(_image_cache[idx]);
+                                }
+                                cache_lock.release();
+                                end = _image_shape(0);
+                                break;
                             }
-                            cache_lock.release();
-                            end = _image_shape(0);
-                            break;
-                        }
-                        case 1: { // y
-                            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                            profile.reserve(_image_shape(1));
-                            for (unsigned int j = 0; j < _image_shape(1); ++j) {
-                                auto idx = (j * num_image_cols) + x;
-                                profile.push_back(_image_cache[idx]);
+                            case 1: { // y
+                                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                                profile.reserve(_image_shape(1));
+                                for (unsigned int j = 0; j < _image_shape(1); ++j) {
+                                    auto idx = (j * num_image_cols) + x;
+                                    profile.push_back(_image_cache[idx]);
+                                }
+                                cache_lock.release();
+                                end = _image_shape(1);
+                                break;
                             }
-                            cache_lock.release();
-                            end = _image_shape(1);
-                            break;
                         }
+                    } else {
+                        // slice image data
+                        casacore::Slicer section;
+                        switch (axis_stokes.first) {
+                            case 0: { // x
+                                GetImageSlicer(section, -1, y, _channel_index, profile_stokes);
+                                end = _image_shape(0);
+                                break;
+                            }
+                            case 1: { // y
+                                GetImageSlicer(section, x, -1, _channel_index, profile_stokes);
+                                end = _image_shape(1);
+                                break;
+                            }
+                        }
+                        profile.resize(end);
+                        casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
+                        std::lock_guard<std::mutex> guard(_image_mutex);
+                        _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
                     }
-                } else {
-                    // slice image data
-                    casacore::Slicer section;
-                    switch (axis_stokes.first) {
-                        case 0: { // x
-                            GetImageSlicer(section, -1, y, _channel_index, profile_stokes);
-                            end = _image_shape(0);
-                            break;
-                        }
-                        case 1: { // y
-                            GetImageSlicer(section, x, -1, _channel_index, profile_stokes);
-                            end = _image_shape(1);
-                            break;
-                        }
-                    }
-                    profile.resize(end);
-                    casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
-                    std::lock_guard<std::mutex> guard(_image_mutex);
-                    _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
+                    // SpatialProfile
+                    auto new_profile = profile_data.add_profiles();
+                    new_profile->set_coordinate(region->GetSpatialCoordinate(i));
+                    new_profile->set_start(0);
+                    new_profile->set_end(end);
+                    new_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
+                    region->SetSpatialProfileSent(i, true);
                 }
-                // SpatialProfile
-                auto new_profile = profile_data.add_profiles();
-                new_profile->set_coordinate(region->GetSpatialCoordinate(i));
-                new_profile->set_start(0);
-                new_profile->set_end(end);
-                new_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
             }
             profile_ok = true;
+	    // send if no profiles requested (for cursor value), but not if requested profiles do not need to be sent
+	    if ((nprofiles > 0) && (profile_data.profiles_size() == 0)) {
+                profile_ok = false;
+            }
         }
     }
     return profile_ok;
