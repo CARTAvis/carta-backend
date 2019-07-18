@@ -913,6 +913,10 @@ bool Frame::FillSpectralProfileData(
                         guard.unlock();
                     }
                 } else { // statistics
+                    // do calculations for the image dimensions > 3
+                    if (_image_shape.size() < 3) {
+                        return profile_ok; // false
+                    }
                     bool use_swizzled_data(false);
                     std::unique_lock<std::mutex> guard(_image_mutex);
                     try {
