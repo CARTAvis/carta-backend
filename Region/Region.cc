@@ -756,7 +756,7 @@ void Region::FillSpectralProfileData(
     }
 }
 
-void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index) {
+void Region::FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index) {
     // Fill spectral profile with NaN statistics values according to config stored in RegionProfiler
     CARTA::SetSpectralRequirements_SpectralConfig config;
     if (_profiler->GetSpectralConfig(config, profile_index)) {

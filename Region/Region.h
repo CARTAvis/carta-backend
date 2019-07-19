@@ -91,7 +91,7 @@ public:
     bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
     void FillSpectralProfileData(
         CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values);
-    void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index);
+    void FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index);
 
     // Stats: pass through to RegionStats
     void SetStatsRequirements(const std::vector<int>& stats_types);
