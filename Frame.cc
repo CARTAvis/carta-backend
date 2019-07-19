@@ -141,7 +141,7 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
         auto& region = _regions[region_id];
         region_set = region->UpdateRegionParameters(name, type, points, rotation);
         if (region->RegionChanged()) {
-            region->SetAllSpatialProfilesUnsent(); // force new profiles for new region settings
+            region->SetAllProfilesUnsent(); // force new profiles for new region settings
         }
     } else { // map new Region to region id
         const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
@@ -300,7 +300,8 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                 SetImageCache();
                 updated = true;
                 for (auto& region : _regions) {
-                    region.second->SetAllSpatialProfilesUnsent(); // force sending new profiles for new chan/stokes
+		    // force sending new profiles for new chan/stokes
+                    region.second->SetAllProfilesUnsent();
                 }
             } else {
                 message = fmt::format("Channel {} or Stokes {} is invalid in file {}", new_channel, new_stokes, _filename);
@@ -791,15 +792,21 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
 
         if (point_in_image) {
             // set profiles
-	    size_t nprofiles(region->NumSpatialProfiles());
+            size_t nprofiles(region->NumSpatialProfiles());
             for (size_t i = 0; i < nprofiles; ++i) {
                 if (!region->GetSpatialProfileSent(i)) {
                     // get <axis, stokes> for slicing image data
                     std::pair<int, int> axis_stokes = region->GetSpatialProfileAxes(i);
+                    if (axis_stokes.first < 0) {  // invalid index
+                        return profile_ok;
+                    }
 
                     if (stokes_changed && (axis_stokes.second != CURRENT_STOKES)) {
+			// Do not send fixed stokes profile when stokes changes.
+                        // When chan/stokes changes, all messages are set to unsent to force new profiles;
+			// put fixed stokes profile back to sent
                         region->SetSpatialProfileSent(i, true);
-                        continue; // do not send fixed stokes profile when stokes changes
+                        continue;
                     }
                     int profile_stokes = (axis_stokes.second < 0 ? _stokes_index : axis_stokes.second);
 
@@ -862,10 +869,11 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                     region->SetSpatialProfileSent(i, true);
                 }
             }
-            profile_ok = true;
-	    // send if no profiles requested (for cursor value), but not if requested profiles do not need to be sent
-	    if ((nprofiles > 0) && (profile_data.profiles_size() == 0)) {
+            // send if no profiles requested (for cursor value), but not if requested profiles do not need to be sent
+            if ((nprofiles > 0) && (profile_data.profiles_size() == 0)) {
                 profile_ok = false;
+            } else {
+                profile_ok = true;
             }
         }
     }
@@ -890,13 +898,21 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         // send profile and stats together
         // set stats profiles
         for (size_t i = 0; i < num_profiles; ++i) {
-            int profile_stokes;
-            if (region->GetSpectralConfigStokes(profile_stokes, i)) {
+            if (region->NumStatsToLoad(i) == 0) {
+                continue; // already loaded
+            }
+            int profile_stokes(region->GetSpectralConfigStokes(i));
+            if (profile_stokes >= CURRENT_STOKES) {
+                // When chan/stokes changes, all messages are set to unsent to force new profiles;
+                // put fixed stokes profile back to sent for the following:
                 if (channel_changed && !stokes_changed) {
+                    region->SetSpectralProfileAllStatsSent(i, true);
                     continue; // do not send spectral profile when only channel changes
                 }
                 if ((channel_changed || stokes_changed) && (profile_stokes != CURRENT_STOKES)) {
-                    continue; // do not send fixed stokes profile when channel or stokes changes
+                    // Do not send fixed stokes profile when stokes changes.
+                    region->SetSpectralProfileAllStatsSent(i, true);
+                    continue;
                 }
 
                 if (profile_stokes == CURRENT_STOKES) {
@@ -916,7 +932,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         CARTA::SpectralProfileData profile_data;
                         profile_data.set_stokes(curr_stokes);
                         profile_data.set_progress(1.0);
-                        region->FillSpectralProfileData(profile_data, i, spectral_data);
+                        region->FillPointSpectralProfileData(profile_data, i, spectral_data);
                         // send result to Session
                         cb(profile_data);
                     } else {
@@ -927,7 +943,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                             CARTA::SpectralProfileData profile_data;
                             profile_data.set_stokes(curr_stokes);
                             profile_data.set_progress(progress);
-                            region->FillSpectralProfileData(profile_data, i, tmp_spectral_data);
+                            region->FillPointSpectralProfileData(profile_data, i, tmp_spectral_data);
                             // send (partial) result to Session
                             cb(profile_data);
                         });
@@ -1273,12 +1289,11 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     int profile_size = NumChannels();        // total number of channels
     auto& region = _regions[region_id];
     // get statistical requirements for this process
-    CARTA::SetSpectralRequirements_SpectralConfig config;
-    if (!region->GetSpectralConfig(config, profile_index)) {
+    std::vector<int> config_stats;
+    if (!region->GetSpectralConfigStats(profile_index, config_stats)) { // stats in config, to see if req changed
         return false;
     }
-    int stats_size = config.stats_types().size();
-    std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
+    int stats_size = region->NumStatsToLoad(profile_index);
     // initialize the size of statistical results
     std::vector<std::vector<double>> results(stats_size);
     for (int i = 0; i < stats_size; ++i) {
@@ -1296,7 +1311,7 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
         // check if frontend's requirements changed
-        if (Interrupt(region_id, profile_index, region_state, requested_stats)) {
+        if (Interrupt(region_id, profile_index, region_state, config_stats)) {
             return false;
         }
         end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
