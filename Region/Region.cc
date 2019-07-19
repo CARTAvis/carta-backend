@@ -346,7 +346,7 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
         float bmaj(points[1].x()), bmin(points[1].y());
         // rotation is in degrees from y-axis;
         // ellipse rotation angle is in radians from x-axis
-        float theta = (rotation + 90.0) * (M_PI / 180.0f);
+        float theta;
 
         // Convert ellipsoid center pixel coords to world coords
         int num_axes(_coord_sys.nPixelAxes());
@@ -369,19 +369,22 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
         radii(0) = casacore::Quantity(bmaj, "pix");
         radii(1) = casacore::Quantity(bmin, "pix");
 
-        // Convert theta to a Quantity
-        casacore::Quantity quantity_theta = casacore::Quantity(static_cast<double>(theta), "rad");
-
         // Make sure the major axis is greater than the minor axis
         casacore::Quantity major_axis;
         casacore::Quantity minor_axis;
         if (radii(0) < radii(1)) {
             major_axis = radii(1);
             minor_axis = radii(0);
+            theta = (rotation) * (M_PI / 180.0f);
         } else {
             major_axis = radii(0);
             minor_axis = radii(1);
+            theta = (rotation + 90.0) * (M_PI / 180.0f);
         }
+
+        // Convert theta to a Quantity
+        casacore::Quantity quantity_theta = casacore::Quantity(static_cast<double>(theta), "rad");
+
         ellipse =
             new casacore::WCEllipsoid(center(0), center(1), major_axis, minor_axis, quantity_theta, _xy_axes(0), _xy_axes(1), _coord_sys);
     }
