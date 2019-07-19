@@ -924,7 +924,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         CARTA::SpectralProfileData profile_data;
                         profile_data.set_stokes(curr_stokes);
                         profile_data.set_progress(1.0);
-                        region->FillEmptySpectralProfileData(profile_data, i);
+                        region->FillSpectralProfileData(profile_data, i);
                         // send empty (NaN) result to Session
                         cb(profile_data);
                         profile_ok = true;
@@ -943,7 +943,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         CARTA::SpectralProfileData profile_data;
                         profile_data.set_stokes(curr_stokes);
                         profile_data.set_progress(1.0);
-                        region->FillEmptySpectralProfileData(profile_data, i);
+                        region->FillSpectralProfileData(profile_data, i);
                         // send empty (NaN) result to Session
                         cb(profile_data);
                         profile_ok = true;
