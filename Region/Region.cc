@@ -721,8 +721,6 @@ void Region::FillSpectralProfileData(
             new_profile->set_coordinate(profile_coord);
             auto stat_type = static_cast<CARTA::StatsType>(requested_stats[i]);
             new_profile->set_stats_type(stat_type);
-            // convert to float for spectral profile
-            std::vector<float> values;
             if (stats_values.find(stat_type) == stats_values.end()) { // stat not provided
                 double nan_value = std::numeric_limits<double>::quiet_NaN();
                 new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
@@ -748,14 +746,31 @@ void Region::FillSpectralProfileData(
             new_profile->set_coordinate(profile_coord);
             auto stat_type = static_cast<CARTA::StatsType>(requested_stats[i]);
             new_profile->set_stats_type(stat_type);
-            // convert to float for spectral profile
-            std::vector<float> values;
             if (stats_values[i].empty()) { // region outside image or NaNs
                 double nan_value = std::numeric_limits<double>::quiet_NaN();
                 new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
             } else {
                 new_profile->set_raw_values_fp64(stats_values[i].data(), stats_values[i].size() * sizeof(double));
             }
+        }
+    }
+}
+
+void Region::FillEmptySpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index) {
+    CARTA::SetSpectralRequirements_SpectralConfig config;
+    if (_profiler->GetSpectralConfig(config, profile_index)) {
+        std::string profile_coord(config.coordinate());
+        std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
+        size_t nstats = requested_stats.size();
+        for (size_t i = 0; i < nstats; ++i) {
+            // one SpectralProfile per stats type
+            auto new_profile = profile_data.add_profiles();
+            new_profile->set_coordinate(profile_coord);
+            auto stat_type = static_cast<CARTA::StatsType>(requested_stats[i]);
+            new_profile->set_stats_type(stat_type);
+            // region outside image or NaNs
+            double nan_value = std::numeric_limits<double>::quiet_NaN();
+            new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         }
     }
 }
