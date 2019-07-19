@@ -784,7 +784,7 @@ int Region::GetSpectralConfigStokes(int profile_index) {
     if (_region_profiler) {
         return _region_profiler->GetSpectralConfigStokes(profile_index);
     }
-    return CURRENT_STOKES - 1;  // invalid
+    return CURRENT_STOKES - 1; // invalid
 }
 
 std::string Region::GetSpectralCoordinate(int profile_index) {

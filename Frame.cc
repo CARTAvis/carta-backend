@@ -30,9 +30,9 @@ Frame::Frame(
         Log(session_id, "Problem loading file {}: loader not implemented", filename);
         _valid = false;
         return;
-    } else {
-        _loader->SetFramePtr(this);
     }
+
+    _loader->SetFramePtr(this);
 
     try {
         _loader->OpenFile(hdu, info);
@@ -300,7 +300,7 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                 SetImageCache();
                 updated = true;
                 for (auto& region : _regions) {
-		    // force sending new profiles for new chan/stokes
+                    // force sending new profiles for new chan/stokes
                     region.second->SetAllProfilesUnsent();
                 }
             } else {
@@ -797,14 +797,14 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                 if (!region->GetSpatialProfileSent(i)) {
                     // get <axis, stokes> for slicing image data
                     std::pair<int, int> axis_stokes = region->GetSpatialProfileAxes(i);
-                    if (axis_stokes.first < 0) {  // invalid index
+                    if (axis_stokes.first < 0) { // invalid index
                         return profile_ok;
                     }
 
                     if (stokes_changed && (axis_stokes.second != CURRENT_STOKES)) {
-			// Do not send fixed stokes profile when stokes changes.
+                        // Do not send fixed stokes profile when stokes changes.
                         // When chan/stokes changes, all messages are set to unsent to force new profiles;
-			// put fixed stokes profile back to sent
+                        // put fixed stokes profile back to sent
                         region->SetSpatialProfileSent(i, true);
                         continue;
                     }
@@ -880,8 +880,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
     return profile_ok;
 }
 
-bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb,
-    int region_id, bool channel_changed, bool stokes_changed) {
+bool Frame::FillSpectralProfileData(
+    std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool channel_changed, bool stokes_changed) {
     // fill spectral profile message with requested statistics (or values for a point region)
     bool profile_ok(false);
     if (_regions.count(region_id)) {
@@ -950,7 +950,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         guard.unlock();
                     }
                 } else { // statistics
-                    // do calculations for the image dimensions >= 3 
+                    // do calculations for the image dimensions >= 3
                     if (_image_shape.size() < 3) {
                         CARTA::SpectralProfileData profile_data;
                         profile_data.set_stokes(curr_stokes);
@@ -1324,8 +1324,8 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
                     memcpy(&results[j][start], &buffer[j][0], buffer[j].size() * sizeof(double));
                 }
             } else {
-                std::cerr << "Can not get zprofile (statistics), region id: " << region_id
-                    << ", channel range: [" << start << "," << end << "]" << std::endl;
+                std::cerr << "Can not get zprofile (statistics), region id: " << region_id << ", channel range: [" << start << "," << end
+                          << "]" << std::endl;
                 return false;
             }
         }

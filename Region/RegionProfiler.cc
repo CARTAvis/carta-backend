@@ -121,7 +121,7 @@ void RegionProfiler::SetAllSpatialProfilesUnsent() {
         profile.profile_sent = false;
     }
 }
-        
+
 // ***** spectral *****
 
 bool RegionProfiler::SetSpectralRequirements(
