@@ -43,17 +43,16 @@ public:
         _event_length = evt_len;
         _event_buffer = event_buf;
     }
-    ~MultiMessageTask() = default;
+    ~MultiMessageTask() {
+        delete[] _event_buffer;
+    };
 };
 
 class SetImageChannelsTask : public OnMessageTask {
-    std::pair<CARTA::SetImageChannels, uint32_t> _request_pair;
     tbb::task* execute() override;
 
 public:
-    SetImageChannelsTask(Session* session, std::pair<CARTA::SetImageChannels, uint32_t> request_pair) : OnMessageTask(session) {
-        _request_pair = request_pair;
-    }
+    SetImageChannelsTask(Session* session) : OnMessageTask(session) {}
     ~SetImageChannelsTask() = default;
 };
 

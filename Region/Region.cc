@@ -36,9 +36,14 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
     _num_dims = image_shape.size();
     _valid = UpdateRegionParameters(name, type, points, rotation);
     if (_valid) {
-        _stats = std::unique_ptr<RegionStats>(new RegionStats());
-        _profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
+        _region_stats = std::unique_ptr<RegionStats>(new RegionStats());
+        _region_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
     }
+}
+
+RegionState Region::GetRegionState() {
+    RegionState region_state(_name, _type, _control_points, _rotation);
+    return region_state;
 }
 
 Region::~Region() {
@@ -50,8 +55,8 @@ Region::~Region() {
         delete _xy_mask;
         _xy_mask = nullptr;
     }
-    _stats.reset();
-    _profiler.reset();
+    _region_stats.reset();
+    _region_profiler.reset();
 }
 
 // *************************************************************************
@@ -72,8 +77,8 @@ bool Region::UpdateRegionParameters(
 
     // region changed if xy params changed and points validated
     _xy_region_changed = xy_params_changed && points_set;
-    if (_xy_region_changed && _stats)
-        _stats->ClearStats(); // recalculate everything
+    if (_xy_region_changed && _region_stats)
+        _region_stats->ClearStats(); // recalculate everything
 
     return points_set;
 }
@@ -173,13 +178,13 @@ bool Region::PointsChanged(const std::vector<CARTA::Point>& new_points) {
 // ***********************************
 // Image Region with parameters applied
 
-bool Region::GetRegion(casacore::ImageRegion& region, int stokes, int channel) {
+bool Region::GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange channel_range) {
     // Return ImageRegion for given stokes and region parameters.
     bool region_ok(false);
     if (!IsValid() || (_xy_region == nullptr) || (stokes < 0))
         return region_ok;
 
-    casacore::WCRegion* wc_region = MakeExtendedRegion(stokes, channel);
+    casacore::WCRegion* wc_region = MakeExtendedRegion(stokes, channel_range);
     if (wc_region != nullptr) {
         region = casacore::ImageRegion(wc_region);
         region_ok = true;
@@ -341,7 +346,7 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
         float bmaj(points[1].x()), bmin(points[1].y());
         // rotation is in degrees from y-axis;
         // ellipse rotation angle is in radians from x-axis
-        float theta = (rotation + 90.0) * (M_PI / 180.0f);
+        float theta;
 
         // Convert ellipsoid center pixel coords to world coords
         int num_axes(_coord_sys.nPixelAxes());
@@ -364,19 +369,22 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
         radii(0) = casacore::Quantity(bmaj, "pix");
         radii(1) = casacore::Quantity(bmin, "pix");
 
-        // Convert theta to a Quantity
-        casacore::Quantity quantity_theta = casacore::Quantity(static_cast<double>(theta), "rad");
-
         // Make sure the major axis is greater than the minor axis
         casacore::Quantity major_axis;
         casacore::Quantity minor_axis;
         if (radii(0) < radii(1)) {
             major_axis = radii(1);
             minor_axis = radii(0);
+            theta = (rotation) * (M_PI / 180.0f);
         } else {
             major_axis = radii(0);
             minor_axis = radii(1);
+            theta = (rotation + 90.0) * (M_PI / 180.0f);
         }
+
+        // Convert theta to a Quantity
+        casacore::Quantity quantity_theta = casacore::Quantity(static_cast<double>(theta), "rad");
+
         ellipse =
             new casacore::WCEllipsoid(center(0), center(1), major_axis, minor_axis, quantity_theta, _xy_axes(0), _xy_axes(1), _coord_sys);
     }
@@ -400,7 +408,7 @@ casacore::WCRegion* Region::MakePolygonRegion(const std::vector<CARTA::Point>& p
     return polygon;
 }
 
-bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int channel) {
+bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRange channel_range) {
     // Create extension box for stored channel range and given stokes.
     // This can change for different profile/histogram/stats requirements so not stored
     bool extension_ok(false);
@@ -409,10 +417,18 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int chann
     }
 
     try {
-        double min_chan(channel), max_chan(channel);
-        if (channel == ALL_CHANNELS) { // extend 0 to nchan
+        double min_chan(channel_range.from), max_chan(channel_range.to);
+        double all_channels = _image_shape(_spectral_axis);
+        if (channel_range.from == ALL_CHANNELS) {
             min_chan = 0;
-            max_chan = _image_shape(_spectral_axis);
+        }
+        if (channel_range.to == ALL_CHANNELS) {
+            max_chan = all_channels - 1;
+        }
+        assert((max_chan >= min_chan) && (all_channels > max_chan));
+        if (max_chan < 0 || min_chan < 0) {
+            std::cerr << "ERROR: max(" << max_chan << ") or min(" << min_chan << ") channel is negative!" << std::endl;
+            return extension_ok; // false
         }
 
         // Convert pixel coordinates to world coordinates;
@@ -458,7 +474,7 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, int chann
     return extension_ok;
 }
 
-casacore::WCRegion* Region::MakeExtendedRegion(int stokes, int channel) {
+casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_range) {
     // Return 2D wcregion extended by chan, stokes; xyregion if 2D
     if (_num_dims == 2) {
         return _xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
@@ -468,7 +484,7 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, int channel) {
     try {
         // create extension box for channel/stokes
         casacore::WCBox ext_box;
-        if (!MakeExtensionBox(ext_box, stokes, channel))
+        if (!MakeExtensionBox(ext_box, stokes, channel_range))
             return region; // nullptr, extension box failed
 
         // apply extension box with extension axes to xy region
@@ -567,111 +583,241 @@ bool Region::GetData(std::vector<float>& data, casacore::ImageInterface<float>& 
 // histogram
 
 bool Region::SetHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_reqs) {
-    _stats->SetHistogramRequirements(histogram_reqs);
-    return true;
+    if (_region_stats) {
+        _region_stats->SetHistogramRequirements(histogram_reqs);
+        return true;
+    }
+    return false;
 }
 
 CARTA::SetHistogramRequirements_HistogramConfig Region::GetHistogramConfig(int histogram_index) {
-    return _stats->GetHistogramConfig(histogram_index);
+    if (_region_stats) {
+        return _region_stats->GetHistogramConfig(histogram_index);
+    }
+    return CARTA::SetHistogramRequirements_HistogramConfig();
 }
 
 size_t Region::NumHistogramConfigs() {
-    return _stats->NumHistogramConfigs();
+    if (_region_stats) {
+        return _region_stats->NumHistogramConfigs();
+    }
+    return 0;
 }
 
 bool Region::GetMinMax(int channel, int stokes, float& min_val, float& max_val) {
-    return _stats->GetMinMax(channel, stokes, min_val, max_val);
+    if (_region_stats) {
+        return _region_stats->GetMinMax(channel, stokes, min_val, max_val);
+    }
+    return false;
 }
 
 void Region::SetMinMax(int channel, int stokes, float min_val, float max_val) {
-    std::pair<float, float> vals = std::make_pair(min_val, max_val);
-    _stats->SetMinMax(channel, stokes, vals);
+    if (_region_stats) {
+        std::pair<float, float> vals = std::make_pair(min_val, max_val);
+        _region_stats->SetMinMax(channel, stokes, vals);
+    }
 }
 
 void Region::CalcMinMax(int channel, int stokes, const std::vector<float>& data, float& min_val, float& max_val) {
-    _stats->CalcMinMax(channel, stokes, data, min_val, max_val);
+    if (_region_stats) {
+        _region_stats->CalcMinMax(channel, stokes, data, min_val, max_val);
+    }
 }
 
 bool Region::GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram) {
-    return _stats->GetHistogram(channel, stokes, num_bins, histogram);
+    if (_region_stats) {
+        return _region_stats->GetHistogram(channel, stokes, num_bins, histogram);
+    }
+    return false;
 }
 
 void Region::SetHistogram(int channel, int stokes, CARTA::Histogram& histogram) {
-    _stats->SetHistogram(channel, stokes, histogram);
+    if (_region_stats) {
+        _region_stats->SetHistogram(channel, stokes, histogram);
+    }
 }
 
 void Region::CalcHistogram(
     int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data, CARTA::Histogram& histogram_msg) {
-    _stats->CalcHistogram(channel, stokes, num_bins, min_val, max_val, data, histogram_msg);
+    if (_region_stats) {
+        _region_stats->CalcHistogram(channel, stokes, num_bins, min_val, max_val, data, histogram_msg);
+    }
 }
 
 // stats
 void Region::SetStatsRequirements(const std::vector<int>& stats_types) {
-    _stats->SetStatsRequirements(stats_types);
+    if (_region_stats) {
+        _region_stats->SetStatsRequirements(stats_types);
+    }
 }
 
 size_t Region::NumStats() {
-    return _stats->NumStats();
+    if (_region_stats) {
+        return _region_stats->NumStats();
+    }
+    return 0;
 }
 
 void Region::FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes) {
-    _stats->FillStatsData(stats_data, image, channel, stokes);
+    if (_region_stats) {
+        _region_stats->FillStatsData(stats_data, image, channel, stokes);
+    }
+}
+
+void Region::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values) {
+    if (_region_stats) {
+        _region_stats->FillStatsData(stats_data, stats_values);
+    }
 }
 
 // ***********************************
 // RegionProfiler
 
+void Region::SetAllProfilesUnsent() {
+    if (_region_profiler) {
+        _region_profiler->SetAllSpatialProfilesUnsent();
+        _region_profiler->SetAllSpectralProfilesUnsent();
+    }
+}
+
 // spatial
 
 bool Region::SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes) {
-    return _profiler->SetSpatialRequirements(profiles, num_stokes);
+    if (_region_profiler) {
+        return _region_profiler->SetSpatialRequirements(profiles, num_stokes);
+    }
+    return false;
 }
 
 size_t Region::NumSpatialProfiles() {
-    return _profiler->NumSpatialProfiles();
-}
-
-std::pair<int, int> Region::GetSpatialProfileReq(int profile_index) {
-    return _profiler->GetSpatialProfileReq(profile_index);
+    if (_region_profiler) {
+        return _region_profiler->NumSpatialProfiles();
+    }
+    return 0;
 }
 
 std::string Region::GetSpatialCoordinate(int profile_index) {
-    return _profiler->GetSpatialCoordinate(profile_index);
+    if (_region_profiler) {
+        return _region_profiler->GetSpatialCoordinate(profile_index);
+    }
+    return std::string();
+}
+
+std::pair<int, int> Region::GetSpatialProfileAxes(int profile_index) {
+    if (_region_profiler) {
+        return _region_profiler->GetSpatialProfileAxes(profile_index);
+    }
+    return std::make_pair(-1, -1);
+}
+
+bool Region::GetSpatialProfileSent(int profile_index) {
+    if (_region_profiler) {
+        return _region_profiler->GetSpatialProfileSent(profile_index);
+    }
+    return false;
+}
+
+void Region::SetSpatialProfileSent(int profile_index, bool sent) {
+    if (_region_profiler) {
+        _region_profiler->SetSpatialProfileSent(profile_index, sent);
+    }
 }
 
 // spectral
 
 bool Region::SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs, const int num_stokes) {
-    return _profiler->SetSpectralRequirements(configs, num_stokes);
+    if (_region_profiler) {
+        return _region_profiler->SetSpectralRequirements(configs, num_stokes);
+    }
+    return false;
 }
 
 size_t Region::NumSpectralProfiles() {
-    return _profiler->NumSpectralProfiles();
+    if (_region_profiler) {
+        return _region_profiler->NumSpectralProfiles();
+    }
+    return 0;
 }
 
-bool Region::GetSpectralConfigStokes(int& stokes, int profile_index) {
-    return _profiler->GetSpectralConfigStokes(stokes, profile_index);
+int Region::NumStatsToLoad(int profile_index) {
+    if (_region_profiler) {
+        return _region_profiler->NumStatsToLoad(profile_index);
+    }
+    return 0;
 }
 
-bool Region::GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index) {
-    return _profiler->GetSpectralConfig(config, profile_index);
+bool Region::GetSpectralConfigStats(int profile_index, std::vector<int>& stats) {
+    if (_region_profiler) {
+        return _region_profiler->GetSpectralConfigStats(profile_index, stats);
+    }
+    return false;
+}
+
+bool Region::GetSpectralStatsToLoad(int profile_index, std::vector<int>& stats) {
+    if (_region_profiler) {
+        return _region_profiler->GetSpectralStatsToLoad(profile_index, stats);
+    }
+    return false;
+}
+
+bool Region::GetSpectralProfileStatSent(int profile_index, int stats_type) {
+    if (_region_profiler) {
+        return _region_profiler->GetSpectralProfileStatSent(profile_index, stats_type);
+    }
+    return false;
+}
+
+void Region::SetSpectralProfileStatSent(int profile_index, int stats_type, bool sent) {
+    if (_region_profiler) {
+        _region_profiler->SetSpectralProfileStatSent(profile_index, stats_type, sent);
+    }
+}
+
+void Region::SetSpectralProfileAllStatsSent(int profile_index, bool sent) {
+    // for fixed stokes profiles when stokes changed, do not resend
+    if (_region_profiler) {
+        _region_profiler->SetSpectralProfileAllStatsSent(profile_index, sent);
+    }
+}
+
+int Region::GetSpectralConfigStokes(int profile_index) {
+    if (_region_profiler) {
+        return _region_profiler->GetSpectralConfigStokes(profile_index);
+    }
+    return CURRENT_STOKES - 1; // invalid
 }
 
 std::string Region::GetSpectralCoordinate(int profile_index) {
-    return _profiler->GetSpectralCoordinate(profile_index);
+    if (_region_profiler) {
+        return _region_profiler->GetSpectralCoordinate(profile_index);
+    }
+    return std::string();
 }
 
-void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data) {
-    // Fill SpectralProfile with values for point region;
-    // This assumes one spectral config with StatsType::Sum
+bool Region::GetSpectralProfileData(
+    std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image) {
+    // Get SpectralProfile with statistics values to load according to config stored in RegionProfiler
+    bool have_stats(false);
+    std::vector<int> required_stats;
+    if (GetSpectralStatsToLoad(profile_index, required_stats)) {
+        if ((required_stats.size() > 0) && _region_stats) { // get required stats values
+            have_stats = _region_stats->CalcStatsValues(stats_values, required_stats, image);
+        }
+    }
+    return have_stats;
+}
+
+void Region::FillPointSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data) {
+    // Fill SpectralProfile with values for point region; assumes one spectral config with StatsType::Sum
     if (IsPoint()) {
-        CARTA::SetSpectralRequirements_SpectralConfig config;
-        if (_profiler->GetSpectralConfig(config, profile_index)) { // make sure it was requested
-            std::string profile_coord(config.coordinate());
+        CARTA::StatsType type = CARTA::StatsType::Sum;
+        if (!GetSpectralProfileStatSent(profile_index, type)) {
+            std::string profile_coord(GetSpectralCoordinate(profile_index));
             auto new_profile = profile_data.add_profiles();
             new_profile->set_coordinate(profile_coord);
-            new_profile->set_stats_type(CARTA::StatsType::Sum);
-            *new_profile->mutable_vals() = {spectral_data.begin(), spectral_data.end()};
+            new_profile->set_stats_type(type);
+            new_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
+            SetSpectralProfileStatSent(profile_index, type, true);
         }
     }
 }
@@ -680,52 +826,64 @@ void Region::FillSpectralProfileData(
     CARTA::SpectralProfileData& profile_data, int profile_index, std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
     // using values calculated externally and passed in as a parameter
-    CARTA::SetSpectralRequirements_SpectralConfig config;
-    if (_profiler->GetSpectralConfig(config, profile_index)) {
-        std::string profile_coord(config.coordinate());
-        std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
-        size_t nstats = requested_stats.size();
-        for (size_t i = 0; i < nstats; ++i) {
+    std::vector<int> required_stats;
+    if (GetSpectralStatsToLoad(profile_index, required_stats)) {
+        std::string profile_coord(GetSpectralCoordinate(profile_index));
+        for (size_t i = 0; i < required_stats.size(); ++i) {
             // one SpectralProfile per stats type
             auto new_profile = profile_data.add_profiles();
             new_profile->set_coordinate(profile_coord);
-            auto stat_type = static_cast<CARTA::StatsType>(requested_stats[i]);
+            auto stat_type = static_cast<CARTA::StatsType>(required_stats[i]);
             new_profile->set_stats_type(stat_type);
-            // convert to float for spectral profile
-            std::vector<float> values;
             if (stats_values.find(stat_type) == stats_values.end()) { // stat not provided
-                new_profile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
+                double nan_value = std::numeric_limits<double>::quiet_NaN();
+                new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
             } else {
-                *new_profile->mutable_double_vals() = {stats_values[stat_type].begin(), stats_values[stat_type].end()};
+                new_profile->set_raw_values_fp64(stats_values[stat_type].data(), stats_values[stat_type].size() * sizeof(double));
             }
+            SetSpectralProfileStatSent(profile_index, stat_type, true);
         }
     }
 }
 
-void Region::FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, casacore::ImageInterface<float>& image) {
+// TODO: This function can be replaced by the upper one and removed in the future.
+void Region::FillSpectralProfileData(
+    CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values) {
     // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
-    // using values calculated internally
-    CARTA::SetSpectralRequirements_SpectralConfig config;
-    if (_profiler->GetSpectralConfig(config, profile_index)) {
-        std::string profile_coord(config.coordinate());
-        std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
-        size_t nstats = requested_stats.size();
-        std::vector<std::vector<double>> stats_values;
-        // get values from RegionStats
-        bool have_stats(_stats->CalcStatsValues(stats_values, requested_stats, image));
-        for (size_t i = 0; i < nstats; ++i) {
+    std::vector<int> required_stats;
+    if (GetSpectralStatsToLoad(profile_index, required_stats)) {
+        std::string profile_coord(GetSpectralCoordinate(profile_index));
+        for (size_t i = 0; i < required_stats.size(); ++i) {
             // one SpectralProfile per stats type
             auto new_profile = profile_data.add_profiles();
             new_profile->set_coordinate(profile_coord);
-            auto stat_type = static_cast<CARTA::StatsType>(requested_stats[i]);
+            auto stat_type = static_cast<CARTA::StatsType>(required_stats[i]);
             new_profile->set_stats_type(stat_type);
-            // convert to float for spectral profile
-            std::vector<float> values;
-            if (!have_stats || stats_values[i].empty()) { // region outside image or NaNs
-                new_profile->add_double_vals(std::numeric_limits<float>::quiet_NaN());
+            if (stats_values[i].empty()) { // region outside image or NaNs
+                double nan_value = std::numeric_limits<double>::quiet_NaN();
+                new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
             } else {
-                *new_profile->mutable_double_vals() = {stats_values[i].begin(), stats_values[i].end()};
+                new_profile->set_raw_values_fp64(stats_values[i].data(), stats_values[i].size() * sizeof(double));
             }
+            SetSpectralProfileStatSent(profile_index, stat_type, true);
+        }
+    }
+}
+
+void Region::FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index) {
+    // Fill spectral profile with NaN statistics values according to config stored in RegionProfiler
+    std::vector<int> required_stats;
+    if (GetSpectralStatsToLoad(profile_index, required_stats)) {
+        std::string profile_coord(GetSpectralCoordinate(profile_index));
+        for (size_t i = 0; i < required_stats.size(); ++i) {
+            // one SpectralProfile per stats type
+            auto new_profile = profile_data.add_profiles();
+            new_profile->set_coordinate(profile_coord);
+            auto stat_type = static_cast<CARTA::StatsType>(required_stats[i]);
+            new_profile->set_stats_type(stat_type);
+            // region outside image or NaNs
+            double nan_value = std::numeric_limits<double>::quiet_NaN();
+            new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         }
     }
 }

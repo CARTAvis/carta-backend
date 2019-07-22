@@ -9,25 +9,45 @@
 
 #include <carta-protobuf/defs.pb.h>
 
+#include "../Util.h"
+
+class Frame;
+
 namespace carta {
 
 namespace FileInfo {
 
 struct ImageStats {
-    float min_val;
-    float max_val;
-    float mean;
+    std::map<CARTA::StatsType, double> basic_stats;
+
     std::vector<float> percentiles;
     std::vector<float> percentile_ranks;
     std::vector<int> histogram_bins;
-    int64_t nan_count;
+
     bool valid;
+    // Remove this check when we drop support for the old schema.
+    bool full;
+};
+
+struct RegionStatsId {
+    int region_id;
+    int stokes;
+
+    RegionStatsId() {}
+
+    RegionStatsId(int region_id, int stokes) : region_id(region_id), stokes(stokes) {}
+
+    bool operator<(const RegionStatsId& rhs) const {
+        return (region_id < rhs.region_id) || ((region_id == rhs.region_id) && (stokes < rhs.stokes));
+    }
 };
 
 struct RegionSpectralStats {
     casacore::IPosition origin;
     casacore::IPosition shape;
     std::map<CARTA::StatsType, std::vector<double>> stats;
+    volatile bool completed = false;
+    size_t latest_x = 0;
 
     RegionSpectralStats() {}
 
@@ -37,12 +57,15 @@ struct RegionSpectralStats {
             CARTA::StatsType::Max};
 
         for (auto& s : supported_stats) {
-            stats.emplace(s, num_channels);
+            stats.emplace(std::piecewise_construct, std::make_tuple(s), std::make_tuple(num_channels));
         }
     }
 
     bool IsValid(casacore::IPosition origin, casacore::IPosition shape) {
         return (origin.isEqual(this->origin) && shape.isEqual(this->shape));
+    }
+    bool IsCompleted() {
+        return completed;
     }
 };
 
@@ -65,14 +88,16 @@ enum class Data : uint32_t {
     STATS_2D,
     STATS_2D_MIN,
     STATS_2D_MAX,
-    STATS_2D_MEAN,
+    STATS_2D_SUM,
+    STATS_2D_SUMSQ,
     STATS_2D_NANS,
     STATS_2D_HIST,
     STATS_2D_PERCENT,
     STATS_3D,
     STATS_3D_MIN,
     STATS_3D_MAX,
-    STATS_3D_MEAN,
+    STATS_3D_SUM,
+    STATS_3D_SUMSQ,
     STATS_3D_NANS,
     STATS_3D_HIST,
     STATS_3D_PERCENT,
@@ -123,16 +148,19 @@ public:
     // Return a casacore image type representing the data stored in the
     // specified HDU/group/table/etc.
     virtual ImageRef LoadData(FileInfo::Data ds) = 0;
-    virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int cursor_y);
-    virtual std::map<CARTA::StatsType, std::vector<double>>* GetRegionSpectralData(
-        int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin);
+    virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y);
+    // check if one can apply swizzled data under such image format and region condition
+    virtual bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask);
+    virtual bool GetRegionSpectralData(int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
+        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
+    virtual void SetFramePtr(Frame* frame);
 
 protected:
     virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
 
     // Dimension values used by stats functions
-    size_t _num_channels, _num_stokes, _num_dims;
+    size_t _num_channels, _num_stokes, _num_dims, _channel_size;
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;

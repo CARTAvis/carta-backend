@@ -1,3 +1,6 @@
+#include <jsoncpp/json/json.h>
+#include <jsoncpp/json/value.h>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -36,9 +39,21 @@ static uWS::Hub websocket_hub;
 // command-line arguments
 static string root_folder("/"), base_folder("."), version_id("1.1");
 static bool verbose, use_permissions;
+static string token;
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
+    // Check for authorization token
+    if (!token.empty()) {
+        string expected_auth_header = fmt::format("CARTA-Authorization={}", token);
+        auto cookie_header = http_request.getHeader("cookie");
+        string auth_header_string(cookie_header.value, cookie_header.valueLength);
+        if (auth_header_string.find(expected_auth_header) == string::npos) {
+            Log(0, "Invalid authorization token header, closing socket");
+            ws->close(403, "Invalid authorization token");
+            return;
+        }
+    }
     session_number++;
     // protect against overflow
     session_number = max(session_number, 1u);
@@ -64,6 +79,11 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
+    // Skip server-forced disconnects
+    if (code == 4003) {
+        return;
+    }
+
     Session* session = (Session*)ws->getUserData();
 
     if (session) {
@@ -99,48 +119,57 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::RegisterViewer message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegisterViewer(message, head.icd_version, head.request_id);
+                    } else {
+                        fmt::print("Bad REGISTER_VIEWER message!\n");
                     }
                     break;
                 }
                 case CARTA::EventType::SET_IMAGE_CHANNELS: {
                     CARTA::SetImageChannels message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->ImageChannelLock();
-                    if (!session->ImageChannelTaskTestAndSet()) {
-                        tsk = new (tbb::task::allocate_root(session->context()))
-                            SetImageChannelsTask(session, make_pair(message, head.request_id));
-                    } else {
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->ImageChannelLock();
+                        if (!session->ImageChannelTaskTestAndSet()) {
+                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session);
+                        }
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
+                        session->ImageChannelUnlock();
+                    } else {
+                        fmt::print("Bad SET_IMAGE_CHANNELS message!\n");
                     }
-                    session->ImageChannelUnlock();
                     break;
                 }
                 case CARTA::EventType::SET_IMAGE_VIEW: {
                     CARTA::SetImageView message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->AddViewSetting(message, head.request_id);
-
-                    if (!session->animationRunning())
-                        tsk = new (tbb::task::allocate_root(session->context())) SetImageViewTask(session, message.file_id());
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnSetImageView(message);
+                    } else {
+                        fmt::print("Bad SET_IMAGE_VIEW message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::SET_CURSOR: {
                     CARTA::SetCursor message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->AddCursorSetting(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root(session->context())) SetCursorTask(session, message.file_id());
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->AddCursorSetting(message, head.request_id);
+                        tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
+                    } else {
+                        fmt::print("Bad SET_CURSOR message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS: {
                     CARTA::SetHistogramRequirements message;
-                    message.ParseFromArray(event_buf, event_length);
-                    if (message.histograms_size() == 0) {
-                        session->CancelSetHistRequirements();
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        if (message.histograms_size() == 0) {
+                            session->CancelSetHistRequirements();
+                        } else {
+                            session->ResetHistContext();
+                            tsk = new (tbb::task::allocate_root(session->HistContext()))
+                                SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                        }
                     } else {
-                        session->ResetHistContext();
-                        tsk = new (tbb::task::allocate_root(session->HistContext()))
-                            SetHistogramRequirementsTask(session, head, event_length, event_buf);
+                        fmt::print("Bad SET_HISTOGRAM_REQUIREMENTS message!\n");
                     }
                     break;
                 }
@@ -150,33 +179,46 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         session->CheckCancelAnimationOnFileClose(message.file_id());
                         session->_file_settings.ClearSettings(message.file_id());
                         session->OnCloseFile(message);
+                    } else {
+                        fmt::print("Bad CLOSE_FILE message!\n");
                     }
                     break;
                 }
                 case CARTA::EventType::START_ANIMATION: {
                     CARTA::StartAnimation message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->cancelExistingAnimation();
-                    session->BuildAnimationObject(message, head.request_id);
-                    tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->CancelExistingAnimation();
+                        session->BuildAnimationObject(message, head.request_id);
+                        tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                    } else {
+                        fmt::print("Bad START_ANIMATION message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::STOP_ANIMATION: {
                     CARTA::StopAnimation message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->StopAnimation(message.file_id(), message.end_frame());
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->StopAnimation(message.file_id(), message.end_frame());
+                    } else {
+                        fmt::print("Bad STOP_ANIMATION message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
                     CARTA::AnimationFlowControl message;
-                    message.ParseFromArray(event_buf, event_length);
-                    session->HandleAnimationFlowControlEvt(message);
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->HandleAnimationFlowControlEvt(message);
+                    } else {
+                        fmt::print("Bad ANIMATION_FLOW_CONTROL message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::FILE_INFO_REQUEST: {
                     CARTA::FileInfoRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnFileInfoRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad FILE_INFO_REQUEST message!\n");
                     }
                     break;
                 }
@@ -184,6 +226,8 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::FileListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnFileListRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad FILE_LIST_REQUEST message!\n");
                     }
                     break;
                 }
@@ -191,11 +235,16 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::OpenFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnOpenFile(message, head.request_id);
+                    } else {
+                        fmt::print("Bad OPEN_FILE message!\n");
                     }
                     break;
                 }
                 default: {
-                    tsk = new (tbb::task::allocate_root(session->context())) MultiMessageTask(session, head, event_length, event_buf);
+                    // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
+                    char* message_buffer = new char[event_length];
+                    memcpy(message_buffer, event_buf, event_length);
+                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
                 }
             }
 
@@ -215,6 +264,22 @@ void ExitBackend(int s) {
     exit(0);
 }
 
+void ReadJSONfile(string fname) {
+    std::ifstream config_file(fname);
+    if (!config_file.is_open()) {
+        std::cerr << "Failed to open config file " << fname << std::endl;
+        exit(1);
+    }
+    Json::Value json_config;
+    Json::Reader reader;
+    reader.parse(config_file, json_config);
+    token = json_config["token"].asString();
+    if (token.empty()) {
+        std::cerr << "Bad config file.\n";
+        exit(1);
+    }
+}
+
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
@@ -230,14 +295,18 @@ int main(int argc, const char* argv[]) {
         int thread_count(tbb::task_scheduler_init::default_num_threads());
         { // get values then let Input go out of scope
             casacore::Input inp;
+            string json_fname;
             inp.version(version_id);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
+            inp.create("token", token, "only accept connections with this authorization token", "String");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
+            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
+            inp.create("read_json_file", json_fname, "read in json file with secure token", "String");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
@@ -246,11 +315,22 @@ int main(int argc, const char* argv[]) {
             thread_count = inp.getInt("threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
+            token = inp.getString("token");
 
             bool has_exit_after_arg = inp.getString("exit_after").size();
             if (has_exit_after_arg) {
                 int wait_time = inp.getInt("exit_after");
                 Session::SetExitTimeout(wait_time);
+            }
+            bool has_init_exit_after_arg = inp.getString("init_exit_after").size();
+            if (has_init_exit_after_arg) {
+                int init_wait_time = inp.getInt("init_exit_after");
+                Session::SetInitExitTimeout(init_wait_time);
+            }
+            bool should_read_json_file = inp.getString("read_json_file").size();
+            if (should_read_json_file) {
+                json_fname = inp.getString("read_json_file");
+                ReadJSONfile(json_fname);
             }
         }
 

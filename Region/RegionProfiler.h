@@ -1,4 +1,4 @@
-// RegionProfiler.h: class for creating requested profiles for and axis (x, y, z) and stokes
+// RegionProfiler.h: class for handling requested profiles for an axis (x, y, z) and stokes
 
 #ifndef CARTA_BACKEND_REGION_REGIONPROFILER_H_
 #define CARTA_BACKEND_REGION_REGIONPROFILER_H_
@@ -11,33 +11,54 @@
 
 namespace carta {
 
+struct SpatialProfile {
+    std::string coordinate;
+    std::pair<int, int> profile_axes; // <axis index, stokes index>
+    bool profile_sent;
+};
+
+struct SpectralProfile {
+    std::string coordinate;
+    int stokes_index;
+    std::vector<int> stats_types;
+    std::vector<bool> profiles_sent;
+};
+
 class RegionProfiler {
 public:
     // spatial
     bool SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes);
     size_t NumSpatialProfiles();
-    std::pair<int, int> GetSpatialProfileReq(int profile_index);
     std::string GetSpatialCoordinate(int profile_index);
+    std::pair<int, int> GetSpatialProfileAxes(int profile_index);
+    bool GetSpatialProfileSent(int profile_index);
+    void SetSpatialProfileSent(int profile_index, bool sent);
+    void SetAllSpatialProfilesUnsent(); // enable sending new profiles
 
     // spectral
     bool SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int num_stokes);
     size_t NumSpectralProfiles();
-    // return false if profileIndex out of range:
-    bool GetSpectralConfigStokes(int& stokes, int profile_index);
+    int NumStatsToLoad(int profile_index);
+    int GetSpectralConfigStokes(int profile_index);
     std::string GetSpectralCoordinate(int profile_index);
-    bool GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index);
+    bool GetSpectralConfigStats(int profile_index, std::vector<int>& stats); // all requested
+    bool GetSpectralStatsToLoad(int profile_index, std::vector<int>& stats); // diff of requested and already sent
+    bool GetSpectralProfileStatSent(int profile_index, int stats_type);
+    void SetSpectralProfileStatSent(int profile_index, int stats_type, bool sent);
+    void SetSpectralProfileAllStatsSent(int profile_index, bool sent);
+    void SetAllSpectralProfilesUnsent(); // enable sending new profiles
 
 private:
-    // parse spatial/coordinate strings into <axisIndex, stokesIndex> pairs
-    std::pair<int, int> GetAxisStokes(std::string profile);
+    // parse coordinate strings into <axisIndex, stokesIndex> pairs
+    std::pair<int, int> CoordinateToAxisStokes(std::string coordinate);
 
-    // spatial
-    std::vector<std::string> _spatial_profiles;
-    std::vector<std::pair<int, int>> _profile_pairs;
+    // determine unsent profiles by diffing current profiles with last profiles
+    void DiffSpatialRequirements(std::vector<SpatialProfile>& last_profiles);
+    void DiffSpectralRequirements(std::vector<SpectralProfile>& last_profiles);
 
-    // spectral
-    std::vector<int> _spectral_stokes;
-    std::vector<CARTA::SetSpectralRequirements_SpectralConfig> _spectral_configs;
+    // profiles
+    std::vector<SpatialProfile> _spatial_profiles;
+    std::vector<SpectralProfile> _spectral_profiles;
 };
 
 } // namespace carta

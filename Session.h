@@ -28,6 +28,7 @@
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
+#include <carta-protobuf/tiles.pb.h>
 
 #include <tbb/task.h>
 
@@ -51,6 +52,7 @@ public:
     void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnSetImageView(const CARTA::SetImageView& message);
+    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     void OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id);
@@ -62,6 +64,10 @@ public:
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
+        std::pair<CARTA::SetImageChannels, uint32_t> rp;
+        // Empty current queue first.
+        while (_set_channel_queue.try_pop(rp)) {
+        }
         _set_channel_queue.push(std::make_pair(message, request_id));
     }
 
@@ -70,31 +76,30 @@ public:
         OnSetImageChannels(request.first);
     }
     void CancelSetHistRequirements() {
-        _histo_context.cancel_group_execution();
+        _histogram_context.cancel_group_execution();
     }
     void ResetHistContext() {
-        _histo_context.reset();
+        _histogram_context.reset();
     }
     tbb::task_group_context& HistContext() {
-        return _histo_context;
+        return _histogram_context;
     }
     tbb::task_group_context& AnimationContext() {
         return _animation_context;
     }
     void CancelAnimation() {
-        _animation_object->cancel_execution();
+        _animation_object->CancelExecution();
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
-    void ExecuteAnimationFrame_inner(bool stopped);
+    void ExecuteAnimationFrameInner(bool stopped);
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
-    int currentFlowWindowSize() {
-        return _animation_object->currentFlowWindowSize();
+    int CurrentFlowWindowSize() {
+        return _animation_object->CurrentFlowWindowSize();
     }
-    void cancelExistingAnimation();
+    void CancelExistingAnimation();
     void CheckCancelAnimationOnFileClose(int file_id);
-    void AddViewSetting(const CARTA::SetImageView& message, uint32_t request_id);
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _file_settings.AddCursorSetting(message, request_id);
     }
@@ -125,23 +130,24 @@ public:
     static int NumberOfSessions() {
         return _num_sessions;
     }
-    tbb::task_group_context& context() {
+    tbb::task_group_context& Context() {
         return _base_context;
     }
-    void setWaitingTask(bool set_wait) {
+    void SetWaitingTask(bool set_wait) {
         _animation_object->_waiting_flow_event = set_wait;
     }
-    bool waitingFlowEvent() {
+    bool WaitingFlowEvent() {
         return _animation_object->_waiting_flow_event;
     }
-    bool animationRunning() {
-        return ((_animation_object && !_animation_object->_stop_called) ? true : false);
+    bool AnimationRunning() {
+        return _animation_object && !_animation_object->_stop_called;
     }
-    int calcuteAnimationFlowWindow();
+    int CalculateAnimationFlowWindow();
     static void SetExitTimeout(int secs) {
         _exit_after_num_seconds = secs;
         _exit_when_all_sessions_closed = true;
     }
+    static void SetInitExitTimeout(int secs);
 
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
@@ -154,6 +160,9 @@ private:
     bool FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const std::string& folder,
         const std::string& filename, std::string hdu, std::string& message);
 
+    // Delete Frame(s)
+    void DeleteFrame(int file_id);
+
     // Histogram
     CARTA::RegionHistogramData* GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel = false);
     bool SendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
@@ -162,11 +171,13 @@ private:
 
     // Send data streams
     bool SendRasterImageData(int file_id, bool send_histogram = false);
-    bool SendSpatialProfileData(int file_id, int region_id, bool check_current_stokes = false);
-    bool SendSpectralProfileData(int file_id, int region_id, bool check_current_stokes = false);
-    bool SendRegionHistogramData(int file_id, int region_id, bool check_current_channel = false);
-    bool SendRegionStatsData(int file_id, int region_id);
-    void UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed);
+    // Only set channel_changed and stokes_changed if they are the only trigger for new data
+    // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
+    bool SendSpatialProfileData(int file_id, int region_id, bool stokes_changed = false);
+    bool SendSpectralProfileData(int file_id, int region_id, bool channel_changed = false, bool stokes_changed = false);
+    bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
+    bool SendRegionStatsData(int file_id, int region_id); // update stats in all cases
+    void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
 
     // Send protobuf messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
@@ -208,7 +219,7 @@ private:
     tbb::task_group_context _base_context;
 
     // TBB context to cancel histogram calculations.
-    tbb::task_group_context _histo_context;
+    tbb::task_group_context _histogram_context;
 
     tbb::task_group_context _animation_context;
 

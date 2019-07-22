@@ -31,7 +31,7 @@ pipeline {
                       sh "lsof -i :3002 # check backend is running"
                       dir ('carta-backend-ICD-test-travis') {
                         dir ('protobuf') {
-                          sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && git checkout master && npm install && ./build_proto.sh # prepare the tests"
+                          sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install && ./build_proto.sh # prepare the tests"
                         }
                         sh "source ~/emsdk/emsdk_env.sh && ./run-travis.sh # run the tests"
                       }
