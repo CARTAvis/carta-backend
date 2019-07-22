@@ -152,8 +152,8 @@ private:
     // get cursor's x-y coordinate from subimage
     bool GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor_xy);
     // get spectral profile data from subimage
-    bool GetCursorSpectralData(
-        std::vector<float>& data, casacore::SubImage<float>& sub_image, std::function<void(std::vector<float>, float)> cb);
+    bool GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image,
+        const std::function<void(std::vector<float>, float)>& partial_results_callback);
     // get regional spectral profile (statistics) data
     bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index, int profile_stokes,
         const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
