@@ -30,9 +30,9 @@ Frame::Frame(
         Log(session_id, "Problem loading file {}: loader not implemented", filename);
         _valid = false;
         return;
-    } else {
-        _loader->SetFramePtr(this);
     }
+
+    _loader->SetFramePtr(this);
 
     try {
         _loader->OpenFile(hdu, info);
@@ -140,6 +140,9 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
     if (_regions.count(region_id)) { // update Region
         auto& region = _regions[region_id];
         region_set = region->UpdateRegionParameters(name, type, points, rotation);
+        if (region->RegionChanged()) {
+            region->SetAllProfilesUnsent(); // force new profiles for new region settings
+        }
     } else { // map new Region to region id
         const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
         auto region = std::unique_ptr<carta::Region>(
@@ -153,7 +156,7 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
     if (region_set) {
         if (name == "cursor" && type == CARTA::RegionType::POINT) { // update current cursor's x-y coordinate
             SetCursorXy(points[0].x(), points[0].y());
-        } else if (region_id > 0 && RegionChanged(region_id)) { // update current region's states
+        } else { // update current region's states
             SetRegionState(region_id, name, type, points, rotation);
         }
     } else {
@@ -296,6 +299,10 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                 _stokes_index = new_stokes;
                 SetImageCache();
                 updated = true;
+                for (auto& region : _regions) {
+                    // force sending new profiles for new chan/stokes
+                    region.second->SetAllProfilesUnsent();
+                }
             } else {
                 message = fmt::format("Channel {} or Stokes {} is invalid in file {}", new_channel, new_stokes, _filename);
             }
@@ -785,80 +792,96 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
 
         if (point_in_image) {
             // set profiles
-            for (size_t i = 0; i < region->NumSpatialProfiles(); ++i) {
-                // get <axis, stokes> for slicing image data
-                std::pair<int, int> axis_stokes = region->GetSpatialProfileReq(i);
-
-                if (stokes_changed && (axis_stokes.second != CURRENT_STOKES)) {
-                    continue; // do not send fixed stokes profile when stokes changes
-                }
-                int profile_stokes = (axis_stokes.second < 0 ? _stokes_index : axis_stokes.second);
-
-                std::vector<float> profile;
-                int end(0);
-                if ((profile_stokes == _stokes_index) && !_image_cache.empty()) {
-                    // use stored channel cache
-                    bool write_lock(false);
-                    switch (axis_stokes.first) {
-                        case 0: { // x
-                            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                            auto x_start = y * num_image_cols;
-                            profile.reserve(_image_shape(0));
-                            for (unsigned int j = 0; j < _image_shape(0); ++j) {
-                                auto idx = x_start + j;
-                                profile.push_back(_image_cache[idx]);
-                            }
-                            cache_lock.release();
-                            end = _image_shape(0);
-                            break;
-                        }
-                        case 1: { // y
-                            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                            profile.reserve(_image_shape(1));
-                            for (unsigned int j = 0; j < _image_shape(1); ++j) {
-                                auto idx = (j * num_image_cols) + x;
-                                profile.push_back(_image_cache[idx]);
-                            }
-                            cache_lock.release();
-                            end = _image_shape(1);
-                            break;
-                        }
+            size_t nprofiles(region->NumSpatialProfiles());
+            for (size_t i = 0; i < nprofiles; ++i) {
+                if (!region->GetSpatialProfileSent(i)) {
+                    // get <axis, stokes> for slicing image data
+                    std::pair<int, int> axis_stokes = region->GetSpatialProfileAxes(i);
+                    if (axis_stokes.first < 0) { // invalid index
+                        return profile_ok;
                     }
-                } else {
-                    // slice image data
-                    casacore::Slicer section;
-                    switch (axis_stokes.first) {
-                        case 0: { // x
-                            GetImageSlicer(section, -1, y, _channel_index, profile_stokes);
-                            end = _image_shape(0);
-                            break;
-                        }
-                        case 1: { // y
-                            GetImageSlicer(section, x, -1, _channel_index, profile_stokes);
-                            end = _image_shape(1);
-                            break;
-                        }
+
+                    if (stokes_changed && (axis_stokes.second != CURRENT_STOKES)) {
+                        // Do not send fixed stokes profile when stokes changes.
+                        // When chan/stokes changes, all messages are set to unsent to force new profiles;
+                        // put fixed stokes profile back to sent
+                        region->SetSpatialProfileSent(i, true);
+                        continue;
                     }
-                    profile.resize(end);
-                    casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
-                    std::lock_guard<std::mutex> guard(_image_mutex);
-                    _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
+                    int profile_stokes = (axis_stokes.second < 0 ? _stokes_index : axis_stokes.second);
+
+                    std::vector<float> profile;
+                    int end(0);
+                    if ((profile_stokes == _stokes_index) && !_image_cache.empty()) {
+                        // use stored channel cache
+                        bool write_lock(false);
+                        switch (axis_stokes.first) {
+                            case 0: { // x
+                                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                                auto x_start = y * num_image_cols;
+                                profile.reserve(_image_shape(0));
+                                for (unsigned int j = 0; j < _image_shape(0); ++j) {
+                                    auto idx = x_start + j;
+                                    profile.push_back(_image_cache[idx]);
+                                }
+                                cache_lock.release();
+                                end = _image_shape(0);
+                                break;
+                            }
+                            case 1: { // y
+                                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                                profile.reserve(_image_shape(1));
+                                for (unsigned int j = 0; j < _image_shape(1); ++j) {
+                                    auto idx = (j * num_image_cols) + x;
+                                    profile.push_back(_image_cache[idx]);
+                                }
+                                cache_lock.release();
+                                end = _image_shape(1);
+                                break;
+                            }
+                        }
+                    } else {
+                        // slice image data
+                        casacore::Slicer section;
+                        switch (axis_stokes.first) {
+                            case 0: { // x
+                                GetImageSlicer(section, -1, y, _channel_index, profile_stokes);
+                                end = _image_shape(0);
+                                break;
+                            }
+                            case 1: { // y
+                                GetImageSlicer(section, x, -1, _channel_index, profile_stokes);
+                                end = _image_shape(1);
+                                break;
+                            }
+                        }
+                        profile.resize(end);
+                        casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
+                        std::lock_guard<std::mutex> guard(_image_mutex);
+                        _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
+                    }
+                    // SpatialProfile
+                    auto new_profile = profile_data.add_profiles();
+                    new_profile->set_coordinate(region->GetSpatialCoordinate(i));
+                    new_profile->set_start(0);
+                    new_profile->set_end(end);
+                    new_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
+                    region->SetSpatialProfileSent(i, true);
                 }
-                // SpatialProfile
-                auto new_profile = profile_data.add_profiles();
-                new_profile->set_coordinate(region->GetSpatialCoordinate(i));
-                new_profile->set_start(0);
-                new_profile->set_end(end);
-                new_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
             }
-            profile_ok = true;
+            // send if no profiles requested (for cursor value), but not if requested profiles do not need to be sent
+            if ((nprofiles > 0) && (profile_data.profiles_size() == 0)) {
+                profile_ok = false;
+            } else {
+                profile_ok = true;
+            }
         }
     }
     return profile_ok;
 }
 
-bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb,
-    int region_id, bool channel_changed, bool stokes_changed) {
+bool Frame::FillSpectralProfileData(
+    std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool channel_changed, bool stokes_changed) {
     // fill spectral profile message with requested statistics (or values for a point region)
     bool profile_ok(false);
     if (_regions.count(region_id)) {
@@ -875,13 +898,21 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         // send profile and stats together
         // set stats profiles
         for (size_t i = 0; i < num_profiles; ++i) {
-            int profile_stokes;
-            if (region->GetSpectralConfigStokes(profile_stokes, i)) {
+            if (region->NumStatsToLoad(i) == 0) {
+                continue; // already loaded
+            }
+            int profile_stokes(region->GetSpectralConfigStokes(i));
+            if (profile_stokes >= CURRENT_STOKES) {
+                // When chan/stokes changes, all messages are set to unsent to force new profiles;
+                // put fixed stokes profile back to sent for the following:
                 if (channel_changed && !stokes_changed) {
+                    region->SetSpectralProfileAllStatsSent(i, true);
                     continue; // do not send spectral profile when only channel changes
                 }
                 if ((channel_changed || stokes_changed) && (profile_stokes != CURRENT_STOKES)) {
-                    continue; // do not send fixed stokes profile when channel or stokes changes
+                    // Do not send fixed stokes profile when stokes changes.
+                    region->SetSpectralProfileAllStatsSent(i, true);
+                    continue;
                 }
 
                 if (profile_stokes == CURRENT_STOKES) {
@@ -901,7 +932,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         CARTA::SpectralProfileData profile_data;
                         profile_data.set_stokes(curr_stokes);
                         profile_data.set_progress(1.0);
-                        region->FillSpectralProfileData(profile_data, i, spectral_data);
+                        region->FillPointSpectralProfileData(profile_data, i, spectral_data);
                         // send result to Session
                         cb(profile_data);
                     } else {
@@ -912,14 +943,14 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                             CARTA::SpectralProfileData profile_data;
                             profile_data.set_stokes(curr_stokes);
                             profile_data.set_progress(progress);
-                            region->FillSpectralProfileData(profile_data, i, tmp_spectral_data);
+                            region->FillPointSpectralProfileData(profile_data, i, tmp_spectral_data);
                             // send (partial) result to Session
                             cb(profile_data);
                         });
                         guard.unlock();
                     }
                 } else { // statistics
-                    // do calculations for the image dimensions >= 3 
+                    // do calculations for the image dimensions >= 3
                     if (_image_shape.size() < 3) {
                         CARTA::SpectralProfileData profile_data;
                         profile_data.set_stokes(curr_stokes);
@@ -1264,12 +1295,11 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     int profile_size = NumChannels();        // total number of channels
     auto& region = _regions[region_id];
     // get statistical requirements for this process
-    CARTA::SetSpectralRequirements_SpectralConfig config;
-    if (!region->GetSpectralConfig(config, profile_index)) {
+    std::vector<int> config_stats;
+    if (!region->GetSpectralConfigStats(profile_index, config_stats)) { // stats in config, to see if req changed
         return false;
     }
-    int stats_size = config.stats_types().size();
-    std::vector<int> requested_stats(config.stats_types().begin(), config.stats_types().end());
+    int stats_size = region->NumStatsToLoad(profile_index);
     // initialize the size of statistical results
     std::vector<std::vector<double>> results(stats_size);
     for (int i = 0; i < stats_size; ++i) {
@@ -1287,7 +1317,7 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
         // check if frontend's requirements changed
-        if (Interrupt(region_id, profile_index, region_state, requested_stats)) {
+        if (Interrupt(region_id, profile_index, region_state, config_stats)) {
             return false;
         }
         end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
@@ -1300,8 +1330,8 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
                     memcpy(&results[j][start], &buffer[j][0], buffer[j].size() * sizeof(double));
                 }
             } else {
-                std::cerr << "Can not get zprofile (statistics), region id: " << region_id
-                    << ", channel range: [" << start << "," << end << "]" << std::endl;
+                std::cerr << "Can not get zprofile (statistics), region id: " << region_id << ", channel range: [" << start << "," << end
+                          << "]" << std::endl;
                 return false;
             }
         }
