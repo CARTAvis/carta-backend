@@ -1189,7 +1189,8 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor
 }
 
 bool Frame::GetCursorSpectralData(
-    std::vector<float>& data, casacore::SubImage<float>& sub_image, std::function<void(std::vector<float>, float)> cb) {
+    std::vector<float>& data, casacore::SubImage<float>& sub_image,
+    const std::function<void(std::vector<float>, float)>& partial_results_callback) {
     bool data_ok(false);
     casacore::IPosition sub_image_shape = sub_image.shape();
     data.resize(sub_image_shape.product(), std::numeric_limits<double>::quiet_NaN());
@@ -1204,7 +1205,8 @@ bool Frame::GetCursorSpectralData(
             // get cursor's x-y coordinate from subimage
             CursorXy cursor_xy;
             GetSubImageXy(sub_image, cursor_xy);
-            // get profile data section by section with a specific length (i.e., checkPerChannels)
+            // get spectral profile for the cursor
+            auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
             while (start(_spectral_axis) < profile_size) {
                 // start the timer
                 auto t_start = std::chrono::high_resolution_clock::now();
@@ -1220,9 +1222,11 @@ bool Frame::GetCursorSpectralData(
                 sub_image.doGetSlice(buffer, slicer);
                 memcpy(&data[start(_spectral_axis)], buffer.data(), count(_spectral_axis) * sizeof(float));
                 start(_spectral_axis) += count(_spectral_axis);
+                progress = (float)start(_spectral_axis) / profile_size;
                 // get the time elapse for this step
                 auto t_end = std::chrono::high_resolution_clock::now();
                 auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+                auto dt_partial_profile = std::chrono::duration<double, std::milli>(t_end - t_partial_profile_start).count();
                 // adjust the increment of channels according to the time elapse
                 delta_channels *= dt_target / dt;
                 if (delta_channels < 1) {
@@ -1231,9 +1235,11 @@ bool Frame::GetCursorSpectralData(
                 if (delta_channels > profile_size) {
                     delta_channels = profile_size;
                 }
-                progress = (float)start(_spectral_axis) / profile_size;
-                // send partial result by the callback function
-                cb(data, progress);
+                if (dt_partial_profile > TARGET_PARTIAL_TIME / 2 || progress >= 1.0f) {
+                    // send partial result by the callback function
+                    t_partial_profile_start = std::chrono::high_resolution_clock::now();
+                    partial_results_callback(data, progress);
+                }
             }
             data_ok = true;
         } catch (casacore::AipsError& err) {
