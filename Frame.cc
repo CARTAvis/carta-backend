@@ -1235,7 +1235,7 @@ bool Frame::GetCursorSpectralData(
                 if (delta_channels > profile_size) {
                     delta_channels = profile_size;
                 }
-                if (dt_partial_profile > TARGET_PARTIAL_TIME / 2 || progress >= 1.0f) {
+                if (dt_partial_profile > TARGET_PARTIAL_CURSOR_TIME || progress >= 1.0f) {
                     // send partial result by the callback function
                     t_partial_profile_start = std::chrono::high_resolution_clock::now();
                     partial_results_callback(data, progress);
@@ -1319,7 +1319,7 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         if (delta_channels > profile_size) {
             delta_channels = profile_size;
         }
-        if (dt_partial_profile > TARGET_PARTIAL_TIME || progress >= 1.0f) {
+        if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= 1.0f) {
             // send partial result by the callback function
             t_partial_profile_start = std::chrono::high_resolution_clock::now();
             partial_results_callback(results, progress);
