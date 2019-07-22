@@ -817,7 +817,9 @@ void Region::FillPointSpectralProfileData(CARTA::SpectralProfileData& profile_da
             new_profile->set_coordinate(profile_coord);
             new_profile->set_stats_type(type);
             new_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
-            SetSpectralProfileStatSent(profile_index, type, true);
+            if (profile_data.progress() == PROFILE_COMPLETE) {
+                SetSpectralProfileStatSent(profile_index, type, true);
+            }
         }
     }
 }
