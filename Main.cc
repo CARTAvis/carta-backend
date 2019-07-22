@@ -240,6 +240,12 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::ADD_REQUIRED_TILES: {
+                    CARTA::AddRequiredTiles message;
+                    message.ParseFromArray(event_buf, event_length);
+                    tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];

@@ -101,4 +101,16 @@ public:
     ~AnimationTask() = default;
 };
 
+class OnAddRequiredTilesTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::AddRequiredTiles _message;
+    int _start, _stride, _end;
+
+public:
+    OnAddRequiredTilesTask(Session* session, CARTA::AddRequiredTiles message) : OnMessageTask(session) {
+        _message = message;
+    }
+    ~OnAddRequiredTilesTask() = default;
+};
+
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_
