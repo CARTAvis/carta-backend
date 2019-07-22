@@ -75,19 +75,16 @@ tbb::task* MultiMessageTask::execute() {
 }
 
 tbb::task* SetImageChannelsTask::execute() {
+    std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
     bool tester;
 
-    _session->ExecuteSetChannelEvt(_request_pair);
     _session->ImageChannelLock();
-
-    if (!(tester = _session->_set_channel_queue.try_pop(_request_pair))) {
-        _session->ImageChannelTaskSetIdle();
-    }
+    tester = _session->_set_channel_queue.try_pop(request_pair);
+    _session->ImageChannelTaskSetIdle();
     _session->ImageChannelUnlock();
 
     if (tester) {
-        increment_ref_count();
-        recycle_as_safe_continuation();
+        _session->ExecuteSetChannelEvt(request_pair);
     }
 
     return nullptr;

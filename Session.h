@@ -64,6 +64,10 @@ public:
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
+        std::pair<CARTA::SetImageChannels, uint32_t> rp;
+        // Empty current queue first.
+        while (_set_channel_queue.try_pop(rp)) {
+        }
         _set_channel_queue.push(std::make_pair(message, request_id));
     }
 

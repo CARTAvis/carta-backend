@@ -49,13 +49,10 @@ public:
 };
 
 class SetImageChannelsTask : public OnMessageTask {
-    std::pair<CARTA::SetImageChannels, uint32_t> _request_pair;
     tbb::task* execute() override;
 
 public:
-    SetImageChannelsTask(Session* session, std::pair<CARTA::SetImageChannels, uint32_t> request_pair) : OnMessageTask(session) {
-        _request_pair = request_pair;
-    }
+    SetImageChannelsTask(Session* session) : OnMessageTask(session) {}
     ~SetImageChannelsTask() = default;
 };
 

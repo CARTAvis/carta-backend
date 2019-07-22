@@ -129,12 +129,10 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->ImageChannelLock();
                         if (!session->ImageChannelTaskTestAndSet()) {
-                            tsk = new (tbb::task::allocate_root(session->Context()))
-                                SetImageChannelsTask(session, make_pair(message, head.request_id));
-                        } else {
-                            // has its own queue to keep channels in order during animation
-                            session->AddToSetChannelQueue(message, head.request_id);
+                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session);
                         }
+                        // has its own queue to keep channels in order during animation
+                        session->AddToSetChannelQueue(message, head.request_id);
                         session->ImageChannelUnlock();
                     } else {
                         fmt::print("Bad SET_IMAGE_CHANNELS message!\n");
