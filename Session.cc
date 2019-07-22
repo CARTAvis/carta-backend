@@ -8,6 +8,7 @@
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
+#include <tbb/task_group.h>
 
 #include <casacore/casa/OS/File.h>
 
@@ -341,6 +342,43 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+void Session::OnAddRequiredTiles2(const CARTA::AddRequiredTiles& message) {
+    auto file_id = message.file_id();
+    auto channel = _frames.at(file_id)->CurrentChannel();
+    auto stokes = _frames.at(file_id)->CurrentStokes();
+    if (!message.tiles().empty() && _frames.count(file_id)) {
+        size_t n = message.tiles_size();
+        CARTA::CompressionType compression_type = message.compression_type();
+        float compression_quality = message.compression_quality();
+        int stride = 2;
+        if (n > 32)
+            stride = 8;
+        else if (n > 3)
+            stride = 4;
+
+        auto lambda = [&](int start) {
+            for (int i = start; i < n; i += stride) {
+                const auto& encoded_coordinate = message.tiles(i);
+                CARTA::RasterTileData raster_tile_data;
+                raster_tile_data.set_file_id(file_id);
+                auto tile = Tile::Decode(encoded_coordinate);
+                if (_frames.at(file_id)->FillRasterTileData(
+                        raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
+                    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
+                } else {
+                    fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+                }
+            }
+        };
+
+        tbb::task_group g;
+        for (int j = 0; j < stride; j++) {
+            g.run([=] { lambda(j); });
+        }
+        g.wait();
     }
 }
 
