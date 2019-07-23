@@ -53,7 +53,6 @@ public:
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnSetImageView(const CARTA::SetImageView& message);
     void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message);
-    void OnAddRequiredTiles2(const CARTA::AddRequiredTiles& message);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     void OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id);

@@ -1,11 +1,11 @@
 #include "Session.h"
 
 #include <signal.h>
+#include <algorithm>
 #include <chrono>
 #include <limits>
 #include <memory>
 #include <thread>
-#include <algorithm>
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
@@ -16,7 +16,6 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
-
 
 #include "Carta.h"
 #include "EventHeader.h"
@@ -331,32 +330,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
         size_t n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
-        tbb::parallel_for(size_t(0), n, [&](size_t i) {
-            const auto& encoded_coordinate = message.tiles(i);
-            CARTA::RasterTileData raster_tile_data;
-            raster_tile_data.set_file_id(file_id);
-            auto tile = Tile::Decode(encoded_coordinate);
-            if (_frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
-                SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
-            } else {
-                fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
-            }
-        });
-    } else {
-        string error = fmt::format("File id {} not found", file_id);
-        SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
-    }
-}
-
-void Session::OnAddRequiredTiles2(const CARTA::AddRequiredTiles& message) {
-    auto file_id = message.file_id();
-    auto channel = _frames.at(file_id)->CurrentChannel();
-    auto stokes = _frames.at(file_id)->CurrentStokes();
-    if (!message.tiles().empty() && _frames.count(file_id)) {
-        size_t n = message.tiles_size();
-        CARTA::CompressionType compression_type = message.compression_type();
-        float compression_quality = message.compression_quality();
-	int stride = std::min(CARTA::global_thread_count, (int)n%CARTA::MAX_TILING_TASKS);
+        int stride = std::min(CARTA::global_thread_count, (int)n % CARTA::MAX_TILING_TASKS);
 
         auto lambda = [&](int start) {
             for (int i = start; i < n; i += stride) {
