@@ -962,13 +962,12 @@ bool Frame::FillSpectralProfileData(
                         return profile_ok;
                     }
                     bool use_swizzled_data(false);
+                    std::unique_lock<std::mutex> guard(_image_mutex);
                     try {
                         // check is the region mask valid (outside the lattice or not)
                         region->XyMask();
                         // if region mask is valid, then check is swizzled data available
-                        std::unique_lock<std::mutex> guard(_image_mutex);
                         use_swizzled_data = _loader->UseRegionSpectralData(region->XyMask());
-                        guard.unlock();
                     } catch (casacore::AipsError& err) {
                         std::cerr << err.getMesg() << std::endl;
                         CARTA::SpectralProfileData profile_data;
@@ -980,6 +979,7 @@ bool Frame::FillSpectralProfileData(
                         profile_ok = true;
                         return profile_ok;
                     }
+                    guard.unlock();
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin(),
