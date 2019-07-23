@@ -105,6 +105,7 @@ public:
     size_t NumStats();
     void FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes);
     void FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values);
+    void FillStatsDataNaN(CARTA::RegionStatsData& stats_data);
 
     RegionState GetRegionState();
 

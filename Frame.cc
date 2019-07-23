@@ -1043,11 +1043,14 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
             stats_data.set_channel(_channel_index);
             stats_data.set_stokes(_stokes_index);
             casacore::SubImage<float> sub_image;
-            std::lock_guard<std::mutex> guard(_image_mutex);
+            std::unique_lock<std::mutex> guard(_image_mutex);
             if (GetRegionSubImage(region_id, sub_image, _stokes_index, ChannelRange(_channel_index))) {
                 region->FillStatsData(stats_data, sub_image, _channel_index, _stokes_index);
-                stats_ok = true;
+            } else {
+                guard.unlock(); // not using ImageStatistics
+                region->FillStatsDataNaN(stats_data);
             }
+            stats_ok = true;
         }
     }
     return stats_ok;
