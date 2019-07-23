@@ -73,22 +73,29 @@ public:
     void CalcHistogram(int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data,
         CARTA::Histogram& histogram_msg);
 
+    void SetAllProfilesUnsent(); // enable sending new spatial and spectral profiles
+
     // Spatial: pass through to RegionProfiler
     bool SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes);
     size_t NumSpatialProfiles();
-    std::pair<int, int> GetSpatialProfileReq(int profile_index);
     std::string GetSpatialCoordinate(int profile_index);
+    std::pair<int, int> GetSpatialProfileAxes(int profile_index);
+    bool GetSpatialProfileSent(int profile_index);
+    void SetSpatialProfileSent(int profile_index, bool sent);
 
     // Spectral: pass through to RegionProfiler
     bool SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int num_stokes);
     size_t NumSpectralProfiles();
-    bool GetSpectralConfigStokes(int& stokes, int profile_index);
-    std::string GetSpectralCoordinate(int profile_index);
-    bool GetSpectralConfig(CARTA::SetSpectralRequirements_SpectralConfig& config, int profile_index);
-    void FillSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
+    int NumStatsToLoad(int profile_index);
+    void SetSpectralProfileStatSent(int profile_index, int stats_type, bool sent);
+    void SetSpectralProfileAllStatsSent(int profile_index, bool sent);
+    void SetAllSpectralProfileStatsUnsent(); // enable sending new profiles
+    int GetSpectralConfigStokes(int profile_index);
+    bool GetSpectralConfigStats(int profile_index, std::vector<int>& stats);
+    bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
+    void FillPointSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
     void FillSpectralProfileData(
         CARTA::SpectralProfileData& profile_data, int profile_index, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
     void FillSpectralProfileData(
         CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values);
     void FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index);
@@ -122,6 +129,11 @@ private:
     bool MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRange channel_range); // for extended region
     casacore::WCRegion* MakeExtendedRegion(int stokes, ChannelRange channel_range);             // x/y region extended chan/stokes
 
+    // internal for spectral profile message
+    std::string GetSpectralCoordinate(int profile_index);
+    bool GetSpectralStatsToLoad(int profile_index, std::vector<int>& stats);
+    bool GetSpectralProfileStatSent(int profile_index, int stats_type);
+
     // region definition (ICD SET_REGION parameters)
     std::string _name;
     CARTA::RegionType _type;
@@ -146,8 +158,8 @@ private:
     casacore::CoordinateSystem _coord_sys;
 
     // classes for requirements, calculations
-    std::unique_ptr<carta::RegionStats> _stats;
-    std::unique_ptr<carta::RegionProfiler> _profiler;
+    std::unique_ptr<carta::RegionStats> _region_stats;
+    std::unique_ptr<carta::RegionProfiler> _region_profiler;
 };
 
 } // namespace carta

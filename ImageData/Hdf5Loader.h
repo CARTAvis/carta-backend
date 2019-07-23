@@ -475,7 +475,7 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore
 
             progress = (float)x / num_x;
             // check whether to send partial results to the frontend
-            if (dt > TARGET_PARTIAL_TIME && x < num_x) {
+            if (dt > TARGET_PARTIAL_REGION_TIME && x < num_x) {
                 // Calculate partial stats
                 calculate_stats();
 

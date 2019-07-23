@@ -33,6 +33,7 @@
 // spectral profile calculation
 #define INIT_DELTA_CHANNEL 10
 #define TARGET_DELTA_TIME 50 // milliseconds
-#define TARGET_PARTIAL_TIME 1000
+#define TARGET_PARTIAL_CURSOR_TIME 500
+#define TARGET_PARTIAL_REGION_TIME 1000
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

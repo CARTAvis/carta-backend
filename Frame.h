@@ -76,11 +76,8 @@ public:
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int channel, int stokes,
         CARTA::CompressionType compression_type, float compression_quality);
     bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool stokes_changed = false);
-    bool FillSpectralProfileData(
-        std::function<void(CARTA::SpectralProfileData profile_data)> cb,
-        int region_id,
-        bool channel_changed = false,
-        bool stokes_changed = false);
+    bool FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id,
+        bool channel_changed = false, bool stokes_changed = false);
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool channel_changed = false);
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
 
@@ -152,8 +149,8 @@ private:
     // get cursor's x-y coordinate from subimage
     bool GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor_xy);
     // get spectral profile data from subimage
-    bool GetCursorSpectralData(
-        std::vector<float>& data, casacore::SubImage<float>& sub_image, std::function<void(std::vector<float>, float)> cb);
+    bool GetCursorSpectralData(std::vector<float>& data, casacore::SubImage<float>& sub_image,
+        const std::function<void(std::vector<float>, float)>& partial_results_callback);
     // get regional spectral profile (statistics) data
     bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index, int profile_stokes,
         const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
