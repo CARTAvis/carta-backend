@@ -817,7 +817,9 @@ void Region::FillPointSpectralProfileData(CARTA::SpectralProfileData& profile_da
             new_profile->set_coordinate(profile_coord);
             new_profile->set_stats_type(type);
             new_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
-            SetSpectralProfileStatSent(profile_index, type, true);
+            if (profile_data.progress() == PROFILE_COMPLETE) {
+                SetSpectralProfileStatSent(profile_index, type, true);
+            }
         }
     }
 }
@@ -841,7 +843,9 @@ void Region::FillSpectralProfileData(
             } else {
                 new_profile->set_raw_values_fp64(stats_values[stat_type].data(), stats_values[stat_type].size() * sizeof(double));
             }
-            SetSpectralProfileStatSent(profile_index, stat_type, true);
+            if (profile_data.progress() == PROFILE_COMPLETE) {
+                SetSpectralProfileStatSent(profile_index, stat_type, true);
+            }
         }
     }
 }
@@ -865,7 +869,9 @@ void Region::FillSpectralProfileData(
             } else {
                 new_profile->set_raw_values_fp64(stats_values[i].data(), stats_values[i].size() * sizeof(double));
             }
-            SetSpectralProfileStatSent(profile_index, stat_type, true);
+            if (profile_data.progress() == PROFILE_COMPLETE) {
+                SetSpectralProfileStatSent(profile_index, stat_type, true);
+            }
         }
     }
 }
@@ -884,6 +890,7 @@ void Region::FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data
             // region outside image or NaNs
             double nan_value = std::numeric_limits<double>::quiet_NaN();
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
+            SetSpectralProfileStatSent(profile_index, stat_type, true);
         }
     }
 }
