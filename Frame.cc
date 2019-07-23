@@ -939,7 +939,8 @@ bool Frame::FillSpectralProfileData(
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        GetCursorSpectralData(spectral_data, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
+                        GetPointSpectralData(
+                            spectral_data, region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
                             CARTA::SpectralProfileData profile_data;
                             profile_data.set_stokes(curr_stokes);
                             profile_data.set_progress(progress);
@@ -1219,9 +1220,10 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor
     return result;
 }
 
-bool Frame::GetCursorSpectralData(
-    std::vector<float>& data, casacore::SubImage<float>& sub_image,
+bool Frame::GetPointSpectralData(
+    std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
     const std::function<void(std::vector<float>, float)>& partial_results_callback) {
+    // slice image data for point region (including cursor)
     bool data_ok(false);
     casacore::IPosition sub_image_shape = sub_image.shape();
     data.resize(sub_image_shape.product(), std::numeric_limits<double>::quiet_NaN());
@@ -1234,17 +1236,30 @@ bool Frame::GetCursorSpectralData(
             casacore::IPosition count(sub_image_shape);
             float progress = 0.0;
             // get cursor's x-y coordinate from subimage
-            CursorXy cursor_xy;
-            GetSubImageXy(sub_image, cursor_xy);
+            CursorXy subimage_cursor;
+            GetSubImageXy(sub_image, subimage_cursor);
             // get spectral profile for the cursor
             auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
             while (start(_spectral_axis) < profile_size) {
                 // start the timer
                 auto t_start = std::chrono::high_resolution_clock::now();
-                // check if frontend's requirements changed
-                if (Interrupt(cursor_xy)) {
-                    return false;
+                // check if region point changed from subimage point
+                if ((region_id == CURSOR_REGION_ID) && (Interrupt(_cursor_xy, subimage_cursor))) {
+                    return false; // cursor moved
                 }
+                if (region_id > CURSOR_REGION_ID) {
+                    if (_regions.count(region_id)) {
+                        std::vector<CARTA::Point> region_points = _regions[region_id]->GetControlPoints();
+                        // round the region cursor float values since subimage cursor comes from IPosition
+                        CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y())); 
+                        if (Interrupt(region_cursor, subimage_cursor)) { // point region moved
+                            return false;
+                        }
+                    } else { // region closed
+                        return false;
+                    }
+                }
+
                 // modify the count for slicer
                 count(_spectral_axis) =
                     (start(_spectral_axis) + delta_channels < profile_size ? delta_channels : profile_size - start(_spectral_axis));
@@ -1266,7 +1281,7 @@ bool Frame::GetCursorSpectralData(
                 if (delta_channels > profile_size) {
                     delta_channels = profile_size;
                 }
-                if (dt_partial_profile > TARGET_PARTIAL_CURSOR_TIME || progress >= 1.0f) {
+                if ((dt_partial_profile > TARGET_PARTIAL_CURSOR_TIME) || (progress >= 1.0f)) {
                     // send partial result by the callback function
                     t_partial_profile_start = std::chrono::high_resolution_clock::now();
                     partial_results_callback(data, progress);
@@ -1359,13 +1374,13 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     return true;
 }
 
-bool Frame::Interrupt(const CursorXy& other_cursor_xy) {
+bool Frame::Interrupt(const CursorXy& cursor1, const CursorXy& cursor2) {
     if (!IsConnected()) {
         std::cerr << "Closing image, exit zprofile before complete" << std::endl;
         return true;
     }
-    if (!IsSameCursorXy(other_cursor_xy)) {
-        std::cerr << "Cursor state changed, exit zprofile before complete" << std::endl;
+    if (!(cursor1 == cursor2)) {
+        std::cerr << "Cursor/Point changed, exit zprofile before complete" << std::endl;
         return true;
     }
     return false;
@@ -1403,10 +1418,6 @@ bool Frame::IsConnected() {
     return _connected;
 }
 
-bool Frame::IsSameCursorXy(const CursorXy& other_cursor_xy) {
-    return (_cursor_xy == other_cursor_xy);
-}
-
 bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
     return (_region_states.count(region_id) && _region_states[region_id] == region_state);
 }
@@ -1419,7 +1430,7 @@ void Frame::SetConnectionFlag(bool connected) {
     _connected = connected;
 }
 
-void Frame::SetCursorXy(int x, int y) {
+void Frame::SetCursorXy(float x, float y) {
     _cursor_xy = CursorXy(x, y);
 }
 
