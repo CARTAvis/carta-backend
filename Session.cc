@@ -5,6 +5,7 @@
 #include <limits>
 #include <memory>
 #include <thread>
+#include <algorithm>
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
@@ -16,6 +17,8 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 
+
+#include "Carta.h"
 #include "EventHeader.h"
 #include "FileInfoLoader.h"
 #include "InterfaceConstants.h"
@@ -353,11 +356,7 @@ void Session::OnAddRequiredTiles2(const CARTA::AddRequiredTiles& message) {
         size_t n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
-        int stride = 2;
-        if (n > 32)
-            stride = 8;
-        else if (n > 3)
-            stride = 4;
+	int stride = std::min(CARTA::global_thread_count, (int)n%CARTA::MAX_TILING_TASKS);
 
         auto lambda = [&](int start) {
             for (int i = start; i < n; i += stride) {
