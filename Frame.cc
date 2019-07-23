@@ -1048,7 +1048,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
                 region->FillStatsData(stats_data, sub_image, _channel_index, _stokes_index);
             } else {
                 guard.unlock(); // not using ImageStatistics
-                region->FillStatsDataNaN(stats_data);
+                region->FillNaNStatsData(stats_data);
             }
             stats_ok = true;
         }

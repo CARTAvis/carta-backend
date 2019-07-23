@@ -670,7 +670,7 @@ void Region::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::S
     }
 }
 
-void Region::FillStatsDataNaN(CARTA::RegionStatsData& stats_data) {
+void Region::FillNaNStatsData(CARTA::RegionStatsData& stats_data) {
     // set stats 0-9 with NaN values when no subimage (region is outside image)
     for (int i = CARTA::StatsType::NumPixels; i < CARTA::StatsType::Blc; ++i) {
         auto carta_stats_type = static_cast<CARTA::StatsType>(i);
