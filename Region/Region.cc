@@ -329,10 +329,8 @@ casacore::WCRegion* Region::MakeRectangleRegion(const std::vector<CARTA::Point>&
         casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
         x_coord.setUnit(coord_units(0));
         y_coord.setUnit(coord_units(1));
-        // using pixel axes 0 and 1
-        casacore::IPosition axes(2, 0, 1);
 
-        box_polygon = new casacore::WCPolygon(x_coord, y_coord, axes, _coord_sys);
+        box_polygon = new casacore::WCPolygon(x_coord, y_coord, _xy_axes, _coord_sys);
     }
     return box_polygon;
 }
@@ -355,8 +353,9 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
         pixel_coords = 0.0;
         pixel_coords(0) = cx;
         pixel_coords(1) = cy;
-        if (!_coord_sys.toWorld(world_coords, pixel_coords))
+        if (!_coord_sys.toWorld(world_coords, pixel_coords)) {
             return ellipse; // nullptr, conversion failed
+        }
 
         // make Quantities for ellipsoid center
         casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
@@ -400,10 +399,26 @@ casacore::WCRegion* Region::MakePolygonRegion(const std::vector<CARTA::Point>& p
         x(i) = points[i].x();
         y(i) = points[i].y();
     }
-    casacore::Quantum<casacore::Vector<casacore::Double>> x_coord(x);
-    casacore::Quantum<casacore::Vector<casacore::Double>> y_coord(y);
-    x_coord.setUnit("pix");
-    y_coord.setUnit("pix");
+
+    // Convert pixel coords to world coords
+    int num_axes(_coord_sys.nPixelAxes());
+    casacore::Matrix<casacore::Double> pixel_coords(num_axes, num_points);
+    casacore::Matrix<casacore::Double> world_coords(num_axes, num_points);
+    pixel_coords = 0.0;
+    pixel_coords.row(0) = x;
+    pixel_coords.row(1) = y;
+    casacore::Vector<casacore::Bool> failures;
+    if (!_coord_sys.toWorldMany(world_coords, pixel_coords, failures)) {
+        return polygon; // nullptr, conversion failed
+    }
+
+    // make a vector of quantums for x and y
+    casacore::Quantum<casacore::Vector<casacore::Double>> x_coord(world_coords.row(0));
+    casacore::Quantum<casacore::Vector<casacore::Double>> y_coord(world_coords.row(1));
+    casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
+    x_coord.setUnit(coord_units(0));
+    y_coord.setUnit(coord_units(1));
+
     polygon = new casacore::WCPolygon(x_coord, y_coord, _xy_axes, _coord_sys);
     return polygon;
 }
