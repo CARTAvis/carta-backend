@@ -27,6 +27,9 @@
 
 using namespace std;
 
+namespace CARTA {
+int global_thread_count = 0;
+}
 // key is current folder
 unordered_map<string, vector<string>> permissions_map;
 
@@ -346,6 +349,7 @@ int main(int argc, const char* argv[]) {
 
         // Construct task scheduler, permissions
         tbb::task_scheduler_init task_scheduler(thread_count);
+	CARTA::global_thread_count = thread_count;
         if (use_permissions) {
             ReadPermissions("permissions.txt", permissions_map);
         }
