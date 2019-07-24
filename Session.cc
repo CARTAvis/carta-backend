@@ -453,6 +453,30 @@ void Session::OnRemoveRegion(const CARTA::RemoveRegion& message) {
     }
 }
 
+void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t request_id) {
+    auto file_id(message.group_id()); // eventually, import into wcs group
+    if (_frames.count(file_id)) {
+        try {
+            CARTA::ImportRegionAck import_ack; // response
+            std::string directory(message.directory()), filename(message.file());
+	    if (!directory.empty() && !filename.empty()) {
+                _frames.at(file_id)->ImportRegionFile(directory, filename, import_ack);
+                SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
+            } else {
+                std::vector<std::string> contents = {message.contents().begin(), message.contents().end()};
+                _frames.at(file_id)->ImportRegionContents(contents, import_ack);
+                SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
+            } 
+        } catch (std::out_of_range& range_error) {
+            string error = fmt::format("File id {} closed", file_id);
+            SendLogEvent(error, {"import"}, CARTA::ErrorSeverity::DEBUG);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"import"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
 void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& message) {
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {

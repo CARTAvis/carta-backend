@@ -240,6 +240,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::IMPORT_REGION: {
+                    CARTA::ImportRegion message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnImportRegion(message, head.request_id);
+                    } else {
+                        fmt::print("Bad OPEN_FILE message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
