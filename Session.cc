@@ -327,10 +327,10 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
     if (!message.tiles().empty() && _frames.count(file_id)) {
-        size_t n = message.tiles_size();
+        int n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
-        int stride = std::min(CARTA::global_thread_count, (int)n % CARTA::MAX_TILING_TASKS);
+        int stride = std::min((int)n, std::min(CARTA::global_thread_count, CARTA::MAX_TILING_TASKS));
 
         auto lambda = [&](int start) {
             for (int i = start; i < n; i += stride) {
