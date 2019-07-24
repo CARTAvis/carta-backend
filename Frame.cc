@@ -435,7 +435,6 @@ bool Frame::SetRegionSpectralRequirements(int region_id, const std::vector<CARTA
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         region_ok = region->SetSpectralRequirements(profiles, NumStokes());
-        SetRegionSpectralRequests(region_id, profiles);
     }
     return region_ok;
 }
@@ -994,8 +993,8 @@ bool Frame::FillSpectralProfileData(
                     } else {
                         std::vector<std::vector<double>> stats_values;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSpectralData(
-                            stats_values, region_id, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
+                        GetRegionSpectralData(stats_values, region_id, num_profiles, i, profile_stokes,
+                            [&](std::vector<std::vector<double>> results, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
                                 profile_data.set_progress(progress);
@@ -1304,8 +1303,8 @@ bool Frame::GetPointSpectralData(
     return data_ok;
 }
 
-bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index, int profile_stokes,
-    const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback) {
+bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int num_profiles, int profile_index,
+    int profile_stokes, const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback) {
     int delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
     int dt_target = TARGET_DELTA_TIME;       // the target time elapse for each step, in the unit of milliseconds
     int profile_size = NumChannels();        // total number of channels
@@ -1333,7 +1332,7 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
         // check if frontend's requirements changed
-        if (Interrupt(region_id, profile_index, region_state, config_stats)) {
+        if (Interrupt(region_id, num_profiles, profile_index, profile_stokes, region_state, config_stats)) {
             return false;
         }
         end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
@@ -1399,7 +1398,8 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
     return false;
 }
 
-bool Frame::Interrupt(int region_id, int profile_index, const RegionState& region_state, const std::vector<int>& requested_stats) {
+bool Frame::Interrupt(int region_id, int num_profiles, int profile_index, int profile_stokes,
+    const RegionState& region_state, const std::vector<int>& config_stats) {
     if (!IsConnected()) {
         std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
         return true;
@@ -1408,7 +1408,7 @@ bool Frame::Interrupt(int region_id, int profile_index, const RegionState& regio
         std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
         return true;
     }
-    if (!AreSameRegionSpectralRequests(region_id, profile_index, requested_stats)) {
+    if (!IsSameRegionSpectralConfig(region_id, num_profiles, profile_index, profile_stokes, config_stats)) {
         std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
         return true;
     }
@@ -1426,8 +1426,32 @@ bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
     return false;
 }
 
-bool Frame::AreSameRegionSpectralRequests(int region_id, int profile_index, const std::vector<int>& requested_stats) {
-    return (_region_requests.count(region_id) && _region_requests[region_id].IsAmong(profile_index, requested_stats));
+bool Frame::IsSameRegionSpectralConfig(int region_id, int num_profiles, int profile_index, int profile_stokes,
+    const std::vector<int>& config_stats) {
+    if (_regions.count(region_id)) {
+        auto& region = _regions[region_id];
+        // check is number of profiles changed
+        size_t new_num_profiles(region->NumSpectralProfiles());
+        if ((new_num_profiles == 0) || (new_num_profiles != num_profiles)) {
+            return false;
+        }
+        // check is profile stoke changed
+        int new_profile_stokes = region->GetSpectralConfigStokes(profile_index);
+        if (new_profile_stokes == CURRENT_STOKES) {
+            new_profile_stokes = CurrentStokes();
+            if (new_profile_stokes != profile_stokes) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+        // check are stats requirements changed
+        std::vector<int> new_config_stats;
+        if (region->GetSpectralConfigStats(profile_index, new_config_stats)) {
+            return (new_config_stats == config_stats);
+        }
+    }
+    return false;
 }
 
 void Frame::SetConnectionFlag(bool connected) {
@@ -1438,15 +1462,10 @@ void Frame::SetCursorXy(float x, float y) {
     _cursor_xy = CursorXy(x, y);
 }
 
-void Frame::SetRegionSpectralRequests(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
-    _region_requests[region_id].UpdateRequest(profiles);
-}
-
 RegionState Frame::GetRegionState(int region_id) {
     if (_regions.count(region_id)) {
         return _regions[region_id]->GetRegionState();
-    } else {
-        std::cerr << "ERROR: region id " << region_id << " does not exist!" << std::endl;
     }
+    std::cerr << "ERROR: region id " << region_id << " does not exist!" << std::endl;
     return RegionState();
 }

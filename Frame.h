@@ -107,7 +107,8 @@ public:
     // Interrupt conditions
     bool Interrupt(const CursorXy& cursor1, const CursorXy& cursor2); // cursor and point regions
     bool Interrupt(int region_id, const RegionState& region_state);
-    bool Interrupt(int region_id, int profile_index, const RegionState& region_state, const std::vector<int>& requested_stats);
+    bool Interrupt(int region_id, int num_profiles, int profile_index, int profile_stokes,
+        const RegionState& region_state, const std::vector<int>& config_stats);
 
 private:
     // Internal regions: image, cursor
@@ -152,18 +153,18 @@ private:
     bool GetPointSpectralData(std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
         const std::function<void(std::vector<float>, float)>& partial_results_callback);
     // get regional spectral profile (statistics) data
-    bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index, int profile_stokes,
-        const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
+    bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int num_profiles, int profile_index,
+        int profile_stokes, const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
 
     // Functions used to set cursor and region states
     void SetConnectionFlag(bool connected);
     void SetCursorXy(float x, float y);
-    void SetRegionSpectralRequests(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
 
     // Functions used to check cursor and region states
     bool IsConnected();
     bool IsSameRegionState(int region_id, const RegionState& region_state);
-    bool AreSameRegionSpectralRequests(int region_id, int profile_index, const std::vector<int>& requested_stats);
+    bool IsSameRegionSpectralConfig(int region_id, int num_profiles, int profile_index, int profile_stokes,
+        const std::vector<int>& config_stats);
 
     // setup
     uint32_t _session_id;
@@ -200,8 +201,6 @@ private:
     volatile bool _connected = true;
     // Current cursor's x-y coordinate
     CursorXy _cursor_xy;
-    // Current region configs
-    std::unordered_map<int, RegionRequest> _region_requests;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_
