@@ -156,8 +156,6 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
     if (region_set) {
         if (name == "cursor" && type == CARTA::RegionType::POINT) { // update current cursor's x-y coordinate
             SetCursorXy(points[0].x(), points[0].y());
-        } else { // update current region's states
-            SetRegionState(region_id, name, type, points, rotation);
         }
     } else {
         message = fmt::format("Region parameters failed to validate for region id {}", region_id);
@@ -1422,7 +1420,10 @@ bool Frame::IsConnected() {
 }
 
 bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
-    return (_region_states.count(region_id) && _region_states[region_id] == region_state);
+    if (_regions.count(region_id)) {
+        return (_regions[region_id]->GetRegionState() == region_state);
+    }
+    return false;
 }
 
 bool Frame::AreSameRegionSpectralRequests(int region_id, int profile_index, const std::vector<int>& requested_stats) {
@@ -1437,14 +1438,15 @@ void Frame::SetCursorXy(float x, float y) {
     _cursor_xy = CursorXy(x, y);
 }
 
-void Frame::SetRegionState(int region_id, std::string name, CARTA::RegionType type, std::vector<CARTA::Point> points, float rotation) {
-    _region_states[region_id].UpdateState(name, type, points, rotation);
-}
-
 void Frame::SetRegionSpectralRequests(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
     _region_requests[region_id].UpdateRequest(profiles);
 }
 
 RegionState Frame::GetRegionState(int region_id) {
-    return _region_states[region_id];
+    if (_regions.count(region_id)) {
+        return _regions[region_id]->GetRegionState();
+    } else {
+        std::cerr << "ERROR: region id " << region_id << " does not exist!" << std::endl;
+    }
+    return RegionState();
 }

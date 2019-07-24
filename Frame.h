@@ -158,7 +158,6 @@ private:
     // Functions used to set cursor and region states
     void SetConnectionFlag(bool connected);
     void SetCursorXy(float x, float y);
-    void SetRegionState(int region_id, std::string name, CARTA::RegionType type, std::vector<CARTA::Point> points, float rotation);
     void SetRegionSpectralRequests(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
 
     // Functions used to check cursor and region states
@@ -201,8 +200,6 @@ private:
     volatile bool _connected = true;
     // Current cursor's x-y coordinate
     CursorXy _cursor_xy;
-    // Current region states
-    std::unordered_map<int, RegionState> _region_states;
     // Current region configs
     std::unordered_map<int, RegionRequest> _region_requests;
 };
