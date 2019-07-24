@@ -59,7 +59,7 @@ public:
     }
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
-    void ImportRegionFile(std::string& directory, std::string& filename, CARTA::ImportRegionAck& import_ack);
+    void ImportRegionFile(std::string& filename, CARTA::ImportRegionAck& import_ack);
     void ImportRegionContents(std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack);
 
     // image view, channels

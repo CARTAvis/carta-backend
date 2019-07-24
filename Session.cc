@@ -460,7 +460,12 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             CARTA::ImportRegionAck import_ack; // response
             std::string directory(message.directory()), filename(message.file());
 	    if (!directory.empty() && !filename.empty()) {
-                _frames.at(file_id)->ImportRegionFile(directory, filename, import_ack);
+                // form path with filename
+                casacore::Path root_path(_root_folder);
+                root_path.append(directory);
+                root_path.append(filename);
+                string abs_filename(root_path.resolvedName());
+                _frames.at(file_id)->ImportRegionFile(abs_filename, import_ack);
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
             } else {
                 std::vector<std::string> contents = {message.contents().begin(), message.contents().end()};

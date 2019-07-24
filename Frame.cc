@@ -231,7 +231,8 @@ void Frame::RemoveRegion(int region_id) {
     }
 }
 
-void Frame::ImportRegionFile(std::string& directory, std::string& filename, CARTA::ImportRegionAck& import_ack) {
+void Frame::ImportRegionFile(std::string& filename, CARTA::ImportRegionAck& import_ack) {
+
 }
 
 void Frame::ImportRegionContents(std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack) {
