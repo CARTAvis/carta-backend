@@ -109,16 +109,16 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                     casacore::String full_path(cc_file.path().absoluteName());
                     try {
                         if (region_list) {
-                            if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
-                                if (casacore::ImageOpener::imageType(full_path) == casacore::ImageOpener::UNKNOWN) { // not image
+                            if (casacore::ImageOpener::imageType(full_path) == casacore::ImageOpener::UNKNOWN) { // not image
+                                if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
                                     casacore::String dir_name(cc_file.path().baseName());
                                     file_list.add_subdirectories(dir_name);
-                                }
-                            } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                                CARTA::FileType file_type(GetRegionType(full_path));
-                                if (file_type != CARTA::FileType::UNKNOWN) {
-                                    auto file_info = file_list.add_files();
-                                    FillRegionFileInfo(file_info, full_path, file_type);
+                                } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
+                                    CARTA::FileType file_type(GetRegionType(full_path));
+                                    if (file_type != CARTA::FileType::UNKNOWN) {
+                                        auto file_info = file_list.add_files();
+                                        FillRegionFileInfo(file_info, full_path, file_type);
+                                    }
                                 }
                             }
                         } else {
