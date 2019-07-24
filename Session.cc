@@ -330,7 +330,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
         int n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
-        int stride = std::min((int)n, std::min(CARTA::global_thread_count, CARTA::MAX_TILING_TASKS));
+        int stride = std::min(n, std::min(CARTA::global_thread_count, CARTA::MAX_TILING_TASKS));
 
         auto lambda = [&](int start) {
             for (int i = start; i < n; i += stride) {
