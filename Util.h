@@ -58,12 +58,13 @@ struct ChannelRange {
 };
 
 struct CursorXy {
-    int x, y;
+    // CARTA::Point is float
+    float x, y;
     CursorXy() {
-        x = -1;
-        y = -1;
+        x = -1.0;
+        y = -1.0;
     }
-    CursorXy(int x_, int y_) {
+    CursorXy(float x_, float y_) {
         x = x_;
         y = y_;
     }
@@ -71,8 +72,8 @@ struct CursorXy {
         x = other.x;
         y = other.y;
     }
-    bool operator==(const CursorXy& rhs) {
-        if (x != rhs.x || y != rhs.y) {
+    bool operator==(const CursorXy& rhs) const {
+        if ((x != rhs.x) || (y != rhs.y)) {
             return false;
         }
         return true;
