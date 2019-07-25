@@ -926,7 +926,7 @@ bool Frame::FillSpectralProfileData(
                     // try use the loader's optimized cursor profile reader first
                     std::unique_lock<std::mutex> guard(_image_mutex);
                     bool have_spectral_data =
-                        _loader->GetCursorSpectralData(spectral_data, profile_stokes, cursor_point.x(), 1, cursor_point.y(), 1);
+                        _loader->GetCursorSpectralData(spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1);
                     guard.unlock();
                     if (have_spectral_data) {
                         CARTA::SpectralProfileData profile_data;
