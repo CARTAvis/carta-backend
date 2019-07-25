@@ -941,13 +941,13 @@ bool Frame::FillSpectralProfileData(
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
                         GetPointSpectralData(
                             spectral_data, region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
-                            CARTA::SpectralProfileData profile_data;
-                            profile_data.set_stokes(curr_stokes);
-                            profile_data.set_progress(progress);
-                            region->FillPointSpectralProfileData(profile_data, i, tmp_spectral_data);
-                            // send (partial) result to Session
-                            cb(profile_data);
-                        });
+                                CARTA::SpectralProfileData profile_data;
+                                profile_data.set_stokes(curr_stokes);
+                                profile_data.set_progress(progress);
+                                region->FillPointSpectralProfileData(profile_data, i, tmp_spectral_data);
+                                // send (partial) result to Session
+                                cb(profile_data);
+                            });
                         guard.unlock();
                     }
                 } else { // statistics
@@ -968,7 +968,8 @@ bool Frame::FillSpectralProfileData(
                     try {
                         // check is the region mask valid (outside the lattice or not)
                         mask = region->XyMask();
-                    } catch (...) { }
+                    } catch (...) {
+                    }
                     guard.unlock();
                     if (mask) {
                         // if region mask is valid, then check is swizzled data available
@@ -1226,8 +1227,7 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor
     return result;
 }
 
-bool Frame::GetPointSpectralData(
-    std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
+bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
     const std::function<void(std::vector<float>, float)>& partial_results_callback) {
     // slice image data for point region (including cursor)
     bool data_ok(false);
@@ -1257,7 +1257,7 @@ bool Frame::GetPointSpectralData(
                     if (_regions.count(region_id)) {
                         std::vector<CARTA::Point> region_points = _regions[region_id]->GetControlPoints();
                         // round the region cursor float values since subimage cursor comes from IPosition
-                        CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y())); 
+                        CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y()));
                         if (Interrupt(region_cursor, subimage_cursor)) { // point region moved
                             return false;
                         }

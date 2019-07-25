@@ -238,23 +238,21 @@ bool FileInfoLoader::FillFileExtInfo(CARTA::FileInfoExtended* ext_info, std::str
 bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message) {
     // Add extended info for HDF5 file
     try {
-        casacore::HDF5File hdf_file(_filename);
+        auto hdf_file_ptr = new casacore::HDF5File(_filename);
+
         if (hdu.empty()) { // use first
-            hdu = casacore::HDF5Group::linkNames(hdf_file)[0];
+            hdu = casacore::HDF5Group::linkNames(*hdf_file_ptr)[0];
         }
-        casacore::HDF5Group hdf_group(hdf_file, hdu, true);
+        casacore::HDF5Group hdf_group(*hdf_file_ptr, hdu, true);
         casacore::Record attributes;
         try {
             // read attributes into casacore Record
             attributes = Hdf5Attributes::ReadAttributes(hdf_group.getHid());
         } catch (casacore::HDF5Error& err) {
             message = "Error reading HDF5 attributes: " + err.getMesg();
-            hdf_group.close();
-            hdf_file.close();
             return false;
         }
-        hdf_group.close();
-        hdf_file.close();
+
         if (attributes.empty()) {
             message = "No HDF5 attributes";
             return false;
@@ -263,8 +261,11 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         // check dimensions
         casacore::uInt num_dims;
         casacore::IPosition data_shape;
+
+        auto counted_ptr = casacore::CountedPtr<casacore::HDF5File>(hdf_file_ptr);
+
         try {
-            casacore::HDF5Lattice<float> hdf5_lattice = casacore::HDF5Lattice<float>(_filename, "DATA", hdu);
+            casacore::HDF5Lattice<float> hdf5_lattice = casacore::HDF5Lattice<float>(counted_ptr, "DATA", hdu);
             data_shape = hdf5_lattice.shape();
             num_dims = data_shape.size();
         } catch (casacore::AipsError& err) {
