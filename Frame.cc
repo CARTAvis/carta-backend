@@ -926,7 +926,7 @@ bool Frame::FillSpectralProfileData(
                     // try use the loader's optimized cursor profile reader first
                     std::unique_lock<std::mutex> guard(_image_mutex);
                     bool have_spectral_data =
-                        _loader->GetCursorSpectralData(spectral_data, profile_stokes, cursor_point.x(), 1, cursor_point.y(), 1);
+                        _loader->GetCursorSpectralData(spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1);
                     guard.unlock();
                     if (have_spectral_data) {
                         CARTA::SpectralProfileData profile_data;
@@ -963,15 +963,18 @@ bool Frame::FillSpectralProfileData(
                         return profile_ok;
                     }
                     bool use_swizzled_data(false);
+                    const casacore::ArrayLattice<casacore::Bool>* mask = nullptr;
+                    std::unique_lock<std::mutex> guard(_image_mutex);
                     try {
                         // check is the region mask valid (outside the lattice or not)
-                        region->XyMask();
+                        mask = region->XyMask();
+                    } catch (...) { }
+                    guard.unlock();
+                    if (mask) {
                         // if region mask is valid, then check is swizzled data available
-                        std::unique_lock<std::mutex> guard(_image_mutex);
-                        use_swizzled_data = _loader->UseRegionSpectralData(region->XyMask());
-                        guard.unlock();
-                    } catch (casacore::AipsError& err) {
-                        std::cerr << err.getMesg() << std::endl;
+                        use_swizzled_data = _loader->UseRegionSpectralData(mask);
+                    } else {
+                        // if region mask not valid, send a NaN to the frontend
                         CARTA::SpectralProfileData profile_data;
                         profile_data.set_stokes(curr_stokes);
                         profile_data.set_progress(1.0);
@@ -983,7 +986,7 @@ bool Frame::FillSpectralProfileData(
                     }
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin(),
+                        _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
                             [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
