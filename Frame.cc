@@ -1453,22 +1453,25 @@ bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
 
 bool Frame::IsSameRegionSpectralConfig(int region_id, int num_profiles, int profile_index, int profile_stokes,
     const std::vector<int>& config_stats) {
+    bool is_same(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         // check is number of profiles changed
         size_t new_num_profiles(region->NumSpectralProfiles());
         if ((new_num_profiles == 0) || (new_num_profiles != num_profiles)) {
-            return false;
+            return is_same;
         }
         // check is profile stoke changed
         int new_profile_stokes = region->GetSpectralConfigStokes(profile_index);
-        if (new_profile_stokes == CURRENT_STOKES) {
-            new_profile_stokes = CurrentStokes();
+        if (new_profile_stokes >= CURRENT_STOKES) {
+            if (new_profile_stokes == CURRENT_STOKES) {
+                new_profile_stokes = CurrentStokes();
+            }
             if (new_profile_stokes != profile_stokes) {
-                return false;
+                return is_same;
             }
         } else {
-            return false;
+            return is_same;
         }
         // check are stats requirements changed
         std::vector<int> new_config_stats;
@@ -1476,7 +1479,7 @@ bool Frame::IsSameRegionSpectralConfig(int region_id, int num_profiles, int prof
             return (new_config_stats == config_stats);
         }
     }
-    return false;
+    return is_same;
 }
 
 void Frame::SetConnectionFlag(bool connected) {
