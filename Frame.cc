@@ -889,12 +889,34 @@ bool Frame::FillSpectralProfileData(
         if (!region->IsValid()) {
             return false;
         }
+
+        int curr_stokes(CurrentStokes());
+
+        const casacore::ArrayLattice<casacore::Bool>* mask = nullptr;
+        std::unique_lock<std::mutex> guard(_image_mutex);
+        try {
+            // check is the region mask valid (outside the lattice or not)
+            mask = region->XyMask();
+        } catch (casacore::AipsError& err) {
+        }
+        guard.unlock();
+        if (!mask) {
+            // if region mask not valid, send a NaN to the frontend
+            CARTA::SpectralProfileData profile_data;
+            profile_data.set_stokes(curr_stokes);
+            profile_data.set_progress(1.0);
+            region->FillNaNSpectralProfileData(profile_data, 0);
+            // send empty (NaN) result to Session
+            cb(profile_data);
+            profile_ok = true;
+            return profile_ok;
+        }
+
         size_t num_profiles(region->NumSpectralProfiles());
         if (num_profiles == 0) {
             return false; // not requested
         }
         // set profile parameters
-        int curr_stokes(CurrentStokes());
         // send profile and stats together
         // set stats profiles
         for (size_t i = 0; i < num_profiles; ++i) {
@@ -962,29 +984,10 @@ bool Frame::FillSpectralProfileData(
                         profile_ok = true;
                         return profile_ok;
                     }
-                    bool use_swizzled_data(false);
-                    const casacore::ArrayLattice<casacore::Bool>* mask = nullptr;
-                    std::unique_lock<std::mutex> guard(_image_mutex);
-                    try {
-                        // check is the region mask valid (outside the lattice or not)
-                        mask = region->XyMask();
-                    } catch (...) {
-                    }
-                    guard.unlock();
-                    if (mask) {
-                        // if region mask is valid, then check is swizzled data available
-                        use_swizzled_data = _loader->UseRegionSpectralData(mask);
-                    } else {
-                        // if region mask not valid, send a NaN to the frontend
-                        CARTA::SpectralProfileData profile_data;
-                        profile_data.set_stokes(curr_stokes);
-                        profile_data.set_progress(1.0);
-                        region->FillNaNSpectralProfileData(profile_data, i);
-                        // send empty (NaN) result to Session
-                        cb(profile_data);
-                        profile_ok = true;
-                        return profile_ok;
-                    }
+
+                    // if region mask is valid, then check is swizzled data available
+                    bool use_swizzled_data(_loader->UseRegionSpectralData(mask));
+
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
