@@ -690,18 +690,17 @@ void Region::FillNaNStatsData(CARTA::RegionStatsData& stats_data) {
     for (int i = CARTA::StatsType::NumPixels; i < CARTA::StatsType::Blc; ++i) {
         auto carta_stats_type = static_cast<CARTA::StatsType>(i);
         double nan_value = std::numeric_limits<double>::quiet_NaN();
-	if (carta_stats_type == CARTA::StatsType::NanCount) { // not implemented
+        if (carta_stats_type == CARTA::StatsType::NanCount) { // not implemented
             continue;
         }
-	if (carta_stats_type == CARTA::StatsType::NumPixels) {
+        if (carta_stats_type == CARTA::StatsType::NumPixels) {
             nan_value = 0.0;
         }
-	auto stats_value = stats_data.add_statistics();
+        auto stats_value = stats_data.add_statistics();
         stats_value->set_stats_type(carta_stats_type);
         stats_value->set_value(nan_value);
     }
 }
-
 
 // ***********************************
 // RegionProfiler

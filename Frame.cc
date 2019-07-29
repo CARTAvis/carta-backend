@@ -926,7 +926,7 @@ bool Frame::FillSpectralProfileData(
                     // try use the loader's optimized cursor profile reader first
                     std::unique_lock<std::mutex> guard(_image_mutex);
                     bool have_spectral_data =
-                        _loader->GetCursorSpectralData(spectral_data, profile_stokes, cursor_point.x(), 1, cursor_point.y(), 1);
+                        _loader->GetCursorSpectralData(spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1);
                     guard.unlock();
                     if (have_spectral_data) {
                         CARTA::SpectralProfileData profile_data;
@@ -941,13 +941,13 @@ bool Frame::FillSpectralProfileData(
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
                         GetPointSpectralData(
                             spectral_data, region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
-                            CARTA::SpectralProfileData profile_data;
-                            profile_data.set_stokes(curr_stokes);
-                            profile_data.set_progress(progress);
-                            region->FillPointSpectralProfileData(profile_data, i, tmp_spectral_data);
-                            // send (partial) result to Session
-                            cb(profile_data);
-                        });
+                                CARTA::SpectralProfileData profile_data;
+                                profile_data.set_stokes(curr_stokes);
+                                profile_data.set_progress(progress);
+                                region->FillPointSpectralProfileData(profile_data, i, tmp_spectral_data);
+                                // send (partial) result to Session
+                                cb(profile_data);
+                            });
                         guard.unlock();
                     }
                 } else { // statistics
@@ -963,15 +963,19 @@ bool Frame::FillSpectralProfileData(
                         return profile_ok;
                     }
                     bool use_swizzled_data(false);
+                    const casacore::ArrayLattice<casacore::Bool>* mask = nullptr;
+                    std::unique_lock<std::mutex> guard(_image_mutex);
                     try {
                         // check is the region mask valid (outside the lattice or not)
-                        region->XyMask();
+                        mask = region->XyMask();
+                    } catch (...) {
+                    }
+                    guard.unlock();
+                    if (mask) {
                         // if region mask is valid, then check is swizzled data available
-                        std::unique_lock<std::mutex> guard(_image_mutex);
-                        use_swizzled_data = _loader->UseRegionSpectralData(region->XyMask());
-                        guard.unlock();
-                    } catch (casacore::AipsError& err) {
-                        std::cerr << err.getMesg() << std::endl;
+                        use_swizzled_data = _loader->UseRegionSpectralData(mask);
+                    } else {
+                        // if region mask not valid, send a NaN to the frontend
                         CARTA::SpectralProfileData profile_data;
                         profile_data.set_stokes(curr_stokes);
                         profile_data.set_progress(1.0);
@@ -983,7 +987,7 @@ bool Frame::FillSpectralProfileData(
                     }
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        _loader->GetRegionSpectralData(profile_stokes, region_id, region->XyMask(), region->XyOrigin(),
+                        _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
                             [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -1223,8 +1227,7 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor
     return result;
 }
 
-bool Frame::GetPointSpectralData(
-    std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
+bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
     const std::function<void(std::vector<float>, float)>& partial_results_callback) {
     // slice image data for point region (including cursor)
     bool data_ok(false);
