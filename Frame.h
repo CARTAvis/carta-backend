@@ -107,8 +107,8 @@ public:
     // Interrupt conditions
     bool Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2); // cursor and point regions
     bool Interrupt(int region_id, const RegionState& region_state);
-    bool Interrupt(int region_id, int num_profiles, int profile_index, int profile_stokes,
-        const RegionState& region_state, const std::vector<int>& config_stats);
+    bool Interrupt(int region_id, int num_profiles, int profile_index, int profile_stokes, const RegionState& region_state,
+        const std::vector<int>& config_stats);
 
 private:
     // Internal regions: image, cursor
@@ -165,8 +165,8 @@ private:
     bool IsConnected();
     bool IsSameRegionId(int region_id);
     bool IsSameRegionState(int region_id, const RegionState& region_state);
-    bool IsSameRegionSpectralConfig(int region_id, int num_profiles, int profile_index, int profile_stokes,
-        const std::vector<int>& config_stats);
+    bool IsSameRegionSpectralConfig(
+        int region_id, int num_profiles, int profile_index, int profile_stokes, const std::vector<int>& config_stats);
 
     // setup
     uint32_t _session_id;

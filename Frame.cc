@@ -1257,7 +1257,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
                     if (_regions.count(region_id)) {
                         std::vector<CARTA::Point> region_points = _regions[region_id]->GetControlPoints();
                         // round the region cursor float values since subimage cursor comes from IPosition
-                        CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y())); 
+                        CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y()));
                         if (Interrupt(region_id, region_cursor, subimage_cursor)) { // point region moved
                             return false;
                         }
@@ -1416,8 +1416,8 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
     return interrupt;
 }
 
-bool Frame::Interrupt(int region_id, int num_profiles, int profile_index, int profile_stokes,
-    const RegionState& region_state, const std::vector<int>& config_stats) {
+bool Frame::Interrupt(int region_id, int num_profiles, int profile_index, int profile_stokes, const RegionState& region_state,
+    const std::vector<int>& config_stats) {
     bool interrupt(true);
     if (!IsConnected()) {
         std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
@@ -1454,8 +1454,8 @@ bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
     return false;
 }
 
-bool Frame::IsSameRegionSpectralConfig(int region_id, int num_profiles, int profile_index, int profile_stokes,
-    const std::vector<int>& config_stats) {
+bool Frame::IsSameRegionSpectralConfig(
+    int region_id, int num_profiles, int profile_index, int profile_stokes, const std::vector<int>& config_stats) {
     bool is_same(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
