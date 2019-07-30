@@ -458,9 +458,11 @@ void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
 
 void Session::OnRemoveRegion(const CARTA::RemoveRegion& message) {
     auto region_id(message.region_id());
-    for (auto& frame : _frames) { // frames = map<fileId, unique_ptr<Frame>>
-        if (frame.second)
-            frame.second->RemoveRegion(region_id);
+    if ((region_id != CURSOR_REGION_ID) && (region_id != IMAGE_REGION_ID)) {
+        for (auto& frame : _frames) { // frames = map<fileId, unique_ptr<Frame>>
+            if (frame.second)
+                frame.second->RemoveRegion(region_id);
+        }
     }
 }
 
