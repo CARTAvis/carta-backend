@@ -1,6 +1,7 @@
 #include "Session.h"
 
 #include <signal.h>
+#include <algorithm>
 #include <chrono>
 #include <limits>
 #include <memory>
@@ -8,6 +9,7 @@
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
+#include <tbb/task_group.h>
 
 #include <casacore/casa/OS/File.h>
 
@@ -15,6 +17,7 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 
+#include "Carta.h"
 #include "EventHeader.h"
 #include "FileInfoLoader.h"
 #include "InterfaceConstants.h"
@@ -324,23 +327,31 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
     if (!message.tiles().empty() && _frames.count(file_id)) {
-        size_t n = message.tiles_size();
+        int n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
-        tbb::parallel_for(size_t(0), n, [&](size_t i) {
-            const auto& encoded_coordinate = message.tiles(i);
-            CARTA::RasterTileData raster_tile_data;
-            raster_tile_data.set_file_id(file_id);
-            auto tile = Tile::Decode(encoded_coordinate);
-            if (_frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
-                SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
-            } else {
-                fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+        int stride = std::min(n, std::min(CARTA::global_thread_count, CARTA::MAX_TILING_TASKS));
+
+        auto lambda = [&](int start) {
+            for (int i = start; i < n; i += stride) {
+                const auto& encoded_coordinate = message.tiles(i);
+                CARTA::RasterTileData raster_tile_data;
+                raster_tile_data.set_file_id(file_id);
+                auto tile = Tile::Decode(encoded_coordinate);
+                if (_frames.at(file_id)->FillRasterTileData(
+                        raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
+                    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
+                } else {
+                    fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+                }
             }
-        });
-    } else {
-        string error = fmt::format("File id {} not found", file_id);
-        SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
+        };
+
+        tbb::task_group g;
+        for (int j = 0; j < stride; j++) {
+            g.run([=] { lambda(j); });
+        }
+        g.wait();
     }
 }
 
@@ -447,9 +458,11 @@ void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
 
 void Session::OnRemoveRegion(const CARTA::RemoveRegion& message) {
     auto region_id(message.region_id());
-    for (auto& frame : _frames) { // frames = map<fileId, unique_ptr<Frame>>
-        if (frame.second)
-            frame.second->RemoveRegion(region_id);
+    if ((region_id != CURSOR_REGION_ID) && (region_id != IMAGE_REGION_ID)) {
+        for (auto& frame : _frames) { // frames = map<fileId, unique_ptr<Frame>>
+            if (frame.second)
+                frame.second->RemoveRegion(region_id);
+        }
     }
 }
 

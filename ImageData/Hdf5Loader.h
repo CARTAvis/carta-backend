@@ -62,8 +62,8 @@ void Hdf5Loader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended*
 
     // Load swizzled image lattice
     if (HasData(FileInfo::Data::SWIZZLED)) {
-        _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(
-            new casacore::HDF5Lattice<float>(_filename, DataSetToString(FileInfo::Data::SWIZZLED), hdu));
+        _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(
+            casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)), DataSetToString(FileInfo::Data::SWIZZLED), hdu));
     }
 }
 
