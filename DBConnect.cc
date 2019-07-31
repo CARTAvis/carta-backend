@@ -4,8 +4,8 @@
 #include <iostream>
 #include <sstream>
 
-#include <bson/bson.h>
-#include <mongoc/mongoc.h>
+#include <bson.h>
+#include <mongoc.h>
 #include <stdio.h>
 
 #include "Carta.h"
@@ -44,7 +44,7 @@ void ConnectToMongoDB(void) {
   }
 
   bson_destroy (query);
-  Mongoc_cursor_destroy (cursor);
+  mongoc_cursor_destroy (cursor);
   mongoc_collection_destroy (collection);
   mongoc_client_destroy (client);
   mongoc_cleanup ();

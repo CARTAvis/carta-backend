@@ -21,8 +21,8 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
-INCLUDE_DIRECTORIES(/usr/local/include/libbson-1.0/)
-INCLUDE_DIRECTORIES(/usr/local/include/libmongoc-1.0/)
+INCLUDE_DIRECTORIES(/usr/include/libbson-1.0/)
+INCLUDE_DIRECTORIES(/usr/include/libmongoc-1.0/)
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
