@@ -152,9 +152,9 @@ private:
     // get point spectral profile data from subimage
     bool GetPointSpectralData(std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
         const std::function<void(std::vector<float>, float)>& partial_results_callback);
-    // get regional spectral profile (statistics) data
-    bool GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int num_profiles, int profile_index,
-        int profile_stokes, const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
+    // get region stats data
+    bool GetRegionSpectralData(int region_id, int num_profiles, int profile_index, int profile_stokes,
+        const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
 
     // Functions used to set cursor and region states
     void SetConnectionFlag(bool connected);

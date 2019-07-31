@@ -926,3 +926,17 @@ void Region::FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data
         }
     }
 }
+
+bool Region::InitStatsData(int profile_index, size_t profile_size, std::vector<std::vector<double>>& stats_data) {
+    bool data_ok(false);
+    int stats_size = NumStatsToLoad(profile_index);
+    if (stats_size > 0) {
+        std::vector<std::vector<double>> results(stats_size);
+        for (int i = 0; i < stats_size; ++i) {
+            results[i].resize(profile_size, std::numeric_limits<double>::quiet_NaN());
+        }
+        stats_data = std::move(results);
+        data_ok = true;
+    }
+    return data_ok;
+}

@@ -107,7 +107,11 @@ public:
     void FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values);
     void FillNaNStatsData(CARTA::RegionStatsData& stats_data);
 
+    // Get current region state
     RegionState GetRegionState();
+
+    // Initialize the stats data
+    bool InitStatsData(int profile_index, size_t profile_size, std::vector<std::vector<double>>& stats_data);
 
 private:
     // bounds checking for Region parameters
