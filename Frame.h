@@ -105,7 +105,7 @@ public:
     RegionState GetRegionState(int region_id);
 
     // Interrupt conditions
-    bool Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2); // cursor and point regions
+    bool Interrupt(const CursorXy& cursor1, const CursorXy& cursor2); // cursor and point regions
     bool Interrupt(int region_id, const RegionState& region_state);
     bool Interrupt(int region_id, int num_profiles, int profile_index, int profile_stokes, const RegionState& region_state,
         const std::vector<int>& config_stats);
@@ -159,11 +159,9 @@ private:
     // Functions used to set cursor and region states
     void SetConnectionFlag(bool connected);
     void SetCursorXy(float x, float y);
-    void SetRegionId(int region_id);
 
     // Functions used to check cursor and region states
     bool IsConnected();
-    bool IsSameRegionId(int region_id);
     bool IsSameRegionState(int region_id, const RegionState& region_state);
     bool IsSameRegionSpectralConfig(
         int region_id, int num_profiles, int profile_index, int profile_stokes, const std::vector<int>& config_stats);
@@ -203,8 +201,6 @@ private:
     volatile bool _connected = true;
     // Current cursor's x-y coordinate
     CursorXy _cursor_xy;
-    // Current region id;
-    int _region_id;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

@@ -435,9 +435,6 @@ bool Frame::SetRegionSpectralRequirements(int region_id, const std::vector<CARTA
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         region_ok = region->SetSpectralRequirements(profiles, NumStokes());
-        if (profiles.size() > 0) {
-            SetRegionId(region_id);
-        }
     }
     return region_ok;
 }
@@ -1250,7 +1247,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
                 // start the timer
                 auto t_start = std::chrono::high_resolution_clock::now();
                 // check if region point changed from subimage point
-                if ((region_id == CURSOR_REGION_ID) && (Interrupt(region_id, _cursor_xy, subimage_cursor))) {
+                if ((region_id == CURSOR_REGION_ID) && (Interrupt(_cursor_xy, subimage_cursor))) {
                     return false; // cursor moved
                 }
                 if (region_id > CURSOR_REGION_ID) {
@@ -1258,7 +1255,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
                         std::vector<CARTA::Point> region_points = _regions[region_id]->GetControlPoints();
                         // round the region cursor float values since subimage cursor comes from IPosition
                         CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y()));
-                        if (Interrupt(region_id, region_cursor, subimage_cursor)) { // point region moved
+                        if (Interrupt(region_cursor, subimage_cursor)) { // point region moved
                             return false;
                         }
                     } else { // region closed
@@ -1380,14 +1377,10 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     return true;
 }
 
-bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2) {
+bool Frame::Interrupt(const CursorXy& cursor1, const CursorXy& cursor2) {
     bool interrupt(true);
     if (!IsConnected()) {
         std::cerr << "Closing image, exit zprofile before complete" << std::endl;
-        return interrupt;
-    }
-    if (!IsSameRegionId(region_id)) {
-        std::cerr << "[Region " << region_id << "] region changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
     if (!(cursor1 == cursor2)) {
@@ -1402,10 +1395,6 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
     bool interrupt(true);
     if (!IsConnected()) {
         std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
-        return interrupt;
-    }
-    if (!IsSameRegionId(region_id)) {
-        std::cerr << "[Region " << region_id << "] region changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
     if (!IsSameRegionState(region_id, region_state)) {
@@ -1423,10 +1412,6 @@ bool Frame::Interrupt(int region_id, int num_profiles, int profile_index, int pr
         std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
-    if (!IsSameRegionId(region_id)) {
-        std::cerr << "[Region " << region_id << "] region changed, exit zprofile (statistics) before complete" << std::endl;
-        return interrupt;
-    }
     if (!IsSameRegionState(region_id, region_state)) {
         std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
@@ -1441,10 +1426,6 @@ bool Frame::Interrupt(int region_id, int num_profiles, int profile_index, int pr
 
 bool Frame::IsConnected() {
     return _connected;
-}
-
-bool Frame::IsSameRegionId(int region_id) {
-    return (_region_id == region_id);
 }
 
 bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
@@ -1491,10 +1472,6 @@ void Frame::SetConnectionFlag(bool connected) {
 
 void Frame::SetCursorXy(float x, float y) {
     _cursor_xy = CursorXy(x, y);
-}
-
-void Frame::SetRegionId(int region_id) {
-    _region_id = region_id;
 }
 
 RegionState Frame::GetRegionState(int region_id) {
