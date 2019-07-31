@@ -537,23 +537,25 @@ const casacore::ArrayLattice<casacore::Bool>* Region::XyMask() {
     casacore::ArrayLattice<casacore::Bool>* mask;
 
     if (_xy_region != nullptr) {
-        // get extended region
-        auto extended_region = static_cast<casacore::LCExtension*>(_xy_region->toLCRegion(_coord_sys, _image_shape));
+        // get extended region (or original region for points)
+        auto lc_region = _xy_region->toLCRegion(_coord_sys, _image_shape);
 
         // get original region
         switch (_type) {
             case CARTA::POINT: {
-                auto region = static_cast<const casacore::LCBox&>(extended_region->region());
-                mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
+                auto region = static_cast<const casacore::LCBox*>(lc_region);
+                mask = new casacore::ArrayLattice<casacore::Bool>(region->getMask());
                 break;
             }
             case CARTA::RECTANGLE:
             case CARTA::POLYGON: {
+                auto extended_region = static_cast<casacore::LCExtension*>(lc_region);
                 auto region = static_cast<const casacore::LCPolygon&>(extended_region->region());
                 mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
                 break;
             }
             case CARTA::ELLIPSE: {
+                auto extended_region = static_cast<casacore::LCExtension*>(lc_region);
                 auto region = static_cast<const casacore::LCEllipsoid&>(extended_region->region());
                 mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
                 break;
