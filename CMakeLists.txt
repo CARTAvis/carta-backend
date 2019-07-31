@@ -21,6 +21,8 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
+INCLUDE_DIRECTORIES(/usr/local/include/libbson-1.0/)
+INCLUDE_DIRECTORIES(/usr/local/include/libmongoc-1.0/)
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
@@ -42,6 +44,8 @@ set(LINK_LIBS
         casa_mirlib
         casa_scimath
         jsoncpp
+	mongoc-1.0
+	bson-1.0
         ${HDF5_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
@@ -62,7 +66,8 @@ set(SOURCE_FILES
         FileSettings.cc
         Util.cc
         FileListHandler.cc
-        Tile.cc)
+        Tile.cc
+	DBConnect.cc)
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

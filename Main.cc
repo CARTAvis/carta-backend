@@ -24,6 +24,7 @@
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "Util.h"
+#include "DBConnect.h"
 
 using namespace std;
 
@@ -41,14 +42,17 @@ static uWS::Hub websocket_hub;
 
 // command-line arguments
 static string root_folder("/"), base_folder("."), version_id("1.1");
-static bool verbose, use_permissions;
-static string token;
+static bool verbose, use_permissions, use_mongodb;
+namespace CARTA {
+  string token;
+  string mongo_db_contact_string;
+}
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     // Check for authorization token
-    if (!token.empty()) {
-        string expected_auth_header = fmt::format("CARTA-Authorization={}", token);
+  if (!CARTA::token.empty()) {
+    string expected_auth_header = fmt::format("CARTA-Authorization={}", CARTA::token);
         auto cookie_header = http_request.getHeader("cookie");
         string auth_header_string(cookie_header.value, cookie_header.valueLength);
         if (auth_header_string.find(expected_auth_header) == string::npos) {
@@ -282,8 +286,8 @@ void ReadJSONfile(string fname) {
     Json::Value json_config;
     Json::Reader reader;
     reader.parse(config_file, json_config);
-    token = json_config["token"].asString();
-    if (token.empty()) {
+    CARTA::token = json_config["token"].asString();
+    if (CARTA::token.empty()) {
         std::cerr << "Bad config file.\n";
         exit(1);
     }
@@ -308,7 +312,7 @@ int main(int argc, const char* argv[]) {
             inp.version(version_id);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
-            inp.create("token", token, "only accept connections with this authorization token", "String");
+            inp.create("token", CARTA::token, "only accept connections with this authorization token", "String");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
@@ -316,6 +320,7 @@ int main(int argc, const char* argv[]) {
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
             inp.create("read_json_file", json_fname, "read in json file with secure token", "String");
+	    inp.create("use_mongodb", "False", "use mongo db", "Bool");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
@@ -324,8 +329,12 @@ int main(int argc, const char* argv[]) {
             thread_count = inp.getInt("threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
-            token = inp.getString("token");
-
+	    CARTA::token = inp.getString("token");
+	    CARTA::mongo_db_contact_string = "mongodb://localhost:27017/";
+	    if (use_mongodb) {
+	      ConnectToMongoDB();
+	    }
+	    
             bool has_exit_after_arg = inp.getString("exit_after").size();
             if (has_exit_after_arg) {
                 int wait_time = inp.getInt("exit_after");
