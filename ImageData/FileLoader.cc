@@ -457,13 +457,13 @@ bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return false;
 }
 
-bool FileLoader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) {
+bool FileLoader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
-    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+bool FileLoader::GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask,
+    IPos origin, const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     // Must be implemented in subclasses
     return false;
 }
