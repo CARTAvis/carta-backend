@@ -480,9 +480,11 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
 }
 
 casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_range) {
+    std::shared_ptr<casacore::WCRegion> current_xy_region = _xy_region;
+
     // Return 2D wcregion extended by chan, stokes; xyregion if 2D
     if (_num_dims == 2) {
-        return _xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
+        return current_xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
     }
 
     casacore::WCExtension* region(nullptr);
@@ -493,7 +495,7 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_
             return region; // nullptr, extension box failed
 
         // apply extension box with extension axes to xy region
-        region = new casacore::WCExtension(*_xy_region, ext_box);
+        region = new casacore::WCExtension(*current_xy_region, ext_box);
     } catch (casacore::AipsError& err) {
         std::cerr << "ERROR: Region extension failed: " << err.getMesg() << std::endl;
     }
@@ -502,9 +504,10 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_
 
 casacore::IPosition Region::XyShape() {
     // returns bounding box shape of xy region
+    std::shared_ptr<casacore::WCRegion> current_xy_region = _xy_region;
     casacore::IPosition xy_shape;
-    if (_xy_region) {
-        casacore::LCRegion* region = _xy_region->toLCRegion(_coord_sys, _image_shape);
+    if (current_xy_region) {
+        casacore::LCRegion* region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
         if (region != nullptr)
             xy_shape = region->shape().keepAxes(_xy_axes);
     }
@@ -513,9 +516,10 @@ casacore::IPosition Region::XyShape() {
 
 casacore::IPosition Region::XyOrigin() {
     // returns bottom-left position of bounding box of xy region
+    std::shared_ptr<casacore::WCRegion> current_xy_region = _xy_region;
     casacore::IPosition xy_origin;
-    if (_xy_region) {
-        auto extended_region = static_cast<casacore::LCExtension*>(_xy_region->toLCRegion(_coord_sys, _image_shape));
+    if (current_xy_region) {
+        auto extended_region = static_cast<casacore::LCExtension*>(current_xy_region->toLCRegion(_coord_sys, _image_shape));
         if (extended_region != nullptr)
             xy_origin = extended_region->region().expand(casacore::IPosition(2, 0, 0));
     }
@@ -524,11 +528,12 @@ casacore::IPosition Region::XyOrigin() {
 
 std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> Region::XyMask() {
     // returns boolean mask of xy region
+    std::shared_ptr<casacore::WCRegion> current_xy_region = _xy_region;
     std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask;
 
-    if (_xy_region) {
+    if (current_xy_region) {
         // get extended region (or original region for points)
-        auto lc_region = _xy_region->toLCRegion(_coord_sys, _image_shape);
+        auto lc_region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
 
         // get original region
         switch (_type) {
