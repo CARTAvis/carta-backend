@@ -11,10 +11,12 @@
 
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/ImageRegion.h>
+#include <imageanalysis/IO/AsciiAnnotationFileLine.h>
 #include <tbb/atomic.h>
 #include <tbb/queuing_rw_mutex.h>
 
 #include <carta-protobuf/defs.pb.h>
+#include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
@@ -59,8 +61,9 @@ public:
     }
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
-    void ImportRegionFile(std::string& filename, CARTA::ImportRegionAck& import_ack);
-    void ImportRegionContents(std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack);
+    void ImportRegionFile(CARTA::FileType file_type, std::string& filename, CARTA::ImportRegionAck& import_ack);
+    void ImportRegionContents(CARTA::FileType file_type, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack);
+    void ExportRegion(CARTA::FileType file_type, std::vector<int> region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // image view, channels
     bool SetImageView(
@@ -116,6 +119,10 @@ private:
     // Internal regions: image, cursor
     void SetImageRegion(int region_id); // set region for entire plane image or cube
     void SetDefaultCursor();            // using center point of image
+
+    // Region import helper
+    bool ProcessRegionFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
+        std::map<casa::AnnotationBase::Keyword, casacore::String>& globals, CARTA::ImportRegionAck& import_ack, std::string message);
 
     // Image view settings
     void SetViewSettings(

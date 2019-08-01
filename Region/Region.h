@@ -7,6 +7,7 @@
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Regions/ImageRegion.h>
 #include <casacore/images/Regions/WCBox.h>
+#include <imageanalysis/Annotations/AnnRegion.h>
 
 #include <carta-protobuf/spectral_profile.pb.h>
 
@@ -25,7 +26,12 @@ class Region {
     // * a CARTA::Region type
 
 public:
+    // Constructors
+    // Region created from SET_REGION
     Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, const float rotation,
+        const casacore::IPosition image_shape, int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys);
+    // Region created from CRTF file
+    Region(const casa::AnnRegion* annotation_region, std::map<casa::AnnotationBase::Keyword, casacore::String>& globals, 
         const casacore::IPosition image_shape, int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys);
     ~Region();
 
@@ -46,8 +52,14 @@ public:
     inline std::string Name() {
         return _name;
     };
+    inline CARTA::RegionType Type() {
+        return _type;
+    };
     inline std::vector<CARTA::Point> GetControlPoints() {
         return _control_points;
+    };
+    inline float Rotation() {
+        return _rotation;
     };
     casacore::IPosition XyShape();
     casacore::IPosition XyOrigin();

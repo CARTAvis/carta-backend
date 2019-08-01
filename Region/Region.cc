@@ -14,6 +14,11 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
 
+#include <imageanalysis/Annotations/AnnRegion.h>
+#include <imageanalysis/Annotations/AnnPolygon.h>
+#include <imageanalysis/Annotations/AnnCircle.h>
+#include <imageanalysis/Annotations/AnnEllipse.h>
+
 #include "../InterfaceConstants.h"
 
 using namespace carta;
@@ -41,9 +46,87 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
     }
 }
 
-RegionState Region::GetRegionState() {
-    RegionState region_state(_name, _type, _control_points, _rotation);
-    return region_state;
+Region::Region(const casa::AnnRegion* annotation_region, std::map<casa::AnnotationBase::Keyword, casacore::String>& globals, 
+    const casacore::IPosition image_shape, int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys)
+    : _rotation(0.0),
+      _valid(false),
+      _image_shape(image_shape),
+      _spectral_axis(spectral_axis),
+      _stokes_axis(stokes_axis),
+      _xy_axes(casacore::IPosition(2, 0, 1)),
+      _xy_region(nullptr),
+      _xy_mask(nullptr),
+      _coord_sys(coord_sys) {
+    // create region from imported annotation region
+    if (annotation_region != nullptr) {
+        // set name, type, control points, rotation (default 0.0), and xy region
+        _name = annotation_region->getLabel();
+        casacore::CoordinateSystem region_coord_sys = annotation_region->getCsys();
+        switch (annotation_region->getType()) {
+            case casa::AnnotationBase::RECT_BOX:
+            case casa::AnnotationBase::CENTER_BOX:
+            case casa::AnnotationBase::ROTATED_BOX:
+            case casa::AnnotationBase::POLYGON: {
+                _type = CARTA::RegionType::RECTANGLE;
+		if ((annotation_region->getType() == casa::AnnotationBase::ROTATED_BOX) ||
+                    (annotation_region->getType() == casa::AnnotationBase::ROTATED_BOX)) {
+                    _type = CARTA::RegionType::POLYGON;
+                } 
+                _xy_region = annotation_region->getRegion2().get()->cloneRegion();
+                // all rectangles are polygons
+                const casa::AnnPolygon* polygon = static_cast<const casa::AnnPolygon*>(annotation_region);
+		if (polygon != nullptr) {
+                    // get control points
+                    std::vector<casacore::Double> x, y;
+		    polygon->pixelVertices(x, y);
+                    _valid = true;
+                }
+                break;
+            }
+            case casa::AnnotationBase::CIRCLE: {
+                _type = CARTA::RegionType::ELLIPSE;
+                _xy_region = annotation_region->getRegion2().get()->cloneRegion();
+                const casa::AnnCircle* circle = static_cast<const casa::AnnCircle*>(annotation_region);
+		if (circle != nullptr) {
+                    // get control points
+                    casacore::MDirection center_position = circle->getCenter();
+		    casacore::Quantity radius = circle->getRadius();
+                    _valid = true;
+                } else { // if pixels not square, makes an ellipse instead
+                    const casa::AnnEllipse* ellipse = static_cast<const casa::AnnEllipse*>(annotation_region);
+		    if (ellipse != nullptr) {
+                        // get control points
+                        casacore::MDirection center_position = ellipse->getCenter();
+		        casacore::Quantity bmaj = ellipse->getSemiMajorAxis();
+		        casacore::Quantity bmin = ellipse->getSemiMinorAxis();
+		        // get rotation
+		        casacore::Quantity position_angle = ellipse->getPositionAngle();
+                        _valid = true;
+                    }
+                }
+                break;
+            }
+            case casa::AnnotationBase::ELLIPSE: {
+                _type = CARTA::RegionType::ELLIPSE;
+                _xy_region = annotation_region->getRegion2().get()->cloneRegion();
+                const casa::AnnEllipse* ellipse = static_cast<const casa::AnnEllipse*>(annotation_region);
+		if (ellipse != nullptr) {
+                    // get control points
+                    casacore::MDirection center_position = ellipse->getCenter();
+		    casacore::Quantity bmaj = ellipse->getSemiMajorAxis();
+		    casacore::Quantity bmin = ellipse->getSemiMinorAxis();
+		    // get rotation
+		    casacore::Quantity position_angle = ellipse->getPositionAngle();
+                    _valid = true;
+                }
+                break;
+            }
+            case casa::AnnotationBase::POLYLINE:
+            case casa::AnnotationBase::ANNULUS:
+            default:
+                break;
+        }
+    }
 }
 
 Region::~Region() {
@@ -91,6 +174,11 @@ bool Region::SetPoints(const std::vector<CARTA::Point>& points) {
         points_updated = true;
     }
     return points_updated;
+}
+
+RegionState Region::GetRegionState() {
+    RegionState region_state(_name, _type, _control_points, _rotation);
+    return region_state;
 }
 
 // *************************************************************************

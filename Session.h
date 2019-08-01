@@ -58,6 +58,7 @@ public:
     void OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id);
     void OnRemoveRegion(const CARTA::RemoveRegion& message);
     void OnImportRegion(const CARTA::ImportRegion& message, uint32_t request_id);
+    void OnExportRegion(const CARTA::ExportRegion& message, uint32_t request_id);
     void OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& message);
     void OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
     void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);

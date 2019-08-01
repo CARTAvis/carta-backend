@@ -254,7 +254,16 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnImportRegion(message, head.request_id);
                     } else {
-                        fmt::print("Bad OPEN_FILE message!\n");
+                        fmt::print("Bad IMPORT_REGION message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::EXPORT_REGION: {
+                    CARTA::ExportRegion message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnExportRegion(message, head.request_id);
+                    } else {
+                        fmt::print("Bad EXPORT_REGION message!\n");
                     }
                     break;
                 }
