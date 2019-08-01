@@ -217,7 +217,7 @@ bool Region::SetXyRegion(const std::vector<CARTA::Point>& points, float rotation
         std::cerr << "ERROR: xy region type " << region_type << " failed: " << err.getMesg() << std::endl;
     }
 
-    _xy_region = region;
+    std::atomic_store(&_xy_region, region);
     return bool(_xy_region);
 }
 
@@ -480,7 +480,7 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
 }
 
 casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_range) {
-    std::shared_ptr<casacore::WCRegion> current_xy_region = _xy_region;
+    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
 
     // Return 2D wcregion extended by chan, stokes; xyregion if 2D
     if (_num_dims == 2) {
@@ -504,7 +504,7 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_
 
 casacore::IPosition Region::XyShape() {
     // returns bounding box shape of xy region
-    std::shared_ptr<casacore::WCRegion> current_xy_region = _xy_region;
+    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_shape;
     if (current_xy_region) {
         casacore::LCRegion* region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
@@ -516,7 +516,7 @@ casacore::IPosition Region::XyShape() {
 
 casacore::IPosition Region::XyOrigin() {
     // returns bottom-left position of bounding box of xy region
-    std::shared_ptr<casacore::WCRegion> current_xy_region = _xy_region;
+    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_origin;
     if (current_xy_region) {
         auto extended_region = static_cast<casacore::LCExtension*>(current_xy_region->toLCRegion(_coord_sys, _image_shape));
@@ -528,7 +528,7 @@ casacore::IPosition Region::XyOrigin() {
 
 std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> Region::XyMask() {
     // returns boolean mask of xy region
-    std::shared_ptr<casacore::WCRegion> current_xy_region = _xy_region;
+    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask;
 
     if (current_xy_region) {
@@ -560,8 +560,8 @@ std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> Region::XyMask() {
         }
     }
 
-    _xy_mask = mask;
-    return _xy_mask;
+    std::atomic_store(&_xy_mask, mask);
+    return std::atomic_load(&_xy_mask);
 }
 
 // ***********************************
