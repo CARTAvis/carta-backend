@@ -226,6 +226,7 @@ bool Frame::RegionChanged(int region_id) {
 
 void Frame::RemoveRegion(int region_id) {
     if (_regions.count(region_id)) {
+        _regions[region_id]->DisconnectCalled();
         _regions[region_id].reset();
         _regions.erase(region_id);
     }
@@ -889,6 +890,10 @@ bool Frame::FillSpectralProfileData(
         if (!region->IsValid()) {
             return false;
         }
+
+        // Increase the spectral profile count
+        region->IncreaseZProfileCount();
+
         size_t num_profiles(region->NumSpectralProfiles());
         if (num_profiles == 0) {
             return false; // not requested
@@ -1016,6 +1021,10 @@ bool Frame::FillSpectralProfileData(
                 }
             }
         }
+
+        // Decrease the spectral profile count
+        region->DecreaseZProfileCount();
+
         profile_ok = true;
     }
     return profile_ok;
@@ -1252,7 +1261,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
                 // start the timer
                 auto t_start = std::chrono::high_resolution_clock::now();
                 // check if region point changed from subimage point
-                if ((region_id == CURSOR_REGION_ID) && (Interrupt(_cursor_xy, subimage_cursor))) {
+                if ((region_id == CURSOR_REGION_ID) && (Interrupt(region_id, _cursor_xy, subimage_cursor))) {
                     return false; // cursor moved
                 }
                 if (region_id > CURSOR_REGION_ID) {
@@ -1260,7 +1269,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
                         std::vector<CARTA::Point> region_points = _regions[region_id]->GetControlPoints();
                         // round the region cursor float values since subimage cursor comes from IPosition
                         CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y()));
-                        if (Interrupt(region_cursor, subimage_cursor)) { // point region moved
+                        if (Interrupt(region_id, region_cursor, subimage_cursor)) { // point region moved
                             return false;
                         }
                     } else { // region closed
@@ -1382,9 +1391,9 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     return true;
 }
 
-bool Frame::Interrupt(const CursorXy& cursor1, const CursorXy& cursor2) {
-    if (!IsConnected()) {
-        std::cerr << "Closing image, exit zprofile before complete" << std::endl;
+bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2) {
+    if (!IsConnected(region_id)) {
+        std::cerr << "Closing image/region, exit zprofile before complete" << std::endl;
         return true;
     }
     if (!(cursor1 == cursor2)) {
@@ -1395,8 +1404,8 @@ bool Frame::Interrupt(const CursorXy& cursor1, const CursorXy& cursor2) {
 }
 
 bool Frame::Interrupt(int region_id, const RegionState& region_state) {
-    if (!IsConnected()) {
-        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+    if (!IsConnected(region_id)) {
+        std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
         return true;
     }
     if (!IsSameRegionState(region_id, region_state)) {
@@ -1407,8 +1416,8 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
 }
 
 bool Frame::Interrupt(int region_id, int profile_index, const RegionState& region_state, const std::vector<int>& requested_stats) {
-    if (!IsConnected()) {
-        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+    if (!IsConnected(region_id)) {
+        std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
         return true;
     }
     if (!IsSameRegionState(region_id, region_state)) {
@@ -1422,7 +1431,10 @@ bool Frame::Interrupt(int region_id, int profile_index, const RegionState& regio
     return false;
 }
 
-bool Frame::IsConnected() {
+bool Frame::IsConnected(int region_id) {
+    if (_regions.count(region_id)) {
+        return (_connected && _regions[region_id]->IsConnected());
+    }
     return _connected;
 }
 

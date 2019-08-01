@@ -10,6 +10,9 @@
 
 #include <carta-protobuf/spectral_profile.pb.h>
 
+#include <tbb/atomic.h>
+#include <thread>
+
 #include "../InterfaceConstants.h"
 #include "../Util.h"
 #include "RegionProfiler.h"
@@ -109,6 +112,17 @@ public:
 
     RegionState GetRegionState();
 
+    // Communication
+    bool IsConnected();
+    void DisconnectCalled();
+
+    void IncreaseZProfileCount() {
+        ++_z_profile_count;
+    }
+    void DecreaseZProfileCount() {
+        --_z_profile_count;
+    }
+
 private:
     // bounds checking for Region parameters
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -134,6 +148,8 @@ private:
     std::string GetSpectralCoordinate(int profile_index);
     bool GetSpectralStatsToLoad(int profile_index, std::vector<int>& stats);
     bool GetSpectralProfileStatSent(int profile_index, int stats_type);
+
+    void SetConnectionFlag(bool connected);
 
     // region definition (ICD SET_REGION parameters)
     std::string _name;
@@ -161,6 +177,12 @@ private:
     // classes for requirements, calculations
     std::unique_ptr<carta::RegionStats> _region_stats;
     std::unique_ptr<carta::RegionProfiler> _region_profiler;
+
+    // Communication
+    volatile bool _connected = true;
+
+    // Spectral profile counter, which is used to determine whether the Region object can be destroyed (_z_profile_count == 0 ?).
+    tbb::atomic<int> _z_profile_count;
 };
 
 } // namespace carta

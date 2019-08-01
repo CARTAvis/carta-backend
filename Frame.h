@@ -105,7 +105,7 @@ public:
     RegionState GetRegionState(int region_id);
 
     // Interrupt conditions
-    bool Interrupt(const CursorXy& cursor1, const CursorXy& cursor2); // cursor and point regions
+    bool Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2); // cursor and point regions
     bool Interrupt(int region_id, const RegionState& region_state);
     bool Interrupt(int region_id, int profile_index, const RegionState& region_state, const std::vector<int>& requested_stats);
 
@@ -162,7 +162,7 @@ private:
     void SetRegionSpectralRequests(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles);
 
     // Functions used to check cursor and region states
-    bool IsConnected();
+    bool IsConnected(int region_id);
     bool IsSameRegionState(int region_id, const RegionState& region_state);
     bool AreSameRegionSpectralRequests(int region_id, int profile_index, const std::vector<int>& requested_stats);
 
