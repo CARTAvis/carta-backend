@@ -44,11 +44,7 @@ RegionState Region::GetRegionState() {
     return region_state;
 }
 
-Region::~Region() {
-    // TODO: is it really necessary to do this explicitly?
-    _region_stats.reset();
-    _region_profiler.reset();
-}
+Region::~Region() {}
 
 // *************************************************************************
 // Region settings
