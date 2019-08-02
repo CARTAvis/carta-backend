@@ -961,11 +961,12 @@ bool Frame::FillSpectralProfileData(
                         region->FillPointSpectralProfileData(profile_data, i, spectral_data);
                         // send result to Session
                         cb(profile_data);
+                        profile_ok = true;
                     } else {
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        GetPointSpectralData(
+                        profile_ok = GetPointSpectralData(
                             spectral_data, region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -994,7 +995,7 @@ bool Frame::FillSpectralProfileData(
 
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
+                        profile_ok = _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
                             [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -1007,7 +1008,7 @@ bool Frame::FillSpectralProfileData(
                     } else {
                         std::vector<std::vector<double>> stats_values;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSpectralData(
+                        profile_ok = GetRegionSpectralData(
                             stats_values, region_id, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -1024,8 +1025,6 @@ bool Frame::FillSpectralProfileData(
 
         // Decrease the spectral profile count
         region->DecreaseZProfileCount();
-
-        profile_ok = true;
     }
     return profile_ok;
 }
