@@ -890,10 +890,6 @@ bool Frame::FillSpectralProfileData(
         if (!region->IsValid()) {
             return false;
         }
-
-        // Increase the spectral profile count
-        region->IncreaseZProfileCount();
-
         size_t num_profiles(region->NumSpectralProfiles());
         if (num_profiles == 0) {
             return false; // not requested
@@ -1022,9 +1018,6 @@ bool Frame::FillSpectralProfileData(
                 }
             }
         }
-
-        // Decrease the spectral profile count
-        region->DecreaseZProfileCount();
     }
     return profile_ok;
 }

@@ -94,10 +94,16 @@ public:
     // set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
 
-    void IncreaseZProfileCount() {
+    void IncreaseZProfileCount(int region_id) {
+        if (_regions.count(region_id)) {
+            _regions[region_id]->IncreaseZProfileCount();
+        }
         ++_z_profile_count;
     }
-    void DecreaseZProfileCount() {
+    void DecreaseZProfileCount(int region_id) {
+        if (_regions.count(region_id)) {
+            _regions[region_id]->DecreaseZProfileCount();
+        }
         --_z_profile_count;
     }
 
