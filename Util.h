@@ -132,4 +132,15 @@ struct RegionState {
     }
 };
 
+struct ZProfileWidget {
+    int stokes_index;
+    std::vector<int> stats_types;
+
+    ZProfileWidget() {}
+    ZProfileWidget(int stokes_index_, std::vector<int> stats_types_) {
+        stokes_index = stokes_index_;
+        stats_types = stats_types_;
+    }
+};
+
 #endif // CARTA_BACKEND__UTIL_H_

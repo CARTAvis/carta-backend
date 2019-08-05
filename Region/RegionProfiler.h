@@ -7,6 +7,8 @@
 #include <utility>
 #include <vector>
 
+#include "../Util.h"
+
 #include <carta-protobuf/region_requirements.pb.h>
 
 namespace carta {
@@ -41,7 +43,8 @@ public:
     int NumStatsToLoad(int profile_index);
     int GetSpectralConfigStokes(int profile_index);
     std::string GetSpectralCoordinate(int profile_index);
-    bool GetSpectralConfigStats(int profile_index, std::vector<int>& stats); // all requested
+    bool GetSpectralConfigStats(int profile_index, ZProfileWidget& stats); // all requested
+    bool IsValidSpectralConfigStats(const ZProfileWidget& stats);
     bool GetSpectralStatsToLoad(int profile_index, std::vector<int>& stats); // diff of requested and already sent
     bool GetSpectralProfileStatSent(int profile_index, int stats_type);
     void SetSpectralProfileStatSent(int profile_index, int stats_type, bool sent);

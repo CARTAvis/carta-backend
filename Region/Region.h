@@ -91,7 +91,8 @@ public:
     void SetSpectralProfileAllStatsSent(int profile_index, bool sent);
     void SetAllSpectralProfileStatsUnsent(); // enable sending new profiles
     int GetSpectralConfigStokes(int profile_index);
-    bool GetSpectralConfigStats(int profile_index, std::vector<int>& stats);
+    bool GetSpectralConfigStats(int profile_index, ZProfileWidget& stats);
+    bool IsValidSpectralConfigStats(const ZProfileWidget& stats);
     bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
     void FillPointSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
     void FillSpectralProfileData(

@@ -996,15 +996,14 @@ bool Frame::FillSpectralProfileData(
                         guard.unlock();
                     } else {
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSpectralData(
-                            region_id, num_profiles, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
-                                CARTA::SpectralProfileData profile_data;
-                                profile_data.set_stokes(curr_stokes);
-                                profile_data.set_progress(progress);
-                                region->FillSpectralProfileData(profile_data, i, results);
-                                // send (partial) result to Session
-                                cb(profile_data);
-                            });
+                        GetRegionSpectralData(region_id, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
+                            CARTA::SpectralProfileData profile_data;
+                            profile_data.set_stokes(curr_stokes);
+                            profile_data.set_progress(progress);
+                            region->FillSpectralProfileData(profile_data, i, results);
+                            // send (partial) result to Session
+                            cb(profile_data);
+                        });
                         guard.unlock();
                     }
                 }
@@ -1305,13 +1304,13 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
     return data_ok;
 }
 
-bool Frame::GetRegionSpectralData(int region_id, int num_profiles, int profile_index, int profile_stokes,
+bool Frame::GetRegionSpectralData(int region_id, int profile_index, int profile_stokes,
     const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback) {
     bool data_ok(false);
     auto& region = _regions[region_id];
 
     // get statistical requirements for this process
-    std::vector<int> config_stats;
+    ZProfileWidget config_stats;
     if (!region->GetSpectralConfigStats(profile_index, config_stats)) { // stats in config, to see if req changed
         return data_ok;
     }
@@ -1342,7 +1341,7 @@ bool Frame::GetRegionSpectralData(int region_id, int num_profiles, int profile_i
         auto t_start = std::chrono::high_resolution_clock::now();
 
         // check if frontend's requirements changed
-        if (Interrupt(region_id, num_profiles, profile_index, profile_stokes, region_state, config_stats)) {
+        if (Interrupt(region_id, region_state, config_stats)) {
             return data_ok;
         }
 
@@ -1419,8 +1418,7 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
     return interrupt;
 }
 
-bool Frame::Interrupt(int region_id, int num_profiles, int profile_index, int profile_stokes, const RegionState& region_state,
-    const std::vector<int>& config_stats) {
+bool Frame::Interrupt(int region_id, const RegionState& region_state, const ZProfileWidget& config_stats) {
     bool interrupt(true);
     if (!IsConnected()) {
         std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
@@ -1430,7 +1428,7 @@ bool Frame::Interrupt(int region_id, int num_profiles, int profile_index, int pr
         std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
-    if (!IsSameRegionSpectralConfig(region_id, num_profiles, profile_index, profile_stokes, config_stats)) {
+    if (!IsSameRegionSpectralConfig(region_id, config_stats)) {
         std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
@@ -1449,35 +1447,14 @@ bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
     return false;
 }
 
-bool Frame::IsSameRegionSpectralConfig(
-    int region_id, int num_profiles, int profile_index, int profile_stokes, const std::vector<int>& config_stats) {
-    bool is_same(false);
+bool Frame::IsSameRegionSpectralConfig(int region_id, const ZProfileWidget& config_stats) {
     if (_regions.count(region_id)) {
-        auto& region = _regions[region_id];
-        // check is number of profiles changed
-        size_t new_num_profiles(region->NumSpectralProfiles());
-        if ((new_num_profiles == 0) || (new_num_profiles != num_profiles)) {
-            return is_same;
-        }
-        // check is profile stoke changed
-        int new_profile_stokes = region->GetSpectralConfigStokes(profile_index);
-        if (new_profile_stokes >= CURRENT_STOKES) {
-            if (new_profile_stokes == CURRENT_STOKES) {
-                new_profile_stokes = CurrentStokes();
-            }
-            if (new_profile_stokes != profile_stokes) {
-                return is_same;
-            }
-        } else {
-            return is_same;
-        }
-        // check are stats requirements changed
-        std::vector<int> new_config_stats;
-        if (region->GetSpectralConfigStats(profile_index, new_config_stats)) {
-            return (new_config_stats == config_stats);
+        // check are the settings of zprofile widgets changed
+        if (_regions[region_id]->IsValidSpectralConfigStats(config_stats)) {
+            return true;
         }
     }
-    return is_same;
+    return false;
 }
 
 void Frame::SetConnectionFlag(bool connected) {

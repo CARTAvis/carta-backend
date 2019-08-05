@@ -778,9 +778,16 @@ int Region::NumStatsToLoad(int profile_index) {
     return 0;
 }
 
-bool Region::GetSpectralConfigStats(int profile_index, std::vector<int>& stats) {
+bool Region::GetSpectralConfigStats(int profile_index, ZProfileWidget& stats) {
     if (_region_profiler) {
         return _region_profiler->GetSpectralConfigStats(profile_index, stats);
+    }
+    return false;
+}
+
+bool Region::IsValidSpectralConfigStats(const ZProfileWidget& stats) {
+    if (_region_profiler) {
+        return _region_profiler->IsValidSpectralConfigStats(stats);
     }
     return false;
 }

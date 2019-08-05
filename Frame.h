@@ -107,8 +107,7 @@ public:
     // Interrupt conditions
     bool Interrupt(const CursorXy& cursor1, const CursorXy& cursor2); // cursor and point regions
     bool Interrupt(int region_id, const RegionState& region_state);
-    bool Interrupt(int region_id, int num_profiles, int profile_index, int profile_stokes, const RegionState& region_state,
-        const std::vector<int>& config_stats);
+    bool Interrupt(int region_id, const RegionState& region_state, const ZProfileWidget& config_stats);
 
 private:
     // Internal regions: image, cursor
@@ -153,7 +152,7 @@ private:
     bool GetPointSpectralData(std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
         const std::function<void(std::vector<float>, float)>& partial_results_callback);
     // get region stats data
-    bool GetRegionSpectralData(int region_id, int num_profiles, int profile_index, int profile_stokes,
+    bool GetRegionSpectralData(int region_id, int profile_index, int profile_stokes,
         const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
 
     // Functions used to set cursor and region states
@@ -163,8 +162,7 @@ private:
     // Functions used to check cursor and region states
     bool IsConnected();
     bool IsSameRegionState(int region_id, const RegionState& region_state);
-    bool IsSameRegionSpectralConfig(
-        int region_id, int num_profiles, int profile_index, int profile_stokes, const std::vector<int>& config_stats);
+    bool IsSameRegionSpectralConfig(int region_id, const ZProfileWidget& config_stats);
 
     // setup
     uint32_t _session_id;

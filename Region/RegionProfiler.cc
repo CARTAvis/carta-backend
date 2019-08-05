@@ -212,11 +212,24 @@ std::string RegionProfiler::GetSpectralCoordinate(int profile_index) {
     }
 }
 
-bool RegionProfiler::GetSpectralConfigStats(int profile_index, std::vector<int>& stats) {
+bool RegionProfiler::GetSpectralConfigStats(int profile_index, ZProfileWidget& stats) {
     // return stats_types at given index; return false if index out of range
     if (profile_index < _spectral_profiles.size()) {
-        stats = _spectral_profiles[profile_index].stats_types;
+        stats = ZProfileWidget(_spectral_profiles[profile_index].stokes_index, _spectral_profiles[profile_index].stats_types);
         return true;
+    }
+    return false;
+}
+
+bool RegionProfiler::IsValidSpectralConfigStats(const ZProfileWidget& stats) {
+    if (_spectral_profiles.size() > 0) {
+        for (const auto& spectral_profile : _spectral_profiles) {
+            if (stats.stokes_index == spectral_profile.stokes_index) {
+                if (stats.stats_types == spectral_profile.stats_types) {
+                    return true;
+                }
+            }
+        }
     }
     return false;
 }
