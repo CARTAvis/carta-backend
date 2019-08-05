@@ -234,6 +234,26 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     SendEvent(CARTA::EventType::FILE_INFO_RESPONSE, request_id, response);
 }
 
+void Session::OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id) {
+    CARTA::RegionListResponse response;
+    FileListHandler::ResultMsg result_msg;
+    _file_list_handler->OnRegionListRequest(request, response, result_msg);
+    SendEvent(CARTA::EventType::REGION_LIST_RESPONSE, request_id, response);
+    if (!result_msg.message.empty()) {
+        SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
+    }
+}
+
+void Session::OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id) {
+    CARTA::RegionFileInfoResponse response;
+    FileListHandler::ResultMsg result_msg;
+    _file_list_handler->OnRegionFileInfoRequest(request, response, result_msg);
+    SendEvent(CARTA::EventType::REGION_FILE_INFO_RESPONSE, request_id, response);
+    if (!result_msg.message.empty()) {
+        SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
+    }
+}
+
 void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     // Create Frame and send response message
     const auto& directory(message.directory());

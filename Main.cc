@@ -249,6 +249,24 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
                     break;
                 }
+                case CARTA::EventType::REGION_LIST_REQUEST: {
+                    CARTA::RegionListRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnRegionListRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad REGION_LIST_REQUEST message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
+                    CARTA::RegionFileInfoRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnRegionFileInfoRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad REGION_FILE_INFO_REQUEST message!\n");
+                    }
+                    break;
+                }
                 case CARTA::EventType::IMPORT_REGION: {
                     CARTA::ImportRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {

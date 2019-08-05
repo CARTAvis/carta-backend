@@ -41,6 +41,8 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo* file_info) {
     if (!cc_file.exists()) {
         return false;
     }
+    std::string filename_only = cc_file.path().baseName();
+    file_info->set_name(filename_only);
 
     // fill FileInfo submessage
     int64_t file_info_size(cc_file.size());
