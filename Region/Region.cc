@@ -377,11 +377,6 @@ bool Region::SetXyRegion(const std::vector<CARTA::Point>& points, float rotation
     }
     delete _xy_region;
     _xy_region = region;
-    // TODO: remove debug
-    if (_xy_region != nullptr) {
-        casacore::String tablename("XYRegion");
-        std::cout << "PDEBUG: carta type=" << region_type << " xyregion record=" << _xy_region->toRecord(tablename) << std::endl;
-    }
     return (_xy_region != nullptr);
 }
 
