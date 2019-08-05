@@ -31,8 +31,9 @@ public:
     Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, const float rotation,
         const casacore::IPosition image_shape, int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys);
     // Region created from CRTF file
-    Region(const casa::AnnRegion* annotation_region, std::map<casa::AnnotationBase::Keyword, casacore::String>& globals, 
-        const casacore::IPosition image_shape, int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys);
+    Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, std::map<casa::AnnotationBase::Keyword,
+        casacore::String>& globals, const casacore::IPosition image_shape, int spectral_axis, int stokes_axis,
+        const casacore::CoordinateSystem& coord_sys);
     ~Region();
 
     // to determine if data needs to be updated
@@ -67,6 +68,7 @@ public:
     inline bool XyRegionValid() {
         return (_xy_region != nullptr);
     };
+    casacore::CountedPtr<const casa::AnnotationBase> AnnotationRegion();
 
     // get image region for requested stokes and (optionally) single channel
     bool GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange channel_range = {0, ALL_CHANNELS});

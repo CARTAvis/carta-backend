@@ -63,7 +63,7 @@ public:
     void RemoveRegion(int region_id);
     void ImportRegionFile(CARTA::FileType file_type, std::string& filename, CARTA::ImportRegionAck& import_ack);
     void ImportRegionContents(CARTA::FileType file_type, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack);
-    void ExportRegion(CARTA::FileType file_type, std::vector<int> region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
+    void ExportRegion(CARTA::FileType file_type, std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // image view, channels
     bool SetImageView(
@@ -120,9 +120,10 @@ private:
     void SetImageRegion(int region_id); // set region for entire plane image or cube
     void SetDefaultCursor();            // using center point of image
 
-    // Region import helper
-    bool ProcessRegionFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
+    // Region import/export helpers
+    bool ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
         std::map<casa::AnnotationBase::Keyword, casacore::String>& globals, CARTA::ImportRegionAck& import_ack, std::string message);
+    void ExportCrtfRegion(std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Image view settings
     void SetViewSettings(
