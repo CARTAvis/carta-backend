@@ -122,7 +122,7 @@ private:
 
     // Region import/export helpers
     bool ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
-        std::map<casa::AnnotationBase::Keyword, casacore::String>& globals, CARTA::ImportRegionAck& import_ack, std::string message);
+        CARTA::ImportRegionAck& import_ack, std::string message);
     void ExportCrtfRegion(std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Image view settings

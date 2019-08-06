@@ -50,9 +50,8 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
     }
 }
 
-Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, std::map<casa::AnnotationBase::Keyword,
-    casacore::String>& globals, const casacore::IPosition image_shape, int spectral_axis, int stokes_axis,
-    const casacore::CoordinateSystem& coord_sys)
+Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, const casacore::IPosition image_shape,
+    int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys)
     : _rotation(0.0),
       _valid(false),
       _image_shape(image_shape),
@@ -125,61 +124,53 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
             case casa::AnnotationBase::CIRCLE:
             case casa::AnnotationBase::ELLIPSE: {
                 _type = CARTA::RegionType::ELLIPSE;
-		casa::AnnotationBase::Type ann_type = annotation_region->getType();
+                casa::AnnotationBase::Type ann_type = annotation_region->getType();
                 casacore::DirectionCoordinate dir_coord = _coord_sys.directionCoordinate();
-                casacore::Vector<casacore::Double> increments = dir_coord.increment();
-		bool circle_is_ellipse(false);
-		if ((ann_type == casa::AnnotationBase::CIRCLE) && dir_coord.hasSquarePixels()) {
+                casacore::MDirection center_position;
+                casacore::Quantity bmaj, bmin, position_angle;
+                bool is_ellipse(true);
+                bool have_region_info(false);
+                if ((ann_type == casa::AnnotationBase::CIRCLE) && dir_coord.hasSquarePixels()) {
                     const casa::AnnCircle* circle = static_cast<const casa::AnnCircle*>(annotation_region.get());
                     if (circle != nullptr) {
                         _xy_region = circle->getRegion2().get()->cloneRegion();
-                        // set control point: cx, cy
-                        casacore::MDirection center_position = circle->getCenter();
-                        casacore::Vector<casacore::Double> pixel_coords;
-			dir_coord.toPixel(pixel_coords, center_position);
-			CARTA::Point point;
-			point.set_x(pixel_coords[0]);
-			point.set_y(pixel_coords[1]);
-                        _control_points.push_back(point);
-                        // set control point: bmaj, bmin
-                        casacore::Quantity radius = circle->getRadius();
-			double radius_pix = radius.getValue() / increments(0);
-			point.set_x(radius_pix);
-			point.set_y(radius_pix);
-                        _control_points.push_back(point);
-                        _valid = true;
+                        center_position = circle->getCenter();
+                        bmaj = circle->getRadius();
+                        bmin = bmaj;
+                        is_ellipse = false;
+                        have_region_info = true;
                     }
                 } else {
-                    circle_is_ellipse = true;
-                }
-
-                // if pixels not square, circle is an AnnEllipse
-		if ((ann_type == casa::AnnotationBase::ELLIPSE) || circle_is_ellipse) {
+                    // if pixels not square, circle is an AnnEllipse
                     const casa::AnnEllipse* ellipse = static_cast<const casa::AnnEllipse*>(annotation_region.get());
                     if (ellipse != nullptr) {
                         _xy_region = ellipse->getRegion2().get()->cloneRegion();
-                        // set control point: cx, cy
-                        casacore::MDirection center_position = ellipse->getCenter();
-                        casacore::Vector<casacore::Double> pixel_coords;
-			dir_coord.toPixel(pixel_coords, center_position);
-			CARTA::Point point;
-			point.set_x(pixel_coords[0]);
-			point.set_y(pixel_coords[1]);
-                        _control_points.push_back(point);
-                        // set control point: bmaj, bmin
-                        casacore::Quantity bmaj = ellipse->getSemiMajorAxis();
-			double bmaj_pix = bmaj.getValue() / increments(0);
-                        casacore::Quantity bmin = ellipse->getSemiMinorAxis();
-			double bmin_pix = bmin.getValue() / increments(1);
-			point.set_x(bmaj_pix);
-			point.set_y(bmin_pix);
-                        _control_points.push_back(point);
-                        // set rotation
-                        casacore::Quantity position_angle = ellipse->getPositionAngle();
-			position_angle.convert("deg");
-			_rotation = position_angle.getValue();
-                        _valid = true;
+                        center_position = ellipse->getCenter();
+                        bmaj = ellipse->getSemiMajorAxis();
+                        bmin = ellipse->getSemiMinorAxis();
+                        position_angle = ellipse->getPositionAngle();
+                        have_region_info = true;
                     }
+                }
+                if (have_region_info) {
+                    // set control point: cx, cy in pixel coords
+                    casacore::Vector<casacore::Double> pixel_coords;
+                    dir_coord.toPixel(pixel_coords, center_position);
+                    CARTA::Point point;
+                    point.set_x(pixel_coords[0]);
+                    point.set_y(pixel_coords[1]);
+                    _control_points.push_back(point);
+                    // set control point: bmaj, bmin in npixels
+                    double bmaj_pixel = AngleToLength(bmaj, 0);
+                    double bmin_pixel = AngleToLength(bmin, 1);
+                    point.set_x(bmaj_pixel);
+                    point.set_y(bmin_pixel);
+                    _control_points.push_back(point);
+                    if (is_ellipse) { // set rotation
+                        position_angle.convert("deg");
+                        _rotation = position_angle.getValue();
+                    }
+                    _valid = true;
                 }
                 break;
             }
@@ -241,6 +232,17 @@ bool Region::SetPoints(const std::vector<CARTA::Point>& points) {
 RegionState Region::GetRegionState() {
     RegionState region_state(_name, _type, _control_points, _rotation);
     return region_state;
+}
+
+double Region::AngleToLength(casacore::Quantity angle, unsigned int pixel_axis) {
+    // world->pixel conversion of ellipse radius.
+    // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
+    int coord, coord_axis;
+    _coord_sys.findWorldAxis(coord, coord_axis, pixel_axis);
+    casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
+    angle.convert(units[coord_axis]);
+    casacore::Vector<casacore::Double> increments(_coord_sys.directionCoordinate().increment());
+    return fabs(angle.getValue() / increments[coord_axis]);
 }
 
 // *************************************************************************

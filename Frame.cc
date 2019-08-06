@@ -243,16 +243,18 @@ void Frame::ImportRegionFile(CARTA::FileType file_type, std::string& filename, C
             try {
                 const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
                 casa::RegionTextList region_list = casa::RegionTextList(filename, coord_sys, _image_shape);
-                std::map<casa::AnnotationBase::Keyword, casacore::String> globals;
                 for (unsigned int iline=0; iline < region_list.nLines(); ++iline) {
                     casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
-                    region_set |= ImportCrtfFileLine(file_line, coord_sys, globals, import_ack, message);
+                    region_set |= ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
+                }
+                if (!region_set) {
+                    import_ack.add_regions();
+		    if (message.empty()) {
+		        message = "CRTF region file import failed: zero regions set";
+                    }
                 }
                 import_ack.set_success(region_set); // true if at least one region was set
                 import_ack.set_message(message);
-                if (!region_set) {
-                    import_ack.add_regions();
-                }
             } catch (casacore::AipsError& err) {
                 import_ack.set_success(false);
                 import_ack.set_message("CRTF region file import failed.");
@@ -278,11 +280,10 @@ void Frame::ImportRegionContents(CARTA::FileType file_type, std::vector<std::str
             try {
                 if (contents.size() > 0) {
                     const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-                    std::map<casa::AnnotationBase::Keyword, casacore::String> globals;
                     for (auto& line : contents) {
                         casa::RegionTextList region_list = casa::RegionTextList(coord_sys, line, _image_shape);
                         casa::AsciiAnnotationFileLine file_line = region_list.lineAt(0);
-                        region_set |= ImportCrtfFileLine(file_line, coord_sys, globals, import_ack, message);
+                        region_set |= ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
                     }
                 } else {
                     message = "CRTF region file import failed: no contents.";
@@ -309,7 +310,7 @@ void Frame::ImportRegionContents(CARTA::FileType file_type, std::vector<std::str
 }
 
 bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
-    std::map<casa::AnnotationBase::Keyword, casacore::String>& globals, CARTA::ImportRegionAck& import_ack, std::string message) {
+    CARTA::ImportRegionAck& import_ack, std::string message) {
     // Process a single CRTF annotation file line to set region; adds region to frame regions.
     // Completes ack message with region properties or appends to message if failed.
     bool region_set(false);
@@ -317,6 +318,7 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
         case casa::AsciiAnnotationFileLine::ANNOTATION: {
             auto annotation_base = file_line.getAnnotationBase();
             const casa::AnnotationBase::Type annotation_type = annotation_base->getType();
+            casacore::String ann_type_str = casa::AnnotationBase::typeToString(annotation_type);
             switch (annotation_type) {
                 case casa::AnnotationBase::LINE:
                 case casa::AnnotationBase::VECTOR:
@@ -326,7 +328,7 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                 }
                 case casa::AnnotationBase::POLYLINE:
                 case casa::AnnotationBase::ANNULUS: {
-                    message += " CRTF region type " + casa::AnnotationBase::typeToString(annotation_type) + " is not supported.";
+                    message += " CRTF region type " + ann_type_str + " is not supported.";
                     break;
                 }
                 case casa::AnnotationBase::RECT_BOX:
@@ -336,7 +338,7 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                 case casa::AnnotationBase::CIRCLE:
                 case casa::AnnotationBase::ELLIPSE: {
                     if (annotation_base) {
-                        auto region = std::unique_ptr<carta::Region>(new carta::Region(annotation_base, globals, _image_shape,
+                        auto region = std::unique_ptr<carta::Region>(new carta::Region(annotation_base, _image_shape,
                             _spectral_axis, _stokes_axis, coord_sys));
                         if (region && region->IsValid()) {
                             // add to frame's regions
@@ -346,11 +348,11 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                             auto region_properties = import_ack.add_regions();
                             region_properties->set_region_id(region_id);
                             auto region_info = region_properties->mutable_region_info();
-                            region_info->set_region_name(region->Name());
-                            region_info->set_region_type(region->Type());
-                            std::vector<CARTA::Point> control_points = region->GetControlPoints();
+                            region_info->set_region_name(_regions[region_id]->Name());
+                            region_info->set_region_type(_regions[region_id]->Type());
+                            std::vector<CARTA::Point> control_points = _regions[region_id]->GetControlPoints();
                             *region_info->mutable_control_points() = {control_points.begin(), control_points.end()};
-                            region_info->set_rotation(region->Rotation());
+                            region_info->set_rotation(_regions[region_id]->Rotation());
                             region_set = true;
                         }
                     }
@@ -358,10 +360,7 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
             }
             break;
         }
-        case casa::AsciiAnnotationFileLine::GLOBAL: {
-            globals = file_line.getGloabalParams(); // typo in casacode
-            break;
-        }
+        case casa::AsciiAnnotationFileLine::GLOBAL:
         case casa::AsciiAnnotationFileLine::COMMENT:
         case casa::AsciiAnnotationFileLine::UNKNOWN_TYPE: {
             break;

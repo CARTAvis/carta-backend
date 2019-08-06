@@ -31,9 +31,8 @@ public:
     Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, const float rotation,
         const casacore::IPosition image_shape, int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys);
     // Region created from CRTF file
-    Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, std::map<casa::AnnotationBase::Keyword,
-        casacore::String>& globals, const casacore::IPosition image_shape, int spectral_axis, int stokes_axis,
-        const casacore::CoordinateSystem& coord_sys);
+    Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, const casacore::IPosition image_shape, int spectral_axis,
+        int stokes_axis, const casacore::CoordinateSystem& coord_sys);
     ~Region();
 
     // to determine if data needs to be updated
@@ -132,6 +131,9 @@ private:
     bool CheckEllipsePoints(const std::vector<CARTA::Point>& points);
     bool CheckPolygonPoints(const std::vector<CARTA::Point>& points);
     bool PointsChanged(const std::vector<CARTA::Point>& new_points); // compare new points with stored points
+
+    // convert world->pixel lengths for region import of ellipse
+    double AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis);
 
     // Create xy regions
     bool SetXyRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
