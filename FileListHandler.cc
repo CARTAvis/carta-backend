@@ -392,4 +392,3 @@ void FileListHandler::GetRegionFileContents(std::string& full_name, std::vector<
         region_file.close();
     }
 }
-
