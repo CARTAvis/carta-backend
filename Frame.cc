@@ -249,8 +249,8 @@ void Frame::ImportRegionFile(CARTA::FileType file_type, std::string& filename, C
                 }
                 if (!region_set) {
                     import_ack.add_regions();
-		    if (message.empty()) {
-		        message = "CRTF region file import failed: zero regions set";
+                    if (message.empty()) {
+                        message = "CRTF region file import failed: zero regions set";
                     }
                 }
                 import_ack.set_success(region_set); // true if at least one region was set
@@ -384,11 +384,11 @@ void Frame::ExportRegion(CARTA::FileType file_type, std::vector<int>& region_ids
     bool export_to_file(!filename.empty());
     if (export_to_file) {
         casacore::File export_file(filename);
-	bool exists(export_file.exists());
+        bool exists(export_file.exists());
         if (exists || !export_file.canCreate()) {
             export_ack.set_success(false);
-	    std::string message = (exists ? "Export region failed: file exists." : "Export region failed: cannot create file.");
-	    export_ack.set_message(message);
+            std::string message = (exists ? "Export region failed: file exists." : "Export region failed: cannot create file.");
+            export_ack.set_message(message);
             export_ack.add_contents();
             return;
         }
@@ -420,8 +420,17 @@ void Frame::ExportCrtfRegion(std::vector<int>& region_ids, std::string& filename
     for (int region_id : region_ids) {
         if (_regions.count(region_id)) {
             auto& region = _regions[region_id];
-            casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(region->AnnotationRegion());
-            region_list.addLine(file_line);
+            if (region->IsValid()) {
+                casacore::CountedPtr<const casa::AnnotationBase> annotation_region = region->AnnotationRegion();
+                if (annotation_region.null()) {
+                    message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
+                } else {
+                    casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
+                    region_list.addLine(file_line);
+                }
+            } else {
+                message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
+            }
         } else {
             message += " Region " + std::to_string(region_id) + " export failed: does not exist.";
         }

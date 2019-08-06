@@ -135,6 +135,9 @@ private:
     // convert world->pixel lengths for region import of ellipse
     double AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis);
 
+    // For region export, need stokes types from coordinate system
+    casacore::Vector<casacore::Stokes::StokesTypes> GetCoordSysStokesTypes();
+
     // Create xy regions
     bool SetXyRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
     casacore::WCRegion* MakePointRegion(const std::vector<CARTA::Point>& points);

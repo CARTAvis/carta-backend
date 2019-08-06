@@ -530,7 +530,7 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
                 casacore::Path root_path(_root_folder);
                 root_path.append(directory);
                 root_path.append(filename);
-                abs_filename = root_path.resolvedName();
+                abs_filename = root_path.absoluteName();
             }
             _frames.at(file_id)->ExportRegion(file_type, region_ids, abs_filename, export_ack);
             SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);

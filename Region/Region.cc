@@ -15,11 +15,14 @@
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
+#include <casacore/measures/Measures/Stokes.h>
 #include <casacore/casa/Quanta/Quantum.h>
 
 #include <imageanalysis/Annotations/AnnCircle.h>
+#include <imageanalysis/Annotations/AnnCenterBox.h>
 #include <imageanalysis/Annotations/AnnEllipse.h>
 #include <imageanalysis/Annotations/AnnRegion.h>
+#include <imageanalysis/Annotations/AnnRectBox.h>
 #include <imageanalysis/Annotations/AnnRotBox.h>
 #include <imageanalysis/Annotations/AnnPolygon.h>
 
@@ -731,38 +734,63 @@ std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> Region::XyMask() {
 casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion() {
     // return region as annotation region for export
     casa::AnnRegion* ann_region(nullptr);
-    switch (_type) {
-        case CARTA::POINT: {
-            //casacore::WCBox
-            //TODO ann_region = new casa::AnnRectBox();
-            break;
-        }
-        case CARTA::RECTANGLE: {
-            /* TODO
-            //casacore::WCPolygon
-            if (_rotation == 0.0) {
-                ann_region = new casa::AnnCenterBox();
-            } else {
-                ann_region = new casa::AnnRotBox();
+    if (!_control_points.empty()) {
+        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetCoordSysStokesTypes();
+        switch (_type) {
+            case CARTA::POINT: {
+                casacore::Quantity x(_control_points[0].x(), "pix");
+                casacore::Quantity y(_control_points[0].y(), "pix");
+                ann_region = new casa::AnnRectBox(x, y, x, y, _coord_sys, _image_shape, stokes_types);
+                break;
             }
-            */
-            break;
+            case CARTA::RECTANGLE: {
+                casacore::Quantity cx(_control_points[0].x(), "pix");
+                casacore::Quantity cy(_control_points[0].y(), "pix");
+                casacore::Quantity xwidth(_control_points[1].x(), "pix");
+                casacore::Quantity ywidth(_control_points[1].y(), "pix");
+                if (_rotation == 0.0) {
+                    ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types);
+                } else {
+                    casacore::Quantity position_angle(_rotation, "deg");
+                    ann_region = new casa::AnnRotBox(cx, cy, xwidth, ywidth, position_angle, _coord_sys, _image_shape, stokes_types);
+                }
+                break;
+            }
+            case CARTA::POLYGON: {
+                size_t npoints(_control_points.size());
+                casacore::Vector<casacore::Quantity> x_coords(npoints), y_coords(npoints);
+                for (size_t i = 0; i < npoints; ++i ) {
+                    x_coords(i) = casacore::Quantity(_control_points[i].x(), "pix");
+                    y_coords(i) = casacore::Quantity(_control_points[i].y(), "pix");
+                }
+                ann_region = new casa::AnnPolygon(x_coords, y_coords, _coord_sys, _image_shape, stokes_types);
+                break;
+            }
+            case CARTA::ELLIPSE: {
+                casacore::Quantity cx(_control_points[0].x(), "pix");
+                casacore::Quantity cy(_control_points[0].y(), "pix");
+                casacore::Quantity bmaj(_control_points[1].x(), "pix");
+                casacore::Quantity bmin(_control_points[1].y(), "pix");
+                casacore::Quantity position_angle(_rotation, "deg");
+                ann_region = new casa::AnnEllipse(cx, cy, bmaj, bmin, position_angle, _coord_sys, _image_shape, stokes_types);
+                break;
+            }
+            default:
+                break;
         }
-        case CARTA::POLYGON: {
-            //casacore::WCPolygon
-            //TODO ann_region = new casa::AnnPolygon();
-            break;
-        }
-        case CARTA::ELLIPSE: {
-            //casacore::WCEllipse
-            //TODO ann_region = new casa::AnnEllipse();
-            break;
-        }
-        default:
-            break;
     }
     casacore::CountedPtr<const casa::AnnotationBase> annotation_region = casacore::CountedPtr<const casa::AnnotationBase>(ann_region);
     return annotation_region;
+}
+
+casacore::Vector<casacore::Stokes::StokesTypes> Region::GetCoordSysStokesTypes() {
+    // basically, convert ints to stokes types in vector
+    casacore::Vector<casacore::Int> istokes = _coord_sys.stokesCoordinate().stokes();
+    casacore::Vector<casacore::Stokes::StokesTypes> stokes_types(istokes.size());
+    for (size_t i = 0; i < istokes.size(); ++i) {
+        stokes_types(i) = casacore::Stokes::type(istokes(i));
+    }
+    return stokes_types;
 }
 
 // ***********************************
