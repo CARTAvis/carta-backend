@@ -1146,14 +1146,12 @@ bool Frame::FillSpectralProfileData(
                 }
 
                 // Return NaNs if the region is entirely outside the image
-                const casacore::ArrayLattice<casacore::Bool>* mask = nullptr;
-                std::unique_lock<std::mutex> guard(_image_mutex);
+                std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask;
                 try {
                     // check is the region mask valid (outside the lattice or not)
                     mask = region->XyMask();
                 } catch (casacore::AipsError& err) {
                 }
-                guard.unlock();
                 if (!mask) {
                     // if region mask not valid, send a NaN to the frontend
                     CARTA::SpectralProfileData profile_data;
