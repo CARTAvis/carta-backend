@@ -51,9 +51,9 @@ public:
     };
     casacore::IPosition XyShape();
     casacore::IPosition XyOrigin();
-    const casacore::ArrayLattice<casacore::Bool>* XyMask();
+    std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> XyMask();
     inline bool XyRegionValid() {
-        return (_xy_region != nullptr);
+        return bool(_xy_region);
     };
 
     // get image region for requested stokes and (optionally) single channel
@@ -125,6 +125,8 @@ private:
     casacore::WCRegion* MakeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::WCRegion* MakeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::WCRegion* MakePolygonRegion(const std::vector<CARTA::Point>& points);
+    // Creation of casacore regions is not threadsafe
+    std::mutex _casacore_region_mutex;
 
     // Extend xy region to make LCRegion
     bool MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRange channel_range); // for extended region
@@ -150,10 +152,10 @@ private:
     int _num_dims, _spectral_axis, _stokes_axis;
 
     // stored 2D region
-    casacore::WCRegion* _xy_region;
+    std::shared_ptr<casacore::WCRegion> _xy_region;
 
     // stored 2D mask
-    casacore::ArrayLattice<casacore::Bool>* _xy_mask;
+    std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> _xy_mask;
 
     // coordinate system
     casacore::CoordinateSystem _coord_sys;

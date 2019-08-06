@@ -29,8 +29,6 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
       _spectral_axis(spectral_axis),
       _stokes_axis(stokes_axis),
       _xy_axes(casacore::IPosition(2, 0, 1)),
-      _xy_region(nullptr),
-      _xy_mask(nullptr),
       _coord_sys(coord_sys) {
     // validate and set region parameters
     _num_dims = image_shape.size();
@@ -46,18 +44,7 @@ RegionState Region::GetRegionState() {
     return region_state;
 }
 
-Region::~Region() {
-    if (_xy_region) {
-        delete _xy_region;
-        _xy_region = nullptr;
-    }
-    if (_xy_mask) {
-        delete _xy_mask;
-        _xy_mask = nullptr;
-    }
-    _region_stats.reset();
-    _region_profiler.reset();
-}
+Region::~Region() {}
 
 // *************************************************************************
 // Region settings
@@ -181,12 +168,14 @@ bool Region::PointsChanged(const std::vector<CARTA::Point>& new_points) {
 bool Region::GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange channel_range) {
     // Return ImageRegion for given stokes and region parameters.
     bool region_ok(false);
-    if (!IsValid() || (_xy_region == nullptr) || (stokes < 0))
+    if (!IsValid() || (!_xy_region) || (stokes < 0))
         return region_ok;
 
     casacore::WCRegion* wc_region = MakeExtendedRegion(stokes, channel_range);
     if (wc_region != nullptr) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         region = casacore::ImageRegion(wc_region);
+        guard.unlock();
         region_ok = true;
     }
     return region_ok;
@@ -194,28 +183,28 @@ bool Region::GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange c
 
 bool Region::SetXyRegion(const std::vector<CARTA::Point>& points, float rotation) {
     // create 2D casacore::WCRegion for type
-    casacore::WCRegion* region(nullptr);
+    std::shared_ptr<casacore::WCRegion> region;
     std::string region_type;
     try {
         switch (_type) {
             case CARTA::RegionType::POINT: {
                 region_type = "POINT";
-                region = MakePointRegion(points);
+                region = std::shared_ptr<casacore::WCRegion>(MakePointRegion(points));
                 break;
             }
             case CARTA::RegionType::RECTANGLE: {
                 region_type = "RECTANGLE";
-                region = MakeRectangleRegion(points, rotation);
+                region = std::shared_ptr<casacore::WCRegion>(MakeRectangleRegion(points, rotation));
                 break;
             }
             case CARTA::RegionType::ELLIPSE: {
                 region_type = "ELLIPSE";
-                region = MakeEllipseRegion(points, rotation);
+                region = std::shared_ptr<casacore::WCRegion>(MakeEllipseRegion(points, rotation));
                 break;
             }
             case CARTA::RegionType::POLYGON: {
                 region_type = "POLYGON";
-                region = MakePolygonRegion(points);
+                region = std::shared_ptr<casacore::WCRegion>(MakePolygonRegion(points));
                 break;
             }
             default:
@@ -226,9 +215,8 @@ bool Region::SetXyRegion(const std::vector<CARTA::Point>& points, float rotation
         std::cerr << "ERROR: xy region type " << region_type << " failed: " << err.getMesg() << std::endl;
     }
 
-    delete _xy_region;
-    _xy_region = region;
-    return (_xy_region != nullptr);
+    std::atomic_store(&_xy_region, region);
+    return bool(_xy_region);
 }
 
 casacore::WCRegion* Region::MakePointRegion(const std::vector<CARTA::Point>& points) {
@@ -257,7 +245,9 @@ casacore::WCRegion* Region::MakePointRegion(const std::vector<CARTA::Point>& poi
         // using pixel axes 0 and 1
         casacore::IPosition axes(2, 0, 1);
         casacore::Vector<casacore::Int> abs_rel;
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         box = new casacore::WCBox(blc, blc, axes, _coord_sys, abs_rel);
+        guard.unlock();
     }
     return box;
 }
@@ -329,8 +319,9 @@ casacore::WCRegion* Region::MakeRectangleRegion(const std::vector<CARTA::Point>&
         casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
         x_coord.setUnit(coord_units(0));
         y_coord.setUnit(coord_units(1));
-
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         box_polygon = new casacore::WCPolygon(x_coord, y_coord, _xy_axes, _coord_sys);
+        guard.unlock();
     }
     return box_polygon;
 }
@@ -383,9 +374,10 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
 
         // Convert theta to a Quantity
         casacore::Quantity quantity_theta = casacore::Quantity(static_cast<double>(theta), "rad");
-
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         ellipse =
             new casacore::WCEllipsoid(center(0), center(1), major_axis, minor_axis, quantity_theta, _xy_axes(0), _xy_axes(1), _coord_sys);
+        guard.unlock();
     }
     return ellipse;
 }
@@ -418,8 +410,9 @@ casacore::WCRegion* Region::MakePolygonRegion(const std::vector<CARTA::Point>& p
     casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
     x_coord.setUnit(coord_units(0));
     y_coord.setUnit(coord_units(1));
-
+    std::unique_lock<std::mutex> guard(_casacore_region_mutex);
     polygon = new casacore::WCPolygon(x_coord, y_coord, _xy_axes, _coord_sys);
+    guard.unlock();
     return polygon;
 }
 
@@ -481,7 +474,9 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
         // make extension box
         casacore::IPosition axes = (num_extension_axes == 1 ? casacore::IPosition(1, 2) : casacore::IPosition(2, 2, 3));
         casacore::Vector<casacore::Int> abs_rel;
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         extend_box = casacore::WCBox(blc, trc, axes, _coord_sys, abs_rel);
+        guard.unlock();
         extension_ok = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "Extension box failed: " << err.getMesg() << std::endl;
@@ -490,9 +485,11 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
 }
 
 casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_range) {
+    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
+
     // Return 2D wcregion extended by chan, stokes; xyregion if 2D
     if (_num_dims == 2) {
-        return _xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
+        return current_xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
     }
 
     casacore::WCExtension* region(nullptr);
@@ -503,7 +500,9 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_
             return region; // nullptr, extension box failed
 
         // apply extension box with extension axes to xy region
-        region = new casacore::WCExtension(*_xy_region, ext_box);
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
+        region = new casacore::WCExtension(*current_xy_region, ext_box);
+        guard.unlock();
     } catch (casacore::AipsError& err) {
         std::cerr << "ERROR: Region extension failed: " << err.getMesg() << std::endl;
     }
@@ -512,9 +511,10 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_
 
 casacore::IPosition Region::XyShape() {
     // returns bounding box shape of xy region
+    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_shape;
-    if (_xy_region != nullptr) {
-        casacore::LCRegion* region = _xy_region->toLCRegion(_coord_sys, _image_shape);
+    if (current_xy_region) {
+        casacore::LCRegion* region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
         if (region != nullptr)
             xy_shape = region->shape().keepAxes(_xy_axes);
     }
@@ -523,41 +523,43 @@ casacore::IPosition Region::XyShape() {
 
 casacore::IPosition Region::XyOrigin() {
     // returns bottom-left position of bounding box of xy region
+    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_origin;
-    if (_xy_region != nullptr) {
-        auto extended_region = static_cast<casacore::LCExtension*>(_xy_region->toLCRegion(_coord_sys, _image_shape));
+    if (current_xy_region) {
+        auto extended_region = static_cast<casacore::LCExtension*>(current_xy_region->toLCRegion(_coord_sys, _image_shape));
         if (extended_region != nullptr)
             xy_origin = extended_region->region().expand(casacore::IPosition(2, 0, 0));
     }
     return xy_origin;
 }
 
-const casacore::ArrayLattice<casacore::Bool>* Region::XyMask() {
+std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> Region::XyMask() {
     // returns boolean mask of xy region
-    casacore::ArrayLattice<casacore::Bool>* mask;
+    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
+    std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask;
 
-    if (_xy_region != nullptr) {
+    if (current_xy_region) {
         // get extended region (or original region for points)
-        auto lc_region = _xy_region->toLCRegion(_coord_sys, _image_shape);
+        auto lc_region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
 
         // get original region
         switch (_type) {
             case CARTA::POINT: {
                 auto region = static_cast<const casacore::LCBox*>(lc_region);
-                mask = new casacore::ArrayLattice<casacore::Bool>(region->getMask());
+                mask = std::make_shared<casacore::ArrayLattice<casacore::Bool>>(region->getMask());
                 break;
             }
             case CARTA::RECTANGLE:
             case CARTA::POLYGON: {
                 auto extended_region = static_cast<casacore::LCExtension*>(lc_region);
                 auto region = static_cast<const casacore::LCPolygon&>(extended_region->region());
-                mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
+                mask = std::make_shared<casacore::ArrayLattice<casacore::Bool>>(region.getMask());
                 break;
             }
             case CARTA::ELLIPSE: {
                 auto extended_region = static_cast<casacore::LCExtension*>(lc_region);
                 auto region = static_cast<const casacore::LCEllipsoid&>(extended_region->region());
-                mask = new casacore::ArrayLattice<casacore::Bool>(region.getMask());
+                mask = std::make_shared<casacore::ArrayLattice<casacore::Bool>>(region.getMask());
                 break;
             }
             default:
@@ -565,12 +567,8 @@ const casacore::ArrayLattice<casacore::Bool>* Region::XyMask() {
         }
     }
 
-    if (_xy_mask) {
-        delete _xy_mask;
-    }
-    _xy_mask = mask;
-
-    return _xy_mask;
+    std::atomic_store(&_xy_mask, mask);
+    return std::atomic_load(&_xy_mask);
 }
 
 // ***********************************
