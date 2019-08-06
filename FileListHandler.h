@@ -12,8 +12,8 @@
 #include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/file_list.pb.h>
-#include <carta-protobuf/region_list.pb.h>
 #include <carta-protobuf/region_file_info.pb.h>
+#include <carta-protobuf/region_list.pb.h>
 
 #include "Util.h"
 

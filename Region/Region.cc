@@ -2,9 +2,9 @@
 
 #include "Region.h"
 
+#include <stdio.h>   // sscanf
 #include <algorithm> // max
 #include <cmath>     // round
-#include <stdio.h>   // sscanf
 
 #include <casacore/casa/Arrays/ArrayLogical.h>
 #include <casacore/casa/Quanta/Quantum.h>
@@ -21,10 +21,10 @@
 #include <imageanalysis/Annotations/AnnCenterBox.h>
 #include <imageanalysis/Annotations/AnnCircle.h>
 #include <imageanalysis/Annotations/AnnEllipse.h>
+#include <imageanalysis/Annotations/AnnPolygon.h>
 #include <imageanalysis/Annotations/AnnRectBox.h>
 #include <imageanalysis/Annotations/AnnRegion.h>
 #include <imageanalysis/Annotations/AnnRotBox.h>
-#include <imageanalysis/Annotations/AnnPolygon.h>
 
 #include "../InterfaceConstants.h"
 

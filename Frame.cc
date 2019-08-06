@@ -3,8 +3,8 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
-#include <thread>
 #include <fstream>
+#include <thread>
 
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 #include <imageanalysis/Annotations/AnnotationBase.h>
@@ -370,8 +370,8 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
     return region_set;
 }
 
-void Frame::ExportRegion(CARTA::FileType file_type, std::vector<int>& region_ids, std::string& filename,
-    CARTA::ExportRegionAck& export_ack) {
+void Frame::ExportRegion(
+    CARTA::FileType file_type, std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack) {
     // Export regions to file with filename; if no filename, add contents to ack message for client-side export.
     // Check if regions to export
     if (region_ids.empty()) {
@@ -447,7 +447,7 @@ void Frame::ExportCrtfRegion(std::vector<int>& region_ids, std::string& filename
     if (filename.empty()) {
         // fill contents[] of ack message
         std::vector<std::string> contents;
-        for (unsigned int i=0; i < region_list.nLines(); ++i) {
+        for (unsigned int i = 0; i < region_list.nLines(); ++i) {
             casa::AsciiAnnotationFileLine file_line = region_list.lineAt(i);
             std::ostringstream export_stream;
             file_line.print(export_stream);

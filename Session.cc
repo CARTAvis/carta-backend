@@ -505,7 +505,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
                 std::vector<std::string> contents = {message.contents().begin(), message.contents().end()};
                 _frames.at(file_id)->ImportRegionContents(file_type, contents, import_ack);
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
-            } 
+            }
         } catch (std::out_of_range& range_error) {
             std::string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"import"}, CARTA::ErrorSeverity::DEBUG);
