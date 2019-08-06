@@ -243,7 +243,7 @@ void Frame::ImportRegionFile(CARTA::FileType file_type, std::string& filename, C
             try {
                 const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
                 casa::RegionTextList region_list = casa::RegionTextList(filename, coord_sys, _image_shape);
-                for (unsigned int iline=0; iline < region_list.nLines(); ++iline) {
+                for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
                     casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
                     region_set |= ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
                 }
@@ -339,8 +339,8 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                 case casa::AnnotationBase::CIRCLE:
                 case casa::AnnotationBase::ELLIPSE: {
                     if (!annotation_base->isAnnotationOnly()) { // shape could be annotation-layer only
-                        auto region = std::unique_ptr<carta::Region>(new carta::Region(annotation_base, _image_shape,
-                            _spectral_axis, _stokes_axis, coord_sys));
+                        auto region = std::unique_ptr<carta::Region>(
+                            new carta::Region(annotation_base, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
                         if (region && region->IsValid()) {
                             // add to frame's regions
                             auto region_id = GetMaxRegionId() + 1;
@@ -375,11 +375,12 @@ void Frame::ExportRegion(CARTA::FileType file_type, std::vector<int>& region_ids
     // Export regions to file with filename; if no filename, add contents to ack message for client-side export.
     // Check if regions to export
     if (region_ids.empty()) {
-          export_ack.set_success(false);
-          export_ack.set_message("Export failed: no regions requested.");
-          export_ack.add_contents();
-          return;
+        export_ack.set_success(false);
+        export_ack.set_message("Export failed: no regions requested.");
+        export_ack.add_contents();
+        return;
     }
+
     // Check export file before creating file contents
     bool export_to_file(!filename.empty());
     if (export_to_file) {
@@ -408,7 +409,6 @@ void Frame::ExportRegion(CARTA::FileType file_type, std::vector<int>& region_ids
         }
     }
 }
-
 
 void Frame::ExportCrtfRegion(std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack) {
     // Create RegionTextList for all requested regions and export to file or put in ack contents[]

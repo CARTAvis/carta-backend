@@ -492,13 +492,13 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         try {
             CARTA::ImportRegionAck import_ack; // response
             std::string directory(message.directory()), filename(message.file());
-	    CARTA::FileType file_type(message.type());
-	    if (!directory.empty() && !filename.empty()) {
+            CARTA::FileType file_type(message.type());
+            if (!directory.empty() && !filename.empty()) {
                 // form path with filename
                 casacore::Path root_path(_root_folder);
                 root_path.append(directory);
                 root_path.append(filename);
-		std::string abs_filename(root_path.resolvedName());
+                std::string abs_filename(root_path.resolvedName());
                 _frames.at(file_id)->ImportRegionFile(file_type, abs_filename, import_ack);
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
             } else {
@@ -521,11 +521,11 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
     if (_frames.count(file_id)) {
         try {
             CARTA::ExportRegionAck export_ack; // response
-	    CARTA::FileType file_type(message.type());
+            CARTA::FileType file_type(message.type());
             std::string directory(message.directory()), filename(message.file());
             std::vector<int> region_ids = {message.region_id().begin(), message.region_id().end()};
             std::string abs_filename;
-	    if (!directory.empty() && !filename.empty()) { // export file on server
+            if (!directory.empty() && !filename.empty()) { // export file on server
                 // form path with filename
                 casacore::Path root_path(_root_folder);
                 root_path.append(directory);

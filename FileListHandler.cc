@@ -130,7 +130,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                                 } else if (image_type == casacore::ImageOpener::UNKNOWN) {
                                     // Check if it is a directory and the user has permission to access it
                                     casacore::String dir_name(cc_file.path().baseName());
-                                    string path_name_relative = (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
+                                    string path_name_relative =
+                                        (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
                                     if (CheckPermissionForDirectory(path_name_relative)) {
                                         file_list.add_subdirectories(dir_name);
                                     }
@@ -302,18 +303,18 @@ CARTA::FileType FileListHandler::GetRegionType(const std::string& filename) {
     CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
     std::ifstream region_file(filename);
     try {
-	std::string first_line;
-	if (!region_file.eof()) { // empty file
+        std::string first_line;
+        if (!region_file.eof()) { // empty file
             getline(region_file, first_line);
         }
-	region_file.close();
+        region_file.close();
         if (first_line.find("#CRTF") == 0) {
             file_type = CARTA::FileType::CRTF;
         } else if (first_line.find("# Region file format: DS9") == 0) { // optional header, but what else to do?
             file_type = CARTA::FileType::REG;
         }
     } catch (std::ios_base::failure& f) {
-	region_file.close();
+        region_file.close();
     }
     return file_type;
 }
@@ -359,17 +360,17 @@ void FileListHandler::OnRegionFileInfoRequest(
     if (cc_file.exists() && cc_file.isRegular(true) && cc_file.isReadable()) {
         casacore::String full_name(cc_file.path().resolvedName());
         auto file_info = response.mutable_file_info();
-	FillRegionFileInfo(file_info, full_name);
+        FillRegionFileInfo(file_info, full_name);
         std::vector<std::string> file_contents;
-	GetRegionFileContents(full_name, file_contents);
-	response.set_success(true);
-	response.set_message(message);
-	*response.mutable_contents() = {file_contents.begin(), file_contents.end()};
+        GetRegionFileContents(full_name, file_contents);
+        response.set_success(true);
+        response.set_message(message);
+        *response.mutable_contents() = {file_contents.begin(), file_contents.end()};
     } else {
         message = "File " + filename + " is not readable.";
-	response.set_success(false);
-	response.set_message(message);
-	response.add_contents(contents);
+        response.set_success(false);
+        response.set_message(message);
+        response.add_contents(contents);
     }
 }
 
@@ -377,16 +378,16 @@ void FileListHandler::GetRegionFileContents(std::string& full_name, std::vector<
     // read each line of file into string in vector
     std::ifstream region_file(full_name);
     try {
-	if (!region_file) {
+        if (!region_file) {
             return;
         }
 
-	std::string file_line;
-	while (!region_file.eof()) {
+        std::string file_line;
+        while (!region_file.eof()) {
             getline(region_file, file_line);
-	    file_contents.push_back(file_line);
+            file_contents.push_back(file_line);
         }
-	region_file.close();
+        region_file.close();
     } catch (std::ios_base::failure& f) {
         region_file.close();
     }

@@ -7,6 +7,7 @@
 #include <stdio.h>   // sscanf
 
 #include <casacore/casa/Arrays/ArrayLogical.h>
+#include <casacore/casa/Quanta/Quantum.h>
 #include <casacore/images/Regions/WCEllipsoid.h>
 #include <casacore/images/Regions/WCExtension.h>
 #include <casacore/images/Regions/WCPolygon.h>
@@ -16,13 +17,12 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
 #include <casacore/measures/Measures/Stokes.h>
-#include <casacore/casa/Quanta/Quantum.h>
 
-#include <imageanalysis/Annotations/AnnCircle.h>
 #include <imageanalysis/Annotations/AnnCenterBox.h>
+#include <imageanalysis/Annotations/AnnCircle.h>
 #include <imageanalysis/Annotations/AnnEllipse.h>
-#include <imageanalysis/Annotations/AnnRegion.h>
 #include <imageanalysis/Annotations/AnnRectBox.h>
+#include <imageanalysis/Annotations/AnnRegion.h>
 #include <imageanalysis/Annotations/AnnRotBox.h>
 #include <imageanalysis/Annotations/AnnPolygon.h>
 
@@ -51,8 +51,8 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
     }
 }
 
-Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, const casacore::IPosition image_shape,
-    int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys)
+Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, const casacore::IPosition image_shape, int spectral_axis,
+    int stokes_axis, const casacore::CoordinateSystem& coord_sys)
     : _rotation(0.0),
       _valid(false),
       _image_shape(image_shape),
@@ -66,7 +66,6 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
     // set name, type, control points, rotation (default 0.0 already set), and xy region
     if (annotation_region) {
         _name = annotation_region->getLabel();
-        //casacore::CoordinateSystem region_coord_sys = annotation_region->getCsys();
         switch (annotation_region->getType()) {
             case casa::AnnotationBase::RECT_BOX:
             case casa::AnnotationBase::CENTER_BOX: {
@@ -112,7 +111,7 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                     // get polygon vertices for control points
                     std::vector<casacore::Double> x, y;
                     polygon->pixelVertices(x, y);
-                    for (size_t i=0; i < x.size(); ++i) {
+                    for (size_t i = 0; i < x.size(); ++i) {
                         CARTA::Point point;
                         point.set_x(x[i]);
                         point.set_y(y[i]);
@@ -759,7 +758,7 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion() {
             case CARTA::POLYGON: {
                 size_t npoints(_control_points.size());
                 casacore::Vector<casacore::Quantity> x_coords(npoints), y_coords(npoints);
-                for (size_t i = 0; i < npoints; ++i ) {
+                for (size_t i = 0; i < npoints; ++i) {
                     x_coords(i) = casacore::Quantity(_control_points[i].x(), "pix");
                     y_coords(i) = casacore::Quantity(_control_points[i].y(), "pix");
                 }

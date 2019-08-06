@@ -32,7 +32,8 @@ public:
         std::string api_key, const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg);
 
     void OnRegionListRequest(const CARTA::RegionListRequest& request, CARTA::RegionListResponse& response, ResultMsg& result_msg);
-    void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, CARTA::RegionFileInfoResponse& response, ResultMsg& result_msg);
+    void OnRegionFileInfoRequest(
+        const CARTA::RegionFileInfoRequest& request, CARTA::RegionFileInfoResponse& response, ResultMsg& result_msg);
 
 private:
     // ICD: File/Region list response
