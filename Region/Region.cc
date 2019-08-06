@@ -173,7 +173,9 @@ bool Region::GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange c
 
     casacore::WCRegion* wc_region = MakeExtendedRegion(stokes, channel_range);
     if (wc_region != nullptr) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         region = casacore::ImageRegion(wc_region);
+        guard.unlock();
         region_ok = true;
     }
     return region_ok;
@@ -243,7 +245,9 @@ casacore::WCRegion* Region::MakePointRegion(const std::vector<CARTA::Point>& poi
         // using pixel axes 0 and 1
         casacore::IPosition axes(2, 0, 1);
         casacore::Vector<casacore::Int> abs_rel;
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         box = new casacore::WCBox(blc, blc, axes, _coord_sys, abs_rel);
+        guard.unlock();
     }
     return box;
 }
@@ -315,8 +319,9 @@ casacore::WCRegion* Region::MakeRectangleRegion(const std::vector<CARTA::Point>&
         casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
         x_coord.setUnit(coord_units(0));
         y_coord.setUnit(coord_units(1));
-
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         box_polygon = new casacore::WCPolygon(x_coord, y_coord, _xy_axes, _coord_sys);
+        guard.unlock();
     }
     return box_polygon;
 }
@@ -369,9 +374,10 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
 
         // Convert theta to a Quantity
         casacore::Quantity quantity_theta = casacore::Quantity(static_cast<double>(theta), "rad");
-
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         ellipse =
             new casacore::WCEllipsoid(center(0), center(1), major_axis, minor_axis, quantity_theta, _xy_axes(0), _xy_axes(1), _coord_sys);
+        guard.unlock();
     }
     return ellipse;
 }
@@ -404,8 +410,9 @@ casacore::WCRegion* Region::MakePolygonRegion(const std::vector<CARTA::Point>& p
     casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
     x_coord.setUnit(coord_units(0));
     y_coord.setUnit(coord_units(1));
-
+    std::unique_lock<std::mutex> guard(_casacore_region_mutex);
     polygon = new casacore::WCPolygon(x_coord, y_coord, _xy_axes, _coord_sys);
+    guard.unlock();
     return polygon;
 }
 
@@ -467,7 +474,9 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
         // make extension box
         casacore::IPosition axes = (num_extension_axes == 1 ? casacore::IPosition(1, 2) : casacore::IPosition(2, 2, 3));
         casacore::Vector<casacore::Int> abs_rel;
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         extend_box = casacore::WCBox(blc, trc, axes, _coord_sys, abs_rel);
+        guard.unlock();
         extension_ok = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "Extension box failed: " << err.getMesg() << std::endl;
@@ -491,7 +500,9 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_
             return region; // nullptr, extension box failed
 
         // apply extension box with extension axes to xy region
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         region = new casacore::WCExtension(*current_xy_region, ext_box);
+        guard.unlock();
     } catch (casacore::AipsError& err) {
         std::cerr << "ERROR: Region extension failed: " << err.getMesg() << std::endl;
     }

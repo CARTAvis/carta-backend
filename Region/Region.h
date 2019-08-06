@@ -125,6 +125,8 @@ private:
     casacore::WCRegion* MakeRectangleRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::WCRegion* MakeEllipseRegion(const std::vector<CARTA::Point>& points, float rotation);
     casacore::WCRegion* MakePolygonRegion(const std::vector<CARTA::Point>& points);
+    // Creation of casacore regions is not threadsafe
+    std::mutex _casacore_region_mutex;
 
     // Extend xy region to make LCRegion
     bool MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRange channel_range); // for extended region
