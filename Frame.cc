@@ -256,6 +256,7 @@ void Frame::ImportRegionFile(CARTA::FileType file_type, std::string& filename, C
                 import_ack.set_success(region_set); // true if at least one region was set
                 import_ack.set_message(message);
             } catch (casacore::AipsError& err) {
+                std::cerr << "Import region failed: " << err.getMesg() << std::endl;
                 import_ack.set_success(false);
                 import_ack.set_message("CRTF region file import failed.");
                 import_ack.add_regions();
@@ -318,7 +319,6 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
         case casa::AsciiAnnotationFileLine::ANNOTATION: {
             auto annotation_base = file_line.getAnnotationBase();
             const casa::AnnotationBase::Type annotation_type = annotation_base->getType();
-            casacore::String ann_type_str = casa::AnnotationBase::typeToString(annotation_type);
             switch (annotation_type) {
                 case casa::AnnotationBase::LINE:
                 case casa::AnnotationBase::VECTOR:
@@ -328,6 +328,7 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                 }
                 case casa::AnnotationBase::POLYLINE:
                 case casa::AnnotationBase::ANNULUS: {
+                    casacore::String ann_type_str = casa::AnnotationBase::typeToString(annotation_type);
                     message += " CRTF region type " + ann_type_str + " is not supported.";
                     break;
                 }
@@ -337,7 +338,7 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                 case casa::AnnotationBase::POLYGON:
                 case casa::AnnotationBase::CIRCLE:
                 case casa::AnnotationBase::ELLIPSE: {
-                    if (annotation_base) {
+                    if (!annotation_base->isAnnotationOnly()) { // shape could be annotation-layer only
                         auto region = std::unique_ptr<carta::Region>(new carta::Region(annotation_base, _image_shape,
                             _spectral_axis, _stokes_axis, coord_sys));
                         if (region && region->IsValid()) {

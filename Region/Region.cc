@@ -128,7 +128,7 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                 casacore::Quantity bmaj, bmin, position_angle;
                 bool is_ellipse(true);
                 bool have_region_info(false);
-                if ((ann_type == casa::AnnotationBase::CIRCLE) && dir_coord.hasSquarePixels()) {
+                if (ann_type == casa::AnnotationBase::CIRCLE) {
                     const casa::AnnCircle* circle = static_cast<const casa::AnnCircle*>(annotation_region.get());
                     if (circle != nullptr) {
                         std::atomic_store(&_xy_region, circle->getRegion2());
