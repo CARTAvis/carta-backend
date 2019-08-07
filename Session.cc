@@ -467,12 +467,12 @@ void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
     SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
     // update data streams if requirements set
     if (success && _frames.at(file_id)->RegionChanged(region_id)) {
-        _frames.at(file_id)->IncreaseZProfileCount();
+        _frames.at(file_id)->IncreaseZProfileCount(region_id);
         SendRegionStatsData(file_id, region_id);
         SendSpatialProfileData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
         SendSpectralProfileData(file_id, region_id);
-        _frames.at(file_id)->DecreaseZProfileCount();
+        _frames.at(file_id)->DecreaseZProfileCount(region_id);
     }
 }
 
@@ -902,7 +902,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool channel_c
             if (region_id == CURSOR_REGION_ID && !_frames.at(file_id)->IsCursorSet()) {
                 return data_sent; // do not send profile unless frontend set cursor
             }
-            _frames.at(file_id)->IncreaseZProfileCount();
+            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             bool profile_ok = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
                     if (profile_data.profiles_size() > 0) { // update needed (not for new channel)
@@ -913,7 +913,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool channel_c
                     }
                 },
                 region_id, channel_changed, stokes_changed);
-            _frames.at(file_id)->DecreaseZProfileCount();
+            _frames.at(file_id)->DecreaseZProfileCount(region_id);
             if (profile_ok) {
                 data_sent = true;
             }
@@ -967,7 +967,7 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
         std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
         for (auto region_id : regions) {
             // CHECK FOR CANCEL HERE ??
-            _frames.at(file_id)->IncreaseZProfileCount();
+            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             SendRegionStatsData(file_id, region_id);
             SendSpatialProfileData(file_id, region_id, stokes_changed);
             if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
@@ -976,7 +976,7 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
                 SendRegionHistogramData(file_id, region_id, channel_changed);
             }
             SendSpectralProfileData(file_id, region_id, channel_changed, stokes_changed);
-            _frames.at(file_id)->DecreaseZProfileCount();
+            _frames.at(file_id)->DecreaseZProfileCount(region_id);
         }
     }
 }
