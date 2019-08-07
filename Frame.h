@@ -94,10 +94,16 @@ public:
     // set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
 
-    void IncreaseZProfileCount() {
+    void IncreaseZProfileCount(int region_id) {
+        if (_regions.count(region_id)) {
+            _regions[region_id]->IncreaseZProfileCount();
+        }
         ++_z_profile_count;
     }
-    void DecreaseZProfileCount() {
+    void DecreaseZProfileCount(int region_id) {
+        if (_regions.count(region_id)) {
+            _regions[region_id]->DecreaseZProfileCount();
+        }
         --_z_profile_count;
     }
 
@@ -161,7 +167,7 @@ private:
     void SetRegionId(int region_id);
 
     // Functions used to check cursor and region states
-    bool IsConnected();
+    bool IsConnected(int region_id);
     bool IsSameRegionId(int region_id);
     bool IsSameRegionState(int region_id, const RegionState& region_state);
     bool IsSameRegionSpectralConfig(int region_id, const ZProfileWidget& config_stats);

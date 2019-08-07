@@ -21,8 +21,8 @@ public:
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
-    bool UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) override;
-    bool GetRegionSpectralData(int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
+    bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask) override;
+    bool GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     void SetFramePtr(Frame* frame) override;
 
@@ -62,8 +62,8 @@ void Hdf5Loader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended*
 
     // Load swizzled image lattice
     if (HasData(FileInfo::Data::SWIZZLED)) {
-        _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(
-            new casacore::HDF5Lattice<float>(_filename, DataSetToString(FileInfo::Data::SWIZZLED), hdu));
+        _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(
+            casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)), DataSetToString(FileInfo::Data::SWIZZLED), hdu));
     }
 }
 
@@ -310,7 +310,7 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
     return data_ok;
 }
 
-bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bool>* mask) {
+bool Hdf5Loader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
         return false;
     }
@@ -328,8 +328,8 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::ArrayLattice<casacore::Bo
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const casacore::ArrayLattice<casacore::Bool>* mask, IPos origin,
-    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask,
+    IPos origin, const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
         return false;
     }

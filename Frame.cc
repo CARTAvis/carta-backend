@@ -224,6 +224,7 @@ bool Frame::RegionChanged(int region_id) {
 
 void Frame::RemoveRegion(int region_id) {
     if (_regions.count(region_id)) {
+        _regions[region_id]->DisconnectCalled();
         _regions[region_id].reset();
         _regions.erase(region_id);
     }
@@ -920,6 +921,25 @@ bool Frame::FillSpectralProfileData(
                     profile_stokes = curr_stokes;
                 }
 
+                // Return NaNs if the region is entirely outside the image
+                std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask;
+                try {
+                    // check is the region mask valid (outside the lattice or not)
+                    mask = region->XyMask();
+                } catch (casacore::AipsError& err) {
+                }
+                if (!mask) {
+                    // if region mask not valid, send a NaN to the frontend
+                    CARTA::SpectralProfileData profile_data;
+                    profile_data.set_stokes(curr_stokes);
+                    profile_data.set_progress(1.0);
+                    region->FillNaNSpectralProfileData(profile_data, i);
+                    // send empty (NaN) result to Session
+                    cb(profile_data);
+                    profile_ok = true;
+                    return profile_ok;
+                }
+
                 // fill SpectralProfiles for this config
                 if (region->IsPoint()) { // values
                     std::vector<float> spectral_data;
@@ -936,11 +956,12 @@ bool Frame::FillSpectralProfileData(
                         region->FillPointSpectralProfileData(profile_data, i, spectral_data);
                         // send result to Session
                         cb(profile_data);
+                        profile_ok = true;
                     } else {
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        GetPointSpectralData(
+                        profile_ok = GetPointSpectralData(
                             spectral_data, region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -963,32 +984,13 @@ bool Frame::FillSpectralProfileData(
                         profile_ok = true;
                         return profile_ok;
                     }
-                    bool use_swizzled_data(false);
-                    const casacore::ArrayLattice<casacore::Bool>* mask = nullptr;
-                    std::unique_lock<std::mutex> guard(_image_mutex);
-                    try {
-                        // check is the region mask valid (outside the lattice or not)
-                        mask = region->XyMask();
-                    } catch (...) {
-                    }
-                    guard.unlock();
-                    if (mask) {
-                        // if region mask is valid, then check is swizzled data available
-                        use_swizzled_data = _loader->UseRegionSpectralData(mask);
-                    } else {
-                        // if region mask not valid, send a NaN to the frontend
-                        CARTA::SpectralProfileData profile_data;
-                        profile_data.set_stokes(curr_stokes);
-                        profile_data.set_progress(1.0);
-                        region->FillNaNSpectralProfileData(profile_data, i);
-                        // send empty (NaN) result to Session
-                        cb(profile_data);
-                        profile_ok = true;
-                        return profile_ok;
-                    }
+
+                    // if region mask is valid, then check is swizzled data available
+                    bool use_swizzled_data(_loader->UseRegionSpectralData(mask));
+
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
+                        profile_ok = _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
                             [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -1000,20 +1002,20 @@ bool Frame::FillSpectralProfileData(
                         guard.unlock();
                     } else {
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSpectralData(region_id, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
-                            CARTA::SpectralProfileData profile_data;
-                            profile_data.set_stokes(curr_stokes);
-                            profile_data.set_progress(progress);
-                            region->FillSpectralProfileData(profile_data, i, results);
-                            // send (partial) result to Session
-                            cb(profile_data);
-                        });
+                        profile_ok = GetRegionSpectralData(
+                            region_id, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
+                                CARTA::SpectralProfileData profile_data;
+                                profile_data.set_stokes(curr_stokes);
+                                profile_data.set_progress(progress);
+                                region->FillSpectralProfileData(profile_data, i, results);
+                                // send (partial) result to Session
+                                cb(profile_data);
+                            });
                         guard.unlock();
                     }
                 }
             }
         }
-        profile_ok = true;
     }
     return profile_ok;
 }
@@ -1396,8 +1398,8 @@ bool Frame::GetRegionSpectralData(int region_id, int profile_index, int profile_
 
 bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2) {
     bool interrupt(true);
-    if (!IsConnected()) {
-        std::cerr << "Closing image, exit zprofile before complete" << std::endl;
+    if (!IsConnected(region_id)) {
+        std::cerr << "Closing image/region, exit zprofile before complete" << std::endl;
         return interrupt;
     }
     if (!IsSameRegionId(region_id)) {
@@ -1414,8 +1416,8 @@ bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cu
 
 bool Frame::Interrupt(int region_id, const RegionState& region_state) {
     bool interrupt(true);
-    if (!IsConnected()) {
-        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+    if (!IsConnected(region_id)) {
+        std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
     if (!IsSameRegionId(region_id)) {
@@ -1432,8 +1434,8 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
 
 bool Frame::Interrupt(int region_id, const RegionState& region_state, const ZProfileWidget& config_stats) {
     bool interrupt(true);
-    if (!IsConnected()) {
-        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+    if (!IsConnected(region_id)) {
+        std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
     if (!IsSameRegionId(region_id)) {
@@ -1452,7 +1454,10 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state, const ZPro
     return interrupt;
 }
 
-bool Frame::IsConnected() {
+bool Frame::IsConnected(int region_id) {
+    if (_regions.count(region_id)) {
+        return (_connected && _regions[region_id]->IsConnected());
+    }
     return _connected;
 }
 
