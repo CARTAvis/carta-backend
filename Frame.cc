@@ -346,16 +346,21 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                             // add to frame's regions
                             auto region_id = GetMaxRegionId() + 1;
                             _regions[region_id] = move(region);
+                            region_set = true;
+                            // region parameters
+                            std::string name(_regions[region_id]->Name());
+                            CARTA::RegionType type(_regions[region_id]->Type());
+                            std::vector<CARTA::Point> points = _regions[region_id]->GetControlPoints();
+                            float rotation(_regions[region_id]->Rotation());
+                            SetRegionState(region_id, name, type, points, rotation);
                             // add to ack
                             auto region_properties = import_ack.add_regions();
                             region_properties->set_region_id(region_id);
                             auto region_info = region_properties->mutable_region_info();
-                            region_info->set_region_name(_regions[region_id]->Name());
-                            region_info->set_region_type(_regions[region_id]->Type());
-                            std::vector<CARTA::Point> control_points = _regions[region_id]->GetControlPoints();
-                            *region_info->mutable_control_points() = {control_points.begin(), control_points.end()};
-                            region_info->set_rotation(_regions[region_id]->Rotation());
-                            region_set = true;
+                            region_info->set_region_name(name);
+                            region_info->set_region_type(type);
+                            *region_info->mutable_control_points() = {points.begin(), points.end()};
+                            region_info->set_rotation(rotation);
                         }
                     }
                 }

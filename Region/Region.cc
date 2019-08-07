@@ -62,7 +62,8 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
       _xy_region(nullptr),
       _xy_mask(nullptr),
       _coord_sys(coord_sys) {
-    // Create region from imported annotation region:
+    // Create region from imported annotation region
+    _num_dims = image_shape.size();
     // set name, type, control points, rotation (default 0.0 already set), and xy region
     if (annotation_region) {
         _name = annotation_region->getLabel();
@@ -179,6 +180,10 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
             default:
                 break;
         }
+    }
+    if (_valid) {
+        _region_stats = std::unique_ptr<RegionStats>(new RegionStats());
+        _region_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
     }
 }
 
