@@ -926,3 +926,18 @@ void Region::FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data
         }
     }
 }
+
+void Region::SetConnectionFlag(bool connected) {
+    _connected = connected;
+}
+
+bool Region::IsConnected() {
+    return _connected;
+}
+
+void Region::DisconnectCalled() {
+    SetConnectionFlag(false); // set a false flag to interrupt the running jobs in the Region
+    while (_z_profile_count) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    } // wait for the jobs finished
+}
