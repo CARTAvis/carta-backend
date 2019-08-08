@@ -514,7 +514,9 @@ casacore::IPosition Region::XyShape() {
     std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_shape;
     if (current_xy_region) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         casacore::LCRegion* region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
+        guard.unlock();
         if (region != nullptr)
             xy_shape = region->shape().keepAxes(_xy_axes);
     }
@@ -526,7 +528,9 @@ casacore::IPosition Region::XyOrigin() {
     std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_origin;
     if (current_xy_region) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         auto extended_region = static_cast<casacore::LCExtension*>(current_xy_region->toLCRegion(_coord_sys, _image_shape));
+        guard.unlock();
         if (extended_region != nullptr)
             xy_origin = extended_region->region().expand(casacore::IPosition(2, 0, 0));
     }
