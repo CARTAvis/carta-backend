@@ -21,7 +21,7 @@ CartaHdf5Image::CartaHdf5Image(const std::string& filename, const std::string& a
       _valid(false),
       _pixel_mask(nullptr),
       _mask_spec(mask_spec) {
-    _lattice = casacore::HDF5Lattice<float>(filename, array_name, hdu);
+    _lattice = casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(filename)), array_name, hdu);
     _shape = _lattice.shape();
     _pixel_mask = new casacore::ArrayLattice<bool>();
     _valid = Setup(filename, hdu, info);

@@ -1,6 +1,7 @@
 #include "Session.h"
 
 #include <signal.h>
+#include <algorithm>
 #include <chrono>
 #include <limits>
 #include <memory>
@@ -8,6 +9,7 @@
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
+#include <tbb/task_group.h>
 
 #include <casacore/casa/OS/File.h>
 
@@ -15,6 +17,7 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 
+#include "Carta.h"
 #include "EventHeader.h"
 #include "FileInfoLoader.h"
 #include "InterfaceConstants.h"
@@ -324,23 +327,31 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
     if (!message.tiles().empty() && _frames.count(file_id)) {
-        size_t n = message.tiles_size();
+        int n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
-        tbb::parallel_for(size_t(0), n, [&](size_t i) {
-            const auto& encoded_coordinate = message.tiles(i);
-            CARTA::RasterTileData raster_tile_data;
-            raster_tile_data.set_file_id(file_id);
-            auto tile = Tile::Decode(encoded_coordinate);
-            if (_frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
-                SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
-            } else {
-                fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+        int stride = std::min(n, std::min(CARTA::global_thread_count, CARTA::MAX_TILING_TASKS));
+
+        auto lambda = [&](int start) {
+            for (int i = start; i < n; i += stride) {
+                const auto& encoded_coordinate = message.tiles(i);
+                CARTA::RasterTileData raster_tile_data;
+                raster_tile_data.set_file_id(file_id);
+                auto tile = Tile::Decode(encoded_coordinate);
+                if (_frames.at(file_id)->FillRasterTileData(
+                        raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
+                    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
+                } else {
+                    fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+                }
             }
-        });
-    } else {
-        string error = fmt::format("File id {} not found", file_id);
-        SendLogEvent(error, {"view"}, CARTA::ErrorSeverity::DEBUG);
+        };
+
+        tbb::task_group g;
+        for (int j = 0; j < stride; j++) {
+            g.run([=] { lambda(j); });
+        }
+        g.wait();
     }
 }
 
@@ -436,20 +447,22 @@ void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
     SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
     // update data streams if requirements set
     if (success && _frames.at(file_id)->RegionChanged(region_id)) {
-        _frames.at(file_id)->IncreaseZProfileCount();
+        _frames.at(file_id)->IncreaseZProfileCount(region_id);
         SendRegionStatsData(file_id, region_id);
         SendSpatialProfileData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
         SendSpectralProfileData(file_id, region_id);
-        _frames.at(file_id)->DecreaseZProfileCount();
+        _frames.at(file_id)->DecreaseZProfileCount(region_id);
     }
 }
 
 void Session::OnRemoveRegion(const CARTA::RemoveRegion& message) {
     auto region_id(message.region_id());
-    for (auto& frame : _frames) { // frames = map<fileId, unique_ptr<Frame>>
-        if (frame.second)
-            frame.second->RemoveRegion(region_id);
+    if ((region_id != CURSOR_REGION_ID) && (region_id != IMAGE_REGION_ID)) {
+        for (auto& frame : _frames) { // frames = map<fileId, unique_ptr<Frame>>
+            if (frame.second)
+                frame.second->RemoveRegion(region_id);
+        }
     }
 }
 
@@ -811,7 +824,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool channel_c
             if (region_id == CURSOR_REGION_ID && !_frames.at(file_id)->IsCursorSet()) {
                 return data_sent; // do not send profile unless frontend set cursor
             }
-            _frames.at(file_id)->IncreaseZProfileCount();
+            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             bool profile_ok = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
                     if (profile_data.profiles_size() > 0) { // update needed (not for new channel)
@@ -822,7 +835,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool channel_c
                     }
                 },
                 region_id, channel_changed, stokes_changed);
-            _frames.at(file_id)->DecreaseZProfileCount();
+            _frames.at(file_id)->DecreaseZProfileCount(region_id);
             if (profile_ok) {
                 data_sent = true;
             }
@@ -876,7 +889,7 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
         std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
         for (auto region_id : regions) {
             // CHECK FOR CANCEL HERE ??
-            _frames.at(file_id)->IncreaseZProfileCount();
+            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             SendRegionStatsData(file_id, region_id);
             SendSpatialProfileData(file_id, region_id, stokes_changed);
             if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
@@ -885,7 +898,7 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
                 SendRegionHistogramData(file_id, region_id, channel_changed);
             }
             SendSpectralProfileData(file_id, region_id, channel_changed, stokes_changed);
-            _frames.at(file_id)->DecreaseZProfileCount();
+            _frames.at(file_id)->DecreaseZProfileCount(region_id);
         }
     }
 }
