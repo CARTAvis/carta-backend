@@ -256,9 +256,9 @@ bool Region::CartaPointToWorld(const CARTA::Point& point, casacore::Vector<casac
     if (_coord_sys.toWorld(world_coords, pixel_coords)) {
         casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
         world_point.resize(2);
-	world_point(0) = casacore::Quantity(world_coords(0), world_units(0));
-	world_point(1) = casacore::Quantity(world_coords(1), world_units(1));
-	converted = true;
+        world_point(0) = casacore::Quantity(world_coords(0), world_units(0));
+        world_point(1) = casacore::Quantity(world_coords(1), world_units(1));
+        converted = true;
     }
     return converted;
 }
@@ -285,7 +285,7 @@ bool Region::XyPixelsToWorld(casacore::Vector<casacore::Double> x_pixel, casacor
         x_world.setUnit(world_units(0));
         y_world = world_coords.row(1);
         y_world.setUnit(world_units(1));
-	converted = true;
+        converted = true;
     }
     return converted;
 }
@@ -432,7 +432,7 @@ casacore::WCRegion* Region::MakePointRegion(const std::vector<CARTA::Point>& poi
     casacore::WCBox* box(nullptr);
     if (points.size() == 1) {
         // Convert point pixel coordinates to world coordinates;
-	// This point will be blc and trc for WCBox
+        // This point will be blc and trc for WCBox
         casacore::Vector<casacore::Quantity> world_point;
         if (!CartaPointToWorld(points[0], world_point)) {
             return box; // nullptr, conversion failed
@@ -522,17 +522,17 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
 
         // Make Quantities for ellipsoid radii (point 1); major axis > minor axis.
         // rotation is in degrees from y-axis, ellipse rotation angle is in radians from x-axis;
-	// adjust by 90 degrees unless swapped maj/min axes
+        // adjust by 90 degrees unless swapped maj/min axes
         float bmaj(points[1].x()), bmin(points[1].y()), rotation_degrees;
-	casacore::Quantity major_axis, minor_axis;
-	if (bmaj > bmin) {
+        casacore::Quantity major_axis, minor_axis;
+        if (bmaj > bmin) {
             major_axis = casacore::Quantity(bmaj , "pix");
             minor_axis = casacore::Quantity(bmin , "pix");
-	    rotation_degrees = rotation + 90.0;
+            rotation_degrees = rotation + 90.0;
         } else {
             major_axis = casacore::Quantity(bmin , "pix");
             minor_axis = casacore::Quantity(bmaj , "pix");
-	    rotation_degrees = rotation;
+            rotation_degrees = rotation;
         }
         casacore::Quantity theta = casacore::Quantity(rotation_degrees * (M_PI / 180.0f), "rad");
 
@@ -766,8 +766,8 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                     if (CartaPointToWorld(_control_points[0], world_point)) { // will use pixel coords if conversion fails
                         cx = world_point[0];
                         cy = world_point[1];
-		        xwidth = _coord_sys.toWorldLength(_control_points[1].x(), 0);  // pixel axis 0
-		        ywidth = _coord_sys.toWorldLength(_control_points[1].y(), 1);  // pixel axis 1
+                        xwidth = _coord_sys.toWorldLength(_control_points[1].x(), 0);  // pixel axis 0
+                        ywidth = _coord_sys.toWorldLength(_control_points[1].y(), 1);  // pixel axis 1
                     }
                 }
                 if (_rotation == 0.0) {
@@ -799,7 +799,7 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                         casacore::Unit x_unit(x_world.getUnit());
                         casacore::Vector<casacore::Double> y_values(y_world.getValue());
                         casacore::Unit y_unit(y_world.getUnit());
-			for (size_t i = 0; i < x_values.size(); ++i) {
+                        for (size_t i = 0; i < x_values.size(); ++i) {
                             x_coords(i) = casacore::Quantity(x_values[i], x_unit);
                             y_coords(i) = casacore::Quantity(y_values[i], y_unit);
                         }
@@ -819,8 +819,8 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                     if (CartaPointToWorld(_control_points[0], world_point)) { // will use pixel coords if conversion fails
                         cx = world_point[0];
                         cy = world_point[1];
-		        bmaj = _coord_sys.toWorldLength(_control_points[1].x(), 0);  // pixel axis 0
-		        bmin = _coord_sys.toWorldLength(_control_points[1].y(), 1);  // pixel axis 1
+                        bmaj = _coord_sys.toWorldLength(_control_points[1].x(), 0);  // pixel axis 0
+                        bmin = _coord_sys.toWorldLength(_control_points[1].y(), 1);  // pixel axis 1
                     }
                 }
                 casacore::Quantity position_angle(_rotation, "deg");
