@@ -159,7 +159,7 @@ private:
         const std::function<void(std::vector<float>, float)>& partial_results_callback);
     // get region stats data
     bool GetRegionSpectralData(int region_id, int profile_index, int profile_stokes,
-        const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback);
+        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
 
     // Functions used to set cursor and region states
     void SetConnectionFlag(bool connected);

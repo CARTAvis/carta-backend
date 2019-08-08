@@ -834,7 +834,7 @@ std::string Region::GetSpectralCoordinate(int profile_index) {
 }
 
 bool Region::GetSpectralProfileData(
-    std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image) {
+    std::map<CARTA::StatsType, std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image) {
     // Get SpectralProfile with statistics values to load according to config stored in RegionProfiler
     bool have_stats(false);
     std::vector<int> required_stats;
@@ -889,32 +889,6 @@ void Region::FillSpectralProfileData(
     }
 }
 
-// TODO: This function can be replaced by the upper one and removed in the future.
-void Region::FillSpectralProfileData(
-    CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values) {
-    // Fill SpectralProfile with statistics values according to config stored in RegionProfiler
-    std::vector<int> required_stats;
-    if (GetSpectralStatsToLoad(profile_index, required_stats)) {
-        std::string profile_coord(GetSpectralCoordinate(profile_index));
-        for (size_t i = 0; i < required_stats.size(); ++i) {
-            // one SpectralProfile per stats type
-            auto new_profile = profile_data.add_profiles();
-            new_profile->set_coordinate(profile_coord);
-            auto stat_type = static_cast<CARTA::StatsType>(required_stats[i]);
-            new_profile->set_stats_type(stat_type);
-            if (stats_values[i].empty()) { // region outside image or NaNs
-                double nan_value = std::numeric_limits<double>::quiet_NaN();
-                new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
-            } else {
-                new_profile->set_raw_values_fp64(stats_values[i].data(), stats_values[i].size() * sizeof(double));
-            }
-            if (profile_data.progress() == PROFILE_COMPLETE) {
-                SetSpectralProfileStatSent(profile_index, stat_type, true);
-            }
-        }
-    }
-}
-
 void Region::FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index) {
     // Fill spectral profile with NaN statistics values according to config stored in RegionProfiler
     std::vector<int> required_stats;
@@ -934,15 +908,15 @@ void Region::FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data
     }
 }
 
-bool Region::InitStatsData(int profile_index, size_t profile_size, std::vector<std::vector<double>>& stats_data) {
+bool Region::InitStatsData(int profile_index, size_t profile_size, std::map<CARTA::StatsType, std::vector<double>>& stats_data) {
     bool data_ok(false);
-    int stats_size = NumStatsToLoad(profile_index);
-    if (stats_size > 0) {
-        std::vector<std::vector<double>> results(stats_size);
-        for (int i = 0; i < stats_size; ++i) {
-            results[i].resize(profile_size, std::numeric_limits<double>::quiet_NaN());
+    std::vector<int> required_stats;
+    if (GetSpectralStatsToLoad(profile_index, required_stats)) {
+        for (size_t i = 0; i < required_stats.size(); ++i) {
+            auto stats_type = static_cast<CARTA::StatsType>(required_stats[i]);
+            std::vector<double> init_stats_data(profile_size, std::numeric_limits<double>::quiet_NaN());
+            stats_data.emplace(stats_type, init_stats_data);
         }
-        stats_data = std::move(results);
         data_ok = true;
     }
     return data_ok;

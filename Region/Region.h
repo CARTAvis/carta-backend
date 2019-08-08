@@ -96,12 +96,11 @@ public:
     int GetSpectralConfigStokes(int profile_index);
     bool GetSpectralConfigStats(int profile_index, ZProfileWidget& stats);
     bool IsValidSpectralConfigStats(const ZProfileWidget& stats);
-    bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
+    bool GetSpectralProfileData(
+        std::map<CARTA::StatsType, std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
     void FillPointSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
     void FillSpectralProfileData(
         CARTA::SpectralProfileData& profile_data, int profile_index, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    void FillSpectralProfileData(
-        CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values);
     void FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index);
 
     // Stats: pass through to RegionStats
@@ -115,7 +114,7 @@ public:
     RegionState GetRegionState();
 
     // Initialize the stats data
-    bool InitStatsData(int profile_index, size_t profile_size, std::vector<std::vector<double>>& stats_data);
+    bool InitStatsData(int profile_index, size_t profile_size, std::map<CARTA::StatsType, std::vector<double>>& stats_data);
 
     // Communication
     bool IsConnected();

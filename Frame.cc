@@ -999,7 +999,7 @@ bool Frame::FillSpectralProfileData(
                     } else {
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         profile_ok = GetRegionSpectralData(
-                            region_id, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
+                            region_id, i, profile_stokes, [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
                                 profile_data.set_progress(progress);
@@ -1307,7 +1307,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
 }
 
 bool Frame::GetRegionSpectralData(int region_id, int profile_index, int profile_stokes,
-    const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback) {
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
     bool data_ok(false);
     auto& region = _regions[region_id];
 
@@ -1318,7 +1318,7 @@ bool Frame::GetRegionSpectralData(int region_id, int profile_index, int profile_
     }
 
     // initialize the stats data
-    std::vector<std::vector<double>> results;
+    std::map<CARTA::StatsType, std::vector<double>> results;
     size_t profile_size = NumChannels(); // total number of channels
     if (!region->InitStatsData(profile_index, profile_size, results)) {
         return data_ok;
@@ -1331,7 +1331,6 @@ bool Frame::GetRegionSpectralData(int region_id, int profile_index, int profile_
     size_t start = 0;
     size_t count, end;
     float progress = 0;
-    int stats_size = results.size();
     casacore::SubImage<float> sub_image;
     int delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
     int dt_target = TARGET_DELTA_TIME;       // the target time elapse for each step, in the unit of milliseconds
@@ -1352,10 +1351,14 @@ bool Frame::GetRegionSpectralData(int region_id, int profile_index, int profile_
 
         // try to get sub-image and its stats data
         if (GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange(start, end))) {
-            std::vector<std::vector<double>> buffer;
-            if (region->GetSpectralProfileData(buffer, profile_index, sub_image)) {
-                for (int j = 0; j < stats_size; ++j) {
-                    memcpy(&results[j][start], &buffer[j][0], buffer[j].size() * sizeof(double));
+            std::map<CARTA::StatsType, std::vector<double>> buffers;
+            if (region->GetSpectralProfileData(buffers, profile_index, sub_image)) {
+                for (const auto& buffer : buffers) {
+                    auto stats_type = buffer.first;
+                    if (results.count(stats_type)) {
+                        const std::vector<double>& stats_data = buffer.second;
+                        memcpy(&results[stats_type][start], &stats_data[0], stats_data.size() * sizeof(double));
+                    }
                 }
             } else {
                 std::cerr << "Can not get zprofile (statistics), region id: " << region_id << ", channel range: [" << start << "," << end
