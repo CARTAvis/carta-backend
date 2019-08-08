@@ -41,6 +41,7 @@ set(LINK_LIBS
         casa_measures
         casa_mirlib
         casa_scimath
+	imageanalysis
         jsoncpp
         ${HDF5_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
