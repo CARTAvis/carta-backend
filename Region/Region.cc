@@ -489,7 +489,9 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_
 
     // Return 2D wcregion extended by chan, stokes; xyregion if 2D
     if (_num_dims == 2) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         return current_xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
+        guard.unlock();
     }
 
     casacore::WCExtension* region(nullptr);
@@ -544,7 +546,9 @@ std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> Region::XyMask() {
 
     if (current_xy_region) {
         // get extended region (or original region for points)
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         auto lc_region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
+        guard.unlock();
 
         // get original region
         switch (_type) {
