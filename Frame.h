@@ -63,7 +63,7 @@ public:
     void RemoveRegion(int region_id);
     void ImportRegionFile(CARTA::FileType file_type, std::string& filename, CARTA::ImportRegionAck& import_ack);
     void ImportRegionContents(CARTA::FileType file_type, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack);
-    void ExportRegion(CARTA::FileType file_type, CARTA::CoordinateTYpe coord_type, std::vector<int>& region_ids, std::string& filename,
+    void ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename,
         CARTA::ExportRegionAck& export_ack);
 
     // image view, channels
@@ -130,7 +130,8 @@ private:
     // Region import/export helpers
     bool ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
         CARTA::ImportRegionAck& import_ack, std::string message);
-    void ExportCrtfRegion(std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
+    void ExportCrtfRegion(
+        std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Image view settings
     void SetViewSettings(

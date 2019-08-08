@@ -70,7 +70,7 @@ public:
     inline bool XyRegionValid() {
         return bool(_xy_region);
     };
-    casacore::CountedPtr<const casa::AnnotationBase> AnnotationRegion();
+    casacore::CountedPtr<const casa::AnnotationBase> AnnotationRegion(bool pixel_coord = true);
 
     // get image region for requested stokes and (optionally) single channel
     bool GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange channel_range = {0, ALL_CHANNELS});
@@ -146,8 +146,11 @@ private:
     bool CheckPolygonPoints(const std::vector<CARTA::Point>& points);
     bool PointsChanged(const std::vector<CARTA::Point>& new_points); // compare new points with stored points
 
-    // convert world->pixel lengths for region import of ellipse
+    // conversion between world and pixel coordinates
     double AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis);
+    bool CartaPointToWorld(const CARTA::Point& point, casacore::Vector<casacore::Quantity>& world_point);
+    bool XyPixelsToWorld(casacore::Vector<casacore::Double> x, casacore::Vector<casacore::Double> y,
+        casacore::Quantum<casacore::Vector<casacore::Double>>& x_world, casacore::Quantum<casacore::Vector<casacore::Double>>& y_world);
 
     // For region export, need stokes types from coordinate system
     casacore::Vector<casacore::Stokes::StokesTypes> GetCoordSysStokesTypes();

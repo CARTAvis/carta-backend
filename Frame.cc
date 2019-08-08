@@ -416,8 +416,8 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     }
 }
 
-void Frame::ExportCrtfRegion(std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename,
-    CARTA::ExportRegionAck& export_ack) {
+void Frame::ExportCrtfRegion(
+    std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
     // Create RegionTextList for all requested regions and export to file or put in ack contents[]
     std::string message;
     const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
