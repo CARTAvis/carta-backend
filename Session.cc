@@ -522,6 +522,7 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
         try {
             CARTA::ExportRegionAck export_ack; // response
             CARTA::FileType file_type(message.type());
+            CARTA::CoordinateType coord_type(message.coord_type());
             std::string directory(message.directory()), filename(message.file());
             std::vector<int> region_ids = {message.region_id().begin(), message.region_id().end()};
             std::string abs_filename;
@@ -532,7 +533,7 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
                 root_path.append(filename);
                 abs_filename = root_path.absoluteName();
             }
-            _frames.at(file_id)->ExportRegion(file_type, region_ids, abs_filename, export_ack);
+            _frames.at(file_id)->ExportRegion(file_type, coord_type, region_ids, abs_filename, export_ack);
             SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
         } catch (std::out_of_range& range_error) {
             string error = fmt::format("File id {} closed", file_id);

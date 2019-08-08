@@ -63,7 +63,8 @@ public:
     void RemoveRegion(int region_id);
     void ImportRegionFile(CARTA::FileType file_type, std::string& filename, CARTA::ImportRegionAck& import_ack);
     void ImportRegionContents(CARTA::FileType file_type, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack);
-    void ExportRegion(CARTA::FileType file_type, std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
+    void ExportRegion(CARTA::FileType file_type, CARTA::CoordinateTYpe coord_type, std::vector<int>& region_ids, std::string& filename,
+        CARTA::ExportRegionAck& export_ack);
 
     // image view, channels
     bool SetImageView(

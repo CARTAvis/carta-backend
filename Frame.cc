@@ -376,8 +376,8 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
     return region_set;
 }
 
-void Frame::ExportRegion(
-    CARTA::FileType file_type, std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack) {
+void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename,
+    CARTA::ExportRegionAck& export_ack) {
     // Export regions to file with filename; if no filename, add contents to ack message for client-side export.
     // Check if regions to export
     if (region_ids.empty()) {
@@ -404,7 +404,7 @@ void Frame::ExportRegion(
     // export according to type
     switch (file_type) {
         case CARTA::FileType::CRTF: {
-            ExportCrtfRegion(region_ids, filename, export_ack);
+            ExportCrtfRegion(region_ids, coord_type, filename, export_ack);
             break;
         }
         case CARTA::FileType::REG:
@@ -416,7 +416,8 @@ void Frame::ExportRegion(
     }
 }
 
-void Frame::ExportCrtfRegion(std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack) {
+void Frame::ExportCrtfRegion(std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename,
+    CARTA::ExportRegionAck& export_ack) {
     // Create RegionTextList for all requested regions and export to file or put in ack contents[]
     std::string message;
     const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
@@ -427,7 +428,8 @@ void Frame::ExportCrtfRegion(std::vector<int>& region_ids, std::string& filename
         if (_regions.count(region_id)) {
             auto& region = _regions[region_id];
             if (region->IsValid()) {
-                casacore::CountedPtr<const casa::AnnotationBase> annotation_region = region->AnnotationRegion();
+                bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+                casacore::CountedPtr<const casa::AnnotationBase> annotation_region = region->AnnotationRegion(pixel_coord);
                 if (annotation_region.null()) {
                     message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
                 } else {
