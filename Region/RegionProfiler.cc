@@ -153,7 +153,7 @@ bool RegionProfiler::SetSpectralRequirements(
     }
     bool valid(false);
     _spectral_profiles = new_profiles;
-    if (configs.size() == _spectral_profiles.size()) {
+    if (configs.size() == NumSpectralProfiles()) {
         // Determine diff for required data streams
         DiffSpectralRequirements(last_profiles);
         valid = true;
@@ -185,7 +185,7 @@ size_t RegionProfiler::NumSpectralProfiles() {
 
 int RegionProfiler::NumStatsToLoad(int profile_index) {
     int num_unsent(0);
-    if (profile_index < _spectral_profiles.size()) {
+    if (profile_index < NumSpectralProfiles()) {
         SpectralProfile profile = _spectral_profiles[profile_index];
         for (auto sent : profile.profiles_sent) {
             if (!sent) {
@@ -198,14 +198,14 @@ int RegionProfiler::NumStatsToLoad(int profile_index) {
 
 int RegionProfiler::GetSpectralConfigStokes(int profile_index) {
     // return Stokes int value at given index; return false if index out of range
-    if (profile_index < _spectral_profiles.size()) {
+    if (profile_index < NumSpectralProfiles()) {
         return _spectral_profiles[profile_index].stokes_index;
     }
     return CURRENT_STOKES - 1; // invalid
 }
 
 std::string RegionProfiler::GetSpectralCoordinate(int profile_index) {
-    if (profile_index < _spectral_profiles.size()) {
+    if (profile_index < NumSpectralProfiles()) {
         return _spectral_profiles[profile_index].coordinate;
     } else {
         return std::string();
@@ -214,7 +214,7 @@ std::string RegionProfiler::GetSpectralCoordinate(int profile_index) {
 
 bool RegionProfiler::GetSpectralConfigStats(int profile_index, ZProfileWidget& stats) {
     // return stats_types at given index; return false if index out of range
-    if (profile_index < _spectral_profiles.size()) {
+    if (profile_index < NumSpectralProfiles()) {
         stats = ZProfileWidget(_spectral_profiles[profile_index].stokes_index, _spectral_profiles[profile_index].stats_types);
         return true;
     }
@@ -222,7 +222,8 @@ bool RegionProfiler::GetSpectralConfigStats(int profile_index, ZProfileWidget& s
 }
 
 bool RegionProfiler::IsValidSpectralConfigStats(const ZProfileWidget& stats) {
-    if (_spectral_profiles.size() > 0) {
+    // (NumSpectralProfiles() == 0) means the region id is removed from the frontend zprofile widgets
+    if (NumSpectralProfiles() > 0) {
         for (const auto& spectral_profile : _spectral_profiles) {
             if (stats.stokes_index == spectral_profile.stokes_index) {
                 if (stats.stats_types == spectral_profile.stats_types) {
@@ -236,7 +237,7 @@ bool RegionProfiler::IsValidSpectralConfigStats(const ZProfileWidget& stats) {
 
 bool RegionProfiler::GetSpectralStatsToLoad(int profile_index, std::vector<int>& stats) {
     // Return vector of stats that were not sent
-    if (profile_index < _spectral_profiles.size()) {
+    if (profile_index < NumSpectralProfiles()) {
         stats.clear();
         for (size_t i = 0; i < _spectral_profiles[profile_index].profiles_sent.size(); ++i) {
             if (!_spectral_profiles[profile_index].profiles_sent[i]) {
@@ -250,7 +251,7 @@ bool RegionProfiler::GetSpectralStatsToLoad(int profile_index, std::vector<int>&
 
 bool RegionProfiler::GetSpectralProfileStatSent(int profile_index, int stats_type) {
     bool stat_sent(false);
-    if (profile_index < _spectral_profiles.size()) {
+    if (profile_index < NumSpectralProfiles()) {
         SpectralProfile profile = _spectral_profiles[profile_index];
         for (size_t i = 0; i < profile.stats_types.size(); ++i) {
             if (profile.stats_types[i] == stats_type) {
@@ -263,7 +264,7 @@ bool RegionProfiler::GetSpectralProfileStatSent(int profile_index, int stats_typ
 }
 
 void RegionProfiler::SetSpectralProfileStatSent(int profile_index, int stats_type, bool sent) {
-    if (profile_index < _spectral_profiles.size()) {
+    if (profile_index < NumSpectralProfiles()) {
         for (size_t i = 0; i < _spectral_profiles[profile_index].stats_types.size(); ++i) {
             if (_spectral_profiles[profile_index].stats_types[i] == stats_type) {
                 _spectral_profiles[profile_index].profiles_sent[i] = sent;
@@ -274,7 +275,7 @@ void RegionProfiler::SetSpectralProfileStatSent(int profile_index, int stats_typ
 }
 
 void RegionProfiler::SetSpectralProfileAllStatsSent(int profile_index, bool sent) {
-    if (profile_index < _spectral_profiles.size()) {
+    if (profile_index < NumSpectralProfiles()) {
         for (size_t i = 0; i < _spectral_profiles[profile_index].profiles_sent.size(); ++i) {
             _spectral_profiles[profile_index].profiles_sent[i] = sent;
         }
@@ -282,7 +283,7 @@ void RegionProfiler::SetSpectralProfileAllStatsSent(int profile_index, bool sent
 }
 
 void RegionProfiler::SetAllSpectralProfilesUnsent() {
-    for (size_t i = 0; i < _spectral_profiles.size(); ++i) {
+    for (size_t i = 0; i < NumSpectralProfiles(); ++i) {
         for (size_t j = 0; j < _spectral_profiles[i].profiles_sent.size(); ++j) {
             _spectral_profiles[i].profiles_sent[j] = false;
         }
