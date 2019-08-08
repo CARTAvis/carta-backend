@@ -639,7 +639,9 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_
 
     // Return 2D wcregion extended by chan, stokes; xyregion if 2D
     if (_num_dims == 2) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         return current_xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
+        guard.unlock();
     }
 
     casacore::WCExtension* region(nullptr);
@@ -667,7 +669,9 @@ casacore::IPosition Region::XyShape() {
     std::shared_ptr<const casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_shape;
     if (current_xy_region) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         casacore::LCRegion* region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
+        guard.unlock();
         if (region != nullptr)
             xy_shape = region->shape().keepAxes(_xy_axes);
     }
@@ -679,7 +683,9 @@ casacore::IPosition Region::XyOrigin() {
     std::shared_ptr<const casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_origin;
     if (current_xy_region) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         auto extended_region = static_cast<casacore::LCExtension*>(current_xy_region->toLCRegion(_coord_sys, _image_shape));
+        guard.unlock();
         if (extended_region != nullptr)
             xy_origin = extended_region->region().expand(casacore::IPosition(2, 0, 0));
     }
@@ -693,7 +699,9 @@ std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> Region::XyMask() {
 
     if (current_xy_region) {
         // get extended region (or original region for points)
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         auto lc_region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
+        guard.unlock();
 
         // get original region
         switch (_type) {
