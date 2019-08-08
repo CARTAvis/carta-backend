@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <casacore/images/Images/ImageInterface.h>
+
 #include <carta-protobuf/defs.pb.h>                // Histogram, StatisticsValue
 #include <carta-protobuf/region_requirements.pb.h> // HistogramConfig
 #include <carta-protobuf/region_stats.pb.h>        // RegionStatsData
