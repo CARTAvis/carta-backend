@@ -144,7 +144,9 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
             region->SetAllProfilesUnsent(); // force new profiles for new region settings
         }
     } else { // map new Region to region id
-        const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+        std::unique_lock<std::mutex> guard(_coord_sys_copy_mutex);
+        const casacore::CoordinateSystem coord_sys(_loader->LoadData(FileInfo::Data::Image)->coordinates());
+        guard.unlock();
         auto region = std::unique_ptr<carta::Region>(
             new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
         if (region->IsValid()) {

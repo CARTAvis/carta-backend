@@ -202,6 +202,7 @@ private:
     // Region
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID
     bool _cursor_set;                                                 // cursor region set by frontend, not internally
+    std::mutex _coord_sys_copy_mutex;                                          // coordinate system is not threadsafe but shared between regions
 
     // Communication
     volatile bool _connected = true;
