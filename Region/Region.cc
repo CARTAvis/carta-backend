@@ -831,6 +831,9 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                 break;
         }
     }
+    if (ann_region != nullptr) {
+        ann_region->setAnnotationOnly(false);
+    }
     casacore::CountedPtr<const casa::AnnotationBase> annotation_region = casacore::CountedPtr<const casa::AnnotationBase>(ann_region);
     return annotation_region;
 }
