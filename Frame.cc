@@ -436,10 +436,6 @@ bool Frame::SetRegionSpectralRequirements(int region_id, const std::vector<CARTA
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         region_ok = region->SetSpectralRequirements(profiles, NumStokes());
-        // set the current requested region id
-        if (profiles.size() > 0) {
-            SetRegionId(region_id);
-        }
     }
     return region_ok;
 }
@@ -1402,10 +1398,6 @@ bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cu
         std::cerr << "Closing image/region, exit zprofile before complete" << std::endl;
         return interrupt;
     }
-    if (!IsSameRegionId(region_id)) {
-        std::cerr << "[Region " << region_id << "] region changed, exit zprofile (statistics) before complete" << std::endl;
-        return interrupt;
-    }
     if (!(cursor1 == cursor2)) {
         std::cerr << "Cursor/Point changed, exit zprofile before complete" << std::endl;
         return interrupt;
@@ -1420,10 +1412,6 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
         std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
-    if (!IsSameRegionId(region_id)) {
-        std::cerr << "[Region " << region_id << "] region changed, exit zprofile (statistics) before complete" << std::endl;
-        return interrupt;
-    }
     if (!IsSameRegionState(region_id, region_state)) {
         std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
@@ -1436,10 +1424,6 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state, const ZPro
     bool interrupt(true);
     if (!IsConnected(region_id)) {
         std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
-        return interrupt;
-    }
-    if (!IsSameRegionId(region_id)) {
-        std::cerr << "[Region " << region_id << "] region changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
     if (!IsSameRegionState(region_id, region_state)) {
@@ -1459,10 +1443,6 @@ bool Frame::IsConnected(int region_id) {
         return (_connected && _regions[region_id]->IsConnected());
     }
     return _connected;
-}
-
-bool Frame::IsSameRegionId(int region_id) {
-    return (_region_id == region_id);
 }
 
 bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
@@ -1488,10 +1468,6 @@ void Frame::SetConnectionFlag(bool connected) {
 
 void Frame::SetCursorXy(float x, float y) {
     _cursor_xy = CursorXy(x, y);
-}
-
-void Frame::SetRegionId(int region_id) {
-    _region_id = region_id;
 }
 
 RegionState Frame::GetRegionState(int region_id) {
