@@ -1,0 +1,11 @@
+[Unit]
+Description=Runs the CARTA backend on port 3002
+
+[Service]
+Environment=EF_ALLOW_MALLOC_0=1
+User=ubuntu
+ExecStart=/usr/local/bin/carta_backend -port 3002 -root /home/ubuntu/data -base /home/ubuntu/data
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
