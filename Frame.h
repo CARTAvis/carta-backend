@@ -113,7 +113,7 @@ public:
     // Interrupt conditions
     bool Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2); // cursor and point regions
     bool Interrupt(int region_id, const RegionState& region_state);
-    bool Interrupt(int region_id, const RegionState& region_state, const ZProfileWidget& config_stats);
+    bool Interrupt(int region_id, int profile_stokes, const RegionState& region_state, const ZProfileWidget& config_stats);
 
 private:
     // Internal regions: image, cursor
@@ -168,7 +168,7 @@ private:
     // Functions used to check cursor and region states
     bool IsConnected(int region_id);
     bool IsSameRegionState(int region_id, const RegionState& region_state);
-    bool IsSameRegionSpectralConfig(int region_id, const ZProfileWidget& config_stats);
+    bool IsSameRegionSpectralConfig(int region_id, int profile_stokes, const ZProfileWidget& config_stats);
 
     // setup
     uint32_t _session_id;

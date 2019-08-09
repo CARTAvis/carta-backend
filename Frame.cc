@@ -1342,7 +1342,7 @@ bool Frame::GetRegionSpectralData(int region_id, int profile_index, int profile_
         auto t_start = std::chrono::high_resolution_clock::now();
 
         // check if frontend's requirements changed
-        if (Interrupt(region_id, region_state, config_stats)) {
+        if (Interrupt(region_id, profile_stokes, region_state, config_stats)) {
             return data_ok;
         }
 
@@ -1423,7 +1423,7 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
     return interrupt;
 }
 
-bool Frame::Interrupt(int region_id, const RegionState& region_state, const ZProfileWidget& config_stats) {
+bool Frame::Interrupt(int region_id, int profile_stokes, const RegionState& region_state, const ZProfileWidget& config_stats) {
     bool interrupt(true);
     if (!IsConnected(region_id)) {
         std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
@@ -1433,7 +1433,7 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state, const ZPro
         std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
-    if (!IsSameRegionSpectralConfig(region_id, config_stats)) {
+    if (!IsSameRegionSpectralConfig(region_id, profile_stokes, config_stats)) {
         std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
@@ -1455,7 +1455,14 @@ bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
     return false;
 }
 
-bool Frame::IsSameRegionSpectralConfig(int region_id, const ZProfileWidget& config_stats) {
+bool Frame::IsSameRegionSpectralConfig(int region_id, int profile_stokes, const ZProfileWidget& config_stats) {
+    // if the stoke index on the zprofile widget is "Current"
+    if (config_stats.stokes_index == -1) {
+        // check is the stoke index on the Frame changed
+        if (profile_stokes != CurrentStokes()) {
+            return false;
+        }
+    }
     if (_regions.count(region_id)) {
         // check are the settings of zprofile widgets changed
         if (_regions[region_id]->IsValidSpectralConfigStats(config_stats)) {
