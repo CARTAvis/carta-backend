@@ -85,3 +85,6 @@ if(test)
 
   add_test(NAME TestTileEncoding COMMAND testTileEncoding)
 endif(test)
+
+# Install executable
+install(TARGETS carta_backend DESTINATION bin)
