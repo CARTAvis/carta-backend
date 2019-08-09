@@ -53,7 +53,7 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
 }
 
 Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, const casacore::IPosition image_shape, int spectral_axis,
-    int stokes_axis, const casacore::CoordinateSystem& coord_sys)
+    int stokes_axis, const casacore::CoordinateSystem& coord_sys, std::string& global_coord)
     : _rotation(0.0),
       _valid(false),
       _image_shape(image_shape),
@@ -75,7 +75,7 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                 const casa::AnnPolygon* polygon = static_cast<const casa::AnnPolygon*>(annotation_region.get());
                 if (polygon != nullptr) {
                     std::atomic_store(&_xy_region, polygon->getRegion2());
-                    // get polygon vertices for control points, determine blc and trc
+                    // get polygon vertices for control points
                     std::vector<casacore::Double> x, y;
                     polygon->pixelVertices(x, y);
                     double xmin = *std::min_element(x.begin(), x.end());
@@ -104,7 +104,55 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                 }
                 break;
             }
-            case casa::AnnotationBase::ROTATED_BOX: // rotation angle lost when converted to polygon
+            case casa::AnnotationBase::ROTATED_BOX: {
+                _type = CARTA::RegionType::RECTANGLE;
+                // cannot get original rectangle and rotation from AnnRotBox, it is a polygon
+                const casa::AnnRotBox* rotbox = static_cast<const casa::AnnRotBox*>(annotation_region.get());
+                if (rotbox != nullptr) {
+                    std::atomic_store(&_xy_region, rotbox->getRegion2());
+                    // Create center box to get region control points, then add rotation
+                    // parse printed string (known format) to get rotbox input params
+                    std::ostringstream rotbox_output;
+                    rotbox->print(rotbox_output);
+                    casacore::String outputstr(rotbox_output.str()); // "rotbox [[x, y], [x_width, y_width], rotang]"
+                    // create comma-delimited string of quantities
+                    casacore::String params(outputstr.after("rotbox ")); // remove rotbox
+                    params.gsub("[", ""); // remove [
+                    params.gsub("]", ""); // remove ]
+                    // split string into string vector
+                    std::vector<std::string> quantities;
+                    SplitString(params, ',', quantities);
+                    // convert strings to quantities (Quantum readQuantity)
+                    casacore::Quantity cx, cy, xwidth, ywidth, rotang;
+                    casacore::readQuantity(cx, quantities[0]);
+                    casacore::readQuantity(cy, quantities[1]);
+                    casacore::readQuantity(xwidth, quantities[2]);
+                    casacore::readQuantity(ywidth, quantities[3]);
+                    casacore::readQuantity(rotang, quantities[4]);
+                    // make centerbox from quantities
+                    casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetCoordSysStokesTypes();
+                    casa::AnnCenterBox cbox = casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types);
+		    // get pixel vertices to calculate center point, pixel width/height
+                    std::vector<casacore::Double> x, y;
+                    cbox.pixelVertices(x, y);
+                    double xmin = *std::min_element(x.begin(), x.end());
+                    double xmax = *std::max_element(x.begin(), x.end());
+                    double ymin = *std::min_element(y.begin(), y.end());
+                    double ymax = *std::max_element(y.begin(), y.end());
+                    CARTA::Point point;
+                    point.set_x((xmin + xmax) / 2.0); // cx
+                    point.set_y((ymin + ymax) / 2.0); // cy
+                    _control_points.push_back(point);
+                    point.set_x(xmax - xmin); // width
+                    point.set_y(ymax - ymin); // height
+                    _control_points.push_back(point);
+                    // convert rotang to deg
+                    rotang.convert("deg");
+                    _rotation = rotang.getValue();
+                    _valid = true;
+                }
+                break;
+            }
             case casa::AnnotationBase::POLYGON: {
                 _type = CARTA::RegionType::POLYGON;
                 const casa::AnnPolygon* polygon = static_cast<const casa::AnnPolygon*>(annotation_region.get());
@@ -188,7 +236,15 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
     }
 }
 
-Region::~Region() {}
+void Region::SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
+    // util to split input string into parts by delimiter
+    parts.clear();
+    std::stringstream ss(input);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        parts.push_back(item);
+    }
+}
 
 // *************************************************************************
 // Region settings
