@@ -29,7 +29,8 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
       _spectral_axis(spectral_axis),
       _stokes_axis(stokes_axis),
       _xy_axes(casacore::IPosition(2, 0, 1)),
-      _coord_sys(coord_sys) {
+      _coord_sys(coord_sys),
+      _z_profile_count(0) {
     // validate and set region parameters
     _num_dims = image_shape.size();
     _valid = UpdateRegionParameters(name, type, points, rotation);
