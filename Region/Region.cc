@@ -63,7 +63,8 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
       _xy_axes(casacore::IPosition(2, 0, 1)),
       _xy_region(nullptr),
       _xy_mask(nullptr),
-      _coord_sys(coord_sys) {
+      _coord_sys(coord_sys),
+      _z_profile_count(0) {
     // Create region from imported annotation region
     _num_dims = image_shape.size();
     // set name, type, control points, rotation (default 0.0 already set), and xy region
