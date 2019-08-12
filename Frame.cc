@@ -957,15 +957,14 @@ bool Frame::FillSpectralProfileData(
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        profile_ok = GetPointSpectralData(
-                            spectral_data, region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
-                                CARTA::SpectralProfileData profile_data;
-                                profile_data.set_stokes(curr_stokes);
-                                profile_data.set_progress(progress);
-                                region->FillPointSpectralProfileData(profile_data, i, tmp_spectral_data);
-                                // send (partial) result to Session
-                                cb(profile_data);
-                            });
+                        profile_ok = GetPointSpectralData(region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
+                            CARTA::SpectralProfileData profile_data;
+                            profile_data.set_stokes(curr_stokes);
+                            profile_data.set_progress(progress);
+                            region->FillPointSpectralProfileData(profile_data, i, tmp_spectral_data);
+                            // send (partial) result to Session
+                            cb(profile_data);
+                        });
                         guard.unlock();
                     }
                 } else { // statistics
@@ -1224,11 +1223,12 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor
     return result;
 }
 
-bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
-    const std::function<void(std::vector<float>, float)>& partial_results_callback) {
+bool Frame::GetPointSpectralData(
+    int region_id, casacore::SubImage<float>& sub_image, const std::function<void(std::vector<float>, float)>& partial_results_callback) {
     // slice image data for point region (including cursor)
     bool data_ok(false);
     casacore::IPosition sub_image_shape = sub_image.shape();
+    std::vector<float> data;
     data.resize(sub_image_shape.product(), std::numeric_limits<double>::quiet_NaN());
     if ((sub_image_shape.size() > 2) && (_spectral_axis >= 0)) { // stoppable spectral profile process
         try {
