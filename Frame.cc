@@ -399,11 +399,9 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     bool export_to_file(!filename.empty());
     if (export_to_file) {
         casacore::File export_file(filename);
-        bool exists(export_file.exists());
-        if (exists || !export_file.canCreate()) {
+        if (!export_file.canCreate()) {
             export_ack.set_success(false);
-            std::string message = (exists ? "Export region failed: file exists." : "Export region failed: cannot create file.");
-            export_ack.set_message(message);
+            export_ack.set_message("Export region failed: cannot create file.");
             export_ack.add_contents();
             return;
         }
