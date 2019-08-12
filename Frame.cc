@@ -1317,10 +1317,6 @@ bool Frame::GetRegionSpectralData(int region_id, int profile_index, int profile_
         return data_ok;
     }
 
-    if (!region->GetSpectralConfigStats(profile_index, config_stats)) { // stats in config, to see if req changed
-        return data_ok;
-    }
-
     // initialize the stats data
     std::map<CARTA::StatsType, std::vector<double>> results;
     size_t profile_size = NumChannels(); // total number of channels
