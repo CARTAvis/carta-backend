@@ -986,7 +986,7 @@ bool Frame::FillSpectralProfileData(
 
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        profile_ok = _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
+                        profile_ok = _loader->GetRegionSpectralData(region_id, i, profile_stokes, mask, region->XyOrigin(),
                             [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -1313,6 +1313,10 @@ bool Frame::GetRegionSpectralData(int region_id, int profile_index, int profile_
 
     // get statistical requirements for this process
     ZProfileWidget config_stats;
+    if (!GetRegionConfigs(region_id, profile_index, config_stats)) {
+        return data_ok;
+    }
+
     if (!region->GetSpectralConfigStats(profile_index, config_stats)) { // stats in config, to see if req changed
         return data_ok;
     }
@@ -1405,11 +1409,17 @@ bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cu
         std::cerr << "Cursor/Point changed, exit zprofile before complete" << std::endl;
         return interrupt;
     }
+    // check is the Cursor/Point shown on the frontend spectral widget
+    if (_regions.count(region_id) && _regions[region_id]->NumSpectralProfiles() == 0) {
+        std::cerr << "Cursor/Point requirement changed, exit zprofile before complete" << std::endl;
+        return interrupt;
+    }
     interrupt = false;
     return interrupt;
 }
 
-bool Frame::Interrupt(int region_id, const RegionState& region_state) {
+bool Frame::Interrupt(
+    int region_id, int profile_stokes, const RegionState& region_state, const ZProfileWidget& config_stats, bool is_HDF5) {
     bool interrupt(true);
     if (!IsConnected(region_id)) {
         std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
@@ -1419,21 +1429,7 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
         std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
-    interrupt = false;
-    return interrupt;
-}
-
-bool Frame::Interrupt(int region_id, int profile_stokes, const RegionState& region_state, const ZProfileWidget& config_stats) {
-    bool interrupt(true);
-    if (!IsConnected(region_id)) {
-        std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
-        return interrupt;
-    }
-    if (!IsSameRegionState(region_id, region_state)) {
-        std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
-        return interrupt;
-    }
-    if (!IsSameRegionSpectralConfig(region_id, profile_stokes, config_stats)) {
+    if (!IsSameRegionSpectralConfig(region_id, profile_stokes, config_stats, is_HDF5)) {
         std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
         return interrupt;
     }
@@ -1455,21 +1451,35 @@ bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
     return false;
 }
 
-bool Frame::IsSameRegionSpectralConfig(int region_id, int profile_stokes, const ZProfileWidget& config_stats) {
+bool Frame::IsSameRegionSpectralConfig(int region_id, int profile_stokes, const ZProfileWidget& config_stats, bool is_HDF5) {
+    bool is_same(false);
+
     // if the stoke index on the zprofile widget is "Current"
-    if (config_stats.stokes_index == -1) {
+    if (config_stats.stokes_index == CURRENT_STOKES) {
         // check is the stoke index on the Frame changed
         if (profile_stokes != CurrentStokes()) {
-            return false;
+            return is_same; // false
         }
     }
+
     if (_regions.count(region_id)) {
-        // check are the settings of zprofile widgets changed
-        if (_regions[region_id]->IsValidSpectralConfigStats(config_stats)) {
-            return true;
+        // check is the region id shown on the frontend spectral widget
+        if (_regions[region_id]->NumSpectralProfiles() == 0) {
+            return is_same; // false
         }
+        // for non-HDF5 images, there is an additional check
+        if (!is_HDF5) {
+            // check are the settings of zprofile widgets changed
+            if (!_regions[region_id]->IsValidSpectralConfigStats(config_stats)) {
+                return is_same; // false
+            }
+        }
+    } else {
+        return is_same; // false, since region object does not exist
     }
-    return false;
+
+    is_same = true;
+    return is_same;
 }
 
 void Frame::SetConnectionFlag(bool connected) {
@@ -1480,10 +1490,20 @@ void Frame::SetCursorXy(float x, float y) {
     _cursor_xy = CursorXy(x, y);
 }
 
-RegionState Frame::GetRegionState(int region_id) {
+bool Frame::GetRegionState(int region_id, RegionState& region_state) {
     if (_regions.count(region_id)) {
-        return _regions[region_id]->GetRegionState();
+        region_state = _regions[region_id]->GetRegionState();
+        return true;
     }
     std::cerr << "ERROR: region id " << region_id << " does not exist!" << std::endl;
-    return RegionState();
+    return false;
+}
+
+bool Frame::GetRegionConfigs(int region_id, int profile_index, ZProfileWidget& config_stats) {
+    if (_regions.count(region_id)) {
+        if (_regions[region_id]->GetSpectralConfigStats(profile_index, config_stats)) {
+            return true;
+        }
+    }
+    return false;
 }

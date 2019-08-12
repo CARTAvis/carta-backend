@@ -462,8 +462,9 @@ bool FileLoader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLatt
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask,
-    IPos origin, const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+bool FileLoader::GetRegionSpectralData(int region_id, int profile_index, int stokes,
+    const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin,
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     // Must be implemented in subclasses
     return false;
 }

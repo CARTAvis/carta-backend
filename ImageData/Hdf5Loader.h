@@ -22,7 +22,8 @@ public:
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
     bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
     bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask) override;
-    bool GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin,
+    bool GetRegionSpectralData(int region_id, int profile_index, int stokes,
+        const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     void SetFramePtr(Frame* frame) override;
 
@@ -328,8 +329,9 @@ bool Hdf5Loader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLatt
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask,
-    IPos origin, const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+bool Hdf5Loader::GetRegionSpectralData(int region_id, int profile_index, int stokes,
+    const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin,
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     if (!HasData(FileInfo::Data::SWIZZLED)) {
         return false;
     }
@@ -391,7 +393,17 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const std::sha
         }
 
         // get a copy of current region state
-        RegionState region_state = _frame->GetRegionState(region_id);
+        RegionState region_state;
+        if (!_frame->GetRegionState(region_id, region_state)) {
+            return false;
+        }
+
+        // get a copy of current region configs
+        ZProfileWidget config_stats;
+        if (!_frame->GetRegionConfigs(region_id, profile_index, config_stats)) {
+            return false;
+        }
+
         std::map<CARTA::StatsType, std::vector<double>>* stats_values;
         float progress;
 
@@ -432,7 +444,7 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const std::sha
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = x_start; x < num_x; x++) {
             // check if frontend's requirements changed
-            if (_frame != nullptr && _frame->Interrupt(region_id, region_state)) {
+            if (_frame != nullptr && _frame->Interrupt(region_id, stokes, region_state, config_stats, true)) {
                 // remember the latest x step
                 _region_stats[region_stats_id].latest_x = x;
                 return false;
