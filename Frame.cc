@@ -226,6 +226,7 @@ bool Frame::RegionChanged(int region_id) {
 
 void Frame::RemoveRegion(int region_id) {
     if (_regions.count(region_id)) {
+        _regions[region_id]->DisconnectCalled();
         _regions[region_id].reset();
         _regions.erase(region_id);
     }
@@ -920,14 +921,12 @@ bool Frame::FillSpectralProfileData(
                 }
 
                 // Return NaNs if the region is entirely outside the image
-                const casacore::ArrayLattice<casacore::Bool>* mask = nullptr;
-                std::unique_lock<std::mutex> guard(_image_mutex);
+                std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask;
                 try {
                     // check is the region mask valid (outside the lattice or not)
                     mask = region->XyMask();
                 } catch (casacore::AipsError& err) {
                 }
-                guard.unlock();
                 if (!mask) {
                     // if region mask not valid, send a NaN to the frontend
                     CARTA::SpectralProfileData profile_data;
@@ -956,11 +955,12 @@ bool Frame::FillSpectralProfileData(
                         region->FillPointSpectralProfileData(profile_data, i, spectral_data);
                         // send result to Session
                         cb(profile_data);
+                        profile_ok = true;
                     } else {
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        GetPointSpectralData(
+                        profile_ok = GetPointSpectralData(
                             spectral_data, region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -989,7 +989,7 @@ bool Frame::FillSpectralProfileData(
 
                     if (use_swizzled_data) {
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
+                        profile_ok = _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
                             [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -1002,7 +1002,7 @@ bool Frame::FillSpectralProfileData(
                     } else {
                         std::vector<std::vector<double>> stats_values;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSpectralData(
+                        profile_ok = GetRegionSpectralData(
                             stats_values, region_id, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
                                 CARTA::SpectralProfileData profile_data;
                                 profile_data.set_stokes(curr_stokes);
@@ -1016,7 +1016,6 @@ bool Frame::FillSpectralProfileData(
                 }
             }
         }
-        profile_ok = true;
     }
     return profile_ok;
 }
@@ -1252,7 +1251,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
                 // start the timer
                 auto t_start = std::chrono::high_resolution_clock::now();
                 // check if region point changed from subimage point
-                if ((region_id == CURSOR_REGION_ID) && (Interrupt(_cursor_xy, subimage_cursor))) {
+                if ((region_id == CURSOR_REGION_ID) && (Interrupt(region_id, _cursor_xy, subimage_cursor))) {
                     return false; // cursor moved
                 }
                 if (region_id > CURSOR_REGION_ID) {
@@ -1260,7 +1259,7 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
                         std::vector<CARTA::Point> region_points = _regions[region_id]->GetControlPoints();
                         // round the region cursor float values since subimage cursor comes from IPosition
                         CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y()));
-                        if (Interrupt(region_cursor, subimage_cursor)) { // point region moved
+                        if (Interrupt(region_id, region_cursor, subimage_cursor)) { // point region moved
                             return false;
                         }
                     } else { // region closed
@@ -1382,9 +1381,9 @@ bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values
     return true;
 }
 
-bool Frame::Interrupt(const CursorXy& cursor1, const CursorXy& cursor2) {
-    if (!IsConnected()) {
-        std::cerr << "Closing image, exit zprofile before complete" << std::endl;
+bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2) {
+    if (!IsConnected(region_id)) {
+        std::cerr << "Closing image/region, exit zprofile before complete" << std::endl;
         return true;
     }
     if (!(cursor1 == cursor2)) {
@@ -1395,8 +1394,8 @@ bool Frame::Interrupt(const CursorXy& cursor1, const CursorXy& cursor2) {
 }
 
 bool Frame::Interrupt(int region_id, const RegionState& region_state) {
-    if (!IsConnected()) {
-        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+    if (!IsConnected(region_id)) {
+        std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
         return true;
     }
     if (!IsSameRegionState(region_id, region_state)) {
@@ -1407,8 +1406,8 @@ bool Frame::Interrupt(int region_id, const RegionState& region_state) {
 }
 
 bool Frame::Interrupt(int region_id, int profile_index, const RegionState& region_state, const std::vector<int>& requested_stats) {
-    if (!IsConnected()) {
-        std::cerr << "[Region " << region_id << "] closing image, exit zprofile (statistics) before complete" << std::endl;
+    if (!IsConnected(region_id)) {
+        std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
         return true;
     }
     if (!IsSameRegionState(region_id, region_state)) {
@@ -1422,7 +1421,10 @@ bool Frame::Interrupt(int region_id, int profile_index, const RegionState& regio
     return false;
 }
 
-bool Frame::IsConnected() {
+bool Frame::IsConnected(int region_id) {
+    if (_regions.count(region_id)) {
+        return (_connected && _regions[region_id]->IsConnected());
+    }
     return _connected;
 }
 
