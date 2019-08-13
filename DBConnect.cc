@@ -14,44 +14,43 @@
 
 #include "Carta.h"
 
-
 void ConnectToMongoDB(void) {
-  mongoc_client_t *client;
-  mongoc_collection_t *collection;
-  mongoc_cursor_t *cursor;
-  const bson_t *doc;
-  bson_t *query;
-  char *str;
-  char user[50];
-  std::string start_string;
-  Json::Value json_config;
-  Json::Reader reader;
-  std::ostringstream stringStream;
+    mongoc_client_t* client;
+    mongoc_collection_t* collection;
+    mongoc_cursor_t* cursor;
+    const bson_t* doc;
+    bson_t* query;
+    char* str;
+    char user[50];
+    std::string start_string;
+    Json::Value json_config;
+    Json::Reader reader;
+    std::ostringstream stringStream;
 
-  mongoc_init();
+    mongoc_init();
 
-  cuserid(user);
+    cuserid(user);
 
-  stringStream << CARTA::mongo_db_contact_string << "?appname=carta_backend-" << user;
-  start_string  = stringStream.str();
-  client = mongoc_client_new (start_string.c_str());
-  collection = mongoc_client_get_collection (client, "CARTA", "userconf");
+    stringStream << CARTA::mongo_db_contact_string << "?appname=carta_backend-" << user;
+    start_string = stringStream.str();
+    client = mongoc_client_new(start_string.c_str());
+    collection = mongoc_client_get_collection(client, "CARTA", "userconf");
 
-  query = bson_new ();
-  BSON_APPEND_UTF8 (query, "username", user);
-  cursor = mongoc_collection_find_with_opts (collection, query, NULL, NULL);
-  
-  while (mongoc_cursor_next (cursor, &doc)) {
-    reader.parse(str, json_config);
-    CARTA::token = json_config["token"].asString();
-    bson_free (str);       
-  }
+    query = bson_new();
+    BSON_APPEND_UTF8(query, "username", user);
+    cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
 
-  bson_destroy (query);
-  mongoc_cursor_destroy (cursor);
-  mongoc_collection_destroy (collection);
-  mongoc_client_destroy (client);
-  mongoc_cleanup ();
+    while (mongoc_cursor_next(cursor, &doc)) {
+        reader.parse(str, json_config);
+        CARTA::token = json_config["token"].asString();
+        bson_free(str);
+    }
+
+    bson_destroy(query);
+    mongoc_cursor_destroy(cursor);
+    mongoc_collection_destroy(collection);
+    mongoc_client_destroy(client);
+    mongoc_cleanup();
 }
 
 #endif // AuthServer
