@@ -1,6 +1,6 @@
 
 
-#if AuthServer
+#if _AUTH_SERVER_
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/value.h>
 #include "DBConnect.h"
@@ -378,7 +378,7 @@ int main(int argc, const char* argv[]) {
             CARTA::token = inp.getString("token");
             CARTA::mongo_db_contact_string = "mongodb://localhost:27017/";
             if (use_mongodb) {
-#if AuthServer
+#if _AUTH_SERVER_
                 ConnectToMongoDB();
 #else
                 std::cerr << "Not configured to use MongoDB" << std::endl;

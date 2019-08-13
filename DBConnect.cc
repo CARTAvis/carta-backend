@@ -1,6 +1,6 @@
 
 
-#if AuthServer // defined in cmake files
+#if _AUTH_SERVER_ // defined in cmake files
 
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/value.h>
@@ -53,4 +53,4 @@ void ConnectToMongoDB(void) {
     mongoc_cleanup();
 }
 
-#endif // AuthServer
+#endif // _AUTH_SERVER_

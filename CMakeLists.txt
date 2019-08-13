@@ -10,7 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 
-# use -DAuthServer=ON to link mongodb and jsonccpp
+# use -DAuthServer:BOOL=ON to link mongodb and jsonccpp
 option(AuthServer "AuthServer" OFF)
 
 # Needed by clang-tidy and other clang tools
@@ -28,6 +28,7 @@ INCLUDE_DIRECTORIES(/usr/include/casacore)
 INCLUDE_DIRECTORIES(/usr/local/include/casacode)
 
 if(AuthServer)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
 INCLUDE_DIRECTORIES(/usr/include/libbson-1.0/)
 INCLUDE_DIRECTORIES(/usr/include/libmongoc-1.0/)
 set(LINK_LIBS
