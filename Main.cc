@@ -334,6 +334,7 @@ int main(int argc, const char* argv[]) {
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
+	    use_mongodb = inp.getBool("use_mongodb");
             use_permissions = inp.getBool("permissions");
             port = inp.getInt("port");
             thread_count = inp.getInt("threads");
@@ -349,7 +350,6 @@ int main(int argc, const char* argv[]) {
 	      exit(1);
 #endif
 	    }
-	    
             bool has_exit_after_arg = inp.getString("exit_after").size();
             if (has_exit_after_arg) {
                 int wait_time = inp.getInt("exit_after");
