@@ -28,7 +28,7 @@ INCLUDE_DIRECTORIES(/usr/include/casacore)
 INCLUDE_DIRECTORIES(/usr/local/include/casacode)
 
 if (AuthServer)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
+    add_compile_definitions(_AUTH_SERVER_)
     INCLUDE_DIRECTORIES(/usr/include/libbson-1.0/)
     INCLUDE_DIRECTORIES(/usr/include/libmongoc-1.0/)
     set(LINK_LIBS

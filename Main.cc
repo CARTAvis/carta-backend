@@ -318,8 +318,8 @@ void ExitBackend(int s) {
     exit(0);
 }
 
-void ReadJSONfile(string fname) {
-#if _AUTH_SERVER
+void ReadJsonFile(const string& fname) {
+#if _AUTH_SERVER_
     std::ifstream config_file(fname);
     if (!config_file.is_open()) {
         std::cerr << "Failed to open config file " << fname << std::endl;
@@ -398,7 +398,7 @@ int main(int argc, const char* argv[]) {
             bool should_read_json_file = inp.getString("read_json_file").size();
             if (should_read_json_file) {
                 json_fname = inp.getString("read_json_file");
-                ReadJSONfile(json_fname);
+                ReadJsonFile(json_fname);
             }
         }
 

@@ -14,7 +14,7 @@
 
 #include "Carta.h"
 
-void ConnectToMongoDB(void) {
+void ConnectToMongoDB() {
     mongoc_client_t* client;
     mongoc_collection_t* collection;
     mongoc_cursor_t* cursor;
@@ -38,7 +38,7 @@ void ConnectToMongoDB(void) {
 
     query = bson_new();
     BSON_APPEND_UTF8(query, "username", user);
-    cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
+    cursor = mongoc_collection_find_with_opts(collection, query, nullptr, nullptr);
 
     while (mongoc_cursor_next(cursor, &doc)) {
         reader.parse(str, json_config);
