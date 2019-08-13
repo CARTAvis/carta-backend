@@ -1,5 +1,11 @@
+
+
+#if AuthServer
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/value.h>
+#include "DBConnect.h"
+#endif
+
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -24,7 +30,7 @@
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "Util.h"
-#include "DBConnect.h"
+
 
 using namespace std;
 
@@ -278,7 +284,8 @@ void ExitBackend(int s) {
 }
 
 void ReadJSONfile(string fname) {
-    std::ifstream config_file(fname);
+#if AuthServer
+  std::ifstream config_file(fname);
     if (!config_file.is_open()) {
         std::cerr << "Failed to open config file " << fname << std::endl;
         exit(1);
@@ -291,6 +298,9 @@ void ReadJSONfile(string fname) {
         std::cerr << "Bad config file.\n";
         exit(1);
     }
+#else
+    std::cerr << "Not configured to use JSON." << std::endl;
+#endif
 }
 
 // Entry point. Parses command line arguments and starts server listening
@@ -332,7 +342,12 @@ int main(int argc, const char* argv[]) {
 	    CARTA::token = inp.getString("token");
 	    CARTA::mongo_db_contact_string = "mongodb://localhost:27017/";
 	    if (use_mongodb) {
+#if AuthServer
 	      ConnectToMongoDB();
+#else
+	      std::cerr << "Not configured to use MongoDB" << std::endl;
+	      exit(1);
+#endif
 	    }
 	    
             bool has_exit_after_arg = inp.getString("exit_after").size();

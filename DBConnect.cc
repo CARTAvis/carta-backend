@@ -1,3 +1,7 @@
+
+
+#if AuthServer // defined in cmake files
+
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/value.h>
 #include <fstream>
@@ -49,3 +53,5 @@ void ConnectToMongoDB(void) {
   mongoc_client_destroy (client);
   mongoc_cleanup ();
 }
+
+#endif // AuthServer
