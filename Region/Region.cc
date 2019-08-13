@@ -119,8 +119,8 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                     casacore::String outputstr(rotbox_output.str()); // "rotbox [[x, y], [x_width, y_width], rotang]"
                     // create comma-delimited string of quantities
                     casacore::String params(outputstr.after("rotbox ")); // remove rotbox
-                    params.gsub("[", ""); // remove [
-                    params.gsub("]", ""); // remove ]
+                    params.gsub("[", "");                                // remove [
+                    params.gsub("]", "");                                // remove ]
                     // split string into string vector
                     std::vector<std::string> quantities;
                     SplitString(params, ',', quantities);
@@ -134,7 +134,7 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                     // make centerbox from quantities
                     casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
                     casa::AnnCenterBox cbox = casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types);
-		    // get pixel vertices to calculate center point, pixel width/height
+                    // get pixel vertices to calculate center point, pixel width/height
                     std::vector<casacore::Double> x, y;
                     cbox.pixelVertices(x, y);
                     double xmin = *std::min_element(x.begin(), x.end());
