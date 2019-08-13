@@ -323,8 +323,7 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
             switch (annotation_type) {
                 case casa::AnnotationBase::LINE:
                 case casa::AnnotationBase::VECTOR:
-                case casa::AnnotationBase::TEXT:
-                case casa::AnnotationBase::SYMBOL: {
+                case casa::AnnotationBase::TEXT: {
                     break;
                 }
                 case casa::AnnotationBase::POLYLINE:
@@ -333,13 +332,15 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                     message += " CRTF region type " + ann_type_str + " is not supported.";
                     break;
                 }
+                case casa::AnnotationBase::SYMBOL:
                 case casa::AnnotationBase::RECT_BOX:
                 case casa::AnnotationBase::CENTER_BOX:
                 case casa::AnnotationBase::ROTATED_BOX:
                 case casa::AnnotationBase::POLYGON:
                 case casa::AnnotationBase::CIRCLE:
                 case casa::AnnotationBase::ELLIPSE: {
-                    if (!annotation_base->isAnnotationOnly()) { // shape could be annotation-layer only
+                    if ((annotation_type == casa::AnnotationBase::SYMBOL) || // symbol is a carta point region
+                        !annotation_base->isAnnotationOnly()) {              // shape could be annotation-layer only
                         auto region = std::unique_ptr<carta::Region>(
                             new carta::Region(annotation_base, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
                         if (region && region->IsValid()) {
