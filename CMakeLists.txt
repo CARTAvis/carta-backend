@@ -24,6 +24,8 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
+INCLUDE_DIRECTORIES(/usr/include/casacore)
+INCLUDE_DIRECTORIES(/usr/local/include/casacode)
 
 if(AuthServer)
 INCLUDE_DIRECTORIES(/usr/include/libbson-1.0/)
@@ -58,7 +60,6 @@ set(LINK_LIBS
         casa_mirlib
         casa_scimath
 	imageanalysis
-        jsoncpp
         ${HDF5_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
