@@ -46,7 +46,7 @@ static uint32_t session_number;
 static uWS::Hub websocket_hub;
 
 // command-line arguments
-static string root_folder("/"), base_folder("."), version_id("1.1");
+static string root_folder("/"), base_folder("."), version_id("1.2");
 static bool verbose, use_permissions, use_mongodb;
 namespace CARTA {
 string token;
