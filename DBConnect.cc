@@ -41,6 +41,7 @@ void ConnectToMongoDB() {
     cursor = mongoc_collection_find_with_opts(collection, query, nullptr, nullptr);
 
     while (mongoc_cursor_next(cursor, &doc)) {
+        str = bson_as_canonical_extended_json(doc, NULL);
         reader.parse(str, json_config);
         CARTA::token = json_config["token"].asString();
         bson_free(str);
