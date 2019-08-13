@@ -128,7 +128,6 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
             case casa::AnnotationBase::ELLIPSE: {
                 _type = CARTA::RegionType::ELLIPSE;
                 casa::AnnotationBase::Type ann_type = annotation_region->getType();
-                casacore::DirectionCoordinate dir_coord = _coord_sys.directionCoordinate();
                 casacore::MDirection center_position;
                 casacore::Quantity bmaj, bmin, position_angle;
                 bool is_ellipse(true);
@@ -158,7 +157,16 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                 if (have_region_info) {
                     // set control point: cx, cy in pixel coords
                     casacore::Vector<casacore::Double> pixel_coords;
-                    dir_coord.toPixel(pixel_coords, center_position);
+                    if (_coord_sys.hasDirectionCoordinate()) {
+                        casacore::DirectionCoordinate dir_coord = _coord_sys.directionCoordinate();
+                        dir_coord.toPixel(pixel_coords, center_position);
+                    } else {
+                        casacore::Quantum<casacore::Vector<casacore::Double>> angles = center_position.getAngle();
+                        casacore::Vector<casacore::Double> world_coords = angles.getValue();
+                        world_coords.resize(_coord_sys.nPixelAxes(), true);
+                        _coord_sys.toPixel(pixel_coords, world_coords);
+                    }
+
                     CARTA::Point point;
                     point.set_x(pixel_coords[0]);
                     point.set_y(pixel_coords[1]);
@@ -741,7 +749,7 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
     // If pixel_coord=false but conversion fails, creates region in pixel coordinates; better than nothing
     casa::AnnRegion* ann_region(nullptr);
     if (!_control_points.empty()) {
-        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetCoordSysStokesTypes();
+        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
         switch (_type) {
             case CARTA::POINT: {
                 casacore::Quantity x = casacore::Quantity(_control_points[0].x(), "pix");
@@ -839,9 +847,19 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
     return annotation_region;
 }
 
-casacore::Vector<casacore::Stokes::StokesTypes> Region::GetCoordSysStokesTypes() {
-    // basically, convert ints to stokes types in vector
-    casacore::Vector<casacore::Int> istokes = _coord_sys.stokesCoordinate().stokes();
+casacore::Vector<casacore::Stokes::StokesTypes> Region::GetStokesTypes() {
+    // convert ints to stokes types in vector
+    casacore::Vector<casacore::Int> istokes;
+    if (_coord_sys.hasPolarizationCoordinate()) {
+        casacore::Vector<casacore::Int> istokes = _coord_sys.stokesCoordinate().stokes();
+    }
+    if (istokes.empty() && (_stokes_axis >= 0)) {
+        unsigned int nstokes(_image_shape(_stokes_axis));
+        istokes.resize(nstokes);
+        for (unsigned int i = 0; i < nstokes; ++i) {
+            istokes(i) = i + 1;
+        }
+    }
     casacore::Vector<casacore::Stokes::StokesTypes> stokes_types(istokes.size());
     for (size_t i = 0; i < istokes.size(); ++i) {
         stokes_types(i) = casacore::Stokes::type(istokes(i));

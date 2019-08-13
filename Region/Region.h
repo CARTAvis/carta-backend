@@ -153,7 +153,7 @@ private:
         casacore::Quantum<casacore::Vector<casacore::Double>>& x_world, casacore::Quantum<casacore::Vector<casacore::Double>>& y_world);
 
     // For region export, need stokes types from coordinate system
-    casacore::Vector<casacore::Stokes::StokesTypes> GetCoordSysStokesTypes();
+    casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
 
     // Create xy regions
     bool SetXyRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
