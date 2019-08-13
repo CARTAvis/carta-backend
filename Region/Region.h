@@ -35,7 +35,7 @@ public:
         const casacore::IPosition image_shape, int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys);
     // Region created from CRTF file
     Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, const casacore::IPosition image_shape, int spectral_axis,
-        int stokes_axis, const casacore::CoordinateSystem& coord_sys, std::string& global_coord);
+        int stokes_axis, const casacore::CoordinateSystem& coord_sys);
 
     // to determine if data needs to be updated
     inline bool IsValid() {
@@ -152,7 +152,7 @@ private:
         casacore::Quantum<casacore::Vector<casacore::Double>>& x_world, casacore::Quantum<casacore::Vector<casacore::Double>>& y_world);
 
     // For region export, need stokes types from coordinate system
-    casacore::Vector<casacore::Stokes::StokesTypes> GetCoordSysStokesTypes();
+    casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
 
     // Create xy regions
     bool SetXyRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
