@@ -31,7 +31,6 @@
 #include "Session.h"
 #include "Util.h"
 
-
 using namespace std;
 
 namespace CARTA {
@@ -50,15 +49,15 @@ static uWS::Hub websocket_hub;
 static string root_folder("/"), base_folder("."), version_id("1.1");
 static bool verbose, use_permissions, use_mongodb;
 namespace CARTA {
-  string token;
-  string mongo_db_contact_string;
-}
+string token;
+string mongo_db_contact_string;
+} // namespace CARTA
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     // Check for authorization token
-  if (!CARTA::token.empty()) {
-    string expected_auth_header = fmt::format("CARTA-Authorization={}", CARTA::token);
+    if (!CARTA::token.empty()) {
+        string expected_auth_header = fmt::format("CARTA-Authorization={}", CARTA::token);
         auto cookie_header = http_request.getHeader("cookie");
         string auth_header_string(cookie_header.value, cookie_header.valueLength);
         if (auth_header_string.find(expected_auth_header) == string::npos) {
@@ -321,7 +320,7 @@ void ExitBackend(int s) {
 
 void ReadJSONfile(string fname) {
 #if AuthServer
-  std::ifstream config_file(fname);
+    std::ifstream config_file(fname);
     if (!config_file.is_open()) {
         std::cerr << "Failed to open config file " << fname << std::endl;
         exit(1);
@@ -366,26 +365,26 @@ int main(int argc, const char* argv[]) {
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
             inp.create("read_json_file", json_fname, "read in json file with secure token", "String");
-	    inp.create("use_mongodb", "False", "use mongo db", "Bool");
+            inp.create("use_mongodb", "False", "use mongo db", "Bool");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
-	    use_mongodb = inp.getBool("use_mongodb");
+            use_mongodb = inp.getBool("use_mongodb");
             use_permissions = inp.getBool("permissions");
             port = inp.getInt("port");
             thread_count = inp.getInt("threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
-	    CARTA::token = inp.getString("token");
-	    CARTA::mongo_db_contact_string = "mongodb://localhost:27017/";
-	    if (use_mongodb) {
+            CARTA::token = inp.getString("token");
+            CARTA::mongo_db_contact_string = "mongodb://localhost:27017/";
+            if (use_mongodb) {
 #if AuthServer
-	      ConnectToMongoDB();
+                ConnectToMongoDB();
 #else
-	      std::cerr << "Not configured to use MongoDB" << std::endl;
-	      exit(1);
+                std::cerr << "Not configured to use MongoDB" << std::endl;
+                exit(1);
 #endif
-	    }
+            }
             bool has_exit_after_arg = inp.getString("exit_after").size();
             if (has_exit_after_arg) {
                 int wait_time = inp.getInt("exit_after");
