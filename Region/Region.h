@@ -36,7 +36,6 @@ public:
     // Region created from CRTF file
     Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, const casacore::IPosition image_shape, int spectral_axis,
         int stokes_axis, const casacore::CoordinateSystem& coord_sys);
-    ~Region();
 
     // to determine if data needs to be updated
     inline bool IsValid() {
@@ -174,6 +173,9 @@ private:
     bool GetSpectralProfileStatSent(int profile_index, int stats_type);
 
     void SetConnectionFlag(bool connected);
+
+    // util to split input string into parts by delimiter
+    void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
 
     // region definition (ICD SET_REGION parameters)
     std::string _name;
