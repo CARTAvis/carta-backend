@@ -849,7 +849,7 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                             y = world_point(1);
                         }
                     }
-                    ann_symbol = new casa::AnnSymbol(x, y, _coord_sys, casa::AnnSymbol::charToSymbol('.'), stokes_types);
+                    ann_symbol = new casa::AnnSymbol(x, y, _coord_sys, casa::AnnSymbol::POINT, stokes_types);
                     break;
                 }
                 case CARTA::RECTANGLE: {
