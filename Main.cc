@@ -319,7 +319,7 @@ void ExitBackend(int s) {
 }
 
 void ReadJSONfile(string fname) {
-#if AuthServer
+#if _AUTH_SERVER
     std::ifstream config_file(fname);
     if (!config_file.is_open()) {
         std::cerr << "Failed to open config file " << fname << std::endl;
