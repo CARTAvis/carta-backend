@@ -10,7 +10,7 @@
 #include <tbb/parallel_reduce.h>
 
 #include <casacore/casa/Arrays/ArrayMath.h>
-#include <casacore/lattices/LatticeMath/LatticeStatistics.h>
+#include <casacore/images/Images/ImageStatistics.h>
 
 #include "../InterfaceConstants.h"
 #include "Histogram.h"

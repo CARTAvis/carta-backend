@@ -1,5 +1,11 @@
+
+
+#if _AUTH_SERVER_
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/value.h>
+#include "DBConnect.h"
+#endif
+
 #include <fstream>
 #include <iostream>
 #include <mutex>
@@ -40,15 +46,18 @@ static uint32_t session_number;
 static uWS::Hub websocket_hub;
 
 // command-line arguments
-static string root_folder("/"), base_folder("."), version_id("1.1");
-static bool verbose, use_permissions;
-static string token;
+static string root_folder("/"), base_folder("."), version_id("1.2");
+static bool verbose, use_permissions, use_mongodb;
+namespace CARTA {
+string token;
+string mongo_db_contact_string;
+} // namespace CARTA
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     // Check for authorization token
-    if (!token.empty()) {
-        string expected_auth_header = fmt::format("CARTA-Authorization={}", token);
+    if (!CARTA::token.empty()) {
+        string expected_auth_header = fmt::format("CARTA-Authorization={}", CARTA::token);
         auto cookie_header = http_request.getHeader("cookie");
         string auth_header_string(cookie_header.value, cookie_header.valueLength);
         if (auth_header_string.find(expected_auth_header) == string::npos) {
@@ -249,6 +258,42 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
                     break;
                 }
+                case CARTA::EventType::REGION_LIST_REQUEST: {
+                    CARTA::RegionListRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnRegionListRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad REGION_LIST_REQUEST message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
+                    CARTA::RegionFileInfoRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnRegionFileInfoRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad REGION_FILE_INFO_REQUEST message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::IMPORT_REGION: {
+                    CARTA::ImportRegion message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnImportRegion(message, head.request_id);
+                    } else {
+                        fmt::print("Bad IMPORT_REGION message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::EXPORT_REGION: {
+                    CARTA::ExportRegion message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnExportRegion(message, head.request_id);
+                    } else {
+                        fmt::print("Bad EXPORT_REGION message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
@@ -273,7 +318,8 @@ void ExitBackend(int s) {
     exit(0);
 }
 
-void ReadJSONfile(string fname) {
+void ReadJsonFile(const string& fname) {
+#if _AUTH_SERVER_
     std::ifstream config_file(fname);
     if (!config_file.is_open()) {
         std::cerr << "Failed to open config file " << fname << std::endl;
@@ -282,11 +328,14 @@ void ReadJSONfile(string fname) {
     Json::Value json_config;
     Json::Reader reader;
     reader.parse(config_file, json_config);
-    token = json_config["token"].asString();
-    if (token.empty()) {
+    CARTA::token = json_config["token"].asString();
+    if (CARTA::token.empty()) {
         std::cerr << "Bad config file.\n";
         exit(1);
     }
+#else
+    std::cerr << "Not configured to use JSON." << std::endl;
+#endif
 }
 
 // Entry point. Parses command line arguments and starts server listening
@@ -308,7 +357,7 @@ int main(int argc, const char* argv[]) {
             inp.version(version_id);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
-            inp.create("token", token, "only accept connections with this authorization token", "String");
+            inp.create("token", CARTA::token, "only accept connections with this authorization token", "String");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
@@ -316,16 +365,26 @@ int main(int argc, const char* argv[]) {
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
             inp.create("read_json_file", json_fname, "read in json file with secure token", "String");
+            inp.create("use_mongodb", "False", "use mongo db", "Bool");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
+            use_mongodb = inp.getBool("use_mongodb");
             use_permissions = inp.getBool("permissions");
             port = inp.getInt("port");
             thread_count = inp.getInt("threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
-            token = inp.getString("token");
-
+            CARTA::token = inp.getString("token");
+            CARTA::mongo_db_contact_string = "mongodb://localhost:27017/";
+            if (use_mongodb) {
+#if _AUTH_SERVER_
+                ConnectToMongoDB();
+#else
+                std::cerr << "Not configured to use MongoDB" << std::endl;
+                exit(1);
+#endif
+            }
             bool has_exit_after_arg = inp.getString("exit_after").size();
             if (has_exit_after_arg) {
                 int wait_time = inp.getInt("exit_after");
@@ -339,7 +398,7 @@ int main(int argc, const char* argv[]) {
             bool should_read_json_file = inp.getString("read_json_file").size();
             if (should_read_json_file) {
                 json_fname = inp.getString("read_json_file");
-                ReadJSONfile(json_fname);
+                ReadJsonFile(json_fname);
             }
         }
 

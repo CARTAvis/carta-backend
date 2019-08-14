@@ -2,9 +2,13 @@
 
 #include "Region.h"
 
+#include <stdio.h>   // sscanf
 #include <algorithm> // max
 #include <cmath>     // round
 
+#include <casacore/casa/Arrays/ArrayLogical.h>
+#include <casacore/casa/Quanta/Quantum.h>
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/images/Regions/WCEllipsoid.h>
 #include <casacore/images/Regions/WCExtension.h>
 #include <casacore/images/Regions/WCPolygon.h>
@@ -13,6 +17,16 @@
 #include <casacore/lattices/LRegions/LCEllipsoid.h>
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCPolygon.h>
+#include <casacore/measures/Measures/Stokes.h>
+
+#include <imageanalysis/Annotations/AnnCenterBox.h>
+#include <imageanalysis/Annotations/AnnCircle.h>
+#include <imageanalysis/Annotations/AnnEllipse.h>
+#include <imageanalysis/Annotations/AnnPolygon.h>
+#include <imageanalysis/Annotations/AnnRectBox.h>
+#include <imageanalysis/Annotations/AnnRegion.h>
+#include <imageanalysis/Annotations/AnnRotBox.h>
+#include <imageanalysis/Annotations/AnnSymbol.h>
 
 #include "../InterfaceConstants.h"
 
@@ -29,9 +43,11 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
       _spectral_axis(spectral_axis),
       _stokes_axis(stokes_axis),
       _xy_axes(casacore::IPosition(2, 0, 1)),
-      _coord_sys(coord_sys) {
-    // validate and set region parameters
+      _coord_sys(coord_sys),
+      _z_profile_count(0) {
+    // Create region from control points and rotation
     _num_dims = image_shape.size();
+    // validate and set region parameters
     _valid = UpdateRegionParameters(name, type, points, rotation);
     if (_valid) {
         _region_stats = std::unique_ptr<RegionStats>(new RegionStats());
@@ -39,12 +55,235 @@ Region::Region(const std::string& name, const CARTA::RegionType type, const std:
     }
 }
 
-RegionState Region::GetRegionState() {
-    RegionState region_state(_name, _type, _control_points, _rotation);
-    return region_state;
+Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, const casacore::IPosition image_shape, int spectral_axis,
+    int stokes_axis, const casacore::CoordinateSystem& coord_sys)
+    : _rotation(0.0),
+      _valid(false),
+      _image_shape(image_shape),
+      _spectral_axis(spectral_axis),
+      _stokes_axis(stokes_axis),
+      _xy_axes(casacore::IPosition(2, 0, 1)),
+      _xy_region(nullptr),
+      _xy_mask(nullptr),
+      _coord_sys(coord_sys),
+      _z_profile_count(0) {
+    // Create region from imported annotation region
+    _num_dims = image_shape.size();
+    // set name, type, control points, rotation (default 0.0 already set), and xy region
+    if (annotation_region) {
+        try {
+            switch (annotation_region->getType()) {
+                case casa::AnnotationBase::RECT_BOX:
+                case casa::AnnotationBase::CENTER_BOX: {
+                    _name = annotation_region->getLabel();
+                    _type = CARTA::RegionType::RECTANGLE;
+                    // all rectangles are polygons
+                    const casa::AnnPolygon* polygon = dynamic_cast<const casa::AnnPolygon*>(annotation_region.get());
+                    if (polygon != nullptr) {
+                        std::atomic_store(&_xy_region, polygon->getRegion2());
+                        // get polygon vertices for control points
+                        std::vector<casacore::Double> x, y;
+                        polygon->pixelVertices(x, y);
+                        double xmin = *std::min_element(x.begin(), x.end());
+                        double xmax = *std::max_element(x.begin(), x.end());
+                        double ymin = *std::min_element(y.begin(), y.end());
+                        double ymax = *std::max_element(y.begin(), y.end());
+                        // set carta rectangle control points
+                        CARTA::Point point;
+                        point.set_x((xmin + xmax) / 2.0); // cx
+                        point.set_y((ymin + ymax) / 2.0); // cy
+                        _control_points.push_back(point);
+                        point.set_x(xmax - xmin); // width
+                        point.set_y(ymax - ymin); // height
+                        _control_points.push_back(point);
+                        _valid = true;
+                    }
+                    break;
+                }
+                case casa::AnnotationBase::ROTATED_BOX: {
+                    _name = annotation_region->getLabel();
+                    _type = CARTA::RegionType::RECTANGLE;
+                    // cannot get original rectangle and rotation from AnnRotBox, it is a polygon
+                    const casa::AnnRotBox* rotbox = dynamic_cast<const casa::AnnRotBox*>(annotation_region.get());
+                    if (rotbox != nullptr) {
+                        std::atomic_store(&_xy_region, rotbox->getRegion2());
+                        // Create center box to get region control points, then add rotation
+                        // parse printed string (known format) to get rotbox input params
+                        std::ostringstream rotbox_output;
+                        rotbox->print(rotbox_output);
+                        casacore::String outputstr(rotbox_output.str()); // "rotbox [[x, y], [x_width, y_width], rotang]"
+                        // create comma-delimited string of quantities
+                        casacore::String params(outputstr.after("rotbox ")); // remove rotbox
+                        params.gsub("[", "");                                // remove [
+                        params.gsub("]", "");                                // remove ]
+                        // split string into string vector
+                        std::vector<std::string> quantities;
+                        SplitString(params, ',', quantities);
+                        // convert strings to quantities (Quantum readQuantity)
+                        casacore::Quantity cx, cy, xwidth, ywidth, rotang;
+                        casacore::readQuantity(cx, quantities[0]);
+                        casacore::readQuantity(cy, quantities[1]);
+                        casacore::readQuantity(xwidth, quantities[2]);
+                        casacore::readQuantity(ywidth, quantities[3]);
+                        casacore::readQuantity(rotang, quantities[4]);
+                        // make centerbox from quantities
+                        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
+                        casa::AnnCenterBox cbox = casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types);
+                        // get pixel vertices to calculate center point, pixel width/height
+                        std::vector<casacore::Double> x, y;
+                        cbox.pixelVertices(x, y);
+                        double xmin = *std::min_element(x.begin(), x.end());
+                        double xmax = *std::max_element(x.begin(), x.end());
+                        double ymin = *std::min_element(y.begin(), y.end());
+                        double ymax = *std::max_element(y.begin(), y.end());
+                        CARTA::Point point;
+                        point.set_x((xmin + xmax) / 2.0); // cx
+                        point.set_y((ymin + ymax) / 2.0); // cy
+                        _control_points.push_back(point);
+                        point.set_x(xmax - xmin); // width
+                        point.set_y(ymax - ymin); // height
+                        _control_points.push_back(point);
+                        // convert rotang to deg
+                        rotang.convert("deg");
+                        _rotation = rotang.getValue();
+                        _valid = true;
+                    }
+                    break;
+                }
+                case casa::AnnotationBase::POLYGON: {
+                    _name = annotation_region->getLabel();
+                    _type = CARTA::RegionType::POLYGON;
+                    const casa::AnnPolygon* polygon = dynamic_cast<const casa::AnnPolygon*>(annotation_region.get());
+                    if (polygon != nullptr) {
+                        std::atomic_store(&_xy_region, polygon->getRegion2());
+                        // get polygon vertices for control points
+                        std::vector<casacore::Double> x, y;
+                        polygon->pixelVertices(x, y);
+                        for (size_t i = 0; i < x.size(); ++i) {
+                            CARTA::Point point;
+                            point.set_x(x[i]);
+                            point.set_y(y[i]);
+                            _control_points.push_back(point);
+                        }
+                        _valid = true;
+                    }
+                    break;
+                }
+                case casa::AnnotationBase::CIRCLE:
+                case casa::AnnotationBase::ELLIPSE: {
+                    _name = annotation_region->getLabel();
+                    _type = CARTA::RegionType::ELLIPSE;
+                    casa::AnnotationBase::Type ann_type = annotation_region->getType();
+                    casacore::MDirection center_position;
+                    casacore::Quantity bmaj, bmin, position_angle;
+                    bool is_ellipse(true);
+                    bool have_region_info(false);
+                    if (ann_type == casa::AnnotationBase::CIRCLE) {
+                        const casa::AnnCircle* circle = dynamic_cast<const casa::AnnCircle*>(annotation_region.get());
+                        if (circle != nullptr) {
+                            std::atomic_store(&_xy_region, circle->getRegion2());
+                            center_position = circle->getCenter();
+                            bmaj = circle->getRadius();
+                            bmin = bmaj;
+                            is_ellipse = false;
+                            have_region_info = true;
+                        }
+                    } else {
+                        // if pixels not square, circle is an AnnEllipse
+                        const casa::AnnEllipse* ellipse = dynamic_cast<const casa::AnnEllipse*>(annotation_region.get());
+                        if (ellipse != nullptr) {
+                            std::atomic_store(&_xy_region, ellipse->getRegion2());
+                            center_position = ellipse->getCenter();
+                            bmaj = ellipse->getSemiMajorAxis();
+                            bmin = ellipse->getSemiMinorAxis();
+                            position_angle = ellipse->getPositionAngle();
+                            have_region_info = true;
+                        }
+                    }
+                    if (have_region_info) {
+                        // set control point: cx, cy in pixel coords
+                        casacore::Vector<casacore::Double> pixel_coords;
+                        if (_coord_sys.hasDirectionCoordinate()) {
+                            casacore::DirectionCoordinate dir_coord = _coord_sys.directionCoordinate();
+                            dir_coord.toPixel(pixel_coords, center_position);
+                        } else {
+                            casacore::Quantum<casacore::Vector<casacore::Double>> angles = center_position.getAngle();
+                            casacore::Vector<casacore::Double> world_coords = angles.getValue();
+                            world_coords.resize(_coord_sys.nPixelAxes(), true);
+                            _coord_sys.toPixel(pixel_coords, world_coords);
+                        }
+
+                        CARTA::Point point;
+                        point.set_x(pixel_coords[0]);
+                        point.set_y(pixel_coords[1]);
+                        _control_points.push_back(point);
+                        // set control point: bmaj, bmin in npixels
+                        double bmaj_pixel = AngleToLength(bmaj, 0);
+                        double bmin_pixel = AngleToLength(bmin, 1);
+                        point.set_x(bmaj_pixel);
+                        point.set_y(bmin_pixel);
+                        _control_points.push_back(point);
+                        if (is_ellipse) { // set rotation
+                            position_angle.convert("deg");
+                            _rotation = position_angle.getValue();
+                        }
+                        _valid = true;
+                    }
+                    break;
+                }
+                case casa::AnnotationBase::SYMBOL: {
+                    const casa::AnnSymbol* point = dynamic_cast<const casa::AnnSymbol*>(annotation_region.get());
+                    if (point != nullptr) {
+                        // set region with control point since symbol is not a region
+                        // set CARTA point x, y in pixel coords
+                        casacore::MDirection position = point->getDirection();
+                        casacore::Vector<casacore::Double> pixel_coords;
+                        if (_coord_sys.hasDirectionCoordinate()) {
+                            casacore::DirectionCoordinate dir_coord = _coord_sys.directionCoordinate();
+                            dir_coord.toPixel(pixel_coords, position);
+                        } else {
+                            casacore::Quantum<casacore::Vector<casacore::Double>> angles = position.getAngle();
+                            casacore::Vector<casacore::Double> world_coords = angles.getValue();
+                            world_coords.resize(_coord_sys.nPixelAxes(), true);
+                            _coord_sys.toPixel(pixel_coords, world_coords);
+                        }
+                        CARTA::Point point;
+                        point.set_x(pixel_coords[0]);
+                        point.set_y(pixel_coords[1]);
+                        std::vector<CARTA::Point> points;
+                        points.push_back(point);
+                        // other region parameters
+                        std::string name = annotation_region->getLabel();
+                        CARTA::RegionType type = CARTA::RegionType::POINT;
+                        float rotation(0.0);
+                        _valid = UpdateRegionParameters(name, type, points, rotation);
+                    }
+                    break;
+                }
+                case casa::AnnotationBase::POLYLINE: // not supported yet
+                case casa::AnnotationBase::ANNULUS:  // not supported yet
+                default:
+                    break;
+            }
+        } catch (casacore::AipsError& err) {
+            std::cerr << "Import carta region type " << _type << " failed: " << err.getMesg() << std::endl;
+        }
+    }
+    if (_valid) {
+        _region_stats = std::unique_ptr<RegionStats>(new RegionStats());
+        _region_profiler = std::unique_ptr<RegionProfiler>(new RegionProfiler());
+    }
 }
 
-Region::~Region() {}
+void Region::SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
+    // util to split input string into parts by delimiter
+    parts.clear();
+    std::stringstream ss(input);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        parts.push_back(item);
+    }
+}
 
 // *************************************************************************
 // Region settings
@@ -80,6 +319,71 @@ bool Region::SetPoints(const std::vector<CARTA::Point>& points) {
     return points_updated;
 }
 
+RegionState Region::GetRegionState() {
+    RegionState region_state(_name, _type, _control_points, _rotation);
+    return region_state;
+}
+
+double Region::AngleToLength(casacore::Quantity angle, unsigned int pixel_axis) {
+    // world->pixel conversion of ellipse radius.
+    // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
+    int coord, coord_axis;
+    _coord_sys.findWorldAxis(coord, coord_axis, pixel_axis);
+    casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
+    angle.convert(units[coord_axis]);
+    casacore::Vector<casacore::Double> increments(_coord_sys.directionCoordinate().increment());
+    return fabs(angle.getValue() / increments[coord_axis]);
+}
+
+bool Region::CartaPointToWorld(const CARTA::Point& point, casacore::Vector<casacore::Quantity>& world_point) {
+    // Convert CARTA point in pixel coordinates to world coordinates.
+    // Returns world_point vector and boolean flag to indicate a successful conversion.
+    bool converted(false);
+
+    // Vectors must be same number of axes as in coord system for conversion:
+    int naxes(_coord_sys.nPixelAxes());
+    casacore::Vector<casacore::Double> pixel_coords(naxes), world_coords(naxes);
+    pixel_coords = 0.0;
+    pixel_coords(0) = point.x();
+    pixel_coords(1) = point.y();
+
+    // convert pixel vector to world vector
+    if (_coord_sys.toWorld(world_coords, pixel_coords)) {
+        casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
+        world_point.resize(2);
+        world_point(0) = casacore::Quantity(world_coords(0), world_units(0));
+        world_point(1) = casacore::Quantity(world_coords(1), world_units(1));
+        converted = true;
+    }
+    return converted;
+}
+
+bool Region::XyPixelsToWorld(casacore::Vector<casacore::Double> x_pixel, casacore::Vector<casacore::Double> y_pixel,
+    casacore::Quantum<casacore::Vector<casacore::Double>>& x_world, casacore::Quantum<casacore::Vector<casacore::Double>>& y_world) {
+    // Convert many points in pixel coordinates to world coordinates;
+    // Returns world x and y vectors and boolean flag to indicate a successful conversion.
+    bool converted(false);
+
+    // convert pixel coords to world coords
+    int num_axes(_coord_sys.nPixelAxes());
+    int num_points(x_pixel.size());
+    casacore::Matrix<casacore::Double> pixel_coords(num_axes, num_points);
+    casacore::Matrix<casacore::Double> world_coords(num_axes, num_points);
+    pixel_coords = 0.0;
+    pixel_coords.row(0) = x_pixel;
+    pixel_coords.row(1) = y_pixel;
+    casacore::Vector<casacore::Bool> failures;
+    if (_coord_sys.toWorldMany(world_coords, pixel_coords, failures)) {
+        // make vectors of quantums for x and y
+        casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
+        x_world = world_coords.row(0);
+        x_world.setUnit(world_units(0));
+        y_world = world_coords.row(1);
+        y_world.setUnit(world_units(1));
+        converted = true;
+    }
+    return converted;
+}
 // *************************************************************************
 // Parameter checking
 
@@ -183,7 +487,7 @@ bool Region::GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange c
 
 bool Region::SetXyRegion(const std::vector<CARTA::Point>& points, float rotation) {
     // create 2D casacore::WCRegion for type
-    std::shared_ptr<casacore::WCRegion> region;
+    std::shared_ptr<const casacore::WCRegion> region;
     std::string region_type;
     try {
         switch (_type) {
@@ -214,7 +518,6 @@ bool Region::SetXyRegion(const std::vector<CARTA::Point>& points, float rotation
     } catch (casacore::AipsError& err) { // xy region failed
         std::cerr << "ERROR: xy region type " << region_type << " failed: " << err.getMesg() << std::endl;
     }
-
     std::atomic_store(&_xy_region, region);
     return bool(_xy_region);
 }
@@ -223,30 +526,16 @@ casacore::WCRegion* Region::MakePointRegion(const std::vector<CARTA::Point>& poi
     // 1 x 1 WCBox
     casacore::WCBox* box(nullptr);
     if (points.size() == 1) {
-        auto x = points[0].x();
-        auto y = points[0].y();
-
-        // Convert pixel coordinates to world coordinates;
-        // Must be same number of axes as in coord system
-        int naxes(_coord_sys.nPixelAxes());
-        casacore::Vector<casacore::Double> pixel_coords(naxes);
-        casacore::Vector<casacore::Double> world_coords(naxes);
-        pixel_coords = 0.0;
-        pixel_coords(0) = x;
-        pixel_coords(1) = y;
-        if (!_coord_sys.toWorld(world_coords, pixel_coords))
+        // Convert point pixel coordinates to world coordinates;
+        // This point will be blc and trc for WCBox
+        casacore::Vector<casacore::Quantity> world_point;
+        if (!CartaPointToWorld(points[0], world_point)) {
             return box; // nullptr, conversion failed
+        }
 
-        // make blc quantities (trc=blc for point)
-        casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
-        casacore::Vector<casacore::Quantum<casacore::Double>> blc(2);
-        blc(0) = casacore::Quantity(world_coords(0), coord_units(0));
-        blc(1) = casacore::Quantity(world_coords(1), coord_units(1));
-        // using pixel axes 0 and 1
-        casacore::IPosition axes(2, 0, 1);
         casacore::Vector<casacore::Int> abs_rel;
         std::unique_lock<std::mutex> guard(_casacore_region_mutex);
-        box = new casacore::WCBox(blc, blc, axes, _coord_sys, abs_rel);
+        box = new casacore::WCBox(world_point, world_point, _xy_axes, _coord_sys, abs_rel);
         guard.unlock();
     }
     return box;
@@ -303,24 +592,13 @@ casacore::WCRegion* Region::MakeRectangleRegion(const std::vector<CARTA::Point>&
         }
 
         // Convert pixel coords to world coords
-        int num_axes(_coord_sys.nPixelAxes());
-        casacore::Matrix<casacore::Double> pixel_coords(num_axes, num_points);
-        casacore::Matrix<casacore::Double> world_coords(num_axes, num_points);
-        pixel_coords = 0.0;
-        pixel_coords.row(0) = x;
-        pixel_coords.row(1) = y;
-        casacore::Vector<casacore::Bool> failures;
-        if (!_coord_sys.toWorldMany(world_coords, pixel_coords, failures))
+        casacore::Quantum<casacore::Vector<casacore::Double>> x_world, y_world;
+        if (!XyPixelsToWorld(x, y, x_world, y_world)) {
             return box_polygon; // nullptr, conversion failed
+        }
 
-        // make a vector of quantums for x and y
-        casacore::Quantum<casacore::Vector<casacore::Double>> x_coord(world_coords.row(0));
-        casacore::Quantum<casacore::Vector<casacore::Double>> y_coord(world_coords.row(1));
-        casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
-        x_coord.setUnit(coord_units(0));
-        y_coord.setUnit(coord_units(1));
         std::unique_lock<std::mutex> guard(_casacore_region_mutex);
-        box_polygon = new casacore::WCPolygon(x_coord, y_coord, _xy_axes, _coord_sys);
+        box_polygon = new casacore::WCPolygon(x_world, y_world, _xy_axes, _coord_sys);
         guard.unlock();
     }
     return box_polygon;
@@ -331,52 +609,31 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
     casacore::WCEllipsoid* ellipse(nullptr);
 
     if (points.size() == 2) {
-        float cx(points[0].x()), cy(points[0].y());
-        float bmaj(points[1].x()), bmin(points[1].y());
-        // rotation is in degrees from y-axis;
-        // ellipse rotation angle is in radians from x-axis
-        float theta;
-
-        // Convert ellipsoid center pixel coords to world coords
-        int num_axes(_coord_sys.nPixelAxes());
-        casacore::Vector<casacore::Double> pixel_coords(num_axes);
-        casacore::Vector<casacore::Double> world_coords(num_axes);
-        pixel_coords = 0.0;
-        pixel_coords(0) = cx;
-        pixel_coords(1) = cy;
-        if (!_coord_sys.toWorld(world_coords, pixel_coords)) {
+        // Convert ellipsoid center (point 0) pixel coords to world coords
+        casacore::Vector<casacore::Quantity> center_world;
+        if (!CartaPointToWorld(points[0], center_world)) {
             return ellipse; // nullptr, conversion failed
         }
 
-        // make Quantities for ellipsoid center
-        casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
-        casacore::Vector<casacore::Quantum<casacore::Double>> center(2);
-        center(0) = casacore::Quantity(world_coords(0), coord_units(0));
-        center(1) = casacore::Quantity(world_coords(1), coord_units(1));
-
-        // make Quantities for ellipsoid radii
-        casacore::Vector<casacore::Quantum<casacore::Double>> radii(2);
-        radii(0) = casacore::Quantity(bmaj, "pix");
-        radii(1) = casacore::Quantity(bmin, "pix");
-
-        // Make sure the major axis is greater than the minor axis
-        casacore::Quantity major_axis;
-        casacore::Quantity minor_axis;
-        if (radii(0) < radii(1)) {
-            major_axis = radii(1);
-            minor_axis = radii(0);
-            theta = (rotation) * (M_PI / 180.0f);
+        // Make Quantities for ellipsoid radii (point 1); major axis > minor axis.
+        // rotation is in degrees from y-axis, ellipse rotation angle is in radians from x-axis;
+        // adjust by 90 degrees unless swapped maj/min axes
+        float bmaj(points[1].x()), bmin(points[1].y()), rotation_degrees;
+        casacore::Quantity major_axis, minor_axis;
+        if (bmaj > bmin) {
+            major_axis = casacore::Quantity(bmaj, "pix");
+            minor_axis = casacore::Quantity(bmin, "pix");
+            rotation_degrees = rotation + 90.0;
         } else {
-            major_axis = radii(0);
-            minor_axis = radii(1);
-            theta = (rotation + 90.0) * (M_PI / 180.0f);
+            major_axis = casacore::Quantity(bmin, "pix");
+            minor_axis = casacore::Quantity(bmaj, "pix");
+            rotation_degrees = rotation;
         }
+        casacore::Quantity theta = casacore::Quantity(rotation_degrees * (M_PI / 180.0f), "rad");
 
-        // Convert theta to a Quantity
-        casacore::Quantity quantity_theta = casacore::Quantity(static_cast<double>(theta), "rad");
         std::unique_lock<std::mutex> guard(_casacore_region_mutex);
-        ellipse =
-            new casacore::WCEllipsoid(center(0), center(1), major_axis, minor_axis, quantity_theta, _xy_axes(0), _xy_axes(1), _coord_sys);
+        ellipse = new casacore::WCEllipsoid(
+            center_world(0), center_world(1), major_axis, minor_axis, theta, _xy_axes(0), _xy_axes(1), _coord_sys);
         guard.unlock();
     }
     return ellipse;
@@ -385,33 +642,21 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
 casacore::WCRegion* Region::MakePolygonRegion(const std::vector<CARTA::Point>& points) {
     // npoints region
     casacore::WCPolygon* polygon(nullptr);
-    size_t num_points(points.size());
-    casacore::Vector<casacore::Double> x(num_points), y(num_points);
-    for (size_t i = 0; i < num_points; ++i) {
-        x(i) = points[i].x();
-        y(i) = points[i].y();
-    }
 
     // Convert pixel coords to world coords
-    int num_axes(_coord_sys.nPixelAxes());
-    casacore::Matrix<casacore::Double> pixel_coords(num_axes, num_points);
-    casacore::Matrix<casacore::Double> world_coords(num_axes, num_points);
-    pixel_coords = 0.0;
-    pixel_coords.row(0) = x;
-    pixel_coords.row(1) = y;
-    casacore::Vector<casacore::Bool> failures;
-    if (!_coord_sys.toWorldMany(world_coords, pixel_coords, failures)) {
+    size_t npoints(points.size());
+    casacore::Vector<casacore::Double> x_pixel(npoints), y_pixel(npoints);
+    for (size_t i = 0; i < npoints; ++i) {
+        x_pixel(i) = points[i].x();
+        y_pixel(i) = points[i].y();
+    }
+    casacore::Quantum<casacore::Vector<casacore::Double>> x_world, y_world;
+    if (!XyPixelsToWorld(x_pixel, y_pixel, x_world, y_world)) {
         return polygon; // nullptr, conversion failed
     }
 
-    // make a vector of quantums for x and y
-    casacore::Quantum<casacore::Vector<casacore::Double>> x_coord(world_coords.row(0));
-    casacore::Quantum<casacore::Vector<casacore::Double>> y_coord(world_coords.row(1));
-    casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
-    x_coord.setUnit(coord_units(0));
-    y_coord.setUnit(coord_units(1));
     std::unique_lock<std::mutex> guard(_casacore_region_mutex);
-    polygon = new casacore::WCPolygon(x_coord, y_coord, _xy_axes, _coord_sys);
+    polygon = new casacore::WCPolygon(x_world, y_world, _xy_axes, _coord_sys);
     guard.unlock();
     return polygon;
 }
@@ -442,33 +687,33 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
         // Convert pixel coordinates to world coordinates;
         // Must be same number of axes as in coord system
         int num_axes(_coord_sys.nPixelAxes());
-        casacore::Vector<casacore::Double> blc_pixel_coords(num_axes, 0.0);
-        casacore::Vector<casacore::Double> trc_pixel_coords(num_axes, 0.0);
-        casacore::Vector<casacore::Double> blc_world_coords(num_axes);
-        casacore::Vector<casacore::Double> trc_world_coords(num_axes);
-        blc_pixel_coords(_spectral_axis) = min_chan;
-        trc_pixel_coords(_spectral_axis) = max_chan;
+        casacore::Vector<casacore::Double> blc_pixel(num_axes, 0.0);
+        casacore::Vector<casacore::Double> trc_pixel(num_axes, 0.0);
+        blc_pixel(_spectral_axis) = min_chan;
+        trc_pixel(_spectral_axis) = max_chan;
         if (num_axes > 3) {
-            blc_pixel_coords(_stokes_axis) = stokes;
-            trc_pixel_coords(_stokes_axis) = stokes;
+            blc_pixel(_stokes_axis) = stokes;
+            trc_pixel(_stokes_axis) = stokes;
         }
-        if (!(_coord_sys.toWorld(blc_world_coords, blc_pixel_coords) && _coord_sys.toWorld(trc_world_coords, trc_pixel_coords)))
+        casacore::Vector<casacore::Double> blc_world(num_axes);
+        casacore::Vector<casacore::Double> trc_world(num_axes);
+        if (!(_coord_sys.toWorld(blc_world, blc_pixel) && _coord_sys.toWorld(trc_world, trc_pixel)))
             return extension_ok; // false, conversions failed
 
-        // make blc, trc Quantities
+        // make blc, trc Quantities for extension box
         int num_extension_axes(_num_dims - 2);
-        casacore::Vector<casacore::String> coord_units = _coord_sys.worldAxisUnits();
+        casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
         casacore::Vector<casacore::Quantum<casacore::Double>> blc(num_extension_axes);
         casacore::Vector<casacore::Quantum<casacore::Double>> trc(num_extension_axes);
         // channel quantities
         int chan_index(_spectral_axis - 2);
-        blc(chan_index) = casacore::Quantity(blc_world_coords(_spectral_axis), coord_units(_spectral_axis));
-        trc(chan_index) = casacore::Quantity(trc_world_coords(_spectral_axis), coord_units(_spectral_axis));
+        blc(chan_index) = casacore::Quantity(blc_world(_spectral_axis), world_units(_spectral_axis));
+        trc(chan_index) = casacore::Quantity(trc_world(_spectral_axis), world_units(_spectral_axis));
         if (num_extension_axes > 1) {
             // stokes quantities
             int stokes_index(_stokes_axis - 2);
-            blc(stokes_index) = casacore::Quantity(blc_world_coords(_stokes_axis), coord_units(_stokes_axis));
-            trc(stokes_index) = casacore::Quantity(trc_world_coords(_stokes_axis), coord_units(_stokes_axis));
+            blc(stokes_index) = casacore::Quantity(blc_world(_stokes_axis), world_units(_stokes_axis));
+            trc(stokes_index) = casacore::Quantity(trc_world(_stokes_axis), world_units(_stokes_axis));
         }
 
         // make extension box
@@ -485,11 +730,13 @@ bool Region::MakeExtensionBox(casacore::WCBox& extend_box, int stokes, ChannelRa
 }
 
 casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_range) {
-    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
+    std::shared_ptr<const casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
 
     // Return 2D wcregion extended by chan, stokes; xyregion if 2D
     if (_num_dims == 2) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         return current_xy_region->cloneRegion(); // copy: this ptr owned by ImageRegion
+        guard.unlock();
     }
 
     casacore::WCExtension* region(nullptr);
@@ -509,12 +756,17 @@ casacore::WCRegion* Region::MakeExtendedRegion(int stokes, ChannelRange channel_
     return region;
 }
 
+// ***********************************
+// Region bounds, mask
+
 casacore::IPosition Region::XyShape() {
     // returns bounding box shape of xy region
-    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
+    std::shared_ptr<const casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_shape;
     if (current_xy_region) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         casacore::LCRegion* region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
+        guard.unlock();
         if (region != nullptr)
             xy_shape = region->shape().keepAxes(_xy_axes);
     }
@@ -523,10 +775,12 @@ casacore::IPosition Region::XyShape() {
 
 casacore::IPosition Region::XyOrigin() {
     // returns bottom-left position of bounding box of xy region
-    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
+    std::shared_ptr<const casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     casacore::IPosition xy_origin;
     if (current_xy_region) {
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         auto extended_region = static_cast<casacore::LCExtension*>(current_xy_region->toLCRegion(_coord_sys, _image_shape));
+        guard.unlock();
         if (extended_region != nullptr)
             xy_origin = extended_region->region().expand(casacore::IPosition(2, 0, 0));
     }
@@ -535,12 +789,14 @@ casacore::IPosition Region::XyOrigin() {
 
 std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> Region::XyMask() {
     // returns boolean mask of xy region
-    std::shared_ptr<casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
+    std::shared_ptr<const casacore::WCRegion> current_xy_region = std::atomic_load(&_xy_region);
     std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask;
 
     if (current_xy_region) {
         // get extended region (or original region for points)
+        std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         auto lc_region = current_xy_region->toLCRegion(_coord_sys, _image_shape);
+        guard.unlock();
 
         // get original region
         switch (_type) {
@@ -569,6 +825,142 @@ std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> Region::XyMask() {
 
     std::atomic_store(&_xy_mask, mask);
     return std::atomic_load(&_xy_mask);
+}
+
+// ***********************************
+// As annotation region for export
+
+casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool pixel_coord) {
+    // Return region as annotation region for export.
+    // If pixel_coord=false but conversion fails, creates region in pixel coordinates; better than nothing
+    casa::AnnRegion* ann_region(nullptr);
+    casa::AnnSymbol* ann_symbol(nullptr); // not a region
+    if (!_control_points.empty()) {
+        try {
+            casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
+            switch (_type) {
+                case CARTA::POINT: {
+                    casacore::Quantity x = casacore::Quantity(_control_points[0].x(), "pix");
+                    casacore::Quantity y = casacore::Quantity(_control_points[0].y(), "pix");
+                    if (!pixel_coord) {
+                        casacore::Vector<casacore::Quantity> world_point;
+                        if (CartaPointToWorld(_control_points[0], world_point)) {
+                            x = world_point(0);
+                            y = world_point(1);
+                        }
+                    }
+                    ann_symbol = new casa::AnnSymbol(x, y, _coord_sys, casa::AnnSymbol::POINT, stokes_types);
+                    break;
+                }
+                case CARTA::RECTANGLE: {
+                    casacore::Quantity cx, cy, xwidth, ywidth;
+                    cx = casacore::Quantity(_control_points[0].x(), "pix");
+                    cy = casacore::Quantity(_control_points[0].y(), "pix");
+                    xwidth = casacore::Quantity(_control_points[1].x(), "pix");
+                    ywidth = casacore::Quantity(_control_points[1].y(), "pix");
+                    if (!pixel_coord) {
+                        casacore::Vector<casacore::Quantity> world_point;
+                        if (CartaPointToWorld(_control_points[0], world_point)) {
+                            cx = world_point[0];
+                            cy = world_point[1];
+                            xwidth = _coord_sys.toWorldLength(_control_points[1].x(), 0);
+                            ywidth = _coord_sys.toWorldLength(_control_points[1].y(), 1);
+                        }
+                    }
+                    if (_rotation == 0.0) {
+                        ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types);
+                    } else {
+                        casacore::Quantity position_angle(_rotation, "deg");
+                        ann_region = new casa::AnnRotBox(cx, cy, xwidth, ywidth, position_angle, _coord_sys, _image_shape, stokes_types);
+                    }
+                    break;
+                }
+                case CARTA::POLYGON: {
+                    size_t npoints(_control_points.size());
+                    casacore::Vector<casacore::Quantity> x_coords(npoints), y_coords(npoints);
+                    for (size_t i = 0; i < npoints; ++i) {
+                        x_coords(i) = casacore::Quantity(_control_points[i].x(), "pix");
+                        y_coords(i) = casacore::Quantity(_control_points[i].y(), "pix");
+                    }
+                    if (!pixel_coord) {
+                        casacore::Vector<casacore::Double> x_pixel(npoints), y_pixel(npoints);
+                        for (size_t i = 0; i < npoints; ++i) {
+                            x_pixel(i) = _control_points[i].x();
+                            y_pixel(i) = _control_points[i].y();
+                        }
+                        casacore::Quantum<casacore::Vector<casacore::Double>> x_world, y_world;
+                        if (XyPixelsToWorld(x_pixel, y_pixel, x_world, y_world)) {
+                            // Unfortunately, constructors for WCPolygon and AnnPolygon differ;
+                            // convert Quantum<Vector> to Vector<Quantum>
+                            casacore::Vector<casacore::Double> x_values(x_world.getValue());
+                            casacore::Unit x_unit(x_world.getUnit());
+                            casacore::Vector<casacore::Double> y_values(y_world.getValue());
+                            casacore::Unit y_unit(y_world.getUnit());
+                            for (size_t i = 0; i < x_values.size(); ++i) {
+                                x_coords(i) = casacore::Quantity(x_values[i], x_unit);
+                                y_coords(i) = casacore::Quantity(y_values[i], y_unit);
+                            }
+                        }
+                    }
+                    ann_region = new casa::AnnPolygon(x_coords, y_coords, _coord_sys, _image_shape, stokes_types);
+                    break;
+                }
+                case CARTA::ELLIPSE: {
+                    casacore::Quantity cx, cy, bmaj, bmin;
+                    cx = casacore::Quantity(_control_points[0].x(), "pix");
+                    cy = casacore::Quantity(_control_points[0].y(), "pix");
+                    bmaj = casacore::Quantity(_control_points[1].x(), "pix");
+                    bmin = casacore::Quantity(_control_points[1].y(), "pix");
+                    if (!pixel_coord) {
+                        casacore::Vector<casacore::Quantity> world_point;
+                        if (CartaPointToWorld(_control_points[0], world_point)) { // will use pixel coords if conversion fails
+                            cx = world_point[0];
+                            cy = world_point[1];
+                            bmaj = _coord_sys.toWorldLength(_control_points[1].x(), 0);
+                            bmin = _coord_sys.toWorldLength(_control_points[1].y(), 1);
+                        }
+                    }
+                    casacore::Quantity position_angle(_rotation, "deg");
+                    ann_region = new casa::AnnEllipse(cx, cy, bmaj, bmin, position_angle, _coord_sys, _image_shape, stokes_types);
+                    break;
+                }
+                default:
+                    break;
+            }
+        } catch (casacore::AipsError& err) {
+            std::cerr << "Export carta region type " << _type << " failed: " << err.getMesg() << std::endl;
+        }
+    }
+    if (ann_region != nullptr) {
+        ann_region->setAnnotationOnly(false);
+    }
+    casacore::CountedPtr<const casa::AnnotationBase> annotation_region;
+    if (ann_symbol != nullptr) {
+        annotation_region = casacore::CountedPtr<const casa::AnnotationBase>(ann_symbol);
+    } else {
+        annotation_region = casacore::CountedPtr<const casa::AnnotationBase>(ann_region);
+    }
+    return annotation_region;
+}
+
+casacore::Vector<casacore::Stokes::StokesTypes> Region::GetStokesTypes() {
+    // convert ints to stokes types in vector
+    casacore::Vector<casacore::Int> istokes;
+    if (_coord_sys.hasPolarizationCoordinate()) {
+        casacore::Vector<casacore::Int> istokes = _coord_sys.stokesCoordinate().stokes();
+    }
+    if (istokes.empty() && (_stokes_axis >= 0)) {
+        unsigned int nstokes(_image_shape(_stokes_axis));
+        istokes.resize(nstokes);
+        for (unsigned int i = 0; i < nstokes; ++i) {
+            istokes(i) = i + 1;
+        }
+    }
+    casacore::Vector<casacore::Stokes::StokesTypes> stokes_types(istokes.size());
+    for (size_t i = 0; i < istokes.size(); ++i) {
+        stokes_types(i) = casacore::Stokes::type(istokes(i));
+    }
+    return stokes_types;
 }
 
 // ***********************************

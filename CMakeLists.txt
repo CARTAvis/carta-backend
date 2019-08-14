@@ -10,6 +10,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 
+# use -DAuthServer:BOOL=ON to link mongodb and jsonccpp
+option(AuthServer "AuthServer" OFF)
+
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -21,6 +24,22 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
+INCLUDE_DIRECTORIES(/usr/include/casacore)
+INCLUDE_DIRECTORIES(/usr/local/include/casacode)
+
+if (AuthServer)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
+    INCLUDE_DIRECTORIES(/usr/include/libbson-1.0/)
+    INCLUDE_DIRECTORIES(/usr/include/libmongoc-1.0/)
+    set(LINK_LIBS
+            jsoncpp
+            mongoc-1.0
+            bson-1.0)
+    set(SOURCE_FILES
+            DBConnect.cc)
+endif (AuthServer)
+
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
@@ -41,11 +60,12 @@ set(LINK_LIBS
         casa_measures
         casa_mirlib
         casa_scimath
-        jsoncpp
+        imageanalysis
         ${HDF5_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
 set(SOURCE_FILES
+        ${SOURCE_FILES}
         Main.cc
         Session.cc
         Frame.cc
@@ -63,6 +83,7 @@ set(SOURCE_FILES
         Util.cc
         FileListHandler.cc
         Tile.cc)
+
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -74,13 +95,16 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Tests
 option(test "Build all tests." OFF)
-if(test)
-  enable_testing()
-  find_package(GTest)
-  include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+if (test)
+    enable_testing()
+    find_package(GTest)
+    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
 
-  add_executable(testTileEncoding test/TestTileEncoding.cc)
-  target_link_libraries(testTileEncoding gtest gtest_main Threads::Threads fmt)
+    add_executable(testTileEncoding test/TestTileEncoding.cc)
+    target_link_libraries(testTileEncoding gtest gtest_main Threads::Threads fmt)
 
-  add_test(NAME TestTileEncoding COMMAND testTileEncoding)
-endif(test)
+    add_test(NAME TestTileEncoding COMMAND testTileEncoding)
+endif (test)
+
+# Install executable
+install(TARGETS carta_backend DESTINATION bin)

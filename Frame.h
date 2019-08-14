@@ -11,10 +11,13 @@
 
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/ImageRegion.h>
+#include <imageanalysis/IO/AsciiAnnotationFileLine.h>
 #include <tbb/atomic.h>
 #include <tbb/queuing_rw_mutex.h>
 
 #include <carta-protobuf/defs.pb.h>
+#include <carta-protobuf/export_region.pb.h>
+#include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
@@ -49,7 +52,7 @@ public:
     int CurrentChannel();
     int CurrentStokes();
 
-    // Create and remove regions
+    // Create, remove, import regions
     bool SetRegion(int region_id, const std::string& name, CARTA::RegionType type, std::vector<CARTA::Point>& points, float rotation,
         std::string& message);
     bool SetCursorRegion(int region_id, const CARTA::Point& point);
@@ -58,6 +61,10 @@ public:
     }
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
+    void ImportRegionFile(CARTA::FileType file_type, std::string& filename, CARTA::ImportRegionAck& import_ack);
+    void ImportRegionContents(CARTA::FileType file_type, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack);
+    void ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename,
+        CARTA::ExportRegionAck& export_ack);
 
     // image view, channels
     bool SetImageView(
@@ -121,6 +128,12 @@ private:
     // Internal regions: image, cursor
     void SetImageRegion(int region_id); // set region for entire plane image or cube
     void SetDefaultCursor();            // using center point of image
+
+    // Region import/export helpers
+    bool ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
+        CARTA::ImportRegionAck& import_ack, std::string message);
+    void ExportCrtfRegion(
+        std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Image view settings
     void SetViewSettings(

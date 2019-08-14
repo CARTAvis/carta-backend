@@ -12,6 +12,8 @@
 #include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/file_list.pb.h>
+#include <carta-protobuf/region_file_info.pb.h>
+#include <carta-protobuf/region_list.pb.h>
 
 #include "Util.h"
 
@@ -29,22 +31,35 @@ public:
     void OnFileListRequest(
         std::string api_key, const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg);
 
+    void OnRegionListRequest(const CARTA::RegionListRequest& request, CARTA::RegionListResponse& response, ResultMsg& result_msg);
+    void OnRegionFileInfoRequest(
+        const CARTA::RegionFileInfoRequest& request, CARTA::RegionFileInfoResponse& response, ResultMsg& result_msg);
+
 private:
-    // lock on file list handler
-    tbb::mutex _file_list_mutex;
-    // ICD: File list response
+    // ICD: File/Region list response
     void GetRelativePath(std::string& folder);
-    void GetFileList(CARTA::FileListResponse& fileList, std::string folder, ResultMsg& result_msg);
     bool CheckPermissionForDirectory(std::string prefix);
     bool CheckPermissionForEntry(const std::string& entry);
+    void GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, bool region_list = false);
     std::string GetType(casacore::ImageOpener::ImageTypes type); // convert enum to string
+    CARTA::FileType GetRegionType(const std::string& filename);  // parse first line for CRTF or DS9
     bool FillFileInfo(CARTA::FileInfo* file_info, const std::string& filename);
+    bool FillRegionFileInfo(CARTA::FileInfo* file_info, const string& filename, CARTA::FileType type = CARTA::FileType::UNKNOWN);
+    void GetRegionFileContents(std::string& full_name, std::vector<std::string>& file_contents);
+
+    // lock on file list handler
+    tbb::mutex _file_list_mutex;
+    tbb::mutex _region_list_mutex;
+    std::string _filelist_folder;
+    std::string _regionlist_folder;
+
     // permissions
     std::unordered_map<std::string, std::vector<std::string>>& _permissions_map;
     bool _permissions_enabled;
-    bool _verbose_logging;
     std::string _api_key;
-    std::string _root_folder, _base_folder, _filelist_folder;
+
+    bool _verbose_logging;
+    std::string _root_folder, _base_folder;
 };
 
 #endif // CARTA_BACKEND__FILELISTHANDLER_H_
