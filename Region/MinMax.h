@@ -28,11 +28,11 @@ public:
 
 template <typename T>
 MinMax<T>::MinMax(const std::vector<T>& data)
-    : _min_val(std::numeric_limits<T>::max()), _max_val(std::numeric_limits<T>::min()), _data(data) {}
+    : _min_val(std::numeric_limits<T>::max()), _max_val(std::numeric_limits<T>::lowest()), _data(data) {}
 
 template <typename T>
 MinMax<T>::MinMax(MinMax<T>& mm, tbb::split)
-    : _min_val(std::numeric_limits<T>::max()), _max_val(std::numeric_limits<T>::min()), _data(mm._data) {}
+    : _min_val(std::numeric_limits<T>::max()), _max_val(std::numeric_limits<T>::lowest()), _data(mm._data) {}
 
 template <typename T>
 void MinMax<T>::operator()(const tbb::blocked_range<size_t>& r) {
