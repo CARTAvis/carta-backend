@@ -21,8 +21,7 @@ struct SpatialProfile {
 
 struct SpectralProfile {
     std::string coordinate;
-    int stokes_index;
-    std::vector<int> stats_types;
+    SpectralConfig config;
     std::vector<bool> profiles_sent;
 };
 
@@ -40,16 +39,15 @@ public:
     // spectral
     bool SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int num_stokes);
     size_t NumSpectralProfiles();
-    int NumStatsToLoad(int profile_index);
-    int GetSpectralConfigStokes(int profile_index);
-    std::string GetSpectralCoordinate(int profile_index);
-    bool GetSpectralConfigStats(int profile_index, ZProfileWidget& stats); // all requested
-    bool IsValidSpectralConfigStats(const ZProfileWidget& stats);
-    bool GetSpectralStatsToLoad(int profile_index, std::vector<int>& stats); // diff of requested and already sent
-    bool GetSpectralProfileStatSent(int profile_index, int stats_type);
-    void SetSpectralProfileStatSent(int profile_index, int stats_type, bool sent);
-    void SetSpectralProfileAllStatsSent(int profile_index, bool sent);
-    void SetAllSpectralProfilesUnsent(); // enable sending new profiles
+    bool IsValidSpectralConfig(const SpectralConfig& config);
+    std::vector<SpectralProfile> GetSpectralProfiles();
+    std::string GetSpectralCoordinate(int config_stokes);
+    bool GetSpectralConfig(int config_stokes, SpectralConfig& config);
+    bool GetUnsentStatsForProfile(int config_stokes, std::vector<int>& stats);
+    bool GetSpectralProfileAllStatsSent(int config_stokes);
+    void SetSpectralProfileStatSent(int config_stokes, int stats_type, bool sent);
+    void SetSpectralProfileAllStatsSent(int config_stokes, bool sent);
+    void SetAllSpectralProfilesUnsent(); // enable sending new profile data, e.g. when region changes
 
 private:
     // parse coordinate strings into <axisIndex, stokesIndex> pairs

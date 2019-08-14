@@ -146,8 +146,10 @@ bool RegionProfiler::SetSpectralRequirements(
         // add to spectral profiles
         SpectralProfile new_spectral_profile;
         new_spectral_profile.coordinate = coordinate;
-        new_spectral_profile.stokes_index = axis_stokes.second;
-        new_spectral_profile.stats_types = {config.stats_types().begin(), config.stats_types().end()};
+        SpectralConfig new_spectral_config;
+        new_spectral_config.stokes_index = axis_stokes.second;
+        new_spectral_config.stats_types = {config.stats_types().begin(), config.stats_types().end()};
+        new_spectral_profile.config = new_spectral_config;
         new_spectral_profile.profiles_sent = std::vector<bool>(config.stats_types_size(), false);
         new_profiles.push_back(new_spectral_profile);
     }
@@ -162,14 +164,14 @@ bool RegionProfiler::SetSpectralRequirements(
 }
 
 void RegionProfiler::DiffSpectralRequirements(std::vector<SpectralProfile>& last_profiles) {
-    // Determine which current profiles are new (have unsent data streams)
+    // Determine which current profiles have sent data streams
     for (size_t i = 0; i < NumSpectralProfiles(); ++i) {
         for (size_t j = 0; j < last_profiles.size(); ++j) {
             if (_spectral_profiles[i].coordinate == last_profiles[j].coordinate) {
                 // search for each stats_type
-                for (size_t k = 0; k < _spectral_profiles[i].stats_types.size(); ++k) {
-                    for (size_t l = 0; l < last_profiles[j].stats_types.size(); ++l) {
-                        if (_spectral_profiles[i].stats_types[k] == last_profiles[j].stats_types[l]) {
+                for (size_t k = 0; k < _spectral_profiles[i].config.stats_types.size(); ++k) {
+                    for (size_t l = 0; l < last_profiles[j].config.stats_types.size(); ++l) {
+                        if (_spectral_profiles[i].config.stats_types[k] == last_profiles[j].config.stats_types[l]) {
                             _spectral_profiles[i].profiles_sent[k] = last_profiles[j].profiles_sent[l];
                         }
                     }
@@ -183,106 +185,110 @@ size_t RegionProfiler::NumSpectralProfiles() {
     return _spectral_profiles.size();
 }
 
-int RegionProfiler::NumStatsToLoad(int profile_index) {
-    int num_unsent(0);
-    if (profile_index < NumSpectralProfiles()) {
-        SpectralProfile profile = _spectral_profiles[profile_index];
-        for (auto sent : profile.profiles_sent) {
-            if (!sent) {
-                ++num_unsent;
-            }
+bool RegionProfiler::IsValidSpectralConfig(const SpectralConfig& config) {
+    // check if spectral profile still exists
+    std::vector<SpectralProfile> profiles = GetSpectralProfiles();
+    for (const auto& profile : profiles) {
+        if (profile.config == config) { // same stokes index, same stats
+            return true;
         }
-    }
-    return num_unsent;
-}
-
-int RegionProfiler::GetSpectralConfigStokes(int profile_index) {
-    // return Stokes int value at given index; return false if index out of range
-    if (profile_index < NumSpectralProfiles()) {
-        return _spectral_profiles[profile_index].stokes_index;
-    }
-    return CURRENT_STOKES - 1; // invalid
-}
-
-std::string RegionProfiler::GetSpectralCoordinate(int profile_index) {
-    if (profile_index < NumSpectralProfiles()) {
-        return _spectral_profiles[profile_index].coordinate;
-    } else {
-        return std::string();
-    }
-}
-
-bool RegionProfiler::GetSpectralConfigStats(int profile_index, ZProfileWidget& stats) {
-    // return stats_types at given index; return false if index out of range
-    if (profile_index < NumSpectralProfiles()) {
-        stats = ZProfileWidget(_spectral_profiles[profile_index].stokes_index, _spectral_profiles[profile_index].stats_types);
-        return true;
     }
     return false;
 }
 
-bool RegionProfiler::IsValidSpectralConfigStats(const ZProfileWidget& stats) {
-    // (NumSpectralProfiles() == 0) means the region id is removed from the frontend zprofile widgets
-    if (NumSpectralProfiles() > 0) {
-        for (const auto& spectral_profile : _spectral_profiles) {
-            if (stats.stokes_index == spectral_profile.stokes_index) {
-                if (stats.stats_types == spectral_profile.stats_types) {
-                    return true;
+std::vector<SpectralProfile> RegionProfiler::GetSpectralProfiles() {
+    std::vector<SpectralProfile> profiles;
+    for (auto& profile : _spectral_profiles) {
+        profiles.push_back(profile);
+    }
+    return profiles;
+}
+
+std::string RegionProfiler::GetSpectralCoordinate(int config_stokes) {
+    // return SpectralProfile.coordinate
+    std::vector<SpectralProfile> profiles = GetSpectralProfiles();
+    for (auto& iprofile : profiles) {
+        if (iprofile.config.stokes_index == config_stokes) { // found profile
+            return iprofile.coordinate;
+        }
+    }
+    return std::string();
+}
+
+bool RegionProfiler::GetSpectralConfig(int config_stokes, SpectralConfig& config) {
+    // returns whether found config for profile
+    std::vector<SpectralProfile> profiles = GetSpectralProfiles();
+    for (auto& profile : profiles) {
+        if (profile.config.stokes_index == config_stokes) { // found profile
+            config = profile.config;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool RegionProfiler::GetUnsentStatsForProfile(int config_stokes, std::vector<int>& stats) {
+    // return stats for given stokes index if sent=false; returns true if profile found
+    std::vector<SpectralProfile> profiles = GetSpectralProfiles();
+    for (auto& iprofile : profiles) {
+        if (iprofile.config.stokes_index == config_stokes) { // found profile
+            for (size_t i = 0; i < iprofile.profiles_sent.size(); ++i) {
+                if (!iprofile.profiles_sent[i]) {
+                    stats.push_back(iprofile.config.stats_types[i]);
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool RegionProfiler::GetSpectralProfileAllStatsSent(int config_stokes) {
+    // return whether all stats_types for this profile have been sent or are no longer needed
+    bool all_sent(true); // true until proven false
+    std::vector<SpectralProfile> profiles = GetSpectralProfiles();
+    bool found_profile(false);
+    for (auto& profile : profiles) {
+        if (found_profile) {
+            break;
+        }
+        if (profile.config.stokes_index == config_stokes) { // found config_stokes
+            found_profile = true;
+            for (size_t j = 0; j < profile.config.stats_types.size(); ++j) {
+                all_sent &= profile.profiles_sent[j];  // false if any false
+            }
+        }
+    }
+    return all_sent;
+}
+
+void RegionProfiler::SetSpectralProfileStatSent(int config_stokes, int stats_type, bool sent) {
+    // mark this stat sent so not sent again if requirements change
+    // stats_type -1 means all stats
+    bool found_profile(false);
+    for (size_t i = 0; i < NumSpectralProfiles(); ++i) {
+        if (found_profile) {
+            break;
+        }
+        if (_spectral_profiles[i].config.stokes_index == config_stokes) { // found profile
+            found_profile = true;
+            for (size_t j = 0; j < _spectral_profiles[i].config.stats_types.size(); ++j) {
+                if ((stats_type == -1) || (_spectral_profiles[i].config.stats_types[j] == stats_type)) { // found stats_type
+                    _spectral_profiles[i].profiles_sent[j] = sent;
+                    break;
                 }
             }
         }
     }
-    return false;
 }
 
-bool RegionProfiler::GetSpectralStatsToLoad(int profile_index, std::vector<int>& stats) {
-    // Return vector of stats that were not sent
-    if (profile_index < NumSpectralProfiles()) {
-        stats.clear();
-        for (size_t i = 0; i < _spectral_profiles[profile_index].profiles_sent.size(); ++i) {
-            if (!_spectral_profiles[profile_index].profiles_sent[i]) {
-                stats.push_back(_spectral_profiles[profile_index].stats_types[i]);
-            }
-        }
-        return true;
-    }
-    return false;
-}
-
-bool RegionProfiler::GetSpectralProfileStatSent(int profile_index, int stats_type) {
-    bool stat_sent(false);
-    if (profile_index < NumSpectralProfiles()) {
-        SpectralProfile profile = _spectral_profiles[profile_index];
-        for (size_t i = 0; i < profile.stats_types.size(); ++i) {
-            if (profile.stats_types[i] == stats_type) {
-                stat_sent = profile.profiles_sent[i];
-                break;
-            }
-        }
-    }
-    return stat_sent;
-}
-
-void RegionProfiler::SetSpectralProfileStatSent(int profile_index, int stats_type, bool sent) {
-    if (profile_index < NumSpectralProfiles()) {
-        for (size_t i = 0; i < _spectral_profiles[profile_index].stats_types.size(); ++i) {
-            if (_spectral_profiles[profile_index].stats_types[i] == stats_type) {
-                _spectral_profiles[profile_index].profiles_sent[i] = sent;
-                break;
-            }
-        }
-    }
-}
-
-void RegionProfiler::SetSpectralProfileAllStatsSent(int profile_index, bool sent) {
-    if (profile_index < NumSpectralProfiles()) {
-        for (size_t i = 0; i < _spectral_profiles[profile_index].profiles_sent.size(); ++i) {
-            _spectral_profiles[profile_index].profiles_sent[i] = sent;
-        }
-    }
+void RegionProfiler::SetSpectralProfileAllStatsSent(int config_stokes, bool sent) {
+    // mark all stats for this profile sent
+    SetSpectralProfileStatSent(config_stokes, -1, sent);
 }
 
 void RegionProfiler::SetAllSpectralProfilesUnsent() {
+    // mark all stats for all profiles sent
     for (size_t i = 0; i < NumSpectralProfiles(); ++i) {
         for (size_t j = 0; j < _spectral_profiles[i].profiles_sent.size(); ++j) {
             _spectral_profiles[i].profiles_sent[j] = false;

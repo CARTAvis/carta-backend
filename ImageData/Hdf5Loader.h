@@ -329,9 +329,11 @@ bool Hdf5Loader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLatt
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int region_id, int profile_index, int stokes,
+bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
     const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin,
     const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+    // config_stokes is the stokes value in the spectral config, could be -1 for CURRENT_STOKES; used to retrieve config from region
+    // profile_stokes is the stokes index to use for slicing image data
     if (!HasData(FileInfo::Data::SWIZZLED)) {
         return false;
     }
@@ -341,11 +343,11 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int profile_index, int sto
     int num_z = _num_channels;
 
     bool recalculate(false);
-    auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
+    auto region_stats_id = FileInfo::RegionStatsId(region_id, profile_stokes);
 
     if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
         _region_stats.emplace(
-            std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask->shape(), num_z));
+            std::piecewise_construct, std::forward_as_tuple(region_id, profile_stokes), std::forward_as_tuple(origin, mask->shape(), num_z));
         recalculate = true;
     } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
         _region_stats[region_stats_id].origin = origin;
@@ -399,8 +401,8 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int profile_index, int sto
         }
 
         // get a copy of current region configs
-        ZProfileWidget config_stats;
-        if (!_frame->GetRegionConfigs(region_id, profile_index, config_stats)) {
+        SpectralConfig config_stats;
+        if (!_frame->GetRegionSpectralConfig(region_id, config_stokes, config_stats)) {
             return false;
         }
 
@@ -444,13 +446,13 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int profile_index, int sto
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = x_start; x < num_x; x++) {
             // check if frontend's requirements changed
-            if (_frame != nullptr && _frame->Interrupt(region_id, stokes, region_state, config_stats, true)) {
+            if (_frame != nullptr && _frame->Interrupt(region_id, profile_stokes, region_state, config_stats, true)) {
                 // remember the latest x step
                 _region_stats[region_stats_id].latest_x = x;
                 return false;
             }
 
-            bool have_spectral_data = GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y);
+            bool have_spectral_data = GetCursorSpectralData(slice_data, profile_stokes, x + x_min, 1, y_min, num_y);
             if (!have_spectral_data) {
                 return false;
             }

@@ -40,7 +40,7 @@ struct ViewSettings {
 class Frame {
 public:
     Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info,
-        int default_channel = DEFAULT_CHANNEL);
+        bool verbose, int default_channel = DEFAULT_CHANNEL);
     ~Frame();
 
     // frame info
@@ -116,13 +116,13 @@ public:
 
     // Get current region states
     bool GetRegionState(int region_id, RegionState& region_state);
-    // Get current region configs
-    bool GetRegionConfigs(int region_id, int profile_index, ZProfileWidget& config_stats);
+    // Get current region spectral config
+    bool GetRegionSpectralConfig(int region_id, int config_stokes, SpectralConfig& config_stats);
 
     // Interrupt conditions
     bool Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2); // cursor and point regions
-    bool Interrupt(
-        int region_id, int profile_stokes, const RegionState& region_state, const ZProfileWidget& config_stats, bool is_HDF5 = false);
+    bool Interrupt(int region_id, int profile_stokes, const RegionState& start_region_state, const SpectralConfig& start_config_stats,
+        bool is_HDF5 = false);
 
 private:
     // Internal regions: image, cursor
@@ -173,7 +173,7 @@ private:
     bool GetPointSpectralData(int region_id, casacore::SubImage<float>& sub_image,
         const std::function<void(std::vector<float>, float)>& partial_results_callback);
     // get region stats data
-    bool GetRegionSpectralData(int region_id, int profile_index, int profile_stokes,
+    bool GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
 
     // Functions used to set cursor and region states
@@ -183,7 +183,7 @@ private:
     // Functions used to check cursor and region states
     bool IsConnected(int region_id);
     bool IsSameRegionState(int region_id, const RegionState& region_state);
-    bool IsSameRegionSpectralConfig(int region_id, int profile_stokes, const ZProfileWidget& config_stats, bool is_HDF5 = false);
+    bool IsSameRegionSpectralConfig(int region_id, int profile_stokes, const SpectralConfig& start_config_stats, bool is_HDF5 = false);
 
     // setup
     uint32_t _session_id;
@@ -215,11 +215,13 @@ private:
     // Region
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID
     bool _cursor_set;                                                 // cursor region set by frontend, not internally
+    // Current cursor's x-y coordinate
+    CursorXy _cursor_xy;
 
     // Communication
     volatile bool _connected = true;
-    // Current cursor's x-y coordinate
-    CursorXy _cursor_xy;
+    bool _verbose;
+
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

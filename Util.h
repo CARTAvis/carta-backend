@@ -132,14 +132,17 @@ struct RegionState {
     }
 };
 
-struct ZProfileWidget {
+struct SpectralConfig {
     int stokes_index;
     std::vector<int> stats_types;
 
-    ZProfileWidget() {}
-    ZProfileWidget(int stokes_index_, std::vector<int> stats_types_) {
+    SpectralConfig() {}
+    SpectralConfig(int stokes_index_, std::vector<int> stats_types_) {
         stokes_index = stokes_index_;
         stats_types = stats_types_;
+    }
+    bool operator==(const SpectralConfig& rhs) const {
+        return ((stokes_index == rhs.stokes_index) && (stats_types == rhs.stats_types));
     }
 };
 
