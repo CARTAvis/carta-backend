@@ -234,6 +234,26 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     SendEvent(CARTA::EventType::FILE_INFO_RESPONSE, request_id, response);
 }
 
+void Session::OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id) {
+    CARTA::RegionListResponse response;
+    FileListHandler::ResultMsg result_msg;
+    _file_list_handler->OnRegionListRequest(request, response, result_msg);
+    SendEvent(CARTA::EventType::REGION_LIST_RESPONSE, request_id, response);
+    if (!result_msg.message.empty()) {
+        SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
+    }
+}
+
+void Session::OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id) {
+    CARTA::RegionFileInfoResponse response;
+    FileListHandler::ResultMsg result_msg;
+    _file_list_handler->OnRegionFileInfoRequest(request, response, result_msg);
+    SendEvent(CARTA::EventType::REGION_FILE_INFO_RESPONSE, request_id, response);
+    if (!result_msg.message.empty()) {
+        SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
+    }
+}
+
 void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     // Create Frame and send response message
     const auto& directory(message.directory());
@@ -463,6 +483,65 @@ void Session::OnRemoveRegion(const CARTA::RemoveRegion& message) {
             if (frame.second)
                 frame.second->RemoveRegion(region_id);
         }
+    }
+}
+
+void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t request_id) {
+    auto file_id(message.group_id()); // eventually, import into wcs group
+    if (_frames.count(file_id)) {
+        try {
+            CARTA::ImportRegionAck import_ack; // response
+            std::string directory(message.directory()), filename(message.file());
+            CARTA::FileType file_type(message.type());
+            if (!directory.empty() && !filename.empty()) {
+                // form path with filename
+                casacore::Path root_path(_root_folder);
+                root_path.append(directory);
+                root_path.append(filename);
+                std::string abs_filename(root_path.resolvedName());
+                _frames.at(file_id)->ImportRegionFile(file_type, abs_filename, import_ack);
+                SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
+            } else {
+                std::vector<std::string> contents = {message.contents().begin(), message.contents().end()};
+                _frames.at(file_id)->ImportRegionContents(file_type, contents, import_ack);
+                SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
+            }
+        } catch (std::out_of_range& range_error) {
+            std::string error = fmt::format("File id {} closed", file_id);
+            SendLogEvent(error, {"import"}, CARTA::ErrorSeverity::DEBUG);
+        }
+    } else {
+        std::string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"import"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t request_id) {
+    auto file_id(message.file_id());
+    if (_frames.count(file_id)) {
+        try {
+            CARTA::ExportRegionAck export_ack; // response
+            CARTA::FileType file_type(message.type());
+            CARTA::CoordinateType coord_type(message.coord_type());
+            std::string directory(message.directory()), filename(message.file());
+            std::vector<int> region_ids = {message.region_id().begin(), message.region_id().end()};
+            std::string abs_filename;
+            if (!directory.empty() && !filename.empty()) { // export file on server
+                // form path with filename
+                casacore::Path root_path(_root_folder);
+                root_path.append(directory);
+                root_path.append(filename);
+                abs_filename = root_path.absoluteName();
+            }
+            _frames.at(file_id)->ExportRegion(file_type, coord_type, region_ids, abs_filename, export_ack);
+            SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
+        } catch (std::out_of_range& range_error) {
+            string error = fmt::format("File id {} closed", file_id);
+            SendLogEvent(error, {"export"}, CARTA::ErrorSeverity::DEBUG);
+        }
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"export"}, CARTA::ErrorSeverity::DEBUG);
     }
 }
 

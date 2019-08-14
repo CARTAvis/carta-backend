@@ -7,6 +7,7 @@
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Regions/ImageRegion.h>
 #include <casacore/images/Regions/WCBox.h>
+#include <imageanalysis/Annotations/AnnRegion.h>
 
 #include <carta-protobuf/spectral_profile.pb.h>
 
@@ -28,9 +29,13 @@ class Region {
     // * a CARTA::Region type
 
 public:
+    // Constructors
+    // Region created from SET_REGION
     Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, const float rotation,
         const casacore::IPosition image_shape, int spectral_axis, int stokes_axis, const casacore::CoordinateSystem& coord_sys);
-    ~Region();
+    // Region created from CRTF file
+    Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_region, const casacore::IPosition image_shape, int spectral_axis,
+        int stokes_axis, const casacore::CoordinateSystem& coord_sys);
 
     // to determine if data needs to be updated
     inline bool IsValid() {
@@ -49,8 +54,14 @@ public:
     inline std::string Name() {
         return _name;
     };
+    inline CARTA::RegionType Type() {
+        return _type;
+    };
     inline std::vector<CARTA::Point> GetControlPoints() {
         return _control_points;
+    };
+    inline float Rotation() {
+        return _rotation;
     };
     casacore::IPosition XyShape();
     casacore::IPosition XyOrigin();
@@ -58,6 +69,7 @@ public:
     inline bool XyRegionValid() {
         return bool(_xy_region);
     };
+    casacore::CountedPtr<const casa::AnnotationBase> AnnotationRegion(bool pixel_coord = true);
 
     // get image region for requested stokes and (optionally) single channel
     bool GetRegion(casacore::ImageRegion& region, int stokes, ChannelRange channel_range = {0, ALL_CHANNELS});
@@ -133,6 +145,15 @@ private:
     bool CheckPolygonPoints(const std::vector<CARTA::Point>& points);
     bool PointsChanged(const std::vector<CARTA::Point>& new_points); // compare new points with stored points
 
+    // conversion between world and pixel coordinates
+    double AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis);
+    bool CartaPointToWorld(const CARTA::Point& point, casacore::Vector<casacore::Quantity>& world_point);
+    bool XyPixelsToWorld(casacore::Vector<casacore::Double> x, casacore::Vector<casacore::Double> y,
+        casacore::Quantum<casacore::Vector<casacore::Double>>& x_world, casacore::Quantum<casacore::Vector<casacore::Double>>& y_world);
+
+    // For region export, need stokes types from coordinate system
+    casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
+
     // Create xy regions
     bool SetXyRegion(const std::vector<CARTA::Point>& points, float rotation); // 2D plane saved as m_xyRegion
     casacore::WCRegion* MakePointRegion(const std::vector<CARTA::Point>& points);
@@ -153,6 +174,9 @@ private:
 
     void SetConnectionFlag(bool connected);
 
+    // util to split input string into parts by delimiter
+    void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
+
     // region definition (ICD SET_REGION parameters)
     std::string _name;
     CARTA::RegionType _type;
@@ -168,7 +192,7 @@ private:
     int _num_dims, _spectral_axis, _stokes_axis;
 
     // stored 2D region
-    std::shared_ptr<casacore::WCRegion> _xy_region;
+    std::shared_ptr<const casacore::WCRegion> _xy_region;
 
     // stored 2D mask
     std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> _xy_mask;
