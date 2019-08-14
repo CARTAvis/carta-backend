@@ -255,7 +255,7 @@ bool RegionProfiler::GetSpectralProfileAllStatsSent(int config_stokes) {
         if (profile.config.stokes_index == config_stokes) { // found config_stokes
             found_profile = true;
             for (size_t j = 0; j < profile.config.stats_types.size(); ++j) {
-                all_sent &= profile.profiles_sent[j];  // false if any false
+                all_sent &= profile.profiles_sent[j]; // false if any false
             }
         }
     }

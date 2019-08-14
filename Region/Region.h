@@ -111,7 +111,8 @@ public:
     // Spectral data
     bool GetSpectralProfileData(
         std::map<CARTA::StatsType, std::vector<double>>& spectral_data, int config_stokes, casacore::ImageInterface<float>& image);
-    void FillPointSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, int config_stokes, std::vector<float>& spectral_data);
+    void FillPointSpectralProfileDataMessage(
+        CARTA::SpectralProfileData& profile_message, int config_stokes, std::vector<float>& spectral_data);
     void FillSpectralProfileDataMessage(
         CARTA::SpectralProfileData& profile_message, int config_stokes, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
     void FillNaNSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, int config_stokes);

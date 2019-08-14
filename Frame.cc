@@ -1181,7 +1181,8 @@ bool Frame::FillSpectralProfileData(
                 int profile_stokes = (config_stokes == CURRENT_STOKES ? curr_stokes : config_stokes);
 
                 // fill SpectralProfiles for this config
-                if (region->IsPoint()) { // values in image slice
+                if (region->IsPoint()) {
+                    // profile is values in image slice
                     std::vector<float> spectral_data;
                     auto cursor_point = region->GetControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
@@ -1211,7 +1212,8 @@ bool Frame::FillSpectralProfileData(
                         });
                         guard.unlock();
                     }
-                } else { // statistics for image region (SubImage)
+                } else {
+                    // profile is statistics for image region (SubImage)
                     if (_image_shape.size() < 3) { // no spectral axis
                         // send empty (NaN) result
                         CARTA::SpectralProfileData profile_message;
@@ -1473,7 +1475,8 @@ bool Frame::GetPointSpectralData(
     data.resize(sub_image_shape.product(), std::numeric_limits<double>::quiet_NaN());
 
     try {
-        if ((sub_image_shape.size() > 2) && (_spectral_axis >= 0)) { // stoppable spectral profile process
+        if ((sub_image_shape.size() > 2) && (_spectral_axis >= 0)) {
+            // stoppable spectral profile process
             size_t delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
             size_t dt_target = TARGET_DELTA_TIME;       // the target time elapse for each step, in the unit of milliseconds
             size_t profile_size = NumChannels();        // profile vector size
@@ -1538,7 +1541,8 @@ bool Frame::GetPointSpectralData(
                 }
                 data_ok = true;
             }
-        } else { // non-stoppable spectral profile process
+        } else {
+            // non-stoppable spectral profile process
             casacore::Array<float> tmp(sub_image_shape, data.data(), casacore::StorageInitPolicy::SHARE);
             sub_image.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sub_image_shape.size(), 0), sub_image_shape));
             data_ok = true;
@@ -1569,7 +1573,8 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
         // initialize the spectral data
         std::map<CARTA::StatsType, std::vector<double>> results;
         size_t profile_size = NumChannels(); // total number of channels
-        if (!region->InitSpectralData(config_stokes, profile_size, results)) { // config removed or no unsent stats
+        if (!region->InitSpectralData(config_stokes, profile_size, results)) {
+            // config removed or no unsent stats
             return false;
         }
 
@@ -1608,8 +1613,8 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
                     }
                 } else {
                     if (_verbose) {
-                        std::cerr << "Can not get zprofile, region id: " << region_id << ", channel range: [" << start << "," << end
-                                  << "]" << std::endl;
+                        std::cerr << "Can not get zprofile, region id: " << region_id << ", channel range: [" << start << "," << end << "]"
+                                  << std::endl;
                     }
                     return data_ok;
                 }
@@ -1667,8 +1672,8 @@ bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cu
     return false;
 }
 
-bool Frame::Interrupt(int region_id, int profile_stokes, const RegionState& start_region_state,
-    const SpectralConfig& start_config_stats, bool is_HDF5) {
+bool Frame::Interrupt(
+    int region_id, int profile_stokes, const RegionState& start_region_state, const SpectralConfig& start_config_stats, bool is_HDF5) {
     // check if region, current stokes, spectral requirements changed
     bool interrupt(true);
     if (!IsConnected(region_id)) {
@@ -1707,8 +1712,7 @@ bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
     return false;
 }
 
-bool Frame::IsSameRegionSpectralConfig(
-    int region_id, int profile_stokes, const SpectralConfig& start_config_stats, bool is_HDF5) {
+bool Frame::IsSameRegionSpectralConfig(int region_id, int profile_stokes, const SpectralConfig& start_config_stats, bool is_HDF5) {
     // compare stokes, spectral requirements
     if (!_regions.count(region_id)) { // region closed
         return false;

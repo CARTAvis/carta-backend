@@ -346,8 +346,8 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
     auto region_stats_id = FileInfo::RegionStatsId(region_id, profile_stokes);
 
     if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
-        _region_stats.emplace(
-            std::piecewise_construct, std::forward_as_tuple(region_id, profile_stokes), std::forward_as_tuple(origin, mask->shape(), num_z));
+        _region_stats.emplace(std::piecewise_construct, std::forward_as_tuple(region_id, profile_stokes),
+            std::forward_as_tuple(origin, mask->shape(), num_z));
         recalculate = true;
     } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
         _region_stats[region_stats_id].origin = origin;

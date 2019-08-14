@@ -39,8 +39,8 @@ struct ViewSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info,
-        bool verbose, int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, bool verbose,
+        int default_channel = DEFAULT_CHANNEL);
     ~Frame();
 
     // frame info
@@ -221,7 +221,6 @@ private:
     // Communication
     volatile bool _connected = true;
     bool _verbose;
-
 };
 
 #endif // CARTA_BACKEND__FRAME_H_
