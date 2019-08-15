@@ -979,17 +979,21 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                         }
                     } else {
                         casacore::SubImage<float> sub_image;
-                        std::vector<float> region_data;
-                        std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSubImage(region_id, sub_image, curr_stokes, ChannelRange(config_channel));
-                        bool has_data(region->GetData(region_data, sub_image)); // get subimage data once
-                        guard.unlock();
-                        if (has_data) {
-                            if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
-                                region->CalcMinMax(config_channel, curr_stokes, region_data, min_val, max_val);
+                        std::unique_lock<std::mutex> ulock(_image_mutex);
+                        bool has_subimage = GetRegionSubImage(region_id, sub_image, curr_stokes, ChannelRange(config_channel));
+                        ulock.unlock();
+                        if (has_subimage) {
+                            std::vector<float> region_data;
+                            std::unique_lock<std::mutex> ulock2(_image_mutex);
+                            bool has_region_data = region->GetData(region_data, sub_image); // get subimage data once
+                            ulock2.unlock();
+                            if (has_region_data) {
+                                if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
+                                    region->CalcMinMax(config_channel, curr_stokes, region_data, min_val, max_val);
+                                }
+                                region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, region_data, *new_histogram);
                             }
                         }
-                        region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, region_data, *new_histogram);
                     }
                 }
             }
@@ -1188,8 +1192,7 @@ bool Frame::FillSpectralProfileData(
                     std::vector<float> spectral_data;
                     auto cursor_point = region->GetControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
-                    bool have_spectral_data =
-                        _loader->GetCursorSpectralData(
+                    bool have_spectral_data = _loader->GetCursorSpectralData(
                             spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1, _image_mutex);
                     if (have_spectral_data) {
                         CARTA::SpectralProfileData profile_message;
@@ -1202,16 +1205,19 @@ bool Frame::FillSpectralProfileData(
                     } else {
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
+                        bool has_subimage = GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
                         guard.unlock();
-                        profile_ok = GetPointSpectralData(region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
-                            CARTA::SpectralProfileData profile_message;
-                            profile_message.set_stokes(curr_stokes);
-                            profile_message.set_progress(progress);
-                            region->FillPointSpectralProfileDataMessage(profile_message, config_stokes, tmp_spectral_data);
-                            // send (partial) result to Session
-                            cb(profile_message);
-                        });
+                        if (has_subimage) {
+                            profile_ok = GetPointSpectralData(
+                                region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
+                                CARTA::SpectralProfileData profile_message;
+                                profile_message.set_stokes(curr_stokes);
+                                profile_message.set_progress(progress);
+                                region->FillPointSpectralProfileDataMessage(profile_message, config_stokes, tmp_spectral_data);
+                                // send (partial) result to Session
+                                cb(profile_message);
+                            });
+                        }
                     }
                 } else {
                     // profile is statistics for image region (SubImage)
@@ -1283,11 +1289,13 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
             stats_data.set_channel(_channel_index);
             stats_data.set_stokes(_stokes_index);
             casacore::SubImage<float> sub_image;
-            std::unique_lock<std::mutex> guard(_image_mutex);
-            if (GetRegionSubImage(region_id, sub_image, _stokes_index, ChannelRange(_channel_index))) {
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            bool have_subimage = GetRegionSubImage(region_id, sub_image, _stokes_index, ChannelRange(_channel_index));
+            ulock.unlock();
+            if (have_subimage) {
+                std::lock_guard<std::mutex> guard(_image_mutex);
                 region->FillStatsData(stats_data, sub_image, _channel_index, _stokes_index);
             } else {
-                guard.unlock(); // not using ImageStatistics
                 region->FillNaNStatsData(stats_data);
             }
             stats_ok = true;
@@ -1341,14 +1349,19 @@ bool Frame::CalcRegionMinMax(int region_id, int channel, int stokes, float& min_
             }
             min_max_ok = true;
         } else {
-            std::unique_lock<std::mutex> guard(_image_mutex);
             casacore::SubImage<float> sub_image;
-            GetRegionSubImage(region_id, sub_image, stokes, ChannelRange(channel));
-            std::vector<float> region_data;
-            bool has_data(region->GetData(region_data, sub_image));
-            guard.unlock();
-            if (has_data) {
-                region->CalcMinMax(channel, stokes, region_data, min_val, max_val);
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            bool has_subimage = GetRegionSubImage(region_id, sub_image, stokes, ChannelRange(channel));
+            ulock.unlock();
+            bool has_data(false);
+            if (has_subimage) {
+                std::vector<float> region_data;
+                std::unique_lock<std::mutex> ulock2(_image_mutex);
+                has_data = region->GetData(region_data, sub_image);
+                ulock2.unlock();
+                if (has_data) {
+                    region->CalcMinMax(channel, stokes, region_data, min_val, max_val);
+                }
             }
             min_max_ok = has_data;
         }
@@ -1410,14 +1423,19 @@ bool Frame::CalcRegionHistogram(
             }
             histogram_ok = true;
         } else {
-            std::unique_lock<std::mutex> guard(_image_mutex);
+            bool has_data(false);
             casacore::SubImage<float> sub_image;
-            GetRegionSubImage(region_id, sub_image, stokes, ChannelRange(channel));
-            std::vector<float> region_data;
-            bool has_data(region->GetData(region_data, sub_image));
-            guard.unlock();
-            if (has_data) {
-                region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, region_data, histogram);
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            bool has_subimage = GetRegionSubImage(region_id, sub_image, stokes, ChannelRange(channel));
+            ulock.unlock();
+            if (has_subimage) {
+                std::vector<float> region_data;
+                std::unique_lock<std::mutex> ulock2(_image_mutex);
+                has_data = region->GetData(region_data, sub_image);
+                ulock2.unlock();
+                if (has_data) {
+                    region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, region_data, histogram);
+                }
             }
             histogram_ok = has_data;
         }
@@ -1602,11 +1620,15 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
             count = end - start + 1;
 
             // try to get sub-image and its stats data
-            std::unique_lock<std::mutex> guard(_image_mutex);
-            if (GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange(start, end))) {
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            bool has_subimage = GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange(start, end));
+            ulock.unlock();
+            if (has_subimage) {
                 std::map<CARTA::StatsType, std::vector<double>> buffers;
-                if (region->GetSpectralProfileData(buffers, config_stokes, sub_image)) {
-                    guard.unlock();
+                std::unique_lock<std::mutex> ulock2(_image_mutex);
+                bool has_data = region->GetSpectralProfileData(buffers, config_stokes, sub_image);
+                ulock2.unlock();
+                if (has_data) {
                     for (const auto& buffer : buffers) {
                         auto stats_type = buffer.first;
                         if (results.count(stats_type)) {
@@ -1615,16 +1637,12 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
                         }
                     }
                 } else {
-                    guard.unlock();
                     if (_verbose) {
                         std::cerr << "Can not get zprofile, region id: " << region_id << ", channel range: [" << start << "," << end << "]"
                                   << std::endl;
                     }
                     return data_ok;
                 }
-            }
-	    if (guard) {
-                guard.unlock();
             }
 
             start += count;
