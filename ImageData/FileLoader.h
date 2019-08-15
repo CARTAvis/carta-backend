@@ -148,11 +148,15 @@ public:
     // Return a casacore image type representing the data stored in the
     // specified HDU/group/table/etc.
     virtual ImageRef LoadData(FileInfo::Data ds) = 0;
-    virtual bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y);
+
+    virtual bool GetCursorSpectralData(
+        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
     // check if one can apply swizzled data under such image format and region condition
-    virtual bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask);
-    virtual bool GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask,
-        IPos origin, const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
+    virtual bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex);
+    virtual bool GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
+        const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
+        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
+
     virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
     virtual void SetFramePtr(Frame* frame);
 

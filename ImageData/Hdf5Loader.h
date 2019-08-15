@@ -20,9 +20,11 @@ public:
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
-    bool GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) override;
-    bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask) override;
-    bool GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin,
+    bool GetCursorSpectralData(
+        std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
+    bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) override;
+    bool GetRegionSpectralData(int region_id, int profile_index, int stokes,
+        const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     void SetFramePtr(Frame* frame) override;
 
@@ -287,9 +289,13 @@ casacore::ArrayBase* Hdf5Loader::GetStatsDataTyped(FileInfo::Data ds) {
     return data;
 }
 
-bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) {
+bool Hdf5Loader::GetCursorSpectralData(
+    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) {
     bool data_ok(false);
-    if (HasData(FileInfo::Data::SWIZZLED)) {
+    std::unique_lock<std::mutex> ulock(image_mutex);
+    bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
+    ulock.unlock();
+    if (has_swizzled) {
         casacore::Slicer slicer;
         if (_num_dims == 4) {
             slicer = casacore::Slicer(IPos(4, 0, cursor_y, cursor_x, stokes), IPos(4, _num_channels, count_y, count_x, 1));
@@ -299,6 +305,7 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
 
         data.resize(_num_channels * count_y * count_x);
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
+        std::lock_guard<std::mutex> lguard(image_mutex);
         try {
             LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
             data_ok = true;
@@ -306,12 +313,14 @@ bool Hdf5Loader::GetCursorSpectralData(std::vector<float>& data, int stokes, int
             std::cerr << "Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: " << err.getMesg() << std::endl;
         }
     }
-
     return data_ok;
 }
 
-bool Hdf5Loader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask) {
-    if (!HasData(FileInfo::Data::SWIZZLED)) {
+bool Hdf5Loader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) {
+    std::unique_lock<std::mutex> ulock(image_mutex);
+    bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
+    ulock.unlock();
+    if (!has_swizzled) {
         return false;
     }
 
@@ -328,9 +337,15 @@ bool Hdf5Loader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLatt
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask,
-    IPos origin, const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
-    if (!HasData(FileInfo::Data::SWIZZLED)) {
+bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
+    const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+    // config_stokes is the stokes value in the spectral config, could be -1 for CURRENT_STOKES; used to retrieve config from region
+    // profile_stokes is the stokes index to use for slicing image data
+    std::unique_lock<std::mutex> ulock(image_mutex);
+    bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
+    ulock.unlock();
+    if (!has_swizzled) {
         return false;
     }
 
@@ -339,11 +354,11 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const std::sha
     int num_z = _num_channels;
 
     bool recalculate(false);
-    auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
+    auto region_stats_id = FileInfo::RegionStatsId(region_id, profile_stokes);
 
     if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
-        _region_stats.emplace(
-            std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask->shape(), num_z));
+        _region_stats.emplace(std::piecewise_construct, std::forward_as_tuple(region_id, profile_stokes),
+            std::forward_as_tuple(origin, mask->shape(), num_z));
         recalculate = true;
     } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
         _region_stats[region_stats_id].origin = origin;
@@ -391,7 +406,17 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const std::sha
         }
 
         // get a copy of current region state
-        RegionState region_state = _frame->GetRegionState(region_id);
+        RegionState region_state;
+        if (!_frame->GetRegionState(region_id, region_state)) {
+            return false;
+        }
+
+        // get a copy of current region configs
+        SpectralConfig config_stats;
+        if (!_frame->GetRegionSpectralConfig(region_id, config_stokes, config_stats)) {
+            return false;
+        }
+
         std::map<CARTA::StatsType, std::vector<double>>* stats_values;
         float progress;
 
@@ -432,13 +457,13 @@ bool Hdf5Loader::GetRegionSpectralData(int stokes, int region_id, const std::sha
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = x_start; x < num_x; x++) {
             // check if frontend's requirements changed
-            if (_frame != nullptr && _frame->Interrupt(region_id, region_state)) {
+            if (_frame != nullptr && _frame->Interrupt(region_id, profile_stokes, region_state, config_stats, true)) {
                 // remember the latest x step
                 _region_stats[region_stats_id].latest_x = x;
                 return false;
             }
 
-            bool have_spectral_data = GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y);
+            bool have_spectral_data = GetCursorSpectralData(slice_data, profile_stokes, x + x_min, 1, y_min, num_y, image_mutex);
             if (!have_spectral_data) {
                 return false;
             }
