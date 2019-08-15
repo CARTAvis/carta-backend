@@ -1193,7 +1193,7 @@ bool Frame::FillSpectralProfileData(
                     auto cursor_point = region->GetControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
                     bool have_spectral_data = _loader->GetCursorSpectralData(
-                            spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1, _image_mutex);
+                        spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1, _image_mutex);
                     if (have_spectral_data) {
                         CARTA::SpectralProfileData profile_message;
                         profile_message.set_stokes(curr_stokes);
@@ -1208,15 +1208,15 @@ bool Frame::FillSpectralProfileData(
                         bool has_subimage = GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
                         guard.unlock();
                         if (has_subimage) {
-                            profile_ok = GetPointSpectralData(
-                                region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
-                                CARTA::SpectralProfileData profile_message;
-                                profile_message.set_stokes(curr_stokes);
-                                profile_message.set_progress(progress);
-                                region->FillPointSpectralProfileDataMessage(profile_message, config_stokes, tmp_spectral_data);
-                                // send (partial) result to Session
-                                cb(profile_message);
-                            });
+                            profile_ok =
+                                GetPointSpectralData(region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
+                                    CARTA::SpectralProfileData profile_message;
+                                    profile_message.set_stokes(curr_stokes);
+                                    profile_message.set_progress(progress);
+                                    region->FillPointSpectralProfileDataMessage(profile_message, config_stokes, tmp_spectral_data);
+                                    // send (partial) result to Session
+                                    cb(profile_message);
+                                });
                         }
                     }
                 } else {
