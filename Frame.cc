@@ -978,10 +978,10 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                             region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, data, *new_histogram);
                         }
                     } else {
-                        std::unique_lock<std::mutex> guard(_image_mutex);
                         casacore::SubImage<float> sub_image;
-                        GetRegionSubImage(region_id, sub_image, curr_stokes, ChannelRange(config_channel));
                         std::vector<float> region_data;
+                        std::unique_lock<std::mutex> guard(_image_mutex);
+                        GetRegionSubImage(region_id, sub_image, curr_stokes, ChannelRange(config_channel));
                         bool has_data(region->GetData(region_data, sub_image)); // get subimage data once
                         guard.unlock();
                         if (has_data) {
@@ -1159,11 +1159,13 @@ bool Frame::FillSpectralProfileData(
 
                 // Return NaNs if the region is entirely outside the image
                 std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask;
+                std::unique_lock<std::mutex> guard(_image_mutex);
                 try {
                     // check is the region mask valid (outside the lattice or not)
                     mask = region->XyMask();
                 } catch (casacore::AipsError& err) {
                 }
+                guard.unlock();
                 if (!mask) {
                     // if region mask not valid, send a NaN to the frontend
                     CARTA::SpectralProfileData profile_message;
@@ -1186,10 +1188,9 @@ bool Frame::FillSpectralProfileData(
                     std::vector<float> spectral_data;
                     auto cursor_point = region->GetControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
-                    std::unique_lock<std::mutex> guard(_image_mutex);
                     bool have_spectral_data =
-                        _loader->GetCursorSpectralData(spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1);
-                    guard.unlock();
+                        _loader->GetCursorSpectralData(
+                            spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1, _image_mutex);
                     if (have_spectral_data) {
                         CARTA::SpectralProfileData profile_message;
                         profile_message.set_stokes(curr_stokes);
@@ -1202,6 +1203,7 @@ bool Frame::FillSpectralProfileData(
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
                         GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
+                        guard.unlock();
                         profile_ok = GetPointSpectralData(region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
                             CARTA::SpectralProfileData profile_message;
                             profile_message.set_stokes(curr_stokes);
@@ -1210,7 +1212,6 @@ bool Frame::FillSpectralProfileData(
                             // send (partial) result to Session
                             cb(profile_message);
                         });
-                        guard.unlock();
                     }
                 } else {
                     // profile is statistics for image region (SubImage)
@@ -1226,10 +1227,9 @@ bool Frame::FillSpectralProfileData(
                     }
 
                     // if region mask is valid, then check is swizzled data available
-                    if (_loader->UseRegionSpectralData(mask)) {
-                        std::unique_lock<std::mutex> guard(_image_mutex);
+                    if (_loader->UseRegionSpectralData(mask, _image_mutex)) {
                         profile_ok = _loader->GetRegionSpectralData(region_id, config_stokes, profile_stokes, mask, region->XyOrigin(),
-                            [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values_map, float progress) {
+                            _image_mutex, [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values_map, float progress) {
                                 CARTA::SpectralProfileData profile_message;
                                 profile_message.set_stokes(curr_stokes);
                                 profile_message.set_progress(progress);
@@ -1237,9 +1237,7 @@ bool Frame::FillSpectralProfileData(
                                 // send (partial) result to Session
                                 cb(profile_message);
                             });
-                        guard.unlock();
                     } else {
-                        std::unique_lock<std::mutex> guard(_image_mutex);
                         profile_ok = GetRegionSpectralData(region_id, config_stokes, profile_stokes,
                             [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
                                 CARTA::SpectralProfileData profile_message;
@@ -1249,7 +1247,6 @@ bool Frame::FillSpectralProfileData(
                                 // send (partial) result to Session
                                 cb(profile_message);
                             });
-                        guard.unlock();
                     }
                 }
             }
@@ -1514,7 +1511,9 @@ bool Frame::GetPointSpectralData(
                         (start(_spectral_axis) + delta_channels < profile_size ? delta_channels : profile_size - start(_spectral_axis));
                     casacore::Slicer slicer(start, count);
                     casacore::Array<float> buffer;
+                    std::unique_lock<std::mutex> guard(_image_mutex);
                     sub_image.doGetSlice(buffer, slicer);
+                    guard.unlock();
                     memcpy(&data[start(_spectral_axis)], buffer.data(), count(_spectral_axis) * sizeof(float));
                     start(_spectral_axis) += count(_spectral_axis);
                     progress = (float)start(_spectral_axis) / profile_size;
@@ -1544,7 +1543,9 @@ bool Frame::GetPointSpectralData(
         } else {
             // non-stoppable spectral profile process
             casacore::Array<float> tmp(sub_image_shape, data.data(), casacore::StorageInitPolicy::SHARE);
+            std::unique_lock<std::mutex> guard(_image_mutex);
             sub_image.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sub_image_shape.size(), 0), sub_image_shape));
+            guard.unlock();
             data_ok = true;
         }
     } catch (casacore::AipsError& err) {
@@ -1601,9 +1602,11 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
             count = end - start + 1;
 
             // try to get sub-image and its stats data
+            std::unique_lock<std::mutex> guard(_image_mutex);
             if (GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange(start, end))) {
                 std::map<CARTA::StatsType, std::vector<double>> buffers;
                 if (region->GetSpectralProfileData(buffers, config_stokes, sub_image)) {
+                    guard.unlock();
                     for (const auto& buffer : buffers) {
                         auto stats_type = buffer.first;
                         if (results.count(stats_type)) {
@@ -1612,12 +1615,16 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
                         }
                     }
                 } else {
+                    guard.unlock();
                     if (_verbose) {
                         std::cerr << "Can not get zprofile, region id: " << region_id << ", channel range: [" << start << "," << end << "]"
                                   << std::endl;
                     }
                     return data_ok;
                 }
+            }
+	    if (guard) {
+                guard.unlock();
             }
 
             start += count;
