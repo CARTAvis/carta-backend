@@ -90,7 +90,7 @@ public:
 
     void SetAllProfilesUnsent(); // enable sending new spatial and spectral profiles
 
-    // Spatial: pass through to RegionProfiler
+    // Spatial requirements: pass through to RegionProfiler
     bool SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes);
     size_t NumSpatialProfiles();
     std::string GetSpatialCoordinate(int profile_index);
@@ -98,22 +98,25 @@ public:
     bool GetSpatialProfileSent(int profile_index);
     void SetSpatialProfileSent(int profile_index, bool sent);
 
-    // Spectral: pass through to RegionProfiler
+    // Spectral requirements: pass through to RegionProfiler
     bool SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int num_stokes);
     size_t NumSpectralProfiles();
-    int NumStatsToLoad(int profile_index);
-    void SetSpectralProfileStatSent(int profile_index, int stats_type, bool sent);
-    void SetSpectralProfileAllStatsSent(int profile_index, bool sent);
-    void SetAllSpectralProfileStatsUnsent(); // enable sending new profiles
-    int GetSpectralConfigStokes(int profile_index);
-    bool GetSpectralConfigStats(int profile_index, std::vector<int>& stats);
-    bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
-    void FillPointSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
-    void FillSpectralProfileData(
-        CARTA::SpectralProfileData& profile_data, int profile_index, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    void FillSpectralProfileData(
-        CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values);
-    void FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index);
+    bool IsValidSpectralConfig(const SpectralConfig& stats);
+    std::vector<SpectralProfile> GetSpectralProfiles();
+    bool GetSpectralConfig(int config_stokes, SpectralConfig& config);
+    bool GetSpectralProfileAllStatsSent(int config_stokes);
+    void SetSpectralProfileAllStatsSent(int config_stokes, bool sent);
+    void SetAllSpectralProfilesUnsent();
+
+    // Spectral data
+    bool GetSpectralProfileData(
+        std::map<CARTA::StatsType, std::vector<double>>& spectral_data, int config_stokes, casacore::ImageInterface<float>& image);
+    void FillPointSpectralProfileDataMessage(
+        CARTA::SpectralProfileData& profile_message, int config_stokes, std::vector<float>& spectral_data);
+    void FillSpectralProfileDataMessage(
+        CARTA::SpectralProfileData& profile_message, int config_stokes, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
+    void FillNaNSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, int config_stokes);
+    bool InitSpectralData(int profile_index, size_t profile_size, std::map<CARTA::StatsType, std::vector<double>>& stats_data);
 
     // Stats: pass through to RegionStats
     void SetStatsRequirements(const std::vector<int>& stats_types);
@@ -122,6 +125,7 @@ public:
     void FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values);
     void FillNaNStatsData(CARTA::RegionStatsData& stats_data);
 
+    // Get current region state
     RegionState GetRegionState();
 
     // Communication

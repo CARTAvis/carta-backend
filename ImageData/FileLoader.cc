@@ -452,18 +452,20 @@ FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int channel)
     return (channel >= 0 ? _channel_stats[current_stokes][channel] : _cube_stats[current_stokes]);
 }
 
-bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) {
+bool FileLoader::GetCursorSpectralData(
+    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask) {
+bool FileLoader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask,
-    IPos origin, const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+bool FileLoader::GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
+    const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     // Must be implemented in subclasses
     return false;
 }

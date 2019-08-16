@@ -39,7 +39,7 @@ public:
     size_t NumStats();
     void FillStatsData(CARTA::RegionStatsData& stats_data, const casacore::ImageInterface<float>& image, int channel, int stokes);
     void FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values);
-    bool CalcStatsValues(std::vector<std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
+    bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
         const casacore::ImageInterface<float>& image, bool per_channel = true);
 
     // invalidate stored calculations for previous region settings
