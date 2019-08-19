@@ -243,7 +243,10 @@ void Frame::ImportRegionFile(CARTA::FileType file_type, std::string& filename, C
             std::string message;
             try {
                 const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-                casa::RegionTextList region_list = casa::RegionTextList(filename, coord_sys, _image_shape);
+                // use defaults except allow regions outside image
+                bool require_region(false);
+                casa::RegionTextList region_list = casa::RegionTextList(
+                    filename, coord_sys, _image_shape, "", "", "", casa::RegionTextParser::CURRENT_VERSION, true, require_region);
                 for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
                     casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
                     region_set |= ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
@@ -283,7 +286,10 @@ void Frame::ImportRegionContents(CARTA::FileType file_type, std::vector<std::str
                 if (contents.size() > 0) {
                     const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
                     for (auto& line : contents) {
-                        casa::RegionTextList region_list = casa::RegionTextList(coord_sys, line, _image_shape);
+                        // use defaults except allow regions outside image
+                        bool require_region(false);
+                        casa::RegionTextList region_list =
+                            casa::RegionTextList(coord_sys, line, _image_shape, "", "", "", true, require_region);
                         casa::AsciiAnnotationFileLine file_line = region_list.lineAt(0);
                         region_set |= ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
                     }

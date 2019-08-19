@@ -838,6 +838,7 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
     if (!_control_points.empty()) {
         try {
             casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
+            bool require_region(false);
             switch (_type) {
                 case CARTA::POINT: {
                     casacore::Quantity x = casacore::Quantity(_control_points[0].x(), "pix");
@@ -868,10 +869,11 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                         }
                     }
                     if (_rotation == 0.0) {
-                        ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types);
+                        ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types, require_region);
                     } else {
                         casacore::Quantity position_angle(_rotation, "deg");
-                        ann_region = new casa::AnnRotBox(cx, cy, xwidth, ywidth, position_angle, _coord_sys, _image_shape, stokes_types);
+                        ann_region = new casa::AnnRotBox(
+                            cx, cy, xwidth, ywidth, position_angle, _coord_sys, _image_shape, stokes_types, require_region);
                     }
                     break;
                 }
@@ -902,7 +904,7 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                             }
                         }
                     }
-                    ann_region = new casa::AnnPolygon(x_coords, y_coords, _coord_sys, _image_shape, stokes_types);
+                    ann_region = new casa::AnnPolygon(x_coords, y_coords, _coord_sys, _image_shape, stokes_types, require_region);
                     break;
                 }
                 case CARTA::ELLIPSE: {
@@ -921,7 +923,8 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                         }
                     }
                     casacore::Quantity position_angle(_rotation, "deg");
-                    ann_region = new casa::AnnEllipse(cx, cy, bmaj, bmin, position_angle, _coord_sys, _image_shape, stokes_types);
+                    ann_region = new casa::AnnEllipse(
+                        cx, cy, bmaj, bmin, position_angle, _coord_sys, _image_shape, stokes_types, require_region);
                     break;
                 }
                 default:
