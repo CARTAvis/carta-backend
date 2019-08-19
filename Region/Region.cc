@@ -923,8 +923,8 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                         }
                     }
                     casacore::Quantity position_angle(_rotation, "deg");
-                    ann_region = new casa::AnnEllipse(
-                        cx, cy, bmaj, bmin, position_angle, _coord_sys, _image_shape, stokes_types, require_region);
+                    ann_region =
+                        new casa::AnnEllipse(cx, cy, bmaj, bmin, position_angle, _coord_sys, _image_shape, stokes_types, require_region);
                     break;
                 }
                 default:
