@@ -48,7 +48,7 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
 
     // Get shape and axis values from the loader
     if (!_loader->FindShape(_image_shape, _num_channels, _num_stokes, _spectral_axis, _stokes_axis)) {
-        Log(session_id, "Problem loading file {}: could not determine image shape", filename);
+        Log(session_id, "Problem loading file {}: could not determine image shape or coordinate system axes", filename);
         _valid = false;
         return;
     }

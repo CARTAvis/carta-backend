@@ -93,16 +93,27 @@ bool FileLoader::FindShape(IPos& shape, size_t& num_channels, size_t& num_stokes
         return false;
     }
 
-    // determine axis order (0-based)
-    if (num_dims == 3) { // use defaults
-        spectral_axis = 2;
-        stokes_axis = -1;
-    } else if (num_dims == 4) { // find spectral and stokes axes
-        FindCoords(spectral_axis, stokes_axis);
+    casacore::CoordinateSystem coord_sys;
+    if (!GetCoordinateSystem(coord_sys)) {
+        return false;
+    }
+    if (coord_sys.nPixelAxes() != num_dims) {
+        return false;
     }
 
-    num_channels = (spectral_axis >= 0 ? shape(spectral_axis) : 1);
-    num_stokes = (stokes_axis >= 0 ? shape(stokes_axis) : 1);
+    spectral_axis = coord_sys.spectralAxisNumber();
+    if (spectral_axis == -1) {
+        num_channels = 1;
+    } else {
+        num_channels = shape(spectral_axis);
+    }
+
+    stokes_axis = coord_sys.polarizationAxisNumber();
+    if (stokes_axis == -1) {
+        num_stokes = 1;
+    } else {
+        num_stokes = shape(stokes_axis);
+    }
 
     _num_dims = num_dims;
     _num_channels = num_channels;
