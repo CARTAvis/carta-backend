@@ -30,8 +30,13 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
       _num_channels(1),
       _num_stokes(1),
       _verbose(verbose) {
+    casacore::Path ccpath(filename);
+    casacore::String filename_only = ccpath.baseName();
     if (_loader == nullptr) {
-        Log(session_id, "Problem loading file {}: loader not implemented", filename);
+        _open_image_error = fmt::format("Problem loading file {}: loader not implemented", filename_only);
+        if (_verbose) {
+            Log(session_id, _open_image_error);
+        }
         _valid = false;
         return;
     }
@@ -41,17 +46,26 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
     try {
         _loader->OpenFile(hdu, info);
     } catch (casacore::AipsError& err) {
-        Log(session_id, "Problem loading file {}: {}", filename, err.getMesg());
+        _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, err.getMesg());
+        if (_verbose) {
+            Log(session_id, _open_image_error);
+        }
         _valid = false;
         return;
     }
 
     // Get shape and axis values from the loader
-    if (!_loader->FindShape(_image_shape, _num_channels, _num_stokes, _spectral_axis, _stokes_axis)) {
-        Log(session_id, "Problem loading file {}: could not determine image shape or coordinate system axes", filename);
+    std::string log_message;
+    if (!_loader->FindShape(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
+        _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, log_message);
+        if (_verbose) {
+            Log(session_id, _open_image_error);
+        }
         _valid = false;
         return;
     }
+    _num_channels = (_spectral_axis >= 0 ? _image_shape(_spectral_axis) : 1);
+    _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // make Region for entire image (after current channel/stokes set)
     SetImageRegion(IMAGE_REGION_ID);
@@ -68,7 +82,10 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
         // A failure here shouldn't invalidate the frame
         _loader->LoadImageStats();
     } catch (casacore::AipsError& err) {
-        Log(session_id, "Problem loading statistics from file {}: {}", filename, err.getMesg());
+        _open_image_error = fmt::format("Problem loading statistics from file {}: {}", filename_only, err.getMesg());
+        if (_verbose) {
+            Log(session_id, _open_image_error);
+        }
     }
 }
 
@@ -81,6 +98,10 @@ Frame::~Frame() {
 
 bool Frame::IsValid() {
     return _valid;
+}
+
+std::string Frame::GetErrorMessage() {
+    return _open_image_error;
 }
 
 void Frame::DisconnectCalled() {

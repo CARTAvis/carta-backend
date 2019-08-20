@@ -43,8 +43,10 @@ public:
         int default_channel = DEFAULT_CHANNEL);
     ~Frame();
 
-    // frame info
     bool IsValid();
+    std::string GetErrorMessage();
+
+    // frame info
     std::vector<int> GetRegionIds();
     int GetMaxRegionId();
     size_t NumChannels(); // if no channel axis, nchan=1
@@ -188,6 +190,7 @@ private:
     // setup
     uint32_t _session_id;
     bool _valid;
+    std::string _open_image_error;
 
     // spectral profile counter, which is used to determine whether the Frame object can be destroyed (_z_profile_count == 0 ?).
     tbb::atomic<int> _z_profile_count;

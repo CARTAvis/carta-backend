@@ -321,13 +321,15 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
 
             success = true;
         } else {
-            err_message = "Could not load image";
+            err_message = frame->GetErrorMessage();
         }
     }
     ack.set_success(success);
     ack.set_message(err_message);
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
-    UpdateRegionData(file_id);
+    if (success) {
+        UpdateRegionData(file_id);
+    }
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {

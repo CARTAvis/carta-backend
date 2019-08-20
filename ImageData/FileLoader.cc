@@ -82,42 +82,60 @@ void FileLoader::FindCoords(int& spectral_axis, int& stokes_axis) {
     }
 }
 
-bool FileLoader::FindShape(IPos& shape, size_t& num_channels, size_t& num_stokes, int& spectral_axis, int& stokes_axis) {
+bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
     if (!HasData(FileInfo::Data::Image))
         return false;
 
     shape = LoadData(FileInfo::Data::Image)->shape();
-    size_t num_dims = shape.size();
+    size_t _num_dims = shape.size();
 
-    if (num_dims < 2 || num_dims > 4) {
+    if (_num_dims < 2 || _num_dims > 4) {
+        message = "Image must be 2D, 3D, or 4D.";
         return false;
     }
 
     casacore::CoordinateSystem coord_sys;
     if (!GetCoordinateSystem(coord_sys)) {
+        message = "Image does not have valid coordinate system.";
         return false;
     }
-    if (coord_sys.nPixelAxes() != num_dims) {
+    if (coord_sys.nPixelAxes() != _num_dims) {
+        message = "Image coordinate system does not match data shape.";
         return false;
     }
 
+    // use CoordinateSystem to find coordinate axes
+    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
     spectral_axis = coord_sys.spectralAxisNumber();
-    if (spectral_axis == -1) {
-        num_channels = 1;
-    } else {
-        num_channels = shape(spectral_axis);
-    }
-
     stokes_axis = coord_sys.polarizationAxisNumber();
-    if (stokes_axis == -1) {
-        num_stokes = 1;
-    } else {
-        num_stokes = shape(stokes_axis);
+
+    // pv images not supported (yet)
+    if ((spectral_axis == 0) && !linear_axes.empty() && (linear_axes(0) == 1)) { // pv image
+        message = "Position-velocity (pv) images not supported.";
+        return false;
     }
 
-    _num_dims = num_dims;
-    _num_channels = num_channels;
-    _num_stokes = num_stokes;
+    // spectral axis not defined if CTYPE is not "FREQ" (e.g. "FREQUENC" will fail)
+    if ((spectral_axis == -1) && (_num_dims > 2)) {
+        if ((_num_dims == 3) || (stokes_axis == 3)) {
+            spectral_axis = 2;
+        } else {
+            spectral_axis = 3;
+        }
+    }
+
+    if (spectral_axis == -1) {
+        _num_channels = 1;
+    } else {
+        _num_channels = shape(spectral_axis);
+    }
+
+    if (stokes_axis == -1) {
+        _num_stokes = 1;
+    } else {
+        _num_stokes = shape(stokes_axis);
+    }
+
     _channel_size = shape(0) * shape(1);
 
     return true;

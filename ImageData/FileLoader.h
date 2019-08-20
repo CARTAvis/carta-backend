@@ -134,7 +134,7 @@ public:
     virtual void FindCoords(int& spectral_axis, int& stokes_axis);
 
     // get shape and axis information from image
-    virtual bool FindShape(IPos& shape, size_t& num_channels, size_t& num_stokes, int& spectral_axis, int& stokes_axis);
+    virtual bool FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
 
     // Load image statistics, if they exist, from the file
     virtual void LoadImageStats(bool load_percentiles = false);
