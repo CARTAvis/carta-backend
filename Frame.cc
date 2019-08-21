@@ -279,8 +279,8 @@ void Frame::ImportRegion(
         case CARTA::FileType::CRTF: {
             try {
                 // use RegionTextList to import file and create annotation file lines
-		casa::RegionTextList region_list;
-		if (!filename.empty()) {
+                casa::RegionTextList region_list;
+                if (!filename.empty()) {
                     region_list = casa::RegionTextList(filename, coord_sys, _image_shape);
                 } else {
                     region_list = casa::RegionTextList(coord_sys, file_contents, _image_shape);

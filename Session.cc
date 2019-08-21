@@ -495,7 +495,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             CARTA::ImportRegionAck import_ack; // response
             std::string directory(message.directory()), filename(message.file());
             CARTA::FileType file_type(message.type());
-	    std::string abs_filename;
+            std::string abs_filename;
             std::vector<std::string> contents;
             if (!directory.empty() && !filename.empty()) {
                 // form path with filename
