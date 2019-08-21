@@ -255,69 +255,53 @@ void Frame::RemoveRegion(int region_id) {
     }
 }
 
-void Frame::ImportRegionFile(CARTA::FileType file_type, std::string& filename, CARTA::ImportRegionAck& import_ack) {
+void Frame::ImportRegion(
+    CARTA::FileType file_type, std::string& filename, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack) {
     // Import region from file
+    if (filename.empty() && contents.empty()) {
+        import_ack.set_success(false);
+        import_ack.set_message("Import region failed: no region file contents.");
+        import_ack.add_regions();
+        return;
+    }
+
     switch (file_type) {
         case CARTA::FileType::CRTF: {
             bool region_set(false);
             std::string message;
             try {
+                // use RegionTextList to import file and create annotation file lines
                 const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-                casa::RegionTextList region_list = casa::RegionTextList(filename, coord_sys, _image_shape);
+		casa::RegionTextList region_list;
+		if (!filename.empty()) {
+                    region_list = casa::RegionTextList(filename, coord_sys, _image_shape);
+                } else {
+                    // concat into one string, which the RegionTextParser splits by newline \n
+                    std::string file_contents;
+                    for (auto& line : contents) {
+                        file_contents.append(line + "\n");
+                    }
+                    region_list = casa::RegionTextList(coord_sys, file_contents, _image_shape);
+                }
+
+                // iterate through annotations to create regions if valid
                 for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
                     casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
                     region_set |= ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
                 }
+
+                import_ack.set_success(region_set); // true if at least one region was set
                 if (!region_set) {
                     import_ack.add_regions();
                     if (message.empty()) {
                         message = "CRTF region file import failed: zero regions set";
                     }
                 }
-                import_ack.set_success(region_set); // true if at least one region was set
                 import_ack.set_message(message);
             } catch (casacore::AipsError& err) {
                 if (_verbose) {
                     std::cerr << "Import region failed: " << err.getMesg() << std::endl;
                 }
-                import_ack.set_success(false);
-                import_ack.set_message("CRTF region file import failed.");
-                import_ack.add_regions();
-            }
-            break;
-        }
-        case CARTA::FileType::REG:
-        default: {
-            import_ack.set_success(false);
-            import_ack.set_message("Import region failed: file type not supported.");
-            import_ack.add_regions();
-        }
-    }
-}
-
-void Frame::ImportRegionContents(CARTA::FileType file_type, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack) {
-    // Import region file contents from client
-    switch (file_type) {
-        case CARTA::FileType::CRTF: {
-            bool region_set(false);
-            std::string message;
-            try {
-                if (contents.size() > 0) {
-                    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-                    for (auto& line : contents) {
-                        casa::RegionTextList region_list = casa::RegionTextList(coord_sys, line, _image_shape);
-                        casa::AsciiAnnotationFileLine file_line = region_list.lineAt(0);
-                        region_set |= ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
-                    }
-                } else {
-                    message = "CRTF region file import failed: no contents.";
-                }
-                import_ack.set_success(region_set); // true if at least one region was set
-                import_ack.set_message(message);
-                if (!region_set) {
-                    import_ack.add_regions();
-                }
-            } catch (casacore::AipsError& err) {
                 import_ack.set_success(false);
                 import_ack.set_message("CRTF region file import failed.");
                 import_ack.add_regions();
