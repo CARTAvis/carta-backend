@@ -87,7 +87,7 @@ bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, st
         return false;
 
     shape = LoadData(FileInfo::Data::Image)->shape();
-    size_t _num_dims = shape.size();
+    _num_dims = shape.size();
 
     if (_num_dims < 2 || _num_dims > 4) {
         message = "Image must be 2D, 3D, or 4D.";
