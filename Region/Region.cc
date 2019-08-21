@@ -275,16 +275,6 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
     }
 }
 
-void Region::SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
-    // util to split input string into parts by delimiter
-    parts.clear();
-    std::stringstream ss(input);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        parts.push_back(item);
-    }
-}
-
 // *************************************************************************
 // Region settings
 

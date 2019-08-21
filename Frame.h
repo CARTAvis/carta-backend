@@ -132,8 +132,9 @@ private:
     void SetDefaultCursor();            // using center point of image
 
     // Region import/export helpers
-    void ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
-        CARTA::ImportRegionAck& import_ack, std::string message);
+    void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
+        CARTA::FileType file_type, CARTA::ImportRegionAck& import_ack, std::string message);
+    casacore::String AnnTypeToDs9String(casa::AnnotationBase::Type ann_type);
     void ExportCrtfRegion(
         std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack);
 

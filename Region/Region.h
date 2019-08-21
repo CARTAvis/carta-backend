@@ -178,9 +178,6 @@ private:
 
     void SetConnectionFlag(bool connected);
 
-    // util to split input string into parts by delimiter
-    void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
-
     // region definition (ICD SET_REGION parameters)
     std::string _name;
     CARTA::RegionType _type;
