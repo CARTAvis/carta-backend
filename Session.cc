@@ -495,19 +495,19 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             CARTA::ImportRegionAck import_ack; // response
             std::string directory(message.directory()), filename(message.file());
             CARTA::FileType file_type(message.type());
+            std::string abs_filename;
+            std::vector<std::string> contents;
             if (!directory.empty() && !filename.empty()) {
                 // form path with filename
                 casacore::Path root_path(_root_folder);
                 root_path.append(directory);
                 root_path.append(filename);
-                std::string abs_filename(root_path.resolvedName());
-                _frames.at(file_id)->ImportRegionFile(file_type, abs_filename, import_ack);
-                SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
+                abs_filename = root_path.resolvedName();
             } else {
-                std::vector<std::string> contents = {message.contents().begin(), message.contents().end()};
-                _frames.at(file_id)->ImportRegionContents(file_type, contents, import_ack);
-                SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
+                contents = {message.contents().begin(), message.contents().end()};
             }
+            _frames.at(file_id)->ImportRegion(file_type, abs_filename, contents, import_ack);
+            SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
         } catch (std::out_of_range& range_error) {
             std::string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"import"}, CARTA::ErrorSeverity::DEBUG);
