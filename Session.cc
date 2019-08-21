@@ -321,13 +321,15 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
 
             success = true;
         } else {
-            err_message = "Could not load image";
+            err_message = frame->GetErrorMessage();
         }
     }
     ack.set_success(success);
     ack.set_message(err_message);
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
-    UpdateRegionData(file_id);
+    if (success) {
+        UpdateRegionData(file_id);
+    }
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
@@ -968,7 +970,6 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
         std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
         for (auto region_id : regions) {
             // CHECK FOR CANCEL HERE ??
-            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             SendRegionStatsData(file_id, region_id);
             SendSpatialProfileData(file_id, region_id, stokes_changed);
             if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
@@ -976,6 +977,7 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
             } else if (region_id != IMAGE_REGION_ID) {
                 SendRegionHistogramData(file_id, region_id, channel_changed);
             }
+            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             SendSpectralProfileData(file_id, region_id, channel_changed, stokes_changed);
             _frames.at(file_id)->DecreaseZProfileCount(region_id);
         }
@@ -1002,8 +1004,9 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::
 
 void Session::SendFileEvent(int32_t file_id, CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message) {
     // do not send if file is closed
-    if (_frames.count(file_id))
+    if (_frames.count(file_id)) {
         SendEvent(event_type, event_id, message);
+    }
 }
 
 void Session::SendPendingMessages() {
