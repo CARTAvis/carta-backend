@@ -109,8 +109,8 @@ bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, st
     spectral_axis = coord_sys.spectralAxisNumber();
     stokes_axis = coord_sys.polarizationAxisNumber();
 
-    // pv images not supported (yet)
-    if ((spectral_axis == 0) && !linear_axes.empty() && (linear_axes(0) == 1)) { // pv image
+    // pv images not supported (yet); spectral axis is 0 or 1, and the other is linear
+    if (!linear_axes.empty() && (((spectral_axis == 0) && (linear_axes(0) == 1)) || ((spectral_axis == 1) && (linear_axes(0) == 0)))) {
         message = "Position-velocity (pv) images not supported.";
         return false;
     }
