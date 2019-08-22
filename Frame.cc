@@ -333,7 +333,6 @@ void Frame::ImportRegion(
     import_ack.set_message(message);
 }
 
-
 void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
     CARTA::FileType file_type, CARTA::ImportRegionAck& import_ack, std::string message) {
     // Process a single CRTF annotation file line to set region; adds region to frame regions.
@@ -343,7 +342,7 @@ void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, c
             auto annotation_base = file_line.getAnnotationBase();
             const casa::AnnotationBase::Type annotation_type = annotation_base->getType();
             casacore::String ann_type_str = casa::AnnotationBase::typeToString(annotation_type);
-	    casacore::String ds9_type_str = AnnTypeToDs9String(annotation_type);
+            casacore::String ds9_type_str = AnnTypeToDs9String(annotation_type);
             switch (annotation_type) {
                 case casa::AnnotationBase::VECTOR:
                 case casa::AnnotationBase::TEXT: {
