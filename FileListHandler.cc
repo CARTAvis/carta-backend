@@ -299,7 +299,7 @@ void FileListHandler::OnRegionListRequest(
 }
 
 CARTA::FileType FileListHandler::GetRegionType(const std::string& filename) {
-    // Check beginning of file for CRTF or REG header
+    // Check beginning of file for CRTF header
     CARTA::FileType file_type(CARTA::FileType::UNKNOWN);
     std::ifstream region_file(filename);
     try {
@@ -310,8 +310,6 @@ CARTA::FileType FileListHandler::GetRegionType(const std::string& filename) {
         region_file.close();
         if (first_line.find("#CRTF") == 0) {
             file_type = CARTA::FileType::CRTF;
-        } else if (first_line.find("# Region file format: DS9") == 0) { // optional header, but what else to do?
-            file_type = CARTA::FileType::REG;
         }
     } catch (std::ios_base::failure& f) {
         region_file.close();
