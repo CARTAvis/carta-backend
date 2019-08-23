@@ -204,7 +204,13 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_success(success);
     ack_message.set_message(error);
     ack_message.set_session_type(type);
-    ack_message.set_server_feature_flags(CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE);
+
+    uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+#ifdef AUTH_SERVER
+    feature_flags |= CARTA::ServerFeatureFlags::USER_LAYOUTS;
+    feature_flags |= CARTA::ServerFeatureFlags::USER_PREFERENCES;
+#endif
+    ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 }
 
