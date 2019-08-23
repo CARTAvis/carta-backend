@@ -29,6 +29,7 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/tiles.pb.h>
+#include <carta-protobuf/preferences.pb.h>
 
 #include <tbb/task.h>
 
@@ -65,6 +66,8 @@ public:
     void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
+    void OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id);
+    void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {

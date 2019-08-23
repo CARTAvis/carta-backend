@@ -294,6 +294,24 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::SET_USER_PREFERENCES: {
+                    CARTA::SetUserPreferences message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnSetUserPreferences(message, head.request_id);
+                    } else {
+                        fmt::print("Bad SET_USER_PREFERENCES message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::SET_USER_LAYOUT: {
+                    CARTA::SetUserLayout message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnSetUserLayout(message, head.request_id);
+                    } else {
+                        fmt::print("Bad SET_USER_LAYOUT message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
