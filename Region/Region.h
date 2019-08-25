@@ -235,8 +235,9 @@ private:
     // Lock when stats cache is being read or written
     std::mutex _stats_cache_mutex;
 
-    // Define all stats types to calculate: {Sum, Mean, RMS, Sigma, SumSq, Min, Max}
-    std::vector<int> _all_stats = {2, 4, 5, 6, 7, 8, 9};
+    // Define all stats types to calculate
+    std::vector<int> _all_stats = {CARTA::StatsType::Sum, CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma,
+        CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max};
 };
 
 } // namespace carta
