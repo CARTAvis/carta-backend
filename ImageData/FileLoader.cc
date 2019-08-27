@@ -123,7 +123,7 @@ void FileLoader::FindCoordinates(const CARTA::FileInfoExtended* info, int& spect
 
     // find axes from ctypes
     size_t ntypes(4);
-    const casacore::String ctypes[ntypes] = {ctype1, ctype2, ctype3, ctype4};
+    const casacore::String ctypes[] = {ctype1, ctype2, ctype3, ctype4};
     const casacore::String spectral_types[] = {"FELO", "FREQ", "VELO", "VOPT", "VRAD", "WAVE", "AWAV"};
     const casacore::String stokes_type = "STOKES";
     for (size_t i = 0; i < ntypes; ++i) {

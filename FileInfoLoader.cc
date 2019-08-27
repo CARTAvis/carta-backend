@@ -1073,7 +1073,7 @@ void FileInfoLoader::FindChanStokesAxis(const casacore::IPosition& data_shape, c
     c_type4.upcase();
 
     size_t ntypes(4);
-    const casacore::String ctypes[ntypes] = {c_type1, c_type2, c_type3, c_type4};
+    const casacore::String ctypes[] = {c_type1, c_type2, c_type3, c_type4};
     const casacore::String spectral_types[] = {"FELO", "FREQ", "VELO", "VOPT", "VRAD", "WAVE", "AWAV"};
     const casacore::String stokes_type = "STOKES";
     for (size_t i = 0; i < ntypes; ++i) {

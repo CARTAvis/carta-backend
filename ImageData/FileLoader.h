@@ -135,7 +135,6 @@ public:
     virtual bool FindShape(IPos& shape, const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis, std::string& message);
     virtual void FindCoordinates(const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis);
 
-
     // Load image statistics, if they exist, from the file
     virtual void LoadImageStats(bool load_percentiles = false);
     // Retrieve stats for a particular channel or all channels
