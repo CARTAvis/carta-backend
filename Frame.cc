@@ -56,7 +56,7 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
 
     // Get shape and axis values from the loader
     std::string log_message;
-    if (!_loader->FindShape(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
+    if (!_loader->FindShape(_image_shape, info, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, log_message);
         if (_verbose) {
             Log(session_id, _open_image_error);
