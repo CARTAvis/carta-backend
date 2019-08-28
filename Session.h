@@ -203,7 +203,6 @@ private:
     // Frame
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
     std::mutex _frame_mutex;                                 // lock frames to create/destroy
-    bool _new_frame;                                         // flag to send histogram with data
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;

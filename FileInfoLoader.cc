@@ -1061,6 +1061,9 @@ void FileInfoLoader::FindChanStokesAxis(const casacore::IPosition& data_shape, c
     const casacore::String& axis_type_2, const casacore::String& axis_type_3, const casacore::String& axis_type_4, int& chan_axis,
     int& stokes_axis) {
     // Use CTYPE values to find axes and set nchan, nstokes
+    chan_axis = -1;
+    stokes_axis = -1;
+
     // Note header axes are 1-based but shape is 0-based
     casacore::String c_type1(axis_type_1), c_type2(axis_type_2), c_type3(axis_type_3), c_type4(axis_type_4);
     // uppercase for string comparisons
@@ -1069,37 +1072,20 @@ void FileInfoLoader::FindChanStokesAxis(const casacore::IPosition& data_shape, c
     c_type3.upcase();
     c_type4.upcase();
 
-    // find spectral axis
-    if (!c_type1.empty() && (c_type1.contains("FELO") || c_type1.contains("FREQ") || c_type1.contains("VELO") || c_type1.contains("VOPT") ||
-                                c_type1.contains("VRAD") || c_type1.contains("WAVE") || c_type1.contains("AWAV"))) {
-        chan_axis = 0;
-    } else if (!c_type2.empty() &&
-               (c_type2.contains("FELO") || c_type2.contains("FREQ") || c_type2.contains("VELO") || c_type2.contains("VOPT") ||
-                   c_type2.contains("VRAD") || c_type2.contains("WAVE") || c_type2.contains("AWAV"))) {
-        chan_axis = 1;
-    } else if (!c_type3.empty() &&
-               (c_type3.contains("FELO") || c_type3.contains("FREQ") || c_type3.contains("VELO") || c_type3.contains("VOPT") ||
-                   c_type3.contains("VRAD") || c_type3.contains("WAVE") || c_type3.contains("AWAV"))) {
-        chan_axis = 2;
-    } else if (!c_type4.empty() &&
-               (c_type4.contains("FELO") || c_type4.contains("FREQ") || c_type4.contains("VELO") || c_type4.contains("VOPT") ||
-                   c_type4.contains("VRAD") || c_type4.contains("WAVE") || c_type4.contains("AWAV"))) {
-        chan_axis = 3;
-    } else {
-        chan_axis = -1;
+    size_t ntypes(4);
+    const casacore::String ctypes[] = {c_type1, c_type2, c_type3, c_type4};
+    const casacore::String spectral_types[] = {"FELO", "FREQ", "VELO", "VOPT", "VRAD", "WAVE", "AWAV"};
+    const casacore::String stokes_type = "STOKES";
+    for (size_t i = 0; i < ntypes; ++i) {
+        for (auto& spectral_type : spectral_types) {
+            if (ctypes[i].contains(spectral_type)) {
+                chan_axis = i;
+            }
+        }
+        if (ctypes[i] == stokes_type) {
+            stokes_axis = i;
+        }
     }
-
-    // find stokes axis
-    if (c_type1 == "STOKES")
-        stokes_axis = 0;
-    else if (c_type2 == "STOKES")
-        stokes_axis = 1;
-    else if (c_type3 == "STOKES")
-        stokes_axis = 2;
-    else if (c_type4 == "STOKES")
-        stokes_axis = 3;
-    else
-        stokes_axis = -1;
 }
 
 // ***** FITS keyword conversion *****
