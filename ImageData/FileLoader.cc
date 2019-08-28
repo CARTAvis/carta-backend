@@ -84,6 +84,7 @@ bool FileLoader::FindShape(IPos& shape, const CARTA::FileInfoExtended* info, int
     // 3D image
     if (_num_dims == 3) {
         spectral_axis = (spectral_axis < 0 ? 2 : spectral_axis);
+        _num_channels = shape(spectral_axis);
         _num_stokes = 1;
         return true;
     }
