@@ -47,6 +47,7 @@ bool FileLoader::FindShape(IPos& shape, const CARTA::FileInfoExtended* info, int
 
     shape = LoadData(FileInfo::Data::Image)->shape();
     _num_dims = shape.size();
+    _channel_size = shape(0) * shape(1);
 
     if (_num_dims < 2 || _num_dims > 4) {
         message = "Image must be 2D, 3D, or 4D.";
@@ -97,7 +98,6 @@ bool FileLoader::FindShape(IPos& shape, const CARTA::FileInfoExtended* info, int
 
     _num_channels = (spectral_axis == -1 ? 1 : shape(spectral_axis));
     _num_stokes = (stokes_axis == -1 ? 1 : shape(stokes_axis));
-    _channel_size = shape(0) * shape(1);
 
     return true;
 }
