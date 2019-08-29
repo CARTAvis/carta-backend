@@ -1373,12 +1373,6 @@ bool Region::GetStatsCache(
 }
 
 void Region::ResetStatsCache() {
-    // Reset channel end index to 0 for all stats with their stokes, in order to recalculate all spectral profiles.
     std::unique_lock<std::mutex> lock(_stats_cache_mutex);
-    for (const auto& stats_stoke_elem : _stats_cache) {
-        int profile_stokes = stats_stoke_elem.first;
-        for (auto& stats_type_elem : _stats_cache[profile_stokes]) {
-            stats_type_elem.second.channel_end = 0;
-        }
-    }
+    _stats_cache.clear();
 }
