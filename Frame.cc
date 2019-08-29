@@ -1592,15 +1592,12 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
     bool data_ok(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
-
-        // initialize the spectral data
         std::map<CARTA::StatsType, std::vector<double>> results;
         size_t start;
         size_t profile_size = NumChannels(); // total number of channels
-        if (!region->InitSpectralData(profile_stokes, profile_size, results, start)) {
-            // config removed or no unsent stats
-            return false;
-        }
+
+        // Try to get the cache or initialize spectral profiles to NaN
+        region->InitSpectralData(profile_stokes, profile_size, results, start);
 
         // If stats cache is available and completed, don't need to recalculate spectral profiles.
         if (start == profile_size) {
@@ -1640,7 +1637,7 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
             if (has_subimage) {
                 std::map<CARTA::StatsType, std::vector<double>> buffers;
                 std::unique_lock<std::mutex> ulock2(_image_mutex);
-                bool has_data = region->GetSpectralProfileData(buffers, config_stokes, sub_image);
+                bool has_data = region->GetSpectralProfileData(buffers, sub_image);
                 ulock2.unlock();
                 if (has_data) {
                     for (const auto& buffer : buffers) {

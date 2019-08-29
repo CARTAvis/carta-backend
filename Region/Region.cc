@@ -1210,13 +1210,11 @@ void Region::SetAllSpectralProfilesUnsent() {
 // spectral data
 
 bool Region::GetSpectralProfileData(
-    std::map<CARTA::StatsType, std::vector<double>>& spectral_data, int config_stokes, casacore::ImageInterface<float>& image) {
+    std::map<CARTA::StatsType, std::vector<double>>& spectral_data, casacore::ImageInterface<float>& image) {
     // Return spectral data for all stats in spectral config
     bool have_stats(false);
-    if (_region_profiler) {
-        if (!_all_stats.empty() && _region_stats) {
-            have_stats = _region_stats->CalcStatsValues(spectral_data, _all_stats, image);
-        }
+    if (_region_stats) {
+        have_stats = _region_stats->CalcStatsValues(spectral_data, _all_stats, image);
     }
     return have_stats;
 }
@@ -1300,36 +1298,29 @@ void Region::FillNaNSpectralProfileDataMessage(CARTA::SpectralProfileData& profi
     }
 }
 
-bool Region::InitSpectralData(
+void Region::InitSpectralData(
     int profile_stokes, size_t profile_size, std::map<CARTA::StatsType, std::vector<double>>& spectral_data, size_t& channel_start) {
     // Initialize spectral data map for all stats
-    bool data_init(false);
     channel_start = std::numeric_limits<size_t>::max();
-    if (_region_profiler) {
-        if (!_all_stats.empty()) {
-            for (size_t i = 0; i < _all_stats.size(); ++i) {
-                auto stats_type = static_cast<CARTA::StatsType>(_all_stats[i]);
-                std::vector<double> buffer;
-                size_t tmp_channel_start;
-                if (GetStatsCache(profile_stokes, profile_size, stats_type, buffer, tmp_channel_start)) {
-                    // Stats cache is available, reuse it.
-                    spectral_data.emplace(stats_type, buffer);
-                } else {
-                    // Initialize spectral data map for the stats to NaN
-                    std::vector<double> init_spectral_data(profile_size, std::numeric_limits<double>::quiet_NaN());
-                    spectral_data.emplace(stats_type, init_spectral_data);
-                    tmp_channel_start = 0;
-                }
-                // Use the minimum of channel_start for all stats types (to be conservative),
-                // which is used to determine the start channel of spectral profile calculations.
-                if (tmp_channel_start < channel_start) {
-                    channel_start = tmp_channel_start;
-                }
-            }
-            data_init = true;
+    for (size_t i = 0; i < _all_stats.size(); ++i) {
+        auto stats_type = static_cast<CARTA::StatsType>(_all_stats[i]);
+        std::vector<double> buffer;
+        size_t tmp_channel_start;
+        if (GetStatsCache(profile_stokes, profile_size, stats_type, buffer, tmp_channel_start)) {
+            // Stats cache is available, reuse it.
+            spectral_data.emplace(stats_type, buffer);
+        } else {
+            // Initialize spectral data map for the stats to NaN
+            std::vector<double> init_spectral_data(profile_size, std::numeric_limits<double>::quiet_NaN());
+            spectral_data.emplace(stats_type, init_spectral_data);
+            tmp_channel_start = 0;
+        }
+        // Use the minimum of channel_start for all stats types (to be conservative),
+        // which is used to determine the start channel of spectral profile calculations.
+        if (tmp_channel_start < channel_start) {
+            channel_start = tmp_channel_start;
         }
     }
-    return data_init;
 }
 
 // Region connection state
