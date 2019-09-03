@@ -293,8 +293,12 @@ bool Region::UpdateRegionParameters(
 
     // region changed if xy params changed and points validated
     _xy_region_changed = xy_params_changed && points_set;
-    if (_xy_region_changed && _region_stats)
+    if (_xy_region_changed && _region_stats) {
         _region_stats->ClearStats(); // recalculate everything
+        if (type != CARTA::RegionType::POINT) {
+            ResetStatsCache(); // Reset stats cache for non-point region
+        }
+    }
 
     return points_set;
 }
@@ -1196,16 +1200,11 @@ void Region::SetAllSpectralProfilesUnsent() {
 // spectral data
 
 bool Region::GetSpectralProfileData(
-    std::map<CARTA::StatsType, std::vector<double>>& spectral_data, int config_stokes, casacore::ImageInterface<float>& image) {
-    // Return spectral data for unsent stats in spectral config
+    std::map<CARTA::StatsType, std::vector<double>>& spectral_data, casacore::ImageInterface<float>& image) {
+    // Return spectral data for all stats in spectral config
     bool have_stats(false);
-    if (_region_profiler) {
-        std::vector<int> unsent_stats;
-        if (_region_profiler->GetUnsentStatsForProfile(config_stokes, unsent_stats)) {
-            if (!unsent_stats.empty() && _region_stats) {
-                have_stats = _region_stats->CalcStatsValues(spectral_data, unsent_stats, image);
-            }
-        }
+    if (_region_stats) {
+        have_stats = _region_stats->CalcStatsValues(spectral_data, _all_stats, image);
     }
     return have_stats;
 }
@@ -1289,23 +1288,29 @@ void Region::FillNaNSpectralProfileDataMessage(CARTA::SpectralProfileData& profi
     }
 }
 
-bool Region::InitSpectralData(int config_stokes, size_t profile_size, std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
-    // Initialize spectral data map for unsent stats to NaN
-    bool data_init(false);
-    if (_region_profiler) {
-        std::vector<int> unsent_stats;
-        if (_region_profiler->GetUnsentStatsForProfile(config_stokes, unsent_stats)) { // true if profile still exists
-            if (!unsent_stats.empty()) {
-                for (size_t i = 0; i < unsent_stats.size(); ++i) {
-                    auto stats_type = static_cast<CARTA::StatsType>(unsent_stats[i]);
-                    std::vector<double> init_spectral_data(profile_size, std::numeric_limits<double>::quiet_NaN());
-                    spectral_data.emplace(stats_type, init_spectral_data);
-                }
-                data_init = true;
-            }
+void Region::InitSpectralData(
+    int profile_stokes, size_t profile_size, std::map<CARTA::StatsType, std::vector<double>>& spectral_data, size_t& channel_start) {
+    // Initialize spectral data map for all stats
+    channel_start = std::numeric_limits<size_t>::max();
+    for (size_t i = 0; i < _all_stats.size(); ++i) {
+        auto stats_type = static_cast<CARTA::StatsType>(_all_stats[i]);
+        std::vector<double> buffer;
+        size_t tmp_channel_start;
+        if (GetStatsCache(profile_stokes, profile_size, stats_type, buffer, tmp_channel_start)) {
+            // Stats cache is available, reuse it.
+            spectral_data.emplace(stats_type, buffer);
+        } else {
+            // Initialize spectral data map for the stats to NaN
+            std::vector<double> init_spectral_data(profile_size, std::numeric_limits<double>::quiet_NaN());
+            spectral_data.emplace(stats_type, init_spectral_data);
+            tmp_channel_start = 0;
+        }
+        // Use the minimum of channel_start for all stats types (to be conservative),
+        // which is used to determine the start channel of spectral profile calculations.
+        if (tmp_channel_start < channel_start) {
+            channel_start = tmp_channel_start;
         }
     }
-    return data_init;
 }
 
 // Region connection state
@@ -1323,4 +1328,41 @@ void Region::DisconnectCalled() {
     while (_z_profile_count) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     } // wait for the jobs finished
+}
+
+void Region::SetStatsCache(int profile_stokes, std::map<CARTA::StatsType, std::vector<double>>& stats_data, size_t channel_end) {
+    std::unique_lock<std::mutex> lock(_stats_cache_mutex);
+    for (auto& stats_data_elem : stats_data) {
+        auto& stats_type = stats_data_elem.first;
+        std::vector<double>& stats_values = stats_data_elem.second;
+        // Set stats cache
+        StatsCacheData& stats_cache_data = _stats_cache[profile_stokes][stats_type];
+        stats_cache_data.stats_values = std::move(stats_values);
+        stats_cache_data.channel_end = channel_end;
+    }
+}
+
+bool Region::GetStatsCache(
+    int profile_stokes, size_t profile_size, CARTA::StatsType stats_type, std::vector<double>& stats_data, size_t& channel_start) {
+    bool cache_ok(false);
+    channel_start = std::numeric_limits<size_t>::max();
+    std::unique_lock<std::mutex> lock(_stats_cache_mutex);
+    if (_stats_cache.count(profile_stokes)) {
+        auto& stats_cache_stoke = _stats_cache[profile_stokes];
+        if (stats_cache_stoke.count(stats_type)) {
+            StatsCacheData& stats_cache_stoke_type = stats_cache_stoke[stats_type];
+            stats_data = stats_cache_stoke_type.stats_values;
+            channel_start = stats_cache_stoke_type.channel_end;
+            // Check does stats cache fit requirements
+            if ((channel_start > 0 && channel_start <= profile_size) && (stats_data.size() == profile_size)) {
+                cache_ok = true;
+            }
+        }
+    }
+    return cache_ok;
+}
+
+void Region::ResetStatsCache() {
+    std::unique_lock<std::mutex> lock(_stats_cache_mutex);
+    _stats_cache.clear();
 }

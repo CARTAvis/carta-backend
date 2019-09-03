@@ -42,7 +42,6 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _selected_file_info_extended(nullptr),
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
-      _new_frame(false),
       _image_channel_task_active(false),
       _file_settings(this) {
     _histogram_progress = HISTOGRAM_COMPLETE;
@@ -301,7 +300,6 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
             _frames[file_id] = move(frame);
             lock.unlock();
-            _new_frame = true;
             // copy file info, extended file info
             CARTA::FileInfo* response_file_info = new CARTA::FileInfo();
             response_file_info->set_name(_selected_file_info->name());

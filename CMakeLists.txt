@@ -82,7 +82,8 @@ set(SOURCE_FILES
         FileSettings.cc
         Util.cc
         FileListHandler.cc
-        Tile.cc)
+        Tile.cc
+	DS9Parser.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

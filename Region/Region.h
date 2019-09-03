@@ -21,6 +21,11 @@
 
 namespace carta {
 
+struct StatsCacheData {
+    std::vector<double> stats_values; // Spectral profile
+    size_t channel_end;               // End of the channel index from previous calculation
+};
+
 class Region {
     // Region could be:
     // * the 3D cube for a given stokes
@@ -109,14 +114,14 @@ public:
     void SetAllSpectralProfilesUnsent();
 
     // Spectral data
-    bool GetSpectralProfileData(
-        std::map<CARTA::StatsType, std::vector<double>>& spectral_data, int config_stokes, casacore::ImageInterface<float>& image);
+    bool GetSpectralProfileData(std::map<CARTA::StatsType, std::vector<double>>& spectral_data, casacore::ImageInterface<float>& image);
     void FillPointSpectralProfileDataMessage(
         CARTA::SpectralProfileData& profile_message, int config_stokes, std::vector<float>& spectral_data);
     void FillSpectralProfileDataMessage(
         CARTA::SpectralProfileData& profile_message, int config_stokes, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
     void FillNaNSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, int config_stokes);
-    bool InitSpectralData(int profile_index, size_t profile_size, std::map<CARTA::StatsType, std::vector<double>>& stats_data);
+    void InitSpectralData(
+        int profile_stokes, size_t profile_size, std::map<CARTA::StatsType, std::vector<double>>& stats_data, size_t& channel_start);
 
     // Stats: pass through to RegionStats
     void SetStatsRequirements(const std::vector<int>& stats_types);
@@ -138,6 +143,12 @@ public:
     void DecreaseZProfileCount() {
         --_z_profile_count;
     }
+
+    // Set stats cache
+    void SetStatsCache(int profile_stokes, std::map<CARTA::StatsType, std::vector<double>>& stats_data, size_t channel_end);
+    // Get stats cache
+    bool GetStatsCache(
+        int profile_stokes, size_t profile_size, CARTA::StatsType stats_type, std::vector<double>& stats_data, size_t& channel_start);
 
 private:
     // bounds checking for Region parameters
@@ -178,6 +189,9 @@ private:
 
     void SetConnectionFlag(bool connected);
 
+    // Reset stats cache
+    void ResetStatsCache();
+
     // region definition (ICD SET_REGION parameters)
     std::string _name;
     CARTA::RegionType _type;
@@ -210,6 +224,16 @@ private:
 
     // Spectral profile counter, which is used to determine whether the Region object can be destroyed (_z_profile_count == 0 ?).
     tbb::atomic<int> _z_profile_count;
+
+    // Map of stats cache: "stoke index" vs. {"stats type" vs. ["stats values", "channel end"]}
+    std::map<int, std::map<CARTA::StatsType, StatsCacheData>> _stats_cache;
+
+    // Lock when stats cache is being read or written
+    std::mutex _stats_cache_mutex;
+
+    // Define all stats types to calculate
+    std::vector<int> _all_stats = {CARTA::StatsType::Sum, CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma,
+        CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max};
 };
 
 } // namespace carta

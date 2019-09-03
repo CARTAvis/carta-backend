@@ -57,7 +57,7 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
 
     // Get shape and axis values from the loader
     std::string log_message;
-    if (!_loader->FindShape(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
+    if (!_loader->FindShape(info, _image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, log_message);
         if (_verbose) {
             Log(session_id, _open_image_error);
@@ -302,14 +302,17 @@ void Frame::ImportRegion(
             break;
         }
         case CARTA::FileType::REG: {
-            /*
-            carta::Ds9Parser parser = carta::Ds9Parser(filename, coord_sys, _image_shape);
+            carta::Ds9Parser parser;
+            if (!filename.empty()) {
+                parser = carta::Ds9Parser(filename, coord_sys, _image_shape);
+            } else {
+                parser = carta::Ds9Parser(coord_sys, file_contents, _image_shape);
+            }
             // iterate through annotations to create regions if valid
-            for (unsigned int iline = 0; iline < parser.nLines(); ++iline) {
-                casa::AsciiAnnotationFileLine file_line = parser.lineAt(iline);
+            for (unsigned int iline = 0; iline < parser.NumLines(); ++iline) {
+                casa::AsciiAnnotationFileLine file_line = parser.LineAt(iline);
                 ImportAnnotationFileLine(file_line, coord_sys, file_type, import_ack, message);
             }
-	    */
             break;
         }
         default: {
@@ -1619,17 +1622,20 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
     bool data_ok(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
-
-        // initialize the spectral data
         std::map<CARTA::StatsType, std::vector<double>> results;
+        size_t start;
         size_t profile_size = NumChannels(); // total number of channels
-        if (!region->InitSpectralData(config_stokes, profile_size, results)) {
-            // config removed or no unsent stats
-            return false;
+
+        // Try to get the cache or initialize spectral profiles to NaN
+        region->InitSpectralData(profile_stokes, profile_size, results, start);
+
+        // If stats cache is available and completed, don't need to recalculate spectral profiles.
+        if (start == profile_size) {
+            partial_results_callback(results, 1.0f);
+            return true;
         }
 
-        // initialize the variables
-        size_t start = 0;
+        // Initialize variables and calculate spectral profiles
         size_t count, end;
         float progress = 0;
         casacore::SubImage<float> sub_image;
@@ -1644,6 +1650,10 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
 
             // check if region, current stokes, spectral requirements changed
             if (Interrupt(region_id, profile_stokes, start_region_state, start_config_stats)) {
+                // Save stats cache if region state is not changed
+                if (IsSameRegionState(region_id, start_region_state)) {
+                    region->SetStatsCache(profile_stokes, results, start);
+                }
                 return data_ok; // false until complete
             }
 
@@ -1657,7 +1667,7 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
             if (has_subimage) {
                 std::map<CARTA::StatsType, std::vector<double>> buffers;
                 std::unique_lock<std::mutex> ulock2(_image_mutex);
-                bool has_data = region->GetSpectralProfileData(buffers, config_stokes, sub_image);
+                bool has_data = region->GetSpectralProfileData(buffers, sub_image);
                 ulock2.unlock();
                 if (has_data) {
                     for (const auto& buffer : buffers) {
@@ -1697,6 +1707,11 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
             if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= 1.0f) {
                 t_partial_profile_start = std::chrono::high_resolution_clock::now();
                 partial_results_callback(results, progress);
+            }
+
+            // Save stats cache while spectral profiles are completed and region state is not changed
+            if (progress == 1.0f && IsSameRegionState(region_id, start_region_state)) {
+                region->SetStatsCache(profile_stokes, results, start);
             }
         }
         data_ok = true;

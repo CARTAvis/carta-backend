@@ -130,11 +130,11 @@ public:
     virtual ~FileLoader() = default;
 
     static FileLoader* GetLoader(const std::string& filename);
-    // return coordinates for axis types
-    virtual void FindCoords(int& spectral_axis, int& stokes_axis);
 
-    // get shape and axis information from image
-    virtual bool FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
+    // get shape and axis information from image data and coordinate system
+    bool FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
+    // use extended file info if coord sys fails
+    void FindCoordinates(const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis);
 
     // Load image statistics, if they exist, from the file
     virtual void LoadImageStats(bool load_percentiles = false);
