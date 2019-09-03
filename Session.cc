@@ -42,7 +42,6 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _selected_file_info_extended(nullptr),
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
-      _new_frame(false),
       _image_channel_task_active(false),
       _file_settings(this) {
     _histogram_progress = HISTOGRAM_COMPLETE;
@@ -292,7 +291,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
         string abs_filename(root_path.resolvedName());
 
         // create Frame for open file
-        auto frame = std::unique_ptr<Frame>(new Frame(_id, abs_filename, hdu, _selected_file_info_extended));
+        auto frame = std::unique_ptr<Frame>(new Frame(_id, abs_filename, hdu, _selected_file_info_extended, _verbose_logging));
         if (frame->IsValid()) {
             // Check if the old _frames[file_id] object exists. If so, delete it.
             if (_frames.count(file_id) > 0) {
@@ -301,7 +300,6 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
             _frames[file_id] = move(frame);
             lock.unlock();
-            _new_frame = true;
             // copy file info, extended file info
             CARTA::FileInfo* response_file_info = new CARTA::FileInfo();
             response_file_info->set_name(_selected_file_info->name());
@@ -321,13 +319,15 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
 
             success = true;
         } else {
-            err_message = "Could not load image";
+            err_message = frame->GetErrorMessage();
         }
     }
     ack.set_success(success);
     ack.set_message(err_message);
     SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
-    UpdateRegionData(file_id);
+    if (success) {
+        UpdateRegionData(file_id);
+    }
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
@@ -493,19 +493,19 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             CARTA::ImportRegionAck import_ack; // response
             std::string directory(message.directory()), filename(message.file());
             CARTA::FileType file_type(message.type());
+            std::string abs_filename;
+            std::vector<std::string> contents;
             if (!directory.empty() && !filename.empty()) {
                 // form path with filename
                 casacore::Path root_path(_root_folder);
                 root_path.append(directory);
                 root_path.append(filename);
-                std::string abs_filename(root_path.resolvedName());
-                _frames.at(file_id)->ImportRegionFile(file_type, abs_filename, import_ack);
-                SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
+                abs_filename = root_path.resolvedName();
             } else {
-                std::vector<std::string> contents = {message.contents().begin(), message.contents().end()};
-                _frames.at(file_id)->ImportRegionContents(file_type, contents, import_ack);
-                SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
+                contents = {message.contents().begin(), message.contents().end()};
             }
+            _frames.at(file_id)->ImportRegion(file_type, abs_filename, contents, import_ack);
+            SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
         } catch (std::out_of_range& range_error) {
             std::string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"import"}, CARTA::ErrorSeverity::DEBUG);
@@ -968,7 +968,6 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
         std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
         for (auto region_id : regions) {
             // CHECK FOR CANCEL HERE ??
-            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             SendRegionStatsData(file_id, region_id);
             SendSpatialProfileData(file_id, region_id, stokes_changed);
             if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
@@ -976,6 +975,7 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
             } else if (region_id != IMAGE_REGION_ID) {
                 SendRegionHistogramData(file_id, region_id, channel_changed);
             }
+            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             SendSpectralProfileData(file_id, region_id, channel_changed, stokes_changed);
             _frames.at(file_id)->DecreaseZProfileCount(region_id);
         }
@@ -1002,8 +1002,9 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::
 
 void Session::SendFileEvent(int32_t file_id, CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message) {
     // do not send if file is closed
-    if (_frames.count(file_id))
+    if (_frames.count(file_id)) {
         SendEvent(event_type, event_id, message);
+    }
 }
 
 void Session::SendPendingMessages() {

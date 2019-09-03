@@ -157,7 +157,7 @@ void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, const casaco
         auto stats_value = stats_data.add_statistics();
         stats_value->set_stats_type(CARTA::StatsType::Sum);
     } else {
-        std::vector<std::vector<double>> results;
+        std::map<CARTA::StatsType, std::vector<double>> results;
         if (_stats_valid && (_stats_data.count(stokes)) && (_stats_data.at(stokes).count(channel))) {
             // used stored stats
             try {
@@ -187,12 +187,12 @@ void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, const casaco
                 auto carta_stats_type = static_cast<CARTA::StatsType>(_stats_reqs[i]);
                 stats_value->set_stats_type(carta_stats_type);
                 double value(0.0);
-                if (!have_stats || results[i].empty()) { // region outside image or NaNs
+                if (!have_stats || !results.count(carta_stats_type) || results[carta_stats_type].empty()) { // region outside image or NaNs
                     if (carta_stats_type != CARTA::StatsType::NumPixels) {
                         value = std::numeric_limits<double>::quiet_NaN();
                     }
                 } else {
-                    value = results[i][0];
+                    value = results[carta_stats_type][0];
                 }
                 stats_value->set_value(value);
 
@@ -226,7 +226,7 @@ void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CAR
     }
 }
 
-bool RegionStats::CalcStatsValues(std::vector<std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
+bool RegionStats::CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel) {
     // Fill stats_values vector for requested stats; one vector<float> per stat if per channel,
     // else one value per stat per region.
@@ -248,7 +248,6 @@ bool RegionStats::CalcStatsValues(std::vector<std::vector<double>>& stats_values
 
     casacore::Array<casacore::Double> num_points;
     size_t num_stats(requested_stats.size());
-    stats_values.resize(num_stats);
     for (size_t i = 0; i < num_stats; ++i) {
         // get requested statistics values
         casacore::LatticeStatsBase::StatisticsTypes lattice_stats_type(casacore::LatticeStatsBase::NSTATS);
@@ -336,7 +335,7 @@ bool RegionStats::CalcStatsValues(std::vector<std::vector<double>>& stats_values
         }
 
         if (!dbl_result.empty()) {
-            stats_values[i] = std::move(dbl_result);
+            stats_values.emplace(carta_stats_type, dbl_result);
         }
     }
     return true;

@@ -15,8 +15,8 @@
 
 using namespace carta;
 
-Frame::Frame(
-    uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, int default_channel)
+Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, bool verbose,
+    int default_channel)
     : _session_id(session_id),
       _valid(true),
       _z_profile_count(0),
@@ -28,9 +28,15 @@ Frame::Frame(
       _channel_index(-1),
       _stokes_index(-1),
       _num_channels(1),
-      _num_stokes(1) {
+      _num_stokes(1),
+      _verbose(verbose) {
+    casacore::Path ccpath(filename);
+    casacore::String filename_only = ccpath.baseName();
     if (_loader == nullptr) {
-        Log(session_id, "Problem loading file {}: loader not implemented", filename);
+        _open_image_error = fmt::format("Problem loading file {}: loader not implemented", filename_only);
+        if (_verbose) {
+            Log(session_id, _open_image_error);
+        }
         _valid = false;
         return;
     }
@@ -40,17 +46,26 @@ Frame::Frame(
     try {
         _loader->OpenFile(hdu, info);
     } catch (casacore::AipsError& err) {
-        Log(session_id, "Problem loading file {}: {}", filename, err.getMesg());
+        _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, err.getMesg());
+        if (_verbose) {
+            Log(session_id, _open_image_error);
+        }
         _valid = false;
         return;
     }
 
     // Get shape and axis values from the loader
-    if (!_loader->FindShape(_image_shape, _num_channels, _num_stokes, _spectral_axis, _stokes_axis)) {
-        Log(session_id, "Problem loading file {}: could not determine image shape", filename);
+    std::string log_message;
+    if (!_loader->FindShape(info, _image_shape, _spectral_axis, _stokes_axis, log_message)) {
+        _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, log_message);
+        if (_verbose) {
+            Log(session_id, _open_image_error);
+        }
         _valid = false;
         return;
     }
+    _num_channels = (_spectral_axis >= 0 ? _image_shape(_spectral_axis) : 1);
+    _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
     // make Region for entire image (after current channel/stokes set)
     SetImageRegion(IMAGE_REGION_ID);
@@ -67,7 +82,10 @@ Frame::Frame(
         // A failure here shouldn't invalidate the frame
         _loader->LoadImageStats();
     } catch (casacore::AipsError& err) {
-        Log(session_id, "Problem loading statistics from file {}: {}", filename, err.getMesg());
+        _open_image_error = fmt::format("Problem loading statistics from file {}: {}", filename_only, err.getMesg());
+        if (_verbose) {
+            Log(session_id, _open_image_error);
+        }
     }
 }
 
@@ -80,6 +98,10 @@ Frame::~Frame() {
 
 bool Frame::IsValid() {
     return _valid;
+}
+
+std::string Frame::GetErrorMessage() {
+    return _open_image_error;
 }
 
 void Frame::DisconnectCalled() {
@@ -159,8 +181,6 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
     if (region_set) {
         if (name == "cursor" && type == CARTA::RegionType::POINT) { // update current cursor's x-y coordinate
             SetCursorXy(points[0].x(), points[0].y());
-        } else { // update current region's states
-            SetRegionState(region_id, name, type, points, rotation);
         }
     } else {
         message = fmt::format("Region parameters failed to validate for region id {}", region_id);
@@ -235,32 +255,45 @@ void Frame::RemoveRegion(int region_id) {
     }
 }
 
-void Frame::ImportRegionFile(CARTA::FileType file_type, std::string& filename, CARTA::ImportRegionAck& import_ack) {
+void Frame::ImportRegion(
+    CARTA::FileType file_type, std::string& filename, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack) {
     // Import region from file
+    if (filename.empty() && contents.empty()) {
+        import_ack.set_success(false);
+        import_ack.set_message("Import region failed: no region file contents.");
+        import_ack.add_regions();
+        return;
+    }
+
+    // concat contents into one string delimited by newline
+    std::string file_contents;
+    if (!contents.empty()) {
+        for (auto& line : contents) {
+            file_contents.append(line + "\n");
+        }
+    }
+
+    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+    std::string message;
     switch (file_type) {
         case CARTA::FileType::CRTF: {
-            bool region_set(false);
-            std::string message;
             try {
-                const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-                // use defaults except allow regions outside image
-                bool require_region(false);
-                casa::RegionTextList region_list = casa::RegionTextList(
-                    filename, coord_sys, _image_shape, "", "", "", casa::RegionTextParser::CURRENT_VERSION, true, require_region);
+                // use RegionTextList to import file and create annotation file lines
+                casa::RegionTextList region_list;
+                if (!filename.empty()) {
+                    region_list = casa::RegionTextList(filename, coord_sys, _image_shape);
+                } else {
+                    region_list = casa::RegionTextList(coord_sys, file_contents, _image_shape);
+                }
+                // iterate through annotations to create regions if valid
                 for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
                     casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
-                    region_set |= ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
+                    ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
                 }
-                if (!region_set) {
-                    import_ack.add_regions();
-                    if (message.empty()) {
-                        message = "CRTF region file import failed: zero regions set";
-                    }
-                }
-                import_ack.set_success(region_set); // true if at least one region was set
-                import_ack.set_message(message);
             } catch (casacore::AipsError& err) {
-                std::cerr << "Import region failed: " << err.getMesg() << std::endl;
+                if (_verbose) {
+                    std::cerr << "Import region failed: " << err.getMesg() << std::endl;
+                }
                 import_ack.set_success(false);
                 import_ack.set_message("CRTF region file import failed.");
                 import_ack.add_regions();
@@ -269,59 +302,27 @@ void Frame::ImportRegionFile(CARTA::FileType file_type, std::string& filename, C
         }
         case CARTA::FileType::REG:
         default: {
-            import_ack.set_success(false);
-            import_ack.set_message("Import region failed: file type not supported.");
-            import_ack.add_regions();
-        }
-    }
-}
-
-void Frame::ImportRegionContents(CARTA::FileType file_type, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack) {
-    // Import region file contents from client
-    switch (file_type) {
-        case CARTA::FileType::CRTF: {
-            bool region_set(false);
-            std::string message;
-            try {
-                if (contents.size() > 0) {
-                    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-                    for (auto& line : contents) {
-                        // use defaults except allow regions outside image
-                        bool require_region(false);
-                        casa::RegionTextList region_list =
-                            casa::RegionTextList(coord_sys, line, _image_shape, "", "", "", true, require_region);
-                        casa::AsciiAnnotationFileLine file_line = region_list.lineAt(0);
-                        region_set |= ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
-                    }
-                } else {
-                    message = "CRTF region file import failed: no contents.";
-                }
-                import_ack.set_success(region_set); // true if at least one region was set
-                import_ack.set_message(message);
-                if (!region_set) {
-                    import_ack.add_regions();
-                }
-            } catch (casacore::AipsError& err) {
-                import_ack.set_success(false);
-                import_ack.set_message("CRTF region file import failed.");
-                import_ack.add_regions();
-            }
+            message = "Import region failed: file type not supported.";
             break;
         }
-        case CARTA::FileType::REG:
-        default: {
-            import_ack.set_success(false);
-            import_ack.set_message("Import region failed: file type not supported.");
-            import_ack.add_regions();
+    }
+    if (import_ack.regions_size() == 0) {
+        import_ack.set_success(false);
+        if (message.empty()) {
+            message = "Region file import failed: zero regions set";
         }
+        import_ack.set_message(message);
+        import_ack.add_regions();
+    } else {
+        import_ack.set_success(true); // true if at least one region was set
+        import_ack.set_message(message);
     }
 }
 
-bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
+void Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
     CARTA::ImportRegionAck& import_ack, std::string message) {
     // Process a single CRTF annotation file line to set region; adds region to frame regions.
     // Completes ack message with region properties or appends to message if failed.
-    bool region_set(false);
     switch (file_line.getType()) {
         case casa::AsciiAnnotationFileLine::ANNOTATION: {
             auto annotation_base = file_line.getAnnotationBase();
@@ -353,13 +354,11 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                             // add to frame's regions
                             auto region_id = GetMaxRegionId() + 1;
                             _regions[region_id] = move(region);
-                            region_set = true;
                             // region parameters
                             std::string name(_regions[region_id]->Name());
                             CARTA::RegionType type(_regions[region_id]->Type());
                             std::vector<CARTA::Point> points = _regions[region_id]->GetControlPoints();
                             float rotation(_regions[region_id]->Rotation());
-                            SetRegionState(region_id, name, type, points, rotation);
                             // add to ack
                             auto region_properties = import_ack.add_regions();
                             region_properties->set_region_id(region_id);
@@ -380,7 +379,6 @@ bool Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
             break;
         }
     }
-    return region_set;
 }
 
 void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename,
@@ -686,7 +684,6 @@ bool Frame::SetRegionSpectralRequirements(int region_id, const std::vector<CARTA
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         region_ok = region->SetSpectralRequirements(profiles, NumStokes());
-        SetRegionSpectralRequests(region_id, profiles);
     }
     return region_ok;
 }
@@ -985,18 +982,22 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                             region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, data, *new_histogram);
                         }
                     } else {
-                        std::unique_lock<std::mutex> guard(_image_mutex);
                         casacore::SubImage<float> sub_image;
-                        GetRegionSubImage(region_id, sub_image, curr_stokes, ChannelRange(config_channel));
-                        std::vector<float> region_data;
-                        bool has_data(region->GetData(region_data, sub_image)); // get subimage data once
-                        guard.unlock();
-                        if (has_data) {
-                            if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
-                                region->CalcMinMax(config_channel, curr_stokes, region_data, min_val, max_val);
+                        std::unique_lock<std::mutex> ulock(_image_mutex);
+                        bool has_subimage = GetRegionSubImage(region_id, sub_image, curr_stokes, ChannelRange(config_channel));
+                        ulock.unlock();
+                        if (has_subimage) {
+                            std::vector<float> region_data;
+                            std::unique_lock<std::mutex> ulock2(_image_mutex);
+                            bool has_region_data = region->GetData(region_data, sub_image); // get subimage data once
+                            ulock2.unlock();
+                            if (has_region_data) {
+                                if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
+                                    region->CalcMinMax(config_channel, curr_stokes, region_data, min_val, max_val);
+                                }
+                                region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, region_data, *new_histogram);
                             }
                         }
-                        region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, region_data, *new_histogram);
                     }
                 }
             }
@@ -1144,122 +1145,118 @@ bool Frame::FillSpectralProfileData(
         }
         // set profile parameters
         int curr_stokes(CurrentStokes());
-        // send profile and stats together
-        // set stats profiles
-        for (size_t i = 0; i < num_profiles; ++i) {
-            if (region->NumStatsToLoad(i) == 0) {
-                continue; // already loaded
+        std::vector<SpectralProfile> profiles = region->GetSpectralProfiles();
+        for (auto& profile : profiles) {
+            SpectralConfig spectral_config = profile.config;
+            int config_stokes(spectral_config.stokes_index);
+            if (region->GetSpectralProfileAllStatsSent(config_stokes)) {
+                continue; // already loaded or no longer needed
             }
-            int profile_stokes(region->GetSpectralConfigStokes(i));
-            if (profile_stokes >= CURRENT_STOKES) {
+            if (config_stokes >= CURRENT_STOKES) {
                 // When chan/stokes changes, all messages are set to unsent to force new profiles;
                 // put fixed stokes profile back to sent for the following:
                 if (channel_changed && !stokes_changed) {
-                    region->SetSpectralProfileAllStatsSent(i, true);
+                    region->SetSpectralProfileAllStatsSent(config_stokes, true);
                     continue; // do not send spectral profile when only channel changes
                 }
-                if ((channel_changed || stokes_changed) && (profile_stokes != CURRENT_STOKES)) {
+                if ((channel_changed || stokes_changed) && (config_stokes != CURRENT_STOKES)) {
                     // Do not send fixed stokes profile when stokes changes.
-                    region->SetSpectralProfileAllStatsSent(i, true);
+                    region->SetSpectralProfileAllStatsSent(config_stokes, true);
                     continue;
-                }
-
-                if (profile_stokes == CURRENT_STOKES) {
-                    profile_stokes = curr_stokes;
                 }
 
                 // Return NaNs if the region is entirely outside the image
                 std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask;
+                std::unique_lock<std::mutex> guard(_image_mutex);
                 try {
                     // check is the region mask valid (outside the lattice or not)
                     mask = region->XyMask();
                 } catch (casacore::AipsError& err) {
                 }
+                guard.unlock();
                 if (!mask) {
                     // if region mask not valid, send a NaN to the frontend
-                    CARTA::SpectralProfileData profile_data;
-                    profile_data.set_stokes(curr_stokes);
-                    profile_data.set_progress(1.0);
-                    region->FillNaNSpectralProfileData(profile_data, i);
+                    CARTA::SpectralProfileData profile_message;
+                    profile_message.set_stokes(curr_stokes);
+                    profile_message.set_progress(1.0);
+                    region->FillNaNSpectralProfileDataMessage(profile_message, config_stokes);
                     // send empty (NaN) result to Session
-                    cb(profile_data);
+                    cb(profile_message);
                     profile_ok = true;
                     return profile_ok;
                 }
 
+                // config_stokes is the stokes index in config, which could be CURRENT_STOKES = -1
+                // profile_stokes is a valid stokes index used to slice image
+                int profile_stokes = (config_stokes == CURRENT_STOKES ? curr_stokes : config_stokes);
+
                 // fill SpectralProfiles for this config
-                if (region->IsPoint()) { // values
+                if (region->IsPoint()) {
+                    // profile is values in image slice
                     std::vector<float> spectral_data;
                     auto cursor_point = region->GetControlPoints()[0];
                     // try use the loader's optimized cursor profile reader first
-                    std::unique_lock<std::mutex> guard(_image_mutex);
-                    bool have_spectral_data =
-                        _loader->GetCursorSpectralData(spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1);
-                    guard.unlock();
+                    bool have_spectral_data = _loader->GetCursorSpectralData(
+                        spectral_data, profile_stokes, cursor_point.x() + 0.5, 1, cursor_point.y() + 0.5, 1, _image_mutex);
                     if (have_spectral_data) {
-                        CARTA::SpectralProfileData profile_data;
-                        profile_data.set_stokes(curr_stokes);
-                        profile_data.set_progress(1.0);
-                        region->FillPointSpectralProfileData(profile_data, i, spectral_data);
+                        CARTA::SpectralProfileData profile_message;
+                        profile_message.set_stokes(curr_stokes);
+                        profile_message.set_progress(1.0);
+                        region->FillPointSpectralProfileDataMessage(profile_message, config_stokes, spectral_data);
                         // send result to Session
-                        cb(profile_data);
+                        cb(profile_message);
                         profile_ok = true;
                     } else {
                         casacore::SubImage<float> sub_image;
                         std::unique_lock<std::mutex> guard(_image_mutex);
-                        GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
-                        profile_ok = GetPointSpectralData(
-                            spectral_data, region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
-                                CARTA::SpectralProfileData profile_data;
-                                profile_data.set_stokes(curr_stokes);
-                                profile_data.set_progress(progress);
-                                region->FillPointSpectralProfileData(profile_data, i, tmp_spectral_data);
-                                // send (partial) result to Session
-                                cb(profile_data);
-                            });
+                        bool has_subimage = GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange());
                         guard.unlock();
+                        if (has_subimage) {
+                            profile_ok =
+                                GetPointSpectralData(region_id, sub_image, [&](std::vector<float> tmp_spectral_data, float progress) {
+                                    CARTA::SpectralProfileData profile_message;
+                                    profile_message.set_stokes(curr_stokes);
+                                    profile_message.set_progress(progress);
+                                    region->FillPointSpectralProfileDataMessage(profile_message, config_stokes, tmp_spectral_data);
+                                    // send (partial) result to Session
+                                    cb(profile_message);
+                                });
+                        }
                     }
-                } else { // statistics
-                    // do calculations for the image dimensions >= 3
-                    if (_image_shape.size() < 3) {
-                        CARTA::SpectralProfileData profile_data;
-                        profile_data.set_stokes(curr_stokes);
-                        profile_data.set_progress(1.0);
-                        region->FillNaNSpectralProfileData(profile_data, i);
-                        // send empty (NaN) result to Session
-                        cb(profile_data);
+                } else {
+                    // profile is statistics for image region (SubImage)
+                    if (_image_shape.size() < 3) { // no spectral axis
+                        // send empty (NaN) result
+                        CARTA::SpectralProfileData profile_message;
+                        profile_message.set_stokes(curr_stokes);
+                        profile_message.set_progress(1.0);
+                        region->FillNaNSpectralProfileDataMessage(profile_message, config_stokes);
+                        cb(profile_message);
                         profile_ok = true;
                         return profile_ok;
                     }
 
                     // if region mask is valid, then check is swizzled data available
-                    bool use_swizzled_data(_loader->UseRegionSpectralData(mask));
-
-                    if (use_swizzled_data) {
-                        std::unique_lock<std::mutex> guard(_image_mutex);
-                        profile_ok = _loader->GetRegionSpectralData(profile_stokes, region_id, mask, region->XyOrigin(),
-                            [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values, float progress) {
-                                CARTA::SpectralProfileData profile_data;
-                                profile_data.set_stokes(curr_stokes);
-                                profile_data.set_progress(progress);
-                                region->FillSpectralProfileData(profile_data, i, *stats_values);
+                    if (_loader->UseRegionSpectralData(mask, _image_mutex)) {
+                        profile_ok = _loader->GetRegionSpectralData(region_id, config_stokes, profile_stokes, mask, region->XyOrigin(),
+                            _image_mutex, [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values_map, float progress) {
+                                CARTA::SpectralProfileData profile_message;
+                                profile_message.set_stokes(curr_stokes);
+                                profile_message.set_progress(progress);
+                                region->FillSpectralProfileDataMessage(profile_message, config_stokes, *stats_values_map);
                                 // send (partial) result to Session
-                                cb(profile_data);
+                                cb(profile_message);
                             });
-                        guard.unlock();
                     } else {
-                        std::vector<std::vector<double>> stats_values;
-                        std::unique_lock<std::mutex> guard(_image_mutex);
-                        profile_ok = GetRegionSpectralData(
-                            stats_values, region_id, i, profile_stokes, [&](std::vector<std::vector<double>> results, float progress) {
-                                CARTA::SpectralProfileData profile_data;
-                                profile_data.set_stokes(curr_stokes);
-                                profile_data.set_progress(progress);
-                                region->FillSpectralProfileData(profile_data, i, results);
+                        profile_ok = GetRegionSpectralData(region_id, config_stokes, profile_stokes,
+                            [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
+                                CARTA::SpectralProfileData profile_message;
+                                profile_message.set_stokes(curr_stokes);
+                                profile_message.set_progress(progress);
+                                region->FillSpectralProfileDataMessage(profile_message, config_stokes, results);
                                 // send (partial) result to Session
-                                cb(profile_data);
+                                cb(profile_message);
                             });
-                        guard.unlock();
                     }
                 }
             }
@@ -1296,11 +1293,13 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
             stats_data.set_channel(_channel_index);
             stats_data.set_stokes(_stokes_index);
             casacore::SubImage<float> sub_image;
-            std::unique_lock<std::mutex> guard(_image_mutex);
-            if (GetRegionSubImage(region_id, sub_image, _stokes_index, ChannelRange(_channel_index))) {
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            bool have_subimage = GetRegionSubImage(region_id, sub_image, _stokes_index, ChannelRange(_channel_index));
+            ulock.unlock();
+            if (have_subimage) {
+                std::lock_guard<std::mutex> guard(_image_mutex);
                 region->FillStatsData(stats_data, sub_image, _channel_index, _stokes_index);
             } else {
-                guard.unlock(); // not using ImageStatistics
                 region->FillNaNStatsData(stats_data);
             }
             stats_ok = true;
@@ -1354,14 +1353,19 @@ bool Frame::CalcRegionMinMax(int region_id, int channel, int stokes, float& min_
             }
             min_max_ok = true;
         } else {
-            std::unique_lock<std::mutex> guard(_image_mutex);
             casacore::SubImage<float> sub_image;
-            GetRegionSubImage(region_id, sub_image, stokes, ChannelRange(channel));
-            std::vector<float> region_data;
-            bool has_data(region->GetData(region_data, sub_image));
-            guard.unlock();
-            if (has_data) {
-                region->CalcMinMax(channel, stokes, region_data, min_val, max_val);
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            bool has_subimage = GetRegionSubImage(region_id, sub_image, stokes, ChannelRange(channel));
+            ulock.unlock();
+            bool has_data(false);
+            if (has_subimage) {
+                std::vector<float> region_data;
+                std::unique_lock<std::mutex> ulock2(_image_mutex);
+                has_data = region->GetData(region_data, sub_image);
+                ulock2.unlock();
+                if (has_data) {
+                    region->CalcMinMax(channel, stokes, region_data, min_val, max_val);
+                }
             }
             min_max_ok = has_data;
         }
@@ -1423,14 +1427,19 @@ bool Frame::CalcRegionHistogram(
             }
             histogram_ok = true;
         } else {
-            std::unique_lock<std::mutex> guard(_image_mutex);
+            bool has_data(false);
             casacore::SubImage<float> sub_image;
-            GetRegionSubImage(region_id, sub_image, stokes, ChannelRange(channel));
-            std::vector<float> region_data;
-            bool has_data(region->GetData(region_data, sub_image));
-            guard.unlock();
-            if (has_data) {
-                region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, region_data, histogram);
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            bool has_subimage = GetRegionSubImage(region_id, sub_image, stokes, ChannelRange(channel));
+            ulock.unlock();
+            if (has_subimage) {
+                std::vector<float> region_data;
+                std::unique_lock<std::mutex> ulock2(_image_mutex);
+                has_data = region->GetData(region_data, sub_image);
+                ulock2.unlock();
+                if (has_data) {
+                    region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, region_data, histogram);
+                }
             }
             histogram_ok = has_data;
         }
@@ -1476,14 +1485,17 @@ bool Frame::GetSubImageXy(casacore::SubImage<float>& sub_image, CursorXy& cursor
     return result;
 }
 
-bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casacore::SubImage<float>& sub_image,
-    const std::function<void(std::vector<float>, float)>& partial_results_callback) {
+bool Frame::GetPointSpectralData(
+    int region_id, casacore::SubImage<float>& sub_image, const std::function<void(std::vector<float>, float)>& partial_results_callback) {
     // slice image data for point region (including cursor)
     bool data_ok(false);
     casacore::IPosition sub_image_shape = sub_image.shape();
+    std::vector<float> data;
     data.resize(sub_image_shape.product(), std::numeric_limits<double>::quiet_NaN());
-    if ((sub_image_shape.size() > 2) && (_spectral_axis >= 0)) { // stoppable spectral profile process
-        try {
+
+    try {
+        if ((sub_image_shape.size() > 2) && (_spectral_axis >= 0)) {
+            // stoppable spectral profile process
             size_t delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
             size_t dt_target = TARGET_DELTA_TIME;       // the target time elapse for each step, in the unit of milliseconds
             size_t profile_size = NumChannels();        // profile vector size
@@ -1492,181 +1504,239 @@ bool Frame::GetPointSpectralData(std::vector<float>& data, int region_id, casaco
             float progress = 0.0;
             // get cursor's x-y coordinate from subimage
             CursorXy subimage_cursor;
-            GetSubImageXy(sub_image, subimage_cursor);
-            // get spectral profile for the cursor
-            auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
-            while (start(_spectral_axis) < profile_size) {
-                // start the timer
-                auto t_start = std::chrono::high_resolution_clock::now();
-                // check if region point changed from subimage point
-                if ((region_id == CURSOR_REGION_ID) && (Interrupt(region_id, _cursor_xy, subimage_cursor))) {
-                    return false; // cursor moved
-                }
-                if (region_id > CURSOR_REGION_ID) {
-                    if (_regions.count(region_id)) {
-                        std::vector<CARTA::Point> region_points = _regions[region_id]->GetControlPoints();
-                        // round the region cursor float values since subimage cursor comes from IPosition
-                        CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y()));
-                        if (Interrupt(region_id, region_cursor, subimage_cursor)) { // point region moved
+            if (GetSubImageXy(sub_image, subimage_cursor)) {
+                // get spectral profile for the cursor
+                auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
+                while (start(_spectral_axis) < profile_size) {
+                    // start the timer
+                    auto t_start = std::chrono::high_resolution_clock::now();
+
+                    // check if cursor/region point changed from subimage point
+                    if ((region_id == CURSOR_REGION_ID) && (Interrupt(region_id, _cursor_xy, subimage_cursor))) {
+                        return false; // cursor moved
+                    }
+                    if (region_id > CURSOR_REGION_ID) {
+                        if (_regions.count(region_id)) {
+                            std::vector<CARTA::Point> region_points = _regions[region_id]->GetControlPoints();
+                            // round the region cursor float values since subimage cursor comes from IPosition
+                            CursorXy region_cursor(round(region_points[0].x()), round(region_points[0].y()));
+                            if (Interrupt(region_id, region_cursor, subimage_cursor)) { // point region moved
+                                return false;
+                            }
+                        } else { // region closed
                             return false;
                         }
-                    } else { // region closed
-                        return false;
+                    }
+
+                    // Slice subimage for this step; modify the count and update progress
+                    count(_spectral_axis) =
+                        (start(_spectral_axis) + delta_channels < profile_size ? delta_channels : profile_size - start(_spectral_axis));
+                    casacore::Slicer slicer(start, count);
+                    casacore::Array<float> buffer;
+                    std::unique_lock<std::mutex> guard(_image_mutex);
+                    sub_image.doGetSlice(buffer, slicer);
+                    guard.unlock();
+                    memcpy(&data[start(_spectral_axis)], buffer.data(), count(_spectral_axis) * sizeof(float));
+                    start(_spectral_axis) += count(_spectral_axis);
+                    progress = (float)start(_spectral_axis) / profile_size;
+
+                    // get the time elapse for this step
+                    auto t_end = std::chrono::high_resolution_clock::now();
+                    auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+                    auto dt_partial_profile = std::chrono::duration<double, std::milli>(t_end - t_partial_profile_start).count();
+
+                    // adjust the increment of channels according to the time elapse
+                    delta_channels *= dt_target / dt;
+                    if (delta_channels < 1) {
+                        delta_channels = 1;
+                    }
+                    if (delta_channels > profile_size) {
+                        delta_channels = profile_size;
+                    }
+
+                    if ((dt_partial_profile > TARGET_PARTIAL_CURSOR_TIME) || (progress >= 1.0f)) {
+                        // send partial result by the callback function
+                        t_partial_profile_start = std::chrono::high_resolution_clock::now();
+                        partial_results_callback(data, progress);
                     }
                 }
-
-                // modify the count for slicer
-                count(_spectral_axis) =
-                    (start(_spectral_axis) + delta_channels < profile_size ? delta_channels : profile_size - start(_spectral_axis));
-                casacore::Slicer slicer(start, count);
-                casacore::Array<float> buffer;
-                sub_image.doGetSlice(buffer, slicer);
-                memcpy(&data[start(_spectral_axis)], buffer.data(), count(_spectral_axis) * sizeof(float));
-                start(_spectral_axis) += count(_spectral_axis);
-                progress = (float)start(_spectral_axis) / profile_size;
-                // get the time elapse for this step
-                auto t_end = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-                auto dt_partial_profile = std::chrono::duration<double, std::milli>(t_end - t_partial_profile_start).count();
-                // adjust the increment of channels according to the time elapse
-                delta_channels *= dt_target / dt;
-                if (delta_channels < 1) {
-                    delta_channels = 1;
-                }
-                if (delta_channels > profile_size) {
-                    delta_channels = profile_size;
-                }
-                if ((dt_partial_profile > TARGET_PARTIAL_CURSOR_TIME) || (progress >= 1.0f)) {
-                    // send partial result by the callback function
-                    t_partial_profile_start = std::chrono::high_resolution_clock::now();
-                    partial_results_callback(data, progress);
-                }
+                data_ok = true;
             }
-            data_ok = true;
-        } catch (casacore::AipsError& err) {
-            std::cerr << "Spectral profile error: " << err.getMesg() << std::endl;
-        }
-    } else { // non-stoppable spectral profile process
-        casacore::Array<float> tmp(sub_image_shape, data.data(), casacore::StorageInitPolicy::SHARE);
-        try {
+        } else {
+            // non-stoppable spectral profile process
+            casacore::Array<float> tmp(sub_image_shape, data.data(), casacore::StorageInitPolicy::SHARE);
+            std::unique_lock<std::mutex> guard(_image_mutex);
             sub_image.doGetSlice(tmp, casacore::Slicer(casacore::IPosition(sub_image_shape.size(), 0), sub_image_shape));
+            guard.unlock();
             data_ok = true;
-        } catch (casacore::AipsError& err) {
-            std::cerr << "Spectral profile error: " << err.getMesg() << std::endl;
         }
+    } catch (casacore::AipsError& err) {
+        std::cerr << "Point region spectral profile error: " << err.getMesg() << std::endl;
     }
     return data_ok;
 }
 
-bool Frame::GetRegionSpectralData(std::vector<std::vector<double>>& stats_values, int region_id, int profile_index, int profile_stokes,
-    const std::function<void(std::vector<std::vector<double>>, float)>& partial_results_callback) {
-    int delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
-    int dt_target = TARGET_DELTA_TIME;       // the target time elapse for each step, in the unit of milliseconds
-    int profile_size = NumChannels();        // total number of channels
-    auto& region = _regions[region_id];
-    // get statistical requirements for this process
-    std::vector<int> config_stats;
-    if (!region->GetSpectralConfigStats(profile_index, config_stats)) { // stats in config, to see if req changed
+bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
+    // get starting spectral config
+    SpectralConfig start_config_stats;
+    if (!GetRegionSpectralConfig(region_id, config_stokes, start_config_stats)) {
         return false;
     }
-    int stats_size = region->NumStatsToLoad(profile_index);
-    // initialize the size of statistical results
-    std::vector<std::vector<double>> results(stats_size);
-    for (int i = 0; i < stats_size; ++i) {
-        results[i].resize(profile_size, std::numeric_limits<double>::quiet_NaN());
+    // get starting region state
+    RegionState start_region_state;
+    if (!GetRegionState(region_id, start_region_state)) {
+        return false;
     }
-    // get region state for this process
-    RegionState region_state = region->GetRegionState();
-    // get statistical profile data
-    int start = 0;
-    int count, end;
-    float progress = 0;
-    casacore::SubImage<float> sub_image;
-    auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
-    while (start < profile_size) {
-        // start the timer
-        auto t_start = std::chrono::high_resolution_clock::now();
-        // check if frontend's requirements changed
-        if (Interrupt(region_id, profile_index, region_state, config_stats)) {
-            return false;
+
+    bool data_ok(false);
+    if (_regions.count(region_id)) {
+        auto& region = _regions[region_id];
+        std::map<CARTA::StatsType, std::vector<double>> results;
+        size_t start;
+        size_t profile_size = NumChannels(); // total number of channels
+
+        // Try to get the cache or initialize spectral profiles to NaN
+        region->InitSpectralData(profile_stokes, profile_size, results, start);
+
+        // If stats cache is available and completed, don't need to recalculate spectral profiles.
+        if (start == profile_size) {
+            partial_results_callback(results, 1.0f);
+            return true;
         }
-        end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
-        count = end - start + 1;
-        // try to get sub-image and its spectral profile
-        if (GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange(start, end))) {
-            std::vector<std::vector<double>> buffer;
-            if (region->GetSpectralProfileData(buffer, profile_index, sub_image)) {
-                for (int j = 0; j < stats_size; ++j) {
-                    memcpy(&results[j][start], &buffer[j][0], buffer[j].size() * sizeof(double));
+
+        // Initialize variables and calculate spectral profiles
+        size_t count, end;
+        float progress = 0;
+        casacore::SubImage<float> sub_image;
+        int delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
+        int dt_target = TARGET_DELTA_TIME;       // the target time elapse for each step, in the unit of milliseconds
+        auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
+
+        // get stats data
+        while (start < profile_size) {
+            // start the timer
+            auto t_start = std::chrono::high_resolution_clock::now();
+
+            // check if region, current stokes, spectral requirements changed
+            if (Interrupt(region_id, profile_stokes, start_region_state, start_config_stats)) {
+                // Save stats cache if region state is not changed
+                if (IsSameRegionState(region_id, start_region_state)) {
+                    region->SetStatsCache(profile_stokes, results, start);
                 }
-            } else {
-                std::cerr << "Can not get zprofile (statistics), region id: " << region_id << ", channel range: [" << start << "," << end
-                          << "]" << std::endl;
-                return false;
+                return data_ok; // false until complete
+            }
+
+            end = (start + delta_channels > profile_size ? profile_size - 1 : start + delta_channels - 1);
+            count = end - start + 1;
+
+            // try to get sub-image and its stats data
+            std::unique_lock<std::mutex> ulock(_image_mutex);
+            bool has_subimage = GetRegionSubImage(region_id, sub_image, profile_stokes, ChannelRange(start, end));
+            ulock.unlock();
+            if (has_subimage) {
+                std::map<CARTA::StatsType, std::vector<double>> buffers;
+                std::unique_lock<std::mutex> ulock2(_image_mutex);
+                bool has_data = region->GetSpectralProfileData(buffers, sub_image);
+                ulock2.unlock();
+                if (has_data) {
+                    for (const auto& buffer : buffers) {
+                        auto stats_type = buffer.first;
+                        if (results.count(stats_type)) {
+                            const std::vector<double>& stats_data = buffer.second;
+                            memcpy(&results[stats_type][start], &stats_data[0], stats_data.size() * sizeof(double));
+                        }
+                    }
+                } else {
+                    if (_verbose) {
+                        std::cerr << "Can not get zprofile, region id: " << region_id << ", channel range: [" << start << "," << end << "]"
+                                  << std::endl;
+                    }
+                    return data_ok;
+                }
+            }
+
+            start += count;
+            progress = (float)start / profile_size;
+
+            // get the time elapse for this step
+            auto t_end = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+            auto dt_partial_profile = std::chrono::duration<double, std::milli>(t_end - t_partial_profile_start).count();
+
+            // adjust the increment of channels according to the time elapse
+            delta_channels *= dt_target / dt;
+            if (delta_channels < 1) {
+                delta_channels = 1;
+            }
+            if (delta_channels > profile_size) {
+                delta_channels = profile_size;
+            }
+
+            // send partial result by the callback function
+            if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= 1.0f) {
+                t_partial_profile_start = std::chrono::high_resolution_clock::now();
+                partial_results_callback(results, progress);
+            }
+
+            // Save stats cache while spectral profiles are completed and region state is not changed
+            if (progress == 1.0f && IsSameRegionState(region_id, start_region_state)) {
+                region->SetStatsCache(profile_stokes, results, start);
             }
         }
-        start += count;
-        progress = (float)start / profile_size;
-        // get the time elapse for this step
-        auto t_end = std::chrono::high_resolution_clock::now();
-        auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-        auto dt_partial_profile = std::chrono::duration<double, std::milli>(t_end - t_partial_profile_start).count();
-        // adjust the increment of channels according to the time elapse
-        delta_channels *= dt_target / dt;
-        if (delta_channels < 1) {
-            delta_channels = 1;
-        }
-        if (delta_channels > profile_size) {
-            delta_channels = profile_size;
-        }
-        if (dt_partial_profile > TARGET_PARTIAL_REGION_TIME || progress >= 1.0f) {
-            // send partial result by the callback function
-            t_partial_profile_start = std::chrono::high_resolution_clock::now();
-            partial_results_callback(results, progress);
-        }
+        data_ok = true;
     }
-    stats_values = std::move(results);
-    return true;
+    return data_ok;
 }
 
 bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2) {
+    // check if point moved, spectral requirements changed
     if (!IsConnected(region_id)) {
-        std::cerr << "Closing image/region, exit zprofile before complete" << std::endl;
+        if (_verbose) {
+            std::cerr << "Closing image/region, exit zprofile before complete" << std::endl;
+        }
         return true;
     }
     if (!(cursor1 == cursor2)) {
-        std::cerr << "Cursor/Point changed, exit zprofile before complete" << std::endl;
+        if (_verbose) {
+            std::cerr << "Cursor/Point changed, exit zprofile before complete" << std::endl;
+        }
+        return true;
+    }
+    // check is the Cursor/Point shown on the frontend spectral widget
+    if (_regions.count(region_id) && _regions[region_id]->NumSpectralProfiles() == 0) {
+        if (_verbose) {
+            std::cerr << "Cursor/Point profile not needed, exit zprofile before complete" << std::endl;
+        }
         return true;
     }
     return false;
 }
 
-bool Frame::Interrupt(int region_id, const RegionState& region_state) {
+bool Frame::Interrupt(
+    int region_id, int profile_stokes, const RegionState& start_region_state, const SpectralConfig& start_config_stats, bool is_HDF5) {
+    // check if region, current stokes, spectral requirements changed
+    bool interrupt(true);
     if (!IsConnected(region_id)) {
-        std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
-        return true;
+        if (_verbose) {
+            std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile before complete" << std::endl;
+        }
+        return interrupt;
     }
-    if (!IsSameRegionState(region_id, region_state)) {
-        std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
-        return true;
+    if (!IsSameRegionState(region_id, start_region_state)) {
+        if (_verbose) {
+            std::cerr << "[Region " << region_id << "] region state changed, exit zprofile before complete" << std::endl;
+        }
+        return interrupt;
     }
-    return false;
-}
-
-bool Frame::Interrupt(int region_id, int profile_index, const RegionState& region_state, const std::vector<int>& requested_stats) {
-    if (!IsConnected(region_id)) {
-        std::cerr << "[Region " << region_id << "] closing image/region, exit zprofile (statistics) before complete" << std::endl;
-        return true;
+    if (!IsSameRegionSpectralConfig(region_id, profile_stokes, start_config_stats, is_HDF5)) {
+        if (_verbose) {
+            std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile before complete" << std::endl;
+        }
+        return interrupt;
     }
-    if (!IsSameRegionState(region_id, region_state)) {
-        std::cerr << "[Region " << region_id << "] region state changed, exit zprofile (statistics) before complete" << std::endl;
-        return true;
-    }
-    if (!AreSameRegionSpectralRequests(region_id, profile_index, requested_stats)) {
-        std::cerr << "[Region " << region_id << "] region requirement changed, exit zprofile (statistics) before complete" << std::endl;
-        return true;
-    }
-    return false;
+    interrupt = false;
+    return interrupt;
 }
 
 bool Frame::IsConnected(int region_id) {
@@ -1677,11 +1747,36 @@ bool Frame::IsConnected(int region_id) {
 }
 
 bool Frame::IsSameRegionState(int region_id, const RegionState& region_state) {
-    return (_region_states.count(region_id) && _region_states[region_id] == region_state);
+    if (_regions.count(region_id)) {
+        return (_regions[region_id]->GetRegionState() == region_state);
+    }
+    return false;
 }
 
-bool Frame::AreSameRegionSpectralRequests(int region_id, int profile_index, const std::vector<int>& requested_stats) {
-    return (_region_requests.count(region_id) && _region_requests[region_id].IsAmong(profile_index, requested_stats));
+bool Frame::IsSameRegionSpectralConfig(int region_id, int profile_stokes, const SpectralConfig& start_config_stats, bool is_HDF5) {
+    // compare stokes, spectral requirements
+    if (!_regions.count(region_id)) { // region closed
+        return false;
+    }
+
+    // Check CURRENT_STOKES changed
+    if ((start_config_stats.stokes_index == CURRENT_STOKES) && (profile_stokes != CurrentStokes())) {
+        return false;
+    }
+
+    auto& region = _regions[region_id];
+
+    // region has no spectral widgets
+    if (region->NumSpectralProfiles() == 0) {
+        return false;
+    }
+
+    // config removed or changed
+    if (!is_HDF5 && !region->IsValidSpectralConfig(start_config_stats)) {
+        return false;
+    }
+
+    return true; // passed all checks
 }
 
 void Frame::SetConnectionFlag(bool connected) {
@@ -1692,14 +1787,17 @@ void Frame::SetCursorXy(float x, float y) {
     _cursor_xy = CursorXy(x, y);
 }
 
-void Frame::SetRegionState(int region_id, std::string name, CARTA::RegionType type, std::vector<CARTA::Point> points, float rotation) {
-    _region_states[region_id].UpdateState(name, type, points, rotation);
+bool Frame::GetRegionState(int region_id, RegionState& region_state) {
+    if (_regions.count(region_id)) {
+        region_state = _regions[region_id]->GetRegionState();
+        return true;
+    }
+    return false;
 }
 
-void Frame::SetRegionSpectralRequests(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
-    _region_requests[region_id].UpdateRequest(profiles);
-}
-
-RegionState Frame::GetRegionState(int region_id) {
-    return _region_states[region_id];
+bool Frame::GetRegionSpectralConfig(int region_id, int config_stokes, SpectralConfig& config_stats) {
+    if (_regions.count(region_id)) {
+        return _regions[region_id]->GetSpectralConfig(config_stokes, config_stats);
+    }
+    return false;
 }

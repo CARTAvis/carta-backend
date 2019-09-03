@@ -21,6 +21,11 @@
 
 namespace carta {
 
+struct StatsCacheData {
+    std::vector<double> stats_values; // Spectral profile
+    size_t channel_end;               // End of the channel index from previous calculation
+};
+
 class Region {
     // Region could be:
     // * the 3D cube for a given stokes
@@ -90,7 +95,7 @@ public:
 
     void SetAllProfilesUnsent(); // enable sending new spatial and spectral profiles
 
-    // Spatial: pass through to RegionProfiler
+    // Spatial requirements: pass through to RegionProfiler
     bool SetSpatialRequirements(const std::vector<std::string>& profiles, const int num_stokes);
     size_t NumSpatialProfiles();
     std::string GetSpatialCoordinate(int profile_index);
@@ -98,22 +103,25 @@ public:
     bool GetSpatialProfileSent(int profile_index);
     void SetSpatialProfileSent(int profile_index, bool sent);
 
-    // Spectral: pass through to RegionProfiler
+    // Spectral requirements: pass through to RegionProfiler
     bool SetSpectralRequirements(const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles, const int num_stokes);
     size_t NumSpectralProfiles();
-    int NumStatsToLoad(int profile_index);
-    void SetSpectralProfileStatSent(int profile_index, int stats_type, bool sent);
-    void SetSpectralProfileAllStatsSent(int profile_index, bool sent);
-    void SetAllSpectralProfileStatsUnsent(); // enable sending new profiles
-    int GetSpectralConfigStokes(int profile_index);
-    bool GetSpectralConfigStats(int profile_index, std::vector<int>& stats);
-    bool GetSpectralProfileData(std::vector<std::vector<double>>& stats_values, int profile_index, casacore::ImageInterface<float>& image);
-    void FillPointSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index, std::vector<float>& spectral_data);
-    void FillSpectralProfileData(
-        CARTA::SpectralProfileData& profile_data, int profile_index, std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    void FillSpectralProfileData(
-        CARTA::SpectralProfileData& profile_data, int profile_index, const std::vector<std::vector<double>>& stats_values);
-    void FillNaNSpectralProfileData(CARTA::SpectralProfileData& profile_data, int profile_index);
+    bool IsValidSpectralConfig(const SpectralConfig& stats);
+    std::vector<SpectralProfile> GetSpectralProfiles();
+    bool GetSpectralConfig(int config_stokes, SpectralConfig& config);
+    bool GetSpectralProfileAllStatsSent(int config_stokes);
+    void SetSpectralProfileAllStatsSent(int config_stokes, bool sent);
+    void SetAllSpectralProfilesUnsent();
+
+    // Spectral data
+    bool GetSpectralProfileData(std::map<CARTA::StatsType, std::vector<double>>& spectral_data, casacore::ImageInterface<float>& image);
+    void FillPointSpectralProfileDataMessage(
+        CARTA::SpectralProfileData& profile_message, int config_stokes, std::vector<float>& spectral_data);
+    void FillSpectralProfileDataMessage(
+        CARTA::SpectralProfileData& profile_message, int config_stokes, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
+    void FillNaNSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, int config_stokes);
+    void InitSpectralData(
+        int profile_stokes, size_t profile_size, std::map<CARTA::StatsType, std::vector<double>>& stats_data, size_t& channel_start);
 
     // Stats: pass through to RegionStats
     void SetStatsRequirements(const std::vector<int>& stats_types);
@@ -122,6 +130,7 @@ public:
     void FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CARTA::StatsType, double>& stats_values);
     void FillNaNStatsData(CARTA::RegionStatsData& stats_data);
 
+    // Get current region state
     RegionState GetRegionState();
 
     // Communication
@@ -134,6 +143,12 @@ public:
     void DecreaseZProfileCount() {
         --_z_profile_count;
     }
+
+    // Set stats cache
+    void SetStatsCache(int profile_stokes, std::map<CARTA::StatsType, std::vector<double>>& stats_data, size_t channel_end);
+    // Get stats cache
+    bool GetStatsCache(
+        int profile_stokes, size_t profile_size, CARTA::StatsType stats_type, std::vector<double>& stats_data, size_t& channel_start);
 
 private:
     // bounds checking for Region parameters
@@ -177,6 +192,9 @@ private:
     // util to split input string into parts by delimiter
     void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
 
+    // Reset stats cache
+    void ResetStatsCache();
+
     // region definition (ICD SET_REGION parameters)
     std::string _name;
     CARTA::RegionType _type;
@@ -209,6 +227,16 @@ private:
 
     // Spectral profile counter, which is used to determine whether the Region object can be destroyed (_z_profile_count == 0 ?).
     tbb::atomic<int> _z_profile_count;
+
+    // Map of stats cache: "stoke index" vs. {"stats type" vs. ["stats values", "channel end"]}
+    std::map<int, std::map<CARTA::StatsType, StatsCacheData>> _stats_cache;
+
+    // Lock when stats cache is being read or written
+    std::mutex _stats_cache_mutex;
+
+    // Define all stats types to calculate
+    std::vector<int> _all_stats = {CARTA::StatsType::Sum, CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma,
+        CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max};
 };
 
 } // namespace carta

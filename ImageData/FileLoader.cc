@@ -36,80 +36,127 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
     return nullptr;
 }
 
-void FileLoader::FindCoords(int& spectral_axis, int& stokes_axis) {
-    // use CoordinateSystem to determine axis coordinate types
+bool FileLoader::FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
+    // Return image shape, spectral axis, and stokes axis from image data, coordinate system, and extended file info.
+
+    // set defaults: undefined
     spectral_axis = -1;
     stokes_axis = -1;
-    casacore::CoordinateSystem coord_sys;
-    if (GetCoordinateSystem(coord_sys)) {
-        // spectral axis
-        spectral_axis = casacore::CoordinateUtil::findSpectralAxis(coord_sys);
-        if (spectral_axis < 0) {
-            int tab_coord = coord_sys.findCoordinate(casacore::Coordinate::TABULAR);
-            if (tab_coord >= 0) {
-                casacore::Vector<casacore::Int> pixel_axes = coord_sys.pixelAxes(tab_coord);
-                for (casacore::uInt i = 0; i < pixel_axes.size(); ++i) {
-                    casacore::String axis_name = coord_sys.worldAxisNames()(pixel_axes(i));
-                    if (axis_name == "Frequency" || axis_name == "Velocity")
-                        spectral_axis = pixel_axes(i);
-                }
-            }
-        }
-        // stokes axis
-        int pixel, world, coord;
-        casacore::CoordinateUtil::findStokesAxis(pixel, world, coord, coord_sys);
-        if (coord >= 0)
-            stokes_axis = pixel;
 
-        // not found!
-        if (spectral_axis < 2) {   // spectral not found or is xy
-            if (stokes_axis < 2) { // stokes not found or is xy, use defaults
-                spectral_axis = 2;
-                stokes_axis = 3;
-            } else { // stokes found, set spectral to other one
-                if (stokes_axis == 2)
-                    spectral_axis = 3;
-                else
-                    spectral_axis = 2;
-            }
-        } else if (stokes_axis < 2) { // stokes not found
-            // set stokes to the other one
-            if (spectral_axis == 2)
-                stokes_axis = 3;
-            else
-                stokes_axis = 2;
-        }
-    }
-}
-
-bool FileLoader::FindShape(IPos& shape, size_t& num_channels, size_t& num_stokes, int& spectral_axis, int& stokes_axis) {
     if (!HasData(FileInfo::Data::Image))
         return false;
 
     shape = LoadData(FileInfo::Data::Image)->shape();
-    size_t num_dims = shape.size();
+    _num_dims = shape.size();
 
-    if (num_dims < 2 || num_dims > 4) {
+    if (_num_dims < 2 || _num_dims > 4) {
+        message = "Image must be 2D, 3D, or 4D.";
+        return false;
+    }
+    _channel_size = shape(0) * shape(1);
+
+    casacore::CoordinateSystem coord_sys;
+    if (!GetCoordinateSystem(coord_sys)) {
+        message = "Image does not have valid coordinate system.";
+        return false;
+    }
+    if (coord_sys.nPixelAxes() != _num_dims) {
+        message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
         return false;
     }
 
-    // determine axis order (0-based)
-    if (num_dims == 3) { // use defaults
-        spectral_axis = 2;
-        stokes_axis = -1;
-    } else if (num_dims == 4) { // find spectral and stokes axes
-        FindCoords(spectral_axis, stokes_axis);
+    // use CoordinateSystem to find coordinate axes
+    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
+    spectral_axis = coord_sys.spectralAxisNumber();
+    stokes_axis = coord_sys.polarizationAxisNumber();
+
+    // pv images not supported (yet); spectral axis is 0 or 1, and the other is linear
+    if (!linear_axes.empty() && (((spectral_axis == 0) && (linear_axes(0) == 1)) || ((spectral_axis == 1) && (linear_axes(0) == 0)))) {
+        message = "Position-velocity (pv) images not supported yet.";
+        return false;
     }
 
-    num_channels = (spectral_axis >= 0 ? shape(spectral_axis) : 1);
-    num_stokes = (stokes_axis >= 0 ? shape(stokes_axis) : 1);
+    // 2D image
+    if (_num_dims == 2) {
+        _num_channels = 1;
+        _num_stokes = 1;
+        return true;
+    }
 
-    _num_dims = num_dims;
-    _num_channels = num_channels;
-    _num_stokes = num_stokes;
-    _channel_size = shape(0) * shape(1);
+    // 3D image
+    if (_num_dims == 3) {
+        spectral_axis = (spectral_axis < 0 ? 2 : spectral_axis);
+        _num_channels = shape(spectral_axis);
+        _num_stokes = 1;
+        return true;
+    }
+
+    // 4D image
+    if ((spectral_axis < 0) || (stokes_axis < 0)) {
+        // workaround when header incomplete or invalid values for creating proper coordinate system
+        FindCoordinates(info, spectral_axis, stokes_axis);
+    }
+    if ((spectral_axis < 0) || (stokes_axis < 0)) {
+        if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
+            spectral_axis = (stokes_axis == 3 ? 2 : 3);
+        } else if ((spectral_axis >= 0) && (stokes_axis < 0)) { // spectral is known
+            stokes_axis = (spectral_axis == 3 ? 2 : 3);
+        }
+        if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, guess by shape (max 4 stokes)
+            if (shape(2) > 4) {
+                spectral_axis = 2;
+                stokes_axis = 3;
+            } else if (shape(3) > 4) {
+                spectral_axis = 3;
+                stokes_axis = 2;
+            }
+        }
+        if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, give up
+            message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
+            return false;
+        }
+    }
+    _num_channels = (spectral_axis == -1 ? 1 : shape(spectral_axis));
+    _num_stokes = (stokes_axis == -1 ? 1 : shape(stokes_axis));
 
     return true;
+}
+
+void FileLoader::FindCoordinates(const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis) {
+    // read ctypes from file info header entries to determine spectral and stokes axes
+    casacore::String ctype1, ctype2, ctype3, ctype4;
+    for (int i = 0; i < info->header_entries_size(); ++i) {
+        CARTA::HeaderEntry entry = info->header_entries(i);
+        if (entry.name() == "CTYPE1") {
+            ctype1 = casacore::String(entry.value());
+            ctype1.upcase();
+        } else if (entry.name() == "CTYPE2") {
+            ctype2 = casacore::String(entry.value());
+            ctype2.upcase();
+        } else if (entry.name() == "CTYPE3") {
+            ctype3 = casacore::String(entry.value());
+            ctype3.upcase();
+        } else if (entry.name() == "CTYPE4") {
+            ctype4 = casacore::String(entry.value());
+            ctype4.upcase();
+        }
+    }
+
+    // find axes from ctypes
+    size_t ntypes(4);
+    const casacore::String ctypes[] = {ctype1, ctype2, ctype3, ctype4};
+    const casacore::String spectral_types[] = {"FELO", "FREQ", "VELO", "VOPT", "VRAD", "WAVE", "AWAV"};
+    const casacore::String stokes_type = "STOKES";
+    for (size_t i = 0; i < ntypes; ++i) {
+        for (auto& spectral_type : spectral_types) {
+            if (ctypes[i].contains(spectral_type)) {
+                spectral_axis = i;
+            }
+        }
+        if (ctypes[i] == stokes_type) {
+            stokes_axis = i;
+        }
+    }
 }
 
 const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
@@ -452,18 +499,20 @@ FileInfo::ImageStats& FileLoader::GetImageStats(int current_stokes, int channel)
     return (channel >= 0 ? _channel_stats[current_stokes][channel] : _cube_stats[current_stokes]);
 }
 
-bool FileLoader::GetCursorSpectralData(std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y) {
+bool FileLoader::GetCursorSpectralData(
+    std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask) {
+bool FileLoader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int stokes, int region_id, const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask,
-    IPos origin, const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+bool FileLoader::GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
+    const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
     // Must be implemented in subclasses
     return false;
 }
