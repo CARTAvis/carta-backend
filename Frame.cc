@@ -280,10 +280,12 @@ void Frame::ImportRegion(
             try {
                 // use RegionTextList to import file and create annotation file lines
                 casa::RegionTextList region_list;
+                bool require_region(false); // import regions outside image
                 if (!filename.empty()) {
-                    region_list = casa::RegionTextList(filename, coord_sys, _image_shape);
+                    region_list = casa::RegionTextList(
+                        filename, coord_sys, _image_shape, "", "", "", casa::RegionTextParser::CURRENT_VERSION, true, require_region);
                 } else {
-                    region_list = casa::RegionTextList(coord_sys, file_contents, _image_shape);
+                    region_list = casa::RegionTextList(coord_sys, file_contents, _image_shape, "", "", "", true, require_region);
                 }
                 // iterate through annotations to create regions if valid
                 for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
