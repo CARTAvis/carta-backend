@@ -13,7 +13,7 @@
 
 using namespace carta;
 
-Ds9Parser::Ds9Parser(std::string& filename, const casacore::CoordinateSystem& image_coord_sys, casacore::IPosition& image_shape) 
+Ds9Parser::Ds9Parser(std::string& filename, const casacore::CoordinateSystem& image_coord_sys, casacore::IPosition& image_shape)
     : _coord_sys(image_coord_sys),
       _image_shape(image_shape),
       _direction_ref_frame(""),
@@ -54,7 +54,7 @@ Ds9Parser::Ds9Parser(const casacore::CoordinateSystem& image_coord_sys, std::str
     // Create vector of file lines, delimited with newline or semicolon
     std::vector<std::string> file_lines, input_lines;
     SplitString(contents, '\n', input_lines); // split by newline
-    for (auto single_line : input_lines) { 
+    for (auto single_line : input_lines) {
         std::vector<std::string> lines;
         SplitString(single_line, ';', lines); // split by semicolon
         for (auto& line : lines) {
@@ -79,7 +79,6 @@ casa::AsciiAnnotationFileLine Ds9Parser::LineAt(unsigned int i) {
     // region list throws exception if index out of range
     return _region_list.lineAt(i);
 }
-
 
 // Process or ignore each file line
 
@@ -148,10 +147,10 @@ void Ds9Parser::SetAnnotationRegion(std::string& region_description) {
         }
 
         // normalize all formats into space delimiter "circle 100 100 10":
-        formatted_region.gsub("(", " ");   // replace left parenthesis
-        formatted_region.gsub(")", "");    // remove right parenthesis
-        formatted_region.gsub(",", " ");   // replace commas
-	// replace with casacore units
+        formatted_region.gsub("(", " "); // replace left parenthesis
+        formatted_region.gsub(")", "");  // remove right parenthesis
+        formatted_region.gsub(",", " "); // replace commas
+        // replace with casacore units
         formatted_region.gsub("d", "deg");
         formatted_region.gsub("r", "rad");
         formatted_region.gsub("p", "pix");
@@ -174,8 +173,8 @@ void Ds9Parser::SetAnnotationRegion(std::string& region_description) {
 // Coordinate system helpers
 
 bool Ds9Parser::IsDs9CoordSysKeyword(std::string& input) {
-    const std::string ds9_coordsys_keywords[] = {"PHYSICAL", "IMAGE", "FK4", "B1950", "FK5", "J2000", "GALACTIC", "ECLIPTIC", "ICRS", "LINEAR",
-        "AMPLIFIER", "DETECTOR"};
+    const std::string ds9_coordsys_keywords[] = {
+        "PHYSICAL", "IMAGE", "FK4", "B1950", "FK5", "J2000", "GALACTIC", "ECLIPTIC", "ICRS", "LINEAR", "AMPLIFIER", "DETECTOR"};
     std::transform(input.begin(), input.end(), input.begin(), ::toupper); // convert in-place to uppercase
     for (auto& keyword : ds9_coordsys_keywords) {
         if (keyword == input) {
@@ -319,8 +318,7 @@ casa::AnnRegion* Ds9Parser::CreateCircleRegion(std::vector<std::string>& region_
     if (region_definition.size() == 4) { // circle x y radius
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
-	for (size_t i = 1; i < region_definition.size(); ++i) {
-            std::string param_string(region_definition[i]);
+        for (auto& param_string : region_definition) {
             casacore::Quantity param_quantity;
             if (readQuantity(param_quantity, param_string)) {
                 if (param_quantity.getUnit().empty()) {
@@ -353,7 +351,7 @@ casa::AnnRegion* Ds9Parser::CreateEllipseRegion(std::vector<std::string>& region
     if (nparams == 6) { // ellipse x y radius radius angle
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
-	for (size_t i = 1; i < nparams; ++i) {
+        for (size_t i = 1; i < nparams; ++i) {
             std::string param_string(region_definition[i]);
             casacore::Quantity param_quantity;
             if (readQuantity(param_quantity, param_string)) {
@@ -391,8 +389,8 @@ casa::AnnRegion* Ds9Parser::CreateBoxRegion(std::vector<std::string>& region_def
     if (nparams == 6) { // box x y width height angle
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
-	// x and y
-	for (size_t i = 1; i < nparams; ++i) {
+        // x and y
+        for (size_t i = 1; i < nparams; ++i) {
             std::string xy_string(region_definition[i]);
             casacore::Quantity xy_quantity;
             if (readQuantity(xy_quantity, xy_string)) {
