@@ -266,6 +266,15 @@ void Frame::ImportRegion(
         return;
     }
 
+    // cannot create annotation regions with no direction coordinate
+    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+    if (!coord_sys.hasDirectionCoordinate()) {
+        import_ack.set_success(false);
+        import_ack.set_message("Import region failed: image coordinate system has no direction coordinate.");
+        import_ack.add_regions();
+        return;
+    }
+
     // concat contents into one string delimited by newline
     std::string file_contents;
     if (!contents.empty()) {
@@ -274,7 +283,6 @@ void Frame::ImportRegion(
         }
     }
 
-    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
     std::string message;
     switch (file_type) {
         case CARTA::FileType::CRTF: {
@@ -344,8 +352,12 @@ void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, c
         case casa::AsciiAnnotationFileLine::ANNOTATION: {
             auto annotation_base = file_line.getAnnotationBase();
             const casa::AnnotationBase::Type annotation_type = annotation_base->getType();
-            casacore::String ann_type_str = casa::AnnotationBase::typeToString(annotation_type);
-            casacore::String ds9_type_str = AnnTypeToDs9String(annotation_type);
+            casacore::String region_type_str;
+            if (file_type == CARTA::FileType::CRTF) {
+                region_type_str = casa::AnnotationBase::typeToString(annotation_type);
+            } else {
+                region_type_str = AnnTypeToDs9String(annotation_type);
+            }
             switch (annotation_type) {
                 case casa::AnnotationBase::VECTOR:
                 case casa::AnnotationBase::TEXT: {
@@ -354,7 +366,7 @@ void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, c
                 case casa::AnnotationBase::LINE:
                 case casa::AnnotationBase::POLYLINE:
                 case casa::AnnotationBase::ANNULUS: {
-                    message += " CRTF region type " + ann_type_str + " is not supported.";
+                    message += " Region type " + region_type_str + " is not supported yet.";
                     break;
                 }
                 case casa::AnnotationBase::SYMBOL:
@@ -388,8 +400,7 @@ void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, c
                             *region_info->mutable_control_points() = {points.begin(), points.end()};
                             region_info->set_rotation(rotation);
                         } else {
-                            casacore::String region_str = (file_type == CARTA::FileType::CRTF ? ann_type_str : ds9_type_str);
-                            message += " Region " + region_str + " was not validated.";
+                            message += " Region " + region_type_str + " was not validated.";
                         }
                     }
                 }
@@ -404,11 +415,34 @@ void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, c
     }
 }
 
-casacore::String Frame::AnnTypeToDs9String(casa::AnnotationBase::Type ann_type) {
-    // convert annotation type to DS9 region type string
-    casacore::String ds9_string;
-    // TODO
-    return ds9_string;
+casacore::String Frame::AnnTypeToDs9String(casa::AnnotationBase::Type annotation_type) {
+    casacore::String ds9_type;
+    switch (annotation_type) {
+        case casa::AnnotationBase::LINE:
+        case casa::AnnotationBase::CIRCLE:
+        case casa::AnnotationBase::ELLIPSE:
+        case casa::AnnotationBase::ANNULUS:
+            ds9_type = casa::AnnotationBase::typeToString(annotation_type);
+            break;
+        case casa::AnnotationBase::TEXT:
+            ds9_type = "text";
+            break;
+        case casa::AnnotationBase::SYMBOL:
+            ds9_type = "point";
+            break;
+        case casa::AnnotationBase::RECT_BOX:
+        case casa::AnnotationBase::CENTER_BOX:
+        case casa::AnnotationBase::ROTATED_BOX:
+            ds9_type = "box";
+            break;
+        case casa::AnnotationBase::POLYGON:
+            ds9_type = "polygon";
+            break;
+        case casa::AnnotationBase::POLYLINE:
+        case casa::AnnotationBase::VECTOR:
+            break; // no equivalent
+    }
+    return ds9_type;
 }
 
 void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename,
@@ -436,11 +470,10 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
 
     // export according to type
     switch (file_type) {
-        case CARTA::FileType::CRTF: {
-            ExportCrtfRegion(region_ids, coord_type, filename, export_ack);
-            break;
-        }
+        case CARTA::FileType::CRTF:
         case CARTA::FileType::REG:
+            ExportRegion(region_ids, coord_type, filename, export_ack);
+            break;
         default: {
             export_ack.set_success(false);
             export_ack.set_message("Export region failed: file type not supported.");
@@ -449,7 +482,7 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     }
 }
 
-void Frame::ExportCrtfRegion(
+void Frame::ExportRegion(
     std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
     // Create RegionTextList for all requested regions and export to file or put in ack contents[]
     std::string message;

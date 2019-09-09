@@ -32,19 +32,24 @@ private:
     bool SetDirectionRefFrame(std::string& ds9_coord);
     void InitializeDirectionReferenceFrame(); // using input image_coord_sys
 
-    // region helpers
-    void ProcessRegionDefinition(std::vector<std::string>& region_definition, std::string& crtf_prefix);
+    // parse region properties for text
+    casacore::String GetTextLabel(std::string& region_properties);
+
+    // region creation
+    void ConvertUnits(std::vector<std::string>& region_parameters);
+    void ProcessRegionDefinition(std::vector<std::string>& region_definition, casacore::String& label, bool exclude_region);
     bool GetAnnotationRegionType(std::string& ds9_region, casa::AnnotationBase::Type& type);
-    casa::AnnRegion* CreateCircleRegion(std::vector<std::string>& region_definition, std::string& crtf_prefix);
-    casa::AnnRegion* CreateEllipseRegion(std::vector<std::string>& region_definition, std::string& crtf_prefix);
-    casa::AnnRegion* CreateBoxRegion(std::vector<std::string>& region_definition, std::string& crtf_prefix);
-    casa::AnnRegion* CreatePolygonRegion(std::vector<std::string>& region_definition, std::string& crtf_prefix);
-    casa::AnnSymbol* CreateSymbolRegion(std::vector<std::string>& region_definition, std::string& crtf_prefix);
+    casa::AnnRegion* CreateCircleRegion(std::vector<std::string>& region_definition);
+    casa::AnnRegion* CreateEllipseRegion(std::vector<std::string>& region_definition);
+    casa::AnnRegion* CreateBoxRegion(std::vector<std::string>& region_definition);
+    casa::AnnRegion* CreatePolygonRegion(std::vector<std::string>& region_definition);
+    casa::AnnSymbol* CreateSymbolRegion(std::vector<std::string>& region_definition);
 
     casacore::CoordinateSystem _coord_sys;
     casacore::IPosition _image_shape;
     std::string _direction_ref_frame;
-    bool _pixel_coords;
+    std::string _DEFAULT_UNIT; // "deg" in astropy regions DS9Parser
+    bool _pixel_coord;
     casa::RegionTextList _region_list;
 };
 
