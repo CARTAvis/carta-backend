@@ -457,8 +457,7 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     }
 
     // Check export file before creating file contents
-    bool export_to_file(!filename.empty());
-    if (export_to_file) {
+    if (!filename.empty()) {
         casacore::File export_file(filename);
         if (!export_file.canCreate()) {
             export_ack.set_success(false);
@@ -471,8 +470,10 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     // export according to type
     switch (file_type) {
         case CARTA::FileType::CRTF:
+            ExportCrtfRegions(region_ids, coord_type, filename, export_ack);
+            break;
         case CARTA::FileType::REG:
-            ExportRegion(region_ids, coord_type, filename, export_ack);
+            ExportDs9Regions(region_ids, coord_type, filename, export_ack);
             break;
         default: {
             export_ack.set_success(false);
@@ -482,10 +483,11 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     }
 }
 
-void Frame::ExportRegion(
+void Frame::ExportCrtfRegions(
     std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
     // Create RegionTextList for all requested regions and export to file or put in ack contents[]
     std::string message;
+    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
     const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
     casa::RegionTextList region_list = casa::RegionTextList(coord_sys, _image_shape);
 
@@ -494,14 +496,9 @@ void Frame::ExportRegion(
         if (_regions.count(region_id)) {
             auto& region = _regions[region_id];
             if (region->IsValid()) {
-                bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
                 casacore::CountedPtr<const casa::AnnotationBase> annotation_region = region->AnnotationRegion(pixel_coord);
-                if (annotation_region.null()) {
-                    message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
-                } else {
-                    casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
-                    region_list.addLine(file_line);
-                }
+                casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
+                region_list.addLine(file_line);
             } else {
                 message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
             }
@@ -527,6 +524,7 @@ void Frame::ExportRegion(
             file_line.print(export_stream);
             contents.push_back(export_stream.str());
         }
+        // complete ack message
         export_ack.set_success(true);
         export_ack.set_message(message);
         *export_ack.mutable_contents() = {contents.begin(), contents.end()};
@@ -535,6 +533,71 @@ void Frame::ExportRegion(
         std::ofstream export_file(filename);
         region_list.print(export_file);
         export_file.close();
+
+        // complete ack message
+        export_ack.set_success(true);
+        export_ack.set_message(message);
+        export_ack.add_contents();
+    }
+}
+
+void Frame::ExportDs9Regions(
+    std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
+    std::string message;
+    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+
+    carta::Ds9Parser parser(coord_sys, pixel_coord);
+    // create file line for each region
+    for (int region_id : region_ids) {
+        if (_regions.count(region_id)) {
+            auto& region = _regions[region_id];
+            if (pixel_coord) {
+                RegionState region_state = region->GetRegionState();
+                std::vector<CARTA::Point> carta_points(region_state.control_points);
+		std::vector<casacore::Quantity> points_quantities;
+		for (auto& point : carta_points) {
+                    points_quantities.push_back(casacore::Quantity(point.x(), "pix"));
+                    points_quantities.push_back(casacore::Quantity(point.y(), "pix"));
+                }
+                parser.AddRegion(region_state.name, region_state.type, points_quantities, region_state.rotation);
+            } else {
+                std::string name(region->Name());
+		CARTA::RegionType type(region->Type());
+		std::vector<casacore::Quantity> control_points(region->GetControlPointsWcs());
+		float rotation(region->Rotation());
+		parser.AddRegion(name, type, control_points, rotation);
+            }
+        }
+    }
+
+    // check if file lines created
+    if (parser.NumRegions() == 0) {
+        export_ack.set_success(false);
+        export_ack.set_message("Export region failed: no regions to export.");
+        export_ack.add_contents();
+        return;
+    }
+
+    if (filename.empty()) {
+        // fill contents[] of ack message
+        std::vector<std::string> contents;
+        for (unsigned int i = 0; i < parser.NumRegions(); ++i) {
+            std::ostringstream export_stream;
+            parser.PrintRegion(i, export_stream);
+            contents.push_back(export_stream.str());
+        }
+        // complete ack message
+        export_ack.set_success(true);
+        export_ack.set_message(message);
+        *export_ack.mutable_contents() = {contents.begin(), contents.end()};
+    } else {
+        // export to file; empty contents[] returned
+        std::ofstream export_file(filename);
+        parser.PrintRegionsToFile(export_file);
+        export_file.close();
+
+        // complete ack message
         export_ack.set_success(true);
         export_ack.set_message(message);
         export_ack.add_contents();

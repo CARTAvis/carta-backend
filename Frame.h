@@ -135,7 +135,9 @@ private:
     void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
         CARTA::FileType file_type, CARTA::ImportRegionAck& import_ack, std::string message);
     casacore::String AnnTypeToDs9String(casa::AnnotationBase::Type annotation_type);
-    void ExportRegion(
+    void ExportCrtfRegions(
+        std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack);
+    void ExportDs9Regions(
         std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Image view settings

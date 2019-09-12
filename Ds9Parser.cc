@@ -1,5 +1,7 @@
 //# Ds9Parser: parses lines of input ds9 region file into CARTA::RegionInfo for import
 
+#include <iomanip>
+
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <imageanalysis/Annotations/AnnCenterBox.h>
 #include <imageanalysis/Annotations/AnnCircle.h>
@@ -17,10 +19,10 @@ Ds9Parser::Ds9Parser(std::string& filename, const casacore::CoordinateSystem& im
     : _coord_sys(image_coord_sys),
       _image_shape(image_shape),
       _direction_ref_frame(""),
-      _DEFAULT_UNIT("deg"),
       _pixel_coord(true),
       _region_list(image_coord_sys, image_shape) {
     // Parse given file into casa::AsciiAnnotationFileLines
+    InitDs9CoordMap();
 
     // Create vector of file lines, delimited with newline or semicolon
     std::ifstream ds9_file(filename);
@@ -47,10 +49,10 @@ Ds9Parser::Ds9Parser(const casacore::CoordinateSystem& image_coord_sys, std::str
     : _coord_sys(image_coord_sys),
       _image_shape(image_shape),
       _direction_ref_frame(""),
-      _DEFAULT_UNIT("deg"),
       _pixel_coord(true),
       _region_list(image_coord_sys, image_shape) {
     // Convert given file contents into casa::AsciiAnnotationFileLines
+    InitDs9CoordMap();
 
     // Create vector of file lines, delimited with newline or semicolon
     std::vector<std::string> file_lines, input_lines;
@@ -64,6 +66,44 @@ Ds9Parser::Ds9Parser(const casacore::CoordinateSystem& image_coord_sys, std::str
     }
     // Process into annotation lines
     ProcessFileLines(file_lines);
+}
+
+Ds9Parser::Ds9Parser(const casacore::CoordinateSystem& image_coord_sys, bool pixel_coord)
+    : _coord_sys(image_coord_sys),
+      _pixel_coord(pixel_coord) {
+    // Used for exporting regions
+    InitDs9CoordMap();
+
+    // set coordinate system
+    if (pixel_coord) {
+        _direction_ref_frame = "physical";
+    } else {
+        InitializeDirectionReferenceFrame(); // crtf
+        for (auto& coord : _coord_map) {
+            if (coord.second == _direction_ref_frame) {
+                _direction_ref_frame = coord.first; // convert to ds9
+                break;
+            }
+        }
+        if (_direction_ref_frame == "B1950") {
+            _direction_ref_frame = "fk4";
+        } else if (_direction_ref_frame == "J2000") {
+            _direction_ref_frame = "fk5";
+        }
+    }
+}
+
+void Ds9Parser::InitDs9CoordMap() {
+    // for converting coordinate system from DS9 to casacore
+    _coord_map["physical"] = "";
+    _coord_map["image"] = "";
+    _coord_map["b1950"] = "B1950";
+    _coord_map["fk4"] = "B1950";
+    _coord_map["j2000"] = "J2000";
+    _coord_map["fk5"] = "J2000";
+    _coord_map["galactic"] = "GALACTIC";
+    _coord_map["ecliptic"] = "ECLIPTIC";
+    _coord_map["icrs"] = "ICRS";
 }
 
 // public accessors
@@ -127,6 +167,40 @@ void Ds9Parser::ProcessFileLines(std::vector<std::string>& lines) {
     }
 }
 
+// Coordinate system helpers
+
+bool Ds9Parser::IsDs9CoordSysKeyword(std::string& input) {
+    std::string input_lower(input);
+    std::transform(input.begin(), input.end(), input_lower.begin(), ::tolower); // convert to lowercase
+    return _coord_map.count(input_lower);
+}
+
+bool Ds9Parser::SetDirectionRefFrame(std::string& ds9_coord) {
+    // Convert coord sys string to CRTF-defined reference frame
+    // Returns whether conversion was successful or undefined/not supported
+    bool converted_coord(false);
+    std::transform(ds9_coord.begin(), ds9_coord.end(), ds9_coord.begin(), ::tolower); // convert in-place to lowercase
+    if (_coord_map.count(ds9_coord)) {
+        converted_coord = true;
+        if ((ds9_coord != "physical") && (ds9_coord != "image")) { // pixel coordinates
+            _direction_ref_frame = _coord_map[ds9_coord];
+            _pixel_coord = false;
+        }
+    }
+    return converted_coord;
+}
+
+void Ds9Parser::InitializeDirectionReferenceFrame() {
+    // Set _direction_reference_frame attribute to image coord sys direction frame
+    casacore::MDirection::Types reference_frame_type(casacore::MDirection::DEFAULT);
+    if (_coord_sys.hasDirectionCoordinate()) {
+        _coord_sys.directionCoordinate().getReferenceConversion(reference_frame_type);
+    }
+    _direction_ref_frame = casacore::MDirection::showType(reference_frame_type);
+}
+
+// Create Annotation region
+
 void Ds9Parser::SetAnnotationRegion(std::string& region_description) {
     // Convert ds9 region description into AsciiAnnotationFileLine and add to RegionTextList.
 
@@ -166,68 +240,19 @@ void Ds9Parser::SetAnnotationRegion(std::string& region_description) {
     if (region_parameters.size() < 3) {
         return;
     }
-
-    // convert to casacore units
-    ConvertUnits(region_parameters);
+    ConvertDs9UnitToCasacore(region_parameters);
 
     // process region properties (currently text only)
     casacore::String label;
     if (region_parts.size() > 1) {
-        label = GetTextLabel(region_parts[1]);
+        label = GetRegionName(region_parts[1]);
     }
 
     ProcessRegionDefinition(region_parameters, label, exclude_region);
 }
 
-// Coordinate system helpers
-
-bool Ds9Parser::IsDs9CoordSysKeyword(std::string& input) {
-    const std::string ds9_coordsys_keywords[] = {
-        "PHYSICAL", "IMAGE", "FK4", "B1950", "FK5", "J2000", "GALACTIC", "ECLIPTIC", "ICRS", "LINEAR", "AMPLIFIER", "DETECTOR"};
-    std::string input_upper(input);
-    std::transform(input.begin(), input.end(), input_upper.begin(), ::toupper); // convert to uppercase
-    for (auto& keyword : ds9_coordsys_keywords) {
-        if (keyword == input_upper) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool Ds9Parser::SetDirectionRefFrame(std::string& ds9_coord) {
-    // Convert coord sys string to CRTF-defined reference frame
-    // Returns whether conversion was successful or undefined/not supported
-    bool converted_coord(false);
-    std::transform(ds9_coord.begin(), ds9_coord.end(), ds9_coord.begin(), ::toupper); // convert in-place to uppercase
-    if ((ds9_coord == "PHYSICAL") || (ds9_coord == "IMAGE")) { // pixel
-        converted_coord = true;
-    } else if ((ds9_coord == "FK4") || (ds9_coord == "B1950")) {
-        _direction_ref_frame = "B1950";
-        _pixel_coord = false;
-        converted_coord = true;
-    } else if ((ds9_coord == "FK5") || (ds9_coord == "J2000")) {
-        _direction_ref_frame = "J2000";
-        _pixel_coord = false;
-        converted_coord = true;
-    } else if ((ds9_coord == "GALACTIC") || (ds9_coord == "ECLIPTIC") || (ds9_coord == "ICRS")) {
-        _direction_ref_frame = ds9_coord;
-        _pixel_coord = false;
-        converted_coord = true;
-    }
-    return converted_coord;
-}
-
-void Ds9Parser::InitializeDirectionReferenceFrame() {
-    // Set _direction_reference_frame attribute to image coord sys direction frame
-    casacore::MDirection::Types reference_frame_type(casacore::MDirection::DEFAULT);
-    if (_coord_sys.hasDirectionCoordinate()) {
-        _coord_sys.directionCoordinate().getReferenceConversion(reference_frame_type);
-    }
-    _direction_ref_frame = casacore::MDirection::showType(reference_frame_type);
-}
-
-void Ds9Parser::ConvertUnits(std::vector<std::string>& region_parameters) {
-    // replace ds9 units with casacore units
+void Ds9Parser::ConvertDs9UnitToCasacore(std::vector<std::string>& region_parameters) {
+    // replace ds9 units with casacore units in value-unit parameter string
     for (size_t i = 1; i < region_parameters.size(); ++i) {
         std::string casacore_unit;
         if (region_parameters[i].back() == 'd') {
@@ -246,8 +271,8 @@ void Ds9Parser::ConvertUnits(std::vector<std::string>& region_parameters) {
     }
 }
 
-casacore::String Ds9Parser::GetTextLabel(std::string& region_properties) {
-    // Parse region properties (everything after '#') for text
+casacore::String Ds9Parser::GetRegionName(std::string& region_properties) {
+    // Parse region properties (everything after '#') for text, used as region name
     casacore::String text_label;
     if (region_properties.find("text") != std::string::npos) {
        casacore::String properties(region_properties);
@@ -262,8 +287,6 @@ casacore::String Ds9Parser::GetTextLabel(std::string& region_properties) {
     }
     return text_label;
 }
-
-// Region helpers
 
 void Ds9Parser::ProcessRegionDefinition(std::vector<std::string>& region_definition, casacore::String& label, bool exclude_region) {
     // Process region definition vector (e.g. ["circle", "100", "100", "20"]) into AnnRegion
@@ -301,16 +324,16 @@ void Ds9Parser::ProcessRegionDefinition(std::vector<std::string>& region_definit
                 break;
             case casa::AnnotationBase::Type::ANNULUS:
             case casa::AnnotationBase::Type::LINE:
-                error_message = "Import region " + region_type + " failed:  not supported yet.";
+                error_message = "Import region '" + region_type + "' failed:  not supported yet.";
                 break;
             case casa::AnnotationBase::Type::TEXT:
-                error_message = "Import region " + region_type + " failed:  annotations not supported yet.";
+                error_message = "Import region '" + region_type + "' failed:  annotations not supported yet.";
             default:
                 break;
         }
     } catch (casacore::AipsError& err) {
         std::ostringstream oss;
-        oss << "Import region " << region_type << " failed: " << err.getMesg();
+        oss << "Import region '" << region_type << "' failed: " << err.getMesg();
         error_message = oss.str();
     }
 
@@ -335,49 +358,87 @@ bool Ds9Parser::GetAnnotationRegionType(std::string& ds9_region, casa::Annotatio
     // Convert ds9 region type (everything but "ruler") to annotation region type.
     // Returns whether conversion was successful, there is no AnnotationBase::Type::UNKNOWN!
     bool found_type(false);
-    if (ds9_region == "circle") {
-        type = casa::AnnotationBase::Type::CIRCLE;
-        found_type = true;
-    } else if (ds9_region == "annulus") {
-        type = casa::AnnotationBase::Type::ANNULUS;
-        found_type = true;
-    } else if (ds9_region == "ellipse") {
-        type = casa::AnnotationBase::Type::ELLIPSE;
-        found_type = true;
-    } else if (ds9_region == "box") {
-        type = casa::AnnotationBase::Type::ROTATED_BOX; // or a CENTER_BOX if angle=0
-        found_type = true;
-    } else if (ds9_region == "polygon") {
-        type = casa::AnnotationBase::Type::POLYGON;
-        found_type = true;
-    } else if (ds9_region == "line") {
-        type = casa::AnnotationBase::Type::LINE;
-        found_type = true;
-    } else if (ds9_region == "text") {
-        type = casa::AnnotationBase::Type::TEXT;
-        found_type = true;
-    } else if (ds9_region == "point") {
-        type = casa::AnnotationBase::Type::SYMBOL;
+    std::unordered_map<std::string, casa::AnnotationBase::Type> region_type_map = {
+        {"circle", casa::AnnotationBase::Type::CIRCLE},
+        {"annulus", casa::AnnotationBase::Type::ANNULUS},
+        {"ellipse", casa::AnnotationBase::Type::ELLIPSE},
+        {"box", casa::AnnotationBase::Type::ROTATED_BOX}, // or a CENTER_BOX if angle==0
+        {"polygon", casa::AnnotationBase::Type::POLYGON},
+        {"line", casa::AnnotationBase::Type::LINE},
+        {"text", casa::AnnotationBase::Type::TEXT},
+        {"point", casa::AnnotationBase::Type::SYMBOL}
+    };
+
+    if (region_type_map.count(ds9_region)) {
+        type = region_type_map[ds9_region];
         found_type = true;
     }
     return found_type;
 }
 
-casa::AnnRegion* Ds9Parser::CreateCircleRegion(std::vector<std::string>& region_definition) {
-    // Create AnnCircle from DS9 region definition
+casa::AnnRegion* Ds9Parser::CreateBoxRegion(std::vector<std::string>& region_definition) {
+    // Create AnnCenterBox or AnnRotBox from DS9 region definition
     casa::AnnRegion* ann_region(nullptr);
-    if (region_definition.size() == 4) { // circle x y radius
+    size_t nparams(region_definition.size());
+    if (nparams == 6) { // box x y width height angle
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
-        for (auto& param_string : region_definition) {
-            casacore::Quantity param_quantity;
-            if (readQuantity(param_quantity, param_string)) {
+        std::vector<casacore::String> units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
+        casacore::Quantity param_quantity;
+        for (size_t i = 1; i < nparams; ++i) {
+            if (readQuantity(param_quantity, region_definition[i])) {
                 if (param_quantity.getUnit().empty()) {
-                    param_quantity.setUnit("pix");
+                    if ((i == nparams - 1) || !_pixel_coord) {
+                        param_quantity.setUnit(units[i]);
+                    } else {
+                        param_quantity.setUnit("pix");
+                    }
                 }
                 parameters.push_back(param_quantity);
             } else {
-                std::cerr << "ERROR: cannot process circle parameter " << param_string << std::endl;
+                std::cerr << "ERROR: cannot process box parameter " << region_definition[i] << std::endl;
+                return ann_region; // nullptr, cannot process parameters
+            }
+        }
+
+        // AnnCenterBox / AnnRotBox arguments
+        casacore::Quantity begin_freq, end_freq, rest_freq;
+        casacore::String freq_ref_frame, doppler;
+        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
+
+        if (parameters[4].getValue() == 0.0) { // angle parameter; no rotation
+            ann_region = new casa::AnnCenterBox(parameters[0], parameters[1], parameters[2], parameters[3], _direction_ref_frame,
+                _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
+        } else {
+            ann_region = new casa::AnnRotBox(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4],
+                _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types,
+                false, false);
+        }
+    }
+    return ann_region;
+}
+
+casa::AnnRegion* Ds9Parser::CreateCircleRegion(std::vector<std::string>& region_definition) {
+    // Create AnnCircle from DS9 region definition
+    casa::AnnRegion* ann_region(nullptr);
+    size_t nparams(region_definition.size());
+    if (nparams == 4) { // circle x y radius
+        // convert strings to Quantities
+        std::vector<casacore::Quantity> parameters;
+        std::vector<casacore::String> units = {"", "deg", "deg", "arcsec"};
+        for (size_t i = 1; i < nparams; ++i) {
+            casacore::Quantity param_quantity;
+            if (readQuantity(param_quantity, region_definition[i])) {
+                if (param_quantity.getUnit().empty()) {
+                    if (_pixel_coord) {
+                        param_quantity.setUnit("pix");
+                    } else {
+                        param_quantity.setUnit(units[i]);
+                    }
+                }
+                parameters.push_back(param_quantity);
+            } else {
+                std::cerr << "ERROR: cannot process circle parameter " << region_definition[i] << std::endl;
                 return ann_region; // nullptr, cannot process parameters
             }
         }
@@ -386,10 +447,9 @@ casa::AnnRegion* Ds9Parser::CreateCircleRegion(std::vector<std::string>& region_
         casacore::Quantity begin_freq, end_freq, rest_freq;
         casacore::String freq_ref_frame, doppler;
         casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
-        bool annotation_only(false);
 
         ann_region = new casa::AnnCircle(parameters[0], parameters[1], parameters[2], _direction_ref_frame, _coord_sys, _image_shape,
-            begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, annotation_only);
+            begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
     }
 
     return ann_region;
@@ -402,20 +462,20 @@ casa::AnnRegion* Ds9Parser::CreateEllipseRegion(std::vector<std::string>& region
     if (nparams == 6) { // ellipse x y radius radius angle
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
+        std::vector<casacore::String> units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
+        casacore::Quantity param_quantity;
         for (size_t i = 1; i < nparams; ++i) {
-            std::string param_string(region_definition[i]);
-            casacore::Quantity param_quantity;
-            if (readQuantity(param_quantity, param_string)) {
+            if (readQuantity(param_quantity, region_definition[i])) {
                 if (param_quantity.getUnit().empty()) {
-                    if ((i == nparams - 1) || (!_pixel_coord)) {
-                        param_quantity.setUnit(_DEFAULT_UNIT);
+                    if ((i == nparams - 1) || !_pixel_coord) {
+                        param_quantity.setUnit(units[i]);
                     } else {
                         param_quantity.setUnit("pix");
                     }
                 }
                 parameters.push_back(param_quantity);
             } else {
-                std::cerr << "ERROR: cannot process ellipse parameter " << param_string << std::endl;
+                std::cerr << "ERROR: cannot process ellipse parameter " << region_definition[i] << std::endl;
                 return ann_region; // nullptr, cannot process parameters
             }
         }
@@ -424,78 +484,33 @@ casa::AnnRegion* Ds9Parser::CreateEllipseRegion(std::vector<std::string>& region
         casacore::Quantity begin_freq, end_freq, rest_freq;
         casacore::String freq_ref_frame, doppler;
         casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
-        bool annotation_only(false);
 
         ann_region = new casa::AnnEllipse(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], _direction_ref_frame,
-            _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, annotation_only);
+            _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
     }
 
-    return ann_region;
-}
-
-casa::AnnRegion* Ds9Parser::CreateBoxRegion(std::vector<std::string>& region_definition) {
-    // Create AnnCenterBox or AnnRotBox from DS9 region definition
-    casa::AnnRegion* ann_region(nullptr);
-    size_t nparams(region_definition.size());
-    if (nparams == 6) { // box x y width height angle
-        // convert strings to Quantities
-        std::vector<casacore::Quantity> parameters;
-        for (size_t i = 1; i < nparams; ++i) {
-            std::string xy_string(region_definition[i]);
-            casacore::Quantity xy_quantity;
-            if (readQuantity(xy_quantity, xy_string)) {
-                if (xy_quantity.getUnit().empty()) {
-                    if ((i == nparams - 1) || (!_pixel_coord)) {
-                        xy_quantity.setUnit(_DEFAULT_UNIT);
-                    } else {
-                        xy_quantity.setUnit("pix");
-                    }
-                }
-                parameters.push_back(xy_quantity);
-            } else {
-                std::cerr << "ERROR: cannot process box parameter " << xy_string << std::endl;
-                return ann_region; // nullptr, cannot process parameters
-            }
-        }
-
-        // AnnCenterBox / AnnRotBox arguments
-        casacore::Quantity begin_freq, end_freq, rest_freq;
-        casacore::String freq_ref_frame, doppler;
-        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
-        bool annotation_only(false);
-
-        if (parameters[4].getValue() == 0.0) { // angle parameter; no rotation
-            ann_region = new casa::AnnCenterBox(parameters[0], parameters[1], parameters[2], parameters[3], _direction_ref_frame,
-                _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, annotation_only);
-        } else {
-            ann_region = new casa::AnnRotBox(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4],
-                _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types,
-                annotation_only);
-        }
-    }
     return ann_region;
 }
 
 casa::AnnRegion* Ds9Parser::CreatePolygonRegion(std::vector<std::string>& region_definition) {
     // Create AnnPolygon from DS9 region definition
     casa::AnnRegion* ann_region(nullptr);
-    if (region_definition.size() % 2 == 1) { // "polygon" + pairs of x,y points
+    if (region_definition.size() % 2 == 1) { // polygon x1 y1 x2 y2 x3 y3 ...
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
         for (size_t i = 1; i < region_definition.size(); i++) {
-            std::string xy_string(region_definition[i]);
-            casacore::Quantity xy_quantity;
-            if (readQuantity(xy_quantity, xy_string)) {
-                if (xy_quantity.getUnit().empty()) {
-                    if (!_pixel_coord) {
-                        xy_quantity.setUnit(_DEFAULT_UNIT);
+            casacore::Quantity param_quantity;
+            if (readQuantity(param_quantity, region_definition[i])) {
+                if (param_quantity.getUnit().empty()) {
+                    if (_pixel_coord) {
+                        param_quantity.setUnit("pix");
                     } else {
-                        xy_quantity.setUnit("pix");
+                        param_quantity.setUnit("deg");
                     }
                 }
-                parameters.push_back(xy_quantity);
+                parameters.push_back(param_quantity);
             } else {
-                std::cerr << "ERROR: cannot process polygon parameter " << xy_string << std::endl;
+                std::cerr << "ERROR: cannot process polygon parameter " << region_definition[i] << std::endl;
                 return ann_region; // nullptr, cannot process parameters
             }
         }
@@ -509,10 +524,9 @@ casa::AnnRegion* Ds9Parser::CreatePolygonRegion(std::vector<std::string>& region
         casacore::Quantity begin_freq, end_freq, rest_freq;
         casacore::String freq_ref_frame, doppler;
         casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
-        bool annotation_only(false);
 
         ann_region = new casa::AnnPolygon(xPositions, yPositions, _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq,
-            freq_ref_frame, doppler, rest_freq, stokes_types, annotation_only);
+            freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
     }
  
     return ann_region;
@@ -525,19 +539,18 @@ casa::AnnSymbol* Ds9Parser::CreateSymbolRegion(std::vector<std::string>& region_
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
         for (size_t i = 1; i < region_definition.size(); ++i) {
-            std::string xy_string(region_definition[i]);
-            casacore::Quantity xy_quantity;
-            if (readQuantity(xy_quantity, xy_string)) {
-                if (xy_quantity.getUnit().empty()) {
-                    if (!_pixel_coord) {
-                        xy_quantity.setUnit(_DEFAULT_UNIT);
+            casacore::Quantity param_quantity;
+            if (readQuantity(param_quantity, region_definition[i])) {
+                if (param_quantity.getUnit().empty()) {
+                    if (_pixel_coord) {
+                        param_quantity.setUnit("pix");
                     } else {
-                        xy_quantity.setUnit("pix");
+                        param_quantity.setUnit("deg");
                     }
                 }
-                parameters.push_back(xy_quantity);
+                parameters.push_back(param_quantity);
             } else {
-                std::cerr << "ERROR: cannot process point parameter " << xy_string << std::endl;
+                std::cerr << "ERROR: cannot process point parameter " << region_definition[i] << std::endl;
                 return ann_symbol; // nullptr, cannot process parameters
             }
         }
@@ -552,4 +565,143 @@ casa::AnnSymbol* Ds9Parser::CreateSymbolRegion(std::vector<std::string>& region_
     }
 
     return ann_symbol;
+}
+
+// For export
+
+void Ds9Parser::AddRegion(
+    const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float rotation) {
+    RegionProperties properties(name, type, control_points, rotation);
+    _regions.push_back(properties);
+}
+
+void Ds9Parser::PrintHeader(std::ostream& os) {
+    // print file format, globals, and coord sys
+    os << "# Region file format: DS9 CARTA " << VERSION_ID << std::endl;
+    Ds9Properties globals;
+    os << "global color=" << globals.color << " delete=" << globals.delete_region << " edit=" << globals.edit_region << " fixed="
+       << globals.fixed_region << " font=\"" << globals.font << "\" highlite=" << globals.highlite_region << " include="
+       << globals.include_region << " move=" << globals.move_region << " select=" << globals.select_region << std::endl;
+    os << _direction_ref_frame << std::endl;
+}
+
+void Ds9Parser::PrintRegion(unsigned int i, std::ostream& os) {
+    // Print Annotation line; ignore comment and global (for now)
+    if (i < NumRegions()) {
+        auto& region = _regions[i];
+        switch (region.type) {
+            case CARTA::RegionType::POINT:
+                PrintPointRegion(region, os);
+                break;
+            case CARTA::RegionType::RECTANGLE:
+                PrintBoxRegion(region, os);
+                break;
+            case CARTA::RegionType::ELLIPSE:
+                PrintEllipseRegion(region, os);
+                break;
+            case CARTA::RegionType::POLYGON:
+                PrintPolygonRegion(region, os);
+                break;
+            case CARTA::RegionType::LINE:
+            case CARTA::RegionType::POLYLINE:
+            case CARTA::RegionType::ANNULUS:
+            default:
+                break; // not supported yet
+        }
+        if (!region.name.empty()) {
+            os << " # text={" << region.name << "}";
+        }
+        os << std::endl;    
+    }
+}
+
+void Ds9Parser::PrintRegionsToFile(std::ofstream& ofs) {
+    PrintHeader(ofs);
+    for (unsigned int i = 0; i < NumRegions(); ++i) {
+        PrintRegion(i, ofs);
+    }
+}
+
+void Ds9Parser::PrintBoxRegion(const RegionProperties& properties, std::ostream& os) {
+    // box(x,y,width,height,angle)
+    std::string ds9_region("box");
+    std::vector<casacore::Quantity> points = properties.control_points;
+    os << ds9_region << "(";
+    if (_pixel_coord) {
+        os << std::fixed << std::setprecision(2) << points[0].getValue();
+        for (size_t i = 1; i < points.size(); ++i) {
+            os << "," << points[i].getValue();
+        }
+        os << "," << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
+    } else {
+        os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
+        os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
+        os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\"" << ",";
+        os << std::fixed << std::setprecision(2) << points[3].get("arcsec").getValue() << "\"" << ",";
+        os << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
+    }
+}
+
+void Ds9Parser::PrintEllipseRegion(const RegionProperties& properties, std::ostream& os) {
+    // ellipse(x,y,radius,radius,angle) -or- circle(x,y,radius)
+    std::vector<casacore::Quantity> points = properties.control_points;
+    bool is_circle(points[2].getValue() == points[3].getValue()); // bmaj == bmin
+    if (is_circle) {
+        os << "circle(";
+        if (_pixel_coord) {
+            os << std::fixed << std::setprecision(2) << points[0].getValue() << "," << points[1].getValue() << "," << points[2].getValue()
+               << ")";
+        } else {
+            os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
+            os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
+            os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\"";
+            os << ")";
+        }
+    } else {
+        os << "ellipse(";
+        if (_pixel_coord) {
+            os << std::fixed << std::setprecision(2) << points[0].getValue();
+            for (size_t i = 1; i < points.size(); ++i) {
+                os << "," << points[i].getValue();
+            }
+            os << "," << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
+        } else {
+            os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
+            os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
+            os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\"" << ",";
+            os << std::fixed << std::setprecision(2) << points[3].get("arcsec").getValue() << "\"" << ",";
+            os << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
+        }
+    }
+}
+
+void Ds9Parser::PrintPointRegion(const RegionProperties& properties, std::ostream& os) {
+    // point(x,y)
+    std::vector<casacore::Quantity> points = properties.control_points;
+    os << "point(";
+    if (_pixel_coord) {
+        os << std::fixed << std::setprecision(2) << points[0].getValue() << "," << points[1].getValue() << ")";
+    } else {
+        os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
+        os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ")";
+    }
+}
+
+void Ds9Parser::PrintPolygonRegion(const RegionProperties& properties, std::ostream& os) {
+    // polygon(x1,y1,x2,y2,x3,y3,...)
+    std::vector<casacore::Quantity> points = properties.control_points;
+    os << "polygon(";
+    if (_pixel_coord) {
+        os << std::fixed << std::setprecision(2) << points[0].getValue();
+        for (size_t i = 1; i < points.size(); ++i) {
+            os << "," << points[i].getValue();
+        }
+        os << ")";
+    } else {
+        os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue();
+        for (size_t i = 1; i < points.size(); ++i) {
+            os << "," << std::fixed << std::setprecision(6) << points[i].get("deg").getValue();
+        }
+        os << ")";
+    }
 }

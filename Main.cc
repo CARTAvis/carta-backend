@@ -46,7 +46,7 @@ static uint32_t session_number;
 static uWS::Hub websocket_hub;
 
 // command-line arguments
-static string root_folder("/"), base_folder("."), version_id("1.2");
+static string root_folder("/"), base_folder(".");
 static bool verbose, use_permissions, use_mongodb;
 namespace CARTA {
 string token;
@@ -354,7 +354,7 @@ int main(int argc, const char* argv[]) {
         { // get values then let Input go out of scope
             casacore::Input inp;
             string json_fname;
-            inp.version(version_id);
+            inp.version(VERSION_ID);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
             inp.create("token", CARTA::token, "only accept connections with this authorization token", "String");
