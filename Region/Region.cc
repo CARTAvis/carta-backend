@@ -7,8 +7,8 @@
 #include <cmath>     // round
 
 #include <casacore/casa/Arrays/ArrayLogical.h>
-#include <casacore/casa/Quanta/Quantum.h>
 #include <casacore/casa/Quanta/QMath.h>
+#include <casacore/casa/Quanta/Quantum.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/images/Regions/WCEllipsoid.h>
 #include <casacore/images/Regions/WCExtension.h>
@@ -647,7 +647,7 @@ casacore::WCRegion* Region::MakeRectangleRegion(const std::vector<CARTA::Point>&
         y(3) = y_max;
 
         // Set control points (for unrotated box) as quantities in wcs
-	// Convert pixel coords to world coords
+        // Convert pixel coords to world coords
         casacore::Quantum<casacore::Vector<casacore::Double>> x_world, y_world;
         if (!XyPixelsToWorld(x, y, x_world, y_world)) {
             return box_polygon; // nullptr, conversion failed

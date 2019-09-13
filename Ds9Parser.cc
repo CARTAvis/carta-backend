@@ -69,8 +69,7 @@ Ds9Parser::Ds9Parser(const casacore::CoordinateSystem& image_coord_sys, std::str
 }
 
 Ds9Parser::Ds9Parser(const casacore::CoordinateSystem& image_coord_sys, bool pixel_coord)
-    : _coord_sys(image_coord_sys),
-      _pixel_coord(pixel_coord) {
+    : _coord_sys(image_coord_sys), _pixel_coord(pixel_coord) {
     // Used for exporting regions
     InitDs9CoordMap();
 
@@ -148,7 +147,7 @@ void Ds9Parser::ProcessFileLines(std::vector<std::string>& lines) {
         }
 
         // process coordinate system
-        if (IsDs9CoordSysKeyword(line)) { 
+        if (IsDs9CoordSysKeyword(line)) {
             ds9_coord_sys_ok = SetDirectionRefFrame(line);
             if (!ds9_coord_sys_ok) {
                 std::cerr << "Cannot process DS9 coordinate system: " << line << std::endl;
@@ -234,7 +233,7 @@ void Ds9Parser::SetAnnotationRegion(std::string& region_description) {
     formatted_region.gsub(")", "");  // remove right parenthesis
     formatted_region.gsub(",", " "); // replace commas with space
 
-    // split definition into parts (region type and parameters) e.g. ["circle", "100", "100", "10"] 
+    // split definition into parts (region type and parameters) e.g. ["circle", "100", "100", "10"]
     std::vector<std::string> region_parameters;
     SplitString(formatted_region, ' ', region_parameters);
     if (region_parameters.size() < 3) {
@@ -275,15 +274,15 @@ casacore::String Ds9Parser::GetRegionName(std::string& region_properties) {
     // Parse region properties (everything after '#') for text, used as region name
     casacore::String text_label;
     if (region_properties.find("text") != std::string::npos) {
-       casacore::String properties(region_properties);
-       text_label = properties.after("text=");
-       // strip delimiters
-       char text_delim = text_label[0];
-       text_label.ltrim(text_delim);
-       if (text_delim == '{') {
-           text_delim = '}';
-       }
-       text_label = text_label.before(text_delim); // e.g. "Region X"
+        casacore::String properties(region_properties);
+        text_label = properties.after("text=");
+        // strip delimiters
+        char text_delim = text_label[0];
+        text_label.ltrim(text_delim);
+        if (text_delim == '{') {
+            text_delim = '}';
+        }
+        text_label = text_label.before(text_delim); // e.g. "Region X"
     }
     return text_label;
 }
@@ -358,22 +357,17 @@ bool Ds9Parser::GetAnnotationRegionType(std::string& ds9_region, casa::Annotatio
     // Convert ds9 region type (everything but "ruler") to annotation region type.
     // Returns whether conversion was successful, there is no AnnotationBase::Type::UNKNOWN!
     bool found_type(false);
-    std::unordered_map<std::string, casa::AnnotationBase::Type> region_type_map = {
-        {"circle", casa::AnnotationBase::Type::CIRCLE},
-        {"annulus", casa::AnnotationBase::Type::ANNULUS},
-        {"ellipse", casa::AnnotationBase::Type::ELLIPSE},
-        {"box", casa::AnnotationBase::Type::ROTATED_BOX}, // or a CENTER_BOX if angle==0
-        {"polygon", casa::AnnotationBase::Type::POLYGON},
-        {"line", casa::AnnotationBase::Type::LINE},
-        {"text", casa::AnnotationBase::Type::TEXT},
-        {"point", casa::AnnotationBase::Type::SYMBOL}
-    };
+    std::unordered_map<std::string, casa::AnnotationBase::Type> region_type_map = {{"circle", casa::AnnotationBase::Type::CIRCLE},
+        {"annulus", casa::AnnotationBase::Type::ANNULUS}, {"ellipse", casa::AnnotationBase::Type::ELLIPSE},
+	{"box", casa::AnnotationBase::Type::ROTATED_BOX}, // or a CENTER_BOX if angle==0
+        {"polygon", casa::AnnotationBase::Type::POLYGON}, {"line", casa::AnnotationBase::Type::LINE},
+        {"text", casa::AnnotationBase::Type::TEXT}, {"point", casa::AnnotationBase::Type::SYMBOL}};
 
     for (auto& region_type : region_type_map) {
         if (ds9_region.find(region_type.first) != std::string::npos) {
             type = region_type.second;
             found_type = true;
-	    break;
+            break;
         }
     }
     return found_type;
@@ -413,9 +407,9 @@ casa::AnnRegion* Ds9Parser::CreateBoxRegion(std::vector<std::string>& region_def
             ann_region = new casa::AnnCenterBox(parameters[0], parameters[1], parameters[2], parameters[3], _direction_ref_frame,
                 _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
         } else {
-            ann_region = new casa::AnnRotBox(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4],
-                _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types,
-                false, false);
+            ann_region =
+                new casa::AnnRotBox(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], _direction_ref_frame,
+                    _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
         }
     }
     return ann_region;
@@ -531,7 +525,7 @@ casa::AnnRegion* Ds9Parser::CreatePolygonRegion(std::vector<std::string>& region
         ann_region = new casa::AnnPolygon(xPositions, yPositions, _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq,
             freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
     }
- 
+
     return ann_region;
 }
 
@@ -582,9 +576,9 @@ void Ds9Parser::PrintHeader(std::ostream& os) {
     // print file format, globals, and coord sys
     os << "# Region file format: DS9 CARTA " << VERSION_ID << std::endl;
     Ds9Properties globals;
-    os << "global color=" << globals.color << " delete=" << globals.delete_region << " edit=" << globals.edit_region << " fixed="
-       << globals.fixed_region << " font=\"" << globals.font << "\" highlite=" << globals.highlite_region << " include="
-       << globals.include_region << " move=" << globals.move_region << " select=" << globals.select_region << std::endl;
+    os << "global color=" << globals.color << " delete=" << globals.delete_region << " edit=" << globals.edit_region
+       << " fixed=" << globals.fixed_region << " font=\"" << globals.font << "\" highlite=" << globals.highlite_region
+       << " include=" << globals.include_region << " move=" << globals.move_region << " select=" << globals.select_region << std::endl;
     os << _direction_ref_frame << std::endl;
 }
 
@@ -614,7 +608,7 @@ void Ds9Parser::PrintRegion(unsigned int i, std::ostream& os) {
         if (!region.name.empty()) {
             os << " # text={" << region.name << "}";
         }
-        os << std::endl;    
+        os << std::endl;
     }
 }
 
@@ -639,8 +633,10 @@ void Ds9Parser::PrintBoxRegion(const RegionProperties& properties, std::ostream&
     } else {
         os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
         os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
-        os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\"" << ",";
-        os << std::fixed << std::setprecision(2) << points[3].get("arcsec").getValue() << "\"" << ",";
+        os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\""
+           << ",";
+        os << std::fixed << std::setprecision(2) << points[3].get("arcsec").getValue() << "\""
+           << ",";
         os << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
     }
 }
@@ -671,8 +667,10 @@ void Ds9Parser::PrintEllipseRegion(const RegionProperties& properties, std::ostr
         } else {
             os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
             os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
-            os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\"" << ",";
-            os << std::fixed << std::setprecision(2) << points[3].get("arcsec").getValue() << "\"" << ",";
+            os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\""
+               << ",";
+            os << std::fixed << std::setprecision(2) << points[3].get("arcsec").getValue() << "\""
+               << ",";
             os << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
         }
     }

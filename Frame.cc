@@ -557,18 +557,18 @@ void Frame::ExportDs9Regions(
             if (pixel_coord) {
                 RegionState region_state = region->GetRegionState();
                 std::vector<CARTA::Point> carta_points(region_state.control_points);
-		std::vector<casacore::Quantity> points_quantities;
-		for (auto& point : carta_points) {
+                std::vector<casacore::Quantity> points_quantities;
+                for (auto& point : carta_points) {
                     points_quantities.push_back(casacore::Quantity(point.x(), "pix"));
                     points_quantities.push_back(casacore::Quantity(point.y(), "pix"));
                 }
                 parser.AddRegion(region_state.name, region_state.type, points_quantities, region_state.rotation);
             } else {
                 std::string name(region->Name());
-		CARTA::RegionType type(region->Type());
-		std::vector<casacore::Quantity> control_points(region->GetControlPointsWcs());
-		float rotation(region->Rotation());
-		parser.AddRegion(name, type, control_points, rotation);
+                CARTA::RegionType type(region->Type());
+                std::vector<casacore::Quantity> control_points(region->GetControlPointsWcs());
+                float rotation(region->Rotation());
+                parser.AddRegion(name, type, control_points, rotation);
             }
         }
     }

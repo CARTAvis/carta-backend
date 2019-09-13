@@ -19,8 +19,8 @@ struct Ds9Properties {
     bool select_region = true;
     bool edit_region = true;
     bool move_region = true;
-    bool delete_region =true;
-    bool highlite_region =true;
+    bool delete_region = true;
+    bool highlite_region = true;
     bool include_region = true;
     bool fixed_region = false;
 };
