@@ -108,6 +108,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                 if (cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                     casacore::String full_path(cc_file.path().absoluteName());
                     try {
+                        bool is_region(false);
                         if (region_list) {
                             if (casacore::ImageOpener::imageType(full_path) == casacore::ImageOpener::UNKNOWN) { // not image
                                 if (cc_file.isRegular(true) && cc_file.isReadable()) {
@@ -115,39 +116,44 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                                     if (file_type != CARTA::FileType::UNKNOWN) {
                                         auto file_info = file_list.add_files();
                                         FillRegionFileInfo(file_info, full_path, file_type);
+                                        is_region = true;
                                     }
                                 }
                             }
                         }
-                        bool add_image(false);
-                        if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
-                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
-                            if ((image_type == casacore::ImageOpener::AIPSPP) || (image_type == casacore::ImageOpener::MIRIAD)) {
-                                add_image = true;
-                            } else if (image_type == casacore::ImageOpener::UNKNOWN) {
-                                // Check if it is a directory and the user has permission to access it
-                                casacore::String dir_name(cc_file.path().baseName());
-                                string path_name_relative =
-                                    (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
-                                if (CheckPermissionForDirectory(path_name_relative)) {
-                                    file_list.add_subdirectories(dir_name);
+                        if (!is_region) {
+                            bool add_image(false);
+                            if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
+                                casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
+                                if ((image_type == casacore::ImageOpener::AIPSPP) || (image_type == casacore::ImageOpener::MIRIAD)) {
+                                    add_image = true;
+                                } else if (image_type == casacore::ImageOpener::UNKNOWN) {
+                                    // Check if it is a directory and the user has permission to access it
+                                    casacore::String dir_name(cc_file.path().baseName());
+                                    string path_name_relative =
+                                        (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
+                                    if (CheckPermissionForDirectory(path_name_relative)) {
+                                        file_list.add_subdirectories(dir_name);
+                                    }
+                                } else {
+                                    std::string image_type_msg =
+                                        fmt::format("{}: image type {} not supported", cc_file.path().baseName(), GetType(image_type));
+                                    result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                                 }
-                            } else {
-                                std::string image_type_msg =
-                                    fmt::format("{}: image type {} not supported", cc_file.path().baseName(), GetType(image_type));
-                                result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                            } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
+                                casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
+                                if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
+                                    add_image = true;
+                                } else if (region_list) { // list unknown files: name, type, size
+                                    add_image = true;
+                                }
                             }
-                        } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
-                            if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
-                                add_image = true;
-                            }
-                        }
 
-                        if (add_image) { // add image to file list
-                            auto file_info = file_list.add_files();
-                            file_info->set_name(name);
-                            FillFileInfo(file_info, full_path);
+                            if (add_image) { // add image to file list
+                                auto file_info = file_list.add_files();
+                                file_info->set_name(name);
+                                FillFileInfo(file_info, full_path);
+                            }
                         }
                     } catch (casacore::AipsError& err) { // RegularFileIO error
                         // skip it
