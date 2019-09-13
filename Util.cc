@@ -114,6 +114,8 @@ void SplitString(std::string& input, char delim, std::vector<std::string>& parts
     std::stringstream ss(input);
     std::string item;
     while (std::getline(ss, item, delim)) {
-        parts.push_back(item);
+        if (!item.empty()) {
+            parts.push_back(item);
+        }
     }
 }

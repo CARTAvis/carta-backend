@@ -292,7 +292,7 @@ void Ds9Parser::ProcessRegionDefinition(std::vector<std::string>& region_definit
     // Process region definition vector (e.g. ["circle", "100", "100", "20"]) into AnnRegion
     std::string region_type = region_definition[0];
     // point can have symbol descriptor, e.g. ""circle point", "diamond point", etc.
-    if (region_definition[1] == "point") {
+    if (region_definition[1].find("point") != std::string::npos) {
         region_type = "point";
     }
     // Get Annotation type from region type
@@ -369,9 +369,12 @@ bool Ds9Parser::GetAnnotationRegionType(std::string& ds9_region, casa::Annotatio
         {"point", casa::AnnotationBase::Type::SYMBOL}
     };
 
-    if (region_type_map.count(ds9_region)) {
-        type = region_type_map[ds9_region];
-        found_type = true;
+    for (auto& region_type : region_type_map) {
+        if (ds9_region.find(region_type.first) != std::string::npos) {
+            type = region_type.second;
+            found_type = true;
+	    break;
+        }
     }
     return found_type;
 }
