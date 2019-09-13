@@ -108,20 +108,20 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                 if (cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                     casacore::String full_path(cc_file.path().absoluteName());
                     try {
+                        bool is_region(false);
                         if (region_list) {
                             if (casacore::ImageOpener::imageType(full_path) == casacore::ImageOpener::UNKNOWN) { // not image
-                                if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
-                                    casacore::String dir_name(cc_file.path().baseName());
-                                    file_list.add_subdirectories(dir_name);
-                                } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
+                                if (cc_file.isRegular(true) && cc_file.isReadable()) {
                                     CARTA::FileType file_type(GetRegionType(full_path));
                                     if (file_type != CARTA::FileType::UNKNOWN) {
                                         auto file_info = file_list.add_files();
                                         FillRegionFileInfo(file_info, full_path, file_type);
+                                        is_region = true;
                                     }
                                 }
                             }
-                        } else {
+                        }
+                        if (!is_region) {
                             bool add_image(false);
                             if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
                                 casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
@@ -143,6 +143,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                             } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
                                 casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
                                 if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
+                                    add_image = true;
+                                } else if (region_list) { // list unknown files: name, type, size
                                     add_image = true;
                                 }
                             }
