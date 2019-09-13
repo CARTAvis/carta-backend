@@ -359,7 +359,7 @@ bool Ds9Parser::GetAnnotationRegionType(std::string& ds9_region, casa::Annotatio
     bool found_type(false);
     std::unordered_map<std::string, casa::AnnotationBase::Type> region_type_map = {{"circle", casa::AnnotationBase::Type::CIRCLE},
         {"annulus", casa::AnnotationBase::Type::ANNULUS}, {"ellipse", casa::AnnotationBase::Type::ELLIPSE},
-	{"box", casa::AnnotationBase::Type::ROTATED_BOX}, // or a CENTER_BOX if angle==0
+        {"box", casa::AnnotationBase::Type::ROTATED_BOX}, // or a CENTER_BOX if angle==0
         {"polygon", casa::AnnotationBase::Type::POLYGON}, {"line", casa::AnnotationBase::Type::LINE},
         {"text", casa::AnnotationBase::Type::TEXT}, {"point", casa::AnnotationBase::Type::SYMBOL}};
 

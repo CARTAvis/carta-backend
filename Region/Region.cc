@@ -699,7 +699,7 @@ casacore::WCRegion* Region::MakeRectangleRegion(const std::vector<CARTA::Point>&
             }
         }
 
-	// Create rectangle polygon from vertices
+        // Create rectangle polygon from vertices
         std::unique_lock<std::mutex> guard(_casacore_region_mutex);
         box_polygon = new casacore::WCPolygon(x_world, y_world, _xy_axes, _coord_sys);
         guard.unlock();
