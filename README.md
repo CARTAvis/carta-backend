@@ -45,3 +45,4 @@ The server build depends on the following libraries:
 
 [![CircleCI](https://circleci.com/gh/CARTAvis/carta-backend.svg?style=svg)](https://circleci.com/gh/CARTAvis/carta-backend)
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3377984.svg)](https://doi.org/10.5281/zenodo.3377984)
