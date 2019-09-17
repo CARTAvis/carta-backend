@@ -434,28 +434,31 @@ void Region::GetRectangleControlPointsFromVertices(
     std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, double& cx, double& cy, double& width, double& height) {
     // Input: pixel vertices x and y
     // Returns: rectangle center point cx and cy, width, and height
-    double xmin = *std::min_element(x.begin(), x.end());
-    double xmax = *std::max_element(x.begin(), x.end());
-    double ymin = *std::min_element(y.begin(), y.end());
-    double ymax = *std::max_element(y.begin(), y.end());
-    cx = (xmin + xmax) / 2.0;
-    cy = (ymin + ymax) / 2.0;
-    width = xmax - xmin;
-    height = ymax - ymin;
+    // Point 0 is blc, point 2 is trc
+    casacore::Double blc_x = x[0];
+    casacore::Double trc_x = x[2];
+    casacore::Double blc_y = y[0];
+    casacore::Double trc_y = y[2];
+    cx = (blc_x + trc_x) / 2.0;
+    cy = (blc_y + trc_y) / 2.0;
+    width = fabs(trc_x - blc_x);
+    height = fabs(trc_y - blc_y);
 }
 
 void Region::GetRectangleControlPointsFromVertices(std::vector<casacore::Quantity>& x, std::vector<casacore::Quantity>& y,
     casacore::Quantity& cx, casacore::Quantity& cy, casacore::Quantity& width, casacore::Quantity& height) {
     // Input: world vertices x and y
     // Returns: rectangle center point cx and cy, width, and height as wcs Quantities
-    casacore::Quantity xmin = *std::min_element(x.begin(), x.end());
-    casacore::Quantity xmax = *std::max_element(x.begin(), x.end());
-    casacore::Quantity ymin = *std::min_element(y.begin(), y.end());
-    casacore::Quantity ymax = *std::max_element(y.begin(), y.end());
-    cx = (xmin + xmax) / 2.0;
-    cy = (ymin + ymax) / 2.0;
-    width = xmax - xmin;
-    height = ymax - ymin;
+    // Point 0 is blc, point 2 is trc
+    casacore::Quantity blc_x = x[0];
+    casacore::Quantity trc_x = x[2];
+    casacore::Quantity blc_y = y[0];
+    casacore::Quantity trc_y = y[2];
+
+    cx = (blc_x + trc_x) / 2.0;
+    cy = (blc_y + trc_y) / 2.0;
+    width = abs(trc_x - blc_x);
+    height = abs(trc_y - blc_y);
 }
 
 // *************************************************************************
@@ -646,25 +649,25 @@ casacore::WCRegion* Region::MakeRectangleRegion(const std::vector<CARTA::Point>&
         x(3) = x_min;
         y(3) = y_max;
 
-        // Set control points (for unrotated box) as quantities in wcs
+        // Set control points (for UNROTATED box) as quantities in wcs
         // Convert pixel coords to world coords
         casacore::Quantum<casacore::Vector<casacore::Double>> x_world, y_world;
         if (!XyPixelsToWorld(x, y, x_world, y_world)) {
             return box_polygon; // nullptr, conversion failed
         }
-        // Convert Quantum<Vector<Double>> to Vector<Quantum<Double>>
-        std::vector<casacore::Quantum<casacore::Double>> x_world_vector, y_world_vector;
-        casacore::Vector<casacore::Double> x_world_values = x_world.getValue();
-        casacore::Vector<casacore::Double> y_world_values = y_world.getValue();
+        // Get blc,trc in wcs
         casacore::String x_unit = x_world.getUnit();
         casacore::String y_unit = y_world.getUnit();
-        for (size_t i = 0; i < x_world_values.size(); ++i) {
-            x_world_vector.push_back(casacore::Quantity(x_world_values[i], x_unit));
-            y_world_vector.push_back(casacore::Quantity(y_world_values[i], y_unit));
-        }
-        // calculate center point, width, height in world coordinates
-        casacore::Quantity cx_wcs, cy_wcs, width_wcs, height_wcs;
-        GetRectangleControlPointsFromVertices(x_world_vector, y_world_vector, cx_wcs, cy_wcs, width_wcs, height_wcs);
+        casacore::Quantity blc_x = casacore::Quantity(x_world.getValue()(0), x_unit);
+        casacore::Quantity blc_y = casacore::Quantity(y_world.getValue()(0), y_unit);
+        casacore::Quantity trc_x = casacore::Quantity(x_world.getValue()(2), x_unit);
+        casacore::Quantity trc_y = casacore::Quantity(y_world.getValue()(2), y_unit);
+        // Calculate center point, width, height in world coordinates
+        casacore::Quantity cx_wcs = (blc_x + trc_x) / 2.0;
+        casacore::Quantity cy_wcs = (blc_y + trc_y) / 2.0;
+        casacore::Quantity width_wcs = abs(trc_x - blc_x);
+        casacore::Quantity height_wcs = abs(trc_y - blc_y);
+        // Save wcs control points
         _control_points_wcs.clear();
         _control_points_wcs.push_back(cx_wcs);
         _control_points_wcs.push_back(cy_wcs);
@@ -986,6 +989,8 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                         cy = _control_points_wcs[1];
                         xwidth = _control_points_wcs[2];
                         ywidth = _control_points_wcs[3];
+                        // adjust width by cosine(declination) for correct import
+                        xwidth *= cos(cy);
                     }
                     if (_rotation == 0.0) {
                         ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types, require_region);

@@ -3,6 +3,7 @@
 #include <iomanip>
 
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/casa/Quanta/QMath.h>
 #include <imageanalysis/Annotations/AnnCenterBox.h>
 #include <imageanalysis/Annotations/AnnCircle.h>
 #include <imageanalysis/Annotations/AnnEllipse.h>
@@ -191,11 +192,11 @@ bool Ds9Parser::SetDirectionRefFrame(std::string& ds9_coord) {
 
 void Ds9Parser::InitializeDirectionReferenceFrame() {
     // Set _direction_reference_frame attribute to image coord sys direction frame
-    casacore::MDirection::Types reference_frame_type(casacore::MDirection::DEFAULT);
+    casacore::MDirection::Types reference_frame(casacore::MDirection::DEFAULT);
     if (_coord_sys.hasDirectionCoordinate()) {
-        _coord_sys.directionCoordinate().getReferenceConversion(reference_frame_type);
+        reference_frame = _coord_sys.directionCoordinate().directionType();
     }
-    _direction_ref_frame = casacore::MDirection::showType(reference_frame_type);
+    _direction_ref_frame = casacore::MDirection::showType(reference_frame);
 }
 
 // Create Annotation region
@@ -631,11 +632,16 @@ void Ds9Parser::PrintBoxRegion(const RegionProperties& properties, std::ostream&
         }
         os << "," << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
     } else {
-        os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
-        os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
-        os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\""
+        casacore::Quantity cx(points[0]), cy(points[1]);
+        casacore::Quantity width(points[2]), height(points[3]);
+        // adjust width by cosine(declination) for correct export
+        width *= cos(cy);
+        os << std::fixed << std::setprecision(6) << cx.get("deg").getValue() << ",";
+        os << std::fixed << std::setprecision(6) << cy.get("deg").getValue() << ",";
+
+        os << std::fixed << std::setprecision(2) << width.get("arcsec").getValue() << "\""
            << ",";
-        os << std::fixed << std::setprecision(2) << points[3].get("arcsec").getValue() << "\""
+        os << std::fixed << std::setprecision(2) << height.get("arcsec").getValue() << "\""
            << ",";
         os << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
     }
