@@ -304,14 +304,6 @@ void Frame::ImportRegion(
                     casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
                     ImportAnnotationFileLine(file_line, coord_sys, file_type, import_ack, message);
                 }
-                if (!region_set) {
-                    import_ack.add_regions();
-                    if (message.empty()) {
-                        message = "CRTF region file import failed: zero regions set";
-                    }
-                }
-                import_ack.set_success(region_set); // true if at least one region was set
-                import_ack.set_message(message);
             } catch (casacore::AipsError& err) {
                 if (_verbose) {
                     std::cerr << "Import region failed: " << err.getMesg() << std::endl;
@@ -342,6 +334,20 @@ void Frame::ImportRegion(
             import_ack.add_regions();
         }
     }
+
+    // determine success
+    bool success(true);
+    if (import_ack.regions_size() == 0) {
+        success = false;
+        if (message.empty()) {
+            message = "Region file import failed: zero regions set";
+        }
+        import_ack.add_regions();
+    }
+
+    // complete message
+    import_ack.set_success(success); // true if at least one region was set
+    import_ack.set_message(message);
 }
 
 void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
