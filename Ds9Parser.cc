@@ -2,8 +2,8 @@
 
 #include <iomanip>
 
-#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/casa/Quanta/QMath.h>
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <imageanalysis/Annotations/AnnCenterBox.h>
 #include <imageanalysis/Annotations/AnnCircle.h>
 #include <imageanalysis/Annotations/AnnEllipse.h>
