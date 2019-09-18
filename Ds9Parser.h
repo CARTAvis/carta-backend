@@ -4,6 +4,7 @@
 #define CARTA_BACKEND__DS9PARSER_H_
 
 #include <unordered_map>
+
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <imageanalysis/Annotations/AnnSymbol.h>
 #include <imageanalysis/Annotations/RegionTextList.h>
