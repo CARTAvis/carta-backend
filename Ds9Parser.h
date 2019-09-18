@@ -10,7 +10,7 @@
 
 #include <carta-protobuf/defs.pb.h>
 
-namespace carta{
+namespace carta {
 
 struct Ds9Properties {
     std::string text;
