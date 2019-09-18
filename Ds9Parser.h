@@ -80,6 +80,7 @@ private:
     casacore::String GetRegionName(std::string& region_properties);
     void ProcessRegionDefinition(std::vector<std::string>& region_definition, casacore::String& label, bool exclude_region);
     bool GetAnnotationRegionType(std::string& ds9_region, casa::AnnotationBase::Type& type);
+    casacore::String ConvertTimeFormatToDeg(std::string& parameter_string);
     casa::AnnRegion* CreateBoxRegion(std::vector<std::string>& region_definition);
     casa::AnnRegion* CreateCircleRegion(std::vector<std::string>& region_definition);
     casa::AnnRegion* CreateEllipseRegion(std::vector<std::string>& region_definition);

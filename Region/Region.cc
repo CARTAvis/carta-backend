@@ -746,8 +746,9 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
         _control_points_wcs.clear();
         _control_points_wcs.push_back(center_world(0));
         _control_points_wcs.push_back(center_world(1));
-        _control_points_wcs.push_back(major_axis);
-        _control_points_wcs.push_back(minor_axis);
+        // convert npixels to length on given pixel axis
+        _control_points_wcs.push_back(_coord_sys.toWorldLength(major_axis.getValue(), 0));
+        _control_points_wcs.push_back(_coord_sys.toWorldLength(minor_axis.getValue(), 1));
     }
     return ellipse;
 }

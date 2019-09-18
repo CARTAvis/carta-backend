@@ -374,6 +374,15 @@ bool Ds9Parser::GetAnnotationRegionType(std::string& ds9_region, casa::Annotatio
     return found_type;
 }
 
+casacore::String Ds9Parser::ConvertTimeFormatToDeg(std::string& parameter_string) {
+    // If parameter is in sexagesimal format dd:mm::ss.ssss, convert to angle format dd.mm.ss.ssss for readQuantity
+    casacore::String converted_format(parameter_string);
+    if (converted_format.contains(":")) {
+        converted_format.gsub(":", ".");
+    }
+    return converted_format;
+}
+
 casa::AnnRegion* Ds9Parser::CreateBoxRegion(std::vector<std::string>& region_definition) {
     // Create AnnCenterBox or AnnRotBox from DS9 region definition
     casa::AnnRegion* ann_region(nullptr);
@@ -382,9 +391,13 @@ casa::AnnRegion* Ds9Parser::CreateBoxRegion(std::vector<std::string>& region_def
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
         std::vector<casacore::String> units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
-        casacore::Quantity param_quantity;
         for (size_t i = 1; i < nparams; ++i) {
-            if (readQuantity(param_quantity, region_definition[i])) {
+            casacore::String param_string(region_definition[i]);
+            if (i == 2) {
+                param_string = ConvertTimeFormatToDeg(param_string);
+            }
+            casacore::Quantity param_quantity;
+            if (readQuantity(param_quantity, param_string)) {
                 if (param_quantity.getUnit().empty()) {
                     if ((i == nparams - 1) || !_pixel_coord) {
                         param_quantity.setUnit(units[i]);
@@ -425,8 +438,12 @@ casa::AnnRegion* Ds9Parser::CreateCircleRegion(std::vector<std::string>& region_
         std::vector<casacore::Quantity> parameters;
         std::vector<casacore::String> units = {"", "deg", "deg", "arcsec"};
         for (size_t i = 1; i < nparams; ++i) {
+            casacore::String param_string(region_definition[i]);
+            if (i == 2) {
+                param_string = ConvertTimeFormatToDeg(param_string);
+            }
             casacore::Quantity param_quantity;
-            if (readQuantity(param_quantity, region_definition[i])) {
+            if (readQuantity(param_quantity, param_string)) {
                 if (param_quantity.getUnit().empty()) {
                     if (_pixel_coord) {
                         param_quantity.setUnit("pix");
@@ -461,9 +478,13 @@ casa::AnnRegion* Ds9Parser::CreateEllipseRegion(std::vector<std::string>& region
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
         std::vector<casacore::String> units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
-        casacore::Quantity param_quantity;
         for (size_t i = 1; i < nparams; ++i) {
-            if (readQuantity(param_quantity, region_definition[i])) {
+            casacore::String param_string(region_definition[i]);
+            if (i == 2) {
+                param_string = ConvertTimeFormatToDeg(param_string);
+            }
+            casacore::Quantity param_quantity;
+            if (readQuantity(param_quantity, param_string)) {
                 if (param_quantity.getUnit().empty()) {
                     if ((i == nparams - 1) || !_pixel_coord) {
                         param_quantity.setUnit(units[i]);
@@ -482,8 +503,11 @@ casa::AnnRegion* Ds9Parser::CreateEllipseRegion(std::vector<std::string>& region
         casacore::Quantity begin_freq, end_freq, rest_freq;
         casacore::String freq_ref_frame, doppler;
         casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
+        // adjust angle (from x-axis)
+        casacore::Quantity position_angle(parameters[4]);
+        position_angle -= 90.0;
 
-        ann_region = new casa::AnnEllipse(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], _direction_ref_frame,
+        ann_region = new casa::AnnEllipse(parameters[0], parameters[1], parameters[2], parameters[3], position_angle, _direction_ref_frame,
             _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
     }
 
@@ -497,8 +521,12 @@ casa::AnnRegion* Ds9Parser::CreatePolygonRegion(std::vector<std::string>& region
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
         for (size_t i = 1; i < region_definition.size(); i++) {
+            casacore::String param_string(region_definition[i]);
+            if ((i % 2) == 0) {
+                param_string = ConvertTimeFormatToDeg(param_string);
+            }
             casacore::Quantity param_quantity;
-            if (readQuantity(param_quantity, region_definition[i])) {
+            if (readQuantity(param_quantity, param_string)) {
                 if (param_quantity.getUnit().empty()) {
                     if (_pixel_coord) {
                         param_quantity.setUnit("pix");
@@ -537,8 +565,12 @@ casa::AnnSymbol* Ds9Parser::CreateSymbolRegion(std::vector<std::string>& region_
         // convert strings to Quantities
         std::vector<casacore::Quantity> parameters;
         for (size_t i = 1; i < region_definition.size(); ++i) {
+            casacore::String param_string(region_definition[i]);
+            if (i == 2) {
+                param_string = ConvertTimeFormatToDeg(param_string);
+            }
             casacore::Quantity param_quantity;
-            if (readQuantity(param_quantity, region_definition[i])) {
+            if (readQuantity(param_quantity, param_string)) {
                 if (param_quantity.getUnit().empty()) {
                     if (_pixel_coord) {
                         param_quantity.setUnit("pix");
@@ -671,13 +703,18 @@ void Ds9Parser::PrintEllipseRegion(const RegionProperties& properties, std::ostr
             }
             os << "," << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
         } else {
+            // angle measured from x-axis
+            float angle = properties.rotation + 90.0;
+            if (angle > 360.0) {
+                angle -= 360.0;
+            }
             os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
             os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
             os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\""
                << ",";
             os << std::fixed << std::setprecision(2) << points[3].get("arcsec").getValue() << "\""
                << ",";
-            os << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
+            os << std::defaultfloat << std::setprecision(8) << angle << ")";
         }
     }
 }
