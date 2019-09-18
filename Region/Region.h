@@ -60,9 +60,14 @@ public:
     inline std::vector<CARTA::Point> GetControlPoints() {
         return _control_points;
     };
+    inline std::vector<casacore::Quantity> GetControlPointsWcs() {
+        return _control_points_wcs;
+    }
+
     inline float Rotation() {
         return _rotation;
     };
+
     casacore::IPosition XyShape();
     casacore::IPosition XyOrigin();
     std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> XyMask();
@@ -155,6 +160,12 @@ private:
     bool XyPixelsToWorld(casacore::Vector<casacore::Double> x, casacore::Vector<casacore::Double> y,
         casacore::Quantum<casacore::Vector<casacore::Double>>& x_world, casacore::Quantum<casacore::Vector<casacore::Double>>& y_world);
 
+    // Imported rectangles are polygon vertices; calculate center point, width, and height
+    void GetRectangleControlPointsFromVertices(
+        std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, double& cx, double& cy, double& width, double& height);
+    void GetRectangleControlPointsFromVertices(std::vector<casacore::Quantity>& x, std::vector<casacore::Quantity>& y,
+        casacore::Quantity& cx, casacore::Quantity& cy, casacore::Quantity& width, casacore::Quantity& height);
+
     // For region export, need stokes types from coordinate system
     casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
 
@@ -178,13 +189,14 @@ private:
 
     void SetConnectionFlag(bool connected);
 
-    // util to split input string into parts by delimiter
-    void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
+    // Reset stats cache
+    void ResetStatsCache();
 
     // region definition (ICD SET_REGION parameters)
     std::string _name;
     CARTA::RegionType _type;
     std::vector<CARTA::Point> _control_points;
+    std::vector<casacore::Quantity> _control_points_wcs;
     float _rotation;
 
     // region flags
