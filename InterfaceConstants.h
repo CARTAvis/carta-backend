@@ -3,6 +3,9 @@
 #ifndef CARTA_BACKEND__INTERFACECONSTANTS_H_
 #define CARTA_BACKEND__INTERFACECONSTANTS_H_
 
+// version
+#define VERSION_ID "1.2.1"
+
 // file ids
 #define ALL_FILES -1
 
