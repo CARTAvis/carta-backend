@@ -139,9 +139,9 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                         casacore::readQuantity(ywidth, quantities[3]);
                         casacore::readQuantity(rotang, quantities[4]);
 
-                        // make (unrotated) centerbox from parsed quantities
+                        // make (unrotated) centerbox from parsed quantities; requireImageRegion=false for regions outside image
                         casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
-                        casa::AnnCenterBox cbox = casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types);
+                        casa::AnnCenterBox cbox = casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types, false);
 
                         // get polygon pixel vertices, control points
                         double cx_pix, cy_pix, width_pix, height_pix;
