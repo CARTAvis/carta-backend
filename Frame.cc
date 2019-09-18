@@ -3,6 +3,7 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
+#include <algorithm>
 #include <fstream>
 #include <thread>
 
@@ -11,7 +12,7 @@
 #include <imageanalysis/Annotations/RegionTextList.h>
 
 #include "Compression.h"
-#include "Util.h"
+#include "Ds9Parser.h"
 
 using namespace carta;
 
@@ -265,6 +266,15 @@ void Frame::ImportRegion(
         return;
     }
 
+    // cannot create annotation regions with no direction coordinate
+    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+    if (!coord_sys.hasDirectionCoordinate()) {
+        import_ack.set_success(false);
+        import_ack.set_message("Import region failed: image coordinate system has no direction coordinate.");
+        import_ack.add_regions();
+        return;
+    }
+
     // concat contents into one string delimited by newline
     std::string file_contents;
     if (!contents.empty()) {
@@ -273,7 +283,6 @@ void Frame::ImportRegion(
         }
     }
 
-    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
     std::string message;
     switch (file_type) {
         case CARTA::FileType::CRTF: {
@@ -290,7 +299,7 @@ void Frame::ImportRegion(
                 // iterate through annotations to create regions if valid
                 for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
                     casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
-                    ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
+                    ImportAnnotationFileLine(file_line, coord_sys, file_type, import_ack, message);
                 }
             } catch (casacore::AipsError& err) {
                 if (_verbose) {
@@ -302,43 +311,64 @@ void Frame::ImportRegion(
             }
             break;
         }
-        case CARTA::FileType::REG:
+        case CARTA::FileType::REG: {
+            carta::Ds9Parser parser;
+            if (!filename.empty()) {
+                parser = carta::Ds9Parser(filename, coord_sys, _image_shape);
+            } else {
+                parser = carta::Ds9Parser(coord_sys, file_contents, _image_shape);
+            }
+            // iterate through annotations to create regions if valid
+            for (unsigned int iline = 0; iline < parser.NumLines(); ++iline) {
+                casa::AsciiAnnotationFileLine file_line = parser.LineAt(iline);
+                ImportAnnotationFileLine(file_line, coord_sys, file_type, import_ack, message);
+            }
+            break;
+        }
         default: {
             message = "Import region failed: file type not supported.";
             break;
         }
     }
+
+    // determine success
+    bool success(true);
     if (import_ack.regions_size() == 0) {
-        import_ack.set_success(false);
+        success = false;
         if (message.empty()) {
             message = "Region file import failed: zero regions set";
         }
-        import_ack.set_message(message);
         import_ack.add_regions();
-    } else {
-        import_ack.set_success(true); // true if at least one region was set
-        import_ack.set_message(message);
     }
+
+    // complete message
+    import_ack.set_success(success); // true if at least one region was set
+    import_ack.set_message(message);
 }
 
-void Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
-    CARTA::ImportRegionAck& import_ack, std::string message) {
+void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
+    CARTA::FileType file_type, CARTA::ImportRegionAck& import_ack, std::string message) {
     // Process a single CRTF annotation file line to set region; adds region to frame regions.
     // Completes ack message with region properties or appends to message if failed.
     switch (file_line.getType()) {
         case casa::AsciiAnnotationFileLine::ANNOTATION: {
             auto annotation_base = file_line.getAnnotationBase();
             const casa::AnnotationBase::Type annotation_type = annotation_base->getType();
+            casacore::String region_type_str;
+            if (file_type == CARTA::FileType::CRTF) {
+                region_type_str = casa::AnnotationBase::typeToString(annotation_type);
+            } else {
+                region_type_str = AnnTypeToDs9String(annotation_type);
+            }
             switch (annotation_type) {
-                case casa::AnnotationBase::LINE:
                 case casa::AnnotationBase::VECTOR:
                 case casa::AnnotationBase::TEXT: {
                     break;
                 }
+                case casa::AnnotationBase::LINE:
                 case casa::AnnotationBase::POLYLINE:
                 case casa::AnnotationBase::ANNULUS: {
-                    casacore::String ann_type_str = casa::AnnotationBase::typeToString(annotation_type);
-                    message += " CRTF region type " + ann_type_str + " is not supported.";
+                    message += " Region type " + region_type_str + " is not supported yet.";
                     break;
                 }
                 case casa::AnnotationBase::SYMBOL:
@@ -356,11 +386,13 @@ void Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                             // add to frame's regions
                             auto region_id = GetMaxRegionId() + 1;
                             _regions[region_id] = move(region);
-                            // region parameters
+
+                            // get region info parameters
                             std::string name(_regions[region_id]->Name());
                             CARTA::RegionType type(_regions[region_id]->Type());
                             std::vector<CARTA::Point> points = _regions[region_id]->GetControlPoints();
                             float rotation(_regions[region_id]->Rotation());
+
                             // add to ack
                             auto region_properties = import_ack.add_regions();
                             region_properties->set_region_id(region_id);
@@ -369,6 +401,8 @@ void Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                             region_info->set_region_type(type);
                             *region_info->mutable_control_points() = {points.begin(), points.end()};
                             region_info->set_rotation(rotation);
+                        } else {
+                            message += " Region " + region_type_str + " was not validated.";
                         }
                     }
                 }
@@ -383,6 +417,36 @@ void Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
     }
 }
 
+casacore::String Frame::AnnTypeToDs9String(casa::AnnotationBase::Type annotation_type) {
+    casacore::String ds9_type;
+    switch (annotation_type) {
+        case casa::AnnotationBase::LINE:
+        case casa::AnnotationBase::CIRCLE:
+        case casa::AnnotationBase::ELLIPSE:
+        case casa::AnnotationBase::ANNULUS:
+            ds9_type = casa::AnnotationBase::typeToString(annotation_type);
+            break;
+        case casa::AnnotationBase::TEXT:
+            ds9_type = "text";
+            break;
+        case casa::AnnotationBase::SYMBOL:
+            ds9_type = "point";
+            break;
+        case casa::AnnotationBase::RECT_BOX:
+        case casa::AnnotationBase::CENTER_BOX:
+        case casa::AnnotationBase::ROTATED_BOX:
+            ds9_type = "box";
+            break;
+        case casa::AnnotationBase::POLYGON:
+            ds9_type = "polygon";
+            break;
+        case casa::AnnotationBase::POLYLINE:
+        case casa::AnnotationBase::VECTOR:
+            break; // no equivalent
+    }
+    return ds9_type;
+}
+
 void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename,
     CARTA::ExportRegionAck& export_ack) {
     // Export regions to file with filename; if no filename, add contents to ack message for client-side export.
@@ -395,8 +459,7 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     }
 
     // Check export file before creating file contents
-    bool export_to_file(!filename.empty());
-    if (export_to_file) {
+    if (!filename.empty()) {
         casacore::File export_file(filename);
         if (!export_file.canCreate()) {
             export_ack.set_success(false);
@@ -408,11 +471,12 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
 
     // export according to type
     switch (file_type) {
-        case CARTA::FileType::CRTF: {
-            ExportCrtfRegion(region_ids, coord_type, filename, export_ack);
+        case CARTA::FileType::CRTF:
+            ExportCrtfRegions(region_ids, coord_type, filename, export_ack);
             break;
-        }
         case CARTA::FileType::REG:
+            ExportDs9Regions(region_ids, coord_type, filename, export_ack);
+            break;
         default: {
             export_ack.set_success(false);
             export_ack.set_message("Export region failed: file type not supported.");
@@ -421,10 +485,11 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     }
 }
 
-void Frame::ExportCrtfRegion(
+void Frame::ExportCrtfRegions(
     std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
     // Create RegionTextList for all requested regions and export to file or put in ack contents[]
     std::string message;
+    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
     const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
     casa::RegionTextList region_list = casa::RegionTextList(coord_sys, _image_shape);
 
@@ -433,14 +498,9 @@ void Frame::ExportCrtfRegion(
         if (_regions.count(region_id)) {
             auto& region = _regions[region_id];
             if (region->IsValid()) {
-                bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
                 casacore::CountedPtr<const casa::AnnotationBase> annotation_region = region->AnnotationRegion(pixel_coord);
-                if (annotation_region.null()) {
-                    message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
-                } else {
-                    casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
-                    region_list.addLine(file_line);
-                }
+                casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
+                region_list.addLine(file_line);
             } else {
                 message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
             }
@@ -466,6 +526,7 @@ void Frame::ExportCrtfRegion(
             file_line.print(export_stream);
             contents.push_back(export_stream.str());
         }
+        // complete ack message
         export_ack.set_success(true);
         export_ack.set_message(message);
         *export_ack.mutable_contents() = {contents.begin(), contents.end()};
@@ -474,6 +535,71 @@ void Frame::ExportCrtfRegion(
         std::ofstream export_file(filename);
         region_list.print(export_file);
         export_file.close();
+
+        // complete ack message
+        export_ack.set_success(true);
+        export_ack.set_message(message);
+        export_ack.add_contents();
+    }
+}
+
+void Frame::ExportDs9Regions(
+    std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
+    std::string message;
+    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+
+    carta::Ds9Parser parser(coord_sys, pixel_coord);
+    // create file line for each region
+    for (int region_id : region_ids) {
+        if (_regions.count(region_id)) {
+            auto& region = _regions[region_id];
+            if (pixel_coord) {
+                RegionState region_state = region->GetRegionState();
+                std::vector<CARTA::Point> carta_points(region_state.control_points);
+                std::vector<casacore::Quantity> points_quantities;
+                for (auto& point : carta_points) {
+                    points_quantities.push_back(casacore::Quantity(point.x(), "pix"));
+                    points_quantities.push_back(casacore::Quantity(point.y(), "pix"));
+                }
+                parser.AddRegion(region_state.name, region_state.type, points_quantities, region_state.rotation);
+            } else {
+                std::string name(region->Name());
+                CARTA::RegionType type(region->Type());
+                std::vector<casacore::Quantity> control_points(region->GetControlPointsWcs());
+                float rotation(region->Rotation());
+                parser.AddRegion(name, type, control_points, rotation);
+            }
+        }
+    }
+
+    // check if file lines created
+    if (parser.NumRegions() == 0) {
+        export_ack.set_success(false);
+        export_ack.set_message("Export region failed: no regions to export.");
+        export_ack.add_contents();
+        return;
+    }
+
+    if (filename.empty()) {
+        // fill contents[] of ack message
+        std::vector<std::string> contents;
+        for (unsigned int i = 0; i < parser.NumRegions(); ++i) {
+            std::ostringstream export_stream;
+            parser.PrintRegion(i, export_stream);
+            contents.push_back(export_stream.str());
+        }
+        // complete ack message
+        export_ack.set_success(true);
+        export_ack.set_message(message);
+        *export_ack.mutable_contents() = {contents.begin(), contents.end()};
+    } else {
+        // export to file; empty contents[] returned
+        std::ofstream export_file(filename);
+        parser.PrintRegionsToFile(export_file);
+        export_file.close();
+
+        // complete ack message
         export_ack.set_success(true);
         export_ack.set_message(message);
         export_ack.add_contents();

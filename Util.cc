@@ -107,3 +107,15 @@ bool CheckRootBaseFolders(string& root, string& base) {
     }
     return true;
 }
+
+void SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
+    // util to split input string into parts by delimiter
+    parts.clear();
+    std::stringstream ss(input);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        if (!item.empty()) {
+            parts.push_back(item);
+        }
+    }
+}
