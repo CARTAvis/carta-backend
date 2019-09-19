@@ -501,21 +501,41 @@ void Frame::ExportCrtfRegions(
         if (_regions.count(region_id)) {
             auto& region = _regions[region_id];
             if (region->IsValid()) {
-                casacore::CountedPtr<const casa::AnnotationBase> annotation_region = region->AnnotationRegion(pixel_coord);
-                casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
-                region_list.addLine(file_line);
+                try {
+                    casacore::CountedPtr<const casa::AnnotationBase> annotation_region = region->AnnotationRegion(pixel_coord);
+                    if (!annotation_region.null()) {
+                        casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
+                        region_list.addLine(file_line);
+                    }
+                } catch (casacore::AipsError& err) {
+                    std::ostringstream oss;
+                    oss << " Region " << region_id << " export failed: ";
+                    if (err.getMesg().contains("no direction coordinate")) {
+                        oss << "image coordinate system has no direction coordinate.";
+                    } else {
+                        oss << err.getMesg();
+                    }
+                    message += oss.str();
+                }
             } else {
-                message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
+                std::ostringstream oss;
+                oss << " Region " << region_id << " export failed: region is not valid for this image.";
+                message += oss.str();
             }
         } else {
-            message += " Region " + std::to_string(region_id) + " export failed: does not exist.";
+            std::ostringstream oss;
+            oss << " Region " << region_id << " export failed: no longer exists.";
+            message += oss.str();
         }
     }
 
     // check if file lines created
     if (region_list.nLines() == 0) {
         export_ack.set_success(false);
-        export_ack.set_message("Export region failed: no regions to export.");
+        if (message.empty()) {
+            message = "Export region failed: no regions to export.";
+        }
+        export_ack.set_message(message);
         export_ack.add_contents();
         return;
     }
