@@ -192,11 +192,13 @@ bool Ds9Parser::SetDirectionRefFrame(std::string& ds9_coord) {
 
 void Ds9Parser::InitializeDirectionReferenceFrame() {
     // Set _direction_reference_frame attribute to image coord sys direction frame
-    casacore::MDirection::Types reference_frame(casacore::MDirection::DEFAULT);
     if (_coord_sys.hasDirectionCoordinate()) {
+        casacore::MDirection::Types reference_frame;
         reference_frame = _coord_sys.directionCoordinate().directionType();
+        _direction_ref_frame = casacore::MDirection::showType(reference_frame);
+    } else if (_coord_sys.hasLinearCoordinate()) {
+        _direction_ref_frame = "linear";
     }
-    _direction_ref_frame = casacore::MDirection::showType(reference_frame);
 }
 
 // Create Annotation region
@@ -698,18 +700,18 @@ void Ds9Parser::PrintEllipseRegion(const RegionProperties& properties, std::ostr
         }
     } else {
         os << "ellipse(";
+        // angle measured from x-axis
+        float angle = properties.rotation + 90.0;
+        if (angle > 360.0) {
+            angle -= 360.0;
+        }
         if (_pixel_coord) {
             os << std::fixed << std::setprecision(2) << points[0].getValue();
             for (size_t i = 1; i < points.size(); ++i) {
                 os << "," << points[i].getValue();
             }
-            os << "," << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
+            os << "," << std::defaultfloat << std::setprecision(8) << angle << ")";
         } else {
-            // angle measured from x-axis
-            float angle = properties.rotation + 90.0;
-            if (angle > 360.0) {
-                angle -= 360.0;
-            }
             os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
             os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
             os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\""
