@@ -700,18 +700,18 @@ void Ds9Parser::PrintEllipseRegion(const RegionProperties& properties, std::ostr
         }
     } else {
         os << "ellipse(";
+        // angle measured from x-axis
+        float angle = properties.rotation + 90.0;
+        if (angle > 360.0) {
+            angle -= 360.0;
+        }
         if (_pixel_coord) {
             os << std::fixed << std::setprecision(2) << points[0].getValue();
             for (size_t i = 1; i < points.size(); ++i) {
                 os << "," << points[i].getValue();
             }
-            os << "," << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
+            os << "," << std::defaultfloat << std::setprecision(8) << angle << ")";
         } else {
-            // angle measured from x-axis
-            float angle = properties.rotation + 90.0;
-            if (angle > 360.0) {
-                angle -= 360.0;
-            }
             os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
             os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
             os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\""
