@@ -55,6 +55,9 @@ public:
     unsigned int NumLines(); // AsciiAnnotationFileLines stored in RegionTextList
     const casacore::Vector<casa::AsciiAnnotationFileLine> GetLines();
     casa::AsciiAnnotationFileLine LineAt(unsigned int i);
+    inline std::string GetImportErrors() {
+        return _import_errors;
+    }
 
     // export regions
     void AddRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float rotation);
@@ -76,18 +79,21 @@ private:
     bool SetDirectionRefFrame(std::string& ds9_coord);
     void InitializeDirectionReferenceFrame(); // using input image_coord_sys
 
-    // region creation
+    // Import region creation
     void SetAnnotationRegion(std::string& region_description);
-    void ConvertDs9UnitToCasacore(std::vector<std::string>& region_parameters);
     casacore::String GetRegionName(std::string& region_properties);
     void ProcessRegionDefinition(std::vector<std::string>& region_definition, casacore::String& label, bool exclude_region);
     bool GetAnnotationRegionType(std::string& ds9_region, casa::AnnotationBase::Type& type);
+    bool ConvertParameterUnitsToCasacore(std::vector<std::string>& region_parameters, int first_param);
     casacore::String ConvertTimeFormatToDeg(std::string& parameter_string);
     casa::AnnRegion* CreateBoxRegion(std::vector<std::string>& region_definition);
     casa::AnnRegion* CreateCircleRegion(std::vector<std::string>& region_definition);
     casa::AnnRegion* CreateEllipseRegion(std::vector<std::string>& region_definition);
     casa::AnnRegion* CreatePolygonRegion(std::vector<std::string>& region_definition);
     casa::AnnSymbol* CreateSymbolRegion(std::vector<std::string>& region_definition);
+
+    // Import region errors
+    void AddImportError(std::string& error);
 
     // region export
     void PrintBoxRegion(const RegionProperties& properties, std::ostream& os);
@@ -100,6 +106,9 @@ private:
     std::unordered_map<std::string, std::string> _coord_map;
     std::string _direction_ref_frame;
     bool _pixel_coord;
+
+    // capture errors
+    std::string _import_errors;
 
     casa::RegionTextList _region_list; // import
     std::vector<RegionProperties> _regions;

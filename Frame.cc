@@ -275,22 +275,19 @@ void Frame::ImportRegion(
         return;
     }
 
-    // concat contents into one string delimited by newline
     std::string file_contents;
     if (!contents.empty()) {
+        // concat contents into one string delimited by newline
         for (auto& line : contents) {
             file_contents.append(line + "\n");
         }
     }
 
-    std::string message;
-    switch (file_type) {
-        case CARTA::FileType::CRTF: {
-            bool region_set(false);
-            std::string message;
-            try {
-                const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-                // use RegionTextList to import file and create annotation file lines
+    std::string error_prefix("Import region failed: "), message;
+    try {
+        switch (file_type) {
+            case CARTA::FileType::CRTF: {
+                // use casa RegionTextList to import file and create annotation file lines
                 casa::RegionTextList region_list;
                 bool require_region(false); // import regions outside image
                 if (!filename.empty()) {
@@ -299,48 +296,60 @@ void Frame::ImportRegion(
                 } else {
                     region_list = casa::RegionTextList(coord_sys, file_contents, _image_shape, "", "", "", true, require_region);
                 }
-                // iterate through annotations to create regions if valid
+
+                // iterate through annotations to create regions if valid and add to ack message
                 for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
                     casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
                     ImportAnnotationFileLine(file_line, coord_sys, file_type, import_ack, message);
                 }
-            } catch (casacore::AipsError& err) {
-                if (_verbose) {
-                    std::cerr << "Import region failed: " << err.getMesg() << std::endl;
+                break;
+            }
+            case CARTA::FileType::REG: {
+                carta::Ds9Parser parser;
+                if (!filename.empty()) {
+                    parser = carta::Ds9Parser(filename, coord_sys, _image_shape);
+                } else {
+                    parser = carta::Ds9Parser(coord_sys, file_contents, _image_shape);
                 }
-                import_ack.set_success(false);
-                import_ack.set_message("CRTF region file import failed.");
-                import_ack.add_regions();
+
+                // check for failed regions
+                message = parser.GetImportErrors();
+
+                // iterate through annotations to create regions if valid and add to ack message
+                for (unsigned int iline = 0; iline < parser.NumLines(); ++iline) {
+                    casa::AsciiAnnotationFileLine file_line = parser.LineAt(iline);
+                    ImportAnnotationFileLine(file_line, coord_sys, file_type, import_ack, message);
+                }
+                break;
             }
-            break;
-        }
-        case CARTA::FileType::REG: {
-            carta::Ds9Parser parser;
-            if (!filename.empty()) {
-                parser = carta::Ds9Parser(filename, coord_sys, _image_shape);
-            } else {
-                parser = carta::Ds9Parser(coord_sys, file_contents, _image_shape);
+            default: {
+                message = error_prefix + "file type not supported.";
+                break;
             }
-            // iterate through annotations to create regions if valid
-            for (unsigned int iline = 0; iline < parser.NumLines(); ++iline) {
-                casa::AsciiAnnotationFileLine file_line = parser.LineAt(iline);
-                ImportAnnotationFileLine(file_line, coord_sys, file_type, import_ack, message);
-            }
-            break;
         }
-        default: {
-            import_ack.set_success(false);
-            import_ack.set_message("Import region failed: file type not supported.");
-            import_ack.add_regions();
+    } catch (casacore::AipsError& err) {
+        casacore::String error_message(err.getMesg());
+        if (_verbose) {
+            std::cerr << error_prefix << error_message << std::endl;
         }
+
+        // shorten error message to user
+        error_message = error_message.before("... thrown by"); // remove casacode file
+        error_message = error_message.before(" at File");      // remove casacode file
+        if (!filename.empty()) {
+            casacore::Path full_path(filename);
+            error_message.gsub(filename, full_path.baseName()); // remove filename path
+        }
+        std::ostringstream oss;
+        oss << error_prefix << error_message;
+        message = oss.str();
     }
 
     // determine success
-    bool success(true);
-    if (import_ack.regions_size() == 0) {
-        success = false;
+    bool success(import_ack.regions_size() > 0);
+    if (!success) {
         if (message.empty()) {
-            message = "Region file import failed: zero regions set";
+            message = error_prefix + "zero regions set";
         }
         import_ack.add_regions();
     }
