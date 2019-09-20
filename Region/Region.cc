@@ -985,8 +985,10 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                     cy = _control_points_wcs[1];
                     xwidth = _control_points_wcs[2];
                     ywidth = _control_points_wcs[3];
-                    // adjust width by cosine(declination) for correct import
-                    xwidth *= cos(cy);
+                    // adjust width by cosine(declination) for correct import if not linear
+                    if (xwidth.isConform("rad")) {
+                        xwidth *= cos(cy);
+                    }
                 }
                 if (_rotation == 0.0) {
                     ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types, require_region);

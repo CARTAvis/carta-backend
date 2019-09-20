@@ -667,7 +667,9 @@ void Ds9Parser::PrintBoxRegion(const RegionProperties& properties, std::ostream&
         casacore::Quantity cx(points[0]), cy(points[1]);
         casacore::Quantity width(points[2]), height(points[3]);
         // adjust width by cosine(declination) for correct export
-        width *= cos(cy);
+        if (width.isConform("rad")) {
+            width *= cos(cy);
+        }
         os << std::fixed << std::setprecision(6) << cx.get("deg").getValue() << ",";
         os << std::fixed << std::setprecision(6) << cy.get("deg").getValue() << ",";
 
