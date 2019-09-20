@@ -994,8 +994,8 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
                     ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types, require_region);
                 } else {
                     casacore::Quantity position_angle(_rotation, "deg");
-                    ann_region = new casa::AnnRotBox(
-                        cx, cy, xwidth, ywidth, position_angle, _coord_sys, _image_shape, stokes_types, require_region);
+                    ann_region =
+                        new casa::AnnRotBox(cx, cy, xwidth, ywidth, position_angle, _coord_sys, _image_shape, stokes_types, require_region);
                 }
                 break;
             }
