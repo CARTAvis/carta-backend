@@ -472,6 +472,16 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
         }
     }
 
+    if (coord_type == CARTA::CoordinateType::WORLD) {
+        const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+        if (!coord_sys.hasDirectionCoordinate()) {
+            export_ack.set_success(false);
+            export_ack.set_message("Export region failed: image coordinate system has no direction coordinate.");
+            export_ack.add_contents();
+            return;
+        }
+    }
+
     // export according to type
     switch (file_type) {
         case CARTA::FileType::CRTF:

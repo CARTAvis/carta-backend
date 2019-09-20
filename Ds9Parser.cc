@@ -192,11 +192,13 @@ bool Ds9Parser::SetDirectionRefFrame(std::string& ds9_coord) {
 
 void Ds9Parser::InitializeDirectionReferenceFrame() {
     // Set _direction_reference_frame attribute to image coord sys direction frame
-    casacore::MDirection::Types reference_frame(casacore::MDirection::DEFAULT);
     if (_coord_sys.hasDirectionCoordinate()) {
+        casacore::MDirection::Types reference_frame;
         reference_frame = _coord_sys.directionCoordinate().directionType();
+        _direction_ref_frame = casacore::MDirection::showType(reference_frame);
+    } else if (_coord_sys.hasLinearCoordinate()) {
+        _direction_ref_frame = "linear";
     }
-    _direction_ref_frame = casacore::MDirection::showType(reference_frame);
 }
 
 // Create Annotation region
