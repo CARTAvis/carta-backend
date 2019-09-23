@@ -90,6 +90,10 @@ public:
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool channel_changed = false);
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
 
+    // Functions used for smoothing and contouring
+    bool ContourImage(CARTA::SmoothingMode smoothing_mode, int smoothing_factor, const std::vector<double>& levels,
+        std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int>>& index_data);
+
     // histogram only (not full data message) : get if stored, else can calculate
     bool GetRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);
     bool CalcRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);
