@@ -382,7 +382,7 @@ bool Ds9Parser::ConvertParameterUnitsToCasacore(std::vector<std::string>& region
     }
     std::string error_prefix(region_type + " invalid parameter ");
 
-    for (int i=first_param; i < region_parameters.size(); ++i) {
+    for (int i = first_param; i < region_parameters.size(); ++i) {
         std::string param(region_parameters[i]);
         // use stod to find index of unit
         size_t idx;
@@ -397,15 +397,15 @@ bool Ds9Parser::ConvertParameterUnitsToCasacore(std::vector<std::string>& region
 
         size_t param_length(param.length());
         if (param_length == idx) { // no unit
-            continue; // ok
+            continue;
         }
         if (param_length > idx + 1) {
             // check for hms, dms formats
             const char* param_carray = param.c_str();
             float h, m, s;
             if ((sscanf(param_carray, "%f:%f:%f", &h, &m, &s) == 3) || (sscanf(param_carray, "%fh%fm%fs", &h, &m, &s) == 3) ||
-                (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3)) {
-                continue; // ok
+                (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3)) { // time format ok
+                continue;
             }
 
             // DS9 units are a single character
