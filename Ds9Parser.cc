@@ -182,16 +182,20 @@ bool Ds9Parser::SetDirectionRefFrame(std::string& ds9_coord) {
     // Returns whether conversion was successful or undefined/not supported
     bool converted_coord(false);
     std::transform(ds9_coord.begin(), ds9_coord.end(), ds9_coord.begin(), ::tolower); // convert in-place to lowercase
+
     if (_coord_map.count(ds9_coord)) {
         if (_coord_map[ds9_coord] == "UNSUPPORTED") {
             return converted_coord;
-        } 
-        _direction_ref_frame = _coord_map[ds9_coord];
+        }
+
         if ((ds9_coord != "physical") && (ds9_coord != "image")) { // pixel coordinates
             _pixel_coord = false;
         }
+
+        _direction_ref_frame = _coord_map[ds9_coord];
         converted_coord = true;
     }
+
     return converted_coord;
 }
 
@@ -257,8 +261,6 @@ void Ds9Parser::SetAnnotationRegion(std::string& region_description) {
 
     ProcessRegionDefinition(region_parameters, label, exclude_region);
 }
-
-
 
 casacore::String Ds9Parser::GetRegionName(std::string& region_properties) {
     // Parse region properties (everything after '#') for text, used as region name
