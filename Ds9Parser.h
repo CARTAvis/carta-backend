@@ -81,16 +81,18 @@ private:
 
     // Import region creation
     void SetAnnotationRegion(std::string& region_description);
-    casacore::String GetRegionName(std::string& region_properties);
-    void ProcessRegionDefinition(std::vector<std::string>& region_definition, casacore::String& label, bool exclude_region);
     bool GetAnnotationRegionType(std::string& ds9_region, casa::AnnotationBase::Type& type);
-    bool ConvertParameterUnitsToCasacore(std::vector<std::string>& region_parameters, int first_param);
-    casacore::String ConvertTimeFormatToDeg(std::string& parameter_string);
-    casa::AnnRegion* CreateBoxRegion(std::vector<std::string>& region_definition);
-    casa::AnnRegion* CreateCircleRegion(std::vector<std::string>& region_definition);
-    casa::AnnRegion* CreateEllipseRegion(std::vector<std::string>& region_definition);
-    casa::AnnRegion* CreatePolygonRegion(std::vector<std::string>& region_definition);
-    casa::AnnSymbol* CreateSymbolRegion(std::vector<std::string>& region_definition);
+    casacore::String GetRegionName(std::string& region_properties);
+    void ProcessRegionDefinition(
+        casa::AnnotationBase::Type ann_region_type, std::string& region_definition, casacore::String& label, bool exclude_region);
+    bool CheckAndConvertParameter(std::string& parameter, const std::string& region_type);
+    casacore::String ConvertTimeFormatToDeg(std::string& parameter);
+    bool ParseRegion(std::string& region_definition, std::vector<std::string>& parameters, int nparams);
+    casa::AnnRegion* CreateBoxRegion(std::string& region_definition);
+    casa::AnnRegion* CreateCircleRegion(std::string& region_definition);
+    casa::AnnRegion* CreateEllipseRegion(std::string& region_definition);
+    casa::AnnRegion* CreatePolygonRegion(std::string& region_definition);
+    casa::AnnSymbol* CreateSymbolRegion(std::string& region_definition);
 
     // Import region errors
     void AddImportError(std::string& error);

@@ -217,25 +217,18 @@ void Ds9Parser::InitializeDirectionReferenceFrame() {
 void Ds9Parser::SetAnnotationRegion(std::string& region_description) {
     // Convert ds9 region description into AsciiAnnotationFileLine and add to RegionTextList.
 
-    // Split into region parts: definition [0], properties [1]
-    std::vector<string> region_parts;
-    SplitString(region_description, '#', region_parts);
-
-    // Split definition to check for annulus (e.g. "ellipse1 & !ellipse2")
-    std::vector<string> region_definitions;
-    SplitString(region_parts[0], '&', region_definitions);
-    if (region_definitions.size() == 2) {
-        std::string annulus_error = "ellipse annulus and box annulus regions not supported";
-        AddImportError(annulus_error);
-        std::cerr << "Ds9Parser import error: " << annulus_error << std::endl;
-        return;
+    // Split into region definition, properties
+    std::string region_definition(region_description), region_properties;
+    if (region_description.find("#") != std::string::npos) {
+        std::vector<string> region_parts;
+        SplitString(region_description, '#', region_parts);
+        region_definition = region_parts[0];
+        region_properties = region_parts[1];
     }
 
-    // Process region definition
-    // DS9 can have 3 formats: optional commas, and optional parentheses
-    // Ex: "circle 100 100 10", "circle(100 100 10)", "circle(100,100,10)"
+    // Process region definition include/exclude
     bool exclude_region(false);
-    casacore::String formatted_region(region_definitions[0]); // handy utilities: trim, gsub (global substitution)
+    casacore::String formatted_region(region_definition); // handy utilities: trim, gsub (global substitution)
     formatted_region.trim();                                  // remove beginning and ending whitespace
     formatted_region.ltrim('+');                              // remove 'include' property
     if ((formatted_region[0] == '!') || (formatted_region[0] == '-')) {
@@ -244,27 +237,55 @@ void Ds9Parser::SetAnnotationRegion(std::string& region_description) {
         formatted_region.ltrim('-'); // remove 'exclude' property
     }
 
-    // normalize all formats into space delimiter "circle 100 100 10":
-    formatted_region.gsub("(", " "); // replace left parenthesis with space
-    formatted_region.gsub(")", "");  // remove right parenthesis
-    formatted_region.gsub(",", " "); // replace commas with space
-
-    // split definition into parts (region type and parameters) e.g. ["circle", "100", "100", "10"]
-    std::vector<std::string> region_parameters;
-    SplitString(formatted_region, ' ', region_parameters);
-
-    // process region properties (currently "text" only, for region label)
-    casacore::String label;
-    if (region_parts.size() > 1) {
-        label = GetRegionName(region_parts[1]);
+    // Get Annotation type from region definition
+    casa::AnnotationBase::Type ann_region_type;
+    if (!GetAnnotationRegionType(region_definition, ann_region_type)) {
+        std::string unsupported_type("unknown/unsupported keyword " + region_definition);
+        AddImportError(unsupported_type);
+        std::cerr << "Ds9Parser import error: " << unsupported_type << std::endl;
+        return;
     }
 
-    ProcessRegionDefinition(region_parameters, label, exclude_region);
+    // Retrieve label from region properties
+    casacore::String label = GetRegionName(region_properties);
+
+    // Create Annotation Region based on type
+    ProcessRegionDefinition(ann_region_type, region_definition, label, exclude_region);
+}
+
+bool Ds9Parser::GetAnnotationRegionType(std::string& ds9_region, casa::AnnotationBase::Type& type) {
+    // Convert DS9 region type to annotation region type.
+    // Returns whether conversion was successful; there is no AnnotationBase::Type::UNKNOWN
+    bool found_type(false);
+    std::unordered_map<std::string, casa::AnnotationBase::Type> region_type_map = {{"circle", casa::AnnotationBase::Type::CIRCLE},
+        {"ellipse", casa::AnnotationBase::Type::ELLIPSE}, {"box", casa::AnnotationBase::Type::ROTATED_BOX},
+        {"polygon", casa::AnnotationBase::Type::POLYGON}, {"point", casa::AnnotationBase::Type::SYMBOL},
+        {"line", casa::AnnotationBase::Type::LINE}, {"vector", casa::AnnotationBase::Type::VECTOR},
+        {"text", casa::AnnotationBase::Type::TEXT}, {"annulus", casa::AnnotationBase::Type::ANNULUS}};
+
+    // search for "point" first, could be "circle point", "box point", etc.
+    if (ds9_region.find("point") != std::string::npos) {
+        type = region_type_map["point"];
+        found_type = true;
+    } else {
+        for (auto& region_type : region_type_map) {
+            if (ds9_region.find(region_type.first) != std::string::npos) {
+                type = region_type.second;
+                found_type = true;
+                break;
+            }
+        }
+    }
+    return found_type;
 }
 
 casacore::String Ds9Parser::GetRegionName(std::string& region_properties) {
     // Parse region properties (everything after '#') for text, used as region name
     casacore::String text_label;
+    if (region_properties.empty()) {
+        return text_label;
+    }
+
     if (region_properties.find("text") != std::string::npos) {
         casacore::String properties(region_properties);
         text_label = properties.after("text=");
@@ -279,55 +300,53 @@ casacore::String Ds9Parser::GetRegionName(std::string& region_properties) {
     return text_label;
 }
 
-void Ds9Parser::ProcessRegionDefinition(std::vector<std::string>& region_definition, casacore::String& label, bool exclude_region) {
-    // Process region definition vector (e.g. ["circle", "100", "100", "20"]) into AnnRegion
-    std::string region_type = region_definition[0];
-    int first_param(1);
-    // point can have symbol descriptor, e.g. ""circle point", "diamond point", etc.
-    if (region_definition[1].find("point") != std::string::npos) {
-        region_type = "point";
-        first_param++;
-    }
-    // Get Annotation type from region type
-    casa::AnnotationBase::Type ann_region_type;
-    if (!GetAnnotationRegionType(region_type, ann_region_type)) {
-        std::string unknown_type("unknown keyword " + region_type);
-        AddImportError(unknown_type);
-        std::cerr << "Ds9Parser import error: " << unknown_type << std::endl;
-        return;
-    }
-
-    if (!ConvertParameterUnitsToCasacore(region_definition, first_param)) {
-        return;
-    }
-
-    // process region type parameters into AnnRegion or AnnSymbol
-    std::string error_message;
+void Ds9Parser::ProcessRegionDefinition(
+    casa::AnnotationBase::Type ann_region_type, std::string& region_definition, casacore::String& label, bool exclude_region) {
+    // Process region definition arguments into AnnRegion or AnnSymbol
+    std::string error_message, region_type;
     casa::AnnRegion* ann_region(nullptr);
     casa::AnnSymbol* ann_symbol(nullptr); // not a region, handle separately
     try {
         switch (ann_region_type) {
-            case casa::AnnotationBase::Type::CIRCLE:
+            case casa::AnnotationBase::Type::CIRCLE: {
+                region_type = "circle";
                 ann_region = CreateCircleRegion(region_definition);
                 break;
-            case casa::AnnotationBase::Type::ELLIPSE:
+            }
+            case casa::AnnotationBase::Type::ELLIPSE: {
+                region_type = "ellipse";
                 ann_region = CreateEllipseRegion(region_definition);
                 break;
-            case casa::AnnotationBase::Type::ROTATED_BOX: // or a CENTER_BOX if angle==0
+            }
+            case casa::AnnotationBase::Type::ROTATED_BOX: { // or a CENTER_BOX if angle==0
+                region_type = "box";
                 ann_region = CreateBoxRegion(region_definition);
                 break;
-            case casa::AnnotationBase::Type::POLYGON:
+            }
+            case casa::AnnotationBase::Type::POLYGON: {
+                region_type = "polygon";
                 ann_region = CreatePolygonRegion(region_definition);
                 break;
-            case casa::AnnotationBase::Type::SYMBOL: // used for carta point region
+            }
+            case casa::AnnotationBase::Type::SYMBOL: { // used for carta point region
+                region_type = "point";
                 ann_symbol = CreateSymbolRegion(region_definition);
                 break;
-            case casa::AnnotationBase::Type::ANNULUS:
-            case casa::AnnotationBase::Type::LINE:
+            }
+            case casa::AnnotationBase::Type::ANNULUS: {
+                region_type = "annulus";
                 error_message = "Import region '" + region_type + "' failed:  not supported yet.";
                 break;
-            case casa::AnnotationBase::Type::TEXT:
+            }
+            case casa::AnnotationBase::Type::LINE: {
+                region_type = "line";
+                error_message = "Import region '" + region_type + "' failed:  not supported yet.";
+                break;
+            }
+            case casa::AnnotationBase::Type::TEXT: {
+                region_type = "text";
                 error_message = "Import '" + region_type + "' failed:  annotations not supported yet.";
+            }
             default:
                 break;
         }
@@ -335,6 +354,11 @@ void Ds9Parser::ProcessRegionDefinition(std::vector<std::string>& region_definit
         std::ostringstream oss;
         oss << "Import region '" << region_type << "' failed: " << err.getMesg();
         error_message = oss.str();
+    }
+
+    if (!error_message.empty()) {
+        AddImportError(error_message);
+        std::cerr << "Ds9Parser import error: " << error_message << std::endl;
     }
 
     // Add AsciiAnnotationFileLine for Annotation to RegionTextList
@@ -347,180 +371,193 @@ void Ds9Parser::ProcessRegionDefinition(std::vector<std::string>& region_definit
         ann_region->setDifference(exclude_region);
         annotation_region = casacore::CountedPtr<const casa::AnnotationBase>(ann_region);
     } else {
-        std::cerr << error_message << std::endl;
-        AddImportError(error_message);
-        std::cerr << "Ds9Parser import error: " << error_message << std::endl;
         return;
     }
     casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
     _region_list.addLine(file_line);
+
 }
 
-bool Ds9Parser::GetAnnotationRegionType(std::string& ds9_region, casa::AnnotationBase::Type& type) {
-    // Convert ds9 region type (everything but "ruler") to annotation region type.
-    // Returns whether conversion was successful, there is no AnnotationBase::Type::UNKNOWN!
-    bool found_type(false);
-    std::unordered_map<std::string, casa::AnnotationBase::Type> region_type_map = {{"circle", casa::AnnotationBase::Type::CIRCLE},
-        {"annulus", casa::AnnotationBase::Type::ANNULUS}, {"ellipse", casa::AnnotationBase::Type::ELLIPSE},
-        {"box", casa::AnnotationBase::Type::ROTATED_BOX}, // or a CENTER_BOX if angle==0
-        {"polygon", casa::AnnotationBase::Type::POLYGON}, {"line", casa::AnnotationBase::Type::LINE},
-        {"text", casa::AnnotationBase::Type::TEXT}, {"point", casa::AnnotationBase::Type::SYMBOL}};
-
-    for (auto& region_type : region_type_map) {
-        if (ds9_region.find(region_type.first) != std::string::npos) {
-            type = region_type.second;
-            found_type = true;
-            break;
-        }
-    }
-    return found_type;
-}
-
-bool Ds9Parser::ConvertParameterUnitsToCasacore(std::vector<std::string>& region_parameters, int first_param) {
-    // replace ds9 units with casacore units in value-unit parameter string for casacore::Quantity
-    std::string region_type = region_parameters[0];
-    if (first_param == 2) {
-        region_type.append(" " + region_parameters[1]);
-    }
+bool Ds9Parser::CheckAndConvertParameter(std::string& parameter, const std::string& region_type) {
+    // Replace ds9 unit with casacore unit in value-unit parameter string, for casacore::Quantity.
+    // Returns whether valid ds9 parameter
     std::string error_prefix(region_type + " invalid parameter ");
 
-    for (int i = first_param; i < region_parameters.size(); ++i) {
-        std::string param(region_parameters[i]);
-        // use stod to find index of unit
-        size_t idx;
-        try {
-            double val = stod(param, &idx); // string to double
-        } catch (std::invalid_argument& err) {
-            std::string invalid_arg(error_prefix + param + ", not a numeric value");
-            AddImportError(invalid_arg);
-            std::cerr << "Ds9Parser import error: " << invalid_arg << std::endl;
-            return false;
-        }
-
-        size_t param_length(param.length());
-        if (param_length == idx) { // no unit
-            continue;
-        }
-        if (param_length > idx + 1) {
-            // check for hms, dms formats
-            const char* param_carray = param.c_str();
-            float h, m, s;
-            if ((sscanf(param_carray, "%f:%f:%f", &h, &m, &s) == 3) || (sscanf(param_carray, "%fh%fm%fs", &h, &m, &s) == 3) ||
-                (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3)) { // time format ok
-                continue;
-            }
-
-            // DS9 units are a single character
-            std::string invalid_unit(error_prefix + "unit " + param);
-            AddImportError(invalid_unit);
-            std::cerr << "Ds9Parser import error: " << invalid_unit << std::endl;
-            return false;
-        }
-
-        const char unit = param.back();
-        std::string casacore_unit;
-        if (unit == 'd') {
-            casacore_unit = "deg";
-        } else if (unit == 'r') {
-            casacore_unit = "rad";
-        } else if (unit == 'p') {
-            casacore_unit = "pix";
-        } else if (unit == 'i') {
-            casacore_unit = "pix";
-        } else if ((unit == '"') || (unit == '\'')) {
-            // casacore unit is the same, don't throw exception
-        } else {
-            std::string invalid_unit(error_prefix + " unit " + param);
-            AddImportError(invalid_unit);
-            std::cerr << "Ds9Parser import error: " << invalid_unit << std::endl;
-            return false;
-        }
-        if (!casacore_unit.empty()) {
-            region_parameters[i].pop_back();
-            region_parameters[i].append(casacore_unit);
-        }
+    // use stod to find index of unit in string (after numeric value)
+    size_t idx;
+    try {
+        double val = stod(parameter, &idx); // string to double
+    } catch (std::invalid_argument& err) {
+        std::string invalid_arg(error_prefix + parameter + ", not a numeric value");
+        AddImportError(invalid_arg);
+        std::cerr << "Ds9Parser import error: " << invalid_arg << std::endl;
+        return false;
     }
 
-    // all parameter units validated
+    size_t param_length(parameter.length());
+    if (param_length == idx) { // no unit
+        return true;
+    }
+
+    if (param_length > idx + 1) {
+        // check for hms, dms formats
+        const char* param_carray = parameter.c_str();
+        float h, m, s;
+        if ((sscanf(param_carray, "%f:%f:%f", &h, &m, &s) == 3) || (sscanf(param_carray, "%fh%fm%fs", &h, &m, &s) == 3) ||
+            (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3)) { // time format ok
+            return true;
+        }
+
+        // DS9 units are a single character
+        std::string invalid_unit(error_prefix + "unit " + parameter);
+        AddImportError(invalid_unit);
+        std::cerr << "Ds9Parser import error: " << invalid_unit << std::endl;
+        return false;
+    }
+
+    const char unit = parameter.back();
+    std::string casacore_unit;
+    if (unit == 'd') {
+        casacore_unit = "deg";
+    } else if (unit == 'r') {
+        casacore_unit = "rad";
+    } else if (unit == 'p') {
+        casacore_unit = "pix";
+    } else if (unit == 'i') {
+        casacore_unit = "pix";
+    } else if ((unit == '"') || (unit == '\'')) {
+        // casacore unit is the same, no error
+    } else {
+        std::string invalid_unit(error_prefix + "unit " + parameter);
+        AddImportError(invalid_unit);
+        std::cerr << "Ds9Parser import error: " << invalid_unit << std::endl;
+        return false;
+    }
+
+    if (!casacore_unit.empty()) {
+        parameter.pop_back();
+        parameter.append(casacore_unit);
+    }
+
+    // parameter unit validated
     return true;
 }
 
-casacore::String Ds9Parser::ConvertTimeFormatToDeg(std::string& parameter_string) {
+casacore::String Ds9Parser::ConvertTimeFormatToDeg(std::string& parameter) {
     // If parameter is in sexagesimal format dd:mm::ss.ssss, convert to angle format dd.mm.ss.ssss for readQuantity
-    casacore::String converted_format(parameter_string);
+    casacore::String converted_format(parameter);
     if (converted_format.contains(":")) {
         converted_format.gsub(":", ".");
     }
     return converted_format;
 }
 
-casa::AnnRegion* Ds9Parser::CreateBoxRegion(std::vector<std::string>& region_definition) {
-    // Create AnnCenterBox or AnnRotBox from DS9 region definition
-    casa::AnnRegion* ann_region(nullptr);
-    std::string invalid_arguments = "illegal box specification";
+bool Ds9Parser::ParseRegion(std::string& region_definition, std::vector<std::string>& parameters, int nparams) {
+    // Parse region definition into known number of parameters; first is region type.
+    // DS9 can have 3 formats: optional commas, and optional parentheses
+    // Ex: "circle 100 100 10", "circle(100 100 10)", "circle(100,100,10)"
+    // nparams = 0 for variable number of params.
+    // Returns whether syntax was parsed into nparams.
+    casacore::String definition(region_definition);
+    if (definition.freq('(') != definition.freq(')')) {
+        return false;
+    }
 
-    size_t nparams(region_definition.size());
-    if (nparams == 6) { // box x y width height angle
+    definition.gsub("(", " "); // replace ( with space
+    definition.gsub(")", " "); // replace ) with space
+    definition.gsub(",", " "); // replace , with space
+    SplitString(definition, ' ', parameters);
+    if (nparams > 0) {
+        return (parameters.size() == nparams);
+    } else {
+        return true;
+    }
+}
+
+casa::AnnRegion* Ds9Parser::CreateBoxRegion(std::string& region_definition) {
+    // Create AnnCenterBox or AnnRotBox from DS9 region definition
+    // box x y width height angle
+    casa::AnnRegion* ann_region(nullptr);
+    std::vector<std::string> params;
+    if (ParseRegion(region_definition, params, 6)) {
         // convert strings to Quantities
-        std::vector<casacore::Quantity> parameters;
+        std::vector<casacore::Quantity> param_quantities;
         std::vector<casacore::String> units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
+        size_t nparams(params.size());
         for (size_t i = 1; i < nparams; ++i) {
-            casacore::String param_string(region_definition[i]);
-            if (i == 2) {
-                param_string = ConvertTimeFormatToDeg(param_string);
-            }
-            casacore::Quantity param_quantity;
-            if (readQuantity(param_quantity, param_string)) {
-                if (param_quantity.getUnit().empty()) {
-                    if ((i == nparams - 1) || !_pixel_coord) {
-                        param_quantity.setUnit(units[i]);
-                    } else {
-                        param_quantity.setUnit("pix");
-                    }
+            std::string param(params[i]);
+            if (CheckAndConvertParameter(param, "box")) {
+                casacore::String param_string(param);
+                if (i == 2) { // degree format, not time
+                    param_string = ConvertTimeFormatToDeg(param);
                 }
-                parameters.push_back(param_quantity);
+                casacore::Quantity param_quantity;
+                if (readQuantity(param_quantity, param_string)) {
+                    if (param_quantity.getUnit().empty()) {
+                        if ((i == nparams - 1) || !_pixel_coord) {
+                            param_quantity.setUnit(units[i]);
+                        } else {
+                            param_quantity.setUnit("pix");
+                        }
+                    }
+                    param_quantities.push_back(param_quantity);
+                } else {
+                    std::string invalid_param("invalid box parameter " + param);
+                    AddImportError(invalid_param);
+                    std::cerr << "Ds9Parser import error: " << invalid_param << std::endl;
+                    return ann_region;
+                }
             } else {
-                invalid_arguments.append(": " + region_definition[i]);
-                AddImportError(invalid_arguments);
-                std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
-                return ann_region; // nullptr, cannot process parameters
+                return ann_region;
             }
         }
 
-        // AnnCenterBox / AnnRotBox arguments
         casacore::Quantity begin_freq, end_freq, rest_freq;
         casacore::String freq_ref_frame, doppler;
         casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
-
-        if (parameters[4].getValue() == 0.0) { // angle parameter; no rotation
-            ann_region = new casa::AnnCenterBox(parameters[0], parameters[1], parameters[2], parameters[3], _direction_ref_frame,
-                _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
+        if (param_quantities[4].getValue() == 0.0) { // angle parameter; no rotation
+            ann_region = new casa::AnnCenterBox(param_quantities[0], param_quantities[1], param_quantities[2], param_quantities[3],
+                _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types,
+                false, false);
         } else {
-            ann_region =
-                new casa::AnnRotBox(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], _direction_ref_frame,
-                    _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
+            ann_region = new casa::AnnRotBox(param_quantities[0], param_quantities[1], param_quantities[2], param_quantities[3],
+                param_quantities[4], _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler,
+                rest_freq, stokes_types, false, false);
         }
+    } else if (ParseRegion(region_definition, params, 0)) {
+        // unsupported box annulus: box x y w1 h1 w2 h2 [angle]
+        std::string invalid_params = "unsupported box definition " + region_definition;
+        AddImportError(invalid_params);
+        std::cerr << "Ds9Parser import error: " << invalid_params << std::endl;
     } else {
-        AddImportError(invalid_arguments);
-        std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
+        std::string syntax_error = "box syntax error " + region_definition;
+        AddImportError(syntax_error);
+        std::cerr << "Ds9Parser import error: " << syntax_error << std::endl;
     }
     return ann_region;
 }
 
-casa::AnnRegion* Ds9Parser::CreateCircleRegion(std::vector<std::string>& region_definition) {
+casa::AnnRegion* Ds9Parser::CreateCircleRegion(std::string& region_definition) {
     // Create AnnCircle from DS9 region definition
+    // circle x y radius
     casa::AnnRegion* ann_region(nullptr);
-    std::string invalid_arguments = "illegal circle specification";
+    std::vector<std::string> params;
+    if (!ParseRegion(region_definition, params, 4)) {
+        std::string syntax_error = "circle syntax error " + region_definition;
+        AddImportError(syntax_error);
+        std::cerr << "Ds9Parser import error: " << syntax_error << std::endl;
+        return ann_region;
+    }
 
-    size_t nparams(region_definition.size());
-    if (nparams == 4) { // circle x y radius
-        // convert strings to Quantities
-        std::vector<casacore::Quantity> parameters;
-        std::vector<casacore::String> units = {"", "deg", "deg", "arcsec"};
-        for (size_t i = 1; i < nparams; ++i) {
-            casacore::String param_string(region_definition[i]);
-            if (i == 2) {
-                param_string = ConvertTimeFormatToDeg(param_string);
+    // convert strings to Quantities
+    std::vector<casacore::Quantity> param_quantities;
+    std::vector<casacore::String> units = {"", "deg", "deg", "arcsec"};
+    for (size_t i = 1; i < params.size(); ++i) {
+        std::string param(params[i]);
+        if (CheckAndConvertParameter(param, "circle")) {
+            casacore::String param_string(param);
+            if (i == 2) { // degree format, not time
+                param_string = ConvertTimeFormatToDeg(param);
             }
             casacore::Quantity param_quantity;
             if (readQuantity(param_quantity, param_string)) {
@@ -531,91 +568,110 @@ casa::AnnRegion* Ds9Parser::CreateCircleRegion(std::vector<std::string>& region_
                         param_quantity.setUnit(units[i]);
                     }
                 }
-                parameters.push_back(param_quantity);
+                param_quantities.push_back(param_quantity);
             } else {
-                invalid_arguments.append(": " + region_definition[i]);
-                AddImportError(invalid_arguments);
-                std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
-                return ann_region; // nullptr, cannot process parameters
+                std::string invalid_param("invalid circle parameter " + param);
+                AddImportError(invalid_param);
+                std::cerr << "Ds9Parser import error: " << invalid_param << std::endl;
+                return ann_region;
             }
+        } else {
+            return ann_region;
         }
-
-        // AnnCircle arguments
-        casacore::Quantity begin_freq, end_freq, rest_freq;
-        casacore::String freq_ref_frame, doppler;
-        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
-
-        ann_region = new casa::AnnCircle(parameters[0], parameters[1], parameters[2], _direction_ref_frame, _coord_sys, _image_shape,
-            begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
-    } else {
-        AddImportError(invalid_arguments);
-        std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
     }
 
+    casacore::Quantity begin_freq, end_freq, rest_freq;
+    casacore::String freq_ref_frame, doppler;
+    casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
+    ann_region = new casa::AnnCircle(param_quantities[0], param_quantities[1], param_quantities[2], _direction_ref_frame, _coord_sys,
+        _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
     return ann_region;
 }
 
-casa::AnnRegion* Ds9Parser::CreateEllipseRegion(std::vector<std::string>& region_definition) {
+casa::AnnRegion* Ds9Parser::CreateEllipseRegion(std::string& region_definition) {
     // Create AnnEllipse from DS9 region definition
+    // ellipse x y radius radius angle
     casa::AnnRegion* ann_region(nullptr);
-    std::string invalid_arguments = "illegal ellipse specification";
-
-    size_t nparams(region_definition.size());
-    if (nparams == 6) { // ellipse x y radius radius angle
+    std::vector<std::string> params;
+    if (ParseRegion(region_definition, params, 6)) {
         // convert strings to Quantities
-        std::vector<casacore::Quantity> parameters;
+        std::vector<casacore::Quantity> param_quantities;
         std::vector<casacore::String> units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
+        size_t nparams(params.size());
         for (size_t i = 1; i < nparams; ++i) {
-            casacore::String param_string(region_definition[i]);
-            if (i == 2) {
-                param_string = ConvertTimeFormatToDeg(param_string);
-            }
-            casacore::Quantity param_quantity;
-            if (readQuantity(param_quantity, param_string)) {
-                if (param_quantity.getUnit().empty()) {
-                    if ((i == nparams - 1) || !_pixel_coord) {
-                        param_quantity.setUnit(units[i]);
-                    } else {
-                        param_quantity.setUnit("pix");
-                    }
+            std::string param(params[i]);
+            if (CheckAndConvertParameter(param, "ellipse")) {
+                casacore::String param_string(param);
+                if (i == 2) { // degree format, not time
+                    param_string = ConvertTimeFormatToDeg(param);
                 }
-                parameters.push_back(param_quantity);
+                casacore::Quantity param_quantity;
+                if (readQuantity(param_quantity, param_string)) {
+                    if (param_quantity.getUnit().empty()) {
+                        if ((i == nparams - 1) || !_pixel_coord) {
+                            param_quantity.setUnit(units[i]);
+                        } else {
+                            param_quantity.setUnit("pix");
+                        }
+                    }
+                    param_quantities.push_back(param_quantity);
+                } else {
+                    std::string invalid_param("invalid ellipse parameter " + param);
+                    AddImportError(invalid_param);
+                    std::cerr << "Ds9Parser import error: " << invalid_param << std::endl;
+                    return ann_region;
+                }
             } else {
-                invalid_arguments.append(": " + region_definition[i]);
-                AddImportError(invalid_arguments);
-                std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
-                return ann_region; // nullptr, cannot process parameters
+                return ann_region;
             }
         }
 
-        // AnnEllipse arguments
         casacore::Quantity begin_freq, end_freq, rest_freq;
         casacore::String freq_ref_frame, doppler;
         casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
         // adjust angle (from x-axis)
-        casacore::Quantity position_angle(parameters[4]);
+        casacore::Quantity position_angle(param_quantities[4]);
         position_angle -= 90.0;
-
-        ann_region = new casa::AnnEllipse(parameters[0], parameters[1], parameters[2], parameters[3], position_angle, _direction_ref_frame,
-            _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
+        ann_region = new casa::AnnEllipse(param_quantities[0], param_quantities[1], param_quantities[2], param_quantities[3], position_angle,
+            _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
+    } else if (ParseRegion(region_definition, params, 0)) {
+        // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
+        std::string invalid_params = "unsupported ellipse definition " + region_definition;
+        AddImportError(invalid_params);
+        std::cerr << "Ds9Parser import error: " << invalid_params << std::endl;
     } else {
-        AddImportError(invalid_arguments);
-        std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
+        std::string syntax_error = "ellipse syntax error " + region_definition;
+        AddImportError(syntax_error);
+        std::cerr << "Ds9Parser import error: " << syntax_error << std::endl;
     }
-
     return ann_region;
 }
 
-casa::AnnRegion* Ds9Parser::CreatePolygonRegion(std::vector<std::string>& region_definition) {
+casa::AnnRegion* Ds9Parser::CreatePolygonRegion(std::string& region_definition) {
     // Create AnnPolygon from DS9 region definition
+    // polygon x1 y1 x2 y2 x3 y3 ...
     casa::AnnRegion* ann_region(nullptr);
-    std::string invalid_arguments = "illegal polygon specification";
+    std::vector<std::string> params;
+    if (!ParseRegion(region_definition, params, 0)) {
+        std::string syntax_error = "polygon syntax error " + region_definition;
+        AddImportError(syntax_error);
+        std::cerr << "Ds9Parser import error: " << syntax_error << std::endl;
+        return ann_region;
+    }
 
-    if (region_definition.size() % 2 == 1) { // polygon x1 y1 x2 y2 x3 y3 ...
-        // convert strings to Quantities
-        std::vector<casacore::Quantity> parameters;
-        for (size_t i = 1; i < region_definition.size(); i++) {
-            casacore::String param_string(region_definition[i]);
+    if (params.size() % 2 != 1) {
+        std::string syntax_error = "polygon syntax error " + region_definition;
+        AddImportError(syntax_error);
+        std::cerr << "Ds9Parser import error: " << syntax_error << std::endl;
+        return ann_region;
+    }
+
+    // convert strings to Quantities
+    std::vector<casacore::Quantity> param_quantities;
+    for (size_t i = 1; i < params.size(); ++i) {
+        std::string param(params[i]);
+        if (CheckAndConvertParameter(param, "polygon")) {
+            casacore::String param_string(param);
             if ((i % 2) == 0) {
                 param_string = ConvertTimeFormatToDeg(param_string);
             }
@@ -628,46 +684,56 @@ casa::AnnRegion* Ds9Parser::CreatePolygonRegion(std::vector<std::string>& region
                         param_quantity.setUnit("deg");
                     }
                 }
-                parameters.push_back(param_quantity);
+                param_quantities.push_back(param_quantity);
             } else {
-                invalid_arguments.append(": " + region_definition[i]);
-                AddImportError(invalid_arguments);
-                std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
-                return ann_region; // nullptr, cannot process parameters
+                std::string invalid_param("invalid polygon parameter " + param);
+                AddImportError(invalid_param);
+                std::cerr << "Ds9Parser import error: " << invalid_param << std::endl;
+                return ann_region;
             }
+        } else {
+            return ann_region;
         }
+    }   
 
-        // AnnPolygon arguments
-        std::vector<casacore::Quantity> xPositions, yPositions;
-        for (size_t i = 0; i < parameters.size(); i += 2) {
-            xPositions.push_back(parameters[i]);
-            yPositions.push_back(parameters[i + 1]);
-        }
-        casacore::Quantity begin_freq, end_freq, rest_freq;
-        casacore::String freq_ref_frame, doppler;
-        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
-
-        ann_region = new casa::AnnPolygon(xPositions, yPositions, _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq,
-            freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
-    } else {
-        AddImportError(invalid_arguments);
-        std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
+    // AnnPolygon arguments
+    std::vector<casacore::Quantity> xPositions, yPositions;
+    for (size_t i = 0; i < param_quantities.size(); i += 2) {
+        xPositions.push_back(param_quantities[i]);
+        yPositions.push_back(param_quantities[i + 1]);
     }
+    casacore::Quantity begin_freq, end_freq, rest_freq;
+    casacore::String freq_ref_frame, doppler;
+    casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
 
+    ann_region = new casa::AnnPolygon(xPositions, yPositions, _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq,
+        freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
     return ann_region;
 }
 
-casa::AnnSymbol* Ds9Parser::CreateSymbolRegion(std::vector<std::string>& region_definition) {
+casa::AnnSymbol* Ds9Parser::CreateSymbolRegion(std::string& region_definition) {
     // Create AnnSymbol from DS9 region definition
+    // point x y, circle point x y
     casa::AnnSymbol* ann_symbol(nullptr);
-    std::string invalid_arguments = "illegal point specification";
+    std::vector<std::string> params;
+    int first_param;
+    if (ParseRegion(region_definition, params, 3)) {
+        first_param = 1;
+    } else if (ParseRegion(region_definition, params, 4)) {
+        first_param = 2;
+    } else {
+        std::string syntax_error = "point syntax error " + region_definition;
+        AddImportError(syntax_error);
+        std::cerr << "Ds9Parser import error: " << syntax_error << std::endl;
+        return ann_symbol;
+    }
 
-    if (region_definition.size() == 3) { // point x y
-        // convert strings to Quantities
-        std::vector<casacore::Quantity> parameters;
-        for (size_t i = 1; i < region_definition.size(); ++i) {
-            casacore::String param_string(region_definition[i]);
-            if (i == 2) {
+    std::vector<casacore::Quantity> param_quantities;
+    for (size_t i = first_param; i < params.size(); ++i) {
+        std::string param(params[i]);
+        if (CheckAndConvertParameter(param, "point")) {
+            casacore::String param_string(param);
+            if (i == first_param + 1) {
                 param_string = ConvertTimeFormatToDeg(param_string);
             }
             casacore::Quantity param_quantity;
@@ -679,27 +745,23 @@ casa::AnnSymbol* Ds9Parser::CreateSymbolRegion(std::vector<std::string>& region_
                         param_quantity.setUnit("deg");
                     }
                 }
-                parameters.push_back(param_quantity);
+                param_quantities.push_back(param_quantity);
             } else {
-                invalid_arguments.append(": " + region_definition[i]);
-                AddImportError(invalid_arguments);
-                std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
-                return ann_symbol; // nullptr, cannot process parameters
+                std::string invalid_param("invalid point parameter " + param);
+                AddImportError(invalid_param);
+                std::cerr << "Ds9Parser import error: " << invalid_param << std::endl;
+                return ann_symbol;
             }
+        } else {
+            return ann_symbol;
         }
-
-        // AnnSymbol arguments
-        casacore::Quantity begin_freq, end_freq, rest_freq;
-        casacore::String freq_ref_frame, doppler;
-        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
-
-        ann_symbol = new casa::AnnSymbol(parameters[0], parameters[1], _direction_ref_frame, _coord_sys, '.', begin_freq, end_freq,
-            freq_ref_frame, doppler, rest_freq, stokes_types);
-    } else {
-        AddImportError(invalid_arguments);
-        std::cerr << "Ds9Parser import error: " << invalid_arguments << std::endl;
     }
 
+    casacore::Quantity begin_freq, end_freq, rest_freq;
+    casacore::String freq_ref_frame, doppler;
+    casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
+    ann_symbol = new casa::AnnSymbol(param_quantities[0], param_quantities[1], _direction_ref_frame, _coord_sys, '.', begin_freq, end_freq,
+        freq_ref_frame, doppler, rest_freq, stokes_types);
     return ann_symbol;
 }
 
