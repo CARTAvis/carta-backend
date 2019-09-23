@@ -190,7 +190,7 @@ bool Ds9Parser::SetDirectionRefFrame(std::string& ds9_coord) {
         if ((ds9_coord != "physical") && (ds9_coord != "image")) { // pixel coordinates
             _pixel_coord = false;
         }
-	converted_coord = true;
+        converted_coord = true;
     }
     return converted_coord;
 }
@@ -284,7 +284,7 @@ void Ds9Parser::ProcessRegionDefinition(std::vector<std::string>& region_definit
     // point can have symbol descriptor, e.g. ""circle point", "diamond point", etc.
     if (region_definition[1].find("point") != std::string::npos) {
         region_type = "point";
-	first_param++;
+        first_param++;
     }
     // Get Annotation type from region type
     casa::AnnotationBase::Type ann_region_type;
@@ -325,7 +325,7 @@ void Ds9Parser::ProcessRegionDefinition(std::vector<std::string>& region_definit
                 error_message = "Import region '" + region_type + "' failed:  not supported yet.";
                 break;
             case casa::AnnotationBase::Type::TEXT:
-                error_message = "Import region '" + region_type + "' failed:  annotations not supported yet.";
+                error_message = "Import '" + region_type + "' failed:  annotations not supported yet.";
             default:
                 break;
         }
@@ -346,6 +346,8 @@ void Ds9Parser::ProcessRegionDefinition(std::vector<std::string>& region_definit
         annotation_region = casacore::CountedPtr<const casa::AnnotationBase>(ann_region);
     } else {
         std::cerr << error_message << std::endl;
+        AddImportError(error_message);
+        std::cerr << "Ds9Parser import error: " << error_message << std::endl;
         return;
     }
     casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
@@ -384,23 +386,23 @@ bool Ds9Parser::ConvertParameterUnitsToCasacore(std::vector<std::string>& region
         std::string param(region_parameters[i]);
         // use stod to find index of unit
         size_t idx;
-	try {
+        try {
             double val = stod(param, &idx); // string to double
         } catch (std::invalid_argument& err) {
             std::string invalid_arg(error_prefix + param + ", not a numeric value");
             AddImportError(invalid_arg);
             std::cerr << "Ds9Parser import error: " << invalid_arg << std::endl;
-	    return false;
+            return false;
         }
 
-	size_t param_length(param.length());
+        size_t param_length(param.length());
         if (param_length == idx) { // no unit
             continue; // ok
         }
         if (param_length > idx + 1) {
             // check for hms, dms formats
             const char* param_carray = param.c_str();
-	    float h, m, s;
+            float h, m, s;
             if ((sscanf(param_carray, "%f:%f:%f", &h, &m, &s) == 3) || (sscanf(param_carray, "%fh%fm%fs", &h, &m, &s) == 3) ||
                 (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3)) {
                 continue; // ok
@@ -413,7 +415,7 @@ bool Ds9Parser::ConvertParameterUnitsToCasacore(std::vector<std::string>& region
             return false;
         }
 
-	const char unit = param.back();
+        const char unit = param.back();
         std::string casacore_unit;
         if (unit == 'd') {
             casacore_unit = "deg";
