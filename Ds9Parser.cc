@@ -632,8 +632,9 @@ casa::AnnRegion* Ds9Parser::CreateEllipseRegion(std::string& region_definition) 
         // adjust angle (from x-axis)
         casacore::Quantity position_angle(param_quantities[4]);
         position_angle -= 90.0;
-        ann_region = new casa::AnnEllipse(param_quantities[0], param_quantities[1], param_quantities[2], param_quantities[3], position_angle,
-            _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
+        ann_region = new casa::AnnEllipse(param_quantities[0], param_quantities[1], param_quantities[2], param_quantities[3],
+            position_angle, _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq, freq_ref_frame, doppler, rest_freq,
+            stokes_types, false, false);
     } else if (ParseRegion(region_definition, params, 0)) {
         // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
         std::string invalid_params = "unsupported ellipse definition " + region_definition;
@@ -694,7 +695,7 @@ casa::AnnRegion* Ds9Parser::CreatePolygonRegion(std::string& region_definition) 
         } else {
             return ann_region;
         }
-    }   
+    }
 
     // AnnPolygon arguments
     std::vector<casacore::Quantity> xPositions, yPositions;
