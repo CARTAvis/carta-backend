@@ -1814,37 +1814,42 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
 bool Frame::ContourImage(CARTA::SmoothingMode smoothing_mode, int smoothing_factor, const std::vector<double>& levels,
                          std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data) {
     // TODO: Optimize this and handle smoothing types other than Gaussian
-    if (smoothing_mode != CARTA::SmoothingMode::GaussianBlur) {
+
+    double scale = 1.0;
+    double offset = 0;
+    bool smooth_successful = false;
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
+
+    if (smoothing_mode == CARTA::SmoothingMode::NoSmoothing) {
+        TraceContours(_image_cache.data(),  _image_shape(0),  _image_shape(1), scale, offset, levels, vertex_data, index_data);
+        return true;
+    } else if (smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
+        // Smooth the image from cache
+        float sigma = smoothing_factor / 2.0f;
+        int mask_size = smoothing_factor * 2 + 1;
+        const int apron_height = smoothing_factor;
+        std::vector<float> kernel(mask_size);
+        int64_t kernel_width = (kernel.size() - 1) / 2;
+        MakeKernel(kernel, sigma);
+
+        int64_t source_width = _image_shape(0);
+        int64_t source_height =_image_shape(1);
+        int64_t dest_width = _image_shape(0) - 2 * kernel_width;
+        int64_t dest_height = _image_shape(1) - 2 * kernel_width;
+        std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
+        smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height, smoothing_factor);
+        // Can release lock early, as we're no longer using the image cache
+        cache_lock.release();
+        if (smooth_successful) {
+            // Perform contouring with an offset based on the Gaussian smoothing apron size
+            offset = smoothing_factor;
+            TraceContours(dest_array.get(), dest_width, dest_height, scale, offset, levels, vertex_data, index_data);
+            return true;
+        }
+    } else {
         fmt::print("Smoothing mode not implemented yet!\n");
         return false;
     }
-
-    // Smooth the image from cache
-    float sigma = smoothing_factor / 2.0f;
-    int mask_size = smoothing_factor * 2 + 1;
-    const int apron_height = smoothing_factor;
-    std::vector<float> kernel(mask_size);
-    int64_t kernel_width = (kernel.size() - 1) / 2;
-    MakeKernel(kernel, sigma);
-
-    int64_t source_width = this->_image_shape(0);
-    int64_t source_height = this->_image_shape(1);
-    int64_t dest_width = this->_image_shape(0) - 2 * kernel_width;
-    int64_t dest_height = this->_image_shape(1) - 2 * kernel_width;
-    std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
-    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
-    bool smooth_successful =
-        GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height, smoothing_factor);
-    cache_lock.release();
-
-    if (smooth_successful) {
-        // Perform contouring with an offset based on the Gaussian smoothing apron size
-        double scale = 1.0;
-        double offset = smoothing_factor;
-        TraceContours(dest_array.get(), dest_width, dest_height, scale, offset, levels, vertex_data, index_data);
-        return true;
-    }
-    return false;
 }
 
 bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2) {
