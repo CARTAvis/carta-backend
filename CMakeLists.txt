@@ -56,6 +56,7 @@ set(LINK_LIBS
         crypto
         z
         zfp
+        zstd
         tbb
         casa_casa
         casa_coordinates

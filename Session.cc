@@ -17,6 +17,7 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/contour_image.pb.h>
+#include <zstd.h>
 
 #include "Carta.h"
 #include "EventHeader.h"
@@ -660,6 +661,7 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
             response.set_file_id(message.file_id());
             response.set_channel(message.channel());
             response.set_stokes(message.stokes());
+
             // TODO: handle image bounds correctly
             for (auto i = 0; i < levels.size(); i++) {
                 auto& vertices = vertex_data[i];
@@ -673,8 +675,57 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
                 // Fill contour set
                 auto contour_set = response.add_contour_sets();
                 contour_set->set_level(levels[i]);
-                contour_set->set_raw_coordinates_fp32(vertices.data(), vertices.size() * sizeof(float));
-                contour_set->set_raw_start_indices_i32(indices.data(), indices.size() * sizeof(int32_t));
+
+                // decimate vertices and shuffle bytes for better compression
+                const int N = vertices.size();
+                const int pixel_rounding = 8;
+                std::vector<int32_t> vertices_shuffled(N);
+                int v = 0;
+                std::array<int32_t, 4> tmp_data;
+                char* data_shuffled_ptr = (char*) vertices_shuffled.data();
+                char* data_ptr = (char*) tmp_data.data();
+
+                // TODO: This could definitely be improved by SSE/AVX
+                for (v = 0; v < 4 * (N / 4); v += 4) {
+                    tmp_data[0] = vertices[v + 0] * pixel_rounding;
+                    tmp_data[1] = vertices[v + 1] * pixel_rounding;
+                    tmp_data[2] = vertices[v + 2] * pixel_rounding;
+                    tmp_data[3] = vertices[v + 3] * pixel_rounding;
+                    data_shuffled_ptr[0] = data_ptr[0];
+                    data_shuffled_ptr[1] = data_ptr[4];
+                    data_shuffled_ptr[2] = data_ptr[8];
+                    data_shuffled_ptr[3] = data_ptr[12];
+
+                    data_shuffled_ptr[4] = data_ptr[1];
+                    data_shuffled_ptr[5] = data_ptr[5];
+                    data_shuffled_ptr[6] = data_ptr[9];
+                    data_shuffled_ptr[7] = data_ptr[13];
+
+                    data_shuffled_ptr[8] = data_ptr[2];
+                    data_shuffled_ptr[9] = data_ptr[6];
+                    data_shuffled_ptr[10] = data_ptr[10];
+                    data_shuffled_ptr[11] = data_ptr[14];
+
+                    data_shuffled_ptr[12] = data_ptr[3];
+                    data_shuffled_ptr[13] = data_ptr[7];
+                    data_shuffled_ptr[14] = data_ptr[11];
+                    data_shuffled_ptr[15] = data_ptr[15];
+
+                    data_shuffled_ptr += 16;
+                }
+
+                for (; v < N; v++) {
+                    vertices_shuffled[v] = vertices[v] * pixel_rounding;
+                }
+
+                // Compress using Zstd library
+                char* buffer = new char[N * 4];
+                size_t compressed_size = ZSTD_compress(buffer, N * 4, vertices_shuffled.data(), vertices_shuffled.size() * sizeof(int32_t), 1);
+
+                contour_set->set_raw_coordinates(buffer, compressed_size);
+                contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
+                contour_set->set_decimation_factor(pixel_rounding);
+                delete[] buffer;
             }
             SendFileEvent(response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, response);
         } else {
