@@ -505,6 +505,11 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
                 contents = {message.contents().begin(), message.contents().end()};
             }
             _frames.at(file_id)->ImportRegion(file_type, abs_filename, contents, import_ack);
+            std::string ack_message(import_ack.message());
+            if (!ack_message.empty()) { // send message to log
+                CARTA::ErrorSeverity level = (import_ack.success() == true ? CARTA::ErrorSeverity::WARNING : CARTA::ErrorSeverity::ERROR);
+                SendLogEvent(ack_message, {"import"}, level);
+            }
             SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
         } catch (std::out_of_range& range_error) {
             std::string error = fmt::format("File id {} closed", file_id);
