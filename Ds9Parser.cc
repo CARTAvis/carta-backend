@@ -229,8 +229,8 @@ void Ds9Parser::SetAnnotationRegion(std::string& region_description) {
     // Process region definition include/exclude
     bool exclude_region(false);
     casacore::String formatted_region(region_definition); // handy utilities: trim, gsub (global substitution)
-    formatted_region.trim();                                  // remove beginning and ending whitespace
-    formatted_region.ltrim('+');                              // remove 'include' property
+    formatted_region.trim();                              // remove beginning and ending whitespace
+    formatted_region.ltrim('+');                          // remove 'include' property
     if ((formatted_region[0] == '!') || (formatted_region[0] == '-')) {
         exclude_region = true;
         formatted_region.ltrim('!'); // remove 'exclude' property
@@ -373,9 +373,9 @@ void Ds9Parser::ProcessRegionDefinition(
     } else {
         return;
     }
+
     casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
     _region_list.addLine(file_line);
-
 }
 
 bool Ds9Parser::CheckAndConvertParameter(std::string& parameter, const std::string& region_type) {
