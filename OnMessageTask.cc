@@ -11,15 +11,6 @@
 
 tbb::task* MultiMessageTask::execute() {
     switch (_header.type) {
-        case CARTA::EventType::SET_REGION: {
-            CARTA::SetRegion message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnSetRegion(message, _header.request_id);
-            } else {
-                fmt::print("Bad SET_REGION message!\n");
-            }
-            break;
-        }
         case CARTA::EventType::REMOVE_REGION: {
             CARTA::RemoveRegion message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
@@ -102,5 +93,10 @@ tbb::task* SetSpectralRequirementsTask::execute() {
 
 tbb::task* SetStatsRequirementsTask::execute() {
     _session->OnSetStatsRequirements(_message);
+    return nullptr;
+}
+
+tbb::task* SetRegionTask::execute() {
+    _session->OnSetRegion(_message, _header.request_id);
     return nullptr;
 }

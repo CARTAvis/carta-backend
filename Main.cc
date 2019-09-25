@@ -321,6 +321,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::SET_REGION: {
+                    CARTA::SetRegion message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context())) SetRegionTask(session, message, head);
+                    } else {
+                        fmt::print("Bad SET_REGION message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];

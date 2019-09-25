@@ -135,4 +135,17 @@ public:
     ~SetStatsRequirementsTask() = default;
 };
 
+class SetRegionTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::SetRegion _message;
+    carta::EventHeader _header;
+
+public:
+    SetRegionTask(Session* session, CARTA::SetRegion message, carta::EventHeader head) : OnMessageTask(session) {
+        _message = message;
+        _header = head;
+    }
+    ~SetRegionTask() = default;
+};
+
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_
