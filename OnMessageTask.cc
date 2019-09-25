@@ -9,17 +9,6 @@
 #include "EventHeader.h"
 #include "Util.h"
 
-tbb::task* MultiMessageTask::execute() {
-    switch (_header.type) {
-        default: {
-            fmt::print("Bad event type in MultiMessageType:execute : ({})", _header.type);
-            break;
-        }
-    }
-
-    return nullptr;
-}
-
 tbb::task* SetImageChannelsTask::execute() {
     std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
     bool tester;

@@ -31,23 +31,6 @@ public:
     }
 };
 
-class MultiMessageTask : public OnMessageTask {
-    carta::EventHeader _header;
-    int _event_length;
-    char* _event_buffer;
-    tbb::task* execute() override;
-
-public:
-    MultiMessageTask(Session* session_, carta::EventHeader& head, int evt_len, char* event_buf) : OnMessageTask(session_) {
-        _header = head;
-        _event_length = evt_len;
-        _event_buffer = event_buf;
-    }
-    ~MultiMessageTask() {
-        delete[] _event_buffer;
-    };
-};
-
 class SetImageChannelsTask : public OnMessageTask {
     tbb::task* execute() override;
 
