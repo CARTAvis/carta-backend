@@ -31,11 +31,7 @@ tbb::task* SetCursorTask::execute() {
 }
 
 tbb::task* SetHistogramRequirementsTask::execute() {
-    CARTA::SetHistogramRequirements message;
-    if (message.ParseFromArray(_event_buffer, _event_length)) {
-        _session->OnSetHistogramRequirements(message, _header.request_id);
-    }
-
+    _session->OnSetHistogramRequirements(_message, _header.request_id);
     return nullptr;
 }
 

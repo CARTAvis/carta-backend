@@ -52,15 +52,14 @@ public:
 
 class SetHistogramRequirementsTask : public OnMessageTask {
     tbb::task* execute();
+    CARTA::SetHistogramRequirements _message;
     carta::EventHeader _header;
-    int _event_length;
-    char* _event_buffer;
 
 public:
-    SetHistogramRequirementsTask(Session* session, carta::EventHeader& head, int len, char* buf) : OnMessageTask(session) {
+    SetHistogramRequirementsTask(Session* session, CARTA::SetHistogramRequirements message, carta::EventHeader head)
+        : OnMessageTask(session) {
+        _message = message;
         _header = head;
-        _event_length = len;
-        _event_buffer = buf;
     }
     ~SetHistogramRequirementsTask() = default;
 };
