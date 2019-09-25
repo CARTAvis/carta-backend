@@ -254,8 +254,11 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 }
                 case CARTA::EventType::ADD_REQUIRED_TILES: {
                     CARTA::AddRequiredTiles message;
-                    message.ParseFromArray(event_buf, event_length);
-                    tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
+                    } else {
+                        fmt::print("Bad ADD_REQUIRED_TILES message!\n");
+                    }
                     break;
                 }
                 case CARTA::EventType::REGION_LIST_REQUEST: {
