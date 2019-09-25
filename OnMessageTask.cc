@@ -81,11 +81,6 @@ tbb::task* SetImageChannelsTask::execute() {
     return nullptr;
 }
 
-tbb::task* SetImageViewTask::execute() {
-    _session->_file_settings.ExecuteOne("SET_IMAGE_VIEW", _file_id);
-    return nullptr;
-}
-
 tbb::task* SetCursorTask::execute() {
     _session->_file_settings.ExecuteOne("SET_CURSOR", _file_id);
     return nullptr;
