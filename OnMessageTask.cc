@@ -11,15 +11,6 @@
 
 tbb::task* MultiMessageTask::execute() {
     switch (_header.type) {
-        case CARTA::EventType::SET_STATS_REQUIREMENTS: {
-            CARTA::SetStatsRequirements message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnSetStatsRequirements(message);
-            } else {
-                fmt::print("Bad SET_STATS_REQUIREMENTS message!\n");
-            }
-            break;
-        }
         case CARTA::EventType::SET_REGION: {
             CARTA::SetRegion message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
@@ -106,5 +97,10 @@ tbb::task* SetSpatialRequirementsTask::execute() {
 
 tbb::task* SetSpectralRequirementsTask::execute() {
     _session->OnSetSpectralRequirements(_message);
+    return nullptr;
+}
+
+tbb::task* SetStatsRequirementsTask::execute() {
+    _session->OnSetStatsRequirements(_message);
     return nullptr;
 }

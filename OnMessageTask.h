@@ -124,4 +124,15 @@ public:
     ~SetSpectralRequirementsTask() = default;
 };
 
+class SetStatsRequirementsTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::SetStatsRequirements _message;
+
+public:
+    SetStatsRequirementsTask(Session* session, CARTA::SetStatsRequirements message) : OnMessageTask(session) {
+        _message = message;
+    }
+    ~SetStatsRequirementsTask() = default;
+};
+
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_

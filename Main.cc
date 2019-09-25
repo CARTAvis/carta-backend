@@ -312,6 +312,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::SET_STATS_REQUIREMENTS: {
+                    CARTA::SetStatsRequirements message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk = new (tbb::task::allocate_root(session->Context())) SetStatsRequirementsTask(session, message);
+                    } else {
+                        fmt::print("Bad SET_STATS_REQUIREMENTS message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
