@@ -691,6 +691,7 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
                     tmp_data[1] = vertices[v + 1] * pixel_rounding;
                     tmp_data[2] = vertices[v + 2] * pixel_rounding;
                     tmp_data[3] = vertices[v + 3] * pixel_rounding;
+
                     data_shuffled_ptr[0] = data_ptr[0];
                     data_shuffled_ptr[1] = data_ptr[4];
                     data_shuffled_ptr[2] = data_ptr[8];

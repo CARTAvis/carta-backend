@@ -13,8 +13,8 @@ using namespace std;
 // Contour tracing code adapted from SAOImage DS9: https://github.com/SAOImageDS9/SAOImageDS9
 void traceSegment(const float* image,
                   std::vector<bool>& visited,
-                  int width,
-                  int height,
+                  int64_t width,
+                  int64_t height,
                   double scale,
                   double offset,
                   double level,
@@ -22,8 +22,8 @@ void traceSegment(const float* image,
                   int y_cell,
                   int side,
                   vector<float>& vertices) {
-    int i = x_cell;
-    int j = y_cell;
+    int64_t i = x_cell;
+    int64_t j = y_cell;
     int orig_side = side;
 
     bool first_iteration = true;
@@ -124,10 +124,10 @@ void traceSegment(const float* image,
     }
 }
 
-void traceLevel(const float* image, int width, int height, double scale, double offset, double level, vector<float>& vertices, vector<int32_t>& indices) {
-    int N = width * height;
+void traceLevel(const float* image, int64_t width, int64_t height, double scale, double offset, double level, vector<float>& vertices, vector<int32_t>& indices) {
+    int64_t N = width * height;
     vector<bool> visited(N);
-    int i, j;
+    int64_t i, j;
 
     // Search TopEdge
     for (j = 0, i = 0; i < width - 1; i++) {
@@ -172,8 +172,8 @@ void traceLevel(const float* image, int width, int height, double scale, double 
     }
 }
 
-void TraceSingleContour(float* image, int width, int height, double scale, double offset, double level, std::vector<float>& vertex_data, std::vector<int32_t>& indices) {
-    int N = width * height;
+void TraceSingleContour(float* image, int64_t width, int64_t height, double scale, double offset, double level, std::vector<float>& vertex_data, std::vector<int32_t>& indices) {
+    int64_t N = width * height;
     vertex_data.clear();
     indices.clear();
 
@@ -185,28 +185,28 @@ void TraceSingleContour(float* image, int width, int height, double scale, doubl
     traceLevel(image, width, height, scale, offset, level, vertex_data, indices);
 }
 
-void TraceContours(float* image, int width, int height, double scale, double offset, const std::vector<double>& levels, std::vector<std::vector<float>>& vertex_data,
+void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels, std::vector<std::vector<float>>& vertex_data,
                    std::vector<std::vector<int32_t>>& index_data) {
     auto t_start_contours = std::chrono::high_resolution_clock::now();
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
 
-    size_t N = width * height;
-    for (size_t i = 0; i < N; i++) {
+    int64_t N = width * height;
+    for (int64_t i = 0; i < N; i++) {
         if (isnan(image[i])) {
             image[i] = -std::numeric_limits<float>::max();
         }
     }
 
-    auto loop = [&](const tbb::blocked_range<int>& r) {
-        for (int l = r.begin(); l < r.end(); l++) {
+    auto loop = [&](const tbb::blocked_range<int64_t>& r) {
+        for (int64_t l = r.begin(); l < r.end(); l++) {
             vertex_data[l].clear();
             index_data[l].clear();
             traceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l]);
         }
     };
 
-    tbb::parallel_for(tbb::blocked_range<int>(0, levels.size()), loop);
+    tbb::parallel_for(tbb::blocked_range<int64_t>(0, levels.size()), loop);
     auto t_end_contours = std::chrono::high_resolution_clock::now();
     auto dt_contours = std::chrono::duration_cast<std::chrono::microseconds>(t_end_contours - t_start_contours).count();
     auto rate_contours = width * height / (double) dt_contours;
