@@ -102,4 +102,15 @@ public:
     ~OnAddRequiredTilesTask() = default;
 };
 
+class SetSpatialRequirementsTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::SetSpatialRequirements _message;
+
+public:
+    SetSpatialRequirementsTask(Session* session, CARTA::SetSpatialRequirements message) : OnMessageTask(session) {
+        _message = message;
+    }
+    ~SetSpatialRequirementsTask() = default;
+};
+
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_
