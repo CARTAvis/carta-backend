@@ -56,10 +56,10 @@ class SetHistogramRequirementsTask : public OnMessageTask {
     carta::EventHeader _header;
 
 public:
-    SetHistogramRequirementsTask(Session* session, CARTA::SetHistogramRequirements message, carta::EventHeader head)
+    SetHistogramRequirementsTask(Session* session, CARTA::SetHistogramRequirements message, carta::EventHeader header)
         : OnMessageTask(session) {
         _message = message;
-        _header = head;
+        _header = header;
     }
     ~SetHistogramRequirementsTask() = default;
 };
@@ -123,9 +123,9 @@ class SetRegionTask : public OnMessageTask {
     carta::EventHeader _header;
 
 public:
-    SetRegionTask(Session* session, CARTA::SetRegion message, carta::EventHeader head) : OnMessageTask(session) {
+    SetRegionTask(Session* session, CARTA::SetRegion message, carta::EventHeader header) : OnMessageTask(session) {
         _message = message;
-        _header = head;
+        _header = header;
     }
     ~SetRegionTask() = default;
 };

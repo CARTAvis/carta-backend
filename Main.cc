@@ -121,16 +121,16 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
 
     if (op_code == uWS::OpCode::BINARY) {
         if (length > sizeof(carta::EventHeader)) {
-            carta::EventHeader head = *reinterpret_cast<carta::EventHeader*>(raw_message);
+            carta::EventHeader header = *reinterpret_cast<carta::EventHeader*>(raw_message);
             char* event_buf = raw_message + sizeof(carta::EventHeader);
             int event_length = length - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
 
-            switch (head.type) {
+            switch (header.type) {
                 case CARTA::EventType::REGISTER_VIEWER: {
                     CARTA::RegisterViewer message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRegisterViewer(message, head.icd_version, head.request_id);
+                        session->OnRegisterViewer(message, header.icd_version, header.request_id);
                     } else {
                         fmt::print("Bad REGISTER_VIEWER message!\n");
                     }
@@ -144,7 +144,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                             tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session);
                         }
                         // has its own queue to keep channels in order during animation
-                        session->AddToSetChannelQueue(message, head.request_id);
+                        session->AddToSetChannelQueue(message, header.request_id);
                         session->ImageChannelUnlock();
                     } else {
                         fmt::print("Bad SET_IMAGE_CHANNELS message!\n");
@@ -163,7 +163,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::SET_CURSOR: {
                     CARTA::SetCursor message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->AddCursorSetting(message, head.request_id);
+                        session->AddCursorSetting(message, header.request_id);
                         tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
                     } else {
                         fmt::print("Bad SET_CURSOR message!\n");
@@ -178,7 +178,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         } else {
                             session->ResetHistContext();
                             tsk =
-                                new (tbb::task::allocate_root(session->HistContext())) SetHistogramRequirementsTask(session, message, head);
+                                new (tbb::task::allocate_root(session->HistContext())) SetHistogramRequirementsTask(session, message, header);
                         }
                     } else {
                         fmt::print("Bad SET_HISTOGRAM_REQUIREMENTS message!\n");
@@ -200,7 +200,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::StartAnimation message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->CancelExistingAnimation();
-                        session->BuildAnimationObject(message, head.request_id);
+                        session->BuildAnimationObject(message, header.request_id);
                         tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     } else {
                         fmt::print("Bad START_ANIMATION message!\n");
@@ -228,7 +228,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::FILE_INFO_REQUEST: {
                     CARTA::FileInfoRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnFileInfoRequest(message, head.request_id);
+                        session->OnFileInfoRequest(message, header.request_id);
                     } else {
                         fmt::print("Bad FILE_INFO_REQUEST message!\n");
                     }
@@ -237,7 +237,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::FILE_LIST_REQUEST: {
                     CARTA::FileListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnFileListRequest(message, head.request_id);
+                        session->OnFileListRequest(message, header.request_id);
                     } else {
                         fmt::print("Bad FILE_LIST_REQUEST message!\n");
                     }
@@ -246,7 +246,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::OPEN_FILE: {
                     CARTA::OpenFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnOpenFile(message, head.request_id);
+                        session->OnOpenFile(message, header.request_id);
                     } else {
                         fmt::print("Bad OPEN_FILE message!\n");
                     }
@@ -264,7 +264,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::REGION_LIST_REQUEST: {
                     CARTA::RegionListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRegionListRequest(message, head.request_id);
+                        session->OnRegionListRequest(message, header.request_id);
                     } else {
                         fmt::print("Bad REGION_LIST_REQUEST message!\n");
                     }
@@ -273,7 +273,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
                     CARTA::RegionFileInfoRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRegionFileInfoRequest(message, head.request_id);
+                        session->OnRegionFileInfoRequest(message, header.request_id);
                     } else {
                         fmt::print("Bad REGION_FILE_INFO_REQUEST message!\n");
                     }
@@ -282,7 +282,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::IMPORT_REGION: {
                     CARTA::ImportRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnImportRegion(message, head.request_id);
+                        session->OnImportRegion(message, header.request_id);
                     } else {
                         fmt::print("Bad IMPORT_REGION message!\n");
                     }
@@ -291,7 +291,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::EXPORT_REGION: {
                     CARTA::ExportRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnExportRegion(message, head.request_id);
+                        session->OnExportRegion(message, header.request_id);
                     } else {
                         fmt::print("Bad EXPORT_REGION message!\n");
                     }
@@ -327,7 +327,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::SET_REGION: {
                     CARTA::SetRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context())) SetRegionTask(session, message, head);
+                        tsk = new (tbb::task::allocate_root(session->Context())) SetRegionTask(session, message, header);
                     } else {
                         fmt::print("Bad SET_REGION message!\n");
                     }
@@ -343,7 +343,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     break;
                 }
                 default: {
-                    fmt::print("Bad event type : {}!\n", head.type);
+                    fmt::print("Bad event type : {}!\n", header.type);
                 }
             }
 
