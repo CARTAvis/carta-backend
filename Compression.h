@@ -10,4 +10,6 @@ int Compress(std::vector<float>& array, size_t offset, std::vector<char>& compre
 std::vector<int32_t> GetNanEncodingsSimple(std::vector<float>& array, int offset, int length);
 std::vector<int32_t> GetNanEncodingsBlock(std::vector<float>& array, int offset, int w, int h);
 
+void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t>& dest, float rounding_factor);
+void EncodeIntegers(std::vector<int32_t>& array, bool strided = false);
 #endif // CARTA_BACKEND__COMPRESSION_H_

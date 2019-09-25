@@ -1,13 +1,15 @@
 #include "Compression.h"
 
+#include <array>
 #include <cmath>
 
 #include <zfp.h>
+#include <x86intrin.h>
 
 using namespace std;
 
 int Compress(vector<float>& array, size_t offset, vector<char>& compression_buffer, size_t& compressed_size, uint32_t nx, uint32_t ny,
-    uint32_t precision) {
+             uint32_t precision) {
     int status = 0;     /* return value: 0 = success */
     zfp_type type;      /* array scalar type */
     zfp_field* field;   /* array meta data */
@@ -134,4 +136,53 @@ vector<int32_t> GetNanEncodingsBlock(vector<float>& array, int offset, int w, in
         }
     }
     return encoded_array;
+}
+
+// This function transforms an array of 2D vertices from contour data in order to improve compression ratios
+void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t>& dest, float rounding_factor) {
+    const int N = array.size();
+    dest.resize(N);
+    int i = 0;
+
+    const int blocked_length = 4 * (N / 4);
+    // Run through the vertices in groups of 4, rounding to the nearest Nth of a pixel
+    for (i = 0; i < blocked_length; i += 4) {
+        __m128 vertices_vector = _mm_loadu_ps(&array[i]);
+        // If we prefer truncation, then _mm_cvttps_epi32 should be used instead
+        __m128i rounded_vals = _mm_cvtps_epi32(vertices_vector * rounding_factor);
+        _mm_store_si128((__m128i*) &dest[i], rounded_vals);
+    }
+
+    // Round the remaining pixels
+    for (i = blocked_length; i < N; i++) {
+        dest[i] = round(array[i] * rounding_factor);
+    }
+
+    EncodeIntegers(dest, true);
+}
+
+void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
+    const int N = array.size();
+    const int blocked_length = 4 * (N / 4);
+    std::array<uint8_t, 16> shuffle_vals = {0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15};
+
+    if (strided) {
+        // Delta-encoding of neighbouring vertices to improve compression
+        for (size_t i = 0; i < N - 3; i += 2) {
+            array[i] = array[i + 2] - array[i];
+            array[i + 1] = array[i + 3] - array[i + 1];
+        }
+    } else {
+        // Delta-encoding of neighbouring integers to improve compression
+        for (size_t i = 0; i < N - 1; i++) {
+            array[i] = array[i + 1] - array[i];
+        }
+    }
+
+    // Shuffle bytes in blocks of 126 bits (4 floats). The remaining bytes are left along
+    for (size_t i = 0; i < blocked_length; i += 4) {
+        __m128i vals = _mm_loadu_si128((__m128i*) &array[i]);
+        vals = _mm_shuffle_epi8(vals, *(__m128i*) shuffle_vals.data());
+        _mm_store_si128((__m128i*) &array[i], vals);
+    }
 }
