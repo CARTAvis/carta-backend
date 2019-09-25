@@ -11,15 +11,6 @@
 
 tbb::task* MultiMessageTask::execute() {
     switch (_header.type) {
-        case CARTA::EventType::SET_SPECTRAL_REQUIREMENTS: {
-            CARTA::SetSpectralRequirements message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnSetSpectralRequirements(message);
-            } else {
-                fmt::print("Bad SET_SPECTRAL_REQUIREMENTS message!\n");
-            }
-            break;
-        }
         case CARTA::EventType::SET_STATS_REQUIREMENTS: {
             CARTA::SetStatsRequirements message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
@@ -110,5 +101,10 @@ tbb::task* OnAddRequiredTilesTask::execute() {
 
 tbb::task* SetSpatialRequirementsTask::execute() {
     _session->OnSetSpatialRequirements(_message);
+    return nullptr;
+}
+
+tbb::task* SetSpectralRequirementsTask::execute() {
+    _session->OnSetSpectralRequirements(_message);
     return nullptr;
 }

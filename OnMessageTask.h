@@ -113,4 +113,15 @@ public:
     ~SetSpatialRequirementsTask() = default;
 };
 
+class SetSpectralRequirementsTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::SetSpectralRequirements _message;
+
+public:
+    SetSpectralRequirementsTask(Session* session, CARTA::SetSpectralRequirements message) : OnMessageTask(session) {
+        _message = message;
+    }
+    ~SetSpectralRequirementsTask() = default;
+};
+
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_
