@@ -148,4 +148,15 @@ public:
     ~SetRegionTask() = default;
 };
 
+class RemoveRegionTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::RemoveRegion _message;
+
+public:
+    RemoveRegionTask(Session* session, CARTA::RemoveRegion message) : OnMessageTask(session) {
+        _message = message;
+    }
+    ~RemoveRegionTask() = default;
+};
+
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_

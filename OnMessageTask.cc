@@ -11,15 +11,6 @@
 
 tbb::task* MultiMessageTask::execute() {
     switch (_header.type) {
-        case CARTA::EventType::REMOVE_REGION: {
-            CARTA::RemoveRegion message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnRemoveRegion(message);
-            } else {
-                fmt::print("Bad REMOVE_REGION message!\n");
-            }
-            break;
-        }
         default: {
             fmt::print("Bad event type in MultiMessageType:execute : ({})", _header.type);
             break;
@@ -98,5 +89,10 @@ tbb::task* SetStatsRequirementsTask::execute() {
 
 tbb::task* SetRegionTask::execute() {
     _session->OnSetRegion(_message, _header.request_id);
+    return nullptr;
+}
+
+tbb::task* RemoveRegionTask::execute() {
+    _session->OnRemoveRegion(_message);
     return nullptr;
 }
