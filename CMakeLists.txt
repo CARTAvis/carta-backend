@@ -82,6 +82,7 @@ set(SOURCE_FILES
         FileSettings.cc
         Util.cc
         FileListHandler.cc
+        MessageHandler.cc
         Tile.cc
         Ds9Parser.cc)
 
