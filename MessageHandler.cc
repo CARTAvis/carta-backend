@@ -213,6 +213,7 @@ void MessageHandler::Execute() {
         }
         default: {
             fmt::print("Bad event type : {}!\n", _header.type);
+            break;
         }
     }
 }
