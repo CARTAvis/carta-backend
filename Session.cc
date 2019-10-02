@@ -504,7 +504,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
                 return;
             }
- 
+
             std::string abs_filename;
             if (import_file) {
                 // form absolute path with filename
