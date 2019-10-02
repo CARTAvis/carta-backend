@@ -679,14 +679,19 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
                 contour_set->set_level(levels[i]);
 
                 const int N = vertices.size();
-                const float pixel_rounding = 2;
+                const float pixel_rounding = std::max(1, std::min(32, message.decimation_factor()));
+                const int compression_level = std::max(1, std::min(20, message.compression_level()));
 
                 std::vector<int32_t> vertices_shuffled;
                 RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
 
                 // Compress using Zstd library
                 compression_buffer.resize(ZSTD_compressBound(N * sizeof(int32_t)));
-                size_t compressed_size = ZSTD_compress(compression_buffer.data(), N * 4, vertices_shuffled.data(), vertices_shuffled.size() * sizeof(int32_t), 8);
+                size_t compressed_size = ZSTD_compress(compression_buffer.data(),
+                                                       compression_buffer.size(),
+                                                       vertices_shuffled.data(),
+                                                       vertices_shuffled.size() * sizeof(int32_t),
+                                                       compression_level);
 
                 contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
                 contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
