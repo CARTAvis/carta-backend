@@ -258,13 +258,7 @@ void Frame::RemoveRegion(int region_id) {
 
 void Frame::ImportRegion(
     CARTA::FileType file_type, std::string& filename, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack) {
-    // Import region from file
-    if (filename.empty() && contents.empty()) {
-        import_ack.set_success(false);
-        import_ack.set_message("Import region failed: no region file contents.");
-        import_ack.add_regions();
-        return;
-    }
+    // Import region from file or contents
 
     // cannot create annotation regions with no direction coordinate
     const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
@@ -275,6 +269,7 @@ void Frame::ImportRegion(
         return;
     }
 
+    // concat contents vector into one string delimited by newline
     std::string file_contents;
     if (!contents.empty()) {
         // concat contents into one string delimited by newline
