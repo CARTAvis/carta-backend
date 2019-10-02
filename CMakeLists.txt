@@ -11,9 +11,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 # processes only, set EnableAvx to ON
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-option(EnableAvx "Enable AVX codepaths instead of SSE2" OFF)
+option(EnableAvx "Enable AVX codepaths instead of SSE4" OFF)
+
 if (EnableAvx)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
 endif()
 
 # use -DAuthServer:BOOL=ON to link mongodb and jsonccpp
