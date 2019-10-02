@@ -168,14 +168,23 @@ void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
 
     if (strided) {
         // Delta-encoding of neighbouring vertices to improve compression
-        for (size_t i = 0; i < N - 3; i += 2) {
-            array[i] = array[i + 2] - array[i];
-            array[i + 1] = array[i + 3] - array[i + 1];
+        int lastX = 0;
+        int lastY = 0;
+        for (size_t i = 0; i < N - 1; i += 2) {
+            int currentX = array[i];
+            int currentY = array[i + 1];
+            array[i] = currentX - lastX;
+            array[i + 1] = currentY - lastY;
+            lastX = currentX;
+            lastY = currentY;
         }
     } else {
         // Delta-encoding of neighbouring integers to improve compression
-        for (size_t i = 0; i < N - 1; i++) {
-            array[i] = array[i + 1] - array[i];
+        int last = 0;
+        for (size_t i = 0; i < N; i++) {
+            int current = array[i];
+            array[i] = current - last;
+            last = current;
         }
     }
 

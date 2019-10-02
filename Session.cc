@@ -679,7 +679,7 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
                 contour_set->set_level(levels[i]);
 
                 const int N = vertices.size();
-                const float pixel_rounding = 8;
+                const float pixel_rounding = 2;
 
                 std::vector<int32_t> vertices_shuffled;
                 RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
