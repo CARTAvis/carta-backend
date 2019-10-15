@@ -1820,7 +1820,7 @@ bool Frame::ContourImage(CARTA::SmoothingMode smoothing_mode, int smoothing_fact
     bool smooth_successful = false;
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
 
-    if (smoothing_mode == CARTA::SmoothingMode::NoSmoothing) {
+    if (smoothing_mode == CARTA::SmoothingMode::NoSmoothing || smoothing_factor <= 1) {
         TraceContours(_image_cache.data(),  _image_shape(0),  _image_shape(1), scale, offset, levels, vertex_data, index_data);
         return true;
     } else if (smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
@@ -1847,6 +1847,22 @@ bool Frame::ContourImage(CARTA::SmoothingMode smoothing_mode, int smoothing_fact
             return true;
         }
     } else {
+        CARTA::ImageBounds image_bounds;
+        image_bounds.set_x_min(0);
+        image_bounds.set_y_min(0);
+        image_bounds.set_x_max(_image_shape(0));
+        image_bounds.set_y_max(_image_shape(1));
+        std::vector<float> dest_vector;
+        smooth_successful = GetRasterData(dest_vector, image_bounds, smoothing_factor, true);
+        if (smooth_successful) {
+            // Perform contouring with an offset based on the block size, and a scale factor equal to block size
+            offset = 0;
+            scale = smoothing_factor;
+            size_t dest_width = image_bounds.x_max() / smoothing_factor;
+            size_t dest_height = image_bounds.y_max() / smoothing_factor;
+            TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, levels, vertex_data, index_data);
+            return true;
+        }
         fmt::print("Smoothing mode not implemented yet!\n");
         return false;
     }

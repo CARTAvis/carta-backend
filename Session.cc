@@ -664,6 +664,13 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
             response.set_stokes(message.stokes());
 
             std::vector<char> compression_buffer;
+            const float pixel_rounding = std::max(1, std::min(32, message.decimation_factor()));
+            const int compression_level = std::max(1, std::min(20, message.compression_level()));
+
+            auto t_start = std::chrono::high_resolution_clock::now();
+            double total_src_size = 0;
+            double total_compressed_size = 0;
+
             // TODO: handle image bounds correctly
             for (auto i = 0; i < levels.size(); i++) {
                 auto& vertices = vertex_data[i];
@@ -679,24 +686,31 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
                 contour_set->set_level(levels[i]);
 
                 const int N = vertices.size();
-                const float pixel_rounding = std::max(1, std::min(32, message.decimation_factor()));
-                const int compression_level = std::max(1, std::min(20, message.compression_level()));
 
                 std::vector<int32_t> vertices_shuffled;
                 RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
 
                 // Compress using Zstd library
-                compression_buffer.resize(ZSTD_compressBound(N * sizeof(int32_t)));
-                size_t compressed_size = ZSTD_compress(compression_buffer.data(),
-                                                       compression_buffer.size(),
-                                                       vertices_shuffled.data(),
-                                                       vertices_shuffled.size() * sizeof(int32_t),
-                                                       compression_level);
+                const size_t src_size = N * sizeof(int32_t);
+                compression_buffer.resize(ZSTD_compressBound(src_size));
+                size_t compressed_size = ZSTD_compress(compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
 
                 contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
                 contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
                 contour_set->set_decimation_factor(pixel_rounding);
+                total_src_size += src_size;
+                total_compressed_size += compressed_size;
             }
+            auto t_end = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+            double ratio = ((double) total_compressed_size) / total_src_size;
+            fmt::print("Encoded and compressed {:.2f} kB to {:.2f} kB ({:.2f}%) in {} ms using compression level {}\n",
+                       total_src_size * 1.0e-3,
+                       total_compressed_size * 1.0e-3,
+                       ratio * 100,
+                       dt * 1.0e-3,
+                       compression_level);
+
             SendFileEvent(response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, response);
         } else {
             SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);
