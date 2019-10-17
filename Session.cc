@@ -701,16 +701,17 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
                 total_src_size += src_size;
                 total_compressed_size += compressed_size;
             }
-            auto t_end = std::chrono::high_resolution_clock::now();
-            auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-            double ratio = ((double) total_compressed_size) / total_src_size;
-            fmt::print("Encoded and compressed {:.2f} kB to {:.2f} kB ({:.2f}%) in {} ms using compression level {}\n",
-                       total_src_size * 1.0e-3,
-                       total_compressed_size * 1.0e-3,
-                       ratio * 100,
-                       dt * 1.0e-3,
-                       compression_level);
-
+            if (_verbose_logging) {
+                auto t_end = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+                double ratio = ((double) total_compressed_size) / total_src_size;
+                fmt::print("Encoded and compressed {:.2f} kB to {:.2f} kB ({:.2f}%) in {} ms using compression level {}\n",
+                           total_src_size * 1.0e-3,
+                           total_compressed_size * 1.0e-3,
+                           ratio * 100,
+                           dt * 1.0e-3,
+                           compression_level);
+            }
             SendFileEvent(response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, response);
         } else {
             SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);

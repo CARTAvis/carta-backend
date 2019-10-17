@@ -106,7 +106,7 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
 }
 
 bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
-    int smoothing_factor) {
+    int smoothing_factor, bool verbose_logging) {
     float sigma = round(smoothing_factor / 2.0f);
     int mask_size = smoothing_factor * 2 + 1;
     const int apron_height = smoothing_factor;
@@ -149,10 +149,12 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         source_ptr += num_lines * src_width;
         dest_ptr += num_lines * dest_width;
     }
-    auto t_end = std::chrono::high_resolution_clock::now();
-    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-    auto rate = dest_width * dest_height / (double)dt;
-    fmt::print(
-        "Smoothed with smoothing factor of {} and kernel size of {} in {} ms at {} MPix/s\n", smoothing_factor, mask_size, dt * 1e-3, rate);
+    if (verbose_logging) {
+        auto t_end = std::chrono::high_resolution_clock::now();
+        auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+        auto rate = dest_width * dest_height / (double) dt;
+        fmt::print(
+            "Smoothed with smoothing factor of {} and kernel size of {} in {} ms at {} MPix/s\n", smoothing_factor, mask_size, dt * 1e-3, rate);
+    }
     return true;
 }

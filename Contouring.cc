@@ -186,7 +186,7 @@ void TraceSingleContour(float* image, int64_t width, int64_t height, double scal
 }
 
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels, std::vector<std::vector<float>>& vertex_data,
-                   std::vector<std::vector<int32_t>>& index_data) {
+                   std::vector<std::vector<int32_t>>& index_data, bool verbose_logging) {
     auto t_start_contours = std::chrono::high_resolution_clock::now();
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
@@ -207,18 +207,21 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     };
 
     tbb::parallel_for(tbb::blocked_range<int64_t>(0, levels.size()), loop);
-    auto t_end_contours = std::chrono::high_resolution_clock::now();
-    auto dt_contours = std::chrono::duration_cast<std::chrono::microseconds>(t_end_contours - t_start_contours).count();
-    auto rate_contours = width * height / (double) dt_contours;
-    int vertex_count = 0;
-    int segment_count = 0;
-    for (auto& vertices : vertex_data) {
-        vertex_count += vertices.size();
-    }
-    for (auto& indices : index_data) {
-        segment_count += indices.size();
-    }
 
-    fmt::print("Contoured {}x{} image in {} ms at {} MPix/s. Found {} vertices in {} segments across {} levels\n", width, height,
-               dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
+    if (verbose_logging) {
+        auto t_end_contours = std::chrono::high_resolution_clock::now();
+        auto dt_contours = std::chrono::duration_cast<std::chrono::microseconds>(t_end_contours - t_start_contours).count();
+        auto rate_contours = width * height / (double) dt_contours;
+        int vertex_count = 0;
+        int segment_count = 0;
+        for (auto& vertices : vertex_data) {
+            vertex_count += vertices.size();
+        }
+        for (auto& indices : index_data) {
+            segment_count += indices.size();
+        }
+
+        fmt::print("Contoured {}x{} image in {} ms at {} MPix/s. Found {} vertices in {} segments across {} levels\n", width, height,
+                   dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
+    }
 }
