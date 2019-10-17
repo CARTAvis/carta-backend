@@ -164,7 +164,7 @@ void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t
 void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
     const int num_values = array.size();
     const int blocked_length = 4 * (num_values / 4);
-    std::array<uint8_t, 16> shuffle_vals = {0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15};
+    const std::array<uint8_t, 16> shuffle_vals = {0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15};
 
     if (strided) {
         // Delta-encoding of neighbouring vertices to improve compression
