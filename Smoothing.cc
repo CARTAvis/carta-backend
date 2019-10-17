@@ -27,7 +27,9 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
 
     if (vertical && dest_height < src_height - kernel_radius * 2) {
         return false;
-    } else if (dest_width < src_width - kernel_radius * 2) {
+    }
+
+    if (dest_width < src_width - kernel_radius * 2) {
         return false;
     }
 
@@ -50,7 +52,7 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
                     int64_t src_index = src_x + i * jump_size + src_width * src_y;
                     __m256 val = _mm256_loadu_ps(src_data + src_index);
                     __m256 w = _mm256_set1_ps(kernel[i + kernel_radius]);
-                    __m256 mask = _mm256_andnot_ps(is_infinity(val), _mm256_cmp_ps(val, val, _CMP_EQ_OQ));
+                    __m256 mask = _mm256_andnot_ps(IsInfinity(val), _mm256_cmp_ps(val, val, _CMP_EQ_OQ));
                     w = _mm256_and_ps(w, mask);
                     val = _mm256_and_ps(val, mask);
                     sum += val * w;
@@ -65,7 +67,7 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
                     int64_t src_index = src_x + i * jump_size + src_width * src_y;
                     __m128 val = _mm_loadu_ps(src_data + src_index);
                     __m128 w = _mm_set_ps1(kernel[i + kernel_radius]);
-                    __m128 mask = _mm_andnot_ps(is_infinity(val), _mm_cmpeq_ps(val, val));
+                    __m128 mask = _mm_andnot_ps(IsInfinity(val), _mm_cmpeq_ps(val, val));
                     w = _mm_and_ps(w, mask);
                     val = _mm_and_ps(val, mask);
                     sum += val * w;

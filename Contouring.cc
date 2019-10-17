@@ -11,7 +11,7 @@
 using namespace std;
 
 // Contour tracing code adapted from SAOImage DS9: https://github.com/SAOImageDS9/SAOImageDS9
-void traceSegment(const float* image, std::vector<bool>& visited, int64_t width, int64_t height, double scale, double offset, double level,
+void TraceSegment(const float* image, std::vector<bool>& visited, int64_t width, int64_t height, double scale, double offset, double level,
     int x_cell, int y_cell, int side, vector<float>& vertices) {
     int64_t i = x_cell;
     int64_t j = y_cell;
@@ -27,25 +27,26 @@ void traceSegment(const float* image, std::vector<bool>& visited, int64_t width,
         double c = image[(j + 1) * width + i + 1];
         double d = image[(j + 1) * width + i];
 
-        double X = 0, Y = 0;
+        double x = 0;
+        double y = 0;
         if (first_iteration) {
             first_iteration = false;
             switch (side) {
                 case Edge::TopEdge:
-                    X = (level - a) / (b - a) + i;
-                    Y = j;
+                    x = (level - a) / (b - a) + i;
+                    y = j;
                     break;
                 case Edge::RightEdge:
-                    X = i + 1;
-                    Y = (level - b) / (c - b) + j;
+                    x = i + 1;
+                    y = (level - b) / (c - b) + j;
                     break;
                 case Edge::BottomEdge:
-                    X = (level - c) / (d - c) + i;
-                    Y = j + 1;
+                    x = (level - c) / (d - c) + i;
+                    y = j + 1;
                     break;
                 case Edge::LeftEdge:
-                    X = i;
-                    Y = (level - a) / (d - a) + j;
+                    x = i;
+                    y = (level - a) / (d - a) + j;
                     break;
                 default:
                     break;
@@ -65,32 +66,32 @@ void traceSegment(const float* image, std::vector<bool>& visited, int64_t width,
                     case Edge::TopEdge:
                         if (a >= level && level > b) {
                             flag = true;
-                            X = (level - a) / (b - a) + i;
-                            Y = j;
+                            x = (level - a) / (b - a) + i;
+                            y = j;
                             j--;
                         }
                         break;
                     case Edge::RightEdge:
                         if (b >= level && level > c) {
                             flag = true;
-                            X = i + 1;
-                            Y = (level - b) / (c - b) + j;
+                            x = i + 1;
+                            y = (level - b) / (c - b) + j;
                             i++;
                         }
                         break;
                     case Edge::BottomEdge:
                         if (c >= level && level > d) {
                             flag = true;
-                            X = (level - d) / (c - d) + i;
-                            Y = j + 1;
+                            x = (level - d) / (c - d) + i;
+                            y = j + 1;
                             j++;
                         }
                         break;
                     case Edge::LeftEdge:
                         if (d >= level && level > a) {
                             flag = true;
-                            X = i;
-                            Y = (level - a) / (d - a) + j;
+                            x = i;
+                            y = (level - a) / (d - a) + j;
                             i--;
                         }
                         break;
@@ -114,14 +115,14 @@ void traceSegment(const float* image, std::vector<bool>& visited, int64_t width,
         }
 
         // Shift to pixel center
-        double xVal = X + 0.5;
-        double yVal = Y + 0.5;
-        vertices.push_back(scale * xVal + offset);
-        vertices.push_back(scale * yVal + offset);
+        double x_val = x + 0.5;
+        double y_val = y + 0.5;
+        vertices.push_back(scale * x_val + offset);
+        vertices.push_back(scale * y_val + offset);
     }
 }
 
-void traceLevel(const float* image, int64_t width, int64_t height, double scale, double offset, double level, vector<float>& vertices,
+void TraceLevel(const float* image, int64_t width, int64_t height, double scale, double offset, double level, vector<float>& vertices,
     vector<int32_t>& indices) {
     int64_t N = width * height;
     vector<bool> visited(N);
@@ -131,7 +132,7 @@ void traceLevel(const float* image, int64_t width, int64_t height, double scale,
     for (j = 0, i = 0; i < width - 1; i++) {
         if (image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
             indices.push_back(vertices.size());
-            traceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::TopEdge, vertices);
+            TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::TopEdge, vertices);
         }
     }
 
@@ -139,7 +140,7 @@ void traceLevel(const float* image, int64_t width, int64_t height, double scale,
     for (j = 0; j < height - 1; j++) {
         if (image[(j)*width + i] < level && level <= image[(j + 1) * width + i]) {
             indices.push_back(vertices.size());
-            traceSegment(image, visited, width, height, scale, offset, level, i - 1, j, Edge::RightEdge, vertices);
+            TraceSegment(image, visited, width, height, scale, offset, level, i - 1, j, Edge::RightEdge, vertices);
         }
     }
 
@@ -147,7 +148,7 @@ void traceLevel(const float* image, int64_t width, int64_t height, double scale,
     for (i--; i >= 0; i--) {
         if (image[(j)*width + i + 1] < level && level <= image[(j)*width + i]) {
             indices.push_back(vertices.size());
-            traceSegment(image, visited, width, height, scale, offset, level, i, j - 1, Edge::BottomEdge, vertices);
+            TraceSegment(image, visited, width, height, scale, offset, level, i, j - 1, Edge::BottomEdge, vertices);
         }
     }
 
@@ -155,7 +156,7 @@ void traceLevel(const float* image, int64_t width, int64_t height, double scale,
     for (i = 0, j--; j >= 0; j--) {
         if (image[(j + 1) * width + i] < level && level <= image[(j)*width + i]) {
             indices.push_back(vertices.size());
-            traceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::LeftEdge, vertices);
+            TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::LeftEdge, vertices);
         }
     }
 
@@ -164,7 +165,7 @@ void traceLevel(const float* image, int64_t width, int64_t height, double scale,
         for (i = 0; i < width - 1; i++) {
             if (!visited[j * width + i] && image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
                 indices.push_back(vertices.size());
-                traceSegment(image, visited, width, height, scale, offset, level, i, j, TopEdge, vertices);
+                TraceSegment(image, visited, width, height, scale, offset, level, i, j, TopEdge, vertices);
             }
         }
     }
@@ -181,7 +182,7 @@ void TraceSingleContour(float* image, int64_t width, int64_t height, double scal
             image[i] = -std::numeric_limits<float>::max();
         }
     }
-    traceLevel(image, width, height, scale, offset, level, vertex_data, indices);
+    TraceLevel(image, width, height, scale, offset, level, vertex_data, indices);
 }
 
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
@@ -201,7 +202,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
         for (int64_t l = r.begin(); l < r.end(); l++) {
             vertex_data[l].clear();
             index_data[l].clear();
-            traceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l]);
+            TraceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l]);
         }
     };
 

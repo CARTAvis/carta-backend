@@ -15,22 +15,22 @@
 #ifdef __AVX__
 #define SIMD_WIDTH 8
 
-static inline __m256 is_infinity(__m256 x) {
-    const __m256 SIGN_MASK = _mm256_set1_ps(-0.0);
-    const __m256 INF = _mm256_set1_ps(std::numeric_limits<float>::infinity());
-    x = _mm256_andnot_ps(SIGN_MASK, x);
-    x = _mm256_cmp_ps(x, INF, _CMP_EQ_OQ);
+static inline __m256 IsInfinity(__m256 x) {
+    const __m256 sign_mask = _mm256_set1_ps(-0.0);
+    const __m256 inf = _mm256_set1_ps(std::numeric_limits<float>::infinity());
+    x = _mm256_andnot_ps(sign_mask, x);
+    x = _mm256_cmp_ps(x, inf, _CMP_EQ_OQ);
     return x;
 }
 #else
 #define SIMD_WIDTH 4
 
-static inline __m128 is_infinity(__m128 x) {
-    const __m128 SIGN_MASK = _mm_set_ps1(-0.0f);
-    const __m128 INF = _mm_set_ps1(std::numeric_limits<float>::infinity());
+static inline __m128 IsInfinity(__m128 x) {
+    const __m128 sign_mask = _mm_set_ps1(-0.0f);
+    const __m128 inf = _mm_set_ps1(std::numeric_limits<float>::infinity());
 
-    x = _mm_andnot_ps(SIGN_MASK, x);
-    x = _mm_cmpeq_ps(x, INF);
+    x = _mm_andnot_ps(sign_mask, x);
+    x = _mm_cmpeq_ps(x, inf);
     return x;
 }
 #endif
