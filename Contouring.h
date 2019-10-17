@@ -1,13 +1,14 @@
 #ifndef CARTA_BACKEND__CONTOURING_H_
 #define CARTA_BACKEND__CONTOURING_H_
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 enum Edge { TopEdge, RightEdge, BottomEdge, LeftEdge, None };
 
-void TraceContourLevel(float* image, int64_t width, int64_t height, double scale, double offset, double level, std::vector<double>& vertex_data, std::vector<int32_t>& indices);
-void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels, std::vector<std::vector<float>>& vertex_data,
-    std::vector<std::vector<int32_t>>& index_data, bool verbose_logging = false);
+void TraceContourLevel(float* image, int64_t width, int64_t height, double scale, double offset, double level,
+    std::vector<double>& vertex_data, std::vector<int32_t>& indices);
+void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
+    std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, bool verbose_logging = false);
 
 #endif // CARTA_BACKEND__CONTOURING_H_

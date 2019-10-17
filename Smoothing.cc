@@ -152,9 +152,9 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
     if (verbose_logging) {
         auto t_end = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-        auto rate = dest_width * dest_height / (double) dt;
-        fmt::print(
-            "Smoothed with smoothing factor of {} and kernel size of {} in {} ms at {} MPix/s\n", smoothing_factor, mask_size, dt * 1e-3, rate);
+        auto rate = dest_width * dest_height / (double)dt;
+        fmt::print("Smoothed with smoothing factor of {} and kernel size of {} in {} ms at {} MPix/s\n", smoothing_factor, mask_size,
+            dt * 1e-3, rate);
     }
     return true;
 }

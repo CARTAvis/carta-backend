@@ -19,7 +19,7 @@
 using namespace carta;
 
 Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, bool verbose,
-             int default_channel)
+    int default_channel)
     : _session_id(session_id),
       _valid(true),
       _z_profile_count(0),
@@ -160,7 +160,7 @@ bool Frame::ChannelsChanged(int channel, int stokes) {
 // Set regions
 
 bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType type, std::vector<CARTA::Point>& points, float rotation,
-                      std::string& message) {
+    std::string& message) {
     // Create or update Region
     bool region_set(false);
 
@@ -349,7 +349,7 @@ void Frame::ImportRegion(
 }
 
 void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
-                                     CARTA::FileType file_type, CARTA::ImportRegionAck& import_ack, std::string message) {
+    CARTA::FileType file_type, CARTA::ImportRegionAck& import_ack, std::string message) {
     // Process a single CRTF annotation file line to set region; adds region to frame regions.
     // Completes ack message with region properties or appends to message if failed.
     switch (file_line.getType()) {
@@ -425,26 +425,32 @@ casacore::String Frame::AnnTypeToDs9String(casa::AnnotationBase::Type annotation
         case casa::AnnotationBase::LINE:
         case casa::AnnotationBase::CIRCLE:
         case casa::AnnotationBase::ELLIPSE:
-        case casa::AnnotationBase::ANNULUS:ds9_type = casa::AnnotationBase::typeToString(annotation_type);
+        case casa::AnnotationBase::ANNULUS:
+            ds9_type = casa::AnnotationBase::typeToString(annotation_type);
             break;
-        case casa::AnnotationBase::TEXT:ds9_type = "text";
+        case casa::AnnotationBase::TEXT:
+            ds9_type = "text";
             break;
-        case casa::AnnotationBase::SYMBOL:ds9_type = "point";
+        case casa::AnnotationBase::SYMBOL:
+            ds9_type = "point";
             break;
         case casa::AnnotationBase::RECT_BOX:
         case casa::AnnotationBase::CENTER_BOX:
-        case casa::AnnotationBase::ROTATED_BOX:ds9_type = "box";
+        case casa::AnnotationBase::ROTATED_BOX:
+            ds9_type = "box";
             break;
-        case casa::AnnotationBase::POLYGON:ds9_type = "polygon";
+        case casa::AnnotationBase::POLYGON:
+            ds9_type = "polygon";
             break;
         case casa::AnnotationBase::POLYLINE:
-        case casa::AnnotationBase::VECTOR:break; // no equivalent
+        case casa::AnnotationBase::VECTOR:
+            break; // no equivalent
     }
     return ds9_type;
 }
 
 void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename,
-                         CARTA::ExportRegionAck& export_ack) {
+    CARTA::ExportRegionAck& export_ack) {
     // Export regions to file with filename; if no filename, add contents to ack message for client-side export.
     // Check if regions to export
     if (region_ids.empty()) {
@@ -467,9 +473,11 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
 
     // export according to type
     switch (file_type) {
-        case CARTA::FileType::CRTF:ExportCrtfRegions(region_ids, coord_type, filename, export_ack);
+        case CARTA::FileType::CRTF:
+            ExportCrtfRegions(region_ids, coord_type, filename, export_ack);
             break;
-        case CARTA::FileType::REG:ExportDs9Regions(region_ids, coord_type, filename, export_ack);
+        case CARTA::FileType::REG:
+            ExportDs9Regions(region_ids, coord_type, filename, export_ack);
             break;
         default: {
             export_ack.set_success(false);
@@ -877,7 +885,7 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
                     nan_encodings[i] =
                         GetNanEncodingsBlock(image_data, subset_element_start, row_length, subset_row_end - subset_row_start);
                     Compress(image_data, subset_element_start, compression_buffers[i], compressed_sizes[i], row_length,
-                             subset_row_end - subset_row_start, precision);
+                        subset_row_end - subset_row_start, precision);
                 }
             };
             tbb::parallel_for(range, loop);
@@ -885,7 +893,7 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
             // Complete message
             for (auto i = 0; i < num_subsets_setting; i++) {
                 raster_image_data.add_image_data(compression_buffers[i].data(), compressed_sizes[i]);
-                raster_image_data.add_nan_encodings((char*) nan_encodings[i].data(), nan_encodings[i].size() * sizeof(int));
+                raster_image_data.add_nan_encodings((char*)nan_encodings[i].data(), nan_encodings[i].size() * sizeof(int));
             }
             raster_data_ok = true;
         } else {
@@ -975,7 +983,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
 // Tile data
 bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int channel, int stokes,
-                               CARTA::CompressionType compression_type, float compression_quality) {
+    CARTA::CompressionType compression_type, float compression_quality) {
     // Early exit if channel has changed
     if (ChannelsChanged(channel, stokes)) {
         return false;
@@ -1033,9 +1041,9 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
     CARTA::ImageBounds bounds;
     // crop to image size
     bounds.set_x_min(std::max(0, tile.x * tile_size_original));
-    bounds.set_x_max(std::min((int) _image_shape(0), (tile.x + 1) * tile_size_original));
+    bounds.set_x_max(std::min((int)_image_shape(0), (tile.x + 1) * tile_size_original));
     bounds.set_y_min(std::max(0, tile.y * tile_size_original));
-    bounds.set_y_max(std::min((int) _image_shape(1), (tile.y + 1) * tile_size_original));
+    bounds.set_y_max(std::min((int)_image_shape(1), (tile.y + 1) * tile_size_original));
 
     const int req_height = bounds.y_max() - bounds.y_min();
     const int req_width = bounds.x_max() - bounds.x_min();
@@ -1361,7 +1369,7 @@ bool Frame::FillSpectralProfileData(
                     // if region mask is valid, then check is swizzled data available
                     if (_loader->UseRegionSpectralData(mask, _image_mutex)) {
                         profile_ok = _loader->GetRegionSpectralData(region_id, config_stokes, profile_stokes, mask, region->XyOrigin(),
-                                                                    _image_mutex, [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values_map, float progress) {
+                            _image_mutex, [&](std::map<CARTA::StatsType, std::vector<double>>* stats_values_map, float progress) {
                                 CARTA::SpectralProfileData profile_message;
                                 profile_message.set_stokes(curr_stokes);
                                 profile_message.set_progress(progress);
@@ -1371,14 +1379,14 @@ bool Frame::FillSpectralProfileData(
                             });
                     } else {
                         profile_ok = GetRegionSpectralData(region_id, config_stokes, profile_stokes,
-                                                           [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
-                                                               CARTA::SpectralProfileData profile_message;
-                                                               profile_message.set_stokes(curr_stokes);
-                                                               profile_message.set_progress(progress);
-                                                               region->FillSpectralProfileDataMessage(profile_message, config_stokes, results);
-                                                               // send (partial) result to Session
-                                                               cb(profile_message);
-                                                           });
+                            [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
+                                CARTA::SpectralProfileData profile_message;
+                                profile_message.set_stokes(curr_stokes);
+                                profile_message.set_progress(progress);
+                                region->FillSpectralProfileDataMessage(profile_message, config_stokes, results);
+                                // send (partial) result to Session
+                                cb(profile_message);
+                            });
                     }
                 }
             }
@@ -1660,7 +1668,7 @@ bool Frame::GetPointSpectralData(
                     guard.unlock();
                     memcpy(&data[start(_spectral_axis)], buffer.data(), count(_spectral_axis) * sizeof(float));
                     start(_spectral_axis) += count(_spectral_axis);
-                    progress = (float) start(_spectral_axis) / profile_size;
+                    progress = (float)start(_spectral_axis) / profile_size;
 
                     // get the time elapse for this step
                     auto t_end = std::chrono::high_resolution_clock::now();
@@ -1699,7 +1707,7 @@ bool Frame::GetPointSpectralData(
 }
 
 bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
-                                  const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
+    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
     // get starting spectral config
     SpectralConfig start_config_stats;
     if (!GetRegionSpectralConfig(region_id, config_stokes, start_config_stats)) {
@@ -1779,7 +1787,7 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
             }
 
             start += count;
-            progress = (float) start / profile_size;
+            progress = (float)start / profile_size;
 
             // get the time elapse for this step
             auto t_end = std::chrono::high_resolution_clock::now();
@@ -1811,21 +1819,21 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
     return data_ok;
 }
 
-bool Frame::ContourImage(CARTA::SmoothingMode smoothing_mode, int smoothing_factor, const std::vector<double>& levels,
-                         std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data) {
+bool Frame::ContourImage(std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data) {
     double scale = 1.0;
     double offset = 0;
     bool smooth_successful = false;
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
 
-    if (smoothing_mode == CARTA::SmoothingMode::NoSmoothing || smoothing_factor <= 1) {
-        TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, levels, vertex_data, index_data, _verbose);
+    if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
+        TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, _contour_settings.levels, vertex_data,
+            index_data, _verbose);
         return true;
-    } else if (smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
+    } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
-        float sigma = smoothing_factor / 2.0f;
-        int mask_size = smoothing_factor * 2 + 1;
-        const int apron_height = smoothing_factor;
+        float sigma = _contour_settings.smoothing_factor / 2.0f;
+        int mask_size = _contour_settings.smoothing_factor * 2 + 1;
+        const int apron_height = _contour_settings.smoothing_factor;
         std::vector<float> kernel(mask_size);
         int64_t kernel_width = (kernel.size() - 1) / 2;
         MakeKernel(kernel, sigma);
@@ -1835,13 +1843,15 @@ bool Frame::ContourImage(CARTA::SmoothingMode smoothing_mode, int smoothing_fact
         int64_t dest_width = _image_shape(0) - 2 * kernel_width;
         int64_t dest_height = _image_shape(1) - 2 * kernel_width;
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
-        smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height, smoothing_factor, _verbose);
+        smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
+            _contour_settings.smoothing_factor, _verbose);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
         if (smooth_successful) {
             // Perform contouring with an offset based on the Gaussian smoothing apron size
-            offset = smoothing_factor;
-            TraceContours(dest_array.get(), dest_width, dest_height, scale, offset, levels, vertex_data, index_data, _verbose);
+            offset = _contour_settings.smoothing_factor;
+            TraceContours(
+                dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data, _verbose);
             return true;
         }
     } else {
@@ -1852,14 +1862,15 @@ bool Frame::ContourImage(CARTA::SmoothingMode smoothing_mode, int smoothing_fact
         image_bounds.set_x_max(_image_shape(0));
         image_bounds.set_y_max(_image_shape(1));
         std::vector<float> dest_vector;
-        smooth_successful = GetRasterData(dest_vector, image_bounds, smoothing_factor, true);
+        smooth_successful = GetRasterData(dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
         if (smooth_successful) {
             // Perform contouring with an offset based on the block size, and a scale factor equal to block size
             offset = 0;
-            scale = smoothing_factor;
-            size_t dest_width = image_bounds.x_max() / smoothing_factor;
-            size_t dest_height = image_bounds.y_max() / smoothing_factor;
-            TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, levels, vertex_data, index_data, _verbose);
+            scale = _contour_settings.smoothing_factor;
+            size_t dest_width = image_bounds.x_max() / _contour_settings.smoothing_factor;
+            size_t dest_height = image_bounds.y_max() / _contour_settings.smoothing_factor;
+            TraceContours(
+                dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data, _verbose);
             return true;
         }
         fmt::print("Smoothing mode not implemented yet!\n");
@@ -1976,6 +1987,16 @@ bool Frame::GetRegionState(int region_id, RegionState& region_state) {
 bool Frame::GetRegionSpectralConfig(int region_id, int config_stokes, SpectralConfig& config_stats) {
     if (_regions.count(region_id)) {
         return _regions[region_id]->GetSpectralConfig(config_stokes, config_stats);
+    }
+    return false;
+}
+bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
+    ContourSettings new_settings = {std::vector<double>(message.levels().begin(), message.levels().end()), message.smoothing_mode(),
+        message.smoothing_factor(), message.decimation_factor(), message.compression_level(), message.reference_file_id()};
+
+    if (_contour_settings != new_settings) {
+        _contour_settings = new_settings;
+        return true;
     }
     return false;
 }

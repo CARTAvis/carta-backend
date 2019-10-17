@@ -12,20 +12,20 @@
 
 #include <casacore/casa/OS/File.h>
 
+#include <carta-protobuf/contour_image.pb.h>
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
-#include <carta-protobuf/contour_image.pb.h>
-#include <zstd.h>
 #include <xmmintrin.h>
+#include <zstd.h>
 
 #include "Carta.h"
+#include "Compression.h"
 #include "EventHeader.h"
 #include "FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
 #include "Util.h"
-#include "Compression.h"
 
 #define DEBUG(_DB_TEXT_) \
     {}
@@ -36,7 +36,7 @@ bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async,
-                 FileListHandler* file_list_handler, bool verbose)
+    FileListHandler* file_list_handler, bool verbose)
     : _id(id),
       _socket(ws),
       _root_folder(root),
@@ -128,7 +128,7 @@ void Session::DisconnectCalled() {
 // File browser
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const string& folder,
-                                   const string& filename, string hdu, string& message) {
+    const string& filename, string hdu, string& message) {
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool ext_file_info_ok(true);
     try {
@@ -270,7 +270,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     string err_message;
 
     bool info_loaded((_selected_file_info != nullptr) && (_selected_file_info_extended != nullptr) &&
-        (_selected_file_info->name() == filename)); // correct file loaded
+                     (_selected_file_info->name() == filename)); // correct file loaded
     if (!info_loaded) {                                          // load from image file
         ResetFileInfo(true);
         info_loaded =
@@ -364,7 +364,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
                 raster_tile_data.set_file_id(file_id);
                 auto tile = Tile::Decode(encoded_coordinate);
                 if (_frames.at(file_id)->FillRasterTileData(
-                    raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
+                        raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
                     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
                 } else {
                     fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
@@ -383,21 +383,25 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
 void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
+        const std::unique_ptr<Frame>& frame = _frames.at(file_id);
         try {
             std::string err_message;
             auto channel = message.channel();
             auto stokes = message.stokes();
-            bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
-            bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
-            if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
+            bool channel_changed(channel != frame->CurrentChannel());
+            bool stokes_changed(stokes != frame->CurrentStokes());
+            if (frame->SetImageChannels(channel, stokes, err_message)) {
                 // RESPONSE: send data for all regions
                 bool send_histogram(true);
                 UpdateRegionData(file_id, send_histogram, channel_changed, stokes_changed);
+                // Send Contour data if required
+                SendContourData(file_id);
             } else {
                 if (!err_message.empty()) {
                     SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
                 }
             }
+
             // Send any required tiles if they have been requested
             if (message.has_required_tiles()) {
                 OnAddRequiredTiles(message.required_tiles());
@@ -559,7 +563,7 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
         try {
             auto region_id = message.region_id();
             if (_frames.at(file_id)->SetRegionSpatialRequirements(
-                region_id, std::vector<std::string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
+                    region_id, std::vector<std::string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
                 // RESPONSE
                 SendSpatialProfileData(file_id, region_id);
             } else {
@@ -582,8 +586,8 @@ void Session::OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
         try {
             auto region_id = message.region_id();
             if (_frames.at(file_id)->SetRegionHistogramRequirements(
-                region_id, std::vector<CARTA::SetHistogramRequirements_HistogramConfig>(
-                    message.histograms().begin(), message.histograms().end()))) {
+                    region_id, std::vector<CARTA::SetHistogramRequirements_HistogramConfig>(
+                                   message.histograms().begin(), message.histograms().end()))) {
                 // RESPONSE
                 if (region_id == CUBE_REGION_ID) {
                     SendCubeHistogramData(message, request_id);
@@ -610,8 +614,8 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
         try {
             auto region_id = message.region_id();
             if (_frames.at(file_id)->SetRegionSpectralRequirements(
-                region_id, std::vector<CARTA::SetSpectralRequirements_SpectralConfig>(
-                    message.spectral_profiles().begin(), message.spectral_profiles().end()))) {
+                    region_id, std::vector<CARTA::SetSpectralRequirements_SpectralConfig>(
+                                   message.spectral_profiles().begin(), message.spectral_profiles().end()))) {
                 // RESPONSE
                 SendSpectralProfileData(file_id, region_id);
             } else {
@@ -634,7 +638,7 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
         try {
             auto region_id = message.region_id();
             if (_frames.at(file_id)->SetRegionStatsRequirements(
-                region_id, std::vector<int>(message.stats().begin(), message.stats().end()))) {
+                    region_id, std::vector<int>(message.stats().begin(), message.stats().end()))) {
                 // RESPONSE
                 SendRegionStatsData(file_id, region_id);
             } else {
@@ -652,69 +656,10 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
 }
 
 void Session::OnSetContourParameters(const CARTA::SetContourParameters& message) {
-
-    std::vector<double> levels(message.levels().begin(), message.levels().end());
     if (_frames.count(message.file_id())) {
-        std::vector<std::vector<float>> vertex_data(levels.size());
-        std::vector<std::vector<int32_t>> index_data(levels.size());
-        if (_frames.at(message.file_id())->ContourImage(message.smoothing_mode(), message.smoothing_factor(), levels, vertex_data, index_data)) {
-            CARTA::ContourImageData response;
-            response.set_file_id(message.file_id());
-            response.set_channel(message.channel());
-            response.set_stokes(message.stokes());
-
-            std::vector<char> compression_buffer;
-            const float pixel_rounding = std::max(1, std::min(32, message.decimation_factor()));
-            const int compression_level = std::max(1, std::min(20, message.compression_level()));
-
-            auto t_start = std::chrono::high_resolution_clock::now();
-            double total_src_size = 0;
-            double total_compressed_size = 0;
-
-            // TODO: handle image bounds correctly
-            for (auto i = 0; i < levels.size(); i++) {
-                auto& vertices = vertex_data[i];
-                auto& indices = index_data[i];
-
-                // Skip empty contour sets
-                if (vertices.empty() || indices.empty()) {
-                    continue;
-                }
-
-                // Fill contour set
-                auto contour_set = response.add_contour_sets();
-                contour_set->set_level(levels[i]);
-
-                const int N = vertices.size();
-
-                std::vector<int32_t> vertices_shuffled;
-                RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
-
-                // Compress using Zstd library
-                const size_t src_size = N * sizeof(int32_t);
-                compression_buffer.resize(ZSTD_compressBound(src_size));
-                size_t compressed_size = ZSTD_compress(compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
-
-                contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
-                contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
-                contour_set->set_decimation_factor(pixel_rounding);
-                total_src_size += src_size;
-                total_compressed_size += compressed_size;
-            }
-            if (_verbose_logging) {
-                auto t_end = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                double ratio = ((double) total_compressed_size) / total_src_size;
-                fmt::print("Encoded and compressed {:.2f} kB to {:.2f} kB ({:.2f}%) in {} ms using compression level {}\n",
-                           total_src_size * 1.0e-3,
-                           total_compressed_size * 1.0e-3,
-                           ratio * 100,
-                           dt * 1.0e-3,
-                           compression_level);
-            }
-            SendFileEvent(response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, response);
-        } else {
-            SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);
+        const int num_levels = message.levels_size();
+        if (_frames.at(message.file_id())->SetContourParameters(message) && num_levels) {
+            SendContourData(message.file_id());
         }
     }
 }
@@ -847,7 +792,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             cube_bins = {chan_histogram.bins().begin(), chan_histogram.bins().end()};
                         } else { // add chan histogram bins to cube histogram bins
                             std::transform(chan_histogram.bins().begin(), chan_histogram.bins().end(), cube_bins.begin(), cube_bins.begin(),
-                                           std::plus<int>());
+                                std::plus<int>());
                         }
 
                         // check for cancel
@@ -1036,6 +981,82 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     return data_sent;
 }
 
+bool Session::SendContourData(int file_id) {
+    if (_frames.count(file_id)) {
+        std::unique_ptr<Frame>& frame = _frames.at(file_id);
+        const ContourSettings settings = frame->GetContourParameters();
+        int num_levels = settings.levels.size();
+
+        if (!num_levels) {
+            return false;
+        }
+
+        std::vector<std::vector<float>> vertex_data(num_levels);
+        std::vector<std::vector<int32_t>> index_data(num_levels);
+
+        if (frame->ContourImage(vertex_data, index_data)) {
+            CARTA::ContourImageData response;
+            response.set_file_id(file_id);
+            // Currently only supports identical reference file IDs
+            response.set_reference_file_id(settings.reference_file_id);
+            response.set_channel(frame->CurrentChannel());
+            response.set_stokes(frame->CurrentStokes());
+
+            std::vector<char> compression_buffer;
+            const float pixel_rounding = std::max(1, std::min(32, settings.decimation));
+            const int compression_level = std::max(1, std::min(20, settings.compression_level));
+
+            auto t_start = std::chrono::high_resolution_clock::now();
+            double total_src_size = 0;
+            double total_compressed_size = 0;
+
+            // TODO: handle image bounds correctly
+            for (auto i = 0; i < num_levels; i++) {
+                auto& vertices = vertex_data[i];
+                auto& indices = index_data[i];
+
+                // Skip empty contour sets
+                if (vertices.empty() || indices.empty()) {
+                    continue;
+                }
+
+                // Fill contour set
+                auto contour_set = response.add_contour_sets();
+                contour_set->set_level(settings.levels[i]);
+
+                const int N = vertices.size();
+
+                std::vector<int32_t> vertices_shuffled;
+                RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
+
+                // Compress using Zstd library
+                const size_t src_size = N * sizeof(int32_t);
+                compression_buffer.resize(ZSTD_compressBound(src_size));
+                size_t compressed_size = ZSTD_compress(
+                    compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
+
+                contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
+                contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
+                contour_set->set_decimation_factor(pixel_rounding);
+                total_src_size += src_size;
+                total_compressed_size += compressed_size;
+            }
+            if (_verbose_logging) {
+                auto t_end = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+                double ratio = ((double)total_compressed_size) / total_src_size;
+                fmt::print("Encoded and compressed {:.2f} kB to {:.2f} kB ({:.2f}%) in {} ms using compression level {}\n",
+                    total_src_size * 1.0e-3, total_compressed_size * 1.0e-3, ratio * 100, dt * 1.0e-3, compression_level);
+            }
+            SendFileEvent(response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, response);
+            return true;
+        } else {
+            SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);
+        }
+    }
+    return false;
+}
+
 void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool channel_changed, bool stokes_changed) {
     // Send updated data for all regions with requirements; do not send image histogram if already sent with raster data.
     // Only set channel_changed and stokes_changed if they are the only trigger for new data,
@@ -1066,7 +1087,7 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::
     int message_length = message.ByteSize();
     size_t required_size = message_length + sizeof(carta::EventHeader);
     std::vector<char> msg(required_size, 0);
-    carta::EventHeader* head = (carta::EventHeader*) msg.data();
+    carta::EventHeader* head = (carta::EventHeader*)msg.data();
 
     head->type = event_type;
     head->icd_version = carta::ICD_VERSION;
@@ -1137,7 +1158,7 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
 
     if (stopped) {
         if (((_animation_object->_stop_frame.channel() == _animation_object->_current_frame.channel()) &&
-            (_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
+                (_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
             return;
         }
         curr_frame = _animation_object->_stop_frame;
@@ -1147,6 +1168,8 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
 
     auto file_id(_animation_object->_file_id);
     if (_frames.count(file_id)) {
+        const std::unique_ptr<Frame>& frame = _frames.at(file_id);
+
         try {
             std::string err_message;
             auto channel = curr_frame.channel();
@@ -1156,15 +1179,17 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
                 return;
             }
 
-            bool channel_changed(channel != _frames.at(file_id)->CurrentChannel());
-            bool stokes_changed(stokes != _frames.at(file_id)->CurrentStokes());
+            bool channel_changed(channel != frame->CurrentChannel());
+            bool stokes_changed(stokes != frame->CurrentStokes());
 
             _animation_object->_current_frame = curr_frame;
 
-            if (_frames.at(file_id)->SetImageChannels(channel, stokes, err_message)) {
+            if (frame->SetImageChannels(channel, stokes, err_message)) {
                 // RESPONSE: updated image raster/histogram
                 bool send_histogram(true);
                 SendRasterImageData(file_id, send_histogram);
+                // Send Contour data if required
+                SendContourData(file_id);
                 // RESPONSE: data for all regions; no histogram
                 UpdateRegionData(file_id, !send_histogram, channel_changed, stokes_changed);
             } else {
@@ -1266,9 +1291,9 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
 
     if (_animation_object->_file_id != file_id) {
         std::fprintf(stderr,
-                     "%p Session::StopAnimation called with file id %d."
-                     "Expected file id %d",
-                     this, file_id, _animation_object->_file_id);
+            "%p Session::StopAnimation called with file id %d."
+            "Expected file id %d",
+            this, file_id, _animation_object->_file_id);
         return;
     }
 
@@ -1306,7 +1331,7 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
     if (_animation_object->_waiting_flow_event) {
         if (gap <= CurrentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
-            OnMessageTask* tsk = new(tbb::task::allocate_root(_animation_context)) AnimationTask(this);
+            OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
             tbb::task::enqueue(*tsk);
         }
     }

@@ -155,6 +155,9 @@ public:
     }
     static void SetInitExitTimeout(int secs);
 
+    inline uint32_t GetId() {
+        return _id;
+    }
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
@@ -183,6 +186,7 @@ private:
     bool SendSpectralProfileData(int file_id, int region_id, bool channel_changed = false, bool stokes_changed = false);
     bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
     bool SendRegionStatsData(int file_id, int region_id); // update stats in all cases
+    bool SendContourData(int file_id);
     void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
 
     // Send protobuf messages

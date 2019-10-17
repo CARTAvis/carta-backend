@@ -3,13 +3,13 @@
 #include <array>
 #include <cmath>
 
-#include <zfp.h>
 #include <x86intrin.h>
+#include <zfp.h>
 
 using namespace std;
 
 int Compress(vector<float>& array, size_t offset, vector<char>& compression_buffer, size_t& compressed_size, uint32_t nx, uint32_t ny,
-             uint32_t precision) {
+    uint32_t precision) {
     int status = 0;     /* return value: 0 = success */
     zfp_type type;      /* array scalar type */
     zfp_field* field;   /* array meta data */
@@ -150,7 +150,7 @@ void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t
         __m128 vertices_vector = _mm_loadu_ps(&array[i]);
         // If we prefer truncation, then _mm_cvttps_epi32 should be used instead
         __m128i rounded_vals = _mm_cvtps_epi32(vertices_vector * rounding_factor);
-        _mm_store_si128((__m128i*) &dest[i], rounded_vals);
+        _mm_store_si128((__m128i*)&dest[i], rounded_vals);
     }
 
     // Round the remaining pixels
@@ -190,8 +190,8 @@ void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
 
     // Shuffle bytes in blocks of 126 bits (4 floats). The remaining bytes are left along
     for (size_t i = 0; i < blocked_length; i += 4) {
-        __m128i vals = _mm_loadu_si128((__m128i*) &array[i]);
-        vals = _mm_shuffle_epi8(vals, *(__m128i*) shuffle_vals.data());
-        _mm_store_si128((__m128i*) &array[i], vals);
+        __m128i vals = _mm_loadu_si128((__m128i*)&array[i]);
+        vals = _mm_shuffle_epi8(vals, *(__m128i*)shuffle_vals.data());
+        _mm_store_si128((__m128i*)&array[i], vals);
     }
 }
