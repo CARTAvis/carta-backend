@@ -140,11 +140,11 @@ vector<int32_t> GetNanEncodingsBlock(vector<float>& array, int offset, int w, in
 
 // This function transforms an array of 2D vertices from contour data in order to improve compression ratios
 void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t>& dest, float rounding_factor) {
-    const int N = array.size();
-    dest.resize(N);
+    const int num_values = array.size();
+    dest.resize(num_values);
     int i = 0;
 
-    const int blocked_length = 4 * (N / 4);
+    const int blocked_length = 4 * (num_values / 4);
     // Run through the vertices in groups of 4, rounding to the nearest Nth of a pixel
     for (i = 0; i < blocked_length; i += 4) {
         __m128 vertices_vector = _mm_loadu_ps(&array[i]);
@@ -154,7 +154,7 @@ void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t
     }
 
     // Round the remaining pixels
-    for (i = blocked_length; i < N; i++) {
+    for (i = blocked_length; i < num_values; i++) {
         dest[i] = round(array[i] * rounding_factor);
     }
 
@@ -162,15 +162,15 @@ void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t
 }
 
 void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
-    const int N = array.size();
-    const int blocked_length = 4 * (N / 4);
+    const int num_values = array.size();
+    const int blocked_length = 4 * (num_values / 4);
     std::array<uint8_t, 16> shuffle_vals = {0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15};
 
     if (strided) {
         // Delta-encoding of neighbouring vertices to improve compression
         int last_x = 0;
         int last_y = 0;
-        for (size_t i = 0; i < N - 1; i += 2) {
+        for (size_t i = 0; i < num_values - 1; i += 2) {
             int current_x = array[i];
             int current_y = array[i + 1];
             array[i] = current_x - last_x;
@@ -181,7 +181,7 @@ void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
     } else {
         // Delta-encoding of neighbouring integers to improve compression
         int last = 0;
-        for (size_t i = 0; i < N; i++) {
+        for (size_t i = 0; i < num_values; i++) {
             int current = array[i];
             array[i] = current - last;
             last = current;

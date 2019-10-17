@@ -124,8 +124,8 @@ void TraceSegment(const float* image, std::vector<bool>& visited, int64_t width,
 
 void TraceLevel(const float* image, int64_t width, int64_t height, double scale, double offset, double level, vector<float>& vertices,
     vector<int32_t>& indices) {
-    int64_t N = width * height;
-    vector<bool> visited(N);
+    int64_t num_pixels = width * height;
+    vector<bool> visited(num_pixels);
     int64_t i, j;
 
     // Search TopEdge
@@ -173,11 +173,11 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
 
 void TraceSingleContour(float* image, int64_t width, int64_t height, double scale, double offset, double level,
     std::vector<float>& vertex_data, std::vector<int32_t>& indices) {
-    int64_t N = width * height;
+    int64_t num_pixels = width * height;
     vertex_data.clear();
     indices.clear();
 
-    for (auto i = 0; i < N; i++) {
+    for (auto i = 0; i < num_pixels; i++) {
         if (isnan(image[i])) {
             image[i] = -std::numeric_limits<float>::max();
         }
@@ -191,8 +191,8 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
 
-    int64_t N = width * height;
-    for (int64_t i = 0; i < N; i++) {
+    int64_t num_pixels = width * height;
+    for (int64_t i = 0; i < num_pixels; i++) {
         if (isnan(image[i])) {
             image[i] = -std::numeric_limits<float>::max();
         }
