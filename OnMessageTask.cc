@@ -121,3 +121,8 @@ tbb::task* OnAddRequiredTilesTask::execute() {
     _session->OnAddRequiredTiles(_message);
     return nullptr;
 }
+
+tbb::task* OnSetContourParametersTask::execute() {
+    _session->OnSetContourParameters(_message);
+    return nullptr;
+}

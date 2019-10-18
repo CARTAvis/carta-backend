@@ -20,6 +20,7 @@
 #include <casacore/casa/aips.h>
 
 #include <carta-protobuf/close_file.pb.h>
+#include <carta-protobuf/contour.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/open_file.pb.h>
@@ -63,6 +64,7 @@ public:
     void OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
     void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);
     void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
+    void OnSetContourParameters(const CARTA::SetContourParameters& message);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
 
@@ -153,6 +155,9 @@ public:
     }
     static void SetInitExitTimeout(int secs);
 
+    inline uint32_t GetId() {
+        return _id;
+    }
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
@@ -181,6 +186,7 @@ private:
     bool SendSpectralProfileData(int file_id, int region_id, bool channel_changed = false, bool stokes_changed = false);
     bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
     bool SendRegionStatsData(int file_id, int region_id); // update stats in all cases
+    bool SendContourData(int file_id);
     void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
 
     // Send protobuf messages
