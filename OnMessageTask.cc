@@ -121,3 +121,8 @@ tbb::task* OnAddRequiredTilesTask::execute() {
     _session->OnAddRequiredTiles(_message);
     return nullptr;
 }
+
+tbb::task* SetRegionTask::execute() {
+    _session->OnSetRegion(_message, _request_id);
+    return nullptr;
+}

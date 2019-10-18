@@ -28,6 +28,7 @@
 #include "FileListHandler.h"
 #include "FileSettings.h"
 #include "OnMessageTask.h"
+#include "ResumeSessionHandler.h"
 #include "Session.h"
 #include "Util.h"
 
@@ -133,6 +134,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         session->OnRegisterViewer(message, head.icd_version, head.request_id);
                     } else {
                         fmt::print("Bad REGISTER_VIEWER message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::RESUME_SESSION: {
+                    CARTA::ResumeSession message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        ResumeSessionHandler(session, message, head.request_id);
+                    } else {
+                        fmt::print("Bad RESUME_SESSION message!\n");
                     }
                     break;
                 }
