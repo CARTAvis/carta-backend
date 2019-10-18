@@ -12,7 +12,9 @@
 #include <imageanalysis/Annotations/RegionTextList.h>
 
 #include "Compression.h"
+#include "Contouring.h"
 #include "Ds9Parser.h"
+#include "Smoothing.h"
 
 using namespace carta;
 
@@ -1855,6 +1857,65 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
     return data_ok;
 }
 
+bool Frame::ContourImage(std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data) {
+    double scale = 1.0;
+    double offset = 0;
+    bool smooth_successful = false;
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
+
+    if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
+        TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, _contour_settings.levels, vertex_data,
+            index_data, _verbose);
+        return true;
+    } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
+        // Smooth the image from cache
+        float sigma = _contour_settings.smoothing_factor / 2.0f;
+        int mask_size = _contour_settings.smoothing_factor * 2 + 1;
+        const int apron_height = _contour_settings.smoothing_factor;
+        std::vector<float> kernel(mask_size);
+        int64_t kernel_width = (kernel.size() - 1) / 2;
+        MakeKernel(kernel, sigma);
+
+        int64_t source_width = _image_shape(0);
+        int64_t source_height = _image_shape(1);
+        int64_t dest_width = _image_shape(0) - 2 * kernel_width;
+        int64_t dest_height = _image_shape(1) - 2 * kernel_width;
+        std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
+        smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
+            _contour_settings.smoothing_factor, _verbose);
+        // Can release lock early, as we're no longer using the image cache
+        cache_lock.release();
+        if (smooth_successful) {
+            // Perform contouring with an offset based on the Gaussian smoothing apron size
+            offset = _contour_settings.smoothing_factor;
+            TraceContours(
+                dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data, _verbose);
+            return true;
+        }
+    } else {
+        // Block averaging
+        CARTA::ImageBounds image_bounds;
+        image_bounds.set_x_min(0);
+        image_bounds.set_y_min(0);
+        image_bounds.set_x_max(_image_shape(0));
+        image_bounds.set_y_max(_image_shape(1));
+        std::vector<float> dest_vector;
+        smooth_successful = GetRasterData(dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
+        if (smooth_successful) {
+            // Perform contouring with an offset based on the block size, and a scale factor equal to block size
+            offset = 0;
+            scale = _contour_settings.smoothing_factor;
+            size_t dest_width = image_bounds.x_max() / _contour_settings.smoothing_factor;
+            size_t dest_height = image_bounds.y_max() / _contour_settings.smoothing_factor;
+            TraceContours(
+                dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data, _verbose);
+            return true;
+        }
+        fmt::print("Smoothing mode not implemented yet!\n");
+        return false;
+    }
+}
+
 bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2) {
     // check if point moved, spectral requirements changed
     if (!IsConnected(region_id)) {
@@ -1964,6 +2025,16 @@ bool Frame::GetRegionState(int region_id, RegionState& region_state) {
 bool Frame::GetRegionSpectralConfig(int region_id, int config_stokes, SpectralConfig& config_stats) {
     if (_regions.count(region_id)) {
         return _regions[region_id]->GetSpectralConfig(config_stokes, config_stats);
+    }
+    return false;
+}
+bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
+    ContourSettings new_settings = {std::vector<double>(message.levels().begin(), message.levels().end()), message.smoothing_mode(),
+        message.smoothing_factor(), message.decimation_factor(), message.compression_level(), message.reference_file_id()};
+
+    if (_contour_settings != new_settings) {
+        _contour_settings = new_settings;
+        return true;
     }
     return false;
 }

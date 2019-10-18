@@ -7,6 +7,7 @@
 #include <tuple>
 #include <vector>
 
+#include <carta-protobuf/contour.pb.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/task.h>
 
@@ -111,6 +112,18 @@ public:
         _message = message;
     }
     ~OnAddRequiredTilesTask() = default;
+};
+
+class OnSetContourParametersTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::SetContourParameters _message;
+    int _start, _stride, _end;
+
+public:
+    OnSetContourParametersTask(Session* session, CARTA::SetContourParameters message) : OnMessageTask(session) {
+        _message = message;
+    }
+    ~OnSetContourParametersTask() = default;
 };
 
 class SetRegionTask : public OnMessageTask {

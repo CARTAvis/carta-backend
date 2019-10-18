@@ -122,6 +122,11 @@ tbb::task* OnAddRequiredTilesTask::execute() {
     return nullptr;
 }
 
+tbb::task* OnSetContourParametersTask::execute() {
+    _session->OnSetContourParameters(_message);
+    return nullptr;
+}
+
 tbb::task* SetRegionTask::execute() {
     _session->OnSetRegion(_message, _request_id);
     return nullptr;

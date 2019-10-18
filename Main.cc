@@ -1,5 +1,3 @@
-
-
 #if _AUTH_SERVER_
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/value.h>
@@ -302,6 +300,12 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     } else {
                         fmt::print("Bad EXPORT_REGION message!\n");
                     }
+                    break;
+                }
+                case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
+                    CARTA::SetContourParameters message;
+                    message.ParseFromArray(event_buf, event_length);
+                    tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
                     break;
                 }
                 default: {
