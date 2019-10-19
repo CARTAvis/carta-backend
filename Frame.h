@@ -25,6 +25,7 @@
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
+#include "Contouring.h"
 #include "ImageData/FileLoader.h"
 #include "InterfaceConstants.h"
 #include "Region/Region.h"
@@ -44,12 +45,14 @@ struct ContourSettings {
     int smoothing_factor;
     int decimation;
     int compression_level;
+    int chunk_size;
     uint32_t reference_file_id;
 
     // Equality operator for checking if contour settings have changed
     bool operator==(const ContourSettings& rhs) const {
         if (this->smoothing_mode != rhs.smoothing_mode || this->decimation != rhs.decimation ||
-            this->compression_level != rhs.compression_level || this->reference_file_id != rhs.reference_file_id) {
+            this->compression_level != rhs.compression_level || this->reference_file_id != rhs.reference_file_id ||
+            this->chunk_size != rhs.chunk_size) {
             return false;
         }
         if (this->levels.size() != rhs.levels.size()) {
@@ -128,7 +131,8 @@ public:
     inline ContourSettings& GetContourParameters() {
         return _contour_settings;
     };
-    bool ContourImage(std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int>>& index_data);
+    bool ContourImage(
+        std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int>>& index_data, ContourCallback& partial_contour_callback);
 
     // histogram only (not full data message) : get if stored, else can calculate
     bool GetRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);

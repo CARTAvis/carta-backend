@@ -1857,7 +1857,8 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
     return data_ok;
 }
 
-bool Frame::ContourImage(std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data) {
+bool Frame::ContourImage(std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data,
+    ContourCallback& partial_contour_callback) {
     double scale = 1.0;
     double offset = 0;
     bool smooth_successful = false;
@@ -1865,7 +1866,7 @@ bool Frame::ContourImage(std::vector<std::vector<float>>& vertex_data, std::vect
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
         TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, _contour_settings.levels, vertex_data,
-            index_data, _verbose);
+            index_data, _contour_settings.chunk_size, partial_contour_callback, _verbose);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
@@ -1888,8 +1889,8 @@ bool Frame::ContourImage(std::vector<std::vector<float>>& vertex_data, std::vect
         if (smooth_successful) {
             // Perform contouring with an offset based on the Gaussian smoothing apron size
             offset = _contour_settings.smoothing_factor;
-            TraceContours(
-                dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data, _verbose);
+            TraceContours(dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
+                _contour_settings.chunk_size, partial_contour_callback, _verbose);
             return true;
         }
     } else {
@@ -1901,14 +1902,15 @@ bool Frame::ContourImage(std::vector<std::vector<float>>& vertex_data, std::vect
         image_bounds.set_y_max(_image_shape(1));
         std::vector<float> dest_vector;
         smooth_successful = GetRasterData(dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
+        cache_lock.release();
         if (smooth_successful) {
             // Perform contouring with an offset based on the block size, and a scale factor equal to block size
             offset = 0;
             scale = _contour_settings.smoothing_factor;
             size_t dest_width = image_bounds.x_max() / _contour_settings.smoothing_factor;
             size_t dest_height = image_bounds.y_max() / _contour_settings.smoothing_factor;
-            TraceContours(
-                dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data, _verbose);
+            TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
+                _contour_settings.chunk_size, partial_contour_callback, _verbose);
             return true;
         }
         fmt::print("Smoothing mode not implemented yet!\n");
@@ -2030,7 +2032,8 @@ bool Frame::GetRegionSpectralConfig(int region_id, int config_stokes, SpectralCo
 }
 bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
     ContourSettings new_settings = {std::vector<double>(message.levels().begin(), message.levels().end()), message.smoothing_mode(),
-        message.smoothing_factor(), message.decimation_factor(), message.compression_level(), message.reference_file_id()};
+        message.smoothing_factor(), message.decimation_factor(), message.compression_level(), message.contour_chunk_size(),
+        message.reference_file_id()};
 
     if (_contour_settings != new_settings) {
         _contour_settings = new_settings;
