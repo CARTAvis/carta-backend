@@ -131,8 +131,7 @@ public:
     inline ContourSettings& GetContourParameters() {
         return _contour_settings;
     };
-    bool ContourImage(
-        std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int>>& index_data, ContourCallback& partial_contour_callback);
+    bool ContourImage(ContourCallback& partial_contour_callback);
 
     // histogram only (not full data message) : get if stored, else can calculate
     bool GetRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);

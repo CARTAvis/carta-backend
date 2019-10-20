@@ -1019,8 +1019,6 @@ bool Session::SendContourData(int file_id) {
         }
 
         int64_t total_vertices = 0;
-        std::vector<std::vector<float>> vertex_data(num_levels);
-        std::vector<std::vector<int32_t>> index_data(num_levels);
 
         auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
             CARTA::ContourImageData partial_response;
@@ -1042,23 +1040,25 @@ bool Session::SendContourData(int file_id) {
             const int N = vertices.size();
             total_vertices += N;
 
-            std::vector<int32_t> vertices_shuffled;
-            RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
+            if (N) {
+                std::vector<int32_t> vertices_shuffled;
+                RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
 
-            // Compress using Zstd library
-            const size_t src_size = N * sizeof(int32_t);
-            compression_buffer.resize(ZSTD_compressBound(src_size));
-            size_t compressed_size =
-                ZSTD_compress(compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
+                // Compress using Zstd library
+                const size_t src_size = N * sizeof(int32_t);
+                compression_buffer.resize(ZSTD_compressBound(src_size));
+                size_t compressed_size =
+                    ZSTD_compress(compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
 
-            contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
-            contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
+                contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
+                contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
+                contour_set->set_uncompressed_coordinates_size(src_size);
+            }
             contour_set->set_decimation_factor(pixel_rounding);
-            contour_set->set_uncompressed_coordinates_size(src_size);
             SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response);
         };
 
-        if (frame->ContourImage(vertex_data, index_data, callback)) {
+        if (frame->ContourImage(callback)) {
             return true;
         } else {
             SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);

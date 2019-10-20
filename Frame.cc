@@ -1857,11 +1857,12 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
     return data_ok;
 }
 
-bool Frame::ContourImage(std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data,
-    ContourCallback& partial_contour_callback) {
+bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     double scale = 1.0;
     double offset = 0;
     bool smooth_successful = false;
+    std::vector<std::vector<float>> vertex_data;
+    std::vector<std::vector<int>> index_data;
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
