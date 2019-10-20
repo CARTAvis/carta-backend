@@ -1054,6 +1054,7 @@ bool Session::SendContourData(int file_id) {
             contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
             contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
             contour_set->set_decimation_factor(pixel_rounding);
+            contour_set->set_uncompressed_coordinates_size(src_size);
             SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response);
         };
 
