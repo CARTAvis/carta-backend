@@ -258,7 +258,7 @@ void Session::OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& reques
     }
 }
 
-void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
+bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     // Create Frame and send response message
     const auto& directory(message.directory());
     const auto& filename(message.file());
@@ -333,6 +333,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     if (success) {
         UpdateRegionData(file_id);
     }
+    return success;
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
@@ -442,7 +443,7 @@ void Session::OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id) 
     }
 }
 
-void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) {
+bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) {
     // set new Region or update existing one
     auto file_id(message.file_id());
     auto region_id(message.region_id());
@@ -485,6 +486,7 @@ void Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
         SendSpectralProfileData(file_id, region_id);
         _frames.at(file_id)->DecreaseZProfileCount(region_id);
     }
+    return success;
 }
 
 void Session::OnRemoveRegion(const CARTA::RemoveRegion& message) {

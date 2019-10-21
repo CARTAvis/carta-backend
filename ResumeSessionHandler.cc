@@ -8,10 +8,16 @@ ResumeSessionHandler::ResumeSessionHandler(Session* session, CARTA::ResumeSessio
 }
 
 void ResumeSessionHandler::Execute() {
+    bool success(true);
+    // Error message
+    std::string err_message;
+    std::string err_file_ids = "Problem loading files: ";
+    std::string err_region_ids = "Problem loading regions: ";
+
     // Close all images
     CARTA::CloseFile close_file_msg;
     close_file_msg.set_file_id(-1);
-    Command(close_file_msg);
+    CloseFileCmd(close_file_msg);
 
     // Open images
     for (int i = 0; i < _message.images_size(); ++i) {
@@ -21,13 +27,18 @@ void ResumeSessionHandler::Execute() {
         open_file_msg.set_file(image.file());
         open_file_msg.set_hdu(image.hdu());
         open_file_msg.set_file_id(image.file_id());
-        Command(open_file_msg);
+        if (!OpenFileCmd(open_file_msg)) {
+            success = false;
+            // Error message
+            std::string file_id = std::to_string(image.file_id()) + " ";
+            err_file_ids.append(file_id);
+        }
 
         // Set image channels
         CARTA::SetImageChannels set_image_channels_msg;
         set_image_channels_msg.set_channel(image.channel());
         set_image_channels_msg.set_stokes(image.stokes());
-        Command(set_image_channels_msg);
+        SetImageChannelsCmd(set_image_channels_msg);
 
         // Set regions
         for (int j = 0; j < image.regions_size(); ++j) {
@@ -40,22 +51,36 @@ void ResumeSessionHandler::Execute() {
             set_region_msg.set_region_type(region.region_info().region_type());
             *set_region_msg.mutable_control_points() = {
                 region.region_info().control_points().begin(), region.region_info().control_points().end()};
-            Command(set_region_msg);
+            if (!SetRegionCmd(set_region_msg)) {
+                success = false;
+                // Error message
+                std::string region_id = std::to_string(region.region_id()) + " ";
+                err_region_ids.append(region_id);
+            }
         }
-    };
+    }
+
+    // RESPONSE
+    CARTA::ResumeSessionAck ack;
+    ack.set_success(success);
+    if (!success) {
+        err_message = err_file_ids + err_region_ids;
+        ack.set_message(err_message);
+    }
+    _session->SendEvent(CARTA::EventType::RESUME_SESSION_ACK, _request_id, ack);
 }
 
-void ResumeSessionHandler::Command(CARTA::CloseFile message) {
+void ResumeSessionHandler::CloseFileCmd(CARTA::CloseFile message) {
     _session->CheckCancelAnimationOnFileClose(message.file_id());
     _session->_file_settings.ClearSettings(message.file_id());
     _session->OnCloseFile(message);
 }
 
-void ResumeSessionHandler::Command(CARTA::OpenFile message) {
-    _session->OnOpenFile(message, _request_id);
+bool ResumeSessionHandler::OpenFileCmd(CARTA::OpenFile message) {
+    return _session->OnOpenFile(message, _request_id);
 }
 
-void ResumeSessionHandler::Command(CARTA::SetImageChannels message) {
+void ResumeSessionHandler::SetImageChannelsCmd(CARTA::SetImageChannels message) {
     OnMessageTask* tsk = nullptr;
     _session->ImageChannelLock();
     if (!_session->ImageChannelTaskTestAndSet()) {
@@ -67,6 +92,6 @@ void ResumeSessionHandler::Command(CARTA::SetImageChannels message) {
     tbb::task::enqueue(*tsk);
 }
 
-void ResumeSessionHandler::Command(CARTA::SetRegion message) {
-    _session->OnSetRegion(message, _request_id);
+bool ResumeSessionHandler::SetRegionCmd(CARTA::SetRegion message) {
+    return _session->OnSetRegion(message, _request_id);
 }

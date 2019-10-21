@@ -19,10 +19,10 @@ private:
 
     void Execute();
 
-    void Command(CARTA::CloseFile message);
-    void Command(CARTA::OpenFile message);
-    void Command(CARTA::SetImageChannels message);
-    void Command(CARTA::SetRegion message);
+    void CloseFileCmd(CARTA::CloseFile message);
+    bool OpenFileCmd(CARTA::OpenFile message);
+    void SetImageChannelsCmd(CARTA::SetImageChannels message);
+    bool SetRegionCmd(CARTA::SetRegion message);
 };
 
 #endif // CARTA_BACKEND__RESUMESESSIONHANDLER_H_
