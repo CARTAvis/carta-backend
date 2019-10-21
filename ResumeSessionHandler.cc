@@ -68,6 +68,5 @@ void ResumeSessionHandler::Command(CARTA::SetImageChannels message) {
 }
 
 void ResumeSessionHandler::Command(CARTA::SetRegion message) {
-    OnMessageTask* tsk = new (tbb::task::allocate_root(_session->Context())) SetRegionTask(_session, message, _request_id);
-    tbb::task::enqueue(*tsk);
+    _session->OnSetRegion(message, _request_id);
 }

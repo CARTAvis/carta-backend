@@ -126,17 +126,4 @@ public:
     ~OnSetContourParametersTask() = default;
 };
 
-class SetRegionTask : public OnMessageTask {
-    tbb::task* execute() override;
-    CARTA::SetRegion _message;
-    uint32_t _request_id;
-
-public:
-    SetRegionTask(Session* session, CARTA::SetRegion message, uint32_t request_id) : OnMessageTask(session) {
-        _message = message;
-        _request_id = request_id;
-    }
-    ~SetRegionTask() = default;
-};
-
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_
