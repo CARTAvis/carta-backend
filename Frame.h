@@ -50,9 +50,9 @@ struct ContourSettings {
 
     // Equality operator for checking if contour settings have changed
     bool operator==(const ContourSettings& rhs) const {
-        if (this->smoothing_mode != rhs.smoothing_mode || this->decimation != rhs.decimation ||
-            this->compression_level != rhs.compression_level || this->reference_file_id != rhs.reference_file_id ||
-            this->chunk_size != rhs.chunk_size) {
+        if (this->smoothing_mode != rhs.smoothing_mode || this->smoothing_factor != rhs.smoothing_factor ||
+            this->decimation != rhs.decimation || this->compression_level != rhs.compression_level ||
+            this->reference_file_id != rhs.reference_file_id || this->chunk_size != rhs.chunk_size) {
             return false;
         }
         if (this->levels.size() != rhs.levels.size()) {

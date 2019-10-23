@@ -1047,8 +1047,8 @@ bool Session::SendContourData(int file_id) {
                 // Compress using Zstd library
                 const size_t src_size = N * sizeof(int32_t);
                 compression_buffer.resize(ZSTD_compressBound(src_size));
-                size_t compressed_size =
-                    ZSTD_compress(compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
+                size_t compressed_size = ZSTD_compress(
+                    compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
 
                 contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
                 contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
