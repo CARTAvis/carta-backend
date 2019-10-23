@@ -251,13 +251,25 @@ casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileIn
                 } else if ((std::find(int_entries.begin(), int_entries.end(), entry_name) != int_entries.end()) ||
                            (std::find(substr_int_entries.begin(), substr_int_entries.end(), entry_name_substr) !=
                                substr_int_entries.end())) {
-                    header_record.define(entry_name, std::stoi(entry_value)); // int
+                    try {
+                        header_record.define(entry_name, std::stoi(entry_value)); // int
+                    } catch (std::invalid_argument&) {
+                        header_record.define(entry_name, entry_value); // string
+                    }
                 } else if ((std::find(double_entries.begin(), double_entries.end(), entry_name) != double_entries.end()) ||
                            (std::find(substr_dbl_entries.begin(), substr_dbl_entries.end(), entry_name_substr) !=
                                substr_dbl_entries.end())) {
-                    header_record.define(entry_name, std::stod(entry_value)); // double
+                    try {
+                        header_record.define(entry_name, std::stod(entry_value)); // double
+                    } catch (std::invalid_argument&) {
+                        header_record.define(entry_name, entry_value); // string
+                    }
                 } else if (std::find(prefix_entries.begin(), prefix_entries.end(), entry_name_prefix) != prefix_entries.end()) {
-                    header_record.define(entry_name, std::stod(entry_value)); // double
+                    try {
+                        header_record.define(entry_name, std::stod(entry_value)); // double
+                    } catch (std::invalid_argument&) {
+                        header_record.define(entry_name, entry_value); // string
+                    }
                 } else {
                     // convert units
                     entry_value = (entry_value == "Kelvin" ? "K" : entry_value);
