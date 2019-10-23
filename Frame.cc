@@ -1871,12 +1871,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
-        float sigma = _contour_settings.smoothing_factor / 2.0f;
-        int mask_size = _contour_settings.smoothing_factor * 2 + 1;
-        const int apron_height = _contour_settings.smoothing_factor;
-        std::vector<float> kernel(mask_size);
-        int64_t kernel_width = (kernel.size() - 1) / 2;
-        MakeKernel(kernel, sigma);
+        int mask_size = (_contour_settings.smoothing_factor - 1) * 2 + 1;
+        int64_t kernel_width = (mask_size - 1) / 2;
 
         int64_t source_width = _image_shape(0);
         int64_t source_height = _image_shape(1);
@@ -1889,7 +1885,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         cache_lock.release();
         if (smooth_successful) {
             // Perform contouring with an offset based on the Gaussian smoothing apron size
-            offset = _contour_settings.smoothing_factor;
+            offset = _contour_settings.smoothing_factor - 1;
             TraceContours(dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
                 _contour_settings.chunk_size, partial_contour_callback, _verbose);
             return true;

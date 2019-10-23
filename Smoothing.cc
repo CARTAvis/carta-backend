@@ -109,11 +109,11 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
 
 bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
     int smoothing_factor, bool verbose_logging) {
-    float sigma = round(smoothing_factor / 2.0f);
-    int mask_size = smoothing_factor * 2 + 1;
-    const int apron_height = smoothing_factor;
-    int64_t calculated_dest_width = src_width - 2 * smoothing_factor;
-    int64_t calculated_dest_height = src_height - 2 * smoothing_factor;
+    float sigma = (smoothing_factor - 1) / 2.0f;
+    int mask_size = (smoothing_factor - 1) * 2 + 1;
+    const int apron_height = smoothing_factor - 1;
+    int64_t calculated_dest_width = src_width - 2 * (smoothing_factor - 1);
+    int64_t calculated_dest_height = src_height - 2 * (smoothing_factor - 1);
 
     if (dest_width * dest_height < calculated_dest_width * calculated_dest_height) {
         fmt::print(std::cerr, "Incorrectly sized destination array. Should be at least{}x{} (got {}x{})\n", calculated_dest_width,
