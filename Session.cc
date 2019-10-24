@@ -693,7 +693,7 @@ void Session::OnSetUserPreferences(const CARTA::SetUserPreferences& request, uin
     // TODO: Implement this
     CARTA::SetUserPreferencesAck ack_message;
     ack_message.set_success(false);
-    ack_message.set_message("Not implemented");
+    // ack_message.set_message("Not implemented");
     SendEvent(CARTA::EventType::SET_USER_PREFERENCES_ACK, request_id, ack_message);
 }
 
@@ -701,7 +701,7 @@ void Session::OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t requ
     // TODO: Implement this
     CARTA::SetUserLayoutAck ack_message;
     ack_message.set_success(false);
-    ack_message.set_message("Not implemented");
+    // ack_message.set_message("Not implemented");
     SendEvent(CARTA::EventType::SET_USER_LAYOUT_ACK, request_id, ack_message);
 }
 
