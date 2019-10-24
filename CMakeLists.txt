@@ -5,10 +5,19 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
 # Use the -march=native flags when building on the same architecture as deploying to get a slight performance
-# increase when running CPU intensive tasks such as compression and down-sampling of data
+# increase when running CPU intensive tasks such as compression and down-sampling of data. If targeting AVX-capable
+# processes only, set EnableAvx to ON
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+option(EnableAvx "Enable AVX codepaths instead of SSE4" OFF)
+
+if (EnableAvx)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
+endif()
 
 # use -DAuthServer:BOOL=ON to link mongodb and jsonccpp
 option(AuthServer "AuthServer" OFF)
@@ -50,6 +59,7 @@ set(LINK_LIBS
         crypto
         z
         zfp
+        zstd
         tbb
         casa_casa
         casa_coordinates
@@ -82,7 +92,10 @@ set(SOURCE_FILES
         FileSettings.cc
         Util.cc
         FileListHandler.cc
-        Tile.cc)
+        Tile.cc
+        Ds9Parser.cc
+        Contouring.cc
+        Smoothing.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

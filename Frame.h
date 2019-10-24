@@ -15,6 +15,7 @@
 #include <tbb/atomic.h>
 #include <tbb/queuing_rw_mutex.h>
 
+#include <carta-protobuf/contour.pb.h>
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/import_region.pb.h>
@@ -35,6 +36,38 @@ struct ViewSettings {
     CARTA::CompressionType compression_type;
     float quality;
     int num_subsets;
+};
+
+struct ContourSettings {
+    std::vector<double> levels;
+    CARTA::SmoothingMode smoothing_mode;
+    int smoothing_factor;
+    int decimation;
+    int compression_level;
+    uint32_t reference_file_id;
+
+    // Equality operator for checking if contour settings have changed
+    bool operator==(const ContourSettings& rhs) const {
+        if (this->smoothing_mode != rhs.smoothing_mode || this->decimation != rhs.decimation ||
+            this->compression_level != rhs.compression_level || this->reference_file_id != rhs.reference_file_id) {
+            return false;
+        }
+        if (this->levels.size() != rhs.levels.size()) {
+            return false;
+        }
+
+        for (auto i = 0; i < this->levels.size(); i++) {
+            if (this->levels[i] != rhs.levels[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool operator!=(const ContourSettings& rhs) const {
+        return !(*this == rhs);
+    }
 };
 
 class Frame {
@@ -90,6 +123,13 @@ public:
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data, bool channel_changed = false);
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
 
+    // Functions used for smoothing and contouring
+    bool SetContourParameters(const CARTA::SetContourParameters& message);
+    inline ContourSettings& GetContourParameters() {
+        return _contour_settings;
+    };
+    bool ContourImage(std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int>>& index_data);
+
     // histogram only (not full data message) : get if stored, else can calculate
     bool GetRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);
     bool CalcRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);
@@ -132,9 +172,12 @@ private:
     void SetDefaultCursor();            // using center point of image
 
     // Region import/export helpers
-    void ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
-        CARTA::ImportRegionAck& import_ack, std::string message);
-    void ExportCrtfRegion(
+    void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
+        CARTA::FileType file_type, CARTA::ImportRegionAck& import_ack, std::string message);
+    casacore::String AnnTypeToDs9String(casa::AnnotationBase::Type annotation_type);
+    void ExportCrtfRegions(
+        std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack);
+    void ExportDs9Regions(
         std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Image view settings
@@ -208,6 +251,9 @@ private:
 
     // Image settings
     ViewSettings _view_settings;
+
+    // Contour settings
+    ContourSettings _contour_settings;
 
     // Image data handling
     std::vector<float> _image_cache;    // image data for current channelIndex, stokesIndex

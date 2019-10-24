@@ -1,7 +1,9 @@
 #include "Compression.h"
 
+#include <array>
 #include <cmath>
 
+#include <x86intrin.h>
 #include <zfp.h>
 
 using namespace std;
@@ -38,38 +40,6 @@ int Compress(vector<float>& array, size_t offset, vector<char>& compression_buff
         status = 1;
     }
 
-    /* clean up */
-    zfp_field_free(field);
-    zfp_stream_close(zfp);
-    stream_close(stream);
-
-    return status;
-}
-
-int Decompress(
-    vector<float>& array, vector<char>& compression_buffer, size_t& compressed_size, uint32_t nx, uint32_t ny, uint32_t precision) {
-    int status = 0;    /* return value: 0 = success */
-    zfp_type type;     /* array scalar type */
-    zfp_field* field;  /* array meta data */
-    zfp_stream* zfp;   /* compressed stream */
-    bitstream* stream; /* bit stream to write to or read from */
-
-    /* allocate meta data for the 3D array a[nz][ny][nx] */
-    type = zfp_type_float;
-    field = zfp_field_2d(array.data(), type, nx, ny);
-
-    /* allocate meta data for a compressed stream */
-    zfp = zfp_stream_open(nullptr);
-    zfp_stream_set_precision(zfp, precision);
-
-    stream = stream_open(compression_buffer.data(), compressed_size);
-    zfp_stream_set_bit_stream(zfp, stream);
-    zfp_stream_rewind(zfp);
-
-    if (!zfp_decompress(zfp, field)) {
-        // fmt::print("decompression failed\n");
-        status = 1;
-    }
     /* clean up */
     zfp_field_free(field);
     zfp_stream_close(zfp);
@@ -166,4 +136,62 @@ vector<int32_t> GetNanEncodingsBlock(vector<float>& array, int offset, int w, in
         }
     }
     return encoded_array;
+}
+
+// This function transforms an array of 2D vertices from contour data in order to improve compression ratios
+void RoundAndEncodeVertices(const std::vector<float>& array, std::vector<int32_t>& dest, float rounding_factor) {
+    const int num_values = array.size();
+    dest.resize(num_values);
+    int i = 0;
+
+    const int blocked_length = 4 * (num_values / 4);
+    // Run through the vertices in groups of 4, rounding to the nearest Nth of a pixel
+    for (i = 0; i < blocked_length; i += 4) {
+        __m128 vertices_vector = _mm_loadu_ps(&array[i]);
+        // If we prefer truncation, then _mm_cvttps_epi32 should be used instead
+        __m128i rounded_vals = _mm_cvtps_epi32(vertices_vector * rounding_factor);
+        _mm_store_si128((__m128i*)&dest[i], rounded_vals);
+    }
+
+    // Round the remaining pixels
+    for (i = blocked_length; i < num_values; i++) {
+        dest[i] = round(array[i] * rounding_factor);
+    }
+
+    EncodeIntegers(dest, true);
+}
+
+void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
+    const int num_values = array.size();
+    const int blocked_length = 4 * (num_values / 4);
+    const std::array<uint8_t, 16> shuffle_vals = {0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15};
+
+    if (strided) {
+        // Delta-encoding of neighbouring vertices to improve compression
+        int last_x = 0;
+        int last_y = 0;
+        for (size_t i = 0; i < num_values - 1; i += 2) {
+            int current_x = array[i];
+            int current_y = array[i + 1];
+            array[i] = current_x - last_x;
+            array[i + 1] = current_y - last_y;
+            last_x = current_x;
+            last_y = current_y;
+        }
+    } else {
+        // Delta-encoding of neighbouring integers to improve compression
+        int last = 0;
+        for (size_t i = 0; i < num_values; i++) {
+            int current = array[i];
+            array[i] = current - last;
+            last = current;
+        }
+    }
+
+    // Shuffle bytes in blocks of 126 bits (4 floats). The remaining bytes are left along
+    for (size_t i = 0; i < blocked_length; i += 4) {
+        __m128i vals = _mm_loadu_si128((__m128i*)&array[i]);
+        vals = _mm_shuffle_epi8(vals, *(__m128i*)shuffle_vals.data());
+        _mm_store_si128((__m128i*)&array[i], vals);
+    }
 }

@@ -3,6 +3,7 @@
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
 
+#include <algorithm>
 #include <fstream>
 #include <thread>
 
@@ -11,7 +12,9 @@
 #include <imageanalysis/Annotations/RegionTextList.h>
 
 #include "Compression.h"
-#include "Util.h"
+#include "Contouring.h"
+#include "Ds9Parser.h"
+#include "Smoothing.h"
 
 using namespace carta;
 
@@ -257,28 +260,31 @@ void Frame::RemoveRegion(int region_id) {
 
 void Frame::ImportRegion(
     CARTA::FileType file_type, std::string& filename, std::vector<std::string>& contents, CARTA::ImportRegionAck& import_ack) {
-    // Import region from file
-    if (filename.empty() && contents.empty()) {
+    // Import region from file or contents
+
+    // cannot create annotation regions with no direction coordinate
+    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+    if (!coord_sys.hasDirectionCoordinate()) {
         import_ack.set_success(false);
-        import_ack.set_message("Import region failed: no region file contents.");
+        import_ack.set_message("Import region failed: image coordinate system has no direction coordinate.");
         import_ack.add_regions();
         return;
     }
 
-    // concat contents into one string delimited by newline
+    // concat contents vector into one string delimited by newline
     std::string file_contents;
     if (!contents.empty()) {
+        // concat contents into one string delimited by newline
         for (auto& line : contents) {
             file_contents.append(line + "\n");
         }
     }
 
-    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-    std::string message;
-    switch (file_type) {
-        case CARTA::FileType::CRTF: {
-            try {
-                // use RegionTextList to import file and create annotation file lines
+    std::string error_prefix("Import region failed: "), message;
+    try {
+        switch (file_type) {
+            case CARTA::FileType::CRTF: {
+                // use casa RegionTextList to import file and create annotation file lines
                 casa::RegionTextList region_list;
                 bool require_region(false); // import regions outside image
                 if (!filename.empty()) {
@@ -287,58 +293,92 @@ void Frame::ImportRegion(
                 } else {
                     region_list = casa::RegionTextList(coord_sys, file_contents, _image_shape, "", "", "", true, require_region);
                 }
-                // iterate through annotations to create regions if valid
+
+                // iterate through annotations to create regions if valid and add to ack message
                 for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
                     casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
-                    ImportCrtfFileLine(file_line, coord_sys, import_ack, message);
+                    ImportAnnotationFileLine(file_line, coord_sys, file_type, import_ack, message);
                 }
-            } catch (casacore::AipsError& err) {
-                if (_verbose) {
-                    std::cerr << "Import region failed: " << err.getMesg() << std::endl;
-                }
-                import_ack.set_success(false);
-                import_ack.set_message("CRTF region file import failed.");
-                import_ack.add_regions();
+                break;
             }
-            break;
+            case CARTA::FileType::REG: {
+                carta::Ds9Parser parser;
+                if (!filename.empty()) {
+                    parser = carta::Ds9Parser(filename, coord_sys, _image_shape);
+                } else {
+                    parser = carta::Ds9Parser(coord_sys, file_contents, _image_shape);
+                }
+
+                // check for failed regions
+                message = parser.GetImportErrors();
+
+                // iterate through annotations to create regions if valid and add to ack message
+                for (unsigned int iline = 0; iline < parser.NumLines(); ++iline) {
+                    casa::AsciiAnnotationFileLine file_line = parser.LineAt(iline);
+                    ImportAnnotationFileLine(file_line, coord_sys, file_type, import_ack, message);
+                }
+                break;
+            }
+            default: {
+                message = error_prefix + "file type not supported.";
+                break;
+            }
         }
-        case CARTA::FileType::REG:
-        default: {
-            message = "Import region failed: file type not supported.";
-            break;
+    } catch (casacore::AipsError& err) {
+        casacore::String error_message(err.getMesg());
+        if (_verbose) {
+            std::cerr << error_prefix << error_message << std::endl;
         }
+
+        // shorten error message to user
+        error_message = error_message.before("... thrown by"); // remove casacode file
+        error_message = error_message.before(" at File");      // remove casacode file
+        if (!filename.empty()) {
+            casacore::Path full_path(filename);
+            error_message.gsub(filename, full_path.baseName()); // remove filename path
+        }
+        std::ostringstream oss;
+        oss << error_prefix << error_message;
+        message = oss.str();
     }
-    if (import_ack.regions_size() == 0) {
-        import_ack.set_success(false);
+
+    // determine success
+    bool success(import_ack.regions_size() > 0);
+    if (!success) {
         if (message.empty()) {
-            message = "Region file import failed: zero regions set";
+            message = error_prefix + "zero regions set";
         }
-        import_ack.set_message(message);
         import_ack.add_regions();
-    } else {
-        import_ack.set_success(true); // true if at least one region was set
-        import_ack.set_message(message);
     }
+
+    // complete message
+    import_ack.set_success(success); // true if at least one region was set
+    import_ack.set_message(message);
 }
 
-void Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
-    CARTA::ImportRegionAck& import_ack, std::string message) {
+void Frame::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
+    CARTA::FileType file_type, CARTA::ImportRegionAck& import_ack, std::string message) {
     // Process a single CRTF annotation file line to set region; adds region to frame regions.
     // Completes ack message with region properties or appends to message if failed.
     switch (file_line.getType()) {
         case casa::AsciiAnnotationFileLine::ANNOTATION: {
             auto annotation_base = file_line.getAnnotationBase();
             const casa::AnnotationBase::Type annotation_type = annotation_base->getType();
+            casacore::String region_type_str;
+            if (file_type == CARTA::FileType::CRTF) {
+                region_type_str = casa::AnnotationBase::typeToString(annotation_type);
+            } else {
+                region_type_str = AnnTypeToDs9String(annotation_type);
+            }
             switch (annotation_type) {
-                case casa::AnnotationBase::LINE:
                 case casa::AnnotationBase::VECTOR:
                 case casa::AnnotationBase::TEXT: {
                     break;
                 }
+                case casa::AnnotationBase::LINE:
                 case casa::AnnotationBase::POLYLINE:
                 case casa::AnnotationBase::ANNULUS: {
-                    casacore::String ann_type_str = casa::AnnotationBase::typeToString(annotation_type);
-                    message += " CRTF region type " + ann_type_str + " is not supported.";
+                    message += " Region type " + region_type_str + " is not supported yet.";
                     break;
                 }
                 case casa::AnnotationBase::SYMBOL:
@@ -356,11 +396,13 @@ void Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                             // add to frame's regions
                             auto region_id = GetMaxRegionId() + 1;
                             _regions[region_id] = move(region);
-                            // region parameters
+
+                            // get region info parameters
                             std::string name(_regions[region_id]->Name());
                             CARTA::RegionType type(_regions[region_id]->Type());
                             std::vector<CARTA::Point> points = _regions[region_id]->GetControlPoints();
                             float rotation(_regions[region_id]->Rotation());
+
                             // add to ack
                             auto region_properties = import_ack.add_regions();
                             region_properties->set_region_id(region_id);
@@ -369,6 +411,8 @@ void Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
                             region_info->set_region_type(type);
                             *region_info->mutable_control_points() = {points.begin(), points.end()};
                             region_info->set_rotation(rotation);
+                        } else {
+                            message += " Region " + region_type_str + " was not validated.";
                         }
                     }
                 }
@@ -383,6 +427,36 @@ void Frame::ImportCrtfFileLine(casa::AsciiAnnotationFileLine& file_line, const c
     }
 }
 
+casacore::String Frame::AnnTypeToDs9String(casa::AnnotationBase::Type annotation_type) {
+    casacore::String ds9_type;
+    switch (annotation_type) {
+        case casa::AnnotationBase::LINE:
+        case casa::AnnotationBase::CIRCLE:
+        case casa::AnnotationBase::ELLIPSE:
+        case casa::AnnotationBase::ANNULUS:
+            ds9_type = casa::AnnotationBase::typeToString(annotation_type);
+            break;
+        case casa::AnnotationBase::TEXT:
+            ds9_type = "text";
+            break;
+        case casa::AnnotationBase::SYMBOL:
+            ds9_type = "point";
+            break;
+        case casa::AnnotationBase::RECT_BOX:
+        case casa::AnnotationBase::CENTER_BOX:
+        case casa::AnnotationBase::ROTATED_BOX:
+            ds9_type = "box";
+            break;
+        case casa::AnnotationBase::POLYGON:
+            ds9_type = "polygon";
+            break;
+        case casa::AnnotationBase::POLYLINE:
+        case casa::AnnotationBase::VECTOR:
+            break; // no equivalent
+    }
+    return ds9_type;
+}
+
 void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename,
     CARTA::ExportRegionAck& export_ack) {
     // Export regions to file with filename; if no filename, add contents to ack message for client-side export.
@@ -395,8 +469,7 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     }
 
     // Check export file before creating file contents
-    bool export_to_file(!filename.empty());
-    if (export_to_file) {
+    if (!filename.empty()) {
         casacore::File export_file(filename);
         if (!export_file.canCreate()) {
             export_ack.set_success(false);
@@ -406,13 +479,24 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
         }
     }
 
+    if (coord_type == CARTA::CoordinateType::WORLD) {
+        const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+        if (!coord_sys.hasDirectionCoordinate()) {
+            export_ack.set_success(false);
+            export_ack.set_message("Export region failed: image coordinate system has no direction coordinate.");
+            export_ack.add_contents();
+            return;
+        }
+    }
+
     // export according to type
     switch (file_type) {
-        case CARTA::FileType::CRTF: {
-            ExportCrtfRegion(region_ids, coord_type, filename, export_ack);
+        case CARTA::FileType::CRTF:
+            ExportCrtfRegions(region_ids, coord_type, filename, export_ack);
             break;
-        }
         case CARTA::FileType::REG:
+            ExportDs9Regions(region_ids, coord_type, filename, export_ack);
+            break;
         default: {
             export_ack.set_success(false);
             export_ack.set_message("Export region failed: file type not supported.");
@@ -421,10 +505,11 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     }
 }
 
-void Frame::ExportCrtfRegion(
+void Frame::ExportCrtfRegions(
     std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
     // Create RegionTextList for all requested regions and export to file or put in ack contents[]
     std::string message;
+    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
     const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
     casa::RegionTextList region_list = casa::RegionTextList(coord_sys, _image_shape);
 
@@ -433,26 +518,41 @@ void Frame::ExportCrtfRegion(
         if (_regions.count(region_id)) {
             auto& region = _regions[region_id];
             if (region->IsValid()) {
-                bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
-                casacore::CountedPtr<const casa::AnnotationBase> annotation_region = region->AnnotationRegion(pixel_coord);
-                if (annotation_region.null()) {
-                    message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
-                } else {
-                    casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
-                    region_list.addLine(file_line);
+                try {
+                    casacore::CountedPtr<const casa::AnnotationBase> annotation_region = region->AnnotationRegion(pixel_coord);
+                    if (!annotation_region.null()) {
+                        casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
+                        region_list.addLine(file_line);
+                    }
+                } catch (casacore::AipsError& err) {
+                    std::ostringstream oss;
+                    oss << " Region " << region_id << " export failed: ";
+                    if (err.getMesg().contains("no direction coordinate")) {
+                        oss << "image coordinate system has no direction coordinate.";
+                    } else {
+                        oss << err.getMesg();
+                    }
+                    message += oss.str();
                 }
             } else {
-                message += " Region " + std::to_string(region_id) + " export failed: region is not valid for this image.";
+                std::ostringstream oss;
+                oss << " Region " << region_id << " export failed: region is not valid for this image.";
+                message += oss.str();
             }
         } else {
-            message += " Region " + std::to_string(region_id) + " export failed: does not exist.";
+            std::ostringstream oss;
+            oss << " Region " << region_id << " export failed: no longer exists.";
+            message += oss.str();
         }
     }
 
     // check if file lines created
     if (region_list.nLines() == 0) {
         export_ack.set_success(false);
-        export_ack.set_message("Export region failed: no regions to export.");
+        if (message.empty()) {
+            message = "Export region failed: no regions to export.";
+        }
+        export_ack.set_message(message);
         export_ack.add_contents();
         return;
     }
@@ -466,6 +566,7 @@ void Frame::ExportCrtfRegion(
             file_line.print(export_stream);
             contents.push_back(export_stream.str());
         }
+        // complete ack message
         export_ack.set_success(true);
         export_ack.set_message(message);
         *export_ack.mutable_contents() = {contents.begin(), contents.end()};
@@ -474,6 +575,71 @@ void Frame::ExportCrtfRegion(
         std::ofstream export_file(filename);
         region_list.print(export_file);
         export_file.close();
+
+        // complete ack message
+        export_ack.set_success(true);
+        export_ack.set_message(message);
+        export_ack.add_contents();
+    }
+}
+
+void Frame::ExportDs9Regions(
+    std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
+    std::string message;
+    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+
+    carta::Ds9Parser parser(coord_sys, pixel_coord);
+    // create file line for each region
+    for (int region_id : region_ids) {
+        if (_regions.count(region_id)) {
+            auto& region = _regions[region_id];
+            if (pixel_coord) {
+                RegionState region_state = region->GetRegionState();
+                std::vector<CARTA::Point> carta_points(region_state.control_points);
+                std::vector<casacore::Quantity> points_quantities;
+                for (auto& point : carta_points) {
+                    points_quantities.push_back(casacore::Quantity(point.x(), "pix"));
+                    points_quantities.push_back(casacore::Quantity(point.y(), "pix"));
+                }
+                parser.AddRegion(region_state.name, region_state.type, points_quantities, region_state.rotation);
+            } else {
+                std::string name(region->Name());
+                CARTA::RegionType type(region->Type());
+                std::vector<casacore::Quantity> control_points(region->GetControlPointsWcs());
+                float rotation(region->Rotation());
+                parser.AddRegion(name, type, control_points, rotation);
+            }
+        }
+    }
+
+    // check if file lines created
+    if (parser.NumRegions() == 0) {
+        export_ack.set_success(false);
+        export_ack.set_message("Export region failed: no regions to export.");
+        export_ack.add_contents();
+        return;
+    }
+
+    if (filename.empty()) {
+        // fill contents[] of ack message
+        std::vector<std::string> contents;
+        for (unsigned int i = 0; i < parser.NumRegions(); ++i) {
+            std::ostringstream export_stream;
+            parser.PrintRegion(i, export_stream);
+            contents.push_back(export_stream.str());
+        }
+        // complete ack message
+        export_ack.set_success(true);
+        export_ack.set_message(message);
+        *export_ack.mutable_contents() = {contents.begin(), contents.end()};
+    } else {
+        // export to file; empty contents[] returned
+        std::ofstream export_file(filename);
+        parser.PrintRegionsToFile(export_file);
+        export_file.close();
+
+        // complete ack message
         export_ack.set_success(true);
         export_ack.set_message(message);
         export_ack.add_contents();
@@ -1691,6 +1857,65 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
     return data_ok;
 }
 
+bool Frame::ContourImage(std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data) {
+    double scale = 1.0;
+    double offset = 0;
+    bool smooth_successful = false;
+    tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
+
+    if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
+        TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, _contour_settings.levels, vertex_data,
+            index_data, _verbose);
+        return true;
+    } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
+        // Smooth the image from cache
+        float sigma = _contour_settings.smoothing_factor / 2.0f;
+        int mask_size = _contour_settings.smoothing_factor * 2 + 1;
+        const int apron_height = _contour_settings.smoothing_factor;
+        std::vector<float> kernel(mask_size);
+        int64_t kernel_width = (kernel.size() - 1) / 2;
+        MakeKernel(kernel, sigma);
+
+        int64_t source_width = _image_shape(0);
+        int64_t source_height = _image_shape(1);
+        int64_t dest_width = _image_shape(0) - 2 * kernel_width;
+        int64_t dest_height = _image_shape(1) - 2 * kernel_width;
+        std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
+        smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
+            _contour_settings.smoothing_factor, _verbose);
+        // Can release lock early, as we're no longer using the image cache
+        cache_lock.release();
+        if (smooth_successful) {
+            // Perform contouring with an offset based on the Gaussian smoothing apron size
+            offset = _contour_settings.smoothing_factor;
+            TraceContours(
+                dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data, _verbose);
+            return true;
+        }
+    } else {
+        // Block averaging
+        CARTA::ImageBounds image_bounds;
+        image_bounds.set_x_min(0);
+        image_bounds.set_y_min(0);
+        image_bounds.set_x_max(_image_shape(0));
+        image_bounds.set_y_max(_image_shape(1));
+        std::vector<float> dest_vector;
+        smooth_successful = GetRasterData(dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
+        if (smooth_successful) {
+            // Perform contouring with an offset based on the block size, and a scale factor equal to block size
+            offset = 0;
+            scale = _contour_settings.smoothing_factor;
+            size_t dest_width = image_bounds.x_max() / _contour_settings.smoothing_factor;
+            size_t dest_height = image_bounds.y_max() / _contour_settings.smoothing_factor;
+            TraceContours(
+                dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data, _verbose);
+            return true;
+        }
+        fmt::print("Smoothing mode not implemented yet!\n");
+        return false;
+    }
+}
+
 bool Frame::Interrupt(int region_id, const CursorXy& cursor1, const CursorXy& cursor2) {
     // check if point moved, spectral requirements changed
     if (!IsConnected(region_id)) {
@@ -1800,6 +2025,16 @@ bool Frame::GetRegionState(int region_id, RegionState& region_state) {
 bool Frame::GetRegionSpectralConfig(int region_id, int config_stokes, SpectralConfig& config_stats) {
     if (_regions.count(region_id)) {
         return _regions[region_id]->GetSpectralConfig(config_stokes, config_stats);
+    }
+    return false;
+}
+bool Frame::SetContourParameters(const CARTA::SetContourParameters& message) {
+    ContourSettings new_settings = {std::vector<double>(message.levels().begin(), message.levels().end()), message.smoothing_mode(),
+        message.smoothing_factor(), message.decimation_factor(), message.compression_level(), message.reference_file_id()};
+
+    if (_contour_settings != new_settings) {
+        _contour_settings = new_settings;
+        return true;
     }
     return false;
 }

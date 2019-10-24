@@ -1,5 +1,3 @@
-
-
 #if _AUTH_SERVER_
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/value.h>
@@ -46,7 +44,7 @@ static uint32_t session_number;
 static uWS::Hub websocket_hub;
 
 // command-line arguments
-static string root_folder("/"), base_folder("."), version_id("1.2");
+static string root_folder("/"), base_folder(".");
 static bool verbose, use_permissions, use_mongodb;
 namespace CARTA {
 string token;
@@ -310,6 +308,10 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     } else {
                         fmt::print("Bad SET_USER_LAYOUT message!\n");
                     }
+                case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
+                    CARTA::SetContourParameters message;
+                    message.ParseFromArray(event_buf, event_length);
+                    tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
                     break;
                 }
                 default: {
@@ -372,7 +374,7 @@ int main(int argc, const char* argv[]) {
         { // get values then let Input go out of scope
             casacore::Input inp;
             string json_fname;
-            inp.version(version_id);
+            inp.version(VERSION_ID);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
             inp.create("token", CARTA::token, "only accept connections with this authorization token", "String");
