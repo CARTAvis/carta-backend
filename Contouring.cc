@@ -130,17 +130,21 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
     vector<bool> visited(num_pixels);
     int64_t i, j;
 
+    auto test_for_chunk_overflow = [&]() {
+        if (vertex_cutoff && vertices.size() > vertex_cutoff) {
+            double progress = std::min(0.99, checked_pixels / double(num_pixels));
+            partial_callback(level, progress, vertices, indices);
+            vertices.clear();
+            indices.clear();
+        }
+    };
+
     // Search TopEdge
     for (j = 0, i = 0; i < width - 1; i++) {
         if (image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::TopEdge, vertices);
-            if (vertex_cutoff && vertices.size() > vertex_cutoff) {
-                double progress = std::min(0.99, checked_pixels / double(num_pixels));
-                partial_callback(level, progress, vertices, indices);
-                vertices.clear();
-                indices.clear();
-            }
+            test_for_chunk_overflow();
         }
         checked_pixels++;
     }
@@ -150,12 +154,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
         if (image[(j)*width + i] < level && level <= image[(j + 1) * width + i]) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i - 1, j, Edge::RightEdge, vertices);
-            if (vertex_cutoff && vertices.size() > vertex_cutoff) {
-                double progress = std::min(0.99, checked_pixels / double(num_pixels));
-                partial_callback(level, progress, vertices, indices);
-                vertices.clear();
-                indices.clear();
-            }
+            test_for_chunk_overflow();
         }
         checked_pixels++;
     }
@@ -165,12 +164,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
         if (image[(j)*width + i + 1] < level && level <= image[(j)*width + i]) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i, j - 1, Edge::BottomEdge, vertices);
-            if (vertex_cutoff && vertices.size() > vertex_cutoff) {
-                double progress = std::min(0.99, checked_pixels / double(num_pixels));
-                partial_callback(level, progress, vertices, indices);
-                vertices.clear();
-                indices.clear();
-            }
+            test_for_chunk_overflow();
         }
         checked_pixels++;
     }
@@ -180,12 +174,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
         if (image[(j + 1) * width + i] < level && level <= image[(j)*width + i]) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::LeftEdge, vertices);
-            if (vertex_cutoff && vertices.size() > vertex_cutoff) {
-                double progress = std::min(0.99, checked_pixels / double(num_pixels));
-                partial_callback(level, progress, vertices, indices);
-                vertices.clear();
-                indices.clear();
-            }
+            test_for_chunk_overflow();
         }
         checked_pixels++;
     }
@@ -196,12 +185,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
             if (!visited[j * width + i] && image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
                 indices.push_back(vertices.size());
                 TraceSegment(image, visited, width, height, scale, offset, level, i, j, TopEdge, vertices);
-                if (vertex_cutoff && vertices.size() > vertex_cutoff) {
-                    double progress = std::min(0.99, checked_pixels / double(num_pixels));
-                    partial_callback(level, progress, vertices, indices);
-                    vertices.clear();
-                    indices.clear();
-                }
+                test_for_chunk_overflow();
             }
             checked_pixels++;
         }
