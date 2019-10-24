@@ -1031,7 +1031,7 @@ bool Session::SendContourData(int file_id) {
 
             std::vector<char> compression_buffer;
             const float pixel_rounding = std::max(1, std::min(32, settings.decimation));
-            const int compression_level = std::max(1, std::min(20, settings.compression_level));
+            const int compression_level = std::max(0, std::min(20, settings.compression_level));
 
             // Fill contour set
             auto contour_set = partial_response.add_contour_sets();
@@ -1041,20 +1041,27 @@ bool Session::SendContourData(int file_id) {
             total_vertices += N;
 
             if (N) {
-                std::vector<int32_t> vertices_shuffled;
-                RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
+                if (compression_level < 1) {
+                    contour_set->set_raw_coordinates(vertices.data(), N * sizeof(float));
+                    contour_set->set_uncompressed_coordinates_size(N * sizeof(float));
+                    contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
+                    contour_set->set_decimation_factor(0);
+                } else {
+                    std::vector<int32_t> vertices_shuffled;
+                    RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
 
-                // Compress using Zstd library
-                const size_t src_size = N * sizeof(int32_t);
-                compression_buffer.resize(ZSTD_compressBound(src_size));
-                size_t compressed_size = ZSTD_compress(
-                    compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
+                    // Compress using Zstd library
+                    const size_t src_size = N * sizeof(int32_t);
+                    compression_buffer.resize(ZSTD_compressBound(src_size));
+                    size_t compressed_size = ZSTD_compress(
+                        compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
 
-                contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
-                contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
-                contour_set->set_uncompressed_coordinates_size(src_size);
+                    contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
+                    contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
+                    contour_set->set_uncompressed_coordinates_size(src_size);
+                    contour_set->set_decimation_factor(pixel_rounding);
+                }
             }
-            contour_set->set_decimation_factor(pixel_rounding);
             SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response);
         };
 
