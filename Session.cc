@@ -1018,64 +1018,54 @@ bool Session::SendContourData(int file_id) {
             return false;
         }
 
-        std::vector<std::vector<float>> vertex_data(num_levels);
-        std::vector<std::vector<int32_t>> index_data(num_levels);
+        int64_t total_vertices = 0;
 
-        if (frame->ContourImage(vertex_data, index_data)) {
-            CARTA::ContourImageData response;
-            response.set_file_id(file_id);
+        auto callback = [&](double level, double progress, const std::vector<float>& vertices, const std::vector<int>& indices) {
+            CARTA::ContourImageData partial_response;
+            partial_response.set_file_id(file_id);
             // Currently only supports identical reference file IDs
-            response.set_reference_file_id(settings.reference_file_id);
-            response.set_channel(frame->CurrentChannel());
-            response.set_stokes(frame->CurrentStokes());
+            partial_response.set_reference_file_id(settings.reference_file_id);
+            partial_response.set_channel(frame->CurrentChannel());
+            partial_response.set_stokes(frame->CurrentStokes());
+            partial_response.set_progress(progress);
 
             std::vector<char> compression_buffer;
             const float pixel_rounding = std::max(1, std::min(32, settings.decimation));
-            const int compression_level = std::max(1, std::min(20, settings.compression_level));
+            const int compression_level = std::max(0, std::min(20, settings.compression_level));
 
-            auto t_start = std::chrono::high_resolution_clock::now();
-            double total_src_size = 0;
-            double total_compressed_size = 0;
+            // Fill contour set
+            auto contour_set = partial_response.add_contour_sets();
+            contour_set->set_level(level);
 
-            // TODO: handle image bounds correctly
-            for (auto i = 0; i < num_levels; i++) {
-                auto& vertices = vertex_data[i];
-                auto& indices = index_data[i];
+            const int N = vertices.size();
+            total_vertices += N;
 
-                // Skip empty contour sets
-                if (vertices.empty() || indices.empty()) {
-                    continue;
+            if (N) {
+                if (compression_level < 1) {
+                    contour_set->set_raw_coordinates(vertices.data(), N * sizeof(float));
+                    contour_set->set_uncompressed_coordinates_size(N * sizeof(float));
+                    contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
+                    contour_set->set_decimation_factor(0);
+                } else {
+                    std::vector<int32_t> vertices_shuffled;
+                    RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
+
+                    // Compress using Zstd library
+                    const size_t src_size = N * sizeof(int32_t);
+                    compression_buffer.resize(ZSTD_compressBound(src_size));
+                    size_t compressed_size = ZSTD_compress(
+                        compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
+
+                    contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
+                    contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
+                    contour_set->set_uncompressed_coordinates_size(src_size);
+                    contour_set->set_decimation_factor(pixel_rounding);
                 }
-
-                // Fill contour set
-                auto contour_set = response.add_contour_sets();
-                contour_set->set_level(settings.levels[i]);
-
-                const int N = vertices.size();
-
-                std::vector<int32_t> vertices_shuffled;
-                RoundAndEncodeVertices(vertices, vertices_shuffled, pixel_rounding);
-
-                // Compress using Zstd library
-                const size_t src_size = N * sizeof(int32_t);
-                compression_buffer.resize(ZSTD_compressBound(src_size));
-                size_t compressed_size = ZSTD_compress(
-                    compression_buffer.data(), compression_buffer.size(), vertices_shuffled.data(), src_size, compression_level);
-
-                contour_set->set_raw_coordinates(compression_buffer.data(), compressed_size);
-                contour_set->set_raw_start_indices(indices.data(), indices.size() * sizeof(int32_t));
-                contour_set->set_decimation_factor(pixel_rounding);
-                total_src_size += src_size;
-                total_compressed_size += compressed_size;
             }
-            if (_verbose_logging) {
-                auto t_end = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                double ratio = ((double)total_compressed_size) / total_src_size;
-                fmt::print("Encoded and compressed {:.2f} kB to {:.2f} kB ({:.2f}%) in {} ms using compression level {}\n",
-                    total_src_size * 1.0e-3, total_compressed_size * 1.0e-3, ratio * 100, dt * 1.0e-3, compression_level);
-            }
-            SendFileEvent(response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, response);
+            SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response);
+        };
+
+        if (frame->ContourImage(callback)) {
             return true;
         } else {
             SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);
