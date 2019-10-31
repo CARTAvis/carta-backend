@@ -210,7 +210,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_session_type(type);
 
     uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
-#ifdef AUTH_SERVER
+#ifdef _AUTH_SERVER_
     feature_flags |= CARTA::ServerFeatureFlags::USER_LAYOUTS;
     feature_flags |= CARTA::ServerFeatureFlags::USER_PREFERENCES;
 #endif
