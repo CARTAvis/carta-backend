@@ -46,15 +46,25 @@ public:
           _start_frame(start_frame),
           _first_frame(first_frame),
           _last_frame(last_frame),
-          _delta_frame(delta_frame),
           _looping(looping),
           _reverse_at_end(reverse_at_end),
           _frame_rate(frame_rate),
           _always_wait(always_wait) {
         _current_frame = start_frame;
         _next_frame = start_frame;
+
+        // handle negative deltas
+        if (delta_frame.channel() < 0 || delta_frame.stokes() < 0) {
+            _delta_frame.set_channel(-delta_frame.channel());
+            _delta_frame.set_stokes(-delta_frame.stokes());
+            _going_forward = false;
+        } else {
+            _delta_frame.set_channel(delta_frame.channel());
+            _delta_frame.set_stokes(delta_frame.stokes());
+            _going_forward = true;
+        }
+
         _frame_interval = std::chrono::microseconds(int64_t(1.0e6 / frame_rate));
-        _going_forward = true;
         _wait_duration_ms = 100;
         _stop_called = false;
         _file_open = true;
