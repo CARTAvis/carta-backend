@@ -213,6 +213,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 #ifdef _AUTH_SERVER_
     feature_flags |= CARTA::ServerFeatureFlags::USER_LAYOUTS;
     feature_flags |= CARTA::ServerFeatureFlags::USER_PREFERENCES;
+    // TODO: implement get layout/preference from DB
 #endif
     ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
