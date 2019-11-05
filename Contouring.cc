@@ -123,17 +123,30 @@ void TraceSegment(const float* image, std::vector<bool>& visited, int64_t width,
 }
 
 void TraceLevel(const float* image, int64_t width, int64_t height, double scale, double offset, double level, vector<float>& vertices,
-    vector<int32_t>& indices) {
-    int64_t num_pixels = width * height;
+    vector<int32_t>& indices, int chunk_size, ContourCallback& partial_callback) {
+    const int64_t num_pixels = width * height;
+    const size_t vertex_cutoff = 2 * chunk_size;
+    int64_t checked_pixels = 0;
     vector<bool> visited(num_pixels);
     int64_t i, j;
+
+    auto test_for_chunk_overflow = [&]() {
+        if (vertex_cutoff && vertices.size() > vertex_cutoff) {
+            double progress = std::min(0.99, checked_pixels / double(num_pixels));
+            partial_callback(level, progress, vertices, indices);
+            vertices.clear();
+            indices.clear();
+        }
+    };
 
     // Search TopEdge
     for (j = 0, i = 0; i < width - 1; i++) {
         if (image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::TopEdge, vertices);
+            test_for_chunk_overflow();
         }
+        checked_pixels++;
     }
 
     // Search RightEdge
@@ -141,7 +154,9 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
         if (image[(j)*width + i] < level && level <= image[(j + 1) * width + i]) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i - 1, j, Edge::RightEdge, vertices);
+            test_for_chunk_overflow();
         }
+        checked_pixels++;
     }
 
     // Search Bottom
@@ -149,7 +164,9 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
         if (image[(j)*width + i + 1] < level && level <= image[(j)*width + i]) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i, j - 1, Edge::BottomEdge, vertices);
+            test_for_chunk_overflow();
         }
+        checked_pixels++;
     }
 
     // Search Left
@@ -157,7 +174,9 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
         if (image[(j + 1) * width + i] < level && level <= image[(j)*width + i]) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::LeftEdge, vertices);
+            test_for_chunk_overflow();
         }
+        checked_pixels++;
     }
 
     // Search each row of the image
@@ -166,27 +185,17 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
             if (!visited[j * width + i] && image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
                 indices.push_back(vertices.size());
                 TraceSegment(image, visited, width, height, scale, offset, level, i, j, TopEdge, vertices);
+                test_for_chunk_overflow();
             }
+            checked_pixels++;
         }
     }
-}
-
-void TraceSingleContour(float* image, int64_t width, int64_t height, double scale, double offset, double level,
-    std::vector<float>& vertex_data, std::vector<int32_t>& indices) {
-    int64_t num_pixels = width * height;
-    vertex_data.clear();
-    indices.clear();
-
-    for (auto i = 0; i < num_pixels; i++) {
-        if (isnan(image[i])) {
-            image[i] = -std::numeric_limits<float>::max();
-        }
-    }
-    TraceLevel(image, width, height, scale, offset, level, vertex_data, indices);
+    partial_callback(level, 1.0, vertices, indices);
 }
 
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
-    std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, bool verbose_logging) {
+    std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, int chunk_size,
+    ContourCallback& partial_callback, bool verbose_logging) {
     auto t_start_contours = std::chrono::high_resolution_clock::now();
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
@@ -202,7 +211,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
         for (int64_t l = r.begin(); l < r.end(); l++) {
             vertex_data[l].clear();
             index_data[l].clear();
-            TraceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l]);
+            TraceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l], chunk_size, partial_callback);
         }
     };
 

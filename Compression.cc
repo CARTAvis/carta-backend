@@ -170,7 +170,7 @@ void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
         // Delta-encoding of neighbouring vertices to improve compression
         int last_x = 0;
         int last_y = 0;
-        for (size_t i = 0; i < num_values - 1; i += 2) {
+        for (int64_t i = 0; i < num_values - 1; i += 2) {
             int current_x = array[i];
             int current_y = array[i + 1];
             array[i] = current_x - last_x;
@@ -181,7 +181,7 @@ void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
     } else {
         // Delta-encoding of neighbouring integers to improve compression
         int last = 0;
-        for (size_t i = 0; i < num_values; i++) {
+        for (int64_t i = 0; i < num_values; i++) {
             int current = array[i];
             array[i] = current - last;
             last = current;
@@ -189,7 +189,7 @@ void EncodeIntegers(std::vector<int32_t>& array, bool strided) {
     }
 
     // Shuffle bytes in blocks of 126 bits (4 floats). The remaining bytes are left along
-    for (size_t i = 0; i < blocked_length; i += 4) {
+    for (int64_t i = 0; i < blocked_length; i += 4) {
         __m128i vals = _mm_loadu_si128((__m128i*)&array[i]);
         vals = _mm_shuffle_epi8(vals, *(__m128i*)shuffle_vals.data());
         _mm_store_si128((__m128i*)&array[i], vals);
