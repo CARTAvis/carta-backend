@@ -76,8 +76,8 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         uS::Async* outgoing = new uS::Async(websocket_hub.getLoop());
 
         outgoing->start([](uS::Async* async) -> void {
-          Session* current_session = ((Session*)async->getData());
-          current_session->SendPendingMessages();
+            Session* current_session = ((Session*)async->getData());
+            current_session->SendPendingMessages();
         });
 
         session = new Session(ws, session_number, root_folder, outgoing, file_list_handler, verbose);
