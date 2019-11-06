@@ -182,22 +182,23 @@ void Session::ResetFileInfo(bool create) {
 
 void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t icd_version, uint32_t request_id) {
     auto session_id = message.session_id();
-    bool success(false);
-    std::string error;
+    bool success(true);
+    std::string status;
     CARTA::SessionType type(CARTA::SessionType::NEW);
 
     if (icd_version != carta::ICD_VERSION) {
-        error = fmt::format("Invalid ICD version number. Expected {}, got {}", carta::ICD_VERSION, icd_version);
+        status = fmt::format("Invalid ICD version number. Expected {}, got {}", carta::ICD_VERSION, icd_version);
         success = false;
     } else if (!session_id) {
         session_id = _id;
-        success = true;
+        status = fmt::format("Start a new frontend with session id {}", session_id);
     } else {
         type = CARTA::SessionType::RESUMED;
-        if (session_id != _id) { // invalid session id
-            error = fmt::format("Cannot resume session id {}", session_id);
+        if (session_id != _id) {
+            _id = session_id;
+            status = fmt::format("Start a new backend with session id {}", session_id);
         } else {
-            success = true;
+            status = fmt::format("Network reconnected with session id {}", session_id);
         }
     }
 
@@ -206,7 +207,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     CARTA::RegisterViewerAck ack_message;
     ack_message.set_session_id(session_id);
     ack_message.set_success(success);
-    ack_message.set_message(error);
+    ack_message.set_message(status);
     ack_message.set_session_type(type);
     ack_message.set_server_feature_flags(CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);

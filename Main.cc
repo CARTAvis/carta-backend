@@ -69,20 +69,23 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     // protect against overflow
     session_number = max(session_number, 1u);
 
-    uS::Async* outgoing = new uS::Async(websocket_hub.getLoop());
+    Session* session = (Session*)ws->getUserData();
 
-    Session* session;
+    // Create a new Session if it does not exist
+    if (!session) {
+        uS::Async* outgoing = new uS::Async(websocket_hub.getLoop());
 
-    outgoing->start([](uS::Async* async) -> void {
-        Session* current_session = ((Session*)async->getData());
-        current_session->SendPendingMessages();
-    });
+        outgoing->start([](uS::Async* async) -> void {
+          Session* current_session = ((Session*)async->getData());
+          current_session->SendPendingMessages();
+        });
 
-    session = new Session(ws, session_number, root_folder, outgoing, file_list_handler, verbose);
+        session = new Session(ws, session_number, root_folder, outgoing, file_list_handler, verbose);
 
-    ws->setUserData(session);
-    session->IncreaseRefCount();
-    outgoing->setData(session);
+        ws->setUserData(session);
+        session->IncreaseRefCount();
+        outgoing->setData(session);
+    }
 
     Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, ws->getAddress().address,
         Session::NumberOfSessions());
