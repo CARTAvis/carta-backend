@@ -113,6 +113,20 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
     }
 }
 
+void OnError(void* user) {
+    switch ((long)user) {
+        case 3:
+            cerr << "Client emitted error on connection timeout (non-SSL)" << endl;
+            break;
+        case 5:
+            cerr << "Client emitted error on connection timeout (SSL)" << endl;
+            break;
+        default:
+            cerr << "FAILURE: " << user << " should not emit error!" << endl;
+            exit(-1);
+    }
+}
+
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length, uWS::OpCode op_code) {
     Session* session = (Session*)ws->getUserData();
@@ -438,6 +452,7 @@ int main(int argc, const char* argv[]) {
         websocket_hub.onMessage(&OnMessage);
         websocket_hub.onConnection(&OnConnect);
         websocket_hub.onDisconnection(&OnDisconnect);
+        websocket_hub.onError(&OnError);
         if (websocket_hub.listen(port)) {
             fmt::print("Listening on port {} with root folder {}, base folder {}, and {} threads in thread pool\n", port, root_folder,
                 base_folder, thread_count);
