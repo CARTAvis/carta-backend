@@ -4,10 +4,10 @@ ResumeSessionHandler::ResumeSessionHandler(Session* session, CARTA::ResumeSessio
     _session = session;
     _message = message;
     _request_id = request_id;
-    Execute();
+    Process();
 }
 
-void ResumeSessionHandler::Execute() {
+void ResumeSessionHandler::Process() {
     bool success(true);
     // Error message
     std::string err_message;

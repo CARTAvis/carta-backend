@@ -17,7 +17,7 @@ private:
     uint32_t _request_id;
     CARTA::ResumeSession _message;
 
-    void Execute();
+    void Process();
 
     void CloseFileCmd(CARTA::CloseFile message);
     bool OpenFileCmd(CARTA::OpenFile message);
