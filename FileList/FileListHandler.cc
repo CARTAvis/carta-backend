@@ -364,10 +364,16 @@ void FileListHandler::OnRegionFileInfoRequest(
         auto file_info = response.mutable_file_info();
         FillRegionFileInfo(file_info, full_name);
         std::vector<std::string> file_contents;
-        GetRegionFileContents(full_name, file_contents);
-        response.set_success(true);
-        response.set_message(message);
-        *response.mutable_contents() = {file_contents.begin(), file_contents.end()};
+        if (file_info->type() == CARTA::FileType::UNKNOWN) {
+            response.set_success(false);
+            message = "Not a region file.";
+            response.set_message(message);
+        } else {
+            GetRegionFileContents(full_name, file_contents);
+            response.set_success(true);
+            response.set_message(message);
+            *response.mutable_contents() = {file_contents.begin(), file_contents.end()};
+        }
     } else {
         message = "File " + filename + " is not readable.";
         response.set_success(false);

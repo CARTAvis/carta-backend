@@ -35,7 +35,7 @@
 
 #include "AnimationObject.h"
 #include "EventHeader.h"
-#include "FileListHandler.h"
+#include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
 #include "Util.h"

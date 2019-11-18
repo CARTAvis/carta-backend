@@ -22,7 +22,7 @@
 #include "Carta.h"
 #include "Compression.h"
 #include "EventHeader.h"
-#include "FileInfoLoader.h"
+#include "FileList/FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
 #include "Util.h"

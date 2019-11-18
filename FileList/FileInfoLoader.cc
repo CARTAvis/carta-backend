@@ -20,7 +20,7 @@
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 #include <casacore/mirlib/miriad.h>
 
-#include "ImageData/Hdf5Attributes.h"
+#include "../ImageData/Hdf5Attributes.h"
 
 //#################################################################################
 // FILE INFO LOADER
@@ -28,6 +28,7 @@
 FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename) {
     _image_type = FileType(filename);
 }
+
 
 casacore::ImageOpener::ImageTypes FileInfoLoader::FileType(const std::string& file) {
     return casacore::ImageOpener::imageType(file);

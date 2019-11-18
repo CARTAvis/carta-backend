@@ -23,7 +23,7 @@
 #include <casacore/casa/OS/HostInfo.h>
 
 #include "EventHeader.h"
-#include "FileListHandler.h"
+#include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "OnMessageTask.h"
 #include "Session.h"
