@@ -696,6 +696,69 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
     }
 }
 
+void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id) {
+    bool success(true);
+    // Error message
+    std::string err_message;
+    std::string err_file_ids = "Problem loading files: ";
+    std::string err_region_ids = "Problem loading regions: ";
+
+    // Close all images
+    CARTA::CloseFile close_file_msg;
+    close_file_msg.set_file_id(-1);
+    OnCloseFile(close_file_msg);
+
+    // Open images
+    for (int i = 0; i < message.images_size(); ++i) {
+        const CARTA::ImageProperties& image = message.images(i);
+        CARTA::OpenFile open_file_msg;
+        open_file_msg.set_directory(image.directory());
+        open_file_msg.set_file(image.file());
+        open_file_msg.set_hdu(image.hdu());
+        open_file_msg.set_file_id(image.file_id());
+        if (!OnOpenFile(open_file_msg, request_id)) {
+            success = false;
+            // Error message
+            std::string file_id = std::to_string(image.file_id()) + " ";
+            err_file_ids.append(file_id);
+        }
+
+        // Set image channels
+        CARTA::SetImageChannels set_image_channels_msg;
+        set_image_channels_msg.set_channel(image.channel());
+        set_image_channels_msg.set_stokes(image.stokes());
+        OnSetImageChannels(set_image_channels_msg);
+
+        // Set regions
+        for (int j = 0; j < image.regions_size(); ++j) {
+            const CARTA::RegionProperties& region = image.regions(j);
+            CARTA::SetRegion set_region_msg;
+            set_region_msg.set_region_name(region.region_info().region_name());
+            set_region_msg.set_region_id(region.region_id());
+            set_region_msg.set_rotation(region.region_info().rotation());
+            set_region_msg.set_file_id(i);
+            set_region_msg.set_region_type(region.region_info().region_type());
+            *set_region_msg.mutable_control_points() = {
+                region.region_info().control_points().begin(), region.region_info().control_points().end()};
+            if (!OnSetRegion(set_region_msg, request_id)) {
+                success = false;
+                // Error message
+                std::string region_id = std::to_string(region.region_id()) + " ";
+                err_region_ids.append(region_id);
+            }
+        }
+    }
+
+    // RESPONSE
+    CARTA::ResumeSessionAck ack;
+    ack.set_success(success);
+    if (!success) {
+        err_message = err_file_ids + err_region_ids;
+        ack.set_message(err_message);
+    }
+    SendEvent(CARTA::EventType::RESUME_SESSION_ACK, request_id, ack);
+}
+
 // ******** SEND DATA STREAMS *********
 
 CARTA::RegionHistogramData* Session::GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel) {

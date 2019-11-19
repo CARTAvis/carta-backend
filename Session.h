@@ -26,11 +26,11 @@
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
+#include <carta-protobuf/resume_session.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/tiles.pb.h>
-#include <carta-protobuf/resume_session.pb.h>
 
 #include <tbb/task.h>
 
@@ -70,6 +70,7 @@ public:
     void OnSetContourParameters(const CARTA::SetContourParameters& message);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
+    void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {

@@ -92,7 +92,6 @@ set(SOURCE_FILES
         FileSettings.cc
         Util.cc
         FileListHandler.cc
-        ResumeSessionHandler.cc
         Tile.cc
         Ds9Parser.cc
         Contouring.cc
