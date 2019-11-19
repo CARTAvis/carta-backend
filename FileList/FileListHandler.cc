@@ -92,75 +92,85 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
     string message;
 
     try {
-        if (folder_path.exists() && folder_path.isDirectory()) {
-            if (!region_list && !CheckPermissionForDirectory(folder)) {
-                file_list.set_success(false);
-                file_list.set_message("Cannot read directory; check name and permissions.");
-                return;
-            }
+        if (!folder_path.exists()) {
+            file_list.set_success(false);
+            file_list.set_message("Requested directory " + folder + " does not exist.");
+            return;
+        }
 
-            // Iterate through directory to generate file list
-            casacore::Directory start_dir(folder_path);
-            casacore::DirectoryIterator dir_iter(start_dir);
-            while (!dir_iter.pastEnd()) {
-                casacore::File cc_file(dir_iter.file());           // directory is also a File
-                casacore::String name(cc_file.path().baseName());  // in case it is a link
-                if (cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
-                    casacore::String full_path(cc_file.path().absoluteName());
-                    try {
-                        bool is_region(false);
-                        if (region_list) {
-                            if (casacore::ImageOpener::imageType(full_path) == casacore::ImageOpener::UNKNOWN) { // not image
-                                if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                                    CARTA::FileType file_type(GetRegionType(full_path));
-                                    if (file_type != CARTA::FileType::UNKNOWN) {
-                                        auto file_info = file_list.add_files();
-                                        FillRegionFileInfo(file_info, full_path, file_type);
-                                        is_region = true;
-                                    }
+        if (!folder_path.isDirectory()) {
+            file_list.set_success(false);
+            file_list.set_message("Requested path " + folder + " is not a directory.");
+            return;
+        }
+
+        if (!region_list && !CheckPermissionForDirectory(folder)) {
+            file_list.set_success(false);
+            file_list.set_message("Cannot read directory; check name and permissions.");
+            return;
+        }
+
+        // Iterate through directory to generate file list
+        casacore::Directory start_dir(folder_path);
+        casacore::DirectoryIterator dir_iter(start_dir);
+        while (!dir_iter.pastEnd()) {
+            casacore::File cc_file(dir_iter.file());           // directory is also a File
+            casacore::String name(cc_file.path().baseName());  // in case it is a link
+            if (cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
+                casacore::String full_path(cc_file.path().absoluteName());
+                try {
+                    bool is_region(false);
+                    if (region_list) {
+                        if (casacore::ImageOpener::imageType(full_path) == casacore::ImageOpener::UNKNOWN) { // not image
+                            if (cc_file.isRegular(true) && cc_file.isReadable()) {
+                                CARTA::FileType file_type(GetRegionType(full_path));
+                                if (file_type != CARTA::FileType::UNKNOWN) {
+                                    auto file_info = file_list.add_files();
+                                    FillRegionFileInfo(file_info, full_path, file_type);
+                                    is_region = true;
                                 }
                             }
                         }
-                        if (!is_region) {
-                            bool add_image(false);
-                            if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
-                                casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
-                                if ((image_type == casacore::ImageOpener::AIPSPP) || (image_type == casacore::ImageOpener::MIRIAD)) {
-                                    add_image = true;
-                                } else if (image_type == casacore::ImageOpener::UNKNOWN) {
-                                    // Check if it is a directory and the user has permission to access it
-                                    casacore::String dir_name(cc_file.path().baseName());
-                                    string path_name_relative =
-                                        (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
-                                    if (CheckPermissionForDirectory(path_name_relative)) {
-                                        file_list.add_subdirectories(dir_name);
-                                    }
-                                } else {
-                                    std::string image_type_msg =
-                                        fmt::format("{}: image type {} not supported", cc_file.path().baseName(), GetType(image_type));
-                                    result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
-                                }
-                            } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                                casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
-                                if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
-                                    add_image = true;
-                                } else if (region_list) { // list unknown files: name, type, size
-                                    add_image = true;
-                                }
-                            }
-
-                            if (add_image) { // add image to file list
-                                auto file_info = file_list.add_files();
-                                file_info->set_name(name);
-                                FillFileInfo(file_info, full_path);
-                            }
-                        }
-                    } catch (casacore::AipsError& err) { // RegularFileIO error
-                        // skip it
                     }
+                    if (!is_region) {
+                        bool add_image(false);
+                        if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
+                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
+                            if ((image_type == casacore::ImageOpener::AIPSPP) || (image_type == casacore::ImageOpener::MIRIAD)) {
+                                add_image = true;
+                            } else if (image_type == casacore::ImageOpener::UNKNOWN) {
+                                // Check if it is a directory and the user has permission to access it
+                                casacore::String dir_name(cc_file.path().baseName());
+                                string path_name_relative =
+                                    (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
+                                if (CheckPermissionForDirectory(path_name_relative)) {
+                                    file_list.add_subdirectories(dir_name);
+                                }
+                            } else {
+                                std::string image_type_msg =
+                                    fmt::format("{}: image type {} not supported", cc_file.path().baseName(), GetType(image_type));
+                                result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                            }
+                        } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
+                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
+                            if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
+                                add_image = true;
+                            } else if (region_list) { // list unknown files: name, type, size
+                                add_image = true;
+                            }
+                        }
+
+                        if (add_image) { // add image to file list
+                            auto file_info = file_list.add_files();
+                            file_info->set_name(name);
+                            FillFileInfo(file_info, full_path);
+                        }
+                    }
+                } catch (casacore::AipsError& err) { // RegularFileIO error
+                    // skip it
                 }
-                dir_iter++;
             }
+            dir_iter++;
         }
     } catch (casacore::AipsError& err) {
         result_msg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};
@@ -256,8 +266,8 @@ std::string FileListHandler::GetType(casacore::ImageOpener::ImageTypes type) { /
 
 bool FileListHandler::FillFileInfo(CARTA::FileInfo* file_info, const string& filename) {
     // fill FileInfo submessage
-    FileInfoLoader info_loader(filename);
-    return info_loader.FillFileInfo(file_info);
+	std::unique_ptr<FileInfoLoader> info_loader = std::unique_ptr<FileInfoLoader>(FileInfoLoader::GetInfoLoader(filename));
+    return info_loader->FillFileInfo(file_info);
 }
 
 void FileListHandler::OnRegionListRequest(
@@ -359,27 +369,33 @@ void FileListHandler::OnRegionFileInfoRequest(
     root_path.append(filename);
     casacore::File cc_file(root_path);
     std::string message, contents;
-    if (cc_file.exists() && cc_file.isRegular(true) && cc_file.isReadable()) {
+	bool success(false);
+    
+    if (!cc_file.exists()) {
+        message = "File " + filename + " does not exist.";
+        response.add_contents(contents);
+	} else if (!cc_file.isRegular(true)) {
+        message = "File " + filename + " is not a region file.";
+        response.add_contents(contents);
+    } else if (!cc_file.isReadable()) {
+        message = "File " + filename + " is not readable.";
+        response.add_contents(contents);
+    } else {
         casacore::String full_name(cc_file.path().resolvedName());
         auto file_info = response.mutable_file_info();
         FillRegionFileInfo(file_info, full_name);
         std::vector<std::string> file_contents;
         if (file_info->type() == CARTA::FileType::UNKNOWN) {
-            response.set_success(false);
-            message = "Not a region file.";
-            response.set_message(message);
+            message = "File " + filename + " is not a region file.";
+            response.add_contents(contents);
         } else {
             GetRegionFileContents(full_name, file_contents);
-            response.set_success(true);
-            response.set_message(message);
+            success = true;
             *response.mutable_contents() = {file_contents.begin(), file_contents.end()};
         }
-    } else {
-        message = "File " + filename + " is not readable.";
-        response.set_success(false);
-        response.set_message(message);
-        response.add_contents(contents);
     }
+    response.set_success(success);
+    response.set_message(message);
 }
 
 void FileListHandler::GetRegionFileContents(std::string& full_name, std::vector<std::string>& file_contents) {

@@ -140,14 +140,14 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA
         if (cc_file.exists()) {
             casacore::String full_name(cc_file.path().resolvedName());
             try {
-                FileInfoLoader info_loader(full_name);
-                if (!info_loader.FillFileInfo(file_info)) {
+                std::unique_ptr<FileInfoLoader> info_loader = std::unique_ptr<FileInfoLoader>(FileInfoLoader::GetInfoLoader(full_name));
+                if (!info_loader->FillFileInfo(file_info)) {
                     return false;
                 }
                 if (hdu.empty()) { // use first when required
                     hdu = file_info->hdu_list(0);
                 }
-                ext_file_info_ok = info_loader.FillFileExtInfo(extended_info, hdu, message);
+                ext_file_info_ok = info_loader->FillFileExtInfo(extended_info, hdu, message);
             } catch (casacore::AipsError& ex) {
                 message = ex.getMesg();
                 ext_file_info_ok = false;
@@ -164,16 +164,13 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA
 }
 
 void Session::ResetFileInfo(bool create) {
-    // delete old file info pointers
-    delete _selected_file_info;
-    delete _selected_file_info_extended;
-    // optionally create new ones
+    // optionally create new file info pointers
     if (create) {
-        _selected_file_info = new CARTA::FileInfo();
-        _selected_file_info_extended = new CARTA::FileInfoExtended();
+        _selected_file_info.reset(new CARTA::FileInfo());
+        _selected_file_info_extended.reset(new CARTA::FileInfoExtended());
     } else {
-        _selected_file_info = nullptr;
-        _selected_file_info_extended = nullptr;
+        _selected_file_info.reset(nullptr);
+        _selected_file_info_extended.reset(nullptr);
     }
 }
 
@@ -230,8 +227,8 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), request.hdu(), message);
     if (success) { // save a copy
         ResetFileInfo(true);
-        *_selected_file_info = response.file_info();
-        *_selected_file_info_extended = response.file_info_extended();
+        *_selected_file_info.get() = response.file_info();
+        *_selected_file_info_extended.get() = response.file_info_extended();
     }
     response.set_success(success);
     response.set_message(message);
@@ -269,12 +266,12 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
     ack.set_file_id(file_id);
     string err_message;
 
-    bool info_loaded((_selected_file_info != nullptr) && (_selected_file_info_extended != nullptr) &&
+    bool info_loaded((_selected_file_info.get() != nullptr) && (_selected_file_info_extended.get() != nullptr) &&
                      (_selected_file_info->name() == filename)); // correct file loaded
     if (!info_loaded) {                                          // load from image file
         ResetFileInfo(true);
         info_loaded =
-            FillExtendedFileInfo(_selected_file_info_extended, _selected_file_info, message.directory(), message.file(), hdu, err_message);
+            FillExtendedFileInfo(_selected_file_info_extended.get(), _selected_file_info.get(), message.directory(), message.file(), hdu, err_message);
     }
     bool success(false);
     if (!info_loaded) {
@@ -296,7 +293,7 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
         string abs_filename(root_path.resolvedName());
 
         // create Frame for open file
-        auto frame = std::unique_ptr<Frame>(new Frame(_id, abs_filename, hdu, _selected_file_info_extended, _verbose_logging));
+        auto frame = std::unique_ptr<Frame>(new Frame(_id, abs_filename, hdu, _selected_file_info_extended.get(), _verbose_logging));
         if (frame->IsValid()) {
             // Check if the old _frames[file_id] object exists. If so, delete it.
             if (_frames.count(file_id) > 0) {
@@ -306,13 +303,13 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
             _frames[file_id] = move(frame);
             lock.unlock();
             // copy file info, extended file info
-            CARTA::FileInfo* response_file_info = new CARTA::FileInfo();
-            response_file_info->set_name(_selected_file_info->name());
-            response_file_info->set_type(_selected_file_info->type());
-            response_file_info->set_size(_selected_file_info->size());
-            response_file_info->add_hdu_list(hdu); // loaded hdu only
-            *ack.mutable_file_info() = *response_file_info;
-            *ack.mutable_file_info_extended() = *_selected_file_info_extended;
+            CARTA::FileInfo response_file_info = CARTA::FileInfo();
+            response_file_info.set_name(_selected_file_info->name());
+            response_file_info.set_type(_selected_file_info->type());
+            response_file_info.set_size(_selected_file_info->size());
+            response_file_info.add_hdu_list(hdu); // loaded hdu only
+            *ack.mutable_file_info() = response_file_info;
+            *ack.mutable_file_info_extended() = *_selected_file_info_extended.get();
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
             // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
             if (_selected_file_info->type() == CARTA::FileType::HDF5) {
