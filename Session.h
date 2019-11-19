@@ -42,8 +42,6 @@
 #include "Util.h"
 
 class Session {
-    friend class ResumeSessionHandler;
-
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async, FileListHandler* file_list_handler,
         bool verbose = false);
