@@ -213,8 +213,6 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::CLOSE_FILE: {
                     CARTA::CloseFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->CheckCancelAnimationOnFileClose(message.file_id());
-                        session->_file_settings.ClearSettings(message.file_id());
                         session->OnCloseFile(message);
                     } else {
                         fmt::print("Bad CLOSE_FILE message!\n");

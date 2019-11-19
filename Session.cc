@@ -338,6 +338,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
 }
 
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
+    CheckCancelAnimationOnFileClose(message.file_id());
+    _file_settings.ClearSettings(message.file_id());
     DeleteFrame(message.file_id());
 }
 
