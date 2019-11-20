@@ -216,74 +216,75 @@ bool FitsInfoLoader::FillExtFileInfo(CARTA::FileInfoExtended* ext_info, std::str
         // set header entries
         for (casacore::uInt field = 0; field < hdu_entries.nfields(); ++field) {
             casacore::String name = hdu_entries.name(field);
-            if ((name != "SIMPLE") && (name != "BITPIX") && !name.startsWith("PC")) {
-                auto header_entry = ext_info->add_header_entries();
-                header_entry->set_name(name);
-                casacore::DataType data_type(hdu_entries.type(field));
-                switch (data_type) {
-                    case casacore::TpString: {
-                        *header_entry->mutable_value() = hdu_entries.asString(field);
-                        header_entry->set_entry_type(CARTA::EntryType::STRING);
-                        if (header_entry->name() == "CTYPE1")
-                            coord_type_x = header_entry->value();
-                        else if (header_entry->name() == "CTYPE2")
-                            coord_type_y = header_entry->value();
-                        else if (header_entry->name() == "CTYPE3")
-                            coord_type3 = header_entry->value();
-                        else if (header_entry->name() == "CTYPE4")
-                            coord_type4 = header_entry->value();
-                        else if (header_entry->name() == "RADESYS")
-                            rade_sys = header_entry->value();
-                        else if (header_entry->name() == "SPECSYS")
-                            spec_sys = header_entry->value();
-                        else if (header_entry->name() == "BUNIT")
-                            bunit = header_entry->value();
-                        else if (header_entry->name() == "CUNIT1")
-                            cunit1 = header_entry->value();
-                        else if (header_entry->name() == "CUNIT2")
-                            cunit2 = header_entry->value();
-                        break;
+            auto header_entry = ext_info->add_header_entries();
+            header_entry->set_name(name);
+            casacore::DataType data_type(hdu_entries.type(field));
+            switch (data_type) {
+                case casacore::TpString: {
+                    *header_entry->mutable_value() = hdu_entries.asString(field);
+                    header_entry->set_entry_type(CARTA::EntryType::STRING);
+                    if (header_entry->name() == "CTYPE1") {
+                        coord_type_x = header_entry->value();
+                    } else if (header_entry->name() == "CTYPE2") {
+                        coord_type_y = header_entry->value();
+                    } else if (header_entry->name() == "CTYPE3") {
+                        coord_type3 = header_entry->value();
+                    } else if (header_entry->name() == "CTYPE4") {
+                        coord_type4 = header_entry->value();
+                    } else if (header_entry->name() == "RADESYS") {
+                        rade_sys = header_entry->value();
+                    } else if (header_entry->name() == "SPECSYS") {
+                        spec_sys = header_entry->value();
+                    } else if (header_entry->name() == "BUNIT") {
+                        bunit = header_entry->value();
+                    } else if (header_entry->name() == "CUNIT1") {
+                        cunit1 = header_entry->value();
+                    } else if (header_entry->name() == "CUNIT2") {
+                        cunit2 = header_entry->value();
                     }
-                    case casacore::TpInt: {
-                        int64_t value_int(hdu_entries.asInt(field));
-                        if ((name == "NAXIS") && (value_int == 0))
-                            value_int = num_dim;
-                        *header_entry->mutable_value() = fmt::format("{}", value_int);
-                        header_entry->set_entry_type(CARTA::EntryType::INT);
-                        header_entry->set_numeric_value(value_int);
-                        break;
-                    }
-                    case casacore::TpFloat:
-                    case casacore::TpDouble: {
-                        double numeric_value(hdu_entries.asDouble(field));
-                        *header_entry->mutable_value() = fmt::format("{}", numeric_value);
-                        header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-                        header_entry->set_numeric_value(numeric_value);
-                        if (header_entry->name() == "EQUINOX")
-                            equinox = std::to_string(static_cast<int>(numeric_value));
-                        else if (header_entry->name() == "CRVAL1")
-                            crval1 = numeric_value;
-                        else if (header_entry->name() == "CRVAL2")
-                            crval2 = numeric_value;
-                        else if (header_entry->name() == "CRPIX1")
-                            crpix1 = std::to_string(static_cast<int>(numeric_value));
-                        else if (header_entry->name() == "CRPIX2")
-                            crpix2 = std::to_string(static_cast<int>(numeric_value));
-                        else if (header_entry->name() == "CDELT1")
-                            cdelt1 = numeric_value;
-                        else if (header_entry->name() == "CDELT2")
-                            cdelt2 = numeric_value;
-                        else if (header_entry->name() == "BMAJ")
-                            bmaj = numeric_value;
-                        else if (header_entry->name() == "BMIN")
-                            bmin = numeric_value;
-                        else if (header_entry->name() == "BPA")
-                            bpa = numeric_value;
-                        break;
-                    }
-                    default:
-                        break;
+                    break;
                 }
+                case casacore::TpInt: {
+                    int64_t value_int(hdu_entries.asInt(field));
+                    if ((name == "NAXIS") && (value_int == 0)) {
+                        value_int = num_dim;
+                    }
+                    *header_entry->mutable_value() = fmt::format("{}", value_int);
+                    header_entry->set_entry_type(CARTA::EntryType::INT);
+                    header_entry->set_numeric_value(value_int);
+                    break;
+                }
+                case casacore::TpFloat:
+                case casacore::TpDouble: {
+                    double numeric_value(hdu_entries.asDouble(field));
+                    *header_entry->mutable_value() = fmt::format("{}", numeric_value);
+                    header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+                    header_entry->set_numeric_value(numeric_value);
+                    if (header_entry->name() == "EQUINOX") {
+                        equinox = std::to_string(static_cast<int>(numeric_value));
+                    } else if (header_entry->name() == "CRVAL1") {
+                        crval1 = numeric_value;
+                    } else if (header_entry->name() == "CRVAL2") {
+                        crval2 = numeric_value;
+                    } else if (header_entry->name() == "CRPIX1") {
+                        crpix1 = std::to_string(static_cast<int>(numeric_value));
+                    } else if (header_entry->name() == "CRPIX2") {
+                        crpix2 = std::to_string(static_cast<int>(numeric_value));
+                    } else if (header_entry->name() == "CDELT1") {
+                        cdelt1 = numeric_value;
+                    } else if (header_entry->name() == "CDELT2") {
+                        cdelt2 = numeric_value;
+                    } else if (header_entry->name() == "BMAJ") {
+                        bmaj = numeric_value;
+                    } else if (header_entry->name() == "BMIN") {
+                        bmin = numeric_value;
+                    } else if (header_entry->name() == "BPA") {
+                        bpa = numeric_value;
+                    }
+                    break;
+                }
+                default:
+                    break;
             }
         }
 
