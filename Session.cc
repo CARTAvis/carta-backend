@@ -259,7 +259,7 @@ void Session::OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& reques
     }
 }
 
-bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
+bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent) {
     // Create Frame and send response message
     const auto& directory(message.directory());
     const auto& filename(message.file());
@@ -328,9 +328,12 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
             err_message = frame->GetErrorMessage();
         }
     }
-    ack.set_success(success);
-    ack.set_message(err_message);
-    SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
+
+    if (!silent) {
+        ack.set_success(success);
+        ack.set_message(err_message);
+        SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
+    }
     if (success) {
         UpdateRegionData(file_id);
     }
@@ -446,7 +449,7 @@ void Session::OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id) 
     }
 }
 
-bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) {
+bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent) {
     // set new Region or update existing one
     auto file_id(message.file_id());
     auto region_id(message.region_id());
@@ -475,11 +478,13 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id) 
         err_message = fmt::format("File id {} not found", file_id);
     }
     // RESPONSE
-    CARTA::SetRegionAck ack;
-    ack.set_region_id(region_id);
-    ack.set_success(success);
-    ack.set_message(err_message);
-    SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
+    if (!silent) {
+        CARTA::SetRegionAck ack;
+        ack.set_region_id(region_id);
+        ack.set_success(success);
+        ack.set_message(err_message);
+        SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
+    }
     // update data streams if requirements set
     if (success && _frames.at(file_id)->RegionChanged(region_id)) {
         _frames.at(file_id)->IncreaseZProfileCount(region_id);
@@ -716,7 +721,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
         open_file_msg.set_file(image.file());
         open_file_msg.set_hdu(image.hdu());
         open_file_msg.set_file_id(image.file_id());
-        if (!OnOpenFile(open_file_msg, request_id)) {
+        if (!OnOpenFile(open_file_msg, request_id, true)) {
             success = false;
             // Error message
             std::string file_id = std::to_string(image.file_id()) + " ";
@@ -740,7 +745,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
             set_region_msg.set_region_type(region.region_info().region_type());
             *set_region_msg.mutable_control_points() = {
                 region.region_info().control_points().begin(), region.region_info().control_points().end()};
-            if (!OnSetRegion(set_region_msg, request_id)) {
+            if (!OnSetRegion(set_region_msg, request_id, true)) {
                 success = false;
                 // Error message
                 std::string region_id = std::to_string(region.region_id()) + " ";

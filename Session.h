@@ -51,13 +51,13 @@ public:
     void OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t icd_version, uint32_t request_id);
     void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
-    bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
+    bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnSetImageView(const CARTA::SetImageView& message);
     void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
-    bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id);
+    bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);
     void OnRemoveRegion(const CARTA::RemoveRegion& message);
     void OnImportRegion(const CARTA::ImportRegion& message, uint32_t request_id);
     void OnExportRegion(const CARTA::ExportRegion& message, uint32_t request_id);
