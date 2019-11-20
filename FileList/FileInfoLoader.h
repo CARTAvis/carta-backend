@@ -14,12 +14,14 @@ class FileInfoLoader {
 public:
     static FileInfoLoader* GetInfoLoader(const std::string& filename);
 
-	virtual CARTA::FileType GetCartaFileType() = 0;
+    virtual CARTA::FileType GetCartaFileType() = 0;
     bool FillFileInfo(CARTA::FileInfo* file_info);
     bool FillFileExtInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message);
 
 protected:
-	inline std::string GetFilename() { return _filename; }
+    inline std::string GetFilename() {
+        return _filename;
+    }
     virtual bool GetHduList(CARTA::FileInfo* file_info, const std::string& abs_filename);
     virtual bool FillExtFileInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message) = 0;
 
@@ -39,7 +41,7 @@ protected:
     std::string Deg2Arcsec(const double degree);
     std::string ConvertHz(const double hz);
 
-	std::string _filename;
+    std::string _filename;
 };
 
 #endif // CARTA_BACKEND__FILELIST_FILEINFOLOADER_H_

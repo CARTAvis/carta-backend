@@ -32,15 +32,15 @@ CARTA::FileType PagedInfoLoader::GetCartaFileType() {
 }
 
 bool PagedInfoLoader::FillExtFileInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message) {
-        bool ext_info_ok(true);
+    bool ext_info_ok(true);
     casacore::ImageInterface<casacore::Float>* cc_image(nullptr);
     try {
         switch (_image_type) {
-			case CARTA::FileType::CASA: {
+            case CARTA::FileType::CASA: {
                 cc_image = new casacore::PagedImage<casacore::Float>(_filename);
                 break;
             }
-			case CARTA::FileType::MIRIAD: {
+            case CARTA::FileType::MIRIAD: {
                 // no way to catch error, use casacore miriad lib directly
                 int t_handle, i_handle, io_stat, num_dim;
                 hopen_c(&t_handle, _filename.c_str(), "old", &io_stat);
@@ -341,7 +341,7 @@ bool PagedInfoLoader::FillExtFileInfo(CARTA::FileInfoExtended* ext_info, std::st
     }
 
     delete cc_image;
-    return ext_info_ok;    
+    return ext_info_ok;
 }
 
 void PagedInfoLoader::ConvertAxisName(std::string& axis_name, std::string& projection, casacore::MDirection::Types type) {

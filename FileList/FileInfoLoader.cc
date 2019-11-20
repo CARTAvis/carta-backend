@@ -81,7 +81,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo* file_info) {
 
     file_info->set_size(file_info_size);
     CARTA::FileType file_type(GetCartaFileType());
-	file_info->set_type(file_type);
+    file_info->set_type(file_type);
     casacore::String abs_file_name(cc_file.path().absoluteName());
     return GetHduList(file_info, abs_file_name);
 }

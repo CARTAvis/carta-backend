@@ -698,16 +698,16 @@ casa::AnnRegion* Ds9Parser::CreatePolygonRegion(std::string& region_definition) 
     }
 
     // AnnPolygon arguments
-    std::vector<casacore::Quantity> xPositions, yPositions;
+    std::vector<casacore::Quantity> x_positions, y_positions;
     for (size_t i = 0; i < param_quantities.size(); i += 2) {
-        xPositions.push_back(param_quantities[i]);
-        yPositions.push_back(param_quantities[i + 1]);
+        x_positions.push_back(param_quantities[i]);
+        y_positions.push_back(param_quantities[i + 1]);
     }
     casacore::Quantity begin_freq, end_freq, rest_freq;
     casacore::String freq_ref_frame, doppler;
     casacore::Vector<casacore::Stokes::StokesTypes> stokes_types;
 
-    ann_region = new casa::AnnPolygon(xPositions, yPositions, _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq,
+    ann_region = new casa::AnnPolygon(x_positions, y_positions, _direction_ref_frame, _coord_sys, _image_shape, begin_freq, end_freq,
         freq_ref_frame, doppler, rest_freq, stokes_types, false, false);
     return ann_region;
 }

@@ -270,8 +270,8 @@ void Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id) {
                      (_selected_file_info->name() == filename)); // correct file loaded
     if (!info_loaded) {                                          // load from image file
         ResetFileInfo(true);
-        info_loaded =
-            FillExtendedFileInfo(_selected_file_info_extended.get(), _selected_file_info.get(), message.directory(), message.file(), hdu, err_message);
+        info_loaded = FillExtendedFileInfo(
+            _selected_file_info_extended.get(), _selected_file_info.get(), message.directory(), message.file(), hdu, err_message);
     }
     bool success(false);
     if (!info_loaded) {
@@ -537,7 +537,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             // send any errors to log
             std::string ack_message(import_ack.message());
             if (!ack_message.empty()) {
-                CARTA::ErrorSeverity level = (import_ack.success() == true ? CARTA::ErrorSeverity::WARNING : CARTA::ErrorSeverity::ERROR);
+                CARTA::ErrorSeverity level = (import_ack.success() ? CARTA::ErrorSeverity::WARNING : CARTA::ErrorSeverity::ERROR);
                 SendLogEvent(ack_message, {"import"}, level);
             }
             // send ack message
@@ -1064,9 +1064,8 @@ bool Session::SendContourData(int file_id) {
 
         if (frame->ContourImage(callback)) {
             return true;
-        } else {
-            SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);
         }
+        SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);
     }
     return false;
 }

@@ -141,8 +141,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                             } else if (image_type == casacore::ImageOpener::UNKNOWN) {
                                 // Check if it is a directory and the user has permission to access it
                                 casacore::String dir_name(cc_file.path().baseName());
-                                string path_name_relative =
-                                    (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
+                                string path_name_relative = (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
                                 if (CheckPermissionForDirectory(path_name_relative)) {
                                     file_list.add_subdirectories(dir_name);
                                 }
@@ -266,15 +265,15 @@ std::string FileListHandler::GetType(casacore::ImageOpener::ImageTypes type) { /
 
 bool FileListHandler::FillFileInfo(CARTA::FileInfo* file_info, const string& filename) {
     // fill FileInfo submessage
-	std::unique_ptr<FileInfoLoader> info_loader = std::unique_ptr<FileInfoLoader>(FileInfoLoader::GetInfoLoader(filename));
+    std::unique_ptr<FileInfoLoader> info_loader = std::unique_ptr<FileInfoLoader>(FileInfoLoader::GetInfoLoader(filename));
     return info_loader->FillFileInfo(file_info);
 }
 
 void FileListHandler::OnRegionListRequest(
-    const CARTA::RegionListRequest& request, CARTA::RegionListResponse& region_response, ResultMsg& result_msg) {
+    const CARTA::RegionListRequest& region_request, CARTA::RegionListResponse& region_response, ResultMsg& result_msg) {
     // use tbb scoped lock so that it only processes the file list a time for one user
     tbb::mutex::scoped_lock lock(_region_list_mutex);
-    string folder = request.directory();
+    string folder = region_request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == _regionlist_folder) {
         return;
@@ -369,12 +368,12 @@ void FileListHandler::OnRegionFileInfoRequest(
     root_path.append(filename);
     casacore::File cc_file(root_path);
     std::string message, contents;
-	bool success(false);
-    
+    bool success(false);
+
     if (!cc_file.exists()) {
         message = "File " + filename + " does not exist.";
         response.add_contents(contents);
-	} else if (!cc_file.isRegular(true)) {
+    } else if (!cc_file.isRegular(true)) {
         message = "File " + filename + " is not a region file.";
         response.add_contents(contents);
     } else if (!cc_file.isReadable()) {

@@ -1,8 +1,8 @@
 #ifndef CARTA_BACKEND_FILELIST_GENERICINFOLOADER_H_
 #define CARTA_BACKEND_FILELIST_GENERICINFOLOADER_H_
 
-#include "FileInfoLoader.h"
 #include "../ImageData/Hdf5Attributes.h"
+#include "FileInfoLoader.h"
 
 class GenericInfoLoader : public FileInfoLoader {
 public:
@@ -22,7 +22,8 @@ CARTA::FileType GenericInfoLoader::GetCartaFileType() {
 }
 
 bool GenericInfoLoader::FillExtFileInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message) {
-	message = "Not a region file.";
-	return false;
+    message = "Not a region file.";
+    return false;
 }
+
 #endif // CARTA_BACKEND_FILELIST_GENERICINFOLOADER_H_

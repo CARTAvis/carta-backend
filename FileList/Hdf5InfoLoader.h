@@ -1,8 +1,8 @@
 #ifndef CARTA_BACKEND_FILELIST_HDF5INFOLOADER_H_
 #define CARTA_BACKEND_FILELIST_HDF5INFOLOADER_H_
 
-#include "FileInfoLoader.h"
 #include "../ImageData/Hdf5Attributes.h"
+#include "FileInfoLoader.h"
 
 class Hdf5InfoLoader : public FileInfoLoader {
 public:
@@ -16,7 +16,6 @@ protected:
 private:
     std::string GetStringAttribute(casacore::Record& record, std::string field);
     double GetDoubleAttribute(casacore::Record& record, std::string field);
-
 };
 
 Hdf5InfoLoader::Hdf5InfoLoader(const std::string& filename) {

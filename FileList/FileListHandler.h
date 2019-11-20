@@ -31,7 +31,8 @@ public:
     void OnFileListRequest(
         std::string api_key, const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg);
 
-    void OnRegionListRequest(const CARTA::RegionListRequest& request, CARTA::RegionListResponse& response, ResultMsg& result_msg);
+    void OnRegionListRequest(
+        const CARTA::RegionListRequest& region_request, CARTA::RegionListResponse& region_response, ResultMsg& result_msg);
     void OnRegionFileInfoRequest(
         const CARTA::RegionFileInfoRequest& request, CARTA::RegionFileInfoResponse& response, ResultMsg& result_msg);
 

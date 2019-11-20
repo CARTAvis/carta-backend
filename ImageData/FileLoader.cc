@@ -43,8 +43,9 @@ bool FileLoader::FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int
     spectral_axis = -1;
     stokes_axis = -1;
 
-    if (!HasData(FileInfo::Data::Image))
+    if (!HasData(FileInfo::Data::Image)) {
         return false;
+    }
 
     shape = LoadData(FileInfo::Data::Image)->shape();
     _num_dims = shape.size();
