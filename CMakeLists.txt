@@ -83,8 +83,8 @@ set(SOURCE_FILES
         ImageData/Hdf5Attributes.cc
         ImageData/FileLoader.cc
         ImageData/CartaHdf5Image.cc
-		FileList/FileInfoLoader.cc
-		FileList/FileListHandler.cc
+        FileList/FileInfoLoader.cc
+        FileList/FileListHandler.cc
         Region/Region.cc
         Region/RegionStats.cc
         Region/RegionProfiler.cc
