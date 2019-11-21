@@ -194,7 +194,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
         status = fmt::format("Start a new frontend and assign it with session id {}", session_id);
     } else {
         type = CARTA::SessionType::RESUMED;
-        if ((session_id != _id) || (_id == 1)) {
+        if (session_id != _id) {
             _id = session_id;
             status = fmt::format("Start a new backend and assign it with session id {}", session_id);
         } else {
