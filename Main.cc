@@ -117,7 +117,6 @@ void OnError(void* user) {
             break;
         default:
             cerr << "FAILURE: " << user << " should not emit error!" << endl;
-            exit(-1);
     }
 }
 
