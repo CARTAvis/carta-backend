@@ -50,7 +50,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
-    _connected = true;
+    ConnectCalled();
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
@@ -122,6 +122,10 @@ void Session::DisconnectCalled() {
     if (_animation_object) {
         _animation_object->CancelExecution();
     }
+}
+
+void Session::ConnectCalled() {
+    _connected = true;
 }
 
 // ********************************************************************************
@@ -707,6 +711,15 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     std::string err_message;
     std::string err_file_ids = "Problem loading files: ";
     std::string err_region_ids = "Problem loading regions: ";
+
+    // Stop the streaming spectral profile, cube histogram and animation processes
+    DisconnectCalled();
+
+    // Clear the message queue
+    _out_msgs.clear();
+
+    // Reconnect the session
+    ConnectCalled();
 
     // Close all images
     CARTA::CloseFile close_file_msg;

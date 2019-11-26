@@ -135,6 +135,7 @@ public:
         return --_ref_count;
     }
     void DisconnectCalled();
+    void ConnectCalled();
     static int NumberOfSessions() {
         return _num_sessions;
     }
