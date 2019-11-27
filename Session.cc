@@ -22,8 +22,8 @@
 #include "Carta.h"
 #include "Compression.h"
 #include "EventHeader.h"
-#include "FileList/FileInfoLoader.h"
 #include "FileList/FileExtInfoLoader.h"
+#include "FileList/FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
 #include "Util.h"
@@ -226,8 +226,8 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto file_info = response.mutable_file_info();
     auto file_info_extended = response.mutable_file_info_extended();
     string message;
-	casacore::String hdu_name(request.hdu()); // for FITS, includes extension name
-	std::string hdu(hdu_name.before(" "));
+    casacore::String hdu_name(request.hdu()); // for FITS, includes extension name
+    std::string hdu(hdu_name.before(" "));
     bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu, message);
     if (success) { // save a copy
         ResetFileInfo(true);

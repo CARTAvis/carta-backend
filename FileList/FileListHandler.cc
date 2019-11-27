@@ -146,8 +146,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                                     file_list.add_subdirectories(dir_name);
                                 }
                             } else {
-                                std::string image_type_msg =
-                                    fmt::format("{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
+                                std::string image_type_msg = fmt::format(
+                                    "{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
                                 result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                             }
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {

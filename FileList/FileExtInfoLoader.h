@@ -10,8 +10,6 @@
 
 #include <carta-protobuf/file_info.pb.h>
 
-
-
 class FileExtInfoLoader {
 public:
     FileExtInfoLoader(const std::string& filename);

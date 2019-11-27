@@ -1,10 +1,10 @@
 #include "FileLoader.h"
 
+#include "../Util.h"
 #include "CasaLoader.h"
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
 #include "MiriadLoader.h"
-#include "../Util.h"
 
 using namespace carta;
 

@@ -67,4 +67,3 @@ bool FileInfoLoader::GetHdf5HduList(CARTA::FileInfo* file_info, const std::strin
     }
     return true;
 }
-

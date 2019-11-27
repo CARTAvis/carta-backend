@@ -18,13 +18,12 @@ private:
     bool IsImageHdu(casacore::FITS::HDUType hdu_type);
     void GetFitsHduInfo(casacore::FitsInput& fits_input, int& ndim, std::string& ext_name);
 
-	std::string _filename;
+    std::string _filename;
 };
 
 FitsHduList::FitsHduList(const std::string& filename) {
     _filename = filename;
 }
-
 
 bool FitsHduList::GetHduList(CARTA::FileInfo* file_info) {
     bool hdu_ok(false);

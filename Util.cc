@@ -141,4 +141,3 @@ CARTA::FileType GetCartaFileType(const std::string& filename) {
             return CARTA::FileType::UNKNOWN;
     }
 }
-

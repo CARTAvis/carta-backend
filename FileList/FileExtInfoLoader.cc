@@ -5,18 +5,16 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h> // not needed here but *must* include before miriad.h
 
-#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
-#include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/MVAngle.h>
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/measures/Measures/MDirection.h>
 #include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/mirlib/miriad.h>
 
 #include "../ImageData/FileLoader.h"
-//#include "../Util.h"
-//#include "FitsHduList.h"
 
 using namespace carta;
 
@@ -43,203 +41,196 @@ bool FileExtInfoLoader::FillFileExtInfo(CARTA::FileInfoExtended* extended_info, 
 
 bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_info, std::string& hdu, std::string& message) {
     // add header_entries in FITS format (issue #13) using ImageInterface from FileLoader
+    bool file_ok(true);
     if (_type == CARTA::FileType::HDF5) { // TODO
         message = "CartaHdf5Image not implemented yet for file browser.";
-        return false;
+        file_ok = false;
     } else if ((_type == CARTA::FileType::MIRIAD) && (!CheckMiriadImage(_filename, message))) { // in Util.h
         // checks if image is valid using mirlib directly before making MIRIADImage which could crash backend
-        return false;
+        file_ok = false;
     }
-        
-    try {
-        std::unique_ptr<FileLoader> loader = std::unique_ptr<FileLoader>(FileLoader::GetLoader(_filename));
-        if (loader) {
-            loader->OpenFile(hdu, 0);
-            casacore::ImageInterface<float>* image = loader->LoadData(carta::FileInfo::Data::Image);
-            if (image) {
-                casacore::IPosition image_shape(image->shape());
-                unsigned int num_dim = image_shape.size();
-                if (num_dim < 2 || num_dim > 4) {
-                    message = "Image must be 2D, 3D or 4D.";
-                    return false;
-                }
 
-                // Add header_entries
-                casacore::String error_string, origin_str;
-                casacore::ImageFITSHeaderInfo fhi;
-                bool prefer_velocity(false),
-                     optical_velocity(false),
-                     stokes_last(false),
-                     degenerate_last(false),
-                     prefer_wavelength(false),
-                     air_wavelength(false),
-                     verbose(false),
-                     prim_head(true),
-                     allow_append(false),
-                     history(false);
-                int bit_pix(-32);
-                float min_pix(1.0),
-                      max_pix(-1.0);
-                bool ok = casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *image, prefer_velocity, optical_velocity,
-                    bit_pix, min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head,
-                    allow_append, origin_str, history);
-                if (!ok) {
-                    message = error_string;
-                    return false;
-                }
+    if (file_ok) {
+        try {
+            std::unique_ptr<FileLoader> loader = std::unique_ptr<FileLoader>(FileLoader::GetLoader(_filename));
+            if (loader) {
+                loader->OpenFile(hdu, 0);
+                casacore::ImageInterface<float>* image = loader->LoadData(carta::FileInfo::Data::Image);
+                if (image) {
+                    casacore::IPosition image_shape(image->shape());
+                    unsigned int num_dim = image_shape.size();
+                    if (num_dim < 2 || num_dim > 4) {
+                        message = "Image must be 2D, 3D or 4D.";
+                        return false;
+                    }
 
-                int naxis(0), ncoord(0);
-                fhi.kw.first(); // go to first card
-                casacore::FitsKeyword* fkw = fhi.kw.next();
-                while (fkw) {
-                    // parse each FitsKeyword into header_entries in FileInfoExtended
-                    casacore::String full_name(fkw->name());
-                    full_name.trim();
+                    // Add header_entries
+                    casacore::String error_string, origin_str;
+                    casacore::ImageFITSHeaderInfo fhi;
+                    bool prefer_velocity(false), optical_velocity(false), stokes_last(false), degenerate_last(false),
+                        prefer_wavelength(false), air_wavelength(false), verbose(false), prim_head(true), allow_append(false),
+                        history(false);
+                    int bit_pix(-32);
+                    float min_pix(1.0), max_pix(-1.0);
+                    bool ok = casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *image, prefer_velocity, optical_velocity,
+                        bit_pix, min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head,
+                        allow_append, origin_str, history);
+                    if (!ok) {
+                        message = error_string;
+                        return false;
+                    }
 
-                    // Strangely, ImageHeaderToFITS does not append axis or coordinate number
-                    if (full_name == "NAXIS") {
-                        if (naxis > 0) {
-                            full_name += casacore::String::toString(naxis); // append axis number
+                    int naxis(0), ncoord(0);
+                    fhi.kw.first(); // go to first card
+                    casacore::FitsKeyword* fkw = fhi.kw.next();
+                    while (fkw) {
+                        // parse each FitsKeyword into header_entries in FileInfoExtended
+                        casacore::String full_name(fkw->name());
+                        full_name.trim();
+
+                        // Strangely, ImageHeaderToFITS does not append axis or coordinate number
+                        if (full_name == "NAXIS") {
+                            if (naxis > 0) {
+                                full_name += casacore::String::toString(naxis); // append axis number
+                            }
+                            naxis++;
                         }
-                        naxis++;
-                    }
-                    if (full_name == "CTYPE") {
-                        ++ncoord;
-                    }
-                    if ((full_name == "CTYPE") || (full_name == "CRVAL") || (full_name == "CDELT") || (full_name == "CRPIX")) {
-                        full_name += casacore::String::toString(ncoord); // append coordinate number
-                    }
-
-                    if (full_name != "END") {
-                        auto header_entry = extended_info->add_header_entries();
-                        header_entry->set_name(full_name);
-                        //std::string name = fmt::format("{:<8}", full_name);
-                        //header_entry->set_name(name);
-                        switch (fkw->type()) {
-                            case casacore::FITS::LOGICAL: {
-                                bool value(fkw->asBool());
-                                //std::string bool_value(value ? "T" : "F");
-                                header_entry->set_entry_type(CARTA::EntryType::INT);
-                                header_entry->set_numeric_value(value);
-                                //std::string string_value = fmt::format("{:>30}", bool_value);
-                                std::string comment(fkw->comm());
-                                if (!comment.empty()) {
-                                    //string_value.append(" /" + comment);
-                                }
-                                //*header_entry->mutable_value() = string_value;
-                                *header_entry->mutable_value() = std::to_string(value);
-                                break;
-                            }
-                            case casacore::FITS::LONG: {
-                                int value(fkw->asInt());
-                                header_entry->set_entry_type(CARTA::EntryType::INT);
-                                header_entry->set_numeric_value(value);
-                                //std::string string_value = fmt::format("{:>30}", std::to_string(value));
-                                std::string comment(fkw->comm());
-                                if (!comment.empty()) {
-                                    //string_value.append(" /" + comment);
-                                }
-                                //*header_entry->mutable_value() = string_value;
-                                *header_entry->mutable_value() = std::to_string(value);
-                                break;
-                            }
-                            case casacore::FITS::BYTE:
-                            case casacore::FITS::SHORT:
-                            case casacore::FITS::FLOAT:
-                            case casacore::FITS::DOUBLE:
-                            case casacore::FITS::REAL: {
-                                double value(fkw->asDouble());
-                                header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-                                header_entry->set_numeric_value(value);
-                                //std::string string_value = fmt::format("{:>30}", std::to_string(value));
-                                std::string comment(fkw->comm());
-                                if (!comment.empty()) {
-                                    //string_value.append(" /" + comment);
-                                }
-                                //*header_entry->mutable_value() = string_value;
-                                *header_entry->mutable_value() = std::to_string(value);
-                                break;
-                            }
-                            case casacore::FITS::STRING:
-                            case casacore::FITS::FSTRING: {
-                                casacore::String fkw_value = fkw->asString();
-                                fkw_value.trim(); // remove whitespace
-                                //std::string string_value = fmt::format("{:>30}", fkw_value);
-                                header_entry->set_entry_type(CARTA::EntryType::STRING);
-                                std::string comment(fkw->comm());
-                                if (!comment.empty()) {
-                                    //string_value.append(" /" + comment);
-                                }
-                                //*header_entry->mutable_value() = string_value;
-                                *header_entry->mutable_value() = fkw_value;
-                                break;
-                            }
-                            case casacore::FITS::BIT:
-                            case casacore::FITS::CHAR:
-                            case casacore::FITS::COMPLEX:
-                            case casacore::FITS::ICOMPLEX:
-                            case casacore::FITS::DCOMPLEX:
-                            case casacore::FITS::VADESC:
-                            case casacore::FITS::NOVALUE:
-                            default:
-                                break;
+                        if (full_name == "CTYPE") {
+                            ++ncoord;
                         }
-                    }
-                    // get next keyword
-                    fkw = fhi.kw.next();
-                }
+                        if ((full_name == "CTYPE") || (full_name == "CRVAL") || (full_name == "CDELT") || (full_name == "CRPIX")) {
+                            full_name += casacore::String::toString(ncoord); // append coordinate number
+                        }
 
-                int spectral_axis, stokes_axis;
-                if (loader->FindShape(extended_info, image_shape, spectral_axis, stokes_axis, message)) {
-                    AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
-                    AddComputedEntries(extended_info, image);
-                } else {
+                        if (full_name != "END") {
+                            auto header_entry = extended_info->add_header_entries();
+                            // Left justify and pad to 8 chars
+                            std::string name = fmt::format("{:<8}", full_name);
+                            header_entry->set_name(name);
+                            switch (fkw->type()) {
+                                case casacore::FITS::LOGICAL: {
+                                    bool value(fkw->asBool());
+                                    header_entry->set_entry_type(CARTA::EntryType::INT);
+                                    header_entry->set_numeric_value(value);
+                                    std::string bool_string(value ? "T" : "F");
+                                    std::string string_value = fmt::format("{:>30}", bool_string);
+                                    std::string comment(fkw->comm());
+                                    if (!comment.empty()) {
+                                        string_value.append(" /" + comment);
+                                    }
+                                    *header_entry->mutable_value() = string_value;
+                                    break;
+                                }
+                                case casacore::FITS::LONG: {
+                                    int value(fkw->asInt());
+                                    header_entry->set_entry_type(CARTA::EntryType::INT);
+                                    header_entry->set_numeric_value(value);
+                                    std::string string_value = fmt::format("{:>30}", std::to_string(value));
+                                    std::string comment(fkw->comm());
+                                    if (!comment.empty()) {
+                                        string_value.append(" /" + comment);
+                                    }
+                                    *header_entry->mutable_value() = string_value;
+                                    break;
+                                }
+                                case casacore::FITS::BYTE:
+                                case casacore::FITS::SHORT:
+                                case casacore::FITS::FLOAT:
+                                case casacore::FITS::DOUBLE:
+                                case casacore::FITS::REAL: {
+                                    double value(fkw->asDouble());
+                                    header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+                                    header_entry->set_numeric_value(value);
+                                    std::string string_value = fmt::format("{:>30}", std::to_string(value));
+                                    std::string comment(fkw->comm());
+                                    if (!comment.empty()) {
+                                        string_value.append(" /" + comment);
+                                    }
+                                    *header_entry->mutable_value() = string_value;
+                                    break;
+                                }
+                                case casacore::FITS::STRING:
+                                case casacore::FITS::FSTRING: {
+                                    casacore::String fkw_value = fkw->asString();
+                                    fkw_value.trim(); // remove whitespace
+                                    std::string string_value = fmt::format("{:>30}", fkw_value);
+                                    std::string comment(fkw->comm());
+                                    if (!comment.empty()) {
+                                        string_value.append(" /" + comment);
+                                    }
+                                    header_entry->set_entry_type(CARTA::EntryType::STRING);
+                                    *header_entry->mutable_value() = string_value;
+                                    break;
+                                }
+                                case casacore::FITS::BIT:
+                                case casacore::FITS::CHAR:
+                                case casacore::FITS::COMPLEX:
+                                case casacore::FITS::ICOMPLEX:
+                                case casacore::FITS::DCOMPLEX:
+                                case casacore::FITS::VADESC:
+                                case casacore::FITS::NOVALUE:
+                                default:
+                                    break;
+                            }
+                        }
+                        fkw = fhi.kw.next(); // get next keyword
+                    }
+
+                    int spectral_axis, stokes_axis;
+                    if (loader->FindShape(extended_info, image_shape, spectral_axis, stokes_axis, message)) {
+                        AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
+                        AddComputedEntries(extended_info, image);
+                    } else {
+                        return false;
+                    }
+                } else { // image failed
+                    message = "Image could not be opened.";
                     return false;
                 }
-            } else { // image failed
-                message = "Image could not be opened.";
+            } else { // loader failed
+                message = "Image type not supported.";
                 return false;
             }
-        } else { // loader failed
-            message = "Image type not supported.";
+        } catch (casacore::AipsError& err) {
+            message = err.getMesg();
+            if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"
+                message = "Failed to open image at specified HDU.";
+            } else if (message.find("No image at specified location") != std::string::npos) {
+                message = "No image at specified HDU.";
+            } else {
+                message = "Failed to open image: " + message;
+            }
             return false;
         }
-    } catch (casacore::AipsError& err) {
-        message = err.getMesg();
-        if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"
-            message = "Failed to open image at specified HDU.";
-        } else if (message.find("No image at specified location") != std::string::npos) {
-            message = "No image at specified HDU.";
-        } else {
-            message = "Failed to open image: " + message;
-        }
-        return false;
     }
-    return true;
+    return file_ok;
 }
 
 bool FileExtInfoLoader::CheckMiriadImage(const std::string& filename, std::string& message) {
     // Some MIRIAD images throw an error in the miriad libs which cannot be caught in casacore::MIRIADImage, which crashes the backend.
     // If the following checks pass, it should be safe to open the MiriadImage.
+    bool miriad_ok(true);
     int t_handle, i_handle, io_stat, num_dim;
     hopen_c(&t_handle, filename.c_str(), "old", &io_stat);
     if (io_stat != 0) {
         message = "Could not open MIRIAD file";
-        return false;
+        miriad_ok = false;
+    } else {
+        haccess_c(t_handle, &i_handle, "image", "read", &io_stat);
+        if (io_stat != 0) {
+            message = "Could not open MIRIAD file";
+            miriad_ok = false;
+        } else {
+            rdhdi_c(t_handle, "naxis", &num_dim, 0); // read "naxis" value into ndim, default 0
+            hdaccess_c(i_handle, &io_stat);
+            hclose_c(t_handle);
+            if (num_dim < 2 || num_dim > 4) {
+                message = "Image must be 2D, 3D or 4D.";
+                miriad_ok = false;
+            }
+        }
     }
-    haccess_c(t_handle, &i_handle, "image", "read", &io_stat);
-    if (io_stat != 0) {
-        message = "Could not open MIRIAD file";
-        return false;
-    }
-    rdhdi_c(t_handle, "naxis", &num_dim, 0); // read "naxis" value into ndim, default 0
-    hdaccess_c(i_handle, &io_stat);
-    hclose_c(t_handle);
-    if (num_dim < 2 || num_dim > 4) {
-        message = "Image must be 2D, 3D or 4D.";
-        return false;
-    }
-    return true;
+    return miriad_ok;
 }
 
 // ***** Computed entries *****
@@ -328,7 +319,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
     if (!reference_pixels.empty()) {
         auto entry = extended_info->add_computed_entries();
         entry->set_name("Image reference pixels");
-        std::string ref_pix = fmt::format("[{}, {}]", reference_pixels(0)+1.0, reference_pixels(1)+1.0);
+        std::string ref_pix = fmt::format("[{}, {}]", reference_pixels(0) + 1.0, reference_pixels(1) + 1.0);
         entry->set_value(ref_pix);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
@@ -388,7 +379,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
     }
 
     casacore::ImageInfo image_info(image->imageInfo());
-    if (image_info.hasBeam()) { 
+    if (image_info.hasBeam()) {
         auto entry = extended_info->add_computed_entries();
         entry->set_entry_type(CARTA::EntryType::STRING);
         casacore::GaussianBeam gaussian_beam;
@@ -399,8 +390,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
             entry->set_name("Median area beam");
             gaussian_beam = image_info.getBeamSet().getMedianAreaBeam();
         }
-        std::string beam_info = fmt::format("{:.2f}\" X {:.2f}\", {:.4f} deg", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
-            gaussian_beam.getPA("deg").getValue());
+        std::string beam_info = fmt::format("{:.2f}\" X {:.2f}\", {:.4f} deg", gaussian_beam.getMajor("arcsec"),
+            gaussian_beam.getMinor("arcsec"), gaussian_beam.getPA("deg").getValue());
         entry->set_value(beam_info);
     }
 }
@@ -416,8 +407,7 @@ std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double v
     casacore::MVAngle::formatTypes format;
     if (type == "Right Ascension") {
         format = casacore::MVAngle::TIME;
-    } else if ((type == "Declination") || (type.find("Longitude") != std::string::npos) ||
-        (type.find("Latitude") != std::string::npos)) {
+    } else if ((type == "Declination") || (type.find("Longitude") != std::string::npos) || (type.find("Latitude") != std::string::npos)) {
         format = casacore::MVAngle::ANGLE;
     } else {
         return fmt::format("{} {}", val, unit);
@@ -427,4 +417,3 @@ std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double v
     casacore::MVAngle mva(quant1);
     return mva.string(format, 10);
 }
-
