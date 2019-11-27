@@ -78,6 +78,9 @@ public:
     void CancelExecution() {
         _tbb_context.cancel_group_execution();
     }
+    void ResetContext() {
+        _tbb_context.reset();
+    }
 };
 
 #endif // CARTA_BACKEND__ANIMATIONOBJECT_H_

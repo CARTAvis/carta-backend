@@ -50,7 +50,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
-    ConnectCalled();
+    _connected = true;
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
@@ -126,6 +126,11 @@ void Session::DisconnectCalled() {
 
 void Session::ConnectCalled() {
     _connected = true;
+    _base_context.reset();
+    _histogram_context.reset();
+    if (_animation_object) {
+        _animation_object->ResetContext();
+    }
 }
 
 // ********************************************************************************
