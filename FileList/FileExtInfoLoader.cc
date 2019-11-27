@@ -96,6 +96,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                             naxis++;
                         }
                         if (full_name == "CTYPE") {
+                            // This assumes that CTYPE starts the block of C*n headers
                             ++ncoord;
                         }
                         if ((full_name == "CTYPE") || (full_name == "CRVAL") || (full_name == "CDELT") || (full_name == "CRPIX")) {
@@ -105,30 +106,31 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                         if (full_name != "END") {
                             auto header_entry = extended_info->add_header_entries();
                             // Left justify and pad to 8 chars
-                            std::string name = fmt::format("{:<8}", full_name);
-                            header_entry->set_name(name);
+                            // std::string name = fmt::format("{:<8}", full_name);
+                            header_entry->set_name(full_name);
                             switch (fkw->type()) {
                                 case casacore::FITS::LOGICAL: {
                                     bool value(fkw->asBool());
                                     header_entry->set_entry_type(CARTA::EntryType::INT);
                                     header_entry->set_numeric_value(value);
                                     std::string bool_string(value ? "T" : "F");
-                                    std::string string_value = fmt::format("{:>30}", bool_string);
+                                    // std::string string_value = fmt::format("{:>30}", bool_string);
                                     std::string comment(fkw->comm());
                                     if (!comment.empty()) {
-                                        string_value.append(" /" + comment);
+                                        bool_string.append(" / " + comment);
                                     }
-                                    *header_entry->mutable_value() = string_value;
+                                    *header_entry->mutable_value() = bool_string;
                                     break;
                                 }
                                 case casacore::FITS::LONG: {
                                     int value(fkw->asInt());
                                     header_entry->set_entry_type(CARTA::EntryType::INT);
                                     header_entry->set_numeric_value(value);
-                                    std::string string_value = fmt::format("{:>30}", std::to_string(value));
+                                    std::string string_value = std::to_string(value);
+                                    // std::string string_value = fmt::format("{:>30}", std::to_string(value));
                                     std::string comment(fkw->comm());
                                     if (!comment.empty()) {
-                                        string_value.append(" /" + comment);
+                                        string_value.append(" / " + comment);
                                     }
                                     *header_entry->mutable_value() = string_value;
                                     break;
@@ -141,25 +143,26 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                     double value(fkw->asDouble());
                                     header_entry->set_entry_type(CARTA::EntryType::FLOAT);
                                     header_entry->set_numeric_value(value);
-                                    std::string string_value = fmt::format("{:>30}", std::to_string(value));
+                                    std::string string_value = std::to_string(value);
+                                    // std::string string_value = fmt::format("{:>30}", std::to_string(value));
                                     std::string comment(fkw->comm());
                                     if (!comment.empty()) {
-                                        string_value.append(" /" + comment);
+                                        string_value.append(" / " + comment);
                                     }
                                     *header_entry->mutable_value() = string_value;
                                     break;
                                 }
                                 case casacore::FITS::STRING:
                                 case casacore::FITS::FSTRING: {
-                                    casacore::String fkw_value = fkw->asString();
-                                    fkw_value.trim(); // remove whitespace
-                                    std::string string_value = fmt::format("{:>30}", fkw_value);
+                                    casacore::String fkw_string = fkw->asString();
+                                    fkw_string.trim(); // remove whitespace
+                                    // std::string string_value = fmt::format("{:>30}", fkw_value);
                                     std::string comment(fkw->comm());
                                     if (!comment.empty()) {
-                                        string_value.append(" /" + comment);
+                                        fkw_string.append(" / " + comment);
                                     }
                                     header_entry->set_entry_type(CARTA::EntryType::STRING);
-                                    *header_entry->mutable_value() = string_value;
+                                    *header_entry->mutable_value() = fkw_string;
                                     break;
                                 }
                                 case casacore::FITS::BIT:
@@ -240,6 +243,8 @@ void FileExtInfoLoader::AddShapeEntries(
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
     extended_info->set_dimensions(num_dims);
+    extended_info->set_width(shape(0));
+    extended_info->set_height(shape(1));
     if (num_dims == 2) { // 2D
         extended_info->set_depth(1);
         extended_info->set_stokes(1);
