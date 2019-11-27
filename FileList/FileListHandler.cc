@@ -147,7 +147,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                                 }
                             } else {
                                 std::string image_type_msg =
-                                    fmt::format("{}: image type {} not supported", cc_file.path().baseName(), GetType(image_type));
+                                    fmt::format("{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
                                 result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
                             }
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
@@ -235,7 +235,7 @@ bool FileListHandler::CheckPermissionForEntry(const string& entry) {
     return (find(keys.begin(), keys.end(), "*") != keys.end()) || (find(keys.begin(), keys.end(), _api_key) != keys.end());
 }
 
-std::string FileListHandler::GetType(casacore::ImageOpener::ImageTypes type) { // convert enum to string
+std::string FileListHandler::GetCasacoreTypeString(casacore::ImageOpener::ImageTypes type) { // convert enum to string
     std::string type_str;
     switch (type) {
         case casacore::ImageOpener::GIPSY:
@@ -265,8 +265,8 @@ std::string FileListHandler::GetType(casacore::ImageOpener::ImageTypes type) { /
 
 bool FileListHandler::FillFileInfo(CARTA::FileInfo* file_info, const string& filename) {
     // fill FileInfo submessage
-    std::unique_ptr<FileInfoLoader> info_loader = std::unique_ptr<FileInfoLoader>(FileInfoLoader::GetInfoLoader(filename));
-    return info_loader->FillFileInfo(file_info);
+    FileInfoLoader info_loader = FileInfoLoader(filename);
+    return info_loader.FillFileInfo(file_info);
 }
 
 void FileListHandler::OnRegionListRequest(

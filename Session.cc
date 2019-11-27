@@ -23,6 +23,7 @@
 #include "Compression.h"
 #include "EventHeader.h"
 #include "FileList/FileInfoLoader.h"
+#include "FileList/FileExtInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
 #include "Util.h"
@@ -140,14 +141,15 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA
         if (cc_file.exists()) {
             casacore::String full_name(cc_file.path().resolvedName());
             try {
-                std::unique_ptr<FileInfoLoader> info_loader = std::unique_ptr<FileInfoLoader>(FileInfoLoader::GetInfoLoader(full_name));
-                if (!info_loader->FillFileInfo(file_info)) {
+                FileInfoLoader info_loader = FileInfoLoader(full_name);
+                if (!info_loader.FillFileInfo(file_info)) {
                     return false;
                 }
                 if (hdu.empty()) { // use first when required
                     hdu = file_info->hdu_list(0);
                 }
-                ext_file_info_ok = info_loader->FillFileExtInfo(extended_info, hdu, message);
+                FileExtInfoLoader ext_info_loader = FileExtInfoLoader(full_name);
+                ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, hdu, message);
             } catch (casacore::AipsError& ex) {
                 message = ex.getMesg();
                 ext_file_info_ok = false;
@@ -224,7 +226,9 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto file_info = response.mutable_file_info();
     auto file_info_extended = response.mutable_file_info_extended();
     string message;
-    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), request.hdu(), message);
+	casacore::String hdu_name(request.hdu()); // for FITS, includes extension name
+	std::string hdu(hdu_name.before(" "));
+    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu, message);
     if (success) { // save a copy
         ResetFileInfo(true);
         *_selected_file_info.get() = response.file_info();

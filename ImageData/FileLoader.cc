@@ -4,12 +4,12 @@
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
 #include "MiriadLoader.h"
+#include "../Util.h"
 
 using namespace carta;
 
 FileLoader* FileLoader::GetLoader(const std::string& filename) {
-    casacore::ImageOpener::ImageTypes type = FileInfo::fileType(filename);
-    switch (type) {
+    switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
             return new CasaLoader(filename);
         case casacore::ImageOpener::FITS:

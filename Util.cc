@@ -119,3 +119,26 @@ void SplitString(std::string& input, char delim, std::vector<std::string>& parts
         }
     }
 }
+
+CARTA::FileType GetCartaFileType(const std::string& filename) {
+    // get casacore image type then convert to carta file type
+    switch (CasacoreImageType(filename)) {
+        case casacore::ImageOpener::AIPSPP:
+            return CARTA::FileType::CASA;
+        case casacore::ImageOpener::FITS:
+            return CARTA::FileType::FITS;
+        case casacore::ImageOpener::MIRIAD:
+            return CARTA::FileType::MIRIAD;
+        case casacore::ImageOpener::HDF5:
+            return CARTA::FileType::HDF5;
+        case casacore::ImageOpener::GIPSY:
+        case casacore::ImageOpener::CAIPS:
+        case casacore::ImageOpener::NEWSTAR:
+        case casacore::ImageOpener::IMAGECONCAT:
+        case casacore::ImageOpener::IMAGEEXPR:
+        case casacore::ImageOpener::COMPLISTIMAGE:
+        default:
+            return CARTA::FileType::UNKNOWN;
+    }
+}
+

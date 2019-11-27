@@ -164,15 +164,15 @@ bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu, 
         // put kw strings into Vector of Strings
         casacore::Vector<casacore::String> header_vector;
         fits_kw_list.first();
-        casacore::FitsKeyword* x = fits_kw_list.next();
-        while (x != nullptr) {
+        casacore::FitsKeyword* fkw = fits_kw_list.next();
+        while (fkw != nullptr) {
             std::string header_item(80, ' ');
             char* card = &(header_item[0]);
-            casacore::FitsKeyCardTranslator::fmtcard(card, *x);
+            casacore::FitsKeyCardTranslator::fmtcard(card, *fkw);
             size_t header_size(header_vector.size());
             header_vector.resize(header_size + 1, true);
             header_vector(header_size) = header_item;
-            x = fits_kw_list.next();
+            fkw = fits_kw_list.next();
         }
 
         // set coordinate system

@@ -5,7 +5,6 @@
 #include <string>
 
 #include <casacore/images/Images/ImageInterface.h>
-#include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/defs.pb.h>
 
@@ -104,10 +103,6 @@ enum class Data : uint32_t {
     // Mask
     MASK
 };
-
-inline casacore::ImageOpener::ImageTypes fileType(const std::string& file) {
-    return casacore::ImageOpener::imageType(file);
-}
 
 inline casacore::uInt GetFitsHdu(const std::string& hdu) {
     // convert from string to casacore unsigned int

@@ -13,6 +13,8 @@
 
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/File.h>
+#include <casacore/images/Images/ImageOpener.h>
+#include <casacore/mirlib/miriad.h>
 
 #include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
@@ -36,6 +38,14 @@ bool CheckRootBaseFolders(std::string& root, std::string& base);
 
 // split input string into a vector of strings by delimiter
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
+
+// Determine image type from filename
+inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& filename) {
+    return casacore::ImageOpener::imageType(filename);
+}
+
+CARTA::FileType GetCartaFileType(const std::string& filename);
+
 //
 // Usage of the ChannelRange:
 //

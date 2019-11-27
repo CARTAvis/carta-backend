@@ -9,7 +9,6 @@
 #include <tbb/mutex.h>
 
 #include <casacore/casa/aips.h>
-#include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/region_file_info.pb.h>
@@ -42,7 +41,7 @@ private:
     bool CheckPermissionForDirectory(std::string prefix);
     bool CheckPermissionForEntry(const std::string& entry);
     void GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, bool region_list = false);
-    std::string GetType(casacore::ImageOpener::ImageTypes type); // convert enum to string
+    std::string GetCasacoreTypeString(casacore::ImageOpener::ImageTypes type); // convert enum to string
     CARTA::FileType GetRegionType(const std::string& filename);  // parse first line for CRTF or DS9
     bool FillFileInfo(CARTA::FileInfo* file_info, const std::string& filename);
     bool FillRegionFileInfo(CARTA::FileInfo* file_info, const string& filename, CARTA::FileType type = CARTA::FileType::UNKNOWN);
