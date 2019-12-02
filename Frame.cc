@@ -967,8 +967,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     }
 
     // size returned vector
-    size_t num_rows_region = req_height / mip;
-    size_t row_length_region = req_width / mip;
+    size_t num_rows_region = std::ceil((float)req_height / mip);
+    size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = _image_shape(0);
 
@@ -977,7 +977,12 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
 
     if (mean_filter && mip > 1) {
+        if (_loader->GetDownsampledRasterData(image_data, _channel_index, _stokes_index, bounds, mip)) {
+            std::cout << "+++++ GOT RASTER DATA FROM LOADER" << std::endl;
+        }
+        
         // Perform down-sampling by calculating the mean for each MIPxMIP block
+        // TODO TODO TODO: check if these bounds checks are correct
         auto range = tbb::blocked_range<size_t>(0, num_rows_region);
         auto loop = [&](const tbb::blocked_range<size_t>& r) {
             for (size_t j = r.begin(); j != r.end(); ++j) {
@@ -986,8 +991,14 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                     int pixel_count = 0;
                     size_t image_row = y + (j * mip);
                     for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
+                        if (image_row >= _image_shape(0)) {
+                            continue;
+                        }
                         size_t image_col = x + (i * mip);
                         for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
+                            if (image_col >= _image_shape(1)) {
+                                continue;
+                            }
                             float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
                             if (std::isfinite(pix_val)) {
                                 pixel_count++;

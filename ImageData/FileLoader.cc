@@ -517,6 +517,11 @@ bool FileLoader::GetRegionSpectralData(int region_id, int config_stokes, int pro
     return false;
 }
 
+bool FileLoader::GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip) {
+    // Must be implemented in subclasses
+    return false;
+}
+
 void FileLoader::SetFramePtr(Frame* frame) {
     // Must be implemented in subclasses
 }
