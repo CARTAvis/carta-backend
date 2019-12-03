@@ -948,6 +948,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     if (!_valid || _image_cache.empty()) {
         return false;
     }
+    
+    std::cout << "++ got request for region from (" << bounds.x_min() << "," << bounds.y_min() << ") to (" << bounds.x_max() << "," << bounds.y_max() << ")" << std::endl;
 
     const int x = bounds.x_min();
     const int y = bounds.y_min();
@@ -971,16 +973,14 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = _image_shape(0);
+    
+    std::cout << "++ image width " << _image_shape(0) << " height " << _image_shape(1) << ", mip " << mip << ", got num rows " << num_rows_region << " num cols " << row_length_region << std::endl;
 
     // read lock imageCache
     bool write_lock(false);
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
 
     if (mean_filter && mip > 1) {
-        if (_loader->GetDownsampledRasterData(image_data, _channel_index, _stokes_index, bounds, mip, _image_mutex)) {
-            std::cout << "+++++ GOT RASTER DATA FROM LOADER" << std::endl; // Just for testing
-        }
-        
         // Perform down-sampling by calculating the mean for each MIPxMIP block
         // TODO TODO TODO: check if these bounds checks are correct
         auto range = tbb::blocked_range<size_t>(0, num_rows_region);
@@ -1096,8 +1096,8 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
 
     const int req_height = bounds.y_max() - bounds.y_min();
     const int req_width = bounds.x_max() - bounds.x_min();
-    width = req_width / mip;
-    height = req_height / mip;
+    width = std::ceil((float)req_width / mip);
+    height = std::ceil((float)req_height / mip);
     return GetRasterData(tile_data, bounds, mip, true);
 }
 
