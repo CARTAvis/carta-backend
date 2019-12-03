@@ -413,7 +413,6 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    /*
     casacore::ImageInfo image_info(image->imageInfo());
     if (image_info.hasBeam()) {
         auto entry = extended_info->add_computed_entries();
@@ -430,7 +429,6 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
             gaussian_beam.getMinor("arcsec"), gaussian_beam.getPA("deg").getValue());
         entry->set_value(beam_info);
     }
-    */
 }
 
 // ***** FITS keyword conversion *****
