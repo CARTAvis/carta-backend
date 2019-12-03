@@ -26,7 +26,7 @@ public:
     bool GetRegionSpectralData(int region_id, int profile_index, int stokes,
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
-    bool GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip) override;
+    bool GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override;
     void SetFramePtr(Frame* frame) override;
 
 protected:
@@ -538,10 +538,14 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
     return true;
 }
 
-bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip) {
+bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
     std::string ds_name(MipToString(mip));
     
-    if (!HasData(ds_name)) {
+    std::unique_lock<std::mutex> ulock(image_mutex);
+    bool has_mipmap(HasData(ds_name));
+    ulock.unlock();
+    
+    if (!has_mipmap) {
         return false;
     }
     
@@ -553,23 +557,27 @@ bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel,
     const int xmax = bounds.x_max() / mip;
     const int ymax = bounds.y_max() / mip;
     
+    const int w = xmax - xmin;
+    const int h = ymax - ymin;
+    
     casacore::Slicer slicer;
     if (_num_dims == 4) {
-        slicer = casacore::Slicer(IPos(4, xmin, ymin, channel, stokes), IPos(4, xmax, ymax, 1, 1));
+        slicer = casacore::Slicer(IPos(4, xmin, ymin, channel, stokes), IPos(4, w, h, 1, 1));
     } else if (_num_dims == 3) {
-        slicer = casacore::Slicer(IPos(3, xmin, ymin, channel), IPos(3, xmax, ymax, 1));
+        slicer = casacore::Slicer(IPos(3, xmin, ymin, channel), IPos(3, w, h, 1));
     } else if (_num_dims == 2) {
-        slicer = casacore::Slicer(IPos(2, xmin, ymin), IPos(2, xmax, ymax));
+        slicer = casacore::Slicer(IPos(2, xmin, ymin), IPos(2, w, h));
     } else {
         return false;
     }
-    
+        
     data.resize((xmax - xmin) * (ymax - ymin));
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     
     auto mip_map_image = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(
             casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)), ds_name, _hdu));
-    
+        
+    std::lock_guard<std::mutex> lguard(image_mutex);
     try {
         mip_map_image.get()->doGetSlice(tmp, slicer);
         data_ok = true;

@@ -977,8 +977,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
 
     if (mean_filter && mip > 1) {
-        if (_loader->GetDownsampledRasterData(image_data, _channel_index, _stokes_index, bounds, mip)) {
-            std::cout << "+++++ GOT RASTER DATA FROM LOADER" << std::endl;
+        if (_loader->GetDownsampledRasterData(image_data, _channel_index, _stokes_index, bounds, mip, _image_mutex)) {
+            std::cout << "+++++ GOT RASTER DATA FROM LOADER" << std::endl; // Just for testing
         }
         
         // Perform down-sampling by calculating the mean for each MIPxMIP block
