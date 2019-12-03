@@ -413,6 +413,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
+    /*
     casacore::ImageInfo image_info(image->imageInfo());
     if (image_info.hasBeam()) {
         auto entry = extended_info->add_computed_entries();
@@ -421,17 +422,15 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
         if (image_info.hasSingleBeam()) {
             gaussian_beam = image_info.restoringBeam();
             entry->set_name("Restoring beam");
-            std::string beam_info = fmt::format("{:.2f}\" X {:.2f}\", {:.4f} deg", gaussian_beam.getMajor("arcsec"),
-                gaussian_beam.getMinor("arcsec"), gaussian_beam.getPA("deg").getValue());
-            entry->set_value(beam_info);
         } else if (image_info.hasMultipleBeams()) {
-            // entry->set_name("Median area beam");
-            // gaussian_beam = image_info.getBeamSet().getMedianAreaBeam();
-            // TEST performance to just get number of beams:
-            entry->set_name("Number of beams");
-            entry->set_value(std::to_string(image_info.getBeamSet().size()));
+            gaussian_beam = image_info.getBeamSet().getMedianAreaBeam();
+            entry->set_name("Median area beam");
         }
+        std::string beam_info = fmt::format("{:.2f}\" X {:.2f}\", {:.4f} deg", gaussian_beam.getMajor("arcsec"),
+            gaussian_beam.getMinor("arcsec"), gaussian_beam.getPA("deg").getValue());
+        entry->set_value(beam_info);
     }
+    */
 }
 
 // ***** FITS keyword conversion *****
