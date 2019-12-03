@@ -849,12 +849,12 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                     SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
                     data_sent = true;
                 } else { // calculate channel 0 histogram
-                    float min_val, max_val;
-                    if (!_frames.at(file_id)->GetRegionMinMax(IMAGE_REGION_ID, channel_num, stokes, min_val, max_val)) {
-                        _frames.at(file_id)->CalcRegionMinMax(IMAGE_REGION_ID, channel_num, stokes, min_val, max_val);
+                    carta::BasicStats<float> stats;
+                    if (!_frames.at(file_id)->GetRegionBasicStats(IMAGE_REGION_ID, channel_num, stokes, stats)) {
+                        _frames.at(file_id)->CalcRegionBasicStats(IMAGE_REGION_ID, channel_num, stokes, stats);
                     }
                     _frames.at(file_id)->CalcRegionHistogram(
-                        IMAGE_REGION_ID, channel_num, stokes, num_bins, min_val, max_val, *message_histogram);
+                        IMAGE_REGION_ID, channel_num, stokes, num_bins, stats.min_val, stats.max_val, *message_histogram);
                     // send completed histogram
                     SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
                     data_sent = true;
@@ -862,17 +862,16 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
             } else { // calculate cube histogram
                 _histogram_progress = HISTOGRAM_START;
                 auto t_start = std::chrono::high_resolution_clock::now();
-                // determine cube min and max values
-                float cube_min(FLT_MAX), cube_max(FLT_MIN);
+                // stats for entire cube
+                carta::BasicStats<float> cube_stats;
                 size_t num_channels(_frames.at(file_id)->NumChannels());
                 for (size_t chan = 0; chan < num_channels; ++chan) {
-                    // min and max for this channel
-                    float chan_min, chan_max;
-                    if (!_frames.at(file_id)->GetRegionMinMax(IMAGE_REGION_ID, chan, stokes, chan_min, chan_max)) {
-                        _frames.at(file_id)->CalcRegionMinMax(IMAGE_REGION_ID, chan, stokes, chan_min, chan_max);
+                    // stats for this channel
+                    carta::BasicStats<float> channel_stats;
+                    if (!_frames.at(file_id)->GetRegionBasicStats(IMAGE_REGION_ID, chan, stokes, channel_stats)) {
+                        _frames.at(file_id)->CalcRegionBasicStats(IMAGE_REGION_ID, chan, stokes, channel_stats);
                     }
-                    cube_min = std::min(cube_min, chan_min);
-                    cube_max = std::max(cube_max, chan_max);
+                    cube_stats.join(channel_stats);
 
                     // check for cancel
                     if (_histogram_context.is_group_execution_cancelled()) {
@@ -894,7 +893,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                 }
                 // save min,max in cube region
                 if (!_histogram_context.is_group_execution_cancelled()) {
-                    _frames.at(file_id)->SetRegionMinMax(region_id, channel, stokes, cube_min, cube_max);
+                    _frames.at(file_id)->SetRegionBasicStats(region_id, channel, stokes, cube_stats);
                 }
 
                 // check cancel and proceed
@@ -908,7 +907,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                     std::vector<int> cube_bins;
                     CARTA::Histogram chan_histogram; // histogram for each channel
                     for (size_t chan = 0; chan < num_channels; ++chan) {
-                        _frames.at(file_id)->CalcRegionHistogram(region_id, chan, stokes, num_bins, cube_min, cube_max, chan_histogram);
+                        _frames.at(file_id)->CalcRegionHistogram(region_id, chan, stokes, num_bins, cube_stats.min_val, cube_stats.max_val, chan_histogram);
                         // add channel bins to cube bins
                         if (chan == 0) {
                             cube_bins = {chan_histogram.bins().begin(), chan_histogram.bins().end()};
