@@ -421,13 +421,16 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
         if (image_info.hasSingleBeam()) {
             gaussian_beam = image_info.restoringBeam();
             entry->set_name("Restoring beam");
+            std::string beam_info = fmt::format("{:.2f}\" X {:.2f}\", {:.4f} deg", gaussian_beam.getMajor("arcsec"),
+                gaussian_beam.getMinor("arcsec"), gaussian_beam.getPA("deg").getValue());
+            entry->set_value(beam_info);
         } else if (image_info.hasMultipleBeams()) {
-            entry->set_name("Median area beam");
-            gaussian_beam = image_info.getBeamSet().getMedianAreaBeam();
+            // entry->set_name("Median area beam");
+            // gaussian_beam = image_info.getBeamSet().getMedianAreaBeam();
+            // TEST performance to just get number of beams:
+            entry->set_name("Number of beams");
+            entry->set_value(std::to_string(image_info.getBeamSet().size()));
         }
-        std::string beam_info = fmt::format("{:.2f}\" X {:.2f}\", {:.4f} deg", gaussian_beam.getMajor("arcsec"),
-            gaussian_beam.getMinor("arcsec"), gaussian_beam.getPA("deg").getValue());
-        entry->set_value(beam_info);
     }
 }
 
