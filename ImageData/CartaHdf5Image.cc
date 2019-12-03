@@ -15,8 +15,8 @@
 
 using namespace carta;
 
-CartaHdf5Image::CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu,
-    const CARTA::FileInfoExtended* info, casacore::MaskSpecifier mask_spec)
+CartaHdf5Image::CartaHdf5Image(
+    const std::string& filename, const std::string& array_name, const std::string& hdu, casacore::MaskSpecifier mask_spec)
     : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)),
       _valid(false),
       _pixel_mask(nullptr),
@@ -24,7 +24,7 @@ CartaHdf5Image::CartaHdf5Image(const std::string& filename, const std::string& a
     _lattice = casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(filename)), array_name, hdu);
     _shape = _lattice.shape();
     _pixel_mask = new casacore::ArrayLattice<bool>();
-    _valid = Setup(filename, hdu, info);
+    _valid = SetUpImage();
 }
 
 CartaHdf5Image::CartaHdf5Image(const CartaHdf5Image& other)
@@ -149,160 +149,52 @@ casacore::Bool CartaHdf5Image::doGetMaskSlice(casacore::Array<bool>& buffer, con
 
 // Set up image CoordinateSystem, ImageInfo
 
-bool CartaHdf5Image::Setup(const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info) {
-    // Setup coordinate system, image info, misc info from image header entries
+bool CartaHdf5Image::SetUpImage() {
+    // Set up coordinate system, image info, misc info from image header entries
     bool valid(false);
     try {
-        // convert FileInfoExtended entries to casacore Record
-        casacore::Record info_header = ConvertInfoToCasacoreRecord(info);
-        // convert info header record to vector of FITS keyword strings
-        casacore::FitsKeywordList fits_kw_list = casacore::FITSKeywordUtil::makeKeywordList();
-        casacore::FITSKeywordUtil::addKeywords(fits_kw_list, info_header);
-        fits_kw_list.end(); // add end card to end of list
-        if (fits_kw_list.isempty())
-            return false;
-        // put kw strings into Vector of Strings
-        casacore::Vector<casacore::String> header_vector;
-        fits_kw_list.first();
-        casacore::FitsKeyword* fkw = fits_kw_list.next();
-        while (fkw != nullptr) {
-            std::string header_item(80, ' ');
-            char* card = &(header_item[0]);
-            casacore::FitsKeyCardTranslator::fmtcard(card, *fkw);
-            size_t header_size(header_vector.size());
-            header_vector.resize(header_size + 1, true);
-            header_vector(header_size) = header_item;
-            fkw = fits_kw_list.next();
-        }
+        // convert header entries to FITS header strings
+        casacore::Vector<casacore::String> fits_header_strings = Hdf5ToFITSHeaderStrings();
+        if (!fits_header_strings.empty()) {
+            // set coordinate system
+            int stokes_fits_value(1);
+            casacore::Record unused_headers_rec;
+            casacore::LogSink sink; // null sink; hide confusing FITS log messages
+            casacore::LogIO log(sink);
+            unsigned int which_rep(0);
+            casacore::IPosition image_shape(shape());
+            bool drop_stokes(true);
+            casacore::CoordinateSystem coordinate_system = casacore::ImageFITSConverter::getCoordinateSystem(
+                stokes_fits_value, unused_headers_rec, fits_header_strings, log, which_rep, image_shape, drop_stokes);
+            setCoordinateInfo(coordinate_system);
 
-        // set coordinate system
-        int stokes_fits_value(1);
-        casacore::Record header_rec;
-        casacore::LogSink sink; // null sink; hide confusing FITS log messages
-        casacore::LogIO log(sink);
-        unsigned int which_rep(0);
-        casacore::IPosition image_shape(shape());
-        bool drop_stokes(true);
-        casacore::CoordinateSystem coordinate_system = casacore::ImageFITSConverter::getCoordinateSystem(
-            stokes_fits_value, header_rec, header_vector, log, which_rep, image_shape, drop_stokes);
-        setCoordinateInfo(coordinate_system);
+            // set image units
+            setUnits(casacore::ImageFITSConverter::getBrightnessUnit(unused_headers_rec, log));
 
-        // set image units
-        setUnits(casacore::ImageFITSConverter::getBrightnessUnit(header_rec, log));
-
-        // set image info
-        casacore::ImageInfo image_info = casacore::ImageFITSConverter::getImageInfo(header_rec);
-        if (stokes_fits_value != -1) {
-            casacore::ImageInfo::ImageTypes type = casacore::ImageInfo::imageTypeFromFITS(stokes_fits_value);
-            if (type != casacore::ImageInfo::Undefined) {
-                image_info.setImageType(type);
+            // set image info
+            casacore::ImageInfo image_info = casacore::ImageFITSConverter::getImageInfo(unused_headers_rec);
+            if (stokes_fits_value != -1) {
+                casacore::ImageInfo::ImageTypes type = casacore::ImageInfo::imageTypeFromFITS(stokes_fits_value);
+                if (type != casacore::ImageInfo::Undefined) {
+                    image_info.setImageType(type);
+                }
             }
+            setImageInfo(image_info);
+
+            // set misc info
+            casacore::Record misc_info;
+            casacore::ImageFITSConverter::extractMiscInfo(misc_info, unused_headers_rec);
+            setMiscInfo(misc_info);
+            valid = true;
         }
-        setImageInfo(image_info);
-
-        // set misc info
-        casacore::Record misc_info;
-        casacore::ImageFITSConverter::extractMiscInfo(misc_info, header_rec);
-        setMiscInfo(misc_info);
-
-        valid = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "Error opening HDF5 image: " << err.getMesg() << std::endl;
     }
     return valid;
 }
 
-casacore::Record CartaHdf5Image::ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info) {
-    // convert specified keywords to bool, int, or double
-    // hdf5 converter keywords
-    std::vector<std::string> skip_entries{"SIMPLE", "SCHEMA_VERSION", "HDF5_CONVERTER", "HDF5_CONVERTER_VERSION"};
-    // Reserved FITS keywords https://fits.gsfc.nasa.gov/standard40/fits_standard40aa-le.pdf
-    std::vector<std::string> bool_entries{"EXTEND", "BLOCKED", "GROUPS"};
-    std::vector<std::string> int_entries{
-        "BITPIX", "BLANK", "WCSAXES", "A_ORDER", "B_ORDER", "VELREF", "EXTLEVEL", "EXTVER", "GCOUNT", "PCOUNT", "TFIELDS", "THEAP"};
-    std::vector<std::string> double_entries{"EQUINOX", "EPOCH", "LONPOLE", "LATPOLE", "RESTFRQ", "OBSFREQ", "MJD-OBS", "DATAMIN", "DATAMAX",
-        "BMAJ", "BMIN", "BPA", "BSCALE", "BZERO"};
-    std::vector<std::string> substr_int_entries{"NAXIS", "TBCOL"};
-    std::vector<std::string> substr_dbl_entries{
-        "CRVAL", "CRPIX", "CDELT", "CROTA", "OBSGE", "PSCAL", "PZERO", "TSCAL", "TZERO", "TDMIN", "TDMAX", "TLMIN", "TLMAX"};
-    std::vector<std::string> prefix_entries{"A_", "B_", "CD", "PC", "PV"};
-
-    // In FITS card conversion, ending quote is lost in 80-char limit so need to shorten value string
-    int max_string_value_length(66);
-    const char* single_quote = "'";
-
-    // convert header_entries to Record string, int or double field
-    casacore::Record header_record;
-    for (int i = 0; i < info->header_entries_size(); ++i) {
-        const CARTA::HeaderEntry header_entry = info->header_entries(i);
-        const std::string entry_name = header_entry.name();
-        const std::string entry_name_substr = entry_name.substr(0, 5); // 5-letter substring
-        const std::string entry_name_prefix = entry_name.substr(0, 2); // 2-letter prefix
-
-        if (std::find(skip_entries.begin(), skip_entries.end(), entry_name) != skip_entries.end()) {
-            continue;
-        }
-
-        switch (header_entry.entry_type()) {
-            case CARTA::EntryType::STRING: {
-                casacore::String entry_value = header_entry.value();
-                if (std::find(bool_entries.begin(), bool_entries.end(), entry_name) != bool_entries.end()) {
-                    header_record.define(entry_name, (entry_value == "T" ? true : false)); // bool
-                } else if ((std::find(int_entries.begin(), int_entries.end(), entry_name) != int_entries.end()) ||
-                           (std::find(substr_int_entries.begin(), substr_int_entries.end(), entry_name_substr) !=
-                               substr_int_entries.end())) {
-                    try {
-                        header_record.define(entry_name, std::stoi(entry_value)); // int
-                    } catch (std::invalid_argument&) {
-                        header_record.define(entry_name, entry_value); // string
-                    }
-                } else if ((std::find(double_entries.begin(), double_entries.end(), entry_name) != double_entries.end()) ||
-                           (std::find(substr_dbl_entries.begin(), substr_dbl_entries.end(), entry_name_substr) !=
-                               substr_dbl_entries.end())) {
-                    try {
-                        header_record.define(entry_name, std::stod(entry_value)); // double
-                    } catch (std::invalid_argument&) {
-                        header_record.define(entry_name, entry_value); // string
-                    }
-                } else if (std::find(prefix_entries.begin(), prefix_entries.end(), entry_name_prefix) != prefix_entries.end()) {
-                    try {
-                        header_record.define(entry_name, std::stod(entry_value)); // double
-                    } catch (std::invalid_argument&) {
-                        header_record.define(entry_name, entry_value); // string
-                    }
-                } else {
-                    // convert units
-                    entry_value = (entry_value == "Kelvin" ? "K" : entry_value);
-                    // convert date
-                    if (entry_name == "DATE-OBS") { // date
-                        casacore::String fits_date;
-                        casacore::FITSDateUtil::convertDateString(fits_date, entry_value);
-                        header_record.define(entry_name, fits_date);
-                    } else {
-                        // shorten value string
-                        if ((!entry_value.empty()) && (entry_value.firstchar() == single_quote[0]) &&
-                            (entry_value.length() > max_string_value_length)) {
-                            entry_value.resize(max_string_value_length);
-                        }
-                        header_record.define(entry_name, entry_value); // string
-                    }
-                }
-            } break;
-            case CARTA::EntryType::INT: {
-                if ((entry_name == "EXTEND") || (entry_name == "BLOCKED")) { // convert to bool
-                    bool val = (header_entry.numeric_value() == 0.0 ? false : true);
-                    header_record.define(entry_name, val);
-                } else {
-                    header_record.define(entry_name, static_cast<int>(header_entry.numeric_value()));
-                }
-            } break;
-            case CARTA::EntryType::FLOAT: {
-                header_record.define(entry_name, header_entry.numeric_value()); // double
-            } break;
-            default:
-                break;
-        }
-    }
-
-    return header_record;
+casacore::Vector<casacore::String> CartaHdf5Image::Hdf5ToFITSHeaderStrings() {
+    // Convert specified Hdf5 attributes to FITS-format strings.
+    casacore::CountedPtr<casacore::HDF5Group> hdf5_group(_lattice.group());
+    return Hdf5Attributes::ReadAttributes(hdf5_group.get()->getHid(), _schema_version, _converter, _converter_version);
 }

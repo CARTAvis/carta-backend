@@ -9,6 +9,7 @@
 #include <casacore/images/Images/ImageInterface.h>
 
 #include <carta-protobuf/file_info.pb.h>
+#include "../ImageData/CartaHdf5Image.h"
 
 class FileExtInfoLoader {
 public:
@@ -19,6 +20,8 @@ public:
 private:
     // FileInfoExtended
     bool CheckMiriadImage(const std::string& filename, std::string& message);
+    void AddHdf5Headers(CARTA::FileInfoExtended* extended_info, carta::CartaHdf5Image* hdf5_image);
+
     bool FillFileInfoFromImage(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message);
     void AddShapeEntries(CARTA::FileInfoExtended* extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis);
     void AddComputedEntries(CARTA::FileInfoExtended* extended_info, casacore::ImageInterface<float>* image);

@@ -75,8 +75,7 @@ struct ContourSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, bool verbose,
-        int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, bool verbose, int default_channel = DEFAULT_CHANNEL);
     ~Frame();
 
     bool IsValid();

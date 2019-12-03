@@ -6,7 +6,7 @@
 
 #include <casacore/images/Images/ImageInterface.h>
 
-#include <carta-protobuf/defs.pb.h>
+#include <carta-protobuf/enums.pb.h>
 
 #include "../Util.h"
 
@@ -127,9 +127,8 @@ public:
     static FileLoader* GetLoader(const std::string& filename);
 
     // get shape and axis information from image data and coordinate system
-    bool FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
-    // use extended file info if coord sys fails
-    void FindCoordinates(const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis);
+    bool FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
+    void FindCoordinates(int& spectral_axis, int& stokes_axis);
 
     // Load image statistics, if they exist, from the file
     virtual void LoadImageStats(bool load_percentiles = false);
@@ -137,7 +136,7 @@ public:
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
     // Do anything required to open the file (set up cache size, etc)
-    virtual void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) = 0;
+    virtual void OpenFile(const std::string& hdu) = 0;
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Return a casacore image type representing the data stored in the

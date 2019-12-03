@@ -18,8 +18,7 @@
 
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, bool verbose,
-    int default_channel)
+Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, bool verbose, int default_channel)
     : _session_id(session_id),
       _valid(true),
       _z_profile_count(0),
@@ -47,7 +46,7 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
     _loader->SetFramePtr(this);
 
     try {
-        _loader->OpenFile(hdu, info);
+        _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, err.getMesg());
         if (_verbose) {
@@ -59,7 +58,7 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
 
     // Get shape and axis values from the loader
     std::string log_message;
-    if (!_loader->FindShape(info, _image_shape, _spectral_axis, _stokes_axis, log_message)) {
+    if (!_loader->FindShape(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, log_message);
         if (_verbose) {
             Log(session_id, _open_image_error);

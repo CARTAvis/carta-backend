@@ -381,6 +381,7 @@ void Ds9Parser::ProcessRegionDefinition(
 bool Ds9Parser::CheckAndConvertParameter(std::string& parameter, const std::string& region_type) {
     // Replace ds9 unit with casacore unit in value-unit parameter string, for casacore::Quantity.
     // Returns whether valid ds9 parameter
+    bool valid(false);
     std::string error_prefix(region_type + " invalid parameter ");
 
     // use stod to find index of unit in string (after numeric value)
@@ -391,56 +392,59 @@ bool Ds9Parser::CheckAndConvertParameter(std::string& parameter, const std::stri
         std::string invalid_arg(error_prefix + parameter + ", not a numeric value");
         AddImportError(invalid_arg);
         std::cerr << "Ds9Parser import error: " << invalid_arg << std::endl;
-        return false;
+        return valid;
     }
 
     size_t param_length(parameter.length());
-    if (param_length == idx) { // no unit
-        return true;
-    }
+    valid = (param_length == idx); // no unit is valid
+    if (!valid) {
+        // check unit/format
+        if (param_length == (idx + 1)) {
+            // DS9 units are a single character
+            const char unit = parameter.back();
+            std::string casacore_unit;
+            if (unit == 'd') {
+                casacore_unit = "deg";
+                valid = true;
+            } else if (unit == 'r') {
+                casacore_unit = "rad";
+                valid = true;
+            } else if (unit == 'p') {
+                casacore_unit = "pix";
+                valid = true;
+            } else if (unit == 'i') {
+                casacore_unit = "pix";
+                valid = true;
+            } else if ((unit == '"') || (unit == '\'')) {
+                // casacore unit for min, sec is the same
+                valid = true;
+            } else {
+                std::string invalid_unit(error_prefix + "unit " + parameter);
+                AddImportError(invalid_unit);
+                std::cerr << "Ds9Parser import error: " << invalid_unit << std::endl;
+                valid = false;
+            }
 
-    if (param_length > idx + 1) {
-        // check for hms, dms formats
-        const char* param_carray = parameter.c_str();
-        float h, m, s;
-        if ((sscanf(param_carray, "%f:%f:%f", &h, &m, &s) == 3) || (sscanf(param_carray, "%fh%fm%fs", &h, &m, &s) == 3) ||
-            (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3)) { // time format ok
-            return true;
+            if (!casacore_unit.empty()) {
+                // replace DS9 unit with casacore unit
+                parameter.pop_back();
+                parameter.append(casacore_unit);
+            }
+        } else {
+            // check for hms, dms formats
+            const char* param_carray = parameter.c_str();
+            float h, m, s;
+            valid = ((sscanf(param_carray, "%f:%f:%f", &h, &m, &s) == 3) || (sscanf(param_carray, "%fh%fm%fs", &h, &m, &s) == 3) ||
+                     (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3));
+            if (!valid) {
+                // Unit not a single character or time/angle format
+                std::string invalid_unit(error_prefix + "unit " + parameter);
+                AddImportError(invalid_unit);
+                std::cerr << "Ds9Parser import error: " << invalid_unit << std::endl;
+            }
         }
-
-        // DS9 units are a single character
-        std::string invalid_unit(error_prefix + "unit " + parameter);
-        AddImportError(invalid_unit);
-        std::cerr << "Ds9Parser import error: " << invalid_unit << std::endl;
-        return false;
     }
-
-    const char unit = parameter.back();
-    std::string casacore_unit;
-    if (unit == 'd') {
-        casacore_unit = "deg";
-    } else if (unit == 'r') {
-        casacore_unit = "rad";
-    } else if (unit == 'p') {
-        casacore_unit = "pix";
-    } else if (unit == 'i') {
-        casacore_unit = "pix";
-    } else if ((unit == '"') || (unit == '\'')) {
-        // casacore unit is the same, no error
-    } else {
-        std::string invalid_unit(error_prefix + "unit " + parameter);
-        AddImportError(invalid_unit);
-        std::cerr << "Ds9Parser import error: " << invalid_unit << std::endl;
-        return false;
-    }
-
-    if (!casacore_unit.empty()) {
-        parameter.pop_back();
-        parameter.append(casacore_unit);
-    }
-
-    // parameter unit validated
-    return true;
+    return valid;
 }
 
 casacore::String Ds9Parser::ConvertTimeFormatToDeg(std::string& parameter) {

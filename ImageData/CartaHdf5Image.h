@@ -18,7 +18,7 @@ namespace carta {
 class CartaHdf5Image : public casacore::ImageInterface<float> {
 public:
     // Construct an image from a pre-existing file.
-    CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu, const CARTA::FileInfoExtended* info,
+    CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu,
         casacore::MaskSpecifier = casacore::MaskSpecifier());
     // Copy constructor
     CartaHdf5Image(const CartaHdf5Image& other);
@@ -34,6 +34,17 @@ public:
     inline const casacore::HDF5Lattice<float> Lattice() {
         return _lattice;
     };
+
+    // IDIA HDF5 image info
+    inline std::string SchemaVersion() {
+        return _schema_version;
+    }
+    inline std::string Hdf5Converter() {
+        return _converter;
+    }
+    inline std::string Hdf5ConverterVersion() {
+        return _converter_version;
+    }
 
     // implement casacore ImageInterface
     casacore::String imageType() const override;
@@ -60,14 +71,18 @@ private:
         return im->Lattice().file();
     }
 
-    bool Setup(const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info);
-    casacore::Record ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info);
+    bool SetUpImage();
+    casacore::Vector<casacore::String> Hdf5ToFITSHeaderStrings();
 
     bool _valid;
     casacore::MaskSpecifier _mask_spec;
     casacore::HDF5Lattice<float> _lattice;
     casacore::Lattice<bool>* _pixel_mask;
     casacore::IPosition _shape;
+
+    std::string _schema_version;
+    std::string _converter;
+    std::string _converter_version;
 };
 
 } // namespace carta

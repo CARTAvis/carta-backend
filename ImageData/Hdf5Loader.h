@@ -16,7 +16,7 @@ namespace carta {
 class Hdf5Loader : public FileLoader {
 public:
     Hdf5Loader(const std::string& filename);
-    void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) override;
+    void OpenFile(const std::string& hdu) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
@@ -54,9 +54,9 @@ private:
 
 Hdf5Loader::Hdf5Loader(const std::string& filename) : _filename(filename), _hdu("0") {}
 
-void Hdf5Loader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) {
+void Hdf5Loader::OpenFile(const std::string& hdu) {
     // Open hdf5 image with specified hdu
-    _image = std::unique_ptr<CartaHdf5Image>(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu, info));
+    _image = std::unique_ptr<CartaHdf5Image>(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu));
     _hdu = hdu;
 
     // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
