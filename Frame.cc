@@ -949,8 +949,6 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         return false;
     }
     
-    std::cout << "++ got request for region from (" << bounds.x_min() << "," << bounds.y_min() << ") to (" << bounds.x_max() << "," << bounds.y_max() << ")" << std::endl;
-
     const int x = bounds.x_min();
     const int y = bounds.y_min();
     const int req_height = bounds.y_max() - y;
@@ -974,8 +972,6 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = _image_shape(0);
     
-    std::cout << "++ image width " << _image_shape(0) << " height " << _image_shape(1) << ", mip " << mip << ", got num rows " << num_rows_region << " num cols " << row_length_region << std::endl;
-
     // read lock imageCache
     bool write_lock(false);
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
@@ -991,12 +987,12 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                     int pixel_count = 0;
                     size_t image_row = y + (j * mip);
                     for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-                        if (image_row >= _image_shape(0)) {
+                        if (image_row >= _image_shape(1)) {
                             continue;
                         }
                         size_t image_col = x + (i * mip);
                         for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-                            if (image_col >= _image_shape(1)) {
+                            if (image_col >= _image_shape(0)) {
                                 continue;
                             }
                             float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
