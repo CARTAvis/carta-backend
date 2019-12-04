@@ -234,9 +234,9 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto file_info_extended = response.mutable_file_info_extended();
     string message;
 
-    casacore::String hdu_name(request.hdu()); // for FITS, includes extension name
-    std::string hdu(hdu_name.before(" "));
-    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu, message);
+    casacore::String hdu_name(request.hdu());
+    casacore::String hdu_num(hdu_name.before(" ")); // strip FITS extension name
+    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu_num, message);
 
     if (success) { // save a copy to reuse if file opened
         ResetFileInfo(true);
