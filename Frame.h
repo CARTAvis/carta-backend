@@ -73,6 +73,27 @@ struct ContourSettings {
     }
 };
 
+// TODO: implement operators needed for use as key.
+struct CachedTileKey {
+    int x;
+    int y;
+}
+
+struct CachedTileValue {
+    vector<float> data;
+    std::list<CachedTileKey>::iterator position;
+}
+
+struct TileCache {
+    std::list<CachedTileKey> queue;
+    std::unordered_map<CachedTileKey, CachedTileValue> storage;
+    int capacity;
+    
+    void get(CachedTileKey key) {
+        // TODO
+    }
+}
+
 class Frame {
 public:
     Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, bool verbose,
