@@ -18,40 +18,32 @@
 
 using namespace carta;
 
-FileExtInfoLoader::FileExtInfoLoader(const std::string& filename) : _filename(filename) {
-    _type = GetCartaFileType(filename);
+FileExtInfoLoader::FileExtInfoLoader(carta::FileLoader* loader) : _loader(loader) {
 }
 
-bool FileExtInfoLoader::FillFileExtInfo(CARTA::FileInfoExtended* extended_info, std::string& hdu, std::string& message) {
-    casacore::File cc_file(_filename);
-    if (!cc_file.exists()) {
-        return false;
-    }
-
+bool FileExtInfoLoader::FillFileExtInfo(
+    CARTA::FileInfoExtended* extended_info, const std::string& filename, const std::string& hdu, std::string& message) {
     // set name from filename
-    std::string name(cc_file.path().baseName());
     auto entry = extended_info->add_computed_entries();
     entry->set_name("Name");
-    entry->set_value(name);
+    entry->set_value(filename);
     entry->set_entry_type(CARTA::EntryType::STRING);
 
     // fill header_entries, computed_entries
-    return FillFileInfoFromImage(extended_info, hdu, message);
+    bool file_ok(false);
+    if (_loader->CanOpenFile(message)) {
+        file_ok = FillFileInfoFromImage(extended_info, hdu, message);
+    }
+    return file_ok;
 }
 
-bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_info, std::string& hdu, std::string& message) {
+bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_info, const std::string& hdu, std::string& message) {
     // add header_entries in FITS format (issue #13) using ImageInterface from FileLoader
     bool file_ok(false);
-    if ((_type == CARTA::FileType::MIRIAD) && (!CheckMiriadImage(_filename, message))) { // in Util.h
-        // checks if image is valid using mirlib directly before making MIRIADImage which could crash backend
-        return file_ok;
-    }
-
-    try {
-        std::unique_ptr<FileLoader> loader = std::unique_ptr<FileLoader>(FileLoader::GetLoader(_filename));
-        if (loader) {
-            loader->OpenFile(hdu);
-            casacore::ImageInterface<float>* image = loader->LoadData(carta::FileInfo::Data::Image);
+    if (_loader) {
+        try {
+            _loader->OpenFile(hdu);
+            casacore::ImageInterface<float>* image = _loader->LoadData(carta::FileInfo::Data::Image);
             if (image) {
                 casacore::IPosition image_shape(image->shape());
                 unsigned int num_dim = image_shape.size();
@@ -60,6 +52,9 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                     return file_ok;
                 }
 
+                // Add (currently HDF5 only) version headers first
+                AddVersionHeaders(extended_info);
+
                 // Add header_entries
                 casacore::String error_string, origin_str;
                 casacore::ImageFITSHeaderInfo fhi;
@@ -67,20 +62,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                     air_wavelength(false), verbose(false), prim_head(true), allow_append(false), history(false);
                 int bit_pix(-32);
                 float min_pix(1.0), max_pix(-1.0);
-                bool ok = casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *image, prefer_velocity, optical_velocity,
+                if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *image, prefer_velocity, optical_velocity,
                     bit_pix, min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head,
-                    allow_append, origin_str, history);
-                if (!ok) {
+                    allow_append, origin_str, history)) {
                     message = error_string;
                     return file_ok;
-                }
-
-                if (_type == CARTA::FileType::HDF5) {
-                    // add schema and converter info
-                    carta::CartaHdf5Image* hdf5_image = static_cast<carta::CartaHdf5Image*>(image);
-                    if (hdf5_image) {
-                        AddHdf5Headers(extended_info, hdf5_image);
-                    }
                 }
 
                 int naxis(0), ncoord(0);
@@ -183,7 +169,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 }
 
                 int spectral_axis, stokes_axis;
-                if (loader->FindShape(image_shape, spectral_axis, stokes_axis, message)) {
+                if (_loader->FindShape(image_shape, spectral_axis, stokes_axis, message)) {
                     AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
                     AddComputedEntries(extended_info, image);
                     file_ok = true;
@@ -191,78 +177,50 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
             } else { // image failed
                 message = "Image could not be opened.";
             }
-        } else { // loader failed
-            message = "Image type not supported.";
+        } catch (casacore::AipsError& err) {
+            message = err.getMesg();
+            if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"
+                message = "Failed to open image at specified HDU.";
+            } else if (message.find("No image at specified location") != std::string::npos) {
+                message = "No image at specified HDU.";
+            } else {
+                message = "Failed to open image: " + message;
+            }
         }
-    } catch (casacore::AipsError& err) {
-        message = err.getMesg();
-        if (message.find("diagonal") != std::string::npos) { // "ArrayBase::diagonal() - diagonal out of range"
-            message = "Failed to open image at specified HDU.";
-        } else if (message.find("No image at specified location") != std::string::npos) {
-            message = "No image at specified HDU.";
-        } else {
-            message = "Failed to open image: " + message;
-        }
+    } else { // loader failed
+        message = "Image type not supported.";
     }
-
     return file_ok;
 }
 
-bool FileExtInfoLoader::CheckMiriadImage(const std::string& filename, std::string& message) {
-    // Some MIRIAD images throw an error in the miriad libs which cannot be caught in casacore::MIRIADImage, which crashes the backend.
-    // If the following checks pass, it should be safe to open the MiriadImage.
-    bool miriad_ok(true);
-    int t_handle, i_handle, io_stat, num_dim;
-    hopen_c(&t_handle, filename.c_str(), "old", &io_stat);
-    if (io_stat != 0) {
-        message = "Could not open MIRIAD file";
-        miriad_ok = false;
-    } else {
-        haccess_c(t_handle, &i_handle, "image", "read", &io_stat);
-        if (io_stat != 0) {
-            message = "Could not open MIRIAD file";
-            miriad_ok = false;
-        } else {
-            rdhdi_c(t_handle, "naxis", &num_dim, 0); // read "naxis" value into ndim, default 0
-            hdaccess_c(i_handle, &io_stat);
-            hclose_c(t_handle);
-            if (num_dim < 2 || num_dim > 4) {
-                message = "Image must be 2D, 3D or 4D.";
-                miriad_ok = false;
-            }
+void FileExtInfoLoader::AddVersionHeaders(CARTA::FileInfoExtended* extended_info) {
+    // add schema and converter info for HDF5 images
+    std::string schema_version, hdf5_converter, converter_version;
+    if (_loader->GetImageHeaders(schema_version, hdf5_converter, converter_version)) {
+        if (!schema_version.empty()) {
+            auto header_entry = extended_info->add_header_entries();
+            header_entry->set_name("SCHEMA_VERSION");
+            header_entry->set_entry_type(CARTA::EntryType::STRING);
+            size_t first = schema_version.find("'") + 1;
+            size_t count = schema_version.rfind("'") - first;
+            *header_entry->mutable_value() = schema_version.substr(first, count);
         }
-    }
-    return miriad_ok;
-}
-
-void FileExtInfoLoader::AddHdf5Headers(CARTA::FileInfoExtended* extended_info, carta::CartaHdf5Image* hdf5_image) {
-    // add schema and converter info
-    std::string schema_version = hdf5_image->SchemaVersion();
-    if (!schema_version.empty()) {
-        auto header_entry = extended_info->add_header_entries();
-        header_entry->set_name("SCHEMA_VERSION");
-        header_entry->set_entry_type(CARTA::EntryType::STRING);
-        size_t first = schema_version.find("'") + 1;
-        size_t count = schema_version.rfind("'") - first;
-        *header_entry->mutable_value() = schema_version.substr(first, count);
-    }
-    std::string hdf5_converter = hdf5_image->Hdf5Converter();
-    if (!hdf5_converter.empty()) {
-        auto header_entry = extended_info->add_header_entries();
-        header_entry->set_name("HDF5_CONVERTER");
-        header_entry->set_entry_type(CARTA::EntryType::STRING);
-        size_t first = hdf5_converter.find("'") + 1;
-        size_t count = hdf5_converter.rfind("'") - first;
-        *header_entry->mutable_value() = hdf5_converter.substr(first, count);
-    }
-    std::string converter_version = hdf5_image->Hdf5ConverterVersion();
-    if (!converter_version.empty()) {
-        auto header_entry = extended_info->add_header_entries();
-        header_entry->set_name("HDF5_CONVERTER_VERSION");
-        header_entry->set_entry_type(CARTA::EntryType::STRING);
-        size_t first = converter_version.find("'") + 1;
-        size_t count = converter_version.rfind("'") - first;
-        *header_entry->mutable_value() = converter_version.substr(first, count);
+        if (!hdf5_converter.empty()) {
+            auto header_entry = extended_info->add_header_entries();
+            header_entry->set_name("HDF5_CONVERTER");
+            header_entry->set_entry_type(CARTA::EntryType::STRING);
+            size_t first = hdf5_converter.find("'") + 1;
+            size_t count = hdf5_converter.rfind("'") - first;
+            *header_entry->mutable_value() = hdf5_converter.substr(first, count);
+        }
+        if (!converter_version.empty()) {
+            auto header_entry = extended_info->add_header_entries();
+            header_entry->set_name("HDF5_CONVERTER_VERSION");
+            header_entry->set_entry_type(CARTA::EntryType::STRING);
+            size_t first = converter_version.find("'") + 1;
+            size_t count = converter_version.rfind("'") - first;
+            *header_entry->mutable_value() = converter_version.substr(first, count);
+        }
     }
 }
 

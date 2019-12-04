@@ -44,8 +44,11 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
     return casacore::ImageOpener::imageType(filename);
 }
 
+casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
+
 CARTA::FileType GetCartaFileType(const std::string& filename);
 
+// ************ structs *************
 //
 // Usage of the ChannelRange:
 //

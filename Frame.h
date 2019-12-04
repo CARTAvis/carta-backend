@@ -75,7 +75,7 @@ struct ContourSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, bool verbose, int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel = DEFAULT_CHANNEL);
     ~Frame();
 
     bool IsValid();
@@ -240,8 +240,7 @@ private:
     // spectral profile counter, which is used to determine whether the Frame object can be destroyed (_z_profile_count == 0 ?).
     tbb::atomic<int> _z_profile_count;
 
-    // image loader, stats from image file
-    std::string _filename;
+    // image loader for image type
     std::unique_ptr<carta::FileLoader> _loader;
 
     // shape, channel, and stokes

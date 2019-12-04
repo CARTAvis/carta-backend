@@ -126,6 +126,11 @@ public:
 
     static FileLoader* GetLoader(const std::string& filename);
 
+	// check for mirlib (MIRIAD) error; returns true for other image types
+	virtual bool CanOpenFile(std::string& error);
+	// get special image headers; returns true for HDF5 only. Call after OpenFile().
+    virtual bool GetImageHeaders(std::string& schema_version, std::string& converter, std::string& converter_version);
+
     // get shape and axis information from image data and coordinate system
     bool FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
     void FindCoordinates(int& spectral_axis, int& stokes_axis);
@@ -135,7 +140,7 @@ public:
     // Retrieve stats for a particular channel or all channels
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
-    // Do anything required to open the file (set up cache size, etc)
+    // Do anything required to open the file (set up cache size, Image object)
     virtual void OpenFile(const std::string& hdu) = 0;
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;

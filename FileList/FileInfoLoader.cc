@@ -29,8 +29,8 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo* file_info) {
         casacore::Directory cc_dir(cc_file);
         file_size = cc_dir.size();
     } else if (cc_file.isSymLink()) { // gets size of link not file
-        casacore::String resolved_file_name(cc_file.path().resolvedName());
-        casacore::File linked_file(resolved_file_name);
+        casacore::String resolved_filename(cc_file.path().resolvedName());
+        casacore::File linked_file(resolved_filename);
         file_size = linked_file.size();
     }
 

@@ -120,6 +120,24 @@ void SplitString(std::string& input, char delim, std::vector<std::string>& parts
     }
 }
 
+casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file) {
+    // Given directory (relative to root folder) and file, return resolved path and filename
+    // (absolute pathname with symlinks resolved)
+    casacore::String resolved_filename;
+    casacore::Path root_path(root_dir);
+    root_path.append(directory);
+    root_path.append(file);
+    casacore::File cc_file(root_path);
+    if (cc_file.exists()) {
+        try {
+            resolved_filename = cc_file.path().resolvedName();
+        } catch (casacore::AipsError& err) {
+            // return empty string
+        }
+    }
+    return resolved_filename;
+}
+    
 CARTA::FileType GetCartaFileType(const std::string& filename) {
     // get casacore image type then convert to carta file type
     switch (CasacoreImageType(filename)) {

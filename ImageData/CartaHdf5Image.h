@@ -36,7 +36,7 @@ public:
     };
 
     // IDIA HDF5 image info
-    inline std::string SchemaVersion() {
+    inline std::string Hdf5SchemaVersion() {
         return _schema_version;
     }
     inline std::string Hdf5Converter() {

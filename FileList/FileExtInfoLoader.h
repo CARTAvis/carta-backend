@@ -10,24 +10,23 @@
 
 #include <carta-protobuf/file_info.pb.h>
 #include "../ImageData/CartaHdf5Image.h"
+#include "../ImageData/FileLoader.h"
 
 class FileExtInfoLoader {
 public:
-    FileExtInfoLoader(const std::string& filename);
+    FileExtInfoLoader(carta::FileLoader* loader);
 
-    bool FillFileExtInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message);
+    bool FillFileExtInfo(CARTA::FileInfoExtended* extended_info, const std::string& filename, const std::string& hdu, std::string& message);
 
 private:
     // FileInfoExtended
-    bool CheckMiriadImage(const std::string& filename, std::string& message);
-    void AddHdf5Headers(CARTA::FileInfoExtended* extended_info, carta::CartaHdf5Image* hdf5_image);
-
-    bool FillFileInfoFromImage(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message);
+    bool FillFileInfoFromImage(CARTA::FileInfoExtended* ext_info, const std::string& hdu, std::string& message);
+    void AddVersionHeaders(CARTA::FileInfoExtended* extended_info);
     void AddShapeEntries(CARTA::FileInfoExtended* extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis);
     void AddComputedEntries(CARTA::FileInfoExtended* extended_info, casacore::ImageInterface<float>* image);
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit); // convert MVAngle to string
 
-    std::string _filename;
+    carta::FileLoader* _loader;
     CARTA::FileType _type;
 };
 

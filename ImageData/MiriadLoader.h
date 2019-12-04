@@ -10,6 +10,7 @@ namespace carta {
 class MiriadLoader : public FileLoader {
 public:
     MiriadLoader(const std::string& file);
+	bool CanOpenFile(std::string& error) override;
     void OpenFile(const std::string& hdu) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
@@ -24,6 +25,33 @@ private:
 };
 
 MiriadLoader::MiriadLoader(const std::string& filename) : _filename(filename) {}
+
+bool MiriadLoader::CanOpenFile(std::string& error) {
+    // Some MIRIAD images throw an error in the miriad libs which cannot be caught in casacore::MIRIADImage, which crashes the backend.
+    // If the following checks pass, it should be safe to open the MiriadImage.
+    bool miriad_ok(true);
+    int t_handle, i_handle, io_stat, num_dim;
+    hopen_c(&t_handle, _filename.c_str(), "old", &io_stat);
+    if (io_stat != 0) {
+        error = "Could not open MIRIAD file";
+        miriad_ok = false;
+    } else {
+        haccess_c(t_handle, &i_handle, "image", "read", &io_stat);
+        if (io_stat != 0) {
+            error = "Could not open MIRIAD file";
+            miriad_ok = false;
+        } else {
+            rdhdi_c(t_handle, "naxis", &num_dim, 0); // read "naxis" value into ndim, default 0
+            hdaccess_c(i_handle, &io_stat);
+            hclose_c(t_handle);
+            if (num_dim < 2 || num_dim > 4) {
+                error = "Image must be 2D, 3D or 4D.";
+                miriad_ok = false;
+            }
+        }
+    }
+    return miriad_ok;
+}
 
 void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
     _image = std::unique_ptr<casacore::MIRIADImage>(new casacore::MIRIADImage(_filename));
