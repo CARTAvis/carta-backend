@@ -11,6 +11,7 @@
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
+#include "../Util.h"
 #include "Hdf5Attributes.h"
 
 using namespace carta;
@@ -156,6 +157,28 @@ bool CartaHdf5Image::SetUpImage() {
         // convert header entries to FITS header strings
         casacore::Vector<casacore::String> fits_header_strings = Hdf5ToFITSHeaderStrings();
         if (!fits_header_strings.empty()) {
+            // extract HDF5 headers for MiscInfo
+            casacore::String schema, converter, converter_version;
+            for (auto& header : fits_header_strings) {
+                std::vector<std::string> kw_value;
+                if (header.contains("SCHEMA_VERSION")) {
+                    SplitString(header, '=', kw_value);
+                    schema = kw_value[1];
+                    schema.trim();
+                    schema.gsub("'", "");
+                } else if (header.contains("HDF5_CONVERTER=")) {
+                    SplitString(header, '=', kw_value);
+                    converter = kw_value[1];
+                    converter.trim();
+                    converter.gsub("'", "");
+                } else if (header.contains("HDF5_CONVERTER_VERSION")) {
+                    SplitString(header, '=', kw_value);
+                    converter_version = kw_value[1];
+                    converter_version.trim();
+                    converter_version.gsub("'", "");
+                }
+            }
+
             // set coordinate system
             int stokes_fits_value(1);
             casacore::Record unused_headers_rec;
@@ -184,6 +207,15 @@ bool CartaHdf5Image::SetUpImage() {
             // set misc info
             casacore::Record misc_info;
             casacore::ImageFITSConverter::extractMiscInfo(misc_info, unused_headers_rec);
+            if (!schema.empty()) {
+                misc_info.define("SCHEMA", schema);
+            }
+            if (!converter.empty()) {
+                misc_info.define("HDF5CONV", converter);
+            }
+            if (!converter_version.empty()) {
+                misc_info.define("CONVVERS", converter_version);
+            }
             setMiscInfo(misc_info);
             valid = true;
         }
@@ -196,5 +228,5 @@ bool CartaHdf5Image::SetUpImage() {
 casacore::Vector<casacore::String> CartaHdf5Image::Hdf5ToFITSHeaderStrings() {
     // Convert specified Hdf5 attributes to FITS-format strings.
     casacore::CountedPtr<casacore::HDF5Group> hdf5_group(_lattice.group());
-    return Hdf5Attributes::ReadAttributes(hdf5_group.get()->getHid(), _schema_version, _converter, _converter_version);
+    return Hdf5Attributes::ReadAttributes(hdf5_group.get()->getHid());
 }

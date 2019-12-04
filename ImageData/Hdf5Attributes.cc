@@ -8,8 +8,7 @@
 #include <casacore/casa/HDF5/HDF5DataType.h>
 #include <casacore/casa/HDF5/HDF5Error.h>
 
-casacore::Vector<casacore::String> Hdf5Attributes::ReadAttributes(
-    hid_t group_hid, std::string& schema_version, std::string& hdf5_converter, std::string& converter_version) {
+casacore::Vector<casacore::String> Hdf5Attributes::ReadAttributes(hid_t group_hid) {
     // Reads attributes into FITS-format "name = value" strings
     char cname[512];
     // Iterate through the attributes in order of index, so we're sure they are read back in the same order as written.
@@ -34,15 +33,7 @@ casacore::Vector<casacore::String> Hdf5Attributes::ReadAttributes(
         if (rank == 0) {
             casacore::HDF5HidDataType dtid(H5Aget_type(id));
             std::string value = ReadScalar(id, dtid, name);
-            if (name == "SCHEMA_VERSION") {
-                schema_version = value;
-            } else if (name == "HDF5_CONVERTER") {
-                hdf5_converter = value;
-            } else if (name == "HDF5_CONVERTER_VERSION") {
-                converter_version = value;
-            } else {
-                headers(iheader++) = value;
-            }
+            headers(iheader++) = value;
         }
         H5Aclose(id);
     }

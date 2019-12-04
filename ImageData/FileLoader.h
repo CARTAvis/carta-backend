@@ -126,10 +126,8 @@ public:
 
     static FileLoader* GetLoader(const std::string& filename);
 
-	// check for mirlib (MIRIAD) error; returns true for other image types
-	virtual bool CanOpenFile(std::string& error);
-	// get special image headers; returns true for HDF5 only. Call after OpenFile().
-    virtual bool GetImageHeaders(std::string& schema_version, std::string& converter, std::string& converter_version);
+    // check for mirlib (MIRIAD) error; returns true for other image types
+    virtual bool CanOpenFile(std::string& error);
 
     // get shape and axis information from image data and coordinate system
     bool FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);

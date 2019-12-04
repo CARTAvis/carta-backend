@@ -17,7 +17,6 @@ class Hdf5Loader : public FileLoader {
 public:
     Hdf5Loader(const std::string& filename);
     void OpenFile(const std::string& hdu) override;
-    bool GetImageHeaders(std::string& schema_version, std::string& converter, std::string& converter_version) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
@@ -57,28 +56,20 @@ Hdf5Loader::Hdf5Loader(const std::string& filename) : _filename(filename), _hdu(
 
 void Hdf5Loader::OpenFile(const std::string& hdu) {
     // Open hdf5 image with specified hdu
-    _image = std::unique_ptr<CartaHdf5Image>(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu));
-    _hdu = hdu;
+    if (!_image || (hdu != _hdu)) {
+        _image.reset(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu));
+        _hdu = hdu;
 
-    // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
-    _num_dims = _image->shape().size();
+        // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
+        _num_dims = _image->shape().size();
 
-    // Load swizzled image lattice
-    if (HasData(FileInfo::Data::SWIZZLED)) {
-        _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(
-            casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)), DataSetToString(FileInfo::Data::SWIZZLED), hdu));
+        // Load swizzled image lattice
+        if (HasData(FileInfo::Data::SWIZZLED)) {
+            _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(
+                new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)),
+                    DataSetToString(FileInfo::Data::SWIZZLED), hdu));
+        }
     }
-}
-
-bool Hdf5Loader::GetImageHeaders(std::string& schema_version, std::string& converter, std::string& converter_version) {
-    bool has_image_headers(false);
-    if (_image)	{
-        has_image_headers = true;
-        schema_version = _image->Hdf5SchemaVersion();
-        converter = _image->Hdf5Converter();
-        converter_version = _image->Hdf5ConverterVersion();
-	}
-	return has_image_headers;
 }
 
 // We assume that the main image dataset is always loaded and therefore available.

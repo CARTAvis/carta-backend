@@ -28,9 +28,11 @@ FitsLoader::FitsLoader(const std::string& filename) : _filename(filename) {}
 
 void FitsLoader::OpenFile(const std::string& hdu) {
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
-    _image = std::unique_ptr<casacore::FITSImage>(new casacore::FITSImage(_filename, 0, hdu_num));
-    _hdu = hdu_num;
-    _num_dims = _image->shape().size();
+    if (!_image || (hdu_num != _hdu)) {
+        _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+        _hdu = hdu_num;
+        _num_dims = _image->shape().size();
+    }
 }
 
 bool FitsLoader::HasData(FileInfo::Data dl) const {

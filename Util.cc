@@ -137,7 +137,7 @@ casacore::String GetResolvedFilename(const std::string& root_dir, const std::str
     }
     return resolved_filename;
 }
-    
+
 CARTA::FileType GetCartaFileType(const std::string& filename) {
     // get casacore image type then convert to carta file type
     switch (CasacoreImageType(filename)) {

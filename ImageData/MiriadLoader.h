@@ -10,7 +10,7 @@ namespace carta {
 class MiriadLoader : public FileLoader {
 public:
     MiriadLoader(const std::string& file);
-	bool CanOpenFile(std::string& error) override;
+    bool CanOpenFile(std::string& error) override;
     void OpenFile(const std::string& hdu) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
@@ -54,8 +54,10 @@ bool MiriadLoader::CanOpenFile(std::string& error) {
 }
 
 void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
-    _image = std::unique_ptr<casacore::MIRIADImage>(new casacore::MIRIADImage(_filename));
-    _num_dims = _image->shape().size();
+    if (!_image) {
+        _image.reset(new casacore::MIRIADImage(_filename));
+        _num_dims = _image->shape().size();
+    }
 }
 
 bool MiriadLoader::HasData(FileInfo::Data dl) const {

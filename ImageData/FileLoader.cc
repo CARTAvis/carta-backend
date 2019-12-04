@@ -40,10 +40,6 @@ bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
 
-bool FileLoader::GetImageHeaders(std::string& schema_version, std::string& converter, std::string& converter_version) {
-    return false;
-}
-
 bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
     // Return image shape, spectral axis, and stokes axis from image data, coordinate system, and extended file info.
 

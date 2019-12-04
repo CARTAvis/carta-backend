@@ -18,8 +18,7 @@
 
 using namespace carta;
 
-FileExtInfoLoader::FileExtInfoLoader(carta::FileLoader* loader) : _loader(loader) {
-}
+FileExtInfoLoader::FileExtInfoLoader(carta::FileLoader* loader) : _loader(loader) {}
 
 bool FileExtInfoLoader::FillFileExtInfo(
     CARTA::FileInfoExtended* extended_info, const std::string& filename, const std::string& hdu, std::string& message) {
@@ -52,8 +51,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                     return file_ok;
                 }
 
-                // Add (currently HDF5 only) version headers first
-                AddVersionHeaders(extended_info);
+                // Add currently HDF5-only headers
+                AddMiscInfoHeaders(extended_info, image->miscInfo());
 
                 // Add header_entries
                 casacore::String error_string, origin_str;
@@ -62,9 +61,9 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                     air_wavelength(false), verbose(false), prim_head(true), allow_append(false), history(false);
                 int bit_pix(-32);
                 float min_pix(1.0), max_pix(-1.0);
-                if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *image, prefer_velocity, optical_velocity,
-                    bit_pix, min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head,
-                    allow_append, origin_str, history)) {
+                if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *image, prefer_velocity, optical_velocity, bit_pix,
+                        min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head, allow_append,
+                        origin_str, history)) {
                     message = error_string;
                     return file_ok;
                 }
@@ -193,34 +192,25 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
     return file_ok;
 }
 
-void FileExtInfoLoader::AddVersionHeaders(CARTA::FileInfoExtended* extended_info) {
+void FileExtInfoLoader::AddMiscInfoHeaders(CARTA::FileInfoExtended* extended_info, const casacore::TableRecord& misc_info) {
     // add schema and converter info for HDF5 images
-    std::string schema_version, hdf5_converter, converter_version;
-    if (_loader->GetImageHeaders(schema_version, hdf5_converter, converter_version)) {
-        if (!schema_version.empty()) {
-            auto header_entry = extended_info->add_header_entries();
-            header_entry->set_name("SCHEMA_VERSION");
-            header_entry->set_entry_type(CARTA::EntryType::STRING);
-            size_t first = schema_version.find("'") + 1;
-            size_t count = schema_version.rfind("'") - first;
-            *header_entry->mutable_value() = schema_version.substr(first, count);
-        }
-        if (!hdf5_converter.empty()) {
-            auto header_entry = extended_info->add_header_entries();
-            header_entry->set_name("HDF5_CONVERTER");
-            header_entry->set_entry_type(CARTA::EntryType::STRING);
-            size_t first = hdf5_converter.find("'") + 1;
-            size_t count = hdf5_converter.rfind("'") - first;
-            *header_entry->mutable_value() = hdf5_converter.substr(first, count);
-        }
-        if (!converter_version.empty()) {
-            auto header_entry = extended_info->add_header_entries();
-            header_entry->set_name("HDF5_CONVERTER_VERSION");
-            header_entry->set_entry_type(CARTA::EntryType::STRING);
-            size_t first = converter_version.find("'") + 1;
-            size_t count = converter_version.rfind("'") - first;
-            *header_entry->mutable_value() = converter_version.substr(first, count);
-        }
+    if (misc_info.isDefined("SCHEMA")) {
+        auto header_entry = extended_info->add_header_entries();
+        header_entry->set_name("SCHEMA_VERSION");
+        header_entry->set_entry_type(CARTA::EntryType::STRING);
+        *header_entry->mutable_value() = misc_info.asString("SCHEMA");
+    }
+    if (misc_info.isDefined("HDF5CONV")) {
+        auto header_entry = extended_info->add_header_entries();
+        header_entry->set_name("HDF5_CONVERTER");
+        header_entry->set_entry_type(CARTA::EntryType::STRING);
+        *header_entry->mutable_value() = misc_info.asString("HDF5CONV");
+    }
+    if (misc_info.isDefined("CONVVERS")) {
+        auto header_entry = extended_info->add_header_entries();
+        header_entry->set_name("HDF5_CONVERTER_VERSION");
+        header_entry->set_entry_type(CARTA::EntryType::STRING);
+        *header_entry->mutable_value() = misc_info.asString("CONVVERS");
     }
 }
 

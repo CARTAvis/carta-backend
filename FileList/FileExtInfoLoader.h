@@ -21,7 +21,7 @@ public:
 private:
     // FileInfoExtended
     bool FillFileInfoFromImage(CARTA::FileInfoExtended* ext_info, const std::string& hdu, std::string& message);
-    void AddVersionHeaders(CARTA::FileInfoExtended* extended_info);
+    void AddMiscInfoHeaders(CARTA::FileInfoExtended* extended_info, const casacore::TableRecord& misc_info);
     void AddShapeEntries(CARTA::FileInfoExtended* extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis);
     void AddComputedEntries(CARTA::FileInfoExtended* extended_info, casacore::ImageInterface<float>* image);
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit); // convert MVAngle to string

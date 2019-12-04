@@ -10,8 +10,7 @@
 class Hdf5Attributes {
 public:
     // casacore::HDF5Record::doReadRecord modified to not iterate through links
-    static casacore::Vector<casacore::String> ReadAttributes(
-        hid_t group_hid, std::string& schema_version, std::string& hdf5_converter, std::string& converter_version);
+    static casacore::Vector<casacore::String> ReadAttributes(hid_t group_hid);
 
 private:
     // Read a scalar value (int, float, string) and add it to the record.

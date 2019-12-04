@@ -208,7 +208,7 @@ private:
     // File info for browser, open file
     std::unique_ptr<CARTA::FileInfo> _file_info;
     std::unique_ptr<CARTA::FileInfoExtended> _file_info_extended;
-	std::unique_ptr<carta::FileLoader> _loader;
+    std::unique_ptr<carta::FileLoader> _loader;
 
     // Frame
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file

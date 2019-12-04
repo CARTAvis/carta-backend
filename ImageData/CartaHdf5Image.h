@@ -35,17 +35,6 @@ public:
         return _lattice;
     };
 
-    // IDIA HDF5 image info
-    inline std::string Hdf5SchemaVersion() {
-        return _schema_version;
-    }
-    inline std::string Hdf5Converter() {
-        return _converter;
-    }
-    inline std::string Hdf5ConverterVersion() {
-        return _converter_version;
-    }
-
     // implement casacore ImageInterface
     casacore::String imageType() const override;
     casacore::String name(bool stripPath = false) const override;
@@ -79,10 +68,6 @@ private:
     casacore::HDF5Lattice<float> _lattice;
     casacore::Lattice<bool>* _pixel_mask;
     casacore::IPosition _shape;
-
-    std::string _schema_version;
-    std::string _converter;
-    std::string _converter_version;
 };
 
 } // namespace carta

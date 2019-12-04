@@ -26,8 +26,10 @@ private:
 CasaLoader::CasaLoader(const std::string& filename) : _filename(filename) {}
 
 void CasaLoader::OpenFile(const std::string& /*hdu*/) {
-    _image = std::unique_ptr<casacore::PagedImage<float>>(new casacore::PagedImage<float>(_filename));
-    _num_dims = _image->shape().size();
+    if (!_image) {
+        _image.reset(new casacore::PagedImage<float>(_filename));
+        _num_dims = _image->shape().size();
+    }
 }
 
 bool CasaLoader::HasData(FileInfo::Data dl) const {
