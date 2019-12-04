@@ -948,7 +948,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     if (!_valid || _image_cache.empty()) {
         return false;
     }
-    
+
     const int x = bounds.x_min();
     const int y = bounds.y_min();
     const int req_height = bounds.y_max() - y;
@@ -971,7 +971,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = _image_shape(0);
-    
+
     // read lock imageCache
     bool write_lock(false);
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
