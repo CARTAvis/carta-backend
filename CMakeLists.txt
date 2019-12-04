@@ -70,7 +70,7 @@ set(LINK_LIBS
         casa_measures
         casa_mirlib
         casa_scimath
-        imageanalysis
+        casa_imageanalysis
         ${HDF5_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
