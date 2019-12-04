@@ -903,8 +903,8 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
             int precision = lround(quality_setting);
             raster_image_data.set_compression_quality(precision);
 
-            auto row_length = (bounds_setting.x_max() - bounds_setting.x_min()) / mip_setting;
-            auto num_rows = (bounds_setting.y_max() - bounds_setting.y_min()) / mip_setting;
+            auto row_length = std::ceil((float)(bounds_setting.x_max() - bounds_setting.x_min()) / mip_setting);
+            auto num_rows = std::ceil((float)(bounds_setting.y_max() - bounds_setting.y_min()) / mip_setting);
             std::vector<std::vector<char>> compression_buffers(num_subsets_setting);
             std::vector<size_t> compressed_sizes(num_subsets_setting);
             std::vector<std::vector<int32_t>> nan_encodings(num_subsets_setting);
@@ -978,7 +978,6 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        // TODO TODO TODO: check if these bounds checks are correct
         auto range = tbb::blocked_range<size_t>(0, num_rows_region);
         auto loop = [&](const tbb::blocked_range<size_t>& r) {
             for (size_t j = r.begin(); j != r.end(); ++j) {
