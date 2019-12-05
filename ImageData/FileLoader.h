@@ -5,9 +5,8 @@
 #include <string>
 
 #include <casacore/images/Images/ImageInterface.h>
-#include <casacore/images/Images/ImageOpener.h>
 
-#include <carta-protobuf/defs.pb.h>
+#include <carta-protobuf/enums.pb.h>
 
 #include "../Util.h"
 
@@ -105,10 +104,6 @@ enum class Data : uint32_t {
     MASK
 };
 
-inline casacore::ImageOpener::ImageTypes fileType(const std::string& file) {
-    return casacore::ImageOpener::imageType(file);
-}
-
 inline casacore::uInt GetFitsHdu(const std::string& hdu) {
     // convert from string to casacore unsigned int
     casacore::uInt hdu_num(0);
@@ -131,18 +126,20 @@ public:
 
     static FileLoader* GetLoader(const std::string& filename);
 
+    // check for mirlib (MIRIAD) error; returns true for other image types
+    virtual bool CanOpenFile(std::string& error);
+
     // get shape and axis information from image data and coordinate system
-    bool FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
-    // use extended file info if coord sys fails
-    void FindCoordinates(const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis);
+    bool FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
+    void FindCoordinates(int& spectral_axis, int& stokes_axis);
 
     // Load image statistics, if they exist, from the file
     virtual void LoadImageStats(bool load_percentiles = false);
     // Retrieve stats for a particular channel or all channels
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
-    // Do anything required to open the file (set up cache size, etc)
-    virtual void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) = 0;
+    // Do anything required to open the file (set up cache size, Image object)
+    virtual void OpenFile(const std::string& hdu) = 0;
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Return a casacore image type representing the data stored in the

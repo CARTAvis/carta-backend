@@ -10,7 +10,7 @@ namespace carta {
 class FitsLoader : public FileLoader {
 public:
     FitsLoader(const std::string& file);
-    void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) override;
+    void OpenFile(const std::string& hdu) override;
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
@@ -26,11 +26,13 @@ private:
 
 FitsLoader::FitsLoader(const std::string& filename) : _filename(filename) {}
 
-void FitsLoader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* /*info*/) {
+void FitsLoader::OpenFile(const std::string& hdu) {
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
-    _image = std::unique_ptr<casacore::FITSImage>(new casacore::FITSImage(_filename, 0, hdu_num));
-    _hdu = hdu_num;
-    _num_dims = _image->shape().size();
+    if (!_image || (hdu_num != _hdu)) {
+        _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+        _hdu = hdu_num;
+        _num_dims = _image->shape().size();
+    }
 }
 
 bool FitsLoader::HasData(FileInfo::Data dl) const {

@@ -18,14 +18,12 @@
 
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, bool verbose,
-    int default_channel)
+Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel)
     : _session_id(session_id),
       _valid(true),
       _z_profile_count(0),
       _cursor_set(false),
-      _filename(filename),
-      _loader(FileLoader::GetLoader(filename)),
+      _loader(loader),
       _spectral_axis(-1),
       _stokes_axis(-1),
       _channel_index(-1),
@@ -33,10 +31,8 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
       _num_channels(1),
       _num_stokes(1),
       _verbose(verbose) {
-    casacore::Path ccpath(filename);
-    casacore::String filename_only = ccpath.baseName();
     if (_loader == nullptr) {
-        _open_image_error = fmt::format("Problem loading file {}: loader not implemented", filename_only);
+        _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
@@ -47,9 +43,9 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
     _loader->SetFramePtr(this);
 
     try {
-        _loader->OpenFile(hdu, info);
+        _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
-        _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, err.getMesg());
+        _open_image_error = fmt::format("Problem opening image: {}", err.getMesg());
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
@@ -59,8 +55,8 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
 
     // Get shape and axis values from the loader
     std::string log_message;
-    if (!_loader->FindShape(info, _image_shape, _spectral_axis, _stokes_axis, log_message)) {
-        _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, log_message);
+    if (!_loader->FindShape(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
+        _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
@@ -81,11 +77,11 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
     SetImageCache();
 
     try {
-        // resize stats vectors and load data from image, if the format supports it
+        // Resize stats vectors and load data from image, if the format supports it.
         // A failure here shouldn't invalidate the frame
         _loader->LoadImageStats();
     } catch (casacore::AipsError& err) {
-        _open_image_error = fmt::format("Problem loading statistics from file {}: {}", filename_only, err.getMesg());
+        _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
@@ -719,7 +715,7 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                     region.second->SetAllProfilesUnsent();
                 }
             } else {
-                message = fmt::format("Channel {} or Stokes {} is invalid in file {}", new_channel, new_stokes, _filename);
+                message = fmt::format("Channel {} or Stokes {} is invalid in image", new_channel, new_stokes);
             }
         }
     }
