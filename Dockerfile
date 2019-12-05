@@ -7,8 +7,8 @@ RUN \
   apt-get install -y bison build-essential byobu cmake curl default-jre emacs \
     fftw3-dev flex gdb gcc gfortran git git-lfs htop libblas-dev \
     libcfitsio-dev libfmt-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
-    libprotobuf-dev libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev \
-    man protobuf-compiler python-pip python3-pip software-properties-common \
+    libprotobuf-dev libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libzstd-dev \
+    libgsl-dev man protobuf-compiler python-pip python3-pip software-properties-common \
     unzip vim wcslib-dev wget
 
 # Install googletest
@@ -34,13 +34,14 @@ RUN \
   cd sofa/20180130/f77/src && make && cp libsofa.a /usr/lib/libsofa.a && \
   cd /root && rm -rf sofa
 
-# casacore (add '-j<N>' to 'make' to speed things up)
+# casacore + casa_imageanalysis (add '-j<N>' to 'make' to speed things up)
 RUN \
-  git clone https://github.com/casacore/casacore.git && \
-  mkdir -p casacore/build && cd casacore/build && \
-  cmake .. -DUSE_FFTW3=ON -DUSE_HDF5=ON -DUSE_THREADS=ON -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBoost_NO_BOOST_CMAKE=1 -DBUILD_PYTHON=OFF && \
-  make && make install && \
-  cd /root && rm -rf casacore
+  cd /root && \
+  git clone -q --recursive https://open-bitbucket.nrao.edu/scm/casa/carta-casacore.git && \
+  mkdir -p carta-casacore/build && cd carta-casacore/build && \
+  cmake .. -DUSE_FFTW3=ON -DUSE_HDF5=ON -DUSE_THREADS=ON -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBoost_NO_BOOST_CMAKE=1 -DBUILD_PYTHON=OFF -DUseCcache=1 -DHAS_CXX11=1 -DDATA_DIR=/usr/local/share/casacore/data && \
+  make -j2 && make install && \
+  cd /root && rm -rf carta-casacore
 
 # uWS
 RUN \
@@ -58,8 +59,14 @@ RUN \
   cmake .. && make all install && \
   cd /root && rm -rf zfp
 
-# Copy nrao-carta-backend into image (must be in Dockerfile directory)
-COPY carta-backend /root/carta-backend
+# Build carta-backend
+RUN \
+  git clone https://github.com/CARTAvis/carta-backend.git && \
+  cd carta-backend && \
+  git submodule init && git submodule update && \
+  mkdir build && cd build && \
+  cmake .. -DCMAKE_CXX_FLAGS="-I/usr/local/include/casacode -I/usr/local/include/casacore" -DCMAKE_CXX_STANDARD_LIBRARIES="-L/usr/local/lib -lcasa_imageanalysis" && \
+  make
 
 # Forward port so that the webapp can properly access it
 # from outside of the container
