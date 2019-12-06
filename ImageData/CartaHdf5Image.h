@@ -18,7 +18,7 @@ namespace carta {
 class CartaHdf5Image : public casacore::ImageInterface<float> {
 public:
     // Construct an image from a pre-existing file.
-    CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu, const CARTA::FileInfoExtended* info,
+    CartaHdf5Image(const std::string& filename, const std::string& array_name, const std::string& hdu,
         casacore::MaskSpecifier = casacore::MaskSpecifier());
     // Copy constructor
     CartaHdf5Image(const CartaHdf5Image& other);
@@ -60,8 +60,8 @@ private:
         return im->Lattice().file();
     }
 
-    bool Setup(const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info);
-    casacore::Record ConvertInfoToCasacoreRecord(const CARTA::FileInfoExtended* info);
+    bool SetUpImage();
+    casacore::Vector<casacore::String> Hdf5ToFITSHeaderStrings();
 
     bool _valid;
     casacore::MaskSpecifier _mask_spec;

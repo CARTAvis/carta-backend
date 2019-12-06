@@ -10,11 +10,11 @@
 class Hdf5Attributes {
 public:
     // casacore::HDF5Record::doReadRecord modified to not iterate through links
-    static casacore::Record ReadAttributes(hid_t group_hid);
+    static casacore::Vector<casacore::String> ReadAttributes(hid_t group_hid);
 
 private:
     // Read a scalar value (int, float, string) and add it to the record.
-    static void ReadScalar(hid_t attr_id, hid_t data_type_id, const casacore::String& name, casacore::RecordInterface& rec);
+    static std::string ReadScalar(hid_t attr_id, hid_t data_type_id, const std::string& name);
 };
 
 #endif // CARTA_BACKEND_IMAGEDATA_HDF5ATTRIBUTES_H_

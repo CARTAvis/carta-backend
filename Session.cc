@@ -22,10 +22,10 @@
 #include "Carta.h"
 #include "Compression.h"
 #include "EventHeader.h"
-#include "FileInfoLoader.h"
+#include "FileList/FileExtInfoLoader.h"
+#include "FileList/FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
-#include "Util.h"
 
 #define DEBUG(_DB_TEXT_) \
     {}
@@ -41,8 +41,9 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _socket(ws),
       _root_folder(root),
       _verbose_logging(verbose),
-      _selected_file_info(nullptr),
-      _selected_file_info_extended(nullptr),
+      _file_info(nullptr),
+      _file_info_extended(nullptr),
+      _loader(nullptr),
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
       _image_channel_task_active(false),
@@ -141,22 +142,20 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool ext_file_info_ok(true);
     try {
-        file_info->set_name(filename); // in case filename is a link
-        casacore::Path root_path(_root_folder);
-        root_path.append(folder);
-        root_path.append(filename);
-        casacore::File cc_file(root_path);
-        if (cc_file.exists()) {
-            casacore::String full_name(cc_file.path().resolvedName());
+        file_info->set_name(filename);
+        casacore::String full_name(GetResolvedFilename(_root_folder, folder, filename));
+        if (!full_name.empty()) {
             try {
-                FileInfoLoader info_loader(full_name);
+                FileInfoLoader info_loader = FileInfoLoader(full_name);
                 if (!info_loader.FillFileInfo(file_info)) {
                     return false;
                 }
                 if (hdu.empty()) { // use first when required
                     hdu = file_info->hdu_list(0);
                 }
-                ext_file_info_ok = info_loader.FillFileExtInfo(extended_info, hdu, message);
+                _loader.reset(carta::FileLoader::GetLoader(full_name));
+                FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
+                ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, hdu, message);
             } catch (casacore::AipsError& ex) {
                 message = ex.getMesg();
                 ext_file_info_ok = false;
@@ -173,16 +172,13 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA
 }
 
 void Session::ResetFileInfo(bool create) {
-    // delete old file info pointers
-    delete _selected_file_info;
-    delete _selected_file_info_extended;
-    // optionally create new ones
+    // optionally create new file info pointers
     if (create) {
-        _selected_file_info = new CARTA::FileInfo();
-        _selected_file_info_extended = new CARTA::FileInfoExtended();
+        _file_info.reset(new CARTA::FileInfo());
+        _file_info_extended.reset(new CARTA::FileInfoExtended());
     } else {
-        _selected_file_info = nullptr;
-        _selected_file_info_extended = nullptr;
+        _file_info.reset(nullptr);
+        _file_info_extended.reset(nullptr);
     }
 }
 
@@ -237,12 +233,17 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto file_info = response.mutable_file_info();
     auto file_info_extended = response.mutable_file_info_extended();
     string message;
-    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), request.hdu(), message);
-    if (success) { // save a copy
+
+    casacore::String hdu_name(request.hdu());
+    casacore::String hdu_num(hdu_name.before(" ")); // strip FITS extension name
+    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu_num, message);
+
+    if (success) { // save a copy to reuse if file opened
         ResetFileInfo(true);
-        *_selected_file_info = response.file_info();
-        *_selected_file_info_extended = response.file_info_extended();
+        *_file_info.get() = response.file_info();
+        *_file_info_extended.get() = response.file_info_extended();
     }
+
     response.set_success(success);
     response.set_message(message);
     SendEvent(CARTA::EventType::FILE_INFO_RESPONSE, request_id, response);
@@ -279,34 +280,31 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     ack.set_file_id(file_id);
     string err_message;
 
-    bool info_loaded((_selected_file_info != nullptr) && (_selected_file_info_extended != nullptr) &&
-                     (_selected_file_info->name() == filename)); // correct file loaded
-    if (!info_loaded) {                                          // load from image file
+    // correct file loaded?
+    bool info_loaded((_file_info.get() != nullptr) && (_file_info_extended.get() != nullptr) && (_file_info->name() == filename));
+    if (!info_loaded) {
+        // load from image file
         ResetFileInfo(true);
-        info_loaded =
-            FillExtendedFileInfo(_selected_file_info_extended, _selected_file_info, message.directory(), message.file(), hdu, err_message);
+        info_loaded = FillExtendedFileInfo(_file_info_extended.get(), _file_info.get(), directory, filename, hdu, err_message);
     }
+
     bool success(false);
     if (!info_loaded) {
         ResetFileInfo(); // clean up
     } else {
         // Set hdu if empty
         if (hdu.empty()) { // use first
-            hdu = _selected_file_info->hdu_list(0);
+            hdu = _file_info->hdu_list(0);
         } else {
             size_t description_start = hdu.find(" "); // strip ExtName
             if (description_start != std::string::npos) {
                 hdu = hdu.substr(0, description_start);
             }
         }
-        // form path with filename
-        casacore::Path root_path(_root_folder);
-        root_path.append(directory);
-        root_path.append(filename);
-        string abs_filename(root_path.resolvedName());
+        // create Frame for image
+        auto frame = std::unique_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _verbose_logging));
+        _loader.release();
 
-        // create Frame for open file
-        auto frame = std::unique_ptr<Frame>(new Frame(_id, abs_filename, hdu, _selected_file_info_extended, _verbose_logging));
         if (frame->IsValid()) {
             // Check if the old _frames[file_id] object exists. If so, delete it.
             if (_frames.count(file_id) > 0) {
@@ -316,16 +314,16 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             _frames[file_id] = move(frame);
             lock.unlock();
             // copy file info, extended file info
-            CARTA::FileInfo* response_file_info = new CARTA::FileInfo();
-            response_file_info->set_name(_selected_file_info->name());
-            response_file_info->set_type(_selected_file_info->type());
-            response_file_info->set_size(_selected_file_info->size());
-            response_file_info->add_hdu_list(hdu); // loaded hdu only
-            *ack.mutable_file_info() = *response_file_info;
-            *ack.mutable_file_info_extended() = *_selected_file_info_extended;
+            CARTA::FileInfo response_file_info = CARTA::FileInfo();
+            response_file_info.set_name(_file_info->name());
+            response_file_info.set_type(_file_info->type());
+            response_file_info.set_size(_file_info->size());
+            response_file_info.add_hdu_list(hdu); // loaded hdu only
+            *ack.mutable_file_info() = response_file_info;
+            *ack.mutable_file_info_extended() = *_file_info_extended.get();
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
             // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
-            if (_selected_file_info->type() == CARTA::FileType::HDF5) {
+            if (_file_info->type() == CARTA::FileType::HDF5) {
                 feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
                 feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
@@ -343,6 +341,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
         ack.set_message(err_message);
         SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
     }
+
     if (success) {
         UpdateRegionData(file_id);
     }
@@ -538,11 +537,8 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
 
             std::string abs_filename;
             if (import_file) {
-                // form absolute path with filename
-                casacore::Path root_path(_root_folder);
-                root_path.append(directory);
-                root_path.append(filename);
-                casacore::File region_file(root_path);
+                abs_filename = GetResolvedFilename(_root_folder, directory, filename);
+                casacore::File region_file(abs_filename);
                 // check file
                 if (!region_file.exists() || !region_file.isReadable()) {
                     import_ack.set_success(false);
@@ -551,7 +547,6 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
                     SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
                     return;
                 }
-                abs_filename = root_path.resolvedName();
             }
 
             _frames.at(file_id)->ImportRegion(file_type, abs_filename, contents, import_ack);
@@ -559,7 +554,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             // send any errors to log
             std::string ack_message(import_ack.message());
             if (!ack_message.empty()) {
-                CARTA::ErrorSeverity level = (import_ack.success() == true ? CARTA::ErrorSeverity::WARNING : CARTA::ErrorSeverity::ERROR);
+                CARTA::ErrorSeverity level = (import_ack.success() ? CARTA::ErrorSeverity::WARNING : CARTA::ErrorSeverity::ERROR);
                 SendLogEvent(ack_message, {"import"}, level);
             }
             // send ack message
@@ -1165,9 +1160,8 @@ bool Session::SendContourData(int file_id) {
 
         if (frame->ContourImage(callback)) {
             return true;
-        } else {
-            SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);
         }
+        SendLogEvent("Error processing contours", {"contours"}, CARTA::ErrorSeverity::WARNING);
     }
     return false;
 }

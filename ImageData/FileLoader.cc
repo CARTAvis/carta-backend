@@ -1,5 +1,6 @@
 #include "FileLoader.h"
 
+#include "../Util.h"
 #include "CasaLoader.h"
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
@@ -8,8 +9,7 @@
 using namespace carta;
 
 FileLoader* FileLoader::GetLoader(const std::string& filename) {
-    casacore::ImageOpener::ImageTypes type = FileInfo::fileType(filename);
-    switch (type) {
+    switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
             return new CasaLoader(filename);
         case casacore::ImageOpener::FITS:
@@ -36,15 +36,20 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
     return nullptr;
 }
 
-bool FileLoader::FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
+bool FileLoader::CanOpenFile(std::string& /*error*/) {
+    return true;
+}
+
+bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
     // Return image shape, spectral axis, and stokes axis from image data, coordinate system, and extended file info.
 
     // set defaults: undefined
     spectral_axis = -1;
     stokes_axis = -1;
 
-    if (!HasData(FileInfo::Data::Image))
+    if (!HasData(FileInfo::Data::Image)) {
         return false;
+    }
 
     shape = LoadData(FileInfo::Data::Image)->shape();
     _num_dims = shape.size();
@@ -94,7 +99,7 @@ bool FileLoader::FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int
     // 4D image
     if ((spectral_axis < 0) || (stokes_axis < 0)) {
         // workaround when header incomplete or invalid values for creating proper coordinate system
-        FindCoordinates(info, spectral_axis, stokes_axis);
+        FindCoordinates(spectral_axis, stokes_axis);
     }
     if ((spectral_axis < 0) || (stokes_axis < 0)) {
         if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
@@ -122,9 +127,11 @@ bool FileLoader::FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int
     return true;
 }
 
-void FileLoader::FindCoordinates(const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis) {
+void FileLoader::FindCoordinates(int& spectral_axis, int& stokes_axis) {
+    // TODO
     // read ctypes from file info header entries to determine spectral and stokes axes
     casacore::String ctype1, ctype2, ctype3, ctype4;
+    /*
     for (int i = 0; i < info->header_entries_size(); ++i) {
         CARTA::HeaderEntry entry = info->header_entries(i);
         if (entry.name() == "CTYPE1") {
@@ -141,6 +148,7 @@ void FileLoader::FindCoordinates(const CARTA::FileInfoExtended* info, int& spect
             ctype4.upcase();
         }
     }
+    */
 
     // find axes from ctypes
     size_t ntypes(4);

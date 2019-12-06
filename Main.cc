@@ -23,7 +23,7 @@
 #include <casacore/casa/OS/HostInfo.h>
 
 #include "EventHeader.h"
-#include "FileListHandler.h"
+#include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "OnMessageTask.h"
 #include "Session.h"
@@ -407,18 +407,15 @@ int main(int argc, const char* argv[]) {
                 exit(1);
 #endif
             }
-            bool has_exit_after_arg = inp.getString("exit_after").size();
-            if (has_exit_after_arg) {
+            if (!inp.getString("exit_after").empty()) {
                 int wait_time = inp.getInt("exit_after");
                 Session::SetExitTimeout(wait_time);
             }
-            bool has_init_exit_after_arg = inp.getString("init_exit_after").size();
-            if (has_init_exit_after_arg) {
+            if (!inp.getString("init_exit_after").empty()) {
                 int init_wait_time = inp.getInt("init_exit_after");
                 Session::SetInitExitTimeout(init_wait_time);
             }
-            bool should_read_json_file = inp.getString("read_json_file").size();
-            if (should_read_json_file) {
+            if (!inp.getString("read_json_file").empty()) {
                 json_fname = inp.getString("read_json_file");
                 ReadJsonFile(json_fname);
             }
