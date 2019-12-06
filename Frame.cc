@@ -1549,11 +1549,15 @@ bool Frame::GetImageHistogram(int channel, int stokes, int num_bins, CARTA::Hist
         if ((num_bins == AUTO_BIN_SIZE) || (num_bins == image_num_bins)) {
             double min_val(current_stats.basic_stats[CARTA::StatsType::Min]);
             double max_val(current_stats.basic_stats[CARTA::StatsType::Max]);
+            double mean(current_stats.basic_stats[CARTA::StatsType::Mean]);
+            double std_dev(current_stats.basic_stats[CARTA::StatsType::Sigma]);
 
             histogram.set_num_bins(image_num_bins);
             histogram.set_bin_width((max_val - min_val) / image_num_bins);
             histogram.set_first_bin_center(min_val + (histogram.bin_width() / 2.0));
             *histogram.mutable_bins() = {current_stats.histogram_bins.begin(), current_stats.histogram_bins.end()};
+            histogram.set_mean(mean);
+            histogram.set_std_dev(std_dev);
             have_histogram = true;
         }
     }
