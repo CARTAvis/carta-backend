@@ -55,7 +55,7 @@ bool RegionStats::GetBasicStats(int channel, int stokes, BasicStats<float>& stat
     bool have_basic_stats(false);
     if (_histograms_valid) {
         try {
-            auto vals = _basic_stats.at(stokes).at(channel);
+            stats = _basic_stats.at(stokes).at(channel);
             have_basic_stats = true;
         } catch (std::out_of_range) {
             // not stored

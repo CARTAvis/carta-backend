@@ -10,7 +10,7 @@ void BasicStats<T>::join(BasicStats<T>& other) {
     if (other.num_pixels) {
         sum += other.sum;
         sumSq += other.sumSq;
-        num_pixels += num_pixels;
+        num_pixels += other.num_pixels;
         min_val = std::min(min_val, other.min_val);
         max_val = std::max(max_val, other.max_val);
         mean = sum / num_pixels;
