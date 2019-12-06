@@ -15,8 +15,6 @@ public:
     bool FillFileExtInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message);
 
 private:
-    // FileInfo
-    bool GetFitsHduList(CARTA::FileInfo* file_info, const std::string& abs_filename);
     bool GetHdf5HduList(CARTA::FileInfo* file_info, const std::string& abs_filename);
 
     std::string _filename;

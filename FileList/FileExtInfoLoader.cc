@@ -20,14 +20,7 @@ using namespace carta;
 
 FileExtInfoLoader::FileExtInfoLoader(carta::FileLoader* loader) : _loader(loader) {}
 
-bool FileExtInfoLoader::FillFileExtInfo(
-    CARTA::FileInfoExtended* extended_info, const std::string& filename, const std::string& hdu, std::string& message) {
-    // set name from filename
-    auto entry = extended_info->add_computed_entries();
-    entry->set_name("Name");
-    entry->set_value(filename);
-    entry->set_entry_type(CARTA::EntryType::STRING);
-
+bool FileExtInfoLoader::FillFileExtInfo(CARTA::FileInfoExtended* extended_info, const std::string& hdu, std::string& message) {
     // fill header_entries, computed_entries
     bool file_ok(false);
     if (_loader->CanOpenFile(message)) {

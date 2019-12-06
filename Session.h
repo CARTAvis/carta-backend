@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <map>
 #include <mutex>
 #include <tuple>
 #include <unordered_map>
@@ -168,9 +169,8 @@ public:
 
 private:
     // File info
-    void ResetFileInfo(bool create = false); // delete existing file info ptrs, optionally create new ones
-    bool FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const std::string& folder,
-        const std::string& filename, std::string hdu, std::string& message);
+    bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& extended_info_map, CARTA::FileInfo* file_info,
+        const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message);
 
     // Delete Frame(s)
     void DeleteFrame(int file_id);
@@ -205,9 +205,9 @@ private:
     // File browser
     FileListHandler* _file_list_handler;
 
-    // File info for browser, open file
+    // File info and loader for browser, open file
     std::unique_ptr<CARTA::FileInfo> _file_info;
-    std::unique_ptr<CARTA::FileInfoExtended> _file_info_extended;
+    std::map<std::string, CARTA::FileInfoExtended> _file_info_extended; // for ::google::protobuf::Map<hdu, FileInfoExtended>
     std::unique_ptr<carta::FileLoader> _loader;
 
     // Frame
