@@ -463,8 +463,8 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
             LoadStats3DBasic(FileInfo::Data::STATS_3D_MAX);
             LoadStats3DBasic(FileInfo::Data::STATS_3D_MIN);
             if (full) {
-                LoadStats2DBasic(FileInfo::Data::STATS_3D_SUM);
-                LoadStats2DBasic(FileInfo::Data::STATS_3D_SUMSQ);
+                LoadStats3DBasic(FileInfo::Data::STATS_3D_SUM);
+                LoadStats3DBasic(FileInfo::Data::STATS_3D_SUMSQ);
             }
             LoadStats3DBasic(FileInfo::Data::STATS_3D_NANS);
 
