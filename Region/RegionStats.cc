@@ -79,8 +79,6 @@ void RegionStats::CalcBasicStats(int channel, int stokes, const std::vector<floa
     tbb::parallel_reduce(range, mm);
     stats = mm.GetStats();
     SetBasicStats(channel, stokes, stats);
-    fmt::print("numPixels: {}\nsum: {}\nmean: {}\nstdDev: {}\nmin: {}\nmax: {}\nrms: {}\nsumsq: {}\n",
-               stats.num_pixels, stats.sum, stats.mean, stats.stdDev, stats.min_val, stats.max_val, stats.rms, stats.sumSq);
 }
 
 bool RegionStats::GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram) {
@@ -112,20 +110,20 @@ void RegionStats::SetHistogram(int channel, int stokes, CARTA::Histogram& histog
 }
 
 void RegionStats::CalcHistogram(
-    int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data, CARTA::Histogram& histogram_msg) {
+    int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data, CARTA::Histogram& histogram_msg) {
     // Calculate and store histogram for given channel, stokes, nbins; return histogram
     float bin_width(0), bin_center(0);
     std::vector<int> histogram_bins;
-    if ((min_val == std::numeric_limits<float>::max()) || (max_val == std::numeric_limits<float>::min()) || data.empty()) {
+    if ((stats.min_val == std::numeric_limits<float>::max()) || (stats.max_val == std::numeric_limits<float>::min()) || data.empty()) {
         // empty / NaN region
         histogram_bins.resize(num_bins, 0);
     } else {
         tbb::blocked_range<size_t> range(0, data.size());
-        Histogram hist(num_bins, min_val, max_val, data);
+        Histogram hist(num_bins, stats.min_val, stats.max_val, data);
         tbb::parallel_reduce(range, hist);
         histogram_bins = hist.GetHistogram();
         bin_width = hist.GetBinWidth();
-        bin_center = min_val + (bin_width / 2.0);
+        bin_center = stats.min_val + (bin_width / 2.0);
     }
 
     // fill histogram message
@@ -133,6 +131,8 @@ void RegionStats::CalcHistogram(
     histogram_msg.set_num_bins(num_bins);
     histogram_msg.set_bin_width(bin_width);
     histogram_msg.set_first_bin_center(bin_center);
+    histogram_msg.set_mean(stats.mean);
+    histogram_msg.set_std_dev(stats.stdDev);
     *histogram_msg.mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
 
     // save for next time

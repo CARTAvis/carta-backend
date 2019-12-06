@@ -1140,14 +1140,14 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                             if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
                                 CalcRegionBasicStats(region_id, config_channel, curr_stokes, stats);
                             }
-                            CalcRegionHistogram(region_id, config_channel, curr_stokes, num_bins, stats.min_val, stats.max_val, *new_histogram);
+                            CalcRegionHistogram(region_id, config_channel, curr_stokes, num_bins, stats, *new_histogram);
                         } else { // use matrix slicer on image
                             std::vector<float> data;
                             GetChannelMatrix(data, config_channel, curr_stokes); // slice image once
                             if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
                                 region->CalcBasicStats(config_channel, curr_stokes, data, stats);
                             }
-                            region->CalcHistogram(config_channel, curr_stokes, num_bins, stats.min_val, stats.max_val, data, *new_histogram);
+                            region->CalcHistogram(config_channel, curr_stokes, num_bins, stats, data, *new_histogram);
                         }
                     } else {
                         casacore::SubImage<float> sub_image;
@@ -1163,7 +1163,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                                 if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
                                     region->CalcBasicStats(config_channel, curr_stokes, region_data, stats);
                                 }
-                                region->CalcHistogram(config_channel, curr_stokes, num_bins, stats.min_val, stats.max_val, region_data, *new_histogram);
+                                region->CalcHistogram(config_channel, curr_stokes, num_bins, stats, region_data, *new_histogram);
                             }
                         }
                     }
@@ -1576,8 +1576,7 @@ bool Frame::GetRegionHistogram(int region_id, int channel, int stokes, int num_b
     return have_histogram;
 }
 
-bool Frame::CalcRegionHistogram(
-    int region_id, int channel, int stokes, int num_bins, float min_val, float max_val, CARTA::Histogram& histogram) {
+bool Frame::CalcRegionHistogram(int region_id, int channel, int stokes, int num_bins, const BasicStats<float>& stats, CARTA::Histogram& histogram) {
     // Return calculated histogram in histogram parameter; primarily for cube histogram
     bool histogram_ok(false);
     if (_regions.count(region_id)) {
@@ -1587,11 +1586,11 @@ bool Frame::CalcRegionHistogram(
             if (channel == _channel_index) { // use channel cache
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, _image_cache, histogram);
+                region->CalcHistogram(channel, stokes, num_bins, stats, _image_cache, histogram);
             } else {
                 std::vector<float> data;
                 GetChannelMatrix(data, channel, stokes);
-                region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, data, histogram);
+                region->CalcHistogram(channel, stokes, num_bins, stats, data, histogram);
             }
             histogram_ok = true;
         } else {
@@ -1606,7 +1605,7 @@ bool Frame::CalcRegionHistogram(
                 has_data = region->GetData(region_data, sub_image);
                 ulock2.unlock();
                 if (has_data) {
-                    region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, region_data, histogram);
+                    region->CalcHistogram(channel, stokes, num_bins, stats, region_data, histogram);
                 }
             }
             histogram_ok = has_data;

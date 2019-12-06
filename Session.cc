@@ -854,7 +854,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         _frames.at(file_id)->CalcRegionBasicStats(IMAGE_REGION_ID, channel_num, stokes, stats);
                     }
                     _frames.at(file_id)->CalcRegionHistogram(
-                        IMAGE_REGION_ID, channel_num, stokes, num_bins, stats.min_val, stats.max_val, *message_histogram);
+                        IMAGE_REGION_ID, channel_num, stokes, num_bins, stats, *message_histogram);
                     // send completed histogram
                     SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
                     data_sent = true;
@@ -907,7 +907,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                     std::vector<int> cube_bins;
                     CARTA::Histogram chan_histogram; // histogram for each channel
                     for (size_t chan = 0; chan < num_channels; ++chan) {
-                        _frames.at(file_id)->CalcRegionHistogram(region_id, chan, stokes, num_bins, cube_stats.min_val, cube_stats.max_val, chan_histogram);
+                        _frames.at(file_id)->CalcRegionHistogram(region_id, chan, stokes, num_bins, cube_stats, chan_histogram);
                         // add channel bins to cube bins
                         if (chan == 0) {
                             cube_bins = {chan_histogram.bins().begin(), chan_histogram.bins().end()};
@@ -934,6 +934,8 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             message_histogram->set_num_bins(chan_histogram.num_bins());
                             message_histogram->set_bin_width(chan_histogram.bin_width());
                             message_histogram->set_first_bin_center(chan_histogram.first_bin_center());
+                            message_histogram->set_mean(cube_stats.mean);
+                            message_histogram->set_std_dev(cube_stats.stdDev);
                             *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
                             SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_progress_msg);
                             t_start = t_end;
@@ -950,6 +952,8 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         message_histogram->set_num_bins(chan_histogram.num_bins());
                         message_histogram->set_bin_width(chan_histogram.bin_width());
                         message_histogram->set_first_bin_center(chan_histogram.first_bin_center());
+                        message_histogram->set_mean(cube_stats.mean);
+                        message_histogram->set_std_dev(cube_stats.stdDev);
                         *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
 
                         // save cube histogram

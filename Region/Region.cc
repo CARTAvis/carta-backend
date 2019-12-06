@@ -1156,10 +1156,9 @@ void Region::SetHistogram(int channel, int stokes, CARTA::Histogram& histogram) 
     }
 }
 
-void Region::CalcHistogram(
-    int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data, CARTA::Histogram& histogram_msg) {
+void Region::CalcHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data, CARTA::Histogram& histogram_msg) {
     if (_region_stats) {
-        _region_stats->CalcHistogram(channel, stokes, num_bins, min_val, max_val, data, histogram_msg);
+        _region_stats->CalcHistogram(channel, stokes, num_bins, stats, data, histogram_msg);
     }
 }
 
