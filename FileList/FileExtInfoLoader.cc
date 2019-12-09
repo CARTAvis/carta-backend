@@ -373,8 +373,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
             gaussian_beam = image_info.getBeamSet().getMedianAreaBeam();
             entry->set_name("Median area beam");
         }
-        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", gaussian_beam.getMajor("arcsec"),
-            gaussian_beam.getMinor("arcsec"), gaussian_beam.getPA("deg").getValue());
+        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
+            gaussian_beam.getPA("deg").getValue());
         entry->set_value(beam_info);
     }
 }
