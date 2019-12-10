@@ -15,8 +15,6 @@ public:
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
     bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
-
-protected:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
 
 private:
