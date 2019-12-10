@@ -6,6 +6,7 @@
 
 #include <casacore/images/Images/ImageInterface.h>
 
+#include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
 #include "../Util.h"
@@ -132,6 +133,9 @@ public:
     // get shape and axis information from image data and coordinate system
     bool FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
     void FindCoordinates(int& spectral_axis, int& stokes_axis);
+
+    // read beam subtable
+    bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Load image statistics, if they exist, from the file
     virtual void LoadImageStats(bool load_percentiles = false);

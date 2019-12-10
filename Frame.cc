@@ -31,7 +31,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _num_channels(1),
       _num_stokes(1),
       _verbose(verbose) {
-    if (_loader == nullptr) {
+    if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
             Log(session_id, _open_image_error);
@@ -150,6 +150,10 @@ bool Frame::CheckStokes(int stokes) {
 
 bool Frame::ChannelsChanged(int channel, int stokes) {
     return (channel != _channel_index || stokes != _stokes_index);
+}
+
+bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
+    return _loader->GetBeams(beams);
 }
 
 // ********************************************************************

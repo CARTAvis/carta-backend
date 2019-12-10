@@ -88,6 +88,7 @@ public:
     size_t NumStokes();
     int CurrentChannel();
     int CurrentStokes();
+    bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Create, remove, import regions
     bool SetRegion(int region_id, const std::string& name, CARTA::RegionType type, std::vector<CARTA::Point>& points, float rotation,
