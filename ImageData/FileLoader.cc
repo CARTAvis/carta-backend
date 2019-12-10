@@ -167,6 +167,13 @@ void FileLoader::FindCoordinates(int& spectral_axis, int& stokes_axis) {
     }
 }
 
+bool FileLoader::GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) {
+    if (!_image) {
+        return false;
+    }
+    return _image->getMaskSlice(mask, slicer);
+}
+
 const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }

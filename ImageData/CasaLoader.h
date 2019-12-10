@@ -80,7 +80,7 @@ bool CasaLoader::GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slice
     if (!_image) {
         return false;
     }
-    return _image->getMaskSlice(mask, slicer);
+    return _image->getMaskSlice(mask, slicer, removeDegenerateAxes);
 }
 
 } // namespace carta
