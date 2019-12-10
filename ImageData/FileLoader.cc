@@ -207,7 +207,7 @@ bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams) {
     }
     return success;
 }
-    
+
 const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }
