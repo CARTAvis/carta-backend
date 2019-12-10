@@ -127,7 +127,7 @@ public:
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
-    // Do anything required to open the file (set up cache size, Image object)
+    // Do anything required to open the file at given HDU (set up cache size, Image object)
     virtual void OpenFile(const std::string& hdu) = 0;
 
     // Image shape and coordinate system axes
@@ -140,8 +140,8 @@ public:
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Return a casacore image representing the data in the specified HDU/group/table/etc.
     virtual ImageRef LoadData(FileInfo::Data ds) = 0;
-    // Slice pixel mask
-    virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
+    // Slice image data (with mask applied)
+    virtual bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) = 0;
 
     // Image Statistics
     // Load image statistics, if they exist, from the file
@@ -163,6 +163,9 @@ public:
 protected:
     // Dimension values used by stats functions
     size_t _num_channels, _num_stokes, _num_dims, _channel_size;
+
+    // Slice mask for GetSlice
+    virtual bool GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) = 0;
 
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;

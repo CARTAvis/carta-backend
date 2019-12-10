@@ -10,11 +10,17 @@ namespace carta {
 class FitsLoader : public FileLoader {
 public:
     FitsLoader(const std::string& file);
+
     void OpenFile(const std::string& hdu) override;
+
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
-    bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
+
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
+
+protected:
+    bool GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
 
 private:
     std::string _filename;
@@ -58,21 +64,26 @@ typename FitsLoader::ImageRef FitsLoader::LoadData(FileInfo::Data ds) {
     return _image.get(); // nullptr if image not opened
 }
 
-bool FitsLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    if (_image == nullptr) {
+bool FitsLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
+    if (!_image) {
         return false;
-    } else {
-        return _image->getMaskSlice(mask, slicer);
     }
+    coord_sys = _image->coordinates();
+    return true;
 }
 
-bool FitsLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_image == nullptr) {
+bool FitsLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    if (!_image) {
         return false;
-    } else {
-        coord_sys = _image->coordinates();
-        return true;
     }
+    return _image->getSlice(data, slicer, removeDegenerateAxes);
+}
+
+bool FitsLoader::GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    if (!_image) {
+        return false;
+    }
+    return _image->getMaskSlice(mask, slicer);
 }
 
 } // namespace carta

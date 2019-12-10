@@ -10,11 +10,17 @@ namespace carta {
 class CasaLoader : public FileLoader {
 public:
     CasaLoader(const std::string& filename);
+
     void OpenFile(const std::string& hdu) override;
+
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
-    bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
+
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
+
+protected:
+    bool GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
 
 private:
     std::string _filename;
@@ -48,6 +54,14 @@ bool CasaLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
+bool CasaLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
+    if (!_image) {
+        return false;
+    }
+    coord_sys = _image->coordinates();
+    return true;
+}
+
 typename CasaLoader::ImageRef CasaLoader::LoadData(FileInfo::Data ds) {
     if (ds != FileInfo::Data::Image) {
         return nullptr;
@@ -55,21 +69,18 @@ typename CasaLoader::ImageRef CasaLoader::LoadData(FileInfo::Data ds) {
     return _image.get(); // nullptr if image not opened
 }
 
-bool CasaLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    if (_image == nullptr) {
+bool CasaLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    if (!_image) {
         return false;
-    } else {
-        return _image->getMaskSlice(mask, slicer);
     }
+    return _image->getSlice(data, slicer, removeDegenerateAxes);
 }
 
-bool CasaLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_image == nullptr) {
+bool CasaLoader::GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    if (!_image) {
         return false;
-    } else {
-        coord_sys = _image->coordinates();
-        return true;
     }
+    return _image->getMaskSlice(mask, slicer);
 }
 
 } // namespace carta

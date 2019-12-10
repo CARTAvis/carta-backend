@@ -16,10 +16,15 @@ namespace carta {
 class Hdf5Loader : public FileLoader {
 public:
     Hdf5Loader(const std::string& filename);
+
     void OpenFile(const std::string& hdu) override;
+
     bool HasData(FileInfo::Data ds) const override;
     ImageRef LoadData(FileInfo::Data ds) override;
-    bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
+
+    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
+
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
     bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) override;
@@ -27,7 +32,9 @@ public:
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     void SetFramePtr(Frame* frame) override;
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
+
+protected:
+    bool GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
 
 private:
     std::string _filename;
@@ -140,12 +147,18 @@ casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData(FileInfo::Data ds) {
     throw casacore::HDF5Error("Unable to load swizzled dataset " + DataSetToString(ds) + ".");
 }
 
-bool Hdf5Loader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    if (_image == nullptr) {
+bool Hdf5Loader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    if (!_image) {
         return false;
-    } else {
-        return _image->getMaskSlice(mask, slicer);
     }
+    return _image->getSlice(data, slicer, removeDegenerateAxes);
+}
+
+bool Hdf5Loader::GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    if (!_image) {
+        return false;
+    }
+    return _image->getMaskSlice(mask, slicer, removeDegenerateAxes);
 }
 
 // This is necessary on some systems where the compiler
@@ -211,12 +224,11 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
 }
 
 bool Hdf5Loader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_image == nullptr) {
+    if (!_image) {
         return false;
-    } else {
-        coord_sys = _image->coordinates();
-        return true;
     }
+    coord_sys = _image->coordinates();
+    return true;
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
