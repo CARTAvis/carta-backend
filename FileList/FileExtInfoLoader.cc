@@ -189,11 +189,10 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 }
 
                 int spectral_axis, stokes_axis;
-                if (_loader->FindShape(image_shape, spectral_axis, stokes_axis, message)) {
-                    AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
-                    AddComputedEntries(extended_info, image, radesys);
-                    file_ok = true;
-                }
+                _loader->FindShape(image_shape, spectral_axis, stokes_axis, message);
+                AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
+                AddComputedEntries(extended_info, image, radesys);
+                file_ok = true;
             } else { // image failed
                 message = "Image could not be opened.";
             }
