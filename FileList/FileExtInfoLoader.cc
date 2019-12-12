@@ -51,11 +51,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                     return file_ok;
                 }
 
-                // Add currently HDF5-only headers
-                AddMiscInfoHeaders(extended_info, image->miscInfo());
-
-                // Add header_entries
-                casacore::String error_string, origin_str;
+                // Add header_entries in FITS format
+                casacore::String error_string, origin_string;
                 casacore::ImageFITSHeaderInfo fhi;
                 bool prefer_velocity(false), optical_velocity(false), stokes_last(false), degenerate_last(false), prefer_wavelength(false),
                     air_wavelength(false), verbose(false), prim_head(true), allow_append(false), history(false);
@@ -63,64 +60,77 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 float min_pix(1.0), max_pix(-1.0);
                 if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *image, prefer_velocity, optical_velocity, bit_pix,
                         min_pix, max_pix, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength, prim_head, allow_append,
-                        origin_str, history)) {
+                        origin_string, history)) {
                     message = error_string;
                     return file_ok;
                 }
 
+                // axis or coord number to append to name
                 int naxis(0), ncoord(0);
+                // save radesys header
+                casacore::String radesys;
+
                 fhi.kw.first(); // go to first card
                 casacore::FitsKeyword* fkw = fhi.kw.next();
                 while (fkw) {
                     // parse each FitsKeyword into header_entries in FileInfoExtended
-                    casacore::String full_name(fkw->name());
-                    full_name.trim();
+                    casacore::String name(fkw->name());
+                    name.trim();
 
                     // Strangely, ImageHeaderToFITS does not append axis or coordinate number
-                    if (full_name == "NAXIS") {
+                    if (name == "NAXIS") {
+                        // append and increment axis number
                         if (naxis > 0) {
-                            full_name += casacore::String::toString(naxis); // append axis number
+                            name += casacore::String::toString(naxis);
                         }
                         naxis++;
-                    }
-                    if (full_name == "CTYPE") {
+                    } else if (name == "CTYPE") {
                         // This assumes that CTYPE starts the block of C*n headers
                         ++ncoord;
                     }
-                    if ((full_name == "CTYPE") || (full_name == "CRVAL") || (full_name == "CDELT") || (full_name == "CRPIX")) {
-                        full_name += casacore::String::toString(ncoord); // append coordinate number
+
+                    // Modify names
+                    if ((name == "CTYPE") || (name == "CRVAL") || (name == "CDELT") || (name == "CRPIX")) {
+                        // append coordinate number
+                        name += casacore::String::toString(ncoord);
+                    } else if (name == "H5SCHEMA") { // was shortened to FITS length 8
+                        name = "SCHEMA_VERSION";
+                    } else if (name == "H5CNVRTR") { // was shortened to FITS length 8
+                        name = "HDF5_CONVERTER";
+                    } else if (name == "H5CONVSN") { // was shortened to FITS length 8
+                        name = "HDF5_CONVERTER_VERSION";
+                    } else if (name == "H5DATE") { // was shortened to FITS length 8
+                        name = "HDF5_DATE";
                     }
 
-                    if (full_name != "END") {
-                        auto header_entry = extended_info->add_header_entries();
-                        // Left justify and pad to 8 chars
-                        // std::string name = fmt::format("{:<8}", full_name);
-                        header_entry->set_name(full_name);
+                    if (name != "END") {
                         switch (fkw->type()) {
                             case casacore::FITS::LOGICAL: {
                                 bool value(fkw->asBool());
-                                header_entry->set_entry_type(CARTA::EntryType::INT);
-                                header_entry->set_numeric_value(value);
                                 std::string bool_string(value ? "T" : "F");
-                                // std::string string_value = fmt::format("{:>30}", bool_string);
                                 std::string comment(fkw->comm());
                                 if (!comment.empty()) {
                                     bool_string.append(" / " + comment);
                                 }
+                                auto header_entry = extended_info->add_header_entries();
+                                header_entry->set_name(name);
                                 *header_entry->mutable_value() = bool_string;
+                                header_entry->set_entry_type(CARTA::EntryType::INT);
+                                header_entry->set_numeric_value(value);
                                 break;
                             }
                             case casacore::FITS::LONG: {
                                 int value(fkw->asInt());
-                                header_entry->set_entry_type(CARTA::EntryType::INT);
-                                header_entry->set_numeric_value(value);
-                                std::string string_value = std::to_string(value);
-                                // std::string string_value = fmt::format("{:>30}", std::to_string(value));
+                                std::string string_value = fmt::format("{:d}", value);
                                 std::string comment(fkw->comm());
                                 if (!comment.empty()) {
                                     string_value.append(" / " + comment);
                                 }
+                                auto header_entry = extended_info->add_header_entries();
+                                header_entry->set_name(name);
                                 *header_entry->mutable_value() = string_value;
+                                header_entry->set_entry_type(CARTA::EntryType::INT);
+                                header_entry->set_numeric_value(value);
                                 break;
                             }
                             case casacore::FITS::BYTE:
@@ -129,28 +139,39 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                             case casacore::FITS::DOUBLE:
                             case casacore::FITS::REAL: {
                                 double value(fkw->asDouble());
-                                header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-                                header_entry->set_numeric_value(value);
-                                std::string string_value = std::to_string(value);
-                                // std::string string_value = fmt::format("{:>30}", std::to_string(value));
+                                std::string string_value = fmt::format("{:e}", value);
                                 std::string comment(fkw->comm());
                                 if (!comment.empty()) {
                                     string_value.append(" / " + comment);
                                 }
+                                auto header_entry = extended_info->add_header_entries();
+                                header_entry->set_name(name);
                                 *header_entry->mutable_value() = string_value;
+                                header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+                                header_entry->set_numeric_value(value);
                                 break;
                             }
                             case casacore::FITS::STRING:
                             case casacore::FITS::FSTRING: {
-                                casacore::String fkw_string = fkw->asString();
-                                fkw_string.trim(); // remove whitespace
-                                // std::string string_value = fmt::format("{:>30}", fkw_value);
-                                std::string comment(fkw->comm());
-                                if (!comment.empty()) {
-                                    fkw_string.append(" / " + comment);
+                                // Do not include ORIGIN (casacore) or DATE (current) added by ImageHeaderToFITS
+                                if ((name != "DATE") && (name != "ORIGIN")) {
+                                    casacore::String fkw_string = fkw->asString();
+                                    fkw_string.trim(); // remove whitespace
+                                    // save without comment
+                                    if (name == "RADESYS") {
+                                        radesys = fkw_string;
+                                    }
+                                    // add comment
+                                    std::string comment(fkw->comm());
+                                    if (!comment.empty()) {
+                                        fkw_string.append(" / " + comment);
+                                    }
+
+                                    auto header_entry = extended_info->add_header_entries();
+                                    header_entry->set_name(name);
+                                    *header_entry->mutable_value() = fkw_string;
+                                    header_entry->set_entry_type(CARTA::EntryType::STRING);
                                 }
-                                header_entry->set_entry_type(CARTA::EntryType::STRING);
-                                *header_entry->mutable_value() = fkw_string;
                                 break;
                             }
                             case casacore::FITS::BIT:
@@ -168,11 +189,10 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 }
 
                 int spectral_axis, stokes_axis;
-                if (_loader->FindShape(image_shape, spectral_axis, stokes_axis, message)) {
-                    AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
-                    AddComputedEntries(extended_info, image);
-                    file_ok = true;
-                }
+                _loader->FindShape(image_shape, spectral_axis, stokes_axis, message);
+                AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
+                AddComputedEntries(extended_info, image, radesys);
+                file_ok = true;
             } else { // image failed
                 message = "Image could not be opened.";
             }
@@ -190,28 +210,6 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
         message = "Image type not supported.";
     }
     return file_ok;
-}
-
-void FileExtInfoLoader::AddMiscInfoHeaders(CARTA::FileInfoExtended* extended_info, const casacore::TableRecord& misc_info) {
-    // add schema and converter info for HDF5 images
-    if (misc_info.isDefined("SCHEMA")) {
-        auto header_entry = extended_info->add_header_entries();
-        header_entry->set_name("SCHEMA_VERSION");
-        header_entry->set_entry_type(CARTA::EntryType::STRING);
-        *header_entry->mutable_value() = misc_info.asString("SCHEMA");
-    }
-    if (misc_info.isDefined("HDF5CONV")) {
-        auto header_entry = extended_info->add_header_entries();
-        header_entry->set_name("HDF5_CONVERTER");
-        header_entry->set_entry_type(CARTA::EntryType::STRING);
-        *header_entry->mutable_value() = misc_info.asString("HDF5CONV");
-    }
-    if (misc_info.isDefined("CONVVERS")) {
-        auto header_entry = extended_info->add_header_entries();
-        header_entry->set_name("HDF5_CONVERTER_VERSION");
-        header_entry->set_entry_type(CARTA::EntryType::STRING);
-        *header_entry->mutable_value() = misc_info.asString("CONVVERS");
-    }
 }
 
 // ***** Computed entries *****
@@ -272,7 +270,8 @@ void FileExtInfoLoader::AddShapeEntries(
     }
 }
 
-void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_info, casacore::ImageInterface<float>* image) {
+void FileExtInfoLoader::AddComputedEntries(
+    CARTA::FileInfoExtended* extended_info, casacore::ImageInterface<float>* image, casacore::String& radesys) {
     // add computed_entries to extended info (ensures the proper order in file browser)
     casacore::CoordinateSystem coord_system(image->coordinates());
     casacore::Vector<casacore::String> axis_names = coord_system.worldAxisNames();
@@ -329,6 +328,18 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
 
     if (coord_system.hasDirectionCoordinate()) {
         casacore::String direction_frame = casacore::MDirection::showType(coord_system.directionCoordinate().directionType());
+        // add RADESYS
+        if (radesys.empty()) {
+            if (direction_frame.contains("J2000")) {
+                radesys = "FK5";
+            } else if (direction_frame.contains("B1950")) {
+                radesys = "FK4";
+            }
+        }
+        if (!radesys.empty() && (radesys != "ICRS")) {
+            direction_frame = radesys + ", " + direction_frame;
+        }
+
         auto entry = extended_info->add_computed_entries();
         entry->set_name("Celestial frame");
         entry->set_value(direction_frame);
@@ -336,10 +347,15 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
     }
 
     if (coord_system.hasSpectralAxis()) {
-        casacore::String spectral_frame = casacore::MFrequency::showType(coord_system.spectralCoordinate().frequencySystem());
+        casacore::String spectral_frame = casacore::MFrequency::showType(coord_system.spectralCoordinate().frequencySystem(true));
         auto entry = extended_info->add_computed_entries();
         entry->set_name("Spectral frame");
         entry->set_value(spectral_frame);
+        entry->set_entry_type(CARTA::EntryType::STRING);
+        casacore::String vel_doppler = casacore::MDoppler::showType(coord_system.spectralCoordinate().velocityDoppler());
+        entry = extended_info->add_computed_entries();
+        entry->set_name("Velocity definition");
+        entry->set_value(vel_doppler);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 

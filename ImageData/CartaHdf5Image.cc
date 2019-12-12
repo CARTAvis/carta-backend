@@ -158,7 +158,7 @@ bool CartaHdf5Image::SetUpImage() {
         casacore::Vector<casacore::String> fits_header_strings = Hdf5ToFITSHeaderStrings();
         if (!fits_header_strings.empty()) {
             // extract HDF5 headers for MiscInfo
-            casacore::String schema, converter, converter_version;
+            casacore::String schema, converter, converter_version, date;
             for (auto& header : fits_header_strings) {
                 std::vector<std::string> kw_value;
                 if (header.contains("SCHEMA_VERSION")) {
@@ -176,6 +176,11 @@ bool CartaHdf5Image::SetUpImage() {
                     converter_version = kw_value[1];
                     converter_version.trim();
                     converter_version.gsub("'", "");
+                } else if (header.contains("DATE")) {
+                    SplitString(header, '=', kw_value);
+                    date = kw_value[1];
+                    date.trim();
+                    date.gsub("'", "");
                 }
             }
 
@@ -207,15 +212,20 @@ bool CartaHdf5Image::SetUpImage() {
             // set misc info
             casacore::Record misc_info;
             casacore::ImageFITSConverter::extractMiscInfo(misc_info, unused_headers_rec);
+            // shorten keyword names to FITS length 8
             if (!schema.empty()) {
-                misc_info.define("SCHEMA", schema);
+                misc_info.define("h5schema", schema);
             }
             if (!converter.empty()) {
-                misc_info.define("HDF5CONV", converter);
+                misc_info.define("h5cnvrtr", converter);
             }
             if (!converter_version.empty()) {
-                misc_info.define("CONVVERS", converter_version);
+                misc_info.define("h5convsn", converter_version);
             }
+            if (!date.empty()) {
+                misc_info.define("h5date", date);
+            }
+            misc_info.removeField("simple"); // remove redundant header
             setMiscInfo(misc_info);
             valid = true;
         }
