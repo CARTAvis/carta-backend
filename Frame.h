@@ -84,8 +84,9 @@ using CachedTilePtr = std::shared_ptr<std::vector<float>>;
 public:
     TileCache() {}
     TileCache(int capacity) : _capacity(capacity) {}
-        
-    CachedTilePtr peek(CachedTileKey key) {
+    
+    CachedTilePtr Peek(CachedTileKey key) {
+        // This is a read-only operation which it is safe to do in parallel.
         if (_hash.find(key) == _hash.end()) {
             return CachedTilePtr();
         } else {
@@ -93,16 +94,21 @@ public:
         }
     }
         
-    CachedTilePtr get(CachedTileKey key, carta::FileLoader* loader) {
-        // TODO
+    CachedTilePtr Get(CachedTileKey key, const carta::FileLoader* loader) {
+        // TODO get a single tile
     }
     
-    // TODO: a get_multiple method
+    std::unordered_map<CachedTileKey, CachedTilePtr> GetMultiple(std::vector<CachedTileKey>, const carta::FileLoader* loader) {
+        // TODO: first process all tiles found in the cache in parallel, then all the tiles not in the cache serially.
+        // Make thread-safe.
+    }
     
     void lock() {
+        // TODO: lock the cache
     }
     
     void unlock() {
+        // TODO: unlock the cache
     }
     
 private:
@@ -110,7 +116,7 @@ private:
         // TODO move tile to the front of the queue
     }
     
-    void load(carta::FileLoader* loader) {
+    void load(const carta::FileLoader* loader) {
         // TODO load a tile from the file
     }
     
