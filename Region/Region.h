@@ -90,12 +90,12 @@ public:
     bool SetHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_reqs);
     CARTA::SetHistogramRequirements_HistogramConfig GetHistogramConfig(int histogram_index);
     size_t NumHistogramConfigs();
-    bool GetMinMax(int channel, int stokes, float& min_val, float& max_val);
-    void SetMinMax(int channel, int stokes, float min_val, float max_val);
-    void CalcMinMax(int channel, int stokes, const std::vector<float>& data, float& min_val, float& max_val);
+    bool GetBasicStats(int channel, int stokes, BasicStats<float>& stats);
+    void SetBasicStats(int channel, int stokes, const BasicStats<float>& stats);
+    void CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats);
     bool GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram);
     void SetHistogram(int channel, int stokes, CARTA::Histogram& histogram);
-    void CalcHistogram(int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data,
+    void CalcHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data,
         CARTA::Histogram& histogram_msg);
 
     void SetAllProfilesUnsent(); // enable sending new spatial and spectral profiles
