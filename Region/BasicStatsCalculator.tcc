@@ -14,7 +14,7 @@ void BasicStats<T>::join(BasicStats<T>& other) {
         min_val = std::min(min_val, other.min_val);
         max_val = std::max(max_val, other.max_val);
         mean = sum / num_pixels;
-        stdDev = sqrt(sumSq / num_pixels - mean * mean);
+        stdDev = num_pixels > 1 ? sqrt((sumSq - (sum * sum / num_pixels)) / (num_pixels - 1)): NAN;
         rms = sqrt(sumSq / num_pixels);
     }
 }
@@ -75,7 +75,7 @@ BasicStats<T> BasicStatsCalculator<T>::GetStats() const {
 
     if (_num_pixels > 0) {
         mean = _sum / _num_pixels;
-        stdDev = sqrt(_sum_squares / _num_pixels - mean * mean);
+        stdDev = _num_pixels > 1 ? sqrt((_sum_squares - (_sum * _sum / _num_pixels)) / (_num_pixels - 1)): NAN;
         rms = sqrt(_sum_squares / _num_pixels);
     } else {
         mean = NAN;
