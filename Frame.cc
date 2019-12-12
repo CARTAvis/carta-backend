@@ -899,8 +899,8 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
             int precision = lround(quality_setting);
             raster_image_data.set_compression_quality(precision);
 
-            auto row_length = (bounds_setting.x_max() - bounds_setting.x_min()) / mip_setting;
-            auto num_rows = (bounds_setting.y_max() - bounds_setting.y_min()) / mip_setting;
+            auto row_length = std::ceil((float)(bounds_setting.x_max() - bounds_setting.x_min()) / mip_setting);
+            auto num_rows = std::ceil((float)(bounds_setting.y_max() - bounds_setting.y_min()) / mip_setting);
             std::vector<std::vector<char>> compression_buffers(num_subsets_setting);
             std::vector<size_t> compressed_sizes(num_subsets_setting);
             std::vector<std::vector<int32_t>> nan_encodings(num_subsets_setting);
@@ -963,8 +963,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     }
 
     // size returned vector
-    size_t num_rows_region = req_height / mip;
-    size_t row_length_region = req_width / mip;
+    size_t num_rows_region = std::ceil((float)req_height / mip);
+    size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = _image_shape(0);
 
@@ -982,8 +982,14 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                     int pixel_count = 0;
                     size_t image_row = y + (j * mip);
                     for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
+                        if (image_row >= _image_shape(1)) {
+                            continue;
+                        }
                         size_t image_col = x + (i * mip);
                         for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
+                            if (image_col >= _image_shape(0)) {
+                                continue;
+                            }
                             float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
                             if (std::isfinite(pix_val)) {
                                 pixel_count++;
@@ -1081,8 +1087,8 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
 
     const int req_height = bounds.y_max() - bounds.y_min();
     const int req_width = bounds.x_max() - bounds.x_min();
-    width = req_width / mip;
-    height = req_height / mip;
+    width = std::ceil((float)req_width / mip);
+    height = std::ceil((float)req_height / mip);
     return GetRasterData(tile_data, bounds, mip, true);
 }
 
