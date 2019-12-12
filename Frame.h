@@ -77,22 +77,48 @@ struct ContourSettings {
 struct CachedTileKey {
     int x;
     int y;
-}
+};
 
-struct CachedTileValue {
-    vector<float> data;
-    std::list<CachedTileKey>::iterator position;
-}
-
-struct TileCache {
-    std::list<CachedTileKey> queue;
-    std::unordered_map<CachedTileKey, CachedTileValue> storage;
-    int capacity;
-    
-    void get(CachedTileKey key) {
+class TileCache {
+using CachedTilePtr = std::shared_ptr<std::vector<float>>;
+public:
+    TileCache() {}
+    TileCache(int capacity) : _capacity(capacity) {}
+        
+    CachedTilePtr peek(CachedTileKey key) {
+        if (_hash.find(key) == _hash.end()) {
+            return CachedTilePtr();
+        } else {
+            return *_hash.find(key)->second;
+        }
+    }
+        
+    CachedTilePtr get(CachedTileKey key, carta::FileLoader* loader) {
         // TODO
     }
-}
+    
+    // TODO: a get_multiple method
+    
+    void lock() {
+    }
+    
+    void unlock() {
+    }
+    
+private:
+    void touch(CachedTileKey key) {
+        // TODO move tile to the front of the queue
+    }
+    
+    void load(carta::FileLoader* loader) {
+        // TODO load a tile from the file
+    }
+    
+    std::list<CachedTilePtr> _queue;
+    std::unordered_map<CachedTileKey, std::list<CachedTilePtr>::iterator> _hash;
+    int _capacity;
+    std::mutex _tile_cache_mutex; // maybe change to tbb mutex
+};
 
 class Frame {
 public:
