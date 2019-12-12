@@ -307,23 +307,23 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
-    if (!reference_values.empty() && !axis_units.empty()) {
-        auto entry = extended_info->add_computed_entries();
-        entry->set_name("Image reference coordinates");
-        casacore::Quantity coord0(reference_values(0), axis_units(0));
-        casacore::Quantity coord1(reference_values(1), axis_units(1));
-        std::string ref_coords = fmt::format("[{}, {}]", coord0.get("deg"), coord1.get("deg"));
-        entry->set_value(ref_coords);
-        entry->set_entry_type(CARTA::EntryType::STRING);
-    }
-
     if (!axis_names.empty() && !reference_values.empty() && !axis_units.empty()) {
         auto entry = extended_info->add_computed_entries();
-        entry->set_name("Image ref coords (coord type)");
+        entry->set_name("Image reference coords");
         std::string format_coord1 = MakeAngleString(axis_names(0), reference_values(0), axis_units(0));
         std::string format_coord2 = MakeAngleString(axis_names(1), reference_values(1), axis_units(1));
         std::string format_coords = fmt::format("[{}, {}]", format_coord1, format_coord2);
         entry->set_value(format_coords);
+        entry->set_entry_type(CARTA::EntryType::STRING);
+    }
+
+    if (!reference_values.empty() && !axis_units.empty()) {
+        auto entry = extended_info->add_computed_entries();
+        entry->set_name("Image ref coords (deg)");
+        casacore::Quantity coord0(reference_values(0), axis_units(0));
+        casacore::Quantity coord1(reference_values(1), axis_units(1));
+        std::string ref_coords = fmt::format("[{}, {}]", coord0.get("deg"), coord1.get("deg"));
+        entry->set_value(ref_coords);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
@@ -356,7 +356,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
         entry->set_name("Pixel increment");
         casacore::Quantity inc0(increment(0), axis_units(0));
         casacore::Quantity inc1(increment(1), axis_units(1));
-        std::string pixel_inc = fmt::format("{:.3f}\", {:.3f}\"", inc0.getValue("arcsec"), inc1.getValue("arcsec"));
+        std::string pixel_inc = fmt::format("{:g}\", {:g}\"", inc0.getValue("arcsec"), inc1.getValue("arcsec"));
         entry->set_value(pixel_inc);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
@@ -373,8 +373,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
             gaussian_beam = image_info.getBeamSet().getMedianAreaBeam();
             entry->set_name("Median area beam");
         }
-        std::string beam_info = fmt::format("{:.2f}\" X {:.2f}\", {:.4f} deg", gaussian_beam.getMajor("arcsec"),
-            gaussian_beam.getMinor("arcsec"), gaussian_beam.getPA("deg").getValue());
+        std::string beam_info = fmt::format("{:g}\" X {:g}\", {:g} deg", gaussian_beam.getMajor("arcsec"), gaussian_beam.getMinor("arcsec"),
+            gaussian_beam.getPA("deg").getValue());
         entry->set_value(beam_info);
     }
 }
@@ -384,7 +384,7 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended* extended_inf
 std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double val, const std::string& unit) {
     // make coordinate angle string for RA, DEC, GLON, GLAT; else just return "{val} {unit}"
     if (unit.empty()) {
-        return fmt::format("{}", val);
+        return fmt::format("{:g}", val);
     }
 
     casacore::MVAngle::formatTypes format;
@@ -393,7 +393,7 @@ std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double v
     } else if ((type == "Declination") || (type.find("Longitude") != std::string::npos) || (type.find("Latitude") != std::string::npos)) {
         format = casacore::MVAngle::ANGLE;
     } else {
-        return fmt::format("{} {}", val, unit);
+        return fmt::format("{:g} {}", val, unit);
     }
 
     casacore::Quantity quant1(val, unit);
