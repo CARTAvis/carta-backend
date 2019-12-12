@@ -13,8 +13,8 @@
 #include <casacore/images/Images/ImageStatistics.h>
 
 #include "../InterfaceConstants.h"
-#include "Histogram.h"
 #include "BasicStatsCalculator.h"
+#include "Histogram.h"
 
 using namespace carta;
 using namespace std;
@@ -109,8 +109,8 @@ void RegionStats::SetHistogram(int channel, int stokes, CARTA::Histogram& histog
     _histograms_valid = true;
 }
 
-void RegionStats::CalcHistogram(
-    int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data, CARTA::Histogram& histogram_msg) {
+void RegionStats::CalcHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data,
+    CARTA::Histogram& histogram_msg) {
     // Calculate and store histogram for given channel, stokes, nbins; return histogram
     float bin_width(0), bin_center(0);
     std::vector<int> histogram_bins;

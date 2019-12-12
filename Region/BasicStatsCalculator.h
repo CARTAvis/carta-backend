@@ -48,4 +48,4 @@ public:
 
 #include "BasicStatsCalculator.tcc"
 
-#endif //CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_H_
+#endif // CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_H_

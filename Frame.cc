@@ -1582,7 +1582,8 @@ bool Frame::GetRegionHistogram(int region_id, int channel, int stokes, int num_b
     return have_histogram;
 }
 
-bool Frame::CalcRegionHistogram(int region_id, int channel, int stokes, int num_bins, const BasicStats<float>& stats, CARTA::Histogram& histogram) {
+bool Frame::CalcRegionHistogram(
+    int region_id, int channel, int stokes, int num_bins, const BasicStats<float>& stats, CARTA::Histogram& histogram) {
     // Return calculated histogram in histogram parameter; primarily for cube histogram
     bool histogram_ok(false);
     if (_regions.count(region_id)) {

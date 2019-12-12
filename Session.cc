@@ -848,8 +848,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                     if (!_frames.at(file_id)->GetRegionBasicStats(IMAGE_REGION_ID, channel_num, stokes, stats)) {
                         _frames.at(file_id)->CalcRegionBasicStats(IMAGE_REGION_ID, channel_num, stokes, stats);
                     }
-                    _frames.at(file_id)->CalcRegionHistogram(
-                        IMAGE_REGION_ID, channel_num, stokes, num_bins, stats, *message_histogram);
+                    _frames.at(file_id)->CalcRegionHistogram(IMAGE_REGION_ID, channel_num, stokes, num_bins, stats, *message_histogram);
                     // send completed histogram
                     SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
                     data_sent = true;
