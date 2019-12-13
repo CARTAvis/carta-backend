@@ -75,8 +75,10 @@ struct ContourSettings {
 
 // TODO: implement operators needed for use as key.
 struct CachedTileKey {
-    int x;
-    int y;
+    CachedTileKey() {}
+    CachedTileKey(hsize_t x, hsize_t y) : x(x), y(y) {}
+    hsize_t x;
+    hsize_t y;
 };
 
 class TileCache {
@@ -91,7 +93,7 @@ public:
         if (_hash.find(key) == _hash.end()) {
             return CachedTilePtr();
         } else {
-            return _hash.find(key)->second->second;
+            return UnsafePeek(key);
         }
     }
         
@@ -121,32 +123,82 @@ public:
         return tile;
     }
     
-    std::unordered_map<CachedTileKey, CachedTilePtr> GetMultiple(std::vector<CachedTileKey>, const carta::FileLoader* loader) {
+    void GetMultiple(&std::unordered_map<CachedTileKey, CachedTilePtr> tiles, std::vector<CachedTileKey> keys, const carta::FileLoader* loader) {
         // TODO: first process all tiles found in the cache in parallel, then all the tiles not in the cache serially.
         // Make thread-safe.
+        std::vector<CachedTileKey> found;
+        std::vector<CachedTileKey> not_found;
+        
+        Lock();
+        
+        for (auto& key : keys) {
+            if (_hash.find(key) == _hash.end()) {
+                not_found.push_back(key);
+            } else {
+                found.push_back(key);
+            }
+        }
+                
+        auto range = tbb::blocked_range<size_t>(0, found.size());
+        
+        auto loop = [&](const tbb::blocked_range<size_t>& r) {
+            for (size_t t = r.begin(); t != r.end(); ++t) {
+                auto& key = found[t];
+                tiles[key] = UnsafePeek(key);
+            }
+        };
+        
+        for (auto& t : found) {
+            Touch(*t);
+        }
+        
+        tbb::parallel_for(range, loop);
+        
+        for (auto& t : not_found) {
+            tiles[*t] = Get(*t);
+        }
+        
+        Unlock();
     }
     
-    void lock() {
+    void Lock() {
         // TODO: lock the cache
     }
     
-    void unlock() {
+    void Unlock() {
         // TODO: unlock the cache
     }
     
+    void reset(hsize_t channel, hsize_t stokes) {
+        Lock();
+        _hash.clear();
+        _queue.clear();
+        _channel = channel;
+        _stokes = stokes;
+        Unlock();
+    }
+    
 private:
-    void touch(CachedTileKey key) {
-        // move tile to the front of the queue
+    CachedTilePtr UnsafePeek(CachedTileKey key) {
+        // Assumes that the tile is in the cache
+        return _hash.find(key)->second->second;
+    }
+    
+    void Touch(CachedTileKey key) {
+        // Move tile to the front of the queue
+        // Assumes that the tile is in the cache
         auto tile = _hash.find(key)->second->second;
         _queue.erase(_hash.find(key)->second);
         _queue.push_front(std::make_pair(key, tile));
         _hash[key] = _queue.begin();
     }
     
-    CachedTilePtr load(CachedTileKey key, const carta::FileLoader* loader) {
+    CachedTilePtr Load(CachedTileKey key, const carta::FileLoader* loader) {
         // TODO load a tile from the file
     }
     
+    hsize_t _channel;
+    hsize_t _stokes;
     std::list<CachedTilePair> _queue;
     std::unordered_map<CachedTileKey, std::list<CachedTilePair>::iterator> _hash;
     int _capacity;
