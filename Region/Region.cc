@@ -1124,23 +1124,22 @@ size_t Region::NumHistogramConfigs() {
     return 0;
 }
 
-bool Region::GetMinMax(int channel, int stokes, float& min_val, float& max_val) {
+bool Region::GetBasicStats(int channel, int stokes, BasicStats<float>& stats) {
     if (_region_stats) {
-        return _region_stats->GetMinMax(channel, stokes, min_val, max_val);
+        return _region_stats->GetBasicStats(channel, stokes, stats);
     }
     return false;
 }
 
-void Region::SetMinMax(int channel, int stokes, float min_val, float max_val) {
+void Region::SetBasicStats(int channel, int stokes, const BasicStats<float>& stats) {
     if (_region_stats) {
-        std::pair<float, float> vals = std::make_pair(min_val, max_val);
-        _region_stats->SetMinMax(channel, stokes, vals);
+        _region_stats->SetBasicStats(channel, stokes, stats);
     }
 }
 
-void Region::CalcMinMax(int channel, int stokes, const std::vector<float>& data, float& min_val, float& max_val) {
+void Region::CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats) {
     if (_region_stats) {
-        _region_stats->CalcMinMax(channel, stokes, data, min_val, max_val);
+        _region_stats->CalcBasicStats(channel, stokes, data, stats);
     }
 }
 
@@ -1157,10 +1156,10 @@ void Region::SetHistogram(int channel, int stokes, CARTA::Histogram& histogram) 
     }
 }
 
-void Region::CalcHistogram(
-    int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data, CARTA::Histogram& histogram_msg) {
+void Region::CalcHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data,
+    CARTA::Histogram& histogram_msg) {
     if (_region_stats) {
-        _region_stats->CalcHistogram(channel, stokes, num_bins, min_val, max_val, data, histogram_msg);
+        _region_stats->CalcHistogram(channel, stokes, num_bins, stats, data, histogram_msg);
     }
 }
 

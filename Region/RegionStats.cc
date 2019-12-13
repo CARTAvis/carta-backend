@@ -13,8 +13,8 @@
 #include <casacore/images/Images/ImageStatistics.h>
 
 #include "../InterfaceConstants.h"
+#include "BasicStatsCalculator.h"
 #include "Histogram.h"
-#include "MinMax.h"
 
 using namespace carta;
 using namespace std;
@@ -50,39 +50,35 @@ CARTA::SetHistogramRequirements_HistogramConfig RegionStats::GetHistogramConfig(
 }
 
 // min max
-bool RegionStats::GetMinMax(int channel, int stokes, float& min_val, float& max_val) {
+bool RegionStats::GetBasicStats(int channel, int stokes, BasicStats<float>& stats) {
     // Get stored min,max for given channel and stokes; return value indicates status
-    bool have_min_max(false);
+    bool have_basic_stats(false);
     if (_histograms_valid) {
         try {
-            minmax_t vals = _minmax.at(stokes).at(channel);
-            min_val = vals.first;
-            max_val = vals.second;
-            have_min_max = true;
+            stats = _basic_stats.at(stokes).at(channel);
+            have_basic_stats = true;
         } catch (std::out_of_range) {
             // not stored
         }
     }
-    return have_min_max;
+    return have_basic_stats;
 }
 
-void RegionStats::SetMinMax(int channel, int stokes, minmax_t minmax_vals) {
+void RegionStats::SetBasicStats(int channel, int stokes, const BasicStats<float>& stats) {
     // Save min, max for given channel and stokes
     if (channel == ALL_CHANNELS) { // all channels (cube); don't save intermediate channel min/max
-        _minmax[stokes].clear();
+        _basic_stats[stokes].clear();
     }
-    _minmax[stokes][channel] = minmax_vals;
+    _basic_stats[stokes][channel] = stats;
 }
 
-void RegionStats::CalcMinMax(int channel, int stokes, const std::vector<float>& data, float& min_val, float& max_val) {
+void RegionStats::CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats) {
     // Calculate and store min, max values in data; return min_val and maxval
     tbb::blocked_range<size_t> range(0, data.size());
-    MinMax<float> mm(data);
+    BasicStatsCalculator<float> mm(data);
     tbb::parallel_reduce(range, mm);
-    minmax_t minmax_vals(mm.GetMinMax());
-    SetMinMax(channel, stokes, minmax_vals);
-    min_val = minmax_vals.first;
-    max_val = minmax_vals.second;
+    stats = mm.GetStats();
+    SetBasicStats(channel, stokes, stats);
 }
 
 bool RegionStats::GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram) {
@@ -113,21 +109,21 @@ void RegionStats::SetHistogram(int channel, int stokes, CARTA::Histogram& histog
     _histograms_valid = true;
 }
 
-void RegionStats::CalcHistogram(
-    int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data, CARTA::Histogram& histogram_msg) {
+void RegionStats::CalcHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data,
+    CARTA::Histogram& histogram_msg) {
     // Calculate and store histogram for given channel, stokes, nbins; return histogram
     float bin_width(0), bin_center(0);
     std::vector<int> histogram_bins;
-    if ((min_val == std::numeric_limits<float>::max()) || (max_val == std::numeric_limits<float>::min()) || data.empty()) {
+    if ((stats.min_val == std::numeric_limits<float>::max()) || (stats.max_val == std::numeric_limits<float>::min()) || data.empty()) {
         // empty / NaN region
         histogram_bins.resize(num_bins, 0);
     } else {
         tbb::blocked_range<size_t> range(0, data.size());
-        Histogram hist(num_bins, min_val, max_val, data);
+        Histogram hist(num_bins, stats.min_val, stats.max_val, data);
         tbb::parallel_reduce(range, hist);
         histogram_bins = hist.GetHistogram();
         bin_width = hist.GetBinWidth();
-        bin_center = min_val + (bin_width / 2.0);
+        bin_center = stats.min_val + (bin_width / 2.0);
     }
 
     // fill histogram message
@@ -135,6 +131,8 @@ void RegionStats::CalcHistogram(
     histogram_msg.set_num_bins(num_bins);
     histogram_msg.set_bin_width(bin_width);
     histogram_msg.set_first_bin_center(bin_center);
+    histogram_msg.set_mean(stats.mean);
+    histogram_msg.set_std_dev(stats.stdDev);
     *histogram_msg.mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
 
     // save for next time

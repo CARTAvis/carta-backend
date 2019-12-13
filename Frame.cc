@@ -899,8 +899,8 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
             int precision = lround(quality_setting);
             raster_image_data.set_compression_quality(precision);
 
-            auto row_length = (bounds_setting.x_max() - bounds_setting.x_min()) / mip_setting;
-            auto num_rows = (bounds_setting.y_max() - bounds_setting.y_min()) / mip_setting;
+            auto row_length = std::ceil((float)(bounds_setting.x_max() - bounds_setting.x_min()) / mip_setting);
+            auto num_rows = std::ceil((float)(bounds_setting.y_max() - bounds_setting.y_min()) / mip_setting);
             std::vector<std::vector<char>> compression_buffers(num_subsets_setting);
             std::vector<size_t> compressed_sizes(num_subsets_setting);
             std::vector<std::vector<int32_t>> nan_encodings(num_subsets_setting);
@@ -963,8 +963,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     }
 
     // size returned vector
-    size_t num_rows_region = req_height / mip;
-    size_t row_length_region = req_width / mip;
+    size_t num_rows_region = std::ceil((float)req_height / mip);
+    size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = _image_shape(0);
 
@@ -982,8 +982,14 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                     int pixel_count = 0;
                     size_t image_row = y + (j * mip);
                     for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
+                        if (image_row >= _image_shape(1)) {
+                            continue;
+                        }
                         size_t image_col = x + (i * mip);
                         for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
+                            if (image_col >= _image_shape(0)) {
+                                continue;
+                            }
                             float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
                             if (std::isfinite(pix_val)) {
                                 pixel_count++;
@@ -1081,8 +1087,8 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
 
     const int req_height = bounds.y_max() - bounds.y_min();
     const int req_width = bounds.x_max() - bounds.x_min();
-    width = req_width / mip;
-    height = req_height / mip;
+    width = std::ceil((float)req_width / mip);
+    height = std::ceil((float)req_height / mip);
     return GetRasterData(tile_data, bounds, mip, true);
 }
 
@@ -1130,20 +1136,20 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                 int num_bins = (config_num_bins == AUTO_BIN_SIZE ? CalcAutoNumBins(region_id) : config_num_bins);
                 if (!GetRegionHistogram(region_id, config_channel, curr_stokes, num_bins, *new_histogram)) {
                     // Calculate histogram
-                    float min_val(0.0), max_val(0.0);
+                    BasicStats<float> stats;
                     if (region_id == IMAGE_REGION_ID) {
                         if (config_channel == _channel_index) { // use imageCache
-                            if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
-                                CalcRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val);
+                            if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
+                                CalcRegionBasicStats(region_id, config_channel, curr_stokes, stats);
                             }
-                            CalcRegionHistogram(region_id, config_channel, curr_stokes, num_bins, min_val, max_val, *new_histogram);
+                            CalcRegionHistogram(region_id, config_channel, curr_stokes, num_bins, stats, *new_histogram);
                         } else { // use matrix slicer on image
                             std::vector<float> data;
                             GetChannelMatrix(data, config_channel, curr_stokes); // slice image once
-                            if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
-                                region->CalcMinMax(config_channel, curr_stokes, data, min_val, max_val);
+                            if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
+                                region->CalcBasicStats(config_channel, curr_stokes, data, stats);
                             }
-                            region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, data, *new_histogram);
+                            region->CalcHistogram(config_channel, curr_stokes, num_bins, stats, data, *new_histogram);
                         }
                     } else {
                         casacore::SubImage<float> sub_image;
@@ -1156,10 +1162,10 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                             bool has_region_data = region->GetData(region_data, sub_image); // get subimage data once
                             ulock2.unlock();
                             if (has_region_data) {
-                                if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
-                                    region->CalcMinMax(config_channel, curr_stokes, region_data, min_val, max_val);
+                                if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
+                                    region->CalcBasicStats(config_channel, curr_stokes, region_data, stats);
                                 }
-                                region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, region_data, *new_histogram);
+                                region->CalcHistogram(config_channel, curr_stokes, num_bins, stats, region_data, *new_histogram);
                             }
                         }
                     }
@@ -1490,32 +1496,32 @@ int Frame::CalcAutoNumBins(int region_id) {
     return auto_num_bins;
 }
 
-bool Frame::GetRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val) {
+bool Frame::GetRegionBasicStats(int region_id, int channel, int stokes, BasicStats<float>& stats) {
     // Return stored min and max value; false if not stored
-    bool have_min_max(false);
+    bool have_stats(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
-        have_min_max = region->GetMinMax(channel, stokes, min_val, max_val);
+        have_stats = region->GetBasicStats(channel, stokes, stats);
     }
-    return have_min_max;
+    return have_stats;
 }
 
-bool Frame::CalcRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val) {
+bool Frame::CalcRegionBasicStats(int region_id, int channel, int stokes, BasicStats<float>& stats) {
     // Calculate min/max for region data; primarily for cube histogram
-    bool min_max_ok(false);
+    bool stats_ok(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         if (region_id == IMAGE_REGION_ID) {
             if (channel == _channel_index) { // use channel cache
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                region->CalcMinMax(channel, stokes, _image_cache, min_val, max_val);
+                region->CalcBasicStats(channel, stokes, _image_cache, stats);
             } else {
                 std::vector<float> data;
                 GetChannelMatrix(data, channel, stokes);
-                region->CalcMinMax(channel, stokes, data, min_val, max_val);
+                region->CalcBasicStats(channel, stokes, data, stats);
             }
-            min_max_ok = true;
+            stats_ok = true;
         } else {
             casacore::SubImage<float> sub_image;
             std::unique_lock<std::mutex> ulock(_image_mutex);
@@ -1528,13 +1534,13 @@ bool Frame::CalcRegionMinMax(int region_id, int channel, int stokes, float& min_
                 has_data = region->GetData(region_data, sub_image);
                 ulock2.unlock();
                 if (has_data) {
-                    region->CalcMinMax(channel, stokes, region_data, min_val, max_val);
+                    region->CalcBasicStats(channel, stokes, region_data, stats);
                 }
             }
-            min_max_ok = has_data;
+            stats_ok = has_data;
         }
     }
-    return min_max_ok;
+    return stats_ok;
 }
 
 bool Frame::GetImageHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram) {
@@ -1549,11 +1555,15 @@ bool Frame::GetImageHistogram(int channel, int stokes, int num_bins, CARTA::Hist
         if ((num_bins == AUTO_BIN_SIZE) || (num_bins == image_num_bins)) {
             double min_val(current_stats.basic_stats[CARTA::StatsType::Min]);
             double max_val(current_stats.basic_stats[CARTA::StatsType::Max]);
+            double mean(current_stats.basic_stats[CARTA::StatsType::Mean]);
+            double std_dev(current_stats.basic_stats[CARTA::StatsType::Sigma]);
 
             histogram.set_num_bins(image_num_bins);
             histogram.set_bin_width((max_val - min_val) / image_num_bins);
             histogram.set_first_bin_center(min_val + (histogram.bin_width() / 2.0));
             *histogram.mutable_bins() = {current_stats.histogram_bins.begin(), current_stats.histogram_bins.end()};
+            histogram.set_mean(mean);
+            histogram.set_std_dev(std_dev);
             have_histogram = true;
         }
     }
@@ -1573,7 +1583,7 @@ bool Frame::GetRegionHistogram(int region_id, int channel, int stokes, int num_b
 }
 
 bool Frame::CalcRegionHistogram(
-    int region_id, int channel, int stokes, int num_bins, float min_val, float max_val, CARTA::Histogram& histogram) {
+    int region_id, int channel, int stokes, int num_bins, const BasicStats<float>& stats, CARTA::Histogram& histogram) {
     // Return calculated histogram in histogram parameter; primarily for cube histogram
     bool histogram_ok(false);
     if (_regions.count(region_id)) {
@@ -1583,11 +1593,11 @@ bool Frame::CalcRegionHistogram(
             if (channel == _channel_index) { // use channel cache
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, _image_cache, histogram);
+                region->CalcHistogram(channel, stokes, num_bins, stats, _image_cache, histogram);
             } else {
                 std::vector<float> data;
                 GetChannelMatrix(data, channel, stokes);
-                region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, data, histogram);
+                region->CalcHistogram(channel, stokes, num_bins, stats, data, histogram);
             }
             histogram_ok = true;
         } else {
@@ -1602,7 +1612,7 @@ bool Frame::CalcRegionHistogram(
                 has_data = region->GetData(region_data, sub_image);
                 ulock2.unlock();
                 if (has_data) {
-                    region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, region_data, histogram);
+                    region->CalcHistogram(channel, stokes, num_bins, stats, region_data, histogram);
                 }
             }
             histogram_ok = has_data;
@@ -1612,7 +1622,7 @@ bool Frame::CalcRegionHistogram(
 }
 
 // store cube histogram calculations
-void Frame::SetRegionMinMax(int region_id, int channel, int stokes, float min_val, float max_val) {
+void Frame::SetRegionBasicStats(int region_id, int channel, int stokes, const BasicStats<float>& stats) {
     // Store cube min/max calculated in Session
     if (!_regions.count(region_id) && (region_id == CUBE_REGION_ID)) {
         SetImageRegion(CUBE_REGION_ID);
@@ -1620,7 +1630,7 @@ void Frame::SetRegionMinMax(int region_id, int channel, int stokes, float min_va
 
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
-        region->SetMinMax(channel, stokes, min_val, max_val);
+        region->SetBasicStats(channel, stokes, stats);
     }
 }
 
