@@ -86,6 +86,7 @@ set(SOURCE_FILES
         FileList/FileExtInfoLoader.cc
         FileList/FileInfoLoader.cc
         FileList/FileListHandler.cc
+		FileList/FitsHduList.cc
         Region/Region.cc
         Region/RegionStats.cc
         Region/RegionProfiler.cc
