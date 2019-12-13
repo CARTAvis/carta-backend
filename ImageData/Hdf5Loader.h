@@ -33,9 +33,6 @@ public:
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     void SetFramePtr(Frame* frame) override;
 
-protected:
-    bool GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
-
 private:
     std::string _filename;
     std::string _hdu;
@@ -148,17 +145,12 @@ casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData(FileInfo::Data ds) {
 }
 
 bool Hdf5Loader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    bool success(false);
     if (!_image) {
-        return false;
+        return success;
     }
-    return _image->getSlice(data, slicer, removeDegenerateAxes);
-}
-
-bool Hdf5Loader::GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
-    if (!_image) {
-        return false;
-    }
-    return _image->getMaskSlice(mask, slicer, removeDegenerateAxes);
+    success = _image->getSlice(data, slicer, removeDegenerateAxes);
+    return success;
 }
 
 // This is necessary on some systems where the compiler

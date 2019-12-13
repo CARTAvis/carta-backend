@@ -19,9 +19,6 @@ public:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
     bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
 
-protected:
-    bool GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
-
 private:
     std::string _filename;
     casacore::uInt _hdu;
@@ -73,17 +70,12 @@ bool FitsLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
 }
 
 bool FitsLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    bool success(false);
     if (!_image) {
-        return false;
+        return success;
     }
-    return _image->getSlice(data, slicer, removeDegenerateAxes);
-}
-
-bool FitsLoader::GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
-    if (!_image) {
-        return false;
-    }
-    return _image->getMaskSlice(mask, slicer, removeDegenerateAxes);
+    success = _image->getSlice(data, slicer, removeDegenerateAxes);
+    return success;
 }
 
 } // namespace carta

@@ -164,9 +164,6 @@ protected:
     // Dimension values used by stats functions
     size_t _num_channels, _num_stokes, _num_dims, _channel_size;
 
-    // Slice mask for GetSlice
-    virtual bool GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) = 0;
-
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;

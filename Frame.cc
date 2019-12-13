@@ -744,7 +744,7 @@ void Frame::SetImageCache() {
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->GetSlice(tmp, section, true);
+    _loader->GetSlice(tmp, section, false);
 }
 
 void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes) {
@@ -754,7 +754,7 @@ void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, si
     casacore::Array<float> tmp(section.length(), chan_matrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->GetSlice(tmp, section, true);
+    _loader->GetSlice(tmp, section, false);
 }
 
 casacore::Slicer Frame::GetChannelMatrixSlicer(size_t channel, size_t stokes) {

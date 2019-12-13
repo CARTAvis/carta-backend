@@ -19,10 +19,9 @@ public:
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
     bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
 
-protected:
-    bool GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
-
 private:
+    casacore::Array<bool> GetMaskSlice(const casacore::Slicer& slicer, bool removeDegenerateAxes = false);
+
     std::string _filename;
     std::unique_ptr<casacore::PagedImage<float>> _image;
 };
@@ -73,14 +72,30 @@ bool CasaLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
     if (!_image) {
         return false;
     }
-    return _image->getSlice(data, slicer, removeDegenerateAxes);
+
+    // Get data slice and apply mask: set unmasked values to NaN
+    data = _image->getSlice(slicer, removeDegenerateAxes);
+    casacore::Array<bool> mask = GetMaskSlice(slicer, removeDegenerateAxes);
+    bool delete_data_ptr;
+    float* pData = data.getStorage(delete_data_ptr);
+    bool delete_mask_ptr;
+    const bool* pMask = mask.getStorage(delete_mask_ptr);
+    for (size_t i = 0; i < data.nelements(); ++i) {
+        if (!pMask[i]) {
+            pData[i] = std::numeric_limits<float>::quiet_NaN();
+        }
+    }
+    mask.freeStorage(pMask, delete_mask_ptr);
+    data.putStorage(pData, delete_data_ptr);
+    return true;
 }
 
-bool CasaLoader::GetMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+casacore::Array<bool> CasaLoader::GetMaskSlice(const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    casacore::Array<bool> mask;
     if (!_image) {
-        return false;
+        return mask;
     }
-    return _image->getMaskSlice(mask, slicer, removeDegenerateAxes);
+    return _image->getMaskSlice(slicer, removeDegenerateAxes);
 }
 
 } // namespace carta
