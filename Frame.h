@@ -134,13 +134,13 @@ public:
     bool ContourImage(ContourCallback& partial_contour_callback);
 
     // histogram only (not full data message) : get if stored, else can calculate
-    bool GetRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);
-    bool CalcRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);
+    bool GetRegionBasicStats(int region_id, int channel, int stokes, carta::BasicStats<float>& stats);
+    bool CalcRegionBasicStats(int region_id, int channel, int stokes, carta::BasicStats<float>& stats);
     bool GetImageHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram);
     bool GetRegionHistogram(int region_id, int channel, int stokes, int num_bins, CARTA::Histogram& histogram);
     bool CalcRegionHistogram(
-        int region_id, int channel, int stokes, int num_bins, float min_val, float max_val, CARTA::Histogram& histogram);
-    void SetRegionMinMax(int region_id, int channel, int stokes, float min_val, float max_val);
+        int region_id, int channel, int stokes, int num_bins, const carta::BasicStats<float>& stats, CARTA::Histogram& histogram);
+    void SetRegionBasicStats(int region_id, int channel, int stokes, const carta::BasicStats<float>& stats);
     void SetRegionHistogram(int region_id, int channel, int stokes, CARTA::Histogram& histogram);
 
     // set the flag connected = false, in order to stop the jobs and wait for jobs finished
