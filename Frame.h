@@ -81,6 +81,7 @@ struct CachedTileKey {
 
 class TileCache {
 using CachedTilePtr = std::shared_ptr<std::vector<float>>;
+using CachedTilePair = std::pair<CachedTileKey, CachedTilePtr>;
 public:
     TileCache() {}
     TileCache(int capacity) : _capacity(capacity) {}
@@ -90,12 +91,34 @@ public:
         if (_hash.find(key) == _hash.end()) {
             return CachedTilePtr();
         } else {
-            return *_hash.find(key)->second;
+            return _hash.find(key)->second->second;
         }
     }
         
     CachedTilePtr Get(CachedTileKey key, const carta::FileLoader* loader) {
-        // TODO get a single tile
+        // Will be loaded or retrieved from cache
+        CachedTilePtr tile;
+        
+        if(_hash.find(key) == _hash.end()) { // Not in cache
+            // Evict oldest tile if necessary
+            if(_hash.size() == _capacity) {
+                _hash.erase(_queue.back()->first);
+                _queue.pop_back();
+            }
+            // Load new tile from image
+            tile = Load(key, loader);
+        } else {
+            // Remove found tile from queue, to reinsert
+            tile = _hash.find(key)->second->second;
+            _queue.erase(_hash.find(key)->second); 
+        }
+        
+        // Insert new or retrieved tile into the front of the queue
+        _queue.push_front(std::make_pair(key, tile));
+        // Insert or update the hash entry
+        _hash[key] = _queue.begin();
+        
+        return tile;
     }
     
     std::unordered_map<CachedTileKey, CachedTilePtr> GetMultiple(std::vector<CachedTileKey>, const carta::FileLoader* loader) {
@@ -113,15 +136,19 @@ public:
     
 private:
     void touch(CachedTileKey key) {
-        // TODO move tile to the front of the queue
+        // move tile to the front of the queue
+        auto tile = _hash.find(key)->second->second;
+        _queue.erase(_hash.find(key)->second);
+        _queue.push_front(std::make_pair(key, tile));
+        _hash[key] = _queue.begin();
     }
     
-    void load(const carta::FileLoader* loader) {
+    CachedTilePtr load(CachedTileKey key, const carta::FileLoader* loader) {
         // TODO load a tile from the file
     }
     
-    std::list<CachedTilePtr> _queue;
-    std::unordered_map<CachedTileKey, std::list<CachedTilePtr>::iterator> _hash;
+    std::list<CachedTilePair> _queue;
+    std::unordered_map<CachedTileKey, std::list<CachedTilePair>::iterator> _hash;
     int _capacity;
     std::mutex _tile_cache_mutex; // maybe change to tbb mutex
 };
