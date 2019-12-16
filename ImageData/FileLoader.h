@@ -130,18 +130,19 @@ public:
     // Do anything required to open the file at given HDU (set up cache size, Image object)
     virtual void OpenFile(const std::string& hdu) = 0;
 
+    // Return the opened casacore image
+    virtual ImageRef GetLoaderImage() = 0;
+
     // Image shape and coordinate system axes
-    bool FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
-    void FindCoordinates(int& spectral_axis, int& stokes_axis);
-    virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
+    bool GetImageShape(IPos& shape);
+    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
+    bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
 
     // Image Data
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;
-    // Return a casacore image representing the data in the specified HDU/group/table/etc.
-    virtual ImageRef LoadData(FileInfo::Data ds) = 0;
     // Slice image data (with mask applied)
-    virtual bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) = 0;
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false);
 
     // Image Statistics
     // Load image statistics, if they exist, from the file
@@ -181,6 +182,10 @@ protected:
     virtual void LoadStats3DBasic(FileInfo::Data ds);
     virtual void LoadStats3DHist();
     virtual void LoadStats3DPercent();
+
+private:
+    // Find spectral and stokes coordinates
+    void FindCoordinates(int& spectral_axis, int& stokes_axis);
 };
 
 } // namespace carta

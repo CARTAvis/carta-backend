@@ -15,14 +15,9 @@ public:
     void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
-    ImageRef LoadData(FileInfo::Data ds) override;
-
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
-    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
+    ImageRef GetLoaderImage() override;
 
 private:
-    casacore::Array<bool> GetMaskSlice(const casacore::Slicer& slicer, bool removeDegenerateAxes = false);
-
     std::string _filename;
     std::unique_ptr<casacore::MIRIADImage> _image;
 };
@@ -81,49 +76,8 @@ bool MiriadLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename MiriadLoader::ImageRef MiriadLoader::LoadData(FileInfo::Data ds) {
-    if (ds != FileInfo::Data::Image) {
-        return nullptr;
-    }
+typename MiriadLoader::ImageRef MiriadLoader::GetLoaderImage() {
     return _image.get(); // nullptr if image not opened
-}
-
-bool MiriadLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_image == nullptr) {
-        return false;
-    }
-    coord_sys = _image->coordinates();
-    return true;
-}
-
-bool MiriadLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
-    if (!_image) {
-        return false;
-    }
-
-    // Get data slice and apply mask: set unmasked values to NaN
-    data = _image->getSlice(slicer, removeDegenerateAxes);
-    casacore::Array<bool> mask = GetMaskSlice(slicer, removeDegenerateAxes);
-    bool delete_data_ptr;
-    float* pData = data.getStorage(delete_data_ptr);
-    bool delete_mask_ptr;
-    const bool* pMask = mask.getStorage(delete_mask_ptr);
-    for (size_t i = 0; i < data.nelements(); ++i) {
-        if (!pMask[i]) {
-            pData[i] = std::numeric_limits<float>::quiet_NaN();
-        }
-    }
-    mask.freeStorage(pMask, delete_mask_ptr);
-    data.putStorage(pData, delete_data_ptr);
-    return true;
-}
-
-casacore::Array<bool> MiriadLoader::GetMaskSlice(const casacore::Slicer& slicer, bool removeDegenerateAxes) {
-    casacore::Array<bool> mask;
-    if (!_image) {
-        return mask;
-    }
-    return _image->getMaskSlice(slicer, removeDegenerateAxes);
 }
 
 } // namespace carta

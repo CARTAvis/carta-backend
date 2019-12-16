@@ -55,7 +55,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
 
     // Get shape and axis values from the loader
     std::string log_message;
-    if (!_loader->FindShape(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
+    if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
         if (_verbose) {
             Log(session_id, _open_image_error);
@@ -819,8 +819,11 @@ bool Frame::GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_imag
             casacore::ImageRegion image_region;
             if (region->GetRegion(image_region, stokes, channel_range)) {
                 try {
-                    sub_image = casacore::SubImage<float>(*_loader->LoadData(FileInfo::Data::Image), image_region);
-                    sub_image_ok = true;
+                    casacore::ImageInterface<float>* image = _loader->GetLoaderImage();
+                    if (image) {
+                        sub_image = casacore::SubImage<float>(*image, image_region);
+                        sub_image_ok = true;
+                    }
                 } catch (casacore::AipsError& err) {
                     Log(_session_id, "Region creation for {} failed: {}", region->Name(), err.getMesg());
                 }

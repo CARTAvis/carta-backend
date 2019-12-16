@@ -14,10 +14,7 @@ public:
     void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
-    ImageRef LoadData(FileInfo::Data ds) override;
-
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
-    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
+    ImageRef GetLoaderImage() override;
 
 private:
     std::string _filename;
@@ -54,28 +51,8 @@ bool FitsLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename FitsLoader::ImageRef FitsLoader::LoadData(FileInfo::Data ds) {
-    if (ds != FileInfo::Data::Image) {
-        return nullptr;
-    }
+typename FitsLoader::ImageRef FitsLoader::GetLoaderImage() {
     return _image.get(); // nullptr if image not opened
-}
-
-bool FitsLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (!_image) {
-        return false;
-    }
-    coord_sys = _image->coordinates();
-    return true;
-}
-
-bool FitsLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
-    bool success(false);
-    if (!_image) {
-        return success;
-    }
-    success = _image->getSlice(data, slicer, removeDegenerateAxes);
-    return success;
 }
 
 } // namespace carta

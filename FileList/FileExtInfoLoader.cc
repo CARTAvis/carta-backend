@@ -42,7 +42,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
     if (_loader) {
         try {
             _loader->OpenFile(hdu);
-            casacore::ImageInterface<float>* image = _loader->LoadData(carta::FileInfo::Data::Image);
+            casacore::ImageInterface<float>* image = _loader->GetLoaderImage();
             if (image) {
                 casacore::IPosition image_shape(image->shape());
                 unsigned int num_dim = image_shape.size();
@@ -189,7 +189,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 }
 
                 int spectral_axis, stokes_axis;
-                _loader->FindShape(image_shape, spectral_axis, stokes_axis, message);
+                _loader->FindCoordinateAxes(image_shape, spectral_axis, stokes_axis, message);
                 AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
                 AddComputedEntries(extended_info, image, radesys);
                 file_ok = true;

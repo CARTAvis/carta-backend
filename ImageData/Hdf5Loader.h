@@ -20,10 +20,7 @@ public:
     void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
-    ImageRef LoadData(FileInfo::Data ds) override;
-
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
-    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false) override;
+    ImageRef GetLoaderImage() override;
 
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
@@ -51,7 +48,7 @@ private:
     const IPos GetStatsDataShape(FileInfo::Data ds) override;
     casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
 
-    casacore::Lattice<float>* LoadSwizzledData(FileInfo::Data ds);
+    casacore::Lattice<float>* LoadSwizzledData();
 };
 
 Hdf5Loader::Hdf5Loader(const std::string& filename) : _filename(filename), _hdu("0") {}
@@ -99,58 +96,14 @@ bool Hdf5Loader::HasData(FileInfo::Data ds) const {
 }
 
 // TODO: when we fix the typing issue, this should probably return any dataset again, for consistency.
-typename Hdf5Loader::ImageRef Hdf5Loader::LoadData(FileInfo::Data ds) {
-    // returns an ImageInterface*
-    switch (ds) {
-        case FileInfo::Data::Image:
-            return _image.get();
-        case FileInfo::Data::XY:
-            if (_num_dims == 2) {
-                return _image.get();
-            }
-        case FileInfo::Data::XYZ:
-            if (_num_dims == 3) {
-                return _image.get();
-            }
-        case FileInfo::Data::XYZW:
-            if (_num_dims == 4) {
-                return _image.get();
-            }
-        default:
-            break;
-    }
-    throw casacore::HDF5Error("Unable to load dataset " + DataSetToString(ds) + ".");
+typename Hdf5Loader::ImageRef Hdf5Loader::GetLoaderImage() {
+    // returns opened image as ImageInterface*
+    return _image.get();
 }
 
-casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData(FileInfo::Data ds) {
+casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData() {
     // swizzled data returns a Lattice
-    switch (ds) {
-        case FileInfo::Data::SWIZZLED:
-            if (_swizzled_image) {
-                return _swizzled_image.get();
-            }
-        case FileInfo::Data::ZYX:
-            if (_num_dims == 3 && _swizzled_image) {
-                return _swizzled_image.get();
-            }
-        case FileInfo::Data::ZYXW:
-            if (_num_dims == 4 && _swizzled_image) {
-                return _swizzled_image.get();
-            }
-        default:
-            break;
-    }
-
-    throw casacore::HDF5Error("Unable to load swizzled dataset " + DataSetToString(ds) + ".");
-}
-
-bool Hdf5Loader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
-    bool success(false);
-    if (!_image) {
-        return success;
-    }
-    success = _image->getSlice(data, slicer, removeDegenerateAxes);
-    return success;
+    return _swizzled_image.get();
 }
 
 // This is necessary on some systems where the compiler
@@ -213,14 +166,6 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
         default:
             return (um.find(ds) != um.end()) ? um[ds] : "";
     }
-}
-
-bool Hdf5Loader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (!_image) {
-        return false;
-    }
-    coord_sys = _image->coordinates();
-    return true;
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
@@ -312,7 +257,7 @@ bool Hdf5Loader::GetCursorSpectralData(
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         std::lock_guard<std::mutex> lguard(image_mutex);
         try {
-            LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
+            LoadSwizzledData()->doGetSlice(tmp, slicer);
             data_ok = true;
         } catch (casacore::AipsError& err) {
             std::cerr << "Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: " << err.getMesg() << std::endl;
