@@ -157,6 +157,32 @@ void FileLoader::FindCoordinates(const CARTA::FileInfoExtended* info, int& spect
     }
 }
 
+bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    ImageRef image = LoadData(FileInfo::Data::Image);
+    if (!image) {
+        return false;
+    }
+
+    // Get data slice
+    data = image->getSlice(slicer, removeDegenerateAxes);
+    if (image->isMasked()) {
+        // Apply mask: set unmasked values to NaN
+        casacore::Array<bool> mask = image->getMaskSlice(slicer, removeDegenerateAxes);
+        bool delete_data_ptr;
+        float* pData = data.getStorage(delete_data_ptr);
+        bool delete_mask_ptr;
+        const bool* pMask = mask.getStorage(delete_mask_ptr);
+        for (size_t i = 0; i < data.nelements(); ++i) {
+            if (!pMask[i]) {
+                pData[i] = std::numeric_limits<float>::quiet_NaN();
+            }
+        }
+        mask.freeStorage(pMask, delete_mask_ptr);
+        data.putStorage(pData, delete_data_ptr);
+    }
+    return true;
+}
+
 const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }
