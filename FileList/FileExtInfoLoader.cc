@@ -42,7 +42,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
     if (_loader) {
         try {
             _loader->OpenFile(hdu);
-            casacore::ImageInterface<float>* image = _loader->GetLoaderImage();
+            casacore::ImageInterface<float>* image = _loader->GetImage();
             if (image) {
                 casacore::IPosition image_shape(image->shape());
                 unsigned int num_dim = image_shape.size();

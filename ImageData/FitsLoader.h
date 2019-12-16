@@ -14,7 +14,7 @@ public:
     void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
-    ImageRef GetLoaderImage() override;
+    ImageRef GetImage() override;
 
 private:
     std::string _filename;
@@ -51,7 +51,7 @@ bool FitsLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename FitsLoader::ImageRef FitsLoader::GetLoaderImage() {
+typename FitsLoader::ImageRef FitsLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
 }
 

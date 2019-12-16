@@ -14,7 +14,7 @@ public:
     void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
-    ImageRef GetLoaderImage() override;
+    ImageRef GetImage() override;
 
 private:
     std::string _filename;
@@ -48,7 +48,7 @@ bool CasaLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename CasaLoader::ImageRef CasaLoader::GetLoaderImage() {
+typename CasaLoader::ImageRef CasaLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
 }
 

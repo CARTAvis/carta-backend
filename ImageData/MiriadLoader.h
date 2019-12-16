@@ -15,7 +15,7 @@ public:
     void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
-    ImageRef GetLoaderImage() override;
+    ImageRef GetImage() override;
 
 private:
     std::string _filename;
@@ -76,7 +76,7 @@ bool MiriadLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename MiriadLoader::ImageRef MiriadLoader::GetLoaderImage() {
+typename MiriadLoader::ImageRef MiriadLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
 }
 

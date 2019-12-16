@@ -40,8 +40,8 @@ bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
 
-bool FileLoader::GetImageShape(IPos& shape) {
-    ImageRef image = GetLoaderImage();
+bool FileLoader::GetShape(IPos& shape) {
+    ImageRef image = GetImage();
     if (image) {
         shape = image->shape();
         return true;
@@ -50,7 +50,7 @@ bool FileLoader::GetImageShape(IPos& shape) {
 }
 
 bool FileLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    ImageRef image = GetLoaderImage();
+    ImageRef image = GetImage();
     if (image) {
         coord_sys = image->coordinates();
         return true;
@@ -69,7 +69,7 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
         return false;
     }
 
-    if (!GetImageShape(shape)) {
+    if (!GetShape(shape)) {
         return false;
     }
 
@@ -189,7 +189,7 @@ void FileLoader::FindCoordinates(int& spectral_axis, int& stokes_axis) {
 }
 
 bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
-    ImageRef image = GetLoaderImage();
+    ImageRef image = GetImage();
     if (!image) {
         return false;
     }

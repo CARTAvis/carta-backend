@@ -819,7 +819,7 @@ bool Frame::GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_imag
             casacore::ImageRegion image_region;
             if (region->GetRegion(image_region, stokes, channel_range)) {
                 try {
-                    casacore::ImageInterface<float>* image = _loader->GetLoaderImage();
+                    casacore::ImageInterface<float>* image = _loader->GetImage();
                     if (image) {
                         sub_image = casacore::SubImage<float>(*image, image_region);
                         sub_image_ok = true;

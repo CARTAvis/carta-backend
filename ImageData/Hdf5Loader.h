@@ -20,7 +20,7 @@ public:
     void OpenFile(const std::string& hdu) override;
 
     bool HasData(FileInfo::Data ds) const override;
-    ImageRef GetLoaderImage() override;
+    ImageRef GetImage() override;
 
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
@@ -96,7 +96,7 @@ bool Hdf5Loader::HasData(FileInfo::Data ds) const {
 }
 
 // TODO: when we fix the typing issue, this should probably return any dataset again, for consistency.
-typename Hdf5Loader::ImageRef Hdf5Loader::GetLoaderImage() {
+typename Hdf5Loader::ImageRef Hdf5Loader::GetImage() {
     // returns opened image as ImageInterface*
     return _image.get();
 }

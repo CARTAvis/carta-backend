@@ -131,10 +131,10 @@ public:
     virtual void OpenFile(const std::string& hdu) = 0;
 
     // Return the opened casacore image
-    virtual ImageRef GetLoaderImage() = 0;
+    virtual ImageRef GetImage() = 0;
 
     // Image shape and coordinate system axes
-    bool GetImageShape(IPos& shape);
+    bool GetShape(IPos& shape);
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
     bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
 
