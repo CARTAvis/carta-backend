@@ -197,7 +197,7 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
     // Get data slice
     data = image->getSlice(slicer, removeDegenerateAxes);
     if (image->isMasked()) {
-	    // Apply mask: set unmasked values to NaN
+        // Apply mask: set unmasked values to NaN
         casacore::Array<bool> mask = image->getMaskSlice(slicer, removeDegenerateAxes);
         bool delete_data_ptr;
         float* pData = data.getStorage(delete_data_ptr);
