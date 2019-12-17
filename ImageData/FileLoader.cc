@@ -40,7 +40,25 @@ bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
 
-bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
+bool FileLoader::GetShape(IPos& shape) {
+    ImageRef image = GetImage();
+    if (image) {
+        shape = image->shape();
+        return true;
+    }
+    return false;
+}
+
+bool FileLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
+    ImageRef image = GetImage();
+    if (image) {
+        coord_sys = image->coordinates();
+        return true;
+    }
+    return false;
+}
+
+bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
     // Return image shape, spectral axis, and stokes axis from image data, coordinate system, and extended file info.
 
     // set defaults: undefined
@@ -51,7 +69,10 @@ bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, st
         return false;
     }
 
-    shape = LoadData(FileInfo::Data::Image)->shape();
+    if (!GetShape(shape)) {
+        return false;
+    }
+
     _num_dims = shape.size();
 
     if (_num_dims < 2 || _num_dims > 4) {
@@ -165,6 +186,32 @@ void FileLoader::FindCoordinates(int& spectral_axis, int& stokes_axis) {
             stokes_axis = i;
         }
     }
+}
+
+bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
+    }
+
+    // Get data slice
+    data = image->getSlice(slicer, removeDegenerateAxes);
+    if (image->isMasked()) {
+        // Apply mask: set unmasked values to NaN
+        casacore::Array<bool> mask = image->getMaskSlice(slicer, removeDegenerateAxes);
+        bool delete_data_ptr;
+        float* pData = data.getStorage(delete_data_ptr);
+        bool delete_mask_ptr;
+        const bool* pMask = mask.getStorage(delete_mask_ptr);
+        for (size_t i = 0; i < data.nelements(); ++i) {
+            if (!pMask[i]) {
+                pData[i] = std::numeric_limits<float>::quiet_NaN();
+            }
+        }
+        mask.freeStorage(pMask, delete_mask_ptr);
+        data.putStorage(pData, delete_data_ptr);
+    }
+    return true;
 }
 
 const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {

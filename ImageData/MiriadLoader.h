@@ -10,14 +10,12 @@ namespace carta {
 class MiriadLoader : public FileLoader {
 public:
     MiriadLoader(const std::string& file);
+
     bool CanOpenFile(std::string& error) override;
     void OpenFile(const std::string& hdu) override;
-    bool HasData(FileInfo::Data ds) const override;
-    ImageRef LoadData(FileInfo::Data ds) override;
-    bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
 
-protected:
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
+    bool HasData(FileInfo::Data ds) const override;
+    ImageRef GetImage() override;
 
 private:
     std::string _filename;
@@ -78,28 +76,8 @@ bool MiriadLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename MiriadLoader::ImageRef MiriadLoader::LoadData(FileInfo::Data ds) {
-    if (ds != FileInfo::Data::Image) {
-        return nullptr;
-    }
+typename MiriadLoader::ImageRef MiriadLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
-}
-
-bool MiriadLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        return _image->getMaskSlice(mask, slicer);
-    }
-}
-
-bool MiriadLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        coord_sys = _image->coordinates();
-        return true;
-    }
 }
 
 } // namespace carta

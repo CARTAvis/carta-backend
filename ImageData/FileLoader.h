@@ -118,7 +118,6 @@ inline casacore::uInt GetFitsHdu(const std::string& hdu) {
 
 class FileLoader {
 public:
-    // Replaced Lattice with Image Interface - changed back
     using ImageRef = casacore::ImageInterface<float>*;
     using IPos = casacore::IPosition;
 
@@ -128,24 +127,30 @@ public:
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
+    // Do anything required to open the file at given HDU (set up cache size, Image object)
+    virtual void OpenFile(const std::string& hdu) = 0;
 
-    // get shape and axis information from image data and coordinate system
-    bool FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
-    void FindCoordinates(int& spectral_axis, int& stokes_axis);
+    // Return the opened casacore image
+    virtual ImageRef GetImage() = 0;
 
+    // Image shape and coordinate system axes
+    bool GetShape(IPos& shape);
+    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
+    bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
+
+    // Image Data
+    // Check to see if the file has a particular HDU/group/table/etc
+    virtual bool HasData(FileInfo::Data ds) const = 0;
+    // Slice image data (with mask applied)
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false);
+
+    // Image Statistics
     // Load image statistics, if they exist, from the file
     virtual void LoadImageStats(bool load_percentiles = false);
     // Retrieve stats for a particular channel or all channels
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
-    // Do anything required to open the file (set up cache size, Image object)
-    virtual void OpenFile(const std::string& hdu) = 0;
-    // Check to see if the file has a particular HDU/group/table/etc
-    virtual bool HasData(FileInfo::Data ds) const = 0;
-    // Return a casacore image type representing the data stored in the
-    // specified HDU/group/table/etc.
-    virtual ImageRef LoadData(FileInfo::Data ds) = 0;
-
+    // Spectral profiles
     virtual bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
     // check if one can apply swizzled data under such image format and region condition
@@ -153,22 +158,23 @@ public:
     virtual bool GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
-
-    virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
+    // Implemented in Hdf5Loader, used to interrupt loading spectral profile
     virtual void SetFramePtr(Frame* frame);
 
 protected:
-    virtual bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) = 0;
-
     // Dimension values used by stats functions
     size_t _num_channels, _num_stokes, _num_dims, _channel_size;
+
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
     std::vector<carta::FileInfo::ImageStats> _cube_stats;
+
     // Return the shape of the specified stats dataset
     virtual const IPos GetStatsDataShape(FileInfo::Data ds);
+
     // Return stats data as a casacore::Array of type casacore::Float or casacore::Int64
     virtual casacore::ArrayBase* GetStatsData(FileInfo::Data ds);
+
     // Functions for loading individual types of statistics
     virtual void LoadStats2DBasic(FileInfo::Data ds);
     virtual void LoadStats2DHist();
@@ -176,6 +182,10 @@ protected:
     virtual void LoadStats3DBasic(FileInfo::Data ds);
     virtual void LoadStats3DHist();
     virtual void LoadStats3DPercent();
+
+private:
+    // Find spectral and stokes coordinates
+    void FindCoordinates(int& spectral_axis, int& stokes_axis);
 };
 
 } // namespace carta
