@@ -1,12 +1,23 @@
 #ifndef CARTA_BACKEND__TILE_CACHE_H_
 #define CARTA_BACKEND__TILE_CACHE_H_
 
-// TODO: implement operators needed for use as key.
 struct CachedTileKey {
     CachedTileKey() {}
     CachedTileKey(hsize_t x, hsize_t y) : x(x), y(y) {}
+    
+    bool operator==(const CachedTileKey &other) const { 
+        return (x == other.x && y == other.y);
+    }
+    
     hsize_t x;
     hsize_t y;
+};
+
+struct CachedTileKeyHash {
+  std::size_t operator()(const CachedTileKey& k) const
+  {
+      return std::hash<hsize_t>()(k.x) ^ (std::hash<hsize_t>()(k.x) << 1);
+  }
 };
 
 class TileCache {
@@ -30,7 +41,7 @@ private:
     hsize_t _channel;
     hsize_t _stokes;
     std::list<CachedTilePair> _queue;
-    std::unordered_map<CachedTileKey, std::list<CachedTilePair>::iterator> _hash;
+    std::unordered_map<CachedTileKey, std::list<CachedTilePair>::iterator, CachedTileKeyHash> _map;
     int _capacity;
     std::mutex _tile_cache_mutex; // maybe change to tbb mutex
 };

@@ -4,18 +4,21 @@ namespace carta {
 
 Hdf5Loader::Hdf5Loader(const std::string& filename) : _filename(filename), _hdu("0") {}
 
-void Hdf5Loader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) {
+void Hdf5Loader::OpenFile(const std::string& hdu) {
     // Open hdf5 image with specified hdu
-    _image = std::unique_ptr<CartaHdf5Image>(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu, info));
-    _hdu = hdu;
+    if (!_image || (hdu != _hdu)) {
+        _image.reset(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu));
+        _hdu = hdu;
 
-    // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
-    _num_dims = _image->shape().size();
+        // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
+        _num_dims = _image->shape().size();
 
-    // Load swizzled image lattice
-    if (HasData(FileInfo::Data::SWIZZLED)) {
-        _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(
-            casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)), DataSetToString(FileInfo::Data::SWIZZLED), hdu));
+        // Load swizzled image lattice
+        if (HasData(FileInfo::Data::SWIZZLED)) {
+            _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(
+                new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)),
+                    DataSetToString(FileInfo::Data::SWIZZLED), hdu));
+        }
     }
 }
 
