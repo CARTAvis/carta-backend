@@ -135,7 +135,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             int event_length = length - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
 
-	    std::cerr << " " << head.type << " " << std::endl;
+            std::cerr << " " << head.type << " " << std::endl;
             switch (head.type) {
                 case CARTA::EventType::REGISTER_VIEWER: {
                     CARTA::RegisterViewer message;
@@ -322,7 +322,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 }
                 case CARTA::EventType::SET_USER_LAYOUT: {
                     CARTA::SetUserLayout message;
-		    std::cerr << "SET_USER_LAYOUT" << std::endl;
+                    std::cerr << "SET_USER_LAYOUT" << std::endl;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSetUserLayout(message, head.request_id);
                     } else {
