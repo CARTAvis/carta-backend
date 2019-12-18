@@ -54,10 +54,12 @@ bool Hdf5Loader::HasData(FileInfo::Data ds) const {
 typename Hdf5Loader::ImageRef Hdf5Loader::GetImage() {
     // returns opened image as ImageInterface*
     return _image.get();
+}
 
 casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData() {
     // swizzled data returns a Lattice
     return _swizzled_image.get();
+}
 
 std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
     static std::unordered_map<FileInfo::Data, std::string, EnumClassHash> um = {
