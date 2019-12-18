@@ -1,5 +1,6 @@
 #include "FileLoader.h"
 
+#include "../Util.h"
 #include "CasaLoader.h"
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
@@ -8,8 +9,7 @@
 using namespace carta;
 
 FileLoader* FileLoader::GetLoader(const std::string& filename) {
-    casacore::ImageOpener::ImageTypes type = FileInfo::fileType(filename);
-    switch (type) {
+    switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
             return new CasaLoader(filename);
         case casacore::ImageOpener::FITS:
@@ -36,17 +36,43 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
     return nullptr;
 }
 
-bool FileLoader::FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
+bool FileLoader::CanOpenFile(std::string& /*error*/) {
+    return true;
+}
+
+bool FileLoader::GetShape(IPos& shape) {
+    ImageRef image = GetImage();
+    if (image) {
+        shape = image->shape();
+        return true;
+    }
+    return false;
+}
+
+bool FileLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
+    ImageRef image = GetImage();
+    if (image) {
+        coord_sys = image->coordinates();
+        return true;
+    }
+    return false;
+}
+
+bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
     // Return image shape, spectral axis, and stokes axis from image data, coordinate system, and extended file info.
 
     // set defaults: undefined
     spectral_axis = -1;
     stokes_axis = -1;
 
-    if (!HasData(FileInfo::Data::Image))
+    if (!HasData(FileInfo::Data::Image)) {
         return false;
+    }
 
-    shape = LoadData(FileInfo::Data::Image)->shape();
+    if (!GetShape(shape)) {
+        return false;
+    }
+
     _num_dims = shape.size();
 
     if (_num_dims < 2 || _num_dims > 4) {
@@ -94,7 +120,7 @@ bool FileLoader::FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int
     // 4D image
     if ((spectral_axis < 0) || (stokes_axis < 0)) {
         // workaround when header incomplete or invalid values for creating proper coordinate system
-        FindCoordinates(info, spectral_axis, stokes_axis);
+        FindCoordinates(spectral_axis, stokes_axis);
     }
     if ((spectral_axis < 0) || (stokes_axis < 0)) {
         if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
@@ -122,9 +148,11 @@ bool FileLoader::FindShape(const CARTA::FileInfoExtended* info, IPos& shape, int
     return true;
 }
 
-void FileLoader::FindCoordinates(const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis) {
+void FileLoader::FindCoordinates(int& spectral_axis, int& stokes_axis) {
+    // TODO
     // read ctypes from file info header entries to determine spectral and stokes axes
     casacore::String ctype1, ctype2, ctype3, ctype4;
+    /*
     for (int i = 0; i < info->header_entries_size(); ++i) {
         CARTA::HeaderEntry entry = info->header_entries(i);
         if (entry.name() == "CTYPE1") {
@@ -141,6 +169,7 @@ void FileLoader::FindCoordinates(const CARTA::FileInfoExtended* info, int& spect
             ctype4.upcase();
         }
     }
+    */
 
     // find axes from ctypes
     size_t ntypes(4);
@@ -157,6 +186,32 @@ void FileLoader::FindCoordinates(const CARTA::FileInfoExtended* info, int& spect
             stokes_axis = i;
         }
     }
+}
+
+bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
+    }
+
+    // Get data slice
+    data = image->getSlice(slicer, removeDegenerateAxes);
+    if (image->isMasked()) {
+        // Apply mask: set unmasked values to NaN
+        casacore::Array<bool> mask = image->getMaskSlice(slicer, removeDegenerateAxes);
+        bool delete_data_ptr;
+        float* pData = data.getStorage(delete_data_ptr);
+        bool delete_mask_ptr;
+        const bool* pMask = mask.getStorage(delete_mask_ptr);
+        for (size_t i = 0; i < data.nelements(); ++i) {
+            if (!pMask[i]) {
+                pData[i] = std::numeric_limits<float>::quiet_NaN();
+            }
+        }
+        mask.freeStorage(pMask, delete_mask_ptr);
+        data.putStorage(pData, delete_data_ptr);
+    }
+    return true;
 }
 
 const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
@@ -463,8 +518,8 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
             LoadStats3DBasic(FileInfo::Data::STATS_3D_MAX);
             LoadStats3DBasic(FileInfo::Data::STATS_3D_MIN);
             if (full) {
-                LoadStats2DBasic(FileInfo::Data::STATS_3D_SUM);
-                LoadStats2DBasic(FileInfo::Data::STATS_3D_SUMSQ);
+                LoadStats3DBasic(FileInfo::Data::STATS_3D_SUM);
+                LoadStats3DBasic(FileInfo::Data::STATS_3D_SUMSQ);
             }
             LoadStats3DBasic(FileInfo::Data::STATS_3D_NANS);
 

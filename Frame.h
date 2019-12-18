@@ -207,8 +207,7 @@ private:
 
 class Frame {
 public:
-    Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, bool verbose,
-        int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel = DEFAULT_CHANNEL);
     ~Frame();
 
     bool IsValid();
@@ -266,13 +265,13 @@ public:
     bool ContourImage(ContourCallback& partial_contour_callback);
 
     // histogram only (not full data message) : get if stored, else can calculate
-    bool GetRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);
-    bool CalcRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val);
+    bool GetRegionBasicStats(int region_id, int channel, int stokes, carta::BasicStats<float>& stats);
+    bool CalcRegionBasicStats(int region_id, int channel, int stokes, carta::BasicStats<float>& stats);
     bool GetImageHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram);
     bool GetRegionHistogram(int region_id, int channel, int stokes, int num_bins, CARTA::Histogram& histogram);
     bool CalcRegionHistogram(
-        int region_id, int channel, int stokes, int num_bins, float min_val, float max_val, CARTA::Histogram& histogram);
-    void SetRegionMinMax(int region_id, int channel, int stokes, float min_val, float max_val);
+        int region_id, int channel, int stokes, int num_bins, const carta::BasicStats<float>& stats, CARTA::Histogram& histogram);
+    void SetRegionBasicStats(int region_id, int channel, int stokes, const carta::BasicStats<float>& stats);
     void SetRegionHistogram(int region_id, int channel, int stokes, CARTA::Histogram& histogram);
 
     // set the flag connected = false, in order to stop the jobs and wait for jobs finished
@@ -310,10 +309,10 @@ private:
     void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line, const casacore::CoordinateSystem& coord_sys,
         CARTA::FileType file_type, CARTA::ImportRegionAck& import_ack, std::string message);
     casacore::String AnnTypeToDs9String(casa::AnnotationBase::Type annotation_type);
-    void ExportCrtfRegions(
-        std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack);
-    void ExportDs9Regions(
-        std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack);
+    void ExportCrtfRegions(std::vector<int>& region_ids, CARTA::CoordinateType coord_type, const casacore::CoordinateSystem& coord_sys,
+        std::string& crtf_filename, CARTA::ExportRegionAck& export_ack);
+    void ExportDs9Regions(std::vector<int>& region_ids, CARTA::CoordinateType coord_type, const casacore::CoordinateSystem& coord_sys,
+        std::string& ds9_filename, CARTA::ExportRegionAck& export_ack);
 
     // Image view settings
     void SetViewSettings(
@@ -373,8 +372,7 @@ private:
     // spectral profile counter, which is used to determine whether the Frame object can be destroyed (_z_profile_count == 0 ?).
     tbb::atomic<int> _z_profile_count;
 
-    // image loader, stats from image file
-    std::string _filename;
+    // image loader for image type
     std::unique_ptr<carta::FileLoader> _loader;
 
     // shape, channel, and stokes

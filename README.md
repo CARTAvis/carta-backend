@@ -19,22 +19,27 @@ make
 
 Command-line arguments are in the format arg=value.  Available arguments include:
 ```
---help       List version and arguments
-debug        Debug level, default 0
-verbose      Verbose logging, default False
-permissions  Use a permissions file to determine directory access, default False
-port         Set server port, default 3002
-threads      Set thread pool count, default 4
-folder       Set folder for data files, default current directory
+--help          List version and arguments
+debug           Debug level, default 0
+verbose         Verbose logging, default False
+permissions     Use a permissions file for directory access, default False
+token           Only accept connections with this authorization token
+port            Set server port, default 3002
+threads         Set thread pool count, default 4
+base            Set folder for data files, default current directory
+root            Set top-level folder for data files, default /
+exit_after      Number of seconds to stay alive if no clients connect
+read_json_file  JSON file with secure token
+use_mongodb     Use mongo db, default False
 ```
 
 ## External dependencies
 The server build depends on the following libraries: 
-* [casacore](https://github.com/casacore/casacore) for CASA image libraries. Build and install from git repo.  casacore requires casa data (https://open-bitbucket.nrao.edu/scm/casa/casa-data.git); follow the sparse checkout instructions.
+* [casacore and casa imageanalysis](https://open-bitbucket.nrao.edu/scm/casa/carta-casacore.git) for CASA image and analysis libraries. Build and install from BitBucket repo using cmake.  casacore requires casa data (https://open-bitbucket.nrao.edu/scm/casa/casa-data.git); follow the sparse checkout instructions.
 * [zfp](https://github.com/LLNL/zfp) for data compression. The same library is used on the client, after being compiled to WebAssembly. Build and install from git repo. For best performance, build with AVX extensions.
 * [Zstd](https://github.com/facebook/zstd) for data compression. Debian package `libzstd-dev`.
 * [fmt](https://github.com/fmtlib/fmt) for python-style (and safe printf-style) string formatting and printing. Debian package `libfmt3-dev`. 
-* [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu) 
+* [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu). The Debian package `protobuf-compiler` may also be required.
 * [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support. Debian packages `libhdf5-dev` and `libhdf5-cpp-100`. By default, the serial version of the HDF5 library is targeted.
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.([Recommended: v0.14.8](https://github.com/uNetworking/uWebSockets/releases/tag/v0.14.8))
 * [tbb](https://www.threadingbuildingblocks.org/download) Threading Building Blocks for task parallelization. Debian package `libtbb-dev`.

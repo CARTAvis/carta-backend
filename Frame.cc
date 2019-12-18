@@ -18,14 +18,12 @@
 
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, const std::string& filename, const std::string& hdu, const CARTA::FileInfoExtended* info, bool verbose,
-    int default_channel)
+Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel)
     : _session_id(session_id),
       _valid(true),
       _z_profile_count(0),
       _cursor_set(false),
-      _filename(filename),
-      _loader(FileLoader::GetLoader(filename)),
+      _loader(loader),
       _spectral_axis(-1),
       _stokes_axis(-1),
       _channel_index(-1),
@@ -33,10 +31,8 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
       _num_channels(1),
       _num_stokes(1),
       _verbose(verbose) {
-    casacore::Path ccpath(filename);
-    casacore::String filename_only = ccpath.baseName();
-    if (_loader == nullptr) {
-        _open_image_error = fmt::format("Problem loading file {}: loader not implemented", filename_only);
+    if (!_loader) {
+        _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
@@ -47,9 +43,9 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
     _loader->SetFramePtr(this);
 
     try {
-        _loader->OpenFile(hdu, info);
+        _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
-        _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, err.getMesg());
+        _open_image_error = fmt::format("Problem opening image: {}", err.getMesg());
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
@@ -59,8 +55,8 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
 
     // Get shape and axis values from the loader
     std::string log_message;
-    if (!_loader->FindShape(info, _image_shape, _spectral_axis, _stokes_axis, log_message)) {
-        _open_image_error = fmt::format("Problem loading file {}: {}", filename_only, log_message);
+    if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
+        _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
@@ -81,11 +77,11 @@ Frame::Frame(uint32_t session_id, const std::string& filename, const std::string
     SetImageCache();
 
     try {
-        // resize stats vectors and load data from image, if the format supports it
+        // Resize stats vectors and load data from image, if the format supports it.
         // A failure here shouldn't invalidate the frame
         _loader->LoadImageStats();
     } catch (casacore::AipsError& err) {
-        _open_image_error = fmt::format("Problem loading statistics from file {}: {}", filename_only, err.getMesg());
+        _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
@@ -172,23 +168,28 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
             region->SetAllProfilesUnsent(); // force new profiles for new region settings
         }
     } else { // map new Region to region id
-        const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-        auto region = std::unique_ptr<carta::Region>(
-            new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
-        if (region->IsValid()) {
-            _regions[region_id] = move(region);
-            region_set = true;
+        casacore::CoordinateSystem coord_sys;
+        if (!_loader->GetCoordinateSystem(coord_sys)) {
+            region_set = false;
+            message = "Image has no coordinate system, cannot create region.";
+        } else {
+            auto region = std::unique_ptr<carta::Region>(
+                new carta::Region(name, type, points, rotation, _image_shape, _spectral_axis, _stokes_axis, coord_sys));
+            if (region->IsValid()) {
+                _regions[region_id] = move(region);
+                region_set = true;
+            }
+        }
+
+        if (region_set) {
+            if (name == "cursor" && type == CARTA::RegionType::POINT) {
+                // update current cursor's x-y coordinate
+                SetCursorXy(points[0].x(), points[0].y());
+            }
+        } else {
+            message = fmt::format("Region parameters failed to validate for region id {}", region_id);
         }
     }
-
-    if (region_set) {
-        if (name == "cursor" && type == CARTA::RegionType::POINT) { // update current cursor's x-y coordinate
-            SetCursorXy(points[0].x(), points[0].y());
-        }
-    } else {
-        message = fmt::format("Region parameters failed to validate for region id {}", region_id);
-    }
-
     return region_set;
 }
 
@@ -263,7 +264,14 @@ void Frame::ImportRegion(
     // Import region from file or contents
 
     // cannot create annotation regions with no direction coordinate
-    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
+    casacore::CoordinateSystem coord_sys;
+    if (!_loader->GetCoordinateSystem(coord_sys)) {
+        import_ack.set_success(false);
+        import_ack.set_message("Import region failed: image has no coordinate system.");
+        import_ack.add_regions();
+        return;
+    }
+
     if (!coord_sys.hasDirectionCoordinate()) {
         import_ack.set_success(false);
         import_ack.set_message("Import region failed: image coordinate system has no direction coordinate.");
@@ -479,23 +487,27 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
         }
     }
 
-    if (coord_type == CARTA::CoordinateType::WORLD) {
-        const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
-        if (!coord_sys.hasDirectionCoordinate()) {
-            export_ack.set_success(false);
-            export_ack.set_message("Export region failed: image coordinate system has no direction coordinate.");
-            export_ack.add_contents();
-            return;
-        }
+    casacore::CoordinateSystem coord_sys;
+    if (!_loader->GetCoordinateSystem(coord_sys)) {
+        export_ack.set_success(false);
+        export_ack.set_message("Export region failed: image has no coordinate system.");
+        export_ack.add_contents();
+        return;
+    }
+    if (!coord_sys.hasDirectionCoordinate()) {
+        export_ack.set_success(false);
+        export_ack.set_message("Export region failed: image coordinate system has no direction coordinate.");
+        export_ack.add_contents();
+        return;
     }
 
     // export according to type
     switch (file_type) {
         case CARTA::FileType::CRTF:
-            ExportCrtfRegions(region_ids, coord_type, filename, export_ack);
+            ExportCrtfRegions(region_ids, coord_type, coord_sys, filename, export_ack);
             break;
         case CARTA::FileType::REG:
-            ExportDs9Regions(region_ids, coord_type, filename, export_ack);
+            ExportDs9Regions(region_ids, coord_type, coord_sys, filename, export_ack);
             break;
         default: {
             export_ack.set_success(false);
@@ -505,12 +517,11 @@ void Frame::ExportRegion(CARTA::FileType file_type, CARTA::CoordinateType coord_
     }
 }
 
-void Frame::ExportCrtfRegions(
-    std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
+void Frame::ExportCrtfRegions(std::vector<int>& region_ids, CARTA::CoordinateType coord_type, const casacore::CoordinateSystem& coord_sys,
+    std::string& crtf_filename, CARTA::ExportRegionAck& export_ack) {
     // Create RegionTextList for all requested regions and export to file or put in ack contents[]
     std::string message;
     bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
-    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
     casa::RegionTextList region_list = casa::RegionTextList(coord_sys, _image_shape);
 
     // create file line for each region
@@ -557,7 +568,7 @@ void Frame::ExportCrtfRegions(
         return;
     }
 
-    if (filename.empty()) {
+    if (crtf_filename.empty()) {
         // fill contents[] of ack message
         std::vector<std::string> contents;
         for (unsigned int i = 0; i < region_list.nLines(); ++i) {
@@ -572,7 +583,7 @@ void Frame::ExportCrtfRegions(
         *export_ack.mutable_contents() = {contents.begin(), contents.end()};
     } else {
         // export to file; empty contents[] returned
-        std::ofstream export_file(filename);
+        std::ofstream export_file(crtf_filename);
         region_list.print(export_file);
         export_file.close();
 
@@ -583,13 +594,12 @@ void Frame::ExportCrtfRegions(
     }
 }
 
-void Frame::ExportDs9Regions(
-    std::vector<int>& region_ids, CARTA::CoordinateType coord_type, std::string& filename, CARTA::ExportRegionAck& export_ack) {
+void Frame::ExportDs9Regions(std::vector<int>& region_ids, CARTA::CoordinateType coord_type, const casacore::CoordinateSystem& coord_sys,
+    std::string& ds9_filename, CARTA::ExportRegionAck& export_ack) {
     std::string message;
-    const casacore::CoordinateSystem coord_sys = _loader->LoadData(FileInfo::Data::Image)->coordinates();
     bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
-
     carta::Ds9Parser parser(coord_sys, pixel_coord);
+
     // create file line for each region
     for (int region_id : region_ids) {
         if (_regions.count(region_id)) {
@@ -621,7 +631,7 @@ void Frame::ExportDs9Regions(
         return;
     }
 
-    if (filename.empty()) {
+    if (ds9_filename.empty()) {
         // fill contents[] of ack message
         std::vector<std::string> contents;
         for (unsigned int i = 0; i < parser.NumRegions(); ++i) {
@@ -635,7 +645,7 @@ void Frame::ExportDs9Regions(
         *export_ack.mutable_contents() = {contents.begin(), contents.end()};
     } else {
         // export to file; empty contents[] returned
-        std::ofstream export_file(filename);
+        std::ofstream export_file(ds9_filename);
         parser.PrintRegionsToFile(export_file);
         export_file.close();
 
@@ -719,7 +729,7 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                     region.second->SetAllProfilesUnsent();
                 }
             } else {
-                message = fmt::format("Channel {} or Stokes {} is invalid in file {}", new_channel, new_stokes, _filename);
+                message = fmt::format("Channel {} or Stokes {} is invalid in image", new_channel, new_stokes);
             }
         }
     }
@@ -734,7 +744,7 @@ void Frame::SetImageCache() {
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
+    _loader->GetSlice(tmp, section);
 }
 
 void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes) {
@@ -744,7 +754,7 @@ void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, si
     casacore::Array<float> tmp(section.length(), chan_matrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
+    _loader->GetSlice(tmp, section);
 }
 
 casacore::Slicer Frame::GetChannelMatrixSlicer(size_t channel, size_t stokes) {
@@ -809,8 +819,11 @@ bool Frame::GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_imag
             casacore::ImageRegion image_region;
             if (region->GetRegion(image_region, stokes, channel_range)) {
                 try {
-                    sub_image = casacore::SubImage<float>(*_loader->LoadData(FileInfo::Data::Image), image_region);
-                    sub_image_ok = true;
+                    casacore::ImageInterface<float>* image = _loader->GetImage();
+                    if (image) {
+                        sub_image = casacore::SubImage<float>(*image, image_region);
+                        sub_image_ok = true;
+                    }
                 } catch (casacore::AipsError& err) {
                     Log(_session_id, "Region creation for {} failed: {}", region->Name(), err.getMesg());
                 }
@@ -948,7 +961,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     if (!_valid || _image_cache.empty()) {
         return false;
     }
-    
+
     const int x = bounds.x_min();
     const int y = bounds.y_min();
     const int req_height = bounds.y_max() - y;
@@ -971,7 +984,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = _image_shape(0);
-    
+
     // read lock imageCache
     bool write_lock(false);
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
@@ -1141,20 +1154,20 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                 int num_bins = (config_num_bins == AUTO_BIN_SIZE ? CalcAutoNumBins(region_id) : config_num_bins);
                 if (!GetRegionHistogram(region_id, config_channel, curr_stokes, num_bins, *new_histogram)) {
                     // Calculate histogram
-                    float min_val(0.0), max_val(0.0);
+                    BasicStats<float> stats;
                     if (region_id == IMAGE_REGION_ID) {
                         if (config_channel == _channel_index) { // use imageCache
-                            if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
-                                CalcRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val);
+                            if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
+                                CalcRegionBasicStats(region_id, config_channel, curr_stokes, stats);
                             }
-                            CalcRegionHistogram(region_id, config_channel, curr_stokes, num_bins, min_val, max_val, *new_histogram);
+                            CalcRegionHistogram(region_id, config_channel, curr_stokes, num_bins, stats, *new_histogram);
                         } else { // use matrix slicer on image
                             std::vector<float> data;
                             GetChannelMatrix(data, config_channel, curr_stokes); // slice image once
-                            if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
-                                region->CalcMinMax(config_channel, curr_stokes, data, min_val, max_val);
+                            if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
+                                region->CalcBasicStats(config_channel, curr_stokes, data, stats);
                             }
-                            region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, data, *new_histogram);
+                            region->CalcHistogram(config_channel, curr_stokes, num_bins, stats, data, *new_histogram);
                         }
                     } else {
                         casacore::SubImage<float> sub_image;
@@ -1167,10 +1180,10 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                             bool has_region_data = region->GetData(region_data, sub_image); // get subimage data once
                             ulock2.unlock();
                             if (has_region_data) {
-                                if (!GetRegionMinMax(region_id, config_channel, curr_stokes, min_val, max_val)) {
-                                    region->CalcMinMax(config_channel, curr_stokes, region_data, min_val, max_val);
+                                if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
+                                    region->CalcBasicStats(config_channel, curr_stokes, region_data, stats);
                                 }
-                                region->CalcHistogram(config_channel, curr_stokes, num_bins, min_val, max_val, region_data, *new_histogram);
+                                region->CalcHistogram(config_channel, curr_stokes, num_bins, stats, region_data, *new_histogram);
                             }
                         }
                     }
@@ -1283,7 +1296,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                         profile.resize(end);
                         casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
                         std::lock_guard<std::mutex> guard(_image_mutex);
-                        _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
+                        _loader->GetSlice(tmp, section);
                     }
                     // SpatialProfile
                     auto new_profile = profile_data.add_profiles();
@@ -1501,32 +1514,32 @@ int Frame::CalcAutoNumBins(int region_id) {
     return auto_num_bins;
 }
 
-bool Frame::GetRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val) {
+bool Frame::GetRegionBasicStats(int region_id, int channel, int stokes, BasicStats<float>& stats) {
     // Return stored min and max value; false if not stored
-    bool have_min_max(false);
+    bool have_stats(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
-        have_min_max = region->GetMinMax(channel, stokes, min_val, max_val);
+        have_stats = region->GetBasicStats(channel, stokes, stats);
     }
-    return have_min_max;
+    return have_stats;
 }
 
-bool Frame::CalcRegionMinMax(int region_id, int channel, int stokes, float& min_val, float& max_val) {
+bool Frame::CalcRegionBasicStats(int region_id, int channel, int stokes, BasicStats<float>& stats) {
     // Calculate min/max for region data; primarily for cube histogram
-    bool min_max_ok(false);
+    bool stats_ok(false);
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
         if (region_id == IMAGE_REGION_ID) {
             if (channel == _channel_index) { // use channel cache
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                region->CalcMinMax(channel, stokes, _image_cache, min_val, max_val);
+                region->CalcBasicStats(channel, stokes, _image_cache, stats);
             } else {
                 std::vector<float> data;
                 GetChannelMatrix(data, channel, stokes);
-                region->CalcMinMax(channel, stokes, data, min_val, max_val);
+                region->CalcBasicStats(channel, stokes, data, stats);
             }
-            min_max_ok = true;
+            stats_ok = true;
         } else {
             casacore::SubImage<float> sub_image;
             std::unique_lock<std::mutex> ulock(_image_mutex);
@@ -1539,13 +1552,13 @@ bool Frame::CalcRegionMinMax(int region_id, int channel, int stokes, float& min_
                 has_data = region->GetData(region_data, sub_image);
                 ulock2.unlock();
                 if (has_data) {
-                    region->CalcMinMax(channel, stokes, region_data, min_val, max_val);
+                    region->CalcBasicStats(channel, stokes, region_data, stats);
                 }
             }
-            min_max_ok = has_data;
+            stats_ok = has_data;
         }
     }
-    return min_max_ok;
+    return stats_ok;
 }
 
 bool Frame::GetImageHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram) {
@@ -1560,11 +1573,15 @@ bool Frame::GetImageHistogram(int channel, int stokes, int num_bins, CARTA::Hist
         if ((num_bins == AUTO_BIN_SIZE) || (num_bins == image_num_bins)) {
             double min_val(current_stats.basic_stats[CARTA::StatsType::Min]);
             double max_val(current_stats.basic_stats[CARTA::StatsType::Max]);
+            double mean(current_stats.basic_stats[CARTA::StatsType::Mean]);
+            double std_dev(current_stats.basic_stats[CARTA::StatsType::Sigma]);
 
             histogram.set_num_bins(image_num_bins);
             histogram.set_bin_width((max_val - min_val) / image_num_bins);
             histogram.set_first_bin_center(min_val + (histogram.bin_width() / 2.0));
             *histogram.mutable_bins() = {current_stats.histogram_bins.begin(), current_stats.histogram_bins.end()};
+            histogram.set_mean(mean);
+            histogram.set_std_dev(std_dev);
             have_histogram = true;
         }
     }
@@ -1584,7 +1601,7 @@ bool Frame::GetRegionHistogram(int region_id, int channel, int stokes, int num_b
 }
 
 bool Frame::CalcRegionHistogram(
-    int region_id, int channel, int stokes, int num_bins, float min_val, float max_val, CARTA::Histogram& histogram) {
+    int region_id, int channel, int stokes, int num_bins, const BasicStats<float>& stats, CARTA::Histogram& histogram) {
     // Return calculated histogram in histogram parameter; primarily for cube histogram
     bool histogram_ok(false);
     if (_regions.count(region_id)) {
@@ -1594,11 +1611,11 @@ bool Frame::CalcRegionHistogram(
             if (channel == _channel_index) { // use channel cache
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, _image_cache, histogram);
+                region->CalcHistogram(channel, stokes, num_bins, stats, _image_cache, histogram);
             } else {
                 std::vector<float> data;
                 GetChannelMatrix(data, channel, stokes);
-                region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, data, histogram);
+                region->CalcHistogram(channel, stokes, num_bins, stats, data, histogram);
             }
             histogram_ok = true;
         } else {
@@ -1613,7 +1630,7 @@ bool Frame::CalcRegionHistogram(
                 has_data = region->GetData(region_data, sub_image);
                 ulock2.unlock();
                 if (has_data) {
-                    region->CalcHistogram(channel, stokes, num_bins, min_val, max_val, region_data, histogram);
+                    region->CalcHistogram(channel, stokes, num_bins, stats, region_data, histogram);
                 }
             }
             histogram_ok = has_data;
@@ -1623,7 +1640,7 @@ bool Frame::CalcRegionHistogram(
 }
 
 // store cube histogram calculations
-void Frame::SetRegionMinMax(int region_id, int channel, int stokes, float min_val, float max_val) {
+void Frame::SetRegionBasicStats(int region_id, int channel, int stokes, const BasicStats<float>& stats) {
     // Store cube min/max calculated in Session
     if (!_regions.count(region_id) && (region_id == CUBE_REGION_ID)) {
         SetImageRegion(CUBE_REGION_ID);
@@ -1631,7 +1648,7 @@ void Frame::SetRegionMinMax(int region_id, int channel, int stokes, float min_va
 
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
-        region->SetMinMax(channel, stokes, min_val, max_val);
+        region->SetBasicStats(channel, stokes, stats);
     }
 }
 

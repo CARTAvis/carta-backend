@@ -84,7 +84,10 @@ set(SOURCE_FILES
         ImageData/FileLoader.cc
 	ImageData/Hdf5Loader.cc
         ImageData/CartaHdf5Image.cc
-        FileInfoLoader.cc
+        FileList/FileExtInfoLoader.cc
+        FileList/FileInfoLoader.cc
+        FileList/FileListHandler.cc
+		FileList/FitsHduList.cc
         Region/Region.cc
         Region/RegionStats.cc
         Region/RegionProfiler.cc
@@ -92,7 +95,6 @@ set(SOURCE_FILES
         OnMessageTask.cc
         FileSettings.cc
         Util.cc
-        FileListHandler.cc
         Tile.cc
         Ds9Parser.cc
         Contouring.cc

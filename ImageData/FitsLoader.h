@@ -10,13 +10,11 @@ namespace carta {
 class FitsLoader : public FileLoader {
 public:
     FitsLoader(const std::string& file);
-    void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) override;
-    bool HasData(FileInfo::Data ds) const override;
-    ImageRef LoadData(FileInfo::Data ds) override;
-    bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
 
-protected:
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
+    void OpenFile(const std::string& hdu) override;
+
+    bool HasData(FileInfo::Data ds) const override;
+    ImageRef GetImage() override;
 
 private:
     std::string _filename;
@@ -26,11 +24,13 @@ private:
 
 FitsLoader::FitsLoader(const std::string& filename) : _filename(filename) {}
 
-void FitsLoader::OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* /*info*/) {
+void FitsLoader::OpenFile(const std::string& hdu) {
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));
-    _image = std::unique_ptr<casacore::FITSImage>(new casacore::FITSImage(_filename, 0, hdu_num));
-    _hdu = hdu_num;
-    _num_dims = _image->shape().size();
+    if (!_image || (hdu_num != _hdu)) {
+        _image.reset(new casacore::FITSImage(_filename, 0, hdu_num));
+        _hdu = hdu_num;
+        _num_dims = _image->shape().size();
+    }
 }
 
 bool FitsLoader::HasData(FileInfo::Data dl) const {
@@ -51,28 +51,8 @@ bool FitsLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename FitsLoader::ImageRef FitsLoader::LoadData(FileInfo::Data ds) {
-    if (ds != FileInfo::Data::Image) {
-        return nullptr;
-    }
+typename FitsLoader::ImageRef FitsLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
-}
-
-bool FitsLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        return _image->getMaskSlice(mask, slicer);
-    }
-}
-
-bool FitsLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        coord_sys = _image->coordinates();
-        return true;
-    }
 }
 
 } // namespace carta

@@ -16,9 +16,12 @@ namespace carta {
 class Hdf5Loader : public FileLoader {
 public:
     Hdf5Loader(const std::string& filename);
-    void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) override;
+
+    void OpenFile(const std::string& hdu) override;
+
     bool HasData(FileInfo::Data ds) const override;
     ImageRef GetImage() override;
+
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
     bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) override;
