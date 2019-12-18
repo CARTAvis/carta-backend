@@ -11,6 +11,7 @@
 #include <carta-protobuf/defs.pb.h>                // Histogram, StatisticsValue
 #include <carta-protobuf/region_requirements.pb.h> // HistogramConfig
 #include <carta-protobuf/region_stats.pb.h>        // RegionStatsData
+#include "BasicStatsCalculator.h"
 
 namespace carta {
 
@@ -23,15 +24,14 @@ public:
     bool SetHistogramRequirements(const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_reqs);
     size_t NumHistogramConfigs();
     CARTA::SetHistogramRequirements_HistogramConfig GetHistogramConfig(int histogram_index);
-    // min max
-    using minmax_t = std::pair<float, float>; // <min, max>
-    bool GetMinMax(int channel, int stokes, float& min_val, float& max_val);
-    void SetMinMax(int channel, int stokes, minmax_t minmax_vals);
-    void CalcMinMax(int channel, int stokes, const std::vector<float>& data, float& min_val, float& max_val);
+    // basic stats
+    bool GetBasicStats(int channel, int stokes, BasicStats<float>& stats);
+    void SetBasicStats(int channel, int stokes, const BasicStats<float>& stats);
+    void CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats);
     // CARTA::Histogram
     bool GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram);
     void SetHistogram(int channel, int stokes, CARTA::Histogram& histogram);
-    void CalcHistogram(int channel, int stokes, int num_bins, float min_val, float max_val, const std::vector<float>& data,
+    void CalcHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data,
         CARTA::Histogram& histogram_msg);
 
     // Stats
@@ -55,8 +55,8 @@ private:
     std::vector<int> _stats_reqs; // CARTA::StatsType requirements for this region
 
     // Cache calculations
-    // MinMax: first key is stokes, second is channel number (-2 all channels for cube)
-    std::unordered_map<int, std::unordered_map<int, minmax_t>> _minmax;
+    // BasicStats: first key is stokes, second is channel number (-2 all channels for cube)
+    std::unordered_map<int, std::unordered_map<int, BasicStats<float>>> _basic_stats;
     // Histogram: first key is stokes, second is channel number (-2 all channels for cube)
     std::unordered_map<int, std::unordered_map<int, CARTA::Histogram>> _histograms;
     // Region stats: first key is stokes, second is channel number

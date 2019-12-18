@@ -10,13 +10,11 @@ namespace carta {
 class CasaLoader : public FileLoader {
 public:
     CasaLoader(const std::string& filename);
-    void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) override;
-    bool HasData(FileInfo::Data ds) const override;
-    ImageRef LoadData(FileInfo::Data ds) override;
-    bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
 
-protected:
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
+    void OpenFile(const std::string& hdu) override;
+
+    bool HasData(FileInfo::Data ds) const override;
+    ImageRef GetImage() override;
 
 private:
     std::string _filename;
@@ -25,9 +23,11 @@ private:
 
 CasaLoader::CasaLoader(const std::string& filename) : _filename(filename) {}
 
-void CasaLoader::OpenFile(const std::string& /*hdu*/, const CARTA::FileInfoExtended* /*info*/) {
-    _image = std::unique_ptr<casacore::PagedImage<float>>(new casacore::PagedImage<float>(_filename));
-    _num_dims = _image->shape().size();
+void CasaLoader::OpenFile(const std::string& /*hdu*/) {
+    if (!_image) {
+        _image.reset(new casacore::PagedImage<float>(_filename));
+        _num_dims = _image->shape().size();
+    }
 }
 
 bool CasaLoader::HasData(FileInfo::Data dl) const {
@@ -48,28 +48,8 @@ bool CasaLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename CasaLoader::ImageRef CasaLoader::LoadData(FileInfo::Data ds) {
-    if (ds != FileInfo::Data::Image) {
-        return nullptr;
-    }
+typename CasaLoader::ImageRef CasaLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
-}
-
-bool CasaLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        return _image->getMaskSlice(mask, slicer);
-    }
-}
-
-bool CasaLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        coord_sys = _image->coordinates();
-        return true;
-    }
 }
 
 } // namespace carta

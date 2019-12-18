@@ -70,7 +70,7 @@ set(LINK_LIBS
         casa_measures
         casa_mirlib
         casa_scimath
-        imageanalysis
+        casa_imageanalysis
         ${HDF5_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
@@ -83,7 +83,10 @@ set(SOURCE_FILES
         ImageData/Hdf5Attributes.cc
         ImageData/FileLoader.cc
         ImageData/CartaHdf5Image.cc
-        FileInfoLoader.cc
+        FileList/FileExtInfoLoader.cc
+        FileList/FileInfoLoader.cc
+        FileList/FileListHandler.cc
+		FileList/FitsHduList.cc
         Region/Region.cc
         Region/RegionStats.cc
         Region/RegionProfiler.cc
@@ -91,7 +94,6 @@ set(SOURCE_FILES
         OnMessageTask.cc
         FileSettings.cc
         Util.cc
-        FileListHandler.cc
         Tile.cc
         Ds9Parser.cc
         Contouring.cc

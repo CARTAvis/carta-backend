@@ -26,6 +26,7 @@
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
+#include <carta-protobuf/resume_session.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
@@ -37,7 +38,7 @@
 
 #include "AnimationObject.h"
 #include "EventHeader.h"
-#include "FileListHandler.h"
+#include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
 #include "Util.h"
@@ -52,13 +53,13 @@ public:
     void OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t icd_version, uint32_t request_id);
     void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
-    void OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id);
+    bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnSetImageView(const CARTA::SetImageView& message);
     void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
-    void OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id);
+    bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);
     void OnRemoveRegion(const CARTA::RemoveRegion& message);
     void OnImportRegion(const CARTA::ImportRegion& message, uint32_t request_id);
     void OnExportRegion(const CARTA::ExportRegion& message, uint32_t request_id);
@@ -69,8 +70,12 @@ public:
     void OnSetContourParameters(const CARTA::SetContourParameters& message);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
-    void OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id);
-    void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
+
+    //    void OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id);
+    //    void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
+
+    void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
+
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
@@ -137,6 +142,7 @@ public:
         return --_ref_count;
     }
     void DisconnectCalled();
+    void ConnectCalled();
     static int NumberOfSessions() {
         return _num_sessions;
     }
@@ -207,8 +213,9 @@ private:
     FileListHandler* _file_list_handler;
 
     // File info for browser, open file
-    CARTA::FileInfo* _selected_file_info;
-    CARTA::FileInfoExtended* _selected_file_info_extended;
+    std::unique_ptr<CARTA::FileInfo> _file_info;
+    std::unique_ptr<CARTA::FileInfoExtended> _file_info_extended;
+    std::unique_ptr<carta::FileLoader> _loader;
 
     // Frame
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file

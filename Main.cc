@@ -23,7 +23,7 @@
 #include <casacore/casa/OS/HostInfo.h>
 
 #include "EventHeader.h"
-#include "FileListHandler.h"
+#include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "OnMessageTask.h"
 #include "Session.h"
@@ -70,14 +70,12 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
 
     uS::Async* outgoing = new uS::Async(websocket_hub.getLoop());
 
-    Session* session;
-
     outgoing->start([](uS::Async* async) -> void {
         Session* current_session = ((Session*)async->getData());
         current_session->SendPendingMessages();
     });
 
-    session = new Session(ws, session_number, root_folder, outgoing, file_list_handler, verbose);
+    Session* session = new Session(ws, session_number, root_folder, outgoing, file_list_handler, verbose);
 
     ws->setUserData(session);
     session->IncreaseRefCount();
@@ -109,6 +107,19 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
     }
 }
 
+void OnError(void* user) {
+    switch ((long)user) {
+        case 3:
+            cerr << "Client emitted error on connection timeout (non-SSL)" << endl;
+            break;
+        case 5:
+            cerr << "Client emitted error on connection timeout (SSL)" << endl;
+            break;
+        default:
+            cerr << "FAILURE: " << user << " should not emit error!" << endl;
+    }
+}
+
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length, uWS::OpCode op_code) {
     Session* session = (Session*)ws->getUserData();
@@ -132,6 +143,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         session->OnRegisterViewer(message, head.icd_version, head.request_id);
                     } else {
                         fmt::print("Bad REGISTER_VIEWER message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::RESUME_SESSION: {
+                    CARTA::ResumeSession message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnResumeSession(message, head.request_id);
+                    } else {
+                        fmt::print("Bad RESUME_SESSION message!\n");
                     }
                     break;
                 }
@@ -187,8 +207,6 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::CLOSE_FILE: {
                     CARTA::CloseFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->CheckCancelAnimationOnFileClose(message.file_id());
-                        session->_file_settings.ClearSettings(message.file_id());
                         session->OnCloseFile(message);
                     } else {
                         fmt::print("Bad CLOSE_FILE message!\n");
@@ -409,18 +427,15 @@ int main(int argc, const char* argv[]) {
                 exit(1);
 #endif
             }
-            bool has_exit_after_arg = inp.getString("exit_after").size();
-            if (has_exit_after_arg) {
+            if (!inp.getString("exit_after").empty()) {
                 int wait_time = inp.getInt("exit_after");
                 Session::SetExitTimeout(wait_time);
             }
-            bool has_init_exit_after_arg = inp.getString("init_exit_after").size();
-            if (has_init_exit_after_arg) {
+            if (!inp.getString("init_exit_after").empty()) {
                 int init_wait_time = inp.getInt("init_exit_after");
                 Session::SetInitExitTimeout(init_wait_time);
             }
-            bool should_read_json_file = inp.getString("read_json_file").size();
-            if (should_read_json_file) {
+            if (!inp.getString("read_json_file").empty()) {
                 json_fname = inp.getString("read_json_file");
                 ReadJsonFile(json_fname);
             }
@@ -445,6 +460,7 @@ int main(int argc, const char* argv[]) {
         websocket_hub.onMessage(&OnMessage);
         websocket_hub.onConnection(&OnConnect);
         websocket_hub.onDisconnection(&OnDisconnect);
+        websocket_hub.onError(&OnError);
         if (websocket_hub.listen(port)) {
             fmt::print("Listening on port {} with root folder {}, base folder {}, and {} threads in thread pool\n", port, root_folder,
                 base_folder, thread_count);
