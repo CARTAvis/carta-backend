@@ -6,6 +6,8 @@
 #include <limits>
 #include <memory>
 #include <thread>
+#include <vector>
+#include <tuple>
 
 #include <tbb/parallel_for.h>
 #include <tbb/task_group.h>
@@ -26,6 +28,7 @@
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
 #include "Util.h"
+#include "DBConnect.h"
 
 #define DEBUG(_DB_TEXT_) \
     {}
@@ -213,8 +216,17 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 #ifdef _AUTH_SERVER_
     feature_flags |= CARTA::ServerFeatureFlags::USER_LAYOUTS;
     feature_flags |= CARTA::ServerFeatureFlags::USER_PREFERENCES;
-    // TODO: implement get layout/preference from DB
+
+    std::vector< std::tuple<std::string, std::string> > layouts;
+    std::vector< std::tuple<std::string, std::string> > profiles;
+    if( GetLayoutsAndProfilesFromDB(&layouts, &profiles) ) {
+      // Need to pack the layouts and profiles into messages to send
+      // to client.
+      
+    }
+    
 #endif
+    std::cout << "Setup Save Pref Flags SHOULD HAVE BEEN CALLED\n" << std::endl;
     ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 }
@@ -695,14 +707,34 @@ void Session::OnSetUserPreferences(const CARTA::SetUserPreferences& request, uin
     CARTA::SetUserPreferencesAck ack_message;
     ack_message.set_success(false);
     // ack_message.set_message("Not implemented");
+
+    //    std::map<std::string,std::string> entry;
+    //    std::map<std::string,std::string>::iterator itr;
+
+    //    while( itr != request.preference_map() ) {
+    //    for ( auto & pair : request.preference_map() ) {
+    //      std::cerr << pair.first << " " << pair.second << std::endl;
+    //    }
+    SaveUserPreferencesToDB( request );
+    
+    std::cerr << "\n\n\n OnSetUserPreferences \n\n\n" << std::endl;
     SendEvent(CARTA::EventType::SET_USER_PREFERENCES_ACK, request_id, ack_message);
 }
 
 void Session::OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id) {
-    // TODO: Implement this
     CARTA::SetUserLayoutAck ack_message;
-    ack_message.set_success(false);
+
     // ack_message.set_message("Not implemented");
+
+    std::cerr << "OnSetUserLayout" << std::endl;
+    std::cerr << request.value() << std:: endl;
+    
+    if( SaveLayoutToDB( request.name(), request.value() ) ) {
+      ack_message.set_success(true);      
+    } else {
+      ack_message.set_success(false);
+    }
+    
     SendEvent(CARTA::EventType::SET_USER_LAYOUT_ACK, request_id, ack_message);
 }
 
