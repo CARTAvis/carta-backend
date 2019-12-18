@@ -180,15 +180,15 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
                 region_set = true;
             }
         }
+    }
 
-        if (region_set) {
-            if (name == "cursor" && type == CARTA::RegionType::POINT) {
-                // update current cursor's x-y coordinate
-                SetCursorXy(points[0].x(), points[0].y());
-            }
-        } else {
-            message = fmt::format("Region parameters failed to validate for region id {}", region_id);
+    if (region_set) {
+        if (name == "cursor" && type == CARTA::RegionType::POINT) {
+            // update current cursor's x-y coordinate
+            SetCursorXy(points[0].x(), points[0].y());
         }
+    } else {
+        message = fmt::format("Region parameters failed to validate for region id {}", region_id);
     }
     return region_set;
 }
