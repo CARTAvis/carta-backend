@@ -238,7 +238,7 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     char* str;
     char user[50];
 
-    std::cerr << " **** SaveUserPreferencesToDB  ****\n" << std::endl;
+    std::cerr << "\n **** SaveUserPreferencesToDB  ****\n" << std::endl;
 
     mongoc_init();
 
@@ -273,19 +273,18 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     cuserid(user);
 
     for (auto& pair : request.preference_map()) {
-        std::cerr << pair.first << " " << pair.second << std::endl;
+      std::cerr << "MAP ENTRY " << pair.first << " " << pair.second << std::endl;
         if (pair.second.empty()) {
             // Remove this pair from the DB;
-            /*
+            bson_t* doc;
             doc = bson_new();
-            //	BSON_APPEND_OID (doc, "_id", &oid);
-            //     BSON_APPEND_UTF8 (doc,  pair.first, "");;
-
-            if (!mongoc_collection_delete_one (collection, prefs, doc, NULL, NULL, &error)) {
-              fprintf (stderr, "Delete failed: %s\n", error.message);
+            //	  BSON_APPEND_OID (doc, "_id", &oid);
+            BSON_APPEND_UTF8(doc, pair.first.c_str(), pair.second.c_str());
+            const bson_t* doc1 = (const bson_t*)doc;
+            if (!mongoc_collection_delete_one(collection, doc1, NULL, NULL, &error)) {
+                fprintf(stderr, "Delete failed: %s\n", error.message);
             }
-            bson_destroy (doc);
-            */
+            bson_destroy(doc);
         } else {
             // Add this pair to the DB.
             insert = bson_new();
