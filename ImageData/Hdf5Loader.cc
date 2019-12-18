@@ -48,58 +48,13 @@ bool Hdf5Loader::HasData(FileInfo::Data ds) const {
 }
 
 // TODO: when we fix the typing issue, this should probably return any dataset again, for consistency.
-typename Hdf5Loader::ImageRef Hdf5Loader::LoadData(FileInfo::Data ds) {
-    // returns an ImageInterface*
-    switch (ds) {
-        case FileInfo::Data::Image:
-            return _image.get();
-        case FileInfo::Data::XY:
-            if (_num_dims == 2) {
-                return _image.get();
-            }
-        case FileInfo::Data::XYZ:
-            if (_num_dims == 3) {
-                return _image.get();
-            }
-        case FileInfo::Data::XYZW:
-            if (_num_dims == 4) {
-                return _image.get();
-            }
-        default:
-            break;
-    }
-    throw casacore::HDF5Error("Unable to load dataset " + DataSetToString(ds) + ".");
-}
+typename Hdf5Loader::ImageRef Hdf5Loader::GetImage() {
+    // returns opened image as ImageInterface*
+    return _image.get();
 
-casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData(FileInfo::Data ds) {
+casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData() {
     // swizzled data returns a Lattice
-    switch (ds) {
-        case FileInfo::Data::SWIZZLED:
-            if (_swizzled_image) {
-                return _swizzled_image.get();
-            }
-        case FileInfo::Data::ZYX:
-            if (_num_dims == 3 && _swizzled_image) {
-                return _swizzled_image.get();
-            }
-        case FileInfo::Data::ZYXW:
-            if (_num_dims == 4 && _swizzled_image) {
-                return _swizzled_image.get();
-            }
-        default:
-            break;
-    }
-
-    throw casacore::HDF5Error("Unable to load swizzled dataset " + DataSetToString(ds) + ".");
-}
-
-bool Hdf5Loader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        return _image->getMaskSlice(mask, slicer);
-    }
-}
+    return _swizzled_image.get();
 
 std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
     static std::unordered_map<FileInfo::Data, std::string, EnumClassHash> um = {
@@ -152,15 +107,6 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
 
 std::string Hdf5Loader::MipToString(int mip) const {
     return "MipMaps/DATA/DATA_XY_" + std::to_string(mip);
-}
-
-bool Hdf5Loader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        coord_sys = _image->coordinates();
-        return true;
-    }
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
@@ -227,7 +173,7 @@ bool Hdf5Loader::GetCursorSpectralData(
         casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
         std::lock_guard<std::mutex> lguard(image_mutex);
         try {
-            LoadSwizzledData(FileInfo::Data::SWIZZLED)->doGetSlice(tmp, slicer);
+            LoadSwizzledData()->doGetSlice(tmp, slicer);
             data_ok = true;
         } catch (casacore::AipsError& err) {
             std::cerr << "Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: " << err.getMesg() << std::endl;

@@ -18,8 +18,7 @@ public:
     Hdf5Loader(const std::string& filename);
     void OpenFile(const std::string& hdu, const CARTA::FileInfoExtended* info) override;
     bool HasData(FileInfo::Data ds) const override;
-    ImageRef LoadData(FileInfo::Data ds) override;
-    bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
+    ImageRef GetImage() override;
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
     bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) override;
@@ -28,9 +27,6 @@ public:
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     bool GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override;
     void SetFramePtr(Frame* frame) override;
-
-protected:
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
 
 private:
     std::string _filename;
@@ -52,7 +48,7 @@ private:
     const IPos GetStatsDataShape(FileInfo::Data ds) override;
     casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
 
-    casacore::Lattice<float>* LoadSwizzledData(FileInfo::Data ds);
+    casacore::Lattice<float>* LoadSwizzledData();
 };
 
 } // namespace carta

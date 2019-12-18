@@ -157,7 +157,6 @@ public:
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
 
-    virtual bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) = 0;
     virtual bool GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
     virtual void SetFramePtr(Frame* frame);
 
