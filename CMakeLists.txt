@@ -98,7 +98,8 @@ set(SOURCE_FILES
         Tile.cc
         Ds9Parser.cc
         Contouring.cc
-        Smoothing.cc)
+        Smoothing.cc
+        TileCache.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
