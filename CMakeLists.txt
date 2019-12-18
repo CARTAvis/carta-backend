@@ -61,6 +61,7 @@ set(LINK_LIBS
         zfp
         zstd
         tbb
+	json-c
         casa_casa
         casa_coordinates
         casa_tables
