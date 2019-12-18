@@ -31,8 +31,8 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/tiles.pb.h>
-#include <carta-protobuf/user_preferences.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
+#include <carta-protobuf/user_preferences.pb.h>
 
 #include <tbb/task.h>
 
@@ -71,11 +71,10 @@ public:
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
 
-    //    void OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id);
-    //    void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
+    void OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id);
+    void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
 
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
-
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
@@ -245,13 +244,12 @@ private:
 
     // Name of server version users.
     //    string username;
-    
+
     int _ref_count;
     bool _connected;
     static int _num_sessions;
     static int _exit_after_num_seconds;
     static bool _exit_when_all_sessions_closed;
-    
 };
 
 #endif // CARTA_BACKEND__SESSION_H_
