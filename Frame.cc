@@ -1093,9 +1093,8 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
 }
 
 bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height) {
-    int tile_size = 256;
-    int mip = Tile::LayerToMip(tile.layer, _image_shape(0), _image_shape(1), tile_size, tile_size);
-    int tile_size_original = tile_size * mip;
+    int mip = Tile::LayerToMip(tile.layer, _image_shape(0), _image_shape(1), TILE_SIZE, TILE_SIZE);
+    int tile_size_original = TILE_SIZE * mip;
     CARTA::ImageBounds bounds;
     // crop to image size
     bounds.set_x_min(std::max(0, tile.x * tile_size_original));

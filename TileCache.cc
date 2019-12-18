@@ -37,11 +37,10 @@ CachedTilePtr TileCache::Get(CachedTileKey key, const carta::FileLoader* loader)
 
 void TileCache::GetMultiple(&std::unordered_map<CachedTileKey, CachedTilePtr> tiles, std::vector<CachedTileKey> keys, const carta::FileLoader* loader) {
     // TODO: first process all tiles found in the cache in parallel, then all the tiles not in the cache serially.
-    // Make thread-safe.
     std::vector<CachedTileKey> found;
     std::vector<CachedTileKey> not_found;
     
-    Lock();
+    std::unique_lock<std::mutex> lock(_tile_cache_mutex);
     
     for (auto& key : keys) {
         if (_hash.find(key) == _hash.end()) {
@@ -70,24 +69,16 @@ void TileCache::GetMultiple(&std::unordered_map<CachedTileKey, CachedTilePtr> ti
         tiles[*t] = Get(*t);
     }
     
-    Unlock();
-}
-
-void TileCache::Lock() {
-    // TODO: lock the cache
-}
-
-void TileCache::Unlock() {
-    // TODO: unlock the cache
+    lock.unlock();
 }
 
 void TileCache::reset(hsize_t channel, hsize_t stokes) {
-    Lock();
+    std::unique_lock<std::mutex> lock(_tile_cache_mutex);
     _hash.clear();
     _queue.clear();
     _channel = channel;
     _stokes = stokes;
-    Unlock();
+    lock.unlock();
 }
 
 CachedTilePtr TileCache::UnsafePeek(CachedTileKey key) {
@@ -104,7 +95,24 @@ void TileCache::Touch(CachedTileKey key) {
     _hash[key] = _queue.begin();
 }
 
-CachedTilePtr TileCache::Load(CachedTileKey key, const carta::FileLoader* loader) {
+CachedTilePtr TileCache::Load(CachedTileKey key, const carta::FileLoader* loader, std::mutex image_mutex) {
     // load a tile from the file
-    // loader->GetSlice(????);
+    
+    auto tile = std::make_shared<std::vector<float>>(TILE_SIZE * TILE_SIZE);
+    casacore::Array<float> tmp(slicer.length(), tile->data(), casacore::StorageInitPolicy::SHARE);
+    
+    casacore::Slicer slicer;
+    if (_num_dims == 4) {
+        slicer = casacore::Slicer(IPos(4, key.x, key.y, _channel, _stokes), IPos(4, TILE_SIZE, TILE_SIZE, 1, 1));
+    } else if (_num_dims == 3) {
+        slicer = casacore::Slicer(IPos(3, key.x, key.y, _channel), IPos(3, TILE_SIZE, TILE_SIZE, 1));
+    } else if (_num_dims == 2) {
+        slicer = casacore::Slicer(IPos(2, key.x, key.y), IPos(2, TILE_SIZE, TILE_SIZE));
+    }
+    
+    std::unique_lock<std::mutex> image_lock(image_mutex);
+    loader->GetSlice(tmp, slicer);
+    image_lock.unlock()
+    
+    return tile;
 }

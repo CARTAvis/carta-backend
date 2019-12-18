@@ -20,15 +20,12 @@ public:
     CachedTilePtr Get(CachedTileKey key, const carta::FileLoader* loader);
     void GetMultiple(&std::unordered_map<CachedTileKey, CachedTilePtr> tiles, std::vector<CachedTileKey> keys, const carta::FileLoader* loader);
     
-    void Lock();
-    void Unlock();
-    
     void reset(hsize_t channel, hsize_t stokes);
     
 private:
     CachedTilePtr UnsafePeek(CachedTileKey key);
     void Touch(CachedTileKey key);
-    CachedTilePtr Load(CachedTileKey key, const carta::FileLoader* loader);
+    CachedTilePtr Load(CachedTileKey key, const carta::FileLoader* loader, std::mutex image_mutex);
     
     hsize_t _channel;
     hsize_t _stokes;
