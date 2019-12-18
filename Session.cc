@@ -1,5 +1,6 @@
 #include "Session.h"
 
+#include <omp.h>
 #include <signal.h>
 #include <algorithm>
 #include <chrono>
@@ -387,11 +388,10 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
             }
         };
 
-        tbb::task_group g;
+#pragma omp parallel for
         for (int j = 0; j < stride; j++) {
-            g.run([=] { lambda(j); });
+            lambda(j);
         }
-        g.wait();
     }
 }
 

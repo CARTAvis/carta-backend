@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include <omp.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
@@ -25,11 +26,15 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
 }
 
 void Histogram::join(Histogram& h) { // NOLINT
-    auto range = tbb::blocked_range<size_t>(0, _hist.size());
-    auto loop = [this, &h](const tbb::blocked_range<size_t>& r) {
-        size_t beg = r.begin();
-        size_t end = r.end();
+    int iam, nt, ipoints;
+    size_t beg, end;
+#pragma omp parallel default(shared) private(iam, nt, ipoints, beg, end)
+    {
+        iam = omp_get_thread_num();
+        nt = omp_get_num_threads();
+        ipoints = _hist.size() / nt;
+        beg = iam * ipoints;
+        end = beg + ipoints - 1;
         std::transform(&h._hist[beg], &h._hist[end], &_hist[beg], &_hist[beg], std::plus<int>());
-    };
-    tbb::parallel_for(range, loop);
+    }
 }
