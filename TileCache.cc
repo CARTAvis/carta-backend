@@ -49,24 +49,17 @@ void TileCache::GetMultiple(std::unordered_map<CachedTileKey, TileCache::CachedT
         }
     }
     
-    // TODO TODO TODO replace with OpenMP
-    auto range = tbb::blocked_range<size_t>(0, found.size());
-    
-    auto loop = [&](const tbb::blocked_range<size_t>& r) {
-        for (size_t t = r.begin(); t != r.end(); ++t) {
-            auto& key = found[t];
-            tiles[key] = UnsafePeek(key);
-        }
-    };
-    
-    for (auto& t : found) {
-        Touch(t);
+#pragma omp parallel for
+    for (auto& key : found) {
+        tiles[key] = UnsafePeek(key);
     }
-    
-    tbb::parallel_for(range, loop);
-    
-    for (auto& t : not_found) {
-        tiles[t] = Get(t, loader, image_mutex);
+
+    for (auto& key : found) {
+        Touch(key);
+    }
+        
+    for (auto& key : not_found) {
+        tiles[key] = Get(key, loader, image_mutex);
     }
     
     lock.unlock();

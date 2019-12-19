@@ -7,9 +7,6 @@
 #include <vector>
 #include <unordered_map>
 #include <list>
-// TODO this is temporary and should be replaced by OpenMP
-#include "tbb/blocked_range.h"
-#include "tbb/parallel_for.h" 
 
 #include "ImageData/FileLoader.h"
 
