@@ -69,6 +69,7 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     bool retval;
     char* str;
     char user[50];
+    bool result = true;
 
     mongoc_init();
 
@@ -113,6 +114,7 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
 
     if (!mongoc_collection_insert_one(collection, &layout, NULL, NULL, &error)) {
         fprintf(stderr, "%s\n", error.message);
+        result = false;
     }
 
     bson_destroy(insert);
@@ -126,13 +128,11 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     mongoc_client_destroy(client);
     mongoc_cleanup();
 
-    return true;
+    return result;
 }
 
 //
-bool GetLayoutsAndProfilesFromDB(
-    std::vector<std::tuple<std::string, std::string> >* layouts, std::vector<std::tuple<std::string, std::string> >* profiles) {
-    //  std::vector< std::tuple<std::string, std::string> > * vec = new std::vector< std::tuple<std::string, std::string> >;
+bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     const char* uri_string = "mongodb://localhost:27017";
     mongoc_uri_t* uri;
     mongoc_client_t* client;
@@ -147,7 +147,7 @@ bool GetLayoutsAndProfilesFromDB(
     bool retval;
     char user[50];
 
-    std::cerr << "\n ******** GetLayoutsAndProfilesFromDB  *********\n" << std::endl;
+    std::cerr << " ****** GetLayoutsFromDB  *******" << std::endl;
 
     mongoc_init();
 
@@ -181,13 +181,10 @@ bool GetLayoutsAndProfilesFromDB(
 
     cuserid(user);
 
-    fprintf(stderr, " User is %s\n", user);
-
     query = bson_new();
     BSON_APPEND_UTF8(query, "username", user);
     cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
 
-    CARTA::RegisterViewerAck message;
     struct json_object* parsed_json;
     struct json_object* layout_name;
     struct json_object* layout_str;
@@ -202,25 +199,96 @@ bool GetLayoutsAndProfilesFromDB(
         char_layout_name = json_object_get_string(layout_name);
         char_layout_str = json_object_get_string(layout_str);
 
-        printf("LAYOUT:\n\tNAME: %s\n\tSTR %s\n", char_layout_name, char_layout_str);
+        //        printf("LAYOUT:\n\tNAME: %s\n\tSTR %s\n", char_layout_name, char_layout_str);
 
-        (*(message.mutable_user_layouts()))[char_layout_name] = char_layout_str;
+        (*(ack_message_ptr->mutable_user_layouts()))[char_layout_name] = char_layout_str;
     }
     bson_destroy(query);
 
+    return true;
+}
+
+bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
+    const char* uri_string = "mongodb://localhost:27017";
+    mongoc_uri_t* uri;
+    mongoc_client_t* client;
+    mongoc_database_t* database;
+    mongoc_collection_t* collection;
+    mongoc_cursor_t* cursor;
+    bson_t *command, reply, *insert, userconf, *query;
+    const bson_t* doc;
+    bson_error_t error;
+    char* str;
+    char* uvalue = NULL;
+    bool retval;
+    char user[50];
+
+    std::cerr << " ***** GetProfilesFromDB  ******" << std::endl;
+
+    mongoc_init();
+
+    uri = mongoc_uri_new_with_error(uri_string, &error);
+    if (!uri) {
+        fprintf(stderr,
+            "failed to parse URI: %s\n"
+            "error message:       %s\n",
+            uri_string, error.message);
+        return false;
+    }
+
+    client = mongoc_client_new_from_uri(uri);
+    if (!client) {
+        return false;
+    }
+
+    mongoc_client_set_appname(client, "carta_backend");
+
+    query = bson_new();
+    database = mongoc_client_get_database(client, "CARTA");
+
     collection = mongoc_client_get_collection(client, "CARTA", "preferences");
+    command = BCON_NEW("ping", BCON_INT32(1));
+    retval = mongoc_client_command_simple(client, "admin", command, NULL, &reply, &error);
+    if (!retval) {
+        fprintf(stderr, "%s\n", error.message);
+        return false;
+    }
+    str = bson_as_json(&reply, NULL);
+
+    cuserid(user);
+
+    //    fprintf(stderr, " User is %s\n", user);
 
     query = bson_new();
     BSON_APPEND_UTF8(query, "username", user);
     cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
 
-    if (mongoc_cursor_next(cursor, &doc)) {
-        str = bson_as_canonical_extended_json(doc, NULL);
-        printf("GET layouts %s\n", str);
+    struct json_object* parsed_json;
+    struct json_object* pref_name;
+    struct json_object* pref_str;
 
-        // need to ad this to list. XXXXX
-        //    message.user_preferences ...
+    const char* char_pref_name;
+    const char* char_pref_str;
+    const char* cstr;
+
+    bson_iter_t iter;
+    while (mongoc_cursor_next(cursor, &doc)) {
+        str = bson_as_canonical_extended_json(doc, NULL);
+        parsed_json = json_tokener_parse(str);
+        if (bson_iter_init(&iter, doc)) {
+            while (bson_iter_next(&iter)) {
+                cstr = bson_iter_key(&iter);
+                if (((strcmp(cstr, "_id")) && strcmp(cstr, "username"))) {
+                    json_object_object_get_ex(parsed_json, cstr, &pref_str);
+                    char_pref_name = cstr;
+                    char_pref_str = json_object_get_string(pref_str);
+		    //                    printf("ELT %s : %s\n", char_pref_name, char_pref_str);
+                    (*(ack_message_ptr->mutable_user_preferences()))[char_pref_name] = char_pref_str;
+                }
+            }
+        }
     }
+
     bson_destroy(query);
 
     return true;
@@ -237,8 +305,9 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     bool retval;
     char* str;
     char user[50];
+    bool result = true;
 
-    std::cerr << "\n **** SaveUserPreferencesToDB  ****\n" << std::endl;
+    std::cerr << "  **** SaveUserPreferencesToDB  ****" << std::endl;
 
     mongoc_init();
 
@@ -273,30 +342,32 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     cuserid(user);
 
     for (auto& pair : request.preference_map()) {
-      std::cerr << "MAP ENTRY " << pair.first << " " << pair.second << std::endl;
+        bson_t* doc;
+
         if (pair.second.empty()) {
+            std::cerr << " REMOVING" << std::endl;
             // Remove this pair from the DB;
-            bson_t* doc;
             doc = bson_new();
-            //	  BSON_APPEND_OID (doc, "_id", &oid);
             BSON_APPEND_UTF8(doc, pair.first.c_str(), pair.second.c_str());
             const bson_t* doc1 = (const bson_t*)doc;
             if (!mongoc_collection_delete_one(collection, doc1, NULL, NULL, &error)) {
                 fprintf(stderr, "Delete failed: %s\n", error.message);
+                result = false;
             }
             bson_destroy(doc);
         } else {
             // Add this pair to the DB.
-            insert = bson_new();
-            BSON_APPEND_UTF8(&prefs, "username", user);
-            BSON_APPEND_UTF8(&prefs, pair.first.c_str(), pair.second.c_str());
-            if (!mongoc_collection_insert_one(collection, &prefs, NULL, NULL, &error)) {
+            doc = bson_new();
+            BSON_APPEND_UTF8(doc, "username", user);
+            BSON_APPEND_UTF8(doc, pair.first.c_str(), pair.second.c_str());
+            if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error)) {
                 fprintf(stderr, "%s\n", error.message);
+                result = false;
             }
         }
     }
 
-    return true;
+    return result;
 }
 
 #endif // _AUTH_SERVER_
