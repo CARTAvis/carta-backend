@@ -9,18 +9,18 @@ TileCache::CachedTilePtr TileCache::Peek(CachedTileKey key) {
     }
 }
     
-TileCache::CachedTilePtr TileCache::Get(CachedTileKey key, const carta::FileLoader* loader) {
+TileCache::CachedTilePtr TileCache::Get(CachedTileKey key, carta::FileLoader* loader, std::mutex& image_mutex) {
     // Will be loaded or retrieved from cache
     TileCache::CachedTilePtr tile;
     
     if(_map.find(key) == _map.end()) { // Not in cache
         // Evict oldest tile if necessary
         if(_map.size() == _capacity) {
-            _map.erase(_queue.back()->first);
+            _map.erase(_queue.back().first);
             _queue.pop_back();
         }
         // Load new tile from image
-        tile = Load(key, loader);
+        tile = Load(key, loader, image_mutex);
     } else {
         // Remove found tile from queue, to reinsert
         tile = _map.find(key)->second->second;
@@ -35,8 +35,7 @@ TileCache::CachedTilePtr TileCache::Get(CachedTileKey key, const carta::FileLoad
     return tile;
 }
 
-void TileCache::GetMultiple(std::unordered_map<CachedTileKey, TileCache::CachedTilePtr>& tiles, std::vector<CachedTileKey> keys, const carta::FileLoader* loader) {
-    // TODO: first process all tiles found in the cache in parallel, then all the tiles not in the cache serially.
+void TileCache::GetMultiple(std::unordered_map<CachedTileKey, TileCache::CachedTilePtr>& tiles, std::vector<CachedTileKey> keys, carta::FileLoader* loader, std::mutex& image_mutex) {
     std::vector<CachedTileKey> found;
     std::vector<CachedTileKey> not_found;
     
@@ -49,7 +48,8 @@ void TileCache::GetMultiple(std::unordered_map<CachedTileKey, TileCache::CachedT
             found.push_back(key);
         }
     }
-            
+    
+    // TODO TODO TODO replace with OpenMP
     auto range = tbb::blocked_range<size_t>(0, found.size());
     
     auto loop = [&](const tbb::blocked_range<size_t>& r) {
@@ -60,13 +60,13 @@ void TileCache::GetMultiple(std::unordered_map<CachedTileKey, TileCache::CachedT
     };
     
     for (auto& t : found) {
-        Touch(*t);
+        Touch(t);
     }
     
     tbb::parallel_for(range, loop);
     
     for (auto& t : not_found) {
-        tiles[*t] = Get(*t);
+        tiles[t] = Get(t, loader, image_mutex);
     }
     
     lock.unlock();
@@ -95,26 +95,10 @@ void TileCache::Touch(CachedTileKey key) {
     _map[key] = _queue.begin();
 }
 
-TileCache::CachedTilePtr TileCache::Load(CachedTileKey key, const carta::FileLoader* loader, std::mutex image_mutex) {
+TileCache::CachedTilePtr TileCache::Load(CachedTileKey key, carta::FileLoader* loader, std::mutex& image_mutex) {
     // load a tile from the file
-    
-    // TODO TODO TODO this should go in the loader instead
-    
+    // TODO: how to handle errors?
     auto tile = std::make_shared<std::vector<float>>(TILE_SIZE * TILE_SIZE);
-    casacore::Array<float> tmp(slicer.length(), tile->data(), casacore::StorageInitPolicy::SHARE);
-    
-    casacore::Slicer slicer;
-    if (_num_dims == 4) {
-        slicer = casacore::Slicer(FileLoader::IPos(4, key.x, key.y, _channel, _stokes), FileLoader::IPos(4, TILE_SIZE, TILE_SIZE, 1, 1));
-    } else if (_num_dims == 3) {
-        slicer = casacore::Slicer(FileLoader::IPos(3, key.x, key.y, _channel), FileLoader::IPos(3, TILE_SIZE, TILE_SIZE, 1));
-    } else if (_num_dims == 2) {
-        slicer = casacore::Slicer(FileLoader::IPos(2, key.x, key.y), FileLoader::IPos(2, TILE_SIZE, TILE_SIZE));
-    }
-    
-    std::unique_lock<std::mutex> image_lock(image_mutex);
-    loader->GetSlice(tmp, slicer);
-    image_lock.unlock()
-    
+    loader->GetTile(*tile, key.x, key.y, _channel, _stokes, image_mutex);
     return tile;
 }

@@ -439,10 +439,35 @@ bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel,
         
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
-        mip_map_image.get()->doGetSlice(tmp, slicer);
+        mip_map_image->doGetSlice(tmp, slicer);
         data_ok = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "Could not load MipMap data. AIPS ERROR: " << err.getMesg() << std::endl;
+    }
+    
+    return data_ok;
+}
+
+bool Hdf5Loader::GetTile(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
+    bool data_ok(false);
+    
+    casacore::Slicer slicer;
+    if (_num_dims == 4) {
+        slicer = casacore::Slicer(IPos(4, min_x, min_y, channel, stokes), IPos(4, TILE_SIZE, TILE_SIZE, 1, 1));
+    } else if (_num_dims == 3) {
+        slicer = casacore::Slicer(IPos(3, min_x, min_y, channel), IPos(3, TILE_SIZE, TILE_SIZE, 1));
+    } else if (_num_dims == 2) {
+        slicer = casacore::Slicer(IPos(2, min_x, min_y), IPos(2, TILE_SIZE, TILE_SIZE));
+    }
+    
+    casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
+    
+    std::lock_guard<std::mutex> lguard(image_mutex);
+    try {
+        GetSlice(tmp, slicer);
+        data_ok = true;
+    } catch (casacore::AipsError& err) {
+        std::cerr << "Could not load image tile. AIPS ERROR: " << err.getMesg() << std::endl;
     }
     
     return data_ok;
