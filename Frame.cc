@@ -731,7 +731,7 @@ void Frame::SetImageCache() {
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
+    _loader->GetSlice(tmp, section);
 }
 
 void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes) {
@@ -741,7 +741,7 @@ void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, si
     casacore::Array<float> tmp(section.length(), chan_matrix.data(), casacore::StorageInitPolicy::SHARE);
     // slice image data
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
+    _loader->GetSlice(tmp, section);
 }
 
 casacore::Slicer Frame::GetChannelMatrixSlicer(size_t channel, size_t stokes) {
@@ -1273,7 +1273,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                         profile.resize(end);
                         casacore::Array<float> tmp(section.length(), profile.data(), casacore::StorageInitPolicy::SHARE);
                         std::lock_guard<std::mutex> guard(_image_mutex);
-                        _loader->LoadData(FileInfo::Data::Image)->getSlice(tmp, section, true);
+                        _loader->GetSlice(tmp, section);
                     }
                     // SpatialProfile
                     auto new_profile = profile_data.add_profiles();

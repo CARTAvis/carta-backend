@@ -134,6 +134,7 @@ public:
     // get shape and axis information from image, coordinate system, or extended file info
     virtual bool FindShape(IPos& shape, const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis, std::string& message);
     virtual void FindCoordinates(const CARTA::FileInfoExtended* info, int& spectral_axis, int& stokes_axis);
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false);
 
     // Load image statistics, if they exist, from the file
     virtual void LoadImageStats(bool load_percentiles = false);

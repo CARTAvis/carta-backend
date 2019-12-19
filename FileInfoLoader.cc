@@ -301,7 +301,7 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
                 } break;
                 case casacore::TpDouble: {
                     casacore::Double numeric_val = attributes.asDouble(field);
-                    *header_entry->mutable_value() = fmt::format("{}", numeric_val);
+                    *header_entry->mutable_value() = fmt::format("{:e}", numeric_val);
                     header_entry->set_entry_type(CARTA::EntryType::FLOAT);
                     header_entry->set_numeric_value(numeric_val);
                 } break;
@@ -523,7 +523,7 @@ bool FileInfoLoader::FillFitsExtFileInfo(CARTA::FileInfoExtended* ext_info, stri
                     case casacore::TpFloat:
                     case casacore::TpDouble: {
                         double numeric_value(hdu_entries.asDouble(field));
-                        *header_entry->mutable_value() = fmt::format("{}", numeric_value);
+                        *header_entry->mutable_value() = fmt::format("{:e}", numeric_value);
                         header_entry->set_entry_type(CARTA::EntryType::FLOAT);
                         header_entry->set_numeric_value(numeric_value);
                         if (header_entry->name() == "EQUINOX")
@@ -643,11 +643,11 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         ext_info->set_height(data_shape(1));
         ext_info->add_stokes_vals(""); // not in header
         // set dims in header entries
-        auto num_axis_header_entry = ext_info->add_header_entries();
-        num_axis_header_entry->set_name("NAXIS");
-        *num_axis_header_entry->mutable_value() = fmt::format("{}", num_dims);
-        num_axis_header_entry->set_entry_type(CARTA::EntryType::INT);
-        num_axis_header_entry->set_numeric_value(num_dims);
+        auto header_entry = ext_info->add_header_entries();
+        header_entry->set_name("NAXIS");
+        *header_entry->mutable_value() = fmt::format("{}", num_dims);
+        header_entry->set_entry_type(CARTA::EntryType::INT);
+        header_entry->set_numeric_value(num_dims);
         for (casacore::Int i = 0; i < num_dims; ++i) {
             auto header_entry = ext_info->add_header_entries();
             header_entry->set_name("NAXIS" + casacore::String::toString(i + 1));
@@ -657,7 +657,7 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         }
 
         // if in header, save values for computed entries
-        std::string rs_beam, bunit, projection, equinox, rade_sys, coord_type_x, coord_type_y, coord_type3, coord_type4, spec_sys;
+        std::string rs_beam, bunit, projection, equinox, rade_sys, spec_sys, coord_type_x, coord_type_y, coord_type3, coord_type4;
 
         // BMAJ, BMIN, BPA
         if (image_info.hasBeam() && image_info.hasSingleBeam()) {
@@ -671,42 +671,42 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
             // add to header entries
             casacore::Double bmaj(major_axis.getValue()), bmin(minor_axis.getValue());
             casacore::Float bpa(pa.getValue());
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("BMAJ");
-            *num_axis_header_entry->mutable_value() = fmt::format("{}", bmaj);
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            num_axis_header_entry->set_numeric_value(bmaj);
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("BMIN");
-            *num_axis_header_entry->mutable_value() = fmt::format("{}", bmin);
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            num_axis_header_entry->set_numeric_value(bmin);
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("BPA");
-            *num_axis_header_entry->mutable_value() = fmt::format("{}", bpa);
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            num_axis_header_entry->set_numeric_value(bpa);
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("BMAJ");
+            *header_entry->mutable_value() = fmt::format("{:e}", bmaj);
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_numeric_value(bmaj);
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("BMIN");
+            *header_entry->mutable_value() = fmt::format("{:e}", bmin);
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_numeric_value(bmin);
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("BPA");
+            *header_entry->mutable_value() = fmt::format("{:e}", bpa);
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_numeric_value(bpa);
 
             // add to computed entries
             rs_beam = fmt::format("{} X {}, {:.4f} deg", Deg2Arcsec(bmaj), Deg2Arcsec(bmin), bpa);
         }
 
         // type
-        num_axis_header_entry = ext_info->add_header_entries();
-        num_axis_header_entry->set_name("BTYPE");
-        *num_axis_header_entry->mutable_value() = casacore::ImageInfo::imageType(image_info.imageType());
-        num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+        header_entry = ext_info->add_header_entries();
+        header_entry->set_name("BTYPE");
+        *header_entry->mutable_value() = casacore::ImageInfo::imageType(image_info.imageType());
+        header_entry->set_entry_type(CARTA::EntryType::STRING);
         // object
-        num_axis_header_entry = ext_info->add_header_entries();
-        num_axis_header_entry->set_name("OBJECT");
-        *num_axis_header_entry->mutable_value() = image_info.objectName();
-        num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+        header_entry = ext_info->add_header_entries();
+        header_entry->set_name("OBJECT");
+        *header_entry->mutable_value() = image_info.objectName();
+        header_entry->set_entry_type(CARTA::EntryType::STRING);
         // units
-        num_axis_header_entry = ext_info->add_header_entries();
-        num_axis_header_entry->set_name("BUNIT");
+        header_entry = ext_info->add_header_entries();
+        header_entry->set_name("BUNIT");
         bunit = image_summary.units().getName();
-        *num_axis_header_entry->mutable_value() = bunit;
-        num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+        *header_entry->mutable_value() = bunit;
+        header_entry->set_entry_type(CARTA::EntryType::STRING);
 
         // Direction axes: projection, equinox, radesys
         casacore::Vector<casacore::String> dir_axis_names; // axis names to append projection
@@ -749,10 +749,10 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
             }
             // name = CTYPE
             // add header entry
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("CTYPE" + suffix);
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
-            *num_axis_header_entry->mutable_value() = axis_name;
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("CTYPE" + suffix);
+            header_entry->set_entry_type(CARTA::EntryType::STRING);
+            *header_entry->mutable_value() = axis_name;
             // computed entries
             if (suffix == "1")
                 coord_type_x = axis_name;
@@ -764,28 +764,28 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
                 coord_type4 = axis_name;
 
             // ref val = CRVAL
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("CRVAL" + suffix);
-            *num_axis_header_entry->mutable_value() = fmt::format("{}", ax_ref_val(i));
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            num_axis_header_entry->set_numeric_value(ax_ref_val(i));
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("CRVAL" + suffix);
+            *header_entry->mutable_value() = fmt::format("{:e}", ax_ref_val(i));
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_numeric_value(ax_ref_val(i));
             // increment = CDELT
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("CDELT" + suffix);
-            *num_axis_header_entry->mutable_value() = fmt::format("{}", ax_increments(i));
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            num_axis_header_entry->set_numeric_value(ax_increments(i));
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("CDELT" + suffix);
+            *header_entry->mutable_value() = fmt::format("{:e}", ax_increments(i));
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_numeric_value(ax_increments(i));
             // ref pix = CRPIX
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("CRPIX" + suffix);
-            *num_axis_header_entry->mutable_value() = fmt::format("{}", ax_ref_pix(i));
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            num_axis_header_entry->set_numeric_value(ax_ref_pix(i));
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("CRPIX" + suffix);
+            *header_entry->mutable_value() = fmt::format("{:e}", ax_ref_pix(i));
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_numeric_value(ax_ref_pix(i));
             // units = CUNIT
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("CUNIT" + suffix);
-            *num_axis_header_entry->mutable_value() = ax_units(i);
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("CUNIT" + suffix);
+            *header_entry->mutable_value() = ax_units(i);
+            header_entry->set_entry_type(CARTA::EntryType::STRING);
         }
 
         // RESTFRQ
@@ -793,12 +793,12 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         casacore::Quantum<casacore::Double> rest_freq;
         casacore::Bool ok = image_summary.restFrequency(rest_freq_string, rest_freq);
         if (ok) {
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("RESTFRQ");
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("RESTFRQ");
             casacore::Double rest_freq_val(rest_freq.getValue());
-            *num_axis_header_entry->mutable_value() = rest_freq_string;
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-            num_axis_header_entry->set_numeric_value(rest_freq_val);
+            *header_entry->mutable_value() = fmt::format("{:e}", rest_freq_val);
+            header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+            header_entry->set_numeric_value(rest_freq_val);
         }
 
         // SPECSYS
@@ -812,46 +812,46 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
             spectral_coordinate.getReferenceConversion(freq_type, epoch, position, direction);
             bool have_spec_sys = ConvertSpecSysToFits(spec_sys, freq_type);
             if (have_spec_sys) {
-                num_axis_header_entry = ext_info->add_header_entries();
-                num_axis_header_entry->set_name("SPECSYS");
-                *num_axis_header_entry->mutable_value() = spec_sys;
-                num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+                header_entry = ext_info->add_header_entries();
+                header_entry->set_name("SPECSYS");
+                *header_entry->mutable_value() = spec_sys;
+                header_entry->set_entry_type(CARTA::EntryType::STRING);
             }
         }
 
         // RADESYS, EQUINOX
         if (!rade_sys.empty()) {
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("RADESYS");
-            *num_axis_header_entry->mutable_value() = rade_sys;
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("RADESYS");
+            *header_entry->mutable_value() = rade_sys;
+            header_entry->set_entry_type(CARTA::EntryType::STRING);
         }
         if (!equinox.empty()) {
-            num_axis_header_entry = ext_info->add_header_entries();
-            num_axis_header_entry->set_name("EQUINOX");
-            *num_axis_header_entry->mutable_value() = equinox;
-            num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+            header_entry = ext_info->add_header_entries();
+            header_entry->set_name("EQUINOX");
+            *header_entry->mutable_value() = equinox;
+            header_entry->set_entry_type(CARTA::EntryType::STRING);
         }
         // computed entries
         MakeRadeSysStr(rade_sys, equinox);
 
         // Other summary items
         // telescope
-        num_axis_header_entry = ext_info->add_header_entries();
-        num_axis_header_entry->set_name("TELESCOP");
-        *num_axis_header_entry->mutable_value() = image_summary.telescope();
-        num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+        header_entry = ext_info->add_header_entries();
+        header_entry->set_name("TELESCOP");
+        *header_entry->mutable_value() = image_summary.telescope();
+        header_entry->set_entry_type(CARTA::EntryType::STRING);
         // observer
-        num_axis_header_entry = ext_info->add_header_entries();
-        num_axis_header_entry->set_name("OBSERVER");
-        *num_axis_header_entry->mutable_value() = image_summary.observer();
-        num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+        header_entry = ext_info->add_header_entries();
+        header_entry->set_name("OBSERVER");
+        *header_entry->mutable_value() = image_summary.observer();
+        header_entry->set_entry_type(CARTA::EntryType::STRING);
         // obs date
         casacore::MEpoch epoch;
-        num_axis_header_entry = ext_info->add_header_entries();
-        num_axis_header_entry->set_name("DATE");
-        *num_axis_header_entry->mutable_value() = image_summary.obsDate(epoch);
-        num_axis_header_entry->set_entry_type(CARTA::EntryType::STRING);
+        header_entry = ext_info->add_header_entries();
+        header_entry->set_name("DATE_OBS");
+        *header_entry->mutable_value() = image_summary.obsDate(epoch);
+        header_entry->set_entry_type(CARTA::EntryType::STRING);
 
         // shape, chan, stokes entries first
         int chan_axis, stokes_axis;
