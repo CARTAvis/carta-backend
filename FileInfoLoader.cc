@@ -280,7 +280,8 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
         // extract values from Record
         for (casacore::uInt field = 0; field < attributes.nfields(); ++field) {
             auto header_entry = ext_info->add_header_entries();
-            header_entry->set_name(attributes.name(field));
+            std::string name(attributes.name(field));
+            header_entry->set_name(name);
             switch (attributes.type(field)) {
                 case casacore::TpString: {
                     *header_entry->mutable_value() = attributes.asString(field);
@@ -301,7 +302,11 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
                 } break;
                 case casacore::TpDouble: {
                     casacore::Double numeric_val = attributes.asDouble(field);
-                    *header_entry->mutable_value() = fmt::format("{:e}", numeric_val);
+                    if (name.find("PIX") != std::string::npos) {
+                        *header_entry->mutable_value() = fmt::format("{}", numeric_val);
+                    } else {
+                        *header_entry->mutable_value() = fmt::format("{:.12e}", numeric_val);
+                    }
                     header_entry->set_entry_type(CARTA::EntryType::FLOAT);
                     header_entry->set_numeric_value(numeric_val);
                 } break;
@@ -377,7 +382,11 @@ std::string FileInfoLoader::GetStringAttribute(casacore::Record& record, std::st
                 value = std::to_string(record.asInt64(field));
             } break;
             case casacore::TpDouble: {
-                value = std::to_string(record.asDouble(field));
+                if ((field.find("PIX") != std::string::npos) || (field.find("EQUINOX") != std::string::npos)) {
+                    value = fmt::format("{}", record.asDouble(field));
+                } else {
+                    value = std::to_string(record.asDouble(field));
+                }
             } break;
             default:
                 break;
@@ -483,74 +492,84 @@ bool FileInfoLoader::FillFitsExtFileInfo(CARTA::FileInfoExtended* ext_info, stri
         // set header entries
         for (casacore::uInt field = 0; field < hdu_entries.nfields(); ++field) {
             casacore::String name = hdu_entries.name(field);
-            if ((name != "SIMPLE") && (name != "BITPIX") && !name.startsWith("PC")) {
-                auto header_entry = ext_info->add_header_entries();
-                header_entry->set_name(name);
-                casacore::DataType data_type(hdu_entries.type(field));
-                switch (data_type) {
-                    case casacore::TpString: {
-                        *header_entry->mutable_value() = hdu_entries.asString(field);
-                        header_entry->set_entry_type(CARTA::EntryType::STRING);
-                        if (header_entry->name() == "CTYPE1")
-                            coord_type_x = header_entry->value();
-                        else if (header_entry->name() == "CTYPE2")
-                            coord_type_y = header_entry->value();
-                        else if (header_entry->name() == "CTYPE3")
-                            coord_type3 = header_entry->value();
-                        else if (header_entry->name() == "CTYPE4")
-                            coord_type4 = header_entry->value();
-                        else if (header_entry->name() == "RADESYS")
-                            rade_sys = header_entry->value();
-                        else if (header_entry->name() == "SPECSYS")
-                            spec_sys = header_entry->value();
-                        else if (header_entry->name() == "BUNIT")
-                            bunit = header_entry->value();
-                        else if (header_entry->name() == "CUNIT1")
-                            cunit1 = header_entry->value();
-                        else if (header_entry->name() == "CUNIT2")
-                            cunit2 = header_entry->value();
-                        break;
-                    }
-                    case casacore::TpInt: {
-                        int64_t value_int(hdu_entries.asInt(field));
-                        if ((name == "NAXIS") && (value_int == 0))
-                            value_int = num_dim;
-                        *header_entry->mutable_value() = fmt::format("{}", value_int);
-                        header_entry->set_entry_type(CARTA::EntryType::INT);
-                        header_entry->set_numeric_value(value_int);
-                        break;
-                    }
-                    case casacore::TpFloat:
-                    case casacore::TpDouble: {
-                        double numeric_value(hdu_entries.asDouble(field));
-                        *header_entry->mutable_value() = fmt::format("{:e}", numeric_value);
-                        header_entry->set_entry_type(CARTA::EntryType::FLOAT);
-                        header_entry->set_numeric_value(numeric_value);
-                        if (header_entry->name() == "EQUINOX")
-                            equinox = std::to_string(static_cast<int>(numeric_value));
-                        else if (header_entry->name() == "CRVAL1")
-                            crval1 = numeric_value;
-                        else if (header_entry->name() == "CRVAL2")
-                            crval2 = numeric_value;
-                        else if (header_entry->name() == "CRPIX1")
-                            crpix1 = std::to_string(static_cast<int>(numeric_value));
-                        else if (header_entry->name() == "CRPIX2")
-                            crpix2 = std::to_string(static_cast<int>(numeric_value));
-                        else if (header_entry->name() == "CDELT1")
-                            cdelt1 = numeric_value;
-                        else if (header_entry->name() == "CDELT2")
-                            cdelt2 = numeric_value;
-                        else if (header_entry->name() == "BMAJ")
-                            bmaj = numeric_value;
-                        else if (header_entry->name() == "BMIN")
-                            bmin = numeric_value;
-                        else if (header_entry->name() == "BPA")
-                            bpa = numeric_value;
-                        break;
-                    }
-                    default:
-                        break;
+            auto header_entry = ext_info->add_header_entries();
+            header_entry->set_name(name);
+            casacore::DataType data_type(hdu_entries.type(field));
+            switch (data_type) {
+                case casacore::TpString: {
+                    *header_entry->mutable_value() = hdu_entries.asString(field);
+                    header_entry->set_entry_type(CARTA::EntryType::STRING);
+                    if (name == "CTYPE1")
+                        coord_type_x = header_entry->value();
+                    else if (name == "CTYPE2")
+                        coord_type_y = header_entry->value();
+                    else if (name == "CTYPE3")
+                        coord_type3 = header_entry->value();
+                    else if (name == "CTYPE4")
+                        coord_type4 = header_entry->value();
+                    else if (name == "RADESYS")
+                        rade_sys = header_entry->value();
+                    else if (name == "SPECSYS")
+                        spec_sys = header_entry->value();
+                    else if (name == "BUNIT")
+                        bunit = header_entry->value();
+                    else if (name == "CUNIT1")
+                        cunit1 = header_entry->value();
+                    else if (name == "CUNIT2")
+                        cunit2 = header_entry->value();
+                    break;
                 }
+                case casacore::TpInt: {
+                    int64_t value_int(hdu_entries.asInt(field));
+                    if ((name == "NAXIS") && (value_int == 0))
+                        value_int = num_dim;
+                    *header_entry->mutable_value() = fmt::format("{}", value_int);
+                    header_entry->set_entry_type(CARTA::EntryType::INT);
+                    header_entry->set_numeric_value(value_int);
+                    break;
+                }
+                case casacore::TpFloat:
+                case casacore::TpDouble: {
+                    double numeric_value(hdu_entries.asDouble(field));
+                    std::string exp_format("{:.12e}");
+                    if ((name.find("PIX") != std::string::npos) || (name.find("EQUINOX") != std::string::npos)) {
+                        exp_format = "{}";
+                    }
+                    std::string string_val = fmt::format(exp_format, numeric_value);
+                    *header_entry->mutable_value() = string_val;
+                    header_entry->set_entry_type(CARTA::EntryType::FLOAT);
+                    header_entry->set_numeric_value(numeric_value);
+                    if (name == "EQUINOX")
+                        equinox = string_val;
+                    else if (name == "CRVAL1")
+                        crval1 = numeric_value;
+                    else if (name == "CRVAL2")
+                        crval2 = numeric_value;
+                    else if (name == "CRPIX1")
+                        crpix1 = string_val;
+                    else if (name == "CRPIX2")
+                        crpix2 = string_val;
+                    else if (name == "CDELT1")
+                        cdelt1 = numeric_value;
+                    else if (name == "CDELT2")
+                        cdelt2 = numeric_value;
+                    else if (name == "BMAJ")
+                        bmaj = numeric_value;
+                    else if (name == "BMIN")
+                        bmin = numeric_value;
+                    else if (name == "BPA")
+                        bpa = numeric_value;
+                    break;
+                }
+                case casacore::TpBool: {
+                    bool bool_value(hdu_entries.asBool(field));
+                    std::string string_val = (hdu_entries.asBool(field) ? "T" : "F");
+                    *header_entry->mutable_value() = string_val;
+                    header_entry->set_entry_type(CARTA::EntryType::STRING);
+                    break;
+                }
+                default:
+                    break;
             }
         }
 
@@ -673,17 +692,17 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
             casacore::Float bpa(pa.getValue());
             header_entry = ext_info->add_header_entries();
             header_entry->set_name("BMAJ");
-            *header_entry->mutable_value() = fmt::format("{:e}", bmaj);
+            *header_entry->mutable_value() = fmt::format("{:.12e}", bmaj);
             header_entry->set_entry_type(CARTA::EntryType::FLOAT);
             header_entry->set_numeric_value(bmaj);
             header_entry = ext_info->add_header_entries();
             header_entry->set_name("BMIN");
-            *header_entry->mutable_value() = fmt::format("{:e}", bmin);
+            *header_entry->mutable_value() = fmt::format("{:.12e}", bmin);
             header_entry->set_entry_type(CARTA::EntryType::FLOAT);
             header_entry->set_numeric_value(bmin);
             header_entry = ext_info->add_header_entries();
             header_entry->set_name("BPA");
-            *header_entry->mutable_value() = fmt::format("{:e}", bpa);
+            *header_entry->mutable_value() = fmt::format("{:.12e}", bpa);
             header_entry->set_entry_type(CARTA::EntryType::FLOAT);
             header_entry->set_numeric_value(bpa);
 
@@ -766,19 +785,19 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
             // ref val = CRVAL
             header_entry = ext_info->add_header_entries();
             header_entry->set_name("CRVAL" + suffix);
-            *header_entry->mutable_value() = fmt::format("{:e}", ax_ref_val(i));
+            *header_entry->mutable_value() = fmt::format("{:.12e}", ax_ref_val(i));
             header_entry->set_entry_type(CARTA::EntryType::FLOAT);
             header_entry->set_numeric_value(ax_ref_val(i));
             // increment = CDELT
             header_entry = ext_info->add_header_entries();
             header_entry->set_name("CDELT" + suffix);
-            *header_entry->mutable_value() = fmt::format("{:e}", ax_increments(i));
+            *header_entry->mutable_value() = fmt::format("{:.12e}", ax_increments(i));
             header_entry->set_entry_type(CARTA::EntryType::FLOAT);
             header_entry->set_numeric_value(ax_increments(i));
             // ref pix = CRPIX
             header_entry = ext_info->add_header_entries();
             header_entry->set_name("CRPIX" + suffix);
-            *header_entry->mutable_value() = fmt::format("{:e}", ax_ref_pix(i));
+            *header_entry->mutable_value() = fmt::format("{}", ax_ref_pix(i));
             header_entry->set_entry_type(CARTA::EntryType::FLOAT);
             header_entry->set_numeric_value(ax_ref_pix(i));
             // units = CUNIT
@@ -796,7 +815,7 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
             header_entry = ext_info->add_header_entries();
             header_entry->set_name("RESTFRQ");
             casacore::Double rest_freq_val(rest_freq.getValue());
-            *header_entry->mutable_value() = fmt::format("{:e}", rest_freq_val);
+            *header_entry->mutable_value() = fmt::format("{:.12e}", rest_freq_val);
             header_entry->set_entry_type(CARTA::EntryType::FLOAT);
             header_entry->set_numeric_value(rest_freq_val);
         }
@@ -860,17 +879,17 @@ bool FileInfoLoader::FillCasaExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
 
         // computed_entries
         std::string xy_coords, cr_pixels, cr_coords, cr_deg_str, axis_inc;
-        int cr_pix0, cr_pix1;
+        float cr_pix0, cr_pix1;
         std::string cunit0, cr0, cunit1, cr1;
         double crval0, crval1, cdelt0, cdelt1;
         if (axis_size >= 1) { // pv images only have first axis values
-            cr_pix0 = static_cast<int>(ax_ref_pix(0));
+            cr_pix0 = ax_ref_pix(0);
             cunit0 = ax_units(0);
             crval0 = ax_ref_val(0);
             cdelt0 = ax_increments(0);
             cr0 = MakeValueStr(coord_type_x, crval0, cunit0); // for angle format
             if (axis_size > 1) {
-                cr_pix1 = static_cast<int>(ax_ref_pix(1));
+                cr_pix1 = ax_ref_pix(1);
                 cunit1 = ax_units(1);
                 crval1 = ax_ref_val(1);
                 cdelt1 = ax_increments(1);
@@ -1135,13 +1154,15 @@ void FileInfoLoader::MakeRadeSysStr(std::string& rade_sys, const std::string& eq
     // append equinox to radesys
     std::string prefix;
     if (!equinox.empty()) {
-        if ((rade_sys.compare("FK4") == 0) && (equinox[0] != 'B'))
+        if (((rade_sys.compare("FK4") == 0) && (equinox[0] != 'B')) || (equinox == "1950")) {
             prefix = "B";
-        else if ((rade_sys.compare("FK5") == 0) && (equinox[0] != 'J'))
+        } else if (((rade_sys.compare("FK5") == 0) && (equinox[0] != 'J')) || (equinox == "2000")) {
             prefix = "J";
+        }
     }
-    if (!rade_sys.empty() && !equinox.empty())
+    if (!rade_sys.empty() && !equinox.empty()) {
         rade_sys.append(", ");
+    }
     rade_sys.append(prefix + equinox);
 }
 
@@ -1234,7 +1255,7 @@ std::string FileInfoLoader::UnitConversion(const double value, const std::string
     } else if (std::regex_match(unit, std::regex("arcsec", std::regex::icase))) {
         return fmt::format("{:.3f}\"", value);
     } else { // unknown
-        return fmt::format("{:.3f} {}", value, unit);
+        return fmt::format("{:f} {}", value, unit);
     }
 }
 
