@@ -41,10 +41,18 @@ void Hdf5Attributes::ReadScalar(hid_t attr_id, hid_t data_type_id, const casacor
     int sz = H5Tget_size(data_type_id);
     switch (H5Tget_class(data_type_id)) {
         case H5T_INTEGER: {
-            casacore::Int64 value;
-            casacore::HDF5DataType data_type((casacore::Int64*)0);
-            H5Aread(attr_id, data_type.getHidMem(), &value);
-            rec.define(name, value);
+            if ((sz == 4) && (H5Tget_sign(data_type_id) == H5T_SGN_2)) {
+                casacore::Bool value;
+                casacore::HDF5DataType data_type((casacore::Bool*)0);
+                H5Aread(attr_id, data_type.getHidMem(), &value);
+                std::string value_string = (value ? "T" : "F");
+                rec.define(name, value_string);
+            } else {
+                casacore::Int64 value;
+                casacore::HDF5DataType data_type((casacore::Int64*)0);
+                H5Aread(attr_id, data_type.getHidMem(), &value);
+                rec.define(name, value);
+            }
         } break;
         case H5T_FLOAT: {
             casacore::Double value;
