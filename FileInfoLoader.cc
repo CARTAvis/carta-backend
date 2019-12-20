@@ -302,7 +302,8 @@ bool FileInfoLoader::FillHdf5ExtFileInfo(CARTA::FileInfoExtended* ext_info, std:
                 } break;
                 case casacore::TpDouble: {
                     casacore::Double numeric_val = attributes.asDouble(field);
-                    if (name.find("PIX") != std::string::npos) {
+                    if ((name.find("PIX") != std::string::npos) || (name.find("EQUINOX") != std::string::npos) ||
+                        (name.find("EPOCH") != std::string::npos)) {
                         *header_entry->mutable_value() = fmt::format("{}", numeric_val);
                     } else {
                         *header_entry->mutable_value() = fmt::format("{:.12e}", numeric_val);
@@ -382,11 +383,7 @@ std::string FileInfoLoader::GetStringAttribute(casacore::Record& record, std::st
                 value = std::to_string(record.asInt64(field));
             } break;
             case casacore::TpDouble: {
-                if ((field.find("PIX") != std::string::npos) || (field.find("EQUINOX") != std::string::npos)) {
-                    value = fmt::format("{}", record.asDouble(field));
-                } else {
-                    value = std::to_string(record.asDouble(field));
-                }
+                value = fmt::format("{}", record.asDouble(field));
             } break;
             default:
                 break;
@@ -531,11 +528,13 @@ bool FileInfoLoader::FillFitsExtFileInfo(CARTA::FileInfoExtended* ext_info, stri
                 case casacore::TpFloat:
                 case casacore::TpDouble: {
                     double numeric_value(hdu_entries.asDouble(field));
-                    std::string exp_format("{:.12e}");
-                    if ((name.find("PIX") != std::string::npos) || (name.find("EQUINOX") != std::string::npos)) {
-                        exp_format = "{}";
+                    std::string string_val;
+                    if ((name.find("PIX") != std::string::npos) || (name.find("EQUINOX") != std::string::npos) ||
+                        (name.find("EPOCH") != std::string::npos)) {
+                        string_val = fmt::format("{}", numeric_value);
+                    } else {
+                        string_val = fmt::format("{:.12e}", numeric_value);
                     }
-                    std::string string_val = fmt::format(exp_format, numeric_value);
                     *header_entry->mutable_value() = string_val;
                     header_entry->set_entry_type(CARTA::EntryType::FLOAT);
                     header_entry->set_numeric_value(numeric_value);
