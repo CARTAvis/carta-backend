@@ -110,13 +110,20 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     bson_init(&layout);
     BSON_APPEND_UTF8(&layout, "username", user);
     BSON_APPEND_UTF8(&layout, "name", name.c_str());
-    BSON_APPEND_UTF8(&layout, "json_string", json_string.c_str());
+    
+    if( !strcmp(json_string.c_str(), "") ) {
+      if (!mongoc_collection_delete_one(collection, &layout, NULL, NULL, &error)) {
+                fprintf(stderr, "Delete failed: %s\n", error.message);
+                result = false;
+      }
+    } else {
+      BSON_APPEND_UTF8(&layout, "json_string", json_string.c_str());
 
-    if (!mongoc_collection_insert_one(collection, &layout, NULL, NULL, &error)) {
+      if (!mongoc_collection_insert_one(collection, &layout, NULL, NULL, &error)) {
         fprintf(stderr, "%s\n", error.message);
         result = false;
+      }
     }
-
     bson_destroy(insert);
     bson_destroy(&reply);
     bson_destroy(command);
