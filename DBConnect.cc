@@ -73,8 +73,6 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
 
     mongoc_init();
 
-    std::cerr << " SaveLayoutToDB " << std::endl;
-
     uri = mongoc_uri_new_with_error(uri_string, &error);
     if (!uri) {
         fprintf(stderr,
@@ -127,7 +125,7 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     bson_destroy(insert);
     bson_destroy(&reply);
     bson_destroy(command);
-    //  bson_free (str);
+    bson_free (str);
 
     mongoc_collection_destroy(collection);
     mongoc_database_destroy(database);
@@ -153,8 +151,6 @@ bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     char* uvalue = NULL;
     bool retval;
     char user[50];
-
-    std::cerr << " ****** GetLayoutsFromDB  *******" << std::endl;
 
     mongoc_init();
 
@@ -206,8 +202,6 @@ bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
         char_layout_name = json_object_get_string(layout_name);
         char_layout_str = json_object_get_string(layout_str);
 
-        //        printf("LAYOUT:\n\tNAME: %s\n\tSTR %s\n", char_layout_name, char_layout_str);
-
         (*(ack_message_ptr->mutable_user_layouts()))[char_layout_name] = char_layout_str;
     }
     bson_destroy(query);
@@ -229,8 +223,6 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     char* uvalue = NULL;
     bool retval;
     char user[50];
-
-    std::cerr << " ***** GetProfilesFromDB  ******" << std::endl;
 
     mongoc_init();
 
@@ -264,8 +256,6 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
 
     cuserid(user);
 
-    //    fprintf(stderr, " User is %s\n", user);
-
     query = bson_new();
     BSON_APPEND_UTF8(query, "username", user);
     cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
@@ -289,7 +279,7 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
                     json_object_object_get_ex(parsed_json, cstr, &pref_str);
                     char_pref_name = cstr;
                     char_pref_str = json_object_get_string(pref_str);
-		    //                    printf("ELT %s : %s\n", char_pref_name, char_pref_str);
+
                     (*(ack_message_ptr->mutable_user_preferences()))[char_pref_name] = char_pref_str;
                 }
             }
@@ -313,8 +303,6 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     char* str;
     char user[50];
     bool result = true;
-
-    std::cerr << "  **** SaveUserPreferencesToDB  ****" << std::endl;
 
     mongoc_init();
 
@@ -352,7 +340,6 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
         bson_t* doc;
 
         if (pair.second.empty()) {
-            std::cerr << " REMOVING" << std::endl;
             // Remove this pair from the DB;
             doc = bson_new();
             BSON_APPEND_UTF8(doc, pair.first.c_str(), pair.second.c_str());
