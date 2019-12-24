@@ -26,15 +26,12 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
 }
 
 void Histogram::join(Histogram& h) { // NOLINT
-    int iam, nt, ipoints;
-    size_t beg, end;
-#pragma omp parallel default(shared) private(iam, nt, ipoints, beg, end)
-    {
-        iam = omp_get_thread_num();
-        nt = omp_get_num_threads();
-        ipoints = _hist.size() / nt;
-        beg = iam * ipoints;
-        end = beg + ipoints - 1;
+    size_t beg, end, nt;
+#pragma omp parallel
+    nt = omp_get_num_threads();
+#pragma omp parallel for private(beg, end)
+    for (beg = 0; beg < _hist.size(); beg += nt) {
+        end = std::min(beg + nt, _hist.size());
         std::transform(&h._hist[beg], &h._hist[end], &_hist[beg], &_hist[beg], std::plus<int>());
     }
 }
