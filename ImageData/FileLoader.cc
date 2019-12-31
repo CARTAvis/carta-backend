@@ -200,7 +200,6 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
     data.resize(slicer.length());
     casacore::SubImage<float> subimage(*image, slicer);               // apply slicer to image to get appropriate cursor
     casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage); // read-only
-    int i(0);
     for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
         casacore::IPosition cursor_shape(lattice_iter.cursorShape());
         casacore::IPosition cursor_position(lattice_iter.position());
