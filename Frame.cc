@@ -744,7 +744,7 @@ bool Frame::SetImageCache() {
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
     try {
-        _image_cache.resize(_image_shape(0) * _image_shape(1), 0.0);
+        _image_cache.resize(_image_shape(0) * _image_shape(1));
     } catch (std::bad_alloc& alloc_error) {
         Log(_session_id, "Could not allocate memory for image data.");
         return false;
