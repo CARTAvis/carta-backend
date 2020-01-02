@@ -1,5 +1,7 @@
 #include "FileLoader.h"
 
+#include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
+
 #include "../Util.h"
 #include "CasaLoader.h"
 #include "FitsLoader.h"
@@ -194,22 +196,37 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
         return false;
     }
 
-    // Get data slice
-    data = image->getSlice(slicer, removeDegenerateAxes);
-    if (image->isMasked()) {
-        // Apply mask: set unmasked values to NaN
-        casacore::Array<bool> mask = image->getMaskSlice(slicer, removeDegenerateAxes);
-        bool delete_data_ptr;
-        float* pData = data.getStorage(delete_data_ptr);
-        bool delete_mask_ptr;
-        const bool* pMask = mask.getStorage(delete_mask_ptr);
-        for (size_t i = 0; i < data.nelements(); ++i) {
-            if (!pMask[i]) {
-                pData[i] = std::numeric_limits<float>::quiet_NaN();
+    // Get data slice with mask applied
+    data.resize(slicer.length());
+    casacore::SubImage<float> subimage(*image, slicer);               // apply slicer to image to get appropriate cursor
+    casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage); // read-only
+    for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
+        casacore::IPosition cursor_shape(lattice_iter.cursorShape());
+        casacore::IPosition cursor_position(lattice_iter.position());
+        casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
+        casacore::Array<float> cursor_data = lattice_iter.cursor();
+
+        if (image->isMasked()) {
+            casacore::Array<float> masked_data(cursor_data); // reference the same storage
+            const casacore::Array<bool> cursor_mask = lattice_iter.getMask();
+            // Apply cursor mask to cursor data: set masked values to NaN.
+            // booleans are used to delete copy of data if necessary
+            bool del_mask_ptr;
+            const bool* pCursorMask = cursor_mask.getStorage(del_mask_ptr);
+            bool del_data_ptr;
+            float* pMaskedData = masked_data.getStorage(del_data_ptr);
+            for (size_t i = 0; i < cursor_data.nelements(); ++i) {
+                if (!pCursorMask[i]) {
+                    pMaskedData[i] = std::numeric_limits<float>::quiet_NaN();
+                }
             }
+
+            // free storage for cursor arrays
+            cursor_mask.freeStorage(pCursorMask, del_mask_ptr);
+            masked_data.putStorage(pMaskedData, del_data_ptr);
         }
-        mask.freeStorage(pMask, delete_mask_ptr);
-        data.putStorage(pData, delete_data_ptr);
+
+        data(cursor_slicer) = cursor_data;
     }
     return true;
 }

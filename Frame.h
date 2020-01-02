@@ -198,7 +198,7 @@ private:
 
     // Image data
     // save image region data for current channel, stokes
-    void SetImageCache();
+    bool SetImageCache();
     // downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
     bool GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height);
