@@ -430,6 +430,7 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
+		tbb::task_scheduler_init task_scheduler(thread_count);
         omp_set_num_threads(omp_thread_count);
         CARTA::global_thread_count = omp_thread_count;
         if (use_permissions) {
