@@ -59,6 +59,27 @@ void BasicStatsCalculator<T>::operator()(const tbb::blocked_range<size_t>& r) {
 }
 
 template<typename T>
+void BasicStatsCalculator<T>::reduce(const int start, const int end) {
+	  int i;
+#pragma omp parallel for private(i) shared(_data) reduction(min: _min_val) reduction(max:_max_val) reduction(+:_num_pixels) reduction(+:_sum) reduction(+:_sum_squares)
+    for (i = start; i < end ; i++) {
+        T val = _data[i];
+        if (std::isfinite(val)) {
+            if (val < _min_val) {
+                _min_val = val;
+            }
+			if (val > _max_val) {
+                _max_val = val;
+            }
+            _num_pixels++;
+            _sum += val;
+            _sum_squares += val * val;
+        }
+    }
+}
+
+
+template<typename T>
 void BasicStatsCalculator<T>::join(BasicStatsCalculator<T>& other) { // NOLINT
     _min_val = std::min(_min_val, other._min_val);
     _max_val = std::max(_max_val, other._max_val);
