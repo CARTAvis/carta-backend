@@ -1940,8 +1940,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             // Perform contouring with an offset based on the block size, and a scale factor equal to block size
             offset = 0;
             scale = _contour_settings.smoothing_factor;
-            size_t dest_width = image_bounds.x_max() / _contour_settings.smoothing_factor;
-            size_t dest_height = image_bounds.y_max() / _contour_settings.smoothing_factor;
+            size_t dest_width = ceil(double(image_bounds.x_max()) / _contour_settings.smoothing_factor);
+            size_t dest_height = ceil(double(image_bounds.y_max()) / _contour_settings.smoothing_factor);
             TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
                 _contour_settings.chunk_size, partial_contour_callback, _verbose);
             return true;
