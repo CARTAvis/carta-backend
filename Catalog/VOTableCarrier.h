@@ -71,6 +71,7 @@ public:
     void GetHeaders(FileInfoResponse& file_info_response);
     void GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response);
     void GetHeadersAndData(OpenFileResponse& open_file_response, int preview_data_size);
+    void GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size);
     void GetFilteredData(FilterRequest filter_request, std::function<void(FilterResponse)> partial_results_callback);
     size_t GetTableRowNumber();
     static DataType GetDataType(std::string data_type);

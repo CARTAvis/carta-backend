@@ -240,6 +240,87 @@ void VOTableCarrier::GetHeadersAndData(OpenFileResponse& open_file_response, int
     }
 }
 
+void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size) {
+    for (std::pair<int, Field> field : _fields) {
+        Field& tmp_field = field.second;
+        CARTA::EntryType data_type;
+        GetDataType(tmp_field.datatype, data_type);
+        if (data_type != CARTA::EntryType::UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
+            auto header = open_file_response.add_headers();
+            header->set_name(tmp_field.name);
+            header->set_data_type(data_type);
+            header->set_column_index(field.first); // The FIELD index in the VOTable
+            header->set_description(tmp_field.description);
+            header->set_units(tmp_field.unit);
+
+            // Fill the column data with respect to its header
+            int column_index = field.first;
+            auto columns_data = open_file_response.mutable_columns_data();
+            if (_bool_vectors.count(column_index)) {
+                std::vector<bool>& ref_column_data = _bool_vectors[column_index];
+                // Add a bool column
+                auto bool_columns_data = columns_data->add_bool_column();
+                // Fill bool column elements
+                for (int i = 0; i < preview_data_size; ++i) {
+                    bool_columns_data->add_bool_column(ref_column_data[i]);
+                }
+                // Fill the bool column index
+                header->set_data_type_index(bool_columns_data->bool_column_size() - 1);
+            } else if (_string_vectors.count(column_index)) {
+                std::vector<std::string>& ref_column_data = _string_vectors[column_index];
+                // Add a string column
+                auto string_columns_data = columns_data->add_string_column();
+                // Fill string column elements
+                for (int i = 0; i < preview_data_size; ++i) {
+                    string_columns_data->add_string_column(ref_column_data[i]);
+                }
+                // Fill the string column index
+                header->set_data_type_index(string_columns_data->string_column_size() - 1);
+            } else if (_int_vectors.count(column_index)) {
+                std::vector<int>& ref_column_data = _int_vectors[column_index];
+                // Add a int column
+                auto int_columns_data = columns_data->add_int_column();
+                // Fill int column elements
+                for (int i = 0; i < preview_data_size; ++i) {
+                    int_columns_data->add_int_column(ref_column_data[i]);
+                }
+                // Fill the int column index
+                header->set_data_type_index(int_columns_data->int_column_size() - 1);
+            } else if (_ll_vectors.count(column_index)) {
+                std::vector<long long>& ref_column_data = _ll_vectors[column_index];
+                // Add a long long column
+                auto ll_columns_data = columns_data->add_ll_column();
+                // Fill long long column elements
+                for (int i = 0; i < preview_data_size; ++i) {
+                    ll_columns_data->add_ll_column(ref_column_data[i]);
+                }
+                // Fill the long long column index
+                header->set_data_type_index(ll_columns_data->ll_column_size() - 1);
+            } else if (_float_vectors.count(column_index)) {
+                std::vector<float>& ref_column_data = _float_vectors[column_index];
+                // Add a float column
+                auto float_columns_data = columns_data->add_float_column();
+                // Fill float column elements
+                for (int i = 0; i < preview_data_size; ++i) {
+                    float_columns_data->add_float_column(ref_column_data[i]);
+                }
+                // Fill the float column index
+                header->set_data_type_index(float_columns_data->float_column_size() - 1);
+            } else if (_double_vectors.count(column_index)) {
+                std::vector<double>& ref_column_data = _double_vectors[column_index];
+                // Add a double column
+                auto double_columns_data = columns_data->add_double_column();
+                // Fill double column elements
+                for (int i = 0; i < preview_data_size; ++i) {
+                    double_columns_data->add_double_column(ref_column_data[i]);
+                }
+                // Fill the double column index
+                header->set_data_type_index(double_columns_data->double_column_size() - 1);
+            }
+        }
+    }
+}
+
 void VOTableCarrier::GetFilteredData(FilterRequest filter_request, std::function<void(FilterResponse)> partial_results_callback) {
     int file_id(filter_request.file_id);
     int region_id(filter_request.region_id); // TODO: Not implement yet

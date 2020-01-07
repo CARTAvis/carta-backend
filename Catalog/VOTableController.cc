@@ -235,6 +235,52 @@ void Controller::OnOpenFileRequest(OpenFileRequest open_file_request, OpenFileRe
     _carriers[file_id] = std::move(carrier);
 }
 
+void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
+    bool success(false);
+    std::string message;
+    std::string directory(open_file_request.directory());
+    std::string filename(open_file_request.name());
+    std::string file_path_name = Concatenate(directory, filename);
+
+    int file_id(open_file_request.file_id());
+    int preview_data_size(open_file_request.preview_data_size());
+    if (preview_data_size < 1) {
+        preview_data_size = _default_preview_row_numbers; // Default preview row numbers
+    }
+
+    // Get the VOTable data (read the whole file)
+    VOTableCarrier* carrier = new VOTableCarrier();
+    VOTableParser parser(file_path_name, carrier);
+    if (carrier->IsValid()) {
+        success = true;
+    } else {
+        message = "Can not load the file: " + file_path_name;
+    }
+
+    // Fill the response of opening a file
+    open_file_response.set_success(success);
+    open_file_response.set_message(message);
+    open_file_response.set_file_id(file_id);
+    auto file_info = open_file_response.mutable_file_info();
+    file_info->set_name(filename);
+    file_info->set_type(CARTA::CatalogFileType::VOTable);
+    file_info->set_description(GetFileSize(file_path_name));
+
+    // Fill the number of raws
+    size_t total_row_number = carrier->GetTableRowNumber();
+    if (preview_data_size > total_row_number) {
+        preview_data_size = total_row_number;
+    }
+    open_file_response.set_data_size(preview_data_size);
+
+    // Fill the table headers and their columns data
+    carrier->GetHeadersAndData(open_file_response, preview_data_size);
+
+    // Move the VOTableCarrier with respect to its file_id to the cache
+    CloseFile(file_id);
+    _carriers[file_id] = std::move(carrier);
+}
+
 void Controller::OnCloseFileRequest(CloseFileRequest close_file_request) {
     int file_id(close_file_request.file_id);
     CloseFile(file_id);
