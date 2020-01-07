@@ -77,6 +77,64 @@ void Controller::OnFileListRequest(FileListRequest file_list_request, FileListRe
     file_list_response.parent = parent_directory;
 }
 
+void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, CARTA::CatalogListResponse& file_list_response) {
+    bool success(false);
+    std::string message;
+    std::string directory(file_list_request.directory());
+
+    // Replace the $BASE with current working path
+    ParseBasePath(directory);
+
+    // Get a list of files under the directory
+    DIR* current_path;
+    struct dirent* current_entry;
+    if ((current_path = opendir(directory.c_str()))) {
+        success = true; // The directory exists
+        while ((current_entry = readdir(current_path))) {
+            if (strcmp(current_entry->d_name, ".") != 0 && strcmp(current_entry->d_name, "..") != 0) {
+                std::string tmp_name = current_entry->d_name;
+                // Check is it a XML file
+                if (tmp_name.substr(tmp_name.find_last_of(".") + 1) == "xml") {
+                    // Check is it a VOTable XML file
+                    std::string tmp_path_name = Concatenate(directory, tmp_name);
+                    if (VOTableParser::IsVOTable(tmp_path_name)) {
+                        // Get the file size
+                        std::string tmp_file_description = GetFileSize(tmp_path_name);
+                        // Fill the file info
+                        auto file_info = file_list_response.add_files();
+                        file_info->set_name(tmp_name);
+                        file_info->set_type(CARTA::CatalogFileType::VOTable);
+                        file_info->set_description(tmp_file_description);
+                    }
+                } else {
+                    // Check is it a sub-directory
+                    DIR* sub_path;
+                    std::string sub_directory = Concatenate(directory, current_entry->d_name);
+                    if ((sub_path = opendir(sub_directory.c_str()))) {
+                        file_list_response.add_subdirectories(sub_directory);
+                    }
+                    closedir(sub_path);
+                }
+            }
+        }
+        closedir(current_path);
+    } else {
+        message = "Can not open the directory: " + directory;
+    }
+
+    // Get the directory parent
+    std::string parent_directory;
+    if (directory.find("/") != std::string::npos) {
+        parent_directory = directory.substr(0, directory.find_last_of("/"));
+    }
+
+    // Fill the file list response
+    file_list_response.set_success(success);
+    file_list_response.set_message(message);
+    file_list_response.set_directory(directory);
+    file_list_response.set_parent(parent_directory);
+}
+
 void Controller::OnFileInfoRequest(FileInfoRequest file_info_request, FileInfoResponse& file_info_response) {
     bool success(false);
     std::string message;
