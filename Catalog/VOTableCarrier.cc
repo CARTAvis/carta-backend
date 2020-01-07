@@ -164,6 +164,23 @@ void VOTableCarrier::GetHeaders(FileInfoResponse& file_info_response) {
     }
 }
 
+void VOTableCarrier::GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response) {
+    for (std::pair<int, Field> field : _fields) {
+        Field& tmp_field = field.second;
+        CARTA::EntryType catalog_data_type;
+        GetDataType(tmp_field.datatype, catalog_data_type);
+        if (catalog_data_type != CARTA::EntryType::UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
+            auto header = file_info_response.add_headers();
+            header->set_name(tmp_field.name);
+            header->set_data_type(catalog_data_type);
+            header->set_column_index(field.first); // The FIELD index in the VOTable
+            header->set_data_type_index(-1);       // -1 means there is no corresponding data vector in the CatalogColumnsData
+            header->set_description(tmp_field.description);
+            header->set_units(tmp_field.unit);
+        }
+    }
+}
+
 void VOTableCarrier::GetHeadersAndData(OpenFileResponse& open_file_response, int preview_data_size) {
     for (std::pair<int, Field> field : _fields) {
         Field& tmp_field = field.second;
@@ -466,6 +483,24 @@ DataType VOTableCarrier::GetDataType(std::string data_type) {
         catalog_data_type = UNKNOWN_TYPE;
     }
     return catalog_data_type;
+}
+
+void VOTableCarrier::GetDataType(std::string data_type, CARTA::EntryType& catalog_data_type) {
+    if (data_type == "boolean") {
+        catalog_data_type = CARTA::EntryType::BOOL;
+    } else if (data_type == "char") {
+        catalog_data_type = CARTA::EntryType::STRING;
+    } else if (data_type == "short" || data_type == "int") {
+        catalog_data_type = CARTA::EntryType::INT;
+    } else if (data_type == "long") {
+        catalog_data_type = CARTA::EntryType::LONGLONG;
+    } else if (data_type == "float") {
+        catalog_data_type = CARTA::EntryType::FLOAT;
+    } else if (data_type == "double") {
+        catalog_data_type = CARTA::EntryType::DOUBLE;
+    } else {
+        catalog_data_type = CARTA::EntryType::UNKNOWN_TYPE;
+    }
 }
 
 bool VOTableCarrier::IsValid() {

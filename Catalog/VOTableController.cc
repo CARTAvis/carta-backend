@@ -162,6 +162,34 @@ void Controller::OnFileInfoRequest(FileInfoRequest file_info_request, FileInfoRe
         carrier.GetTableRowNumber(); // TODO: since we only read the headers, we don't know the number of table rows
 }
 
+void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request, CARTA::CatalogFileInfoResponse& file_info_response) {
+    bool success(false);
+    std::string message;
+    std::string directory(file_info_request.directory());
+    std::string filename(file_info_request.name());
+    std::string file_path_name = Concatenate(directory, filename);
+
+    // Get the VOTable data (only read to the headers)
+    VOTableCarrier carrier = VOTableCarrier();
+    VOTableParser parser(file_path_name, &carrier, true);
+    if (carrier.IsValid()) {
+        success = true;
+    } else {
+        message = "Can not load the file: " + file_path_name;
+    }
+
+    // Fill the file info response
+    file_info_response.set_success(success);
+    file_info_response.set_message(message);
+    auto file_info = file_info_response.mutable_file_info();
+    file_info->set_name(filename);
+    file_info->set_type(CARTA::CatalogFileType::VOTable);
+    file_info->set_description(GetFileSize(file_path_name));
+    carrier.GetHeaders(file_info_response);
+    file_info_response.set_data_size(
+        carrier.GetTableRowNumber()); // TODO: since we only read the headers, we don't know the number of table rows
+}
+
 void Controller::OnOpenFileRequest(OpenFileRequest open_file_request, OpenFileResponse& open_file_response) {
     bool success(false);
     std::string message;
