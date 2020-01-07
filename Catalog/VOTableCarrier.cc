@@ -80,9 +80,9 @@ void VOTableCarrier::FillTdValues(int column_index, std::string value) {
         }
     } else if (_fields[column_index].datatype == "long") {
         try {
-            _long_vectors[column_index].push_back(std::stol(value));
+            _ll_vectors[column_index].push_back(std::stoll(value));
         } catch (...) {
-            _long_vectors[column_index].push_back(std::numeric_limits<long>::quiet_NaN());
+            _ll_vectors[column_index].push_back(std::numeric_limits<long long>::quiet_NaN());
         }
     } else if (_fields[column_index].datatype == "float") {
         try {
@@ -125,10 +125,10 @@ void VOTableCarrier::UpdateNumOfTableRows() {
             } else if (_num_of_rows != _int_vectors[i].size()) {
                 std::cerr << "The columns sizes are not consistent!" << std::endl;
             }
-        } else if (_long_vectors.find(i) != _long_vectors.end()) {
+        } else if (_ll_vectors.find(i) != _ll_vectors.end()) {
             if (i == 1) {
-                _num_of_rows = _long_vectors[i].size();
-            } else if (_num_of_rows != _long_vectors[i].size()) {
+                _num_of_rows = _ll_vectors[i].size();
+            } else if (_num_of_rows != _ll_vectors[i].size()) {
                 std::cerr << "The columns sizes are not consistent!" << std::endl;
             }
         } else if (_float_vectors.find(i) != _float_vectors.end()) {
@@ -151,7 +151,7 @@ void VOTableCarrier::GetHeaders(FileInfoResponse& file_info_response) {
     for (std::pair<int, Field> field : _fields) {
         Field& tmp_field = field.second;
         DataType tmp_data_type = GetDataType(tmp_field.datatype);
-        if (tmp_data_type != NONE) { // Only fill the header that its data type is in our list
+        if (tmp_data_type != UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
             Header tmp_header;
             tmp_header.column_name = tmp_field.name;
             tmp_header.data_type = tmp_data_type;
@@ -168,7 +168,7 @@ void VOTableCarrier::GetHeadersAndData(OpenFileResponse& open_file_response, int
     for (std::pair<int, Field> field : _fields) {
         Field& tmp_field = field.second;
         DataType tmp_data_type = GetDataType(tmp_field.datatype);
-        if (tmp_data_type != NONE) { // Only fill the header that its data type is in our list
+        if (tmp_data_type != UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
             Header tmp_header;
             tmp_header.column_name = tmp_field.name;
             tmp_header.data_type = tmp_data_type;
@@ -197,12 +197,12 @@ void VOTableCarrier::GetHeadersAndData(OpenFileResponse& open_file_response, int
                 memcpy(copied_column_data.data(), ref_column_data.data(), preview_data_size * sizeof(int));
                 tmp_columns_data.int_columns.emplace_back(copied_column_data);
                 tmp_header.data_type_index = tmp_columns_data.int_columns.size() - 1;
-            } else if (_long_vectors.count(column_index)) {
-                std::vector<long>& ref_column_data = _long_vectors[column_index];
-                std::vector<long> copied_column_data(preview_data_size);
-                memcpy(copied_column_data.data(), ref_column_data.data(), preview_data_size * sizeof(long));
-                tmp_columns_data.long_columns.emplace_back(copied_column_data);
-                tmp_header.data_type_index = tmp_columns_data.long_columns.size() - 1;
+            } else if (_ll_vectors.count(column_index)) {
+                std::vector<long long>& ref_column_data = _ll_vectors[column_index];
+                std::vector<long long> copied_column_data(preview_data_size);
+                memcpy(copied_column_data.data(), ref_column_data.data(), preview_data_size * sizeof(long long));
+                tmp_columns_data.ll_columns.emplace_back(copied_column_data);
+                tmp_header.data_type_index = tmp_columns_data.ll_columns.size() - 1;
             } else if (_float_vectors.count(column_index)) {
                 std::vector<float>& ref_column_data = _float_vectors[column_index];
                 std::vector<float> copied_column_data(preview_data_size);
@@ -252,7 +252,7 @@ void VOTableCarrier::GetFilteredData(FilterRequest filter_request, std::function
     int bool_vector_index = 0;
     int string_vector_index = 0;
     int int_vector_index = 0;
-    int long_vector_index = 0;
+    int ll_vector_index = 0;
     int float_vector_index = 0;
     int double_vector_index = 0;
     std::unordered_map<int, int> column_to_data_type_index; // <Column Index, Data Type Index>
@@ -263,7 +263,7 @@ void VOTableCarrier::GetFilteredData(FilterRequest filter_request, std::function
         DataType tmp_data_type = GetDataType(tmp_field.datatype);
 
         // Only fill the header that its data type is in our list
-        if (tmp_data_type != NONE) {
+        if (tmp_data_type != UNKNOWN_TYPE) {
             // Only fill the header that its column index is not in the hided column set
             int column_index = field.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
@@ -287,10 +287,10 @@ void VOTableCarrier::GetFilteredData(FilterRequest filter_request, std::function
                     column_to_data_type_index[column_index] = int_vector_index;
                     ++int_vector_index;
                     tmp_columns_data.int_columns.resize(int_vector_index);
-                } else if (_long_vectors.count(column_index)) {
-                    column_to_data_type_index[column_index] = long_vector_index;
-                    ++long_vector_index;
-                    tmp_columns_data.long_columns.resize(long_vector_index);
+                } else if (_ll_vectors.count(column_index)) {
+                    column_to_data_type_index[column_index] = ll_vector_index;
+                    ++ll_vector_index;
+                    tmp_columns_data.ll_columns.resize(ll_vector_index);
                 } else if (_float_vectors.count(column_index)) {
                     column_to_data_type_index[column_index] = float_vector_index;
                     ++float_vector_index;
@@ -359,9 +359,9 @@ void VOTableCarrier::GetFilteredData(FilterRequest filter_request, std::function
                             fill = false;
                             break; // Break the loop once the row data does not pass the filter
                         }
-                    } else if (_long_vectors.count(column_index)) {
-                        long tmp_value = _long_vectors[column_index][row];
-                        if (!NumericFilter<long>(filter, tmp_value)) {
+                    } else if (_ll_vectors.count(column_index)) {
+                        long long tmp_value = _ll_vectors[column_index][row];
+                        if (!NumericFilter<long long>(filter, tmp_value)) {
                             fill = false;
                             break; // Break the loop once the row data does not pass the filter
                         }
@@ -408,11 +408,11 @@ void VOTableCarrier::GetFilteredData(FilterRequest filter_request, std::function
                 tmp_columns_data.int_columns[data_type_index].push_back(int_vector.second[row]);
             }
         }
-        for (std::pair<int, std::vector<long>> long_vector : _long_vectors) {
-            int column_index = long_vector.first;
+        for (std::pair<int, std::vector<long long>> ll_vector : _ll_vectors) {
+            int column_index = ll_vector.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
                 int data_type_index = column_to_data_type_index[column_index];
-                tmp_columns_data.long_columns[data_type_index].push_back(long_vector.second[row]);
+                tmp_columns_data.ll_columns[data_type_index].push_back(ll_vector.second[row]);
             }
         }
         for (std::pair<int, std::vector<float>> float_vector : _float_vectors) {
@@ -457,13 +457,13 @@ DataType VOTableCarrier::GetDataType(std::string data_type) {
     } else if (data_type == "short" || data_type == "int") {
         catalog_data_type = INT;
     } else if (data_type == "long") {
-        catalog_data_type = LONG;
+        catalog_data_type = LONGLONG;
     } else if (data_type == "float") {
         catalog_data_type = FLOAT;
     } else if (data_type == "double") {
         catalog_data_type = DOUBLE;
     } else {
-        catalog_data_type = NONE;
+        catalog_data_type = UNKNOWN_TYPE;
     }
     return catalog_data_type;
 }
@@ -480,8 +480,8 @@ void VOTableCarrier::PrintTableElement(int row, int column) {
         std::cout << _string_vectors[column][row] << " | ";
     } else if (_int_vectors.find(column) != _int_vectors.end()) {
         std::cout << _int_vectors[column][row] << " | ";
-    } else if (_long_vectors.find(column) != _long_vectors.end()) {
-        std::cout << _long_vectors[column][row] << " | ";
+    } else if (_ll_vectors.find(column) != _ll_vectors.end()) {
+        std::cout << _ll_vectors[column][row] << " | ";
     } else if (_float_vectors.find(column) != _float_vectors.end()) {
         std::cout << _float_vectors[column][row] << " | ";
     } else if (_double_vectors.find(column) != _double_vectors.end()) {
@@ -494,18 +494,18 @@ void VOTableCarrier::PrintTableElement(int row, int column) {
 void VOTableCarrier::PrintData() {
     UpdateNumOfTableRows();
     std::cout << "------------------------------------------------------------------\n";
-    std::cout << "File Name           : " << _filename << std::endl;
-    std::cout << "File Directory      : " << _directory << std::endl;
-    std::cout << "VOTable Version     : " << _votable_version << std::endl;
-    std::cout << "Table column size   : " << _fields.size() << std::endl;
-    std::cout << "Table row size      : " << _num_of_rows << std::endl;
+    std::cout << "File Name              : " << _filename << std::endl;
+    std::cout << "File Directory         : " << _directory << std::endl;
+    std::cout << "VOTable Version        : " << _votable_version << std::endl;
+    std::cout << "Table column size      : " << _fields.size() << std::endl;
+    std::cout << "Table row size         : " << _num_of_rows << std::endl;
     std::cout << "------------------------------------------------------------------\n";
-    std::cout << "# of bool columns   : " << _bool_vectors.size() << std::endl;
-    std::cout << "# of string columns : " << _string_vectors.size() << std::endl;
-    std::cout << "# of int columns    : " << _int_vectors.size() << std::endl;
-    std::cout << "# of long columns   : " << _long_vectors.size() << std::endl;
-    std::cout << "# of float columns  : " << _float_vectors.size() << std::endl;
-    std::cout << "# of double columns : " << _double_vectors.size() << std::endl;
+    std::cout << "# of bool columns      : " << _bool_vectors.size() << std::endl;
+    std::cout << "# of string columns    : " << _string_vectors.size() << std::endl;
+    std::cout << "# of int columns       : " << _int_vectors.size() << std::endl;
+    std::cout << "# of long long columns : " << _ll_vectors.size() << std::endl;
+    std::cout << "# of float columns     : " << _float_vectors.size() << std::endl;
+    std::cout << "# of double columns    : " << _double_vectors.size() << std::endl;
     std::cout << "------------------------------------------------------------------\n";
     // Print coordinate systems
     for (std::pair<int, Coosys> coosys : _coosys) {

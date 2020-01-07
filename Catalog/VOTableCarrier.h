@@ -95,7 +95,7 @@ private:
     std::unordered_map<int, std::vector<bool>> _bool_vectors;          // For the column with datatype = "boolean"
     std::unordered_map<int, std::vector<std::string>> _string_vectors; // For the column with datatype = "char"
     std::unordered_map<int, std::vector<int>> _int_vectors;            // For the column with datdtype = "int"
-    std::unordered_map<int, std::vector<long>> _long_vectors;          // For the column with datdtype = "long"
+    std::unordered_map<int, std::vector<long long>> _ll_vectors;       // For the column with datdtype = "long long"
     std::unordered_map<int, std::vector<float>> _float_vectors;        // For the column with datdtype = "float"
     std::unordered_map<int, std::vector<double>> _double_vectors;      // For the column with datdtype = "double"
 
