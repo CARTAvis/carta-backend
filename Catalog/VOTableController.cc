@@ -286,6 +286,11 @@ void Controller::OnCloseFileRequest(CloseFileRequest close_file_request) {
     CloseFile(file_id);
 }
 
+void Controller::OnCloseFileRequest(CARTA::CloseCatalogFile close_file_request) {
+    int file_id(close_file_request.file_id());
+    CloseFile(file_id);
+}
+
 void Controller::OnFilterRequest(FilterRequest filter_request, std::function<void(FilterResponse)> partial_results_callback) {
     int file_id(filter_request.file_id);
     if (!_carriers.count(file_id)) {
