@@ -1,5 +1,6 @@
 #include "VOTableCarrier.h"
 
+#include <cassert>
 #include <set>
 
 using namespace catalog;
@@ -541,6 +542,237 @@ void VOTableCarrier::GetFilteredData(FilterRequest filter_request, std::function
     }
 }
 
+void VOTableCarrier::GetFilteredData(
+    CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback) {
+    int file_id(filter_request.file_id());
+    int region_id(filter_request.region_id()); // TODO: Not implement yet
+    int subset_data_size(filter_request.subset_data_size());
+    int subset_start_index(filter_request.subset_start_index());
+    CARTA::ImageBounds image_bounds = filter_request.image_bounds(); // TODO: Not implement yet
+
+    // Get column indices to hide
+    std::set<int> hided_column_indices;
+    for (int i = 0; i < filter_request.hided_headers_size(); ++i) {
+        std::string hided_header = filter_request.hided_headers(i);
+        for (std::pair<int, Field> field : _fields) {
+            if (hided_header == field.second.name) {
+                hided_column_indices.insert(field.first);
+            }
+        }
+    }
+
+    // Fill the filter response
+    CARTA::CatalogFilterResponse filter_response;
+    filter_response.set_file_id(file_id);
+    filter_response.set_region_id(region_id);
+
+    // Initialize columns data with respect to their column indices
+    auto tmp_columns_data = filter_response.mutable_columns_data();
+    int bool_vector_index = 0;
+    int string_vector_index = 0;
+    int int_vector_index = 0;
+    int ll_vector_index = 0;
+    int float_vector_index = 0;
+    int double_vector_index = 0;
+    std::unordered_map<int, int> column_to_data_type_index; // <Column Index, Data Type Index>
+
+    // Fill headers
+    for (std::pair<int, Field> field : _fields) {
+        Field& tmp_field = field.second;
+        CARTA::EntryType tmp_data_type;
+        GetDataType(tmp_field.datatype, tmp_data_type);
+
+        // Only fill the header that its data type is in our list
+        if (tmp_data_type != CARTA::EntryType::UNKNOWN_TYPE) {
+            // Only fill the header that its column index is not in the hided column set
+            int column_index = field.first;
+            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
+                CARTA::CatalogHeader header;
+                header.set_name(tmp_field.name);
+                header.set_data_type(tmp_data_type);
+                header.set_column_index(column_index); // The FIELD index in the VOTable
+                header.set_description(tmp_field.description);
+                header.set_units(tmp_field.unit);
+
+                // Assign the column data type index and column size
+                if (_bool_vectors.count(column_index)) {
+                    column_to_data_type_index[column_index] = bool_vector_index;
+                    ++bool_vector_index;
+                    tmp_columns_data->add_bool_column();
+                } else if (_string_vectors.count(column_index)) {
+                    column_to_data_type_index[column_index] = string_vector_index;
+                    ++string_vector_index;
+                    tmp_columns_data->add_string_column();
+                } else if (_int_vectors.count(column_index)) {
+                    column_to_data_type_index[column_index] = int_vector_index;
+                    ++int_vector_index;
+                    tmp_columns_data->add_int_column();
+                } else if (_ll_vectors.count(column_index)) {
+                    column_to_data_type_index[column_index] = ll_vector_index;
+                    ++ll_vector_index;
+                    tmp_columns_data->add_ll_column();
+                } else if (_float_vectors.count(column_index)) {
+                    column_to_data_type_index[column_index] = float_vector_index;
+                    ++float_vector_index;
+                    tmp_columns_data->add_float_column();
+                } else if (_double_vectors.count(column_index)) {
+                    column_to_data_type_index[column_index] = double_vector_index;
+                    ++double_vector_index;
+                    tmp_columns_data->add_double_column();
+                }
+
+                // Fill the data type index
+                header.set_data_type_index(column_to_data_type_index[column_index]);
+            }
+        }
+    }
+
+    // Get the end index of row
+    int total_row_num = GetTableRowNumber();
+    if (subset_start_index > total_row_num - 1) {
+        std::cerr << "Start row index is out of range!" << std::endl;
+        return;
+    }
+    if (subset_data_size < 0) {
+        std::cerr << "Subset data size is negative!" << std::endl;
+        return;
+    }
+    int subset_end_index = subset_start_index + subset_data_size - 1;
+    if (subset_end_index > total_row_num - 1) {
+        subset_end_index = total_row_num - 1;
+    }
+
+    // Loop the table row data
+    int row_size = subset_end_index - subset_start_index + 1;
+    float check_progress_interval = 0.1;
+    float last_progress = check_progress_interval;
+    for (int row = subset_start_index; row <= subset_end_index; ++row) {
+        // Loop the table column
+        bool fill(true);
+
+        // Apply the filter and determine whether to fill the row data
+        for (int i = 0; i < filter_request.filter_configs_size(); ++i /*auto& filter : filter_configs*/) {
+            auto filter = filter_request.filter_configs(i);
+            if (!fill) { // Break the loop once the "fill" boolean becomes false
+                break;
+            }
+            for (std::pair<int, Field> field : _fields) {
+                if (filter.column_name() == field.second.name) {
+                    int column_index = field.first;
+                    if (_bool_vectors.count(column_index)) {
+                        bool tmp_value = _bool_vectors[column_index][row];
+                        if (!BoolFilter(filter, tmp_value)) {
+                            fill = false;
+                            break; // Break the loop once the row data does not pass the filter
+                        }
+                    } else if (_string_vectors.count(column_index)) {
+                        std::string tmp_value = _string_vectors[column_index][row];
+                        if (!StringFilter(filter, tmp_value)) {
+                            fill = false;
+                            break; // Break the loop once the row data does not pass the filter
+                        }
+                    } else if (_int_vectors.count(column_index)) {
+                        int tmp_value = _int_vectors[column_index][row];
+                        if (!NumericFilter<int>(filter, tmp_value)) {
+                            fill = false;
+                            break; // Break the loop once the row data does not pass the filter
+                        }
+                    } else if (_ll_vectors.count(column_index)) {
+                        long long tmp_value = _ll_vectors[column_index][row];
+                        if (!NumericFilter<long long>(filter, tmp_value)) {
+                            fill = false;
+                            break; // Break the loop once the row data does not pass the filter
+                        }
+                    } else if (_float_vectors.count(column_index)) {
+                        float tmp_value = _float_vectors[column_index][row];
+                        if (!NumericFilter<float>(filter, tmp_value)) {
+                            fill = false;
+                            break; // Break the loop once the row data does not pass the filter
+                        }
+                    } else if (_double_vectors.count(column_index)) {
+                        double tmp_value = _double_vectors[column_index][row];
+                        if (!NumericFilter<double>(filter, tmp_value)) {
+                            fill = false;
+                            break; // Break the loop once the row data does not pass the filter
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!fill) { // Do not do the following process to fill the row data
+            continue;
+        }
+
+        // Fill the row data
+        for (std::pair<int, std::vector<bool>> bool_vector : _bool_vectors) {
+            int column_index = bool_vector.first;
+            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
+                int data_type_index = column_to_data_type_index[column_index];
+                assert(data_type_index < tmp_columns_data->bool_column_size());
+                auto bool_column = tmp_columns_data->bool_column(data_type_index);
+                bool_column.add_bool_column(bool_vector.second[row]);
+            }
+        }
+        for (std::pair<int, std::vector<std::string>> string_vector : _string_vectors) {
+            int column_index = string_vector.first;
+            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
+                int data_type_index = column_to_data_type_index[column_index];
+                assert(data_type_index < tmp_columns_data->string_column_size());
+                auto string_column = tmp_columns_data->string_column(data_type_index);
+                string_column.add_string_column(string_vector.second[row]);
+            }
+        }
+        for (std::pair<int, std::vector<int>> int_vector : _int_vectors) {
+            int column_index = int_vector.first;
+            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
+                int data_type_index = column_to_data_type_index[column_index];
+                assert(data_type_index < tmp_columns_data->int_column_size());
+                auto int_column = tmp_columns_data->int_column(data_type_index);
+                int_column.add_int_column(int_vector.second[row]);
+            }
+        }
+        for (std::pair<int, std::vector<long long>> ll_vector : _ll_vectors) {
+            int column_index = ll_vector.first;
+            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
+                int data_type_index = column_to_data_type_index[column_index];
+                assert(data_type_index < tmp_columns_data->ll_column_size());
+                auto ll_column = tmp_columns_data->ll_column(data_type_index);
+                ll_column.add_ll_column(ll_vector.second[row]);
+            }
+        }
+        for (std::pair<int, std::vector<float>> float_vector : _float_vectors) {
+            int column_index = float_vector.first;
+            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
+                int data_type_index = column_to_data_type_index[column_index];
+                assert(data_type_index < tmp_columns_data->float_column_size());
+                auto float_column = tmp_columns_data->float_column(data_type_index);
+                float_column.add_float_column(float_vector.second[row]);
+            }
+        }
+        for (std::pair<int, std::vector<double>> double_vector : _double_vectors) {
+            int column_index = double_vector.first;
+            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
+                int data_type_index = column_to_data_type_index[column_index];
+                assert(data_type_index < tmp_columns_data->double_column_size());
+                auto double_column = tmp_columns_data->double_column(data_type_index);
+                double_column.add_double_column(double_vector.second[row]);
+            }
+        }
+
+        // Calculate the progress
+        float progress = (float)(row - subset_start_index + 1) / (float)row_size;
+
+        if ((progress > last_progress) || (progress >= 1.0)) {
+            last_progress = progress + check_progress_interval;
+            filter_response.set_progress(progress);
+
+            // Send partial results by the callback function
+            partial_results_callback(filter_response);
+        }
+    }
+}
+
 size_t VOTableCarrier::GetTableRowNumber() {
     UpdateNumOfTableRows();
     return _num_of_rows;
@@ -650,8 +882,21 @@ bool VOTableCarrier::BoolFilter(FilterConfig filter, bool value) {
     return true;
 }
 
+bool VOTableCarrier::BoolFilter(CARTA::FilterConfig filter, bool value) {
+    // TODO: To be defined
+    return true;
+}
+
 bool VOTableCarrier::StringFilter(FilterConfig filter, std::string value) {
     std::string sub_string = filter.sub_string;
+    if (value.find(sub_string) != std::string::npos) {
+        return true;
+    }
+    return false;
+}
+
+bool VOTableCarrier::StringFilter(CARTA::FilterConfig filter, std::string value) {
+    std::string sub_string = filter.sub_string();
     if (value.find(sub_string) != std::string::npos) {
         return true;
     }
@@ -686,6 +931,42 @@ bool VOTableCarrier::NumericFilter(FilterConfig filter, T value) {
             break;
         case FromTo:
             result = (filter.min < value && value < filter.max);
+            break;
+        default:
+            std::cerr << "Unknown comparison operator!" << std::endl;
+            break;
+    }
+    return result;
+}
+
+template <typename T>
+bool VOTableCarrier::NumericFilter(CARTA::FilterConfig filter, T value) {
+    bool result(true);
+    CARTA::ComparisonOperator cmp_op = filter.comparison_operator();
+    switch (cmp_op) {
+        case CARTA::ComparisonOperator::EqualTo:
+            result = (value == filter.min());
+            break;
+        case CARTA::ComparisonOperator::NotEqualTo:
+            result = (value != filter.min());
+            break;
+        case CARTA::ComparisonOperator::LessThan:
+            result = (value < filter.min());
+            break;
+        case CARTA::ComparisonOperator::GreaterThan:
+            result = (value > filter.min());
+            break;
+        case CARTA::ComparisonOperator::LessThanOrEqualTo:
+            result = (value <= filter.min());
+            break;
+        case CARTA::ComparisonOperator::GreaterThanOrEqualTo:
+            result = (value >= filter.min());
+            break;
+        case CARTA::ComparisonOperator::BetweenAnd:
+            result = (filter.min() <= value && value <= filter.max());
+            break;
+        case CARTA::ComparisonOperator::FromTo:
+            result = (filter.min() < value && value < filter.max());
             break;
         default:
             std::cerr << "Unknown comparison operator!" << std::endl;

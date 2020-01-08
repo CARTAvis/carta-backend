@@ -73,6 +73,8 @@ public:
     void GetHeadersAndData(OpenFileResponse& open_file_response, int preview_data_size);
     void GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size);
     void GetFilteredData(FilterRequest filter_request, std::function<void(FilterResponse)> partial_results_callback);
+    void GetFilteredData(
+        CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
     size_t GetTableRowNumber();
     static DataType GetDataType(std::string data_type);
     static void GetDataType(std::string data_type, CARTA::EntryType& catalog_data_type);
@@ -83,9 +85,13 @@ public:
 
 private:
     bool BoolFilter(FilterConfig filter, bool value);
+    bool BoolFilter(CARTA::FilterConfig filter, bool value);
     bool StringFilter(FilterConfig filter, std::string value);
+    bool StringFilter(CARTA::FilterConfig filter, std::string value);
     template <typename T>
     bool NumericFilter(FilterConfig filter, T value);
+    template <typename T>
+    bool NumericFilter(CARTA::FilterConfig filter, T value);
 
     std::string _filename;
     std::string _directory;
