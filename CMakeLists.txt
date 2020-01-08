@@ -84,6 +84,7 @@ set(SOURCE_FILES
         ImageData/FileLoader.cc
         ImageData/Hdf5Loader.cc
         ImageData/CartaHdf5Image.cc
+        ImageData/CartaMiriadImage.cc
         FileList/FileExtInfoLoader.cc
         FileList/FileInfoLoader.cc
         FileList/FileListHandler.cc

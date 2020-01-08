@@ -329,7 +329,13 @@ void FileExtInfoLoader::AddComputedEntries(
     }
 
     if (coord_system.hasDirectionCoordinate()) {
-        std::string projection(coord_system.directionCoordinate().projection().name());
+        std::string projection;
+        casacore::DirectionCoordinate dir_coord(coord_system.directionCoordinate());
+        if (dir_coord.isNCP()) {
+            projection = "NCP";
+        } else {
+            projection = dir_coord.projection().name();
+        }
         if (!projection.empty()) {
             auto entry = extended_info->add_computed_entries();
             entry->set_name("Projection");

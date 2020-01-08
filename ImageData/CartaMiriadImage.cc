@@ -1,0 +1,198 @@
+//# CartaMiriadImage.cc : specialized Image implementation to manage headers and masks
+
+#include "CartaMiriadImage.h"
+
+#include <casacore/casa/OS/File.h>
+#include <casacore/casa/OS/Path.h>
+#include <casacore/mirlib/maxdimc.h>
+#include <casacore/mirlib/miriad.h>
+
+using namespace carta;
+
+CartaMiriadImage::CartaMiriadImage(const std::string& filename, casacore::MaskSpecifier mask_spec)
+    : casacore::MIRIADImage(filename, mask_spec),
+      _filename(filename),
+      _mask_spec(mask_spec),
+      _valid(false),
+      _is_open(false),
+      _has_mask(false),
+      _pixel_mask(nullptr) {
+    SetUp();
+    _valid = true;
+}
+
+CartaMiriadImage::CartaMiriadImage(const CartaMiriadImage& other)
+    : casacore::MIRIADImage(other._filename, other._mask_spec),
+      _filename(other._filename),
+      _mask_spec(other._mask_spec),
+      _valid(other._valid),
+      _has_mask(other._has_mask),
+      _mask_name(other._mask_name) {
+    SetUp();
+    if (other._pixel_mask != nullptr) {
+        _pixel_mask = other._pixel_mask->clone();
+    }
+}
+
+CartaMiriadImage::~CartaMiriadImage() {
+    CloseImage();
+    delete _pixel_mask;
+}
+
+void CartaMiriadImage::SetUp() {
+    // open image, set mask
+    OpenImage();
+
+    // casacore::MIRIADImage ignores masks in image
+    casacore::String mask_name;
+    if (_mask_spec.useDefault()) {
+        _mask_name = "mask";
+    } else {
+        _mask_name = _mask_spec.name();
+    }
+
+    // check if mask exists
+    _has_mask = hdprsnt_c(_file_handle, _mask_name.c_str());
+
+    if (_has_mask) {
+        _pixel_mask = new casacore::ArrayLattice<bool>(); // fill when needed
+    }
+}
+
+void CartaMiriadImage::OpenImage() {
+    int naxis(MAXNAX), axes[MAXNAX];
+    xyopen_c(&_file_handle, _filename.c_str(), "old", naxis, axes);
+    _is_open = true;
+}
+
+void CartaMiriadImage::CloseImage() {
+    xyclose_c(_file_handle);
+    _is_open = false;
+}
+
+// Image interface
+
+casacore::String CartaMiriadImage::imageType() const {
+    return "CartaMiriadImage";
+}
+
+casacore::String CartaMiriadImage::name(bool stripPath) const {
+    if (stripPath) {
+        casacore::Path full_path(_filename);
+        return full_path.baseName();
+    } else {
+        return _filename;
+    }
+}
+
+casacore::ImageInterface<float>* CartaMiriadImage::cloneII() const {
+    return new CartaMiriadImage(*this);
+}
+
+casacore::Bool CartaMiriadImage::isMasked() const {
+    return _has_mask;
+}
+
+casacore::Bool CartaMiriadImage::hasPixelMask() const {
+    return _has_mask;
+}
+
+const casacore::Lattice<bool>& CartaMiriadImage::pixelMask() const {
+    if (!_has_mask) {
+        throw(casacore::AipsError("CartaMiriadImage::pixelMask - no pixelmask used"));
+    }
+    return pixelMask();
+}
+
+casacore::Lattice<bool>& CartaMiriadImage::pixelMask() {
+    if (!_has_mask) {
+        throw(casacore::AipsError("CartaMiriadImage::pixelMask - no pixelmask used"));
+    }
+
+    if (_pixel_mask->shape().empty()) {
+        // fill pixel mask with slicer for entire image shape
+        casacore::IPosition data_shape(shape());
+        casacore::IPosition start(data_shape.size(), 0);
+        casacore::IPosition end(data_shape);
+        casacore::Slicer slicer(start, end);
+        casacore::Array<bool> array_mask;
+        doGetMaskSlice(array_mask, slicer);
+        // replace pixel mask
+        delete _pixel_mask;
+        _pixel_mask = new casacore::ArrayLattice<bool>(array_mask);
+    }
+    return *_pixel_mask;
+}
+
+casacore::Bool CartaMiriadImage::doGetMaskSlice(casacore::Array<bool>& buffer, const casacore::Slicer& section) {
+    // return section of mask using mirlib
+    casacore::IPosition slicer_shape(section.length());
+    buffer.resize(slicer_shape);
+
+    if (!_has_mask) { // use entire section
+        buffer.set(true);
+        return false;
+    }
+
+    if (!_is_open) {
+        OpenImage();
+    }
+
+    // set each image plane and read flags
+    int naxis_plane(slicer_shape.size() - 2); // num axes needed to select image plane
+    casacore::IPosition start_pos(section.start()), end_pos(section.end()), stride(section.stride());
+    switch (naxis_plane) {
+        case 0: { // xy 2D mask
+            GetPlaneFlags(buffer, section);
+            break;
+        }
+        case 1: { // xyz 3D mask
+            for (int z = start_pos(2); z <= end_pos(2); z += stride(2)) {
+                // set 1-based image plane for z and get flags
+                int plane_axes[] = {z + 1};
+                xysetpl_c(_file_handle, naxis_plane, plane_axes);
+                GetPlaneFlags(buffer, section, z);
+            }
+            break;
+        }
+        case 2: { // xyzw 4D mask
+            for (int w = start_pos(3); w <= end_pos(3); w += stride(3)) {
+                for (int z = start_pos(2); z <= end_pos(2); z += stride(2)) {
+                    // set 1-based image plane for zw and get flags
+                    int plane_axes[] = {z + 1, w + 1};
+                    xysetpl_c(_file_handle, naxis_plane, plane_axes);
+                    GetPlaneFlags(buffer, section, z, w);
+                }
+            }
+            break;
+        }
+    }
+    return false;
+}
+
+void CartaMiriadImage::GetPlaneFlags(casacore::Array<bool>& buffer, const casacore::Slicer& section, int z, int w) {
+    // Get flag rows in plane from miriad mask.
+    // Assumes plane has been set (xysetpl_c) and buffer is sized to slicer shape
+    casacore::IPosition start_pos(section.start()), end_pos(section.end()), stride(section.stride()), length(section.length());
+    int nx(shape()(0)), y_start(start_pos(1));
+
+    // Get flags for each row; y is row index in mask file
+    int buffer_row(0);
+    for (int y = start_pos(1); y <= end_pos(1); y += stride(1)) {
+        // read flags (int) into flag_row (1-based row index in mask file)
+        int flag_row[nx];
+        xyflgrd_c(_file_handle, y + 1, flag_row);
+
+        // convert flags in x-range to boolean, set buffer
+        for (int i = 0, x = start_pos(0); x <= end_pos(0); ++i, ++x) {
+            casacore::IPosition buffer_pos(2, i, buffer_row);
+            if (w >= 0) {
+                buffer_pos.append(casacore::IPosition(2, z, w));
+            } else if (z >= 0) {
+                buffer_pos.append(casacore::IPosition(1, z));
+            }
+            buffer(buffer_pos) = (flag_row[x] != 0);
+        }
+        buffer_row++;
+    }
+}
