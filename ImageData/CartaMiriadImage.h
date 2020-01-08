@@ -3,6 +3,7 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_CARTAMIRIADIMAGE_H_
 #define CARTA_BACKEND_IMAGEDATA_CARTAMIRIADIMAGE_H_
 
+#include <casacore/coordinates/Coordinates/SpectralCoordinate.h>
 #include <casacore/images/Images/MIRIADImage.h>
 #include <casacore/images/Images/MaskSpecifier.h>
 
@@ -20,6 +21,10 @@ public:
         return _valid;
     };
 
+    inline casacore::SpectralCoordinate::SpecType NativeType() {
+        return _native_type;
+    }
+
     // implement casacore ImageInterface
     casacore::String imageType() const override;
     casacore::String name(bool stripPath = false) const override;
@@ -36,6 +41,10 @@ private:
     void SetUp();
     void OpenImage();
     void CloseImage();
+    void SetMask();
+    void SetNativeType();
+
+    // for doGetMaskSlice, read flag rows from mask file using mirlib
     void GetPlaneFlags(casacore::Array<bool>& buffer, const casacore::Slicer& section, int z = -1, int w = -1);
 
     casacore::String _filename;
@@ -43,6 +52,7 @@ private:
     bool _valid;
     bool _is_open;
     int _file_handle;
+    casacore::SpectralCoordinate::SpecType _native_type;
 
     bool _has_mask;
     casacore::String _mask_name; // full path to mask file

@@ -2,7 +2,6 @@
 
 #include "CartaMiriadImage.h"
 
-#include <casacore/casa/OS/File.h>
 #include <casacore/casa/OS/Path.h>
 #include <casacore/mirlib/maxdimc.h>
 #include <casacore/mirlib/miriad.h>
@@ -26,6 +25,7 @@ CartaMiriadImage::CartaMiriadImage(const CartaMiriadImage& other)
       _filename(other._filename),
       _mask_spec(other._mask_spec),
       _valid(other._valid),
+      _native_type(other._native_type),
       _has_mask(other._has_mask),
       _mask_name(other._mask_name) {
     SetUp();
@@ -40,23 +40,10 @@ CartaMiriadImage::~CartaMiriadImage() {
 }
 
 void CartaMiriadImage::SetUp() {
-    // open image, set mask
-    OpenImage();
-
-    // casacore::MIRIADImage ignores masks in image
-    casacore::String mask_name;
-    if (_mask_spec.useDefault()) {
-        _mask_name = "mask";
-    } else {
-        _mask_name = _mask_spec.name();
-    }
-
-    // check if mask exists
-    _has_mask = hdprsnt_c(_file_handle, _mask_name.c_str());
-
-    if (_has_mask) {
-        _pixel_mask = new casacore::ArrayLattice<bool>(); // fill when needed
-    }
+    // open image, set mask, set native spectral type
+    OpenImage();     // using mirlib, for checking headers and reading mask
+    SetMask();       // casacore::MIRIADImage ignores masks in image
+    SetNativeType(); // casacore::MIRIADImage sets default FREQ
 }
 
 void CartaMiriadImage::OpenImage() {
@@ -68,6 +55,51 @@ void CartaMiriadImage::OpenImage() {
 void CartaMiriadImage::CloseImage() {
     xyclose_c(_file_handle);
     _is_open = false;
+}
+
+void CartaMiriadImage::SetMask() {
+    casacore::String mask_name;
+    if (_mask_spec.useDefault()) {
+        _mask_name = "mask";
+    } else {
+        _mask_name = _mask_spec.name();
+    }
+    _has_mask = hdprsnt_c(_file_handle, _mask_name.c_str()); // check if mask header exists
+    if (_has_mask) {
+        _pixel_mask = new casacore::ArrayLattice<bool>(); // fill when needed
+    }
+}
+
+void CartaMiriadImage::SetNativeType() {
+    // Read CTYPE header to set native spectral type correctly
+    if (coordinates().hasSpectralAxis()) {
+        int spectral_axis(coordinates().spectralAxisNumber());           // 0-indexed
+        std::string header("ctype" + std::to_string(spectral_axis + 1)); // 1-indexed
+        if (hdprsnt_c(_file_handle, header.c_str())) {                   // check if ctype header exists
+            char ctype_value[30];
+            rdhda_c(_file_handle, header.c_str(), ctype_value, "none", 30);
+            if (ctype_value != "none") { // default if not found
+                casacore::String spectral_ctype(ctype_value);
+                _native_type = casacore::SpectralCoordinate::FREQ;
+                if (spectral_ctype.contains("VRAD")) {
+                    _native_type = casacore::SpectralCoordinate::VRAD;
+                } else if (spectral_ctype.contains("VOPT") || spectral_ctype.contains("FELO")) {
+                    _native_type = casacore::SpectralCoordinate::VOPT;
+                } else if (spectral_ctype.contains("WAVE")) {
+                    _native_type = casacore::SpectralCoordinate::WAVE;
+                } else if (spectral_ctype.contains("AWAV")) {
+                    _native_type = casacore::SpectralCoordinate::AWAV;
+                } else if (spectral_ctype.contains("VELO")) {
+                    casacore::MDoppler::Types vel_doppler(coordinates().spectralCoordinate().velocityDoppler());
+                    if ((vel_doppler == casacore::MDoppler::Z) || (vel_doppler == casacore::MDoppler::OPTICAL)) {
+                        _native_type = casacore::SpectralCoordinate::VOPT;
+                    } else {
+                        _native_type = casacore::SpectralCoordinate::VRAD;
+                    }
+                }
+            }
+        }
+    }
 }
 
 // Image interface
