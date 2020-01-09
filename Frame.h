@@ -30,6 +30,7 @@
 #include "InterfaceConstants.h"
 #include "Region/Region.h"
 #include "Tile.h"
+#include "TileCache.h"
 
 struct ViewSettings {
     CARTA::ImageBounds image_bounds;
@@ -198,7 +199,7 @@ private:
 
     // Image data
     // save image region data for current channel, stokes
-    void SetImageCache();
+    bool SetImageCache();
     // downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
     bool GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height);
@@ -261,6 +262,7 @@ private:
     tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;            // only one disk access at a time
     bool _cache_loaded;                 // channel cache is set
+    TileCache _tile_cache;              // cache for full-resolution image tiles
 
     // Region
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID

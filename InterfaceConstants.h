@@ -27,6 +27,7 @@
 // raster image data
 #define MAX_SUBSETS 8
 #define TILE_SIZE 256
+#define TILE_CACHE_CAPACITY 4096
 
 // histograms
 #define AUTO_BIN_SIZE -1

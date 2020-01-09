@@ -32,6 +32,9 @@ public:
     bool GetTile(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) override;
     void SetFramePtr(Frame* frame) override;
 
+    bool HasMip(int mip, std::mutex& image_mutex) const override;
+    bool UseTileCache(std::mutex& image_mutex) const override;
+
 private:
     std::string _filename;
     std::string _hdu;
@@ -41,7 +44,6 @@ private:
     Frame* _frame;
 
     std::string DataSetToString(FileInfo::Data ds) const;
-    std::string MipToString(int mip) const;
     bool HasData(std::string ds_name) const;
 
     template <typename T>

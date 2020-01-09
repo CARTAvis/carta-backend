@@ -24,6 +24,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _z_profile_count(0),
       _cursor_set(false),
       _loader(loader),
+      _tile_cache(TILE_CACHE_CAPACITY),
       _spectral_axis(-1),
       _stokes_axis(-1),
       _channel_index(-1),
@@ -71,10 +72,9 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     SetDefaultCursor();  // frontend sets requirements for cursor before cursor set
     _cursor_set = false; // only true if set by frontend
 
-    // set current channel, stokes, imageCache
+    // set current channel, stokes
     _channel_index = default_channel;
     _stokes_index = DEFAULT_STOKES;
-    SetImageCache();
 
     try {
         // Resize stats vectors and load data from image, if the format supports it.
@@ -180,15 +180,15 @@ bool Frame::SetRegion(int region_id, const std::string& name, CARTA::RegionType 
                 region_set = true;
             }
         }
+    }
 
-        if (region_set) {
-            if (name == "cursor" && type == CARTA::RegionType::POINT) {
-                // update current cursor's x-y coordinate
-                SetCursorXy(points[0].x(), points[0].y());
-            }
-        } else {
-            message = fmt::format("Region parameters failed to validate for region id {}", region_id);
+    if (region_set) {
+        if (name == "cursor" && type == CARTA::RegionType::POINT) {
+            // update current cursor's x-y coordinate
+            SetCursorXy(points[0].x(), points[0].y());
         }
+    } else {
+        message = fmt::format("Region parameters failed to validate for region id {}", region_id);
     }
     return region_set;
 }
@@ -722,7 +722,6 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
             if (chan_ok && stokes_ok) {
                 _channel_index = new_channel;
                 _stokes_index = new_stokes;
-                SetImageCache();
                 updated = true;
                 for (auto& region : _regions) {
                     // force sending new profiles for new chan/stokes
@@ -736,15 +735,25 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
     return updated;
 }
 
-void Frame::SetImageCache() {
+bool Frame::SetImageCache() {
     // get image data for channel, stokes
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-    _image_cache.resize(_image_shape(0) * _image_shape(1));
+    try {
+        _image_cache.resize(_image_shape(0) * _image_shape(1));
+    } catch (std::bad_alloc& alloc_error) {
+        Log(_session_id, "Could not allocate memory for image data.");
+        return false;
+    }
+
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->GetSlice(tmp, section);
+    if (!_loader->GetSlice(tmp, section)) {
+        Log(_session_id, "Loading image cache failed.");
+        return false;
+    }
+    return true;
 }
 
 void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes) {
@@ -958,8 +967,14 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
 
 bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter) {
     // apply bounds and downsample image cache
-    if (!_valid || _image_cache.empty()) {
+    if (!_valid) {
         return false;
+    }
+    
+    // This function should always use the full image cache.
+    // Loading from mipmaps or the tile cache should be handled by the calling function.
+    if (_image_cache.empty()) {
+        SetImageCache();
     }
 
     const int x = bounds.x_min();
@@ -1106,6 +1121,20 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
     const int req_width = bounds.x_max() - bounds.x_min();
     width = std::ceil((float)req_width / mip);
     height = std::ceil((float)req_height / mip);
+    
+    // TODO: decide to read from mipmap or tile cache or full image cache
+    
+    if (mip > 1) {
+        // TODO read from mipmap if loader supports it (mip dataset exists), otherwise full image cache
+    } else {
+        // TODO image cache if it exists, otherwise:
+        // tile cache if loader supports it (dataset is chunked), otherwise
+        // populate image cache and use it
+    }
+    
+    
+    
+    
     return GetRasterData(tile_data, bounds, mip, true);
 }
 
@@ -1881,6 +1910,11 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
 }
 
 bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
+    // Always use the full image cache (for now)
+    if (_image_cache.empty()) {
+        SetImageCache();
+    }
+    
     double scale = 1.0;
     double offset = 0;
     bool smooth_successful = false;
@@ -1927,8 +1961,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             // Perform contouring with an offset based on the block size, and a scale factor equal to block size
             offset = 0;
             scale = _contour_settings.smoothing_factor;
-            size_t dest_width = image_bounds.x_max() / _contour_settings.smoothing_factor;
-            size_t dest_height = image_bounds.y_max() / _contour_settings.smoothing_factor;
+            size_t dest_width = ceil(double(image_bounds.x_max()) / _contour_settings.smoothing_factor);
+            size_t dest_height = ceil(double(image_bounds.y_max()) / _contour_settings.smoothing_factor);
             TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
                 _contour_settings.chunk_size, partial_contour_callback, _verbose);
             return true;

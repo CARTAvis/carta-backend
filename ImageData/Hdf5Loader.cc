@@ -110,8 +110,14 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
     }
 }
 
-std::string Hdf5Loader::MipToString(int mip) const {
-    return "MipMaps/DATA/DATA_XY_" + std::to_string(mip);
+bool HasMip(int mip, std::mutex& image_mutex) const {
+    std::string ds_name("MipMaps/DATA/DATA_XY_" + std::to_string(mip));
+    
+    std::unique_lock<std::mutex> ulock(image_mutex);
+    bool has_mipmap(HasData(ds_name));
+    ulock.unlock();
+    
+    return has_mipmap;
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
@@ -399,13 +405,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
 }
 
 bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
-    std::string ds_name(MipToString(mip));
-    
-    std::unique_lock<std::mutex> ulock(image_mutex);
-    bool has_mipmap(HasData(ds_name));
-    ulock.unlock();
-    
-    if (!has_mipmap) {
+    if (!HasMip(mip, image_mutex)) {
         return false;
     }
     
@@ -475,6 +475,10 @@ bool Hdf5Loader::GetTile(std::vector<float>& data, int min_x, int min_y, int cha
 
 void Hdf5Loader::SetFramePtr(Frame* frame) {
     _frame = frame;
+}
+
+bool Hdf5Loader::UseTileCache(std::mutex& image_mutex) const {
+//     return false;
 }
 
 } // namespace carta
