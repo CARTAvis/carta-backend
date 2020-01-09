@@ -32,18 +32,18 @@ void Controller::OnFileListRequest(FileListRequest file_list_request, FileListRe
     if ((current_path = opendir(directory.c_str()))) {
         success = true; // The directory exists
         while ((current_entry = readdir(current_path))) {
+            std::string file_name = current_entry->d_name;
             if (strcmp(current_entry->d_name, ".") != 0 && strcmp(current_entry->d_name, "..") != 0) {
-                std::string tmp_name = current_entry->d_name;
                 // Check is it a XML file
-                if (tmp_name.substr(tmp_name.find_last_of(".") + 1) == "xml") {
+                if (file_name.substr(file_name.find_last_of(".") + 1) == "xml") {
                     // Check is it a VOTable XML file
-                    std::string tmp_path_name = Concatenate(directory, tmp_name);
+                    std::string tmp_path_name = Concatenate(directory, file_name);
                     if (VOTableParser::IsVOTable(tmp_path_name)) {
                         // Get the file size
                         std::string tmp_file_description = GetFileSize(tmp_path_name);
                         // Fill the file info
                         FileInfo tmp_file_info;
-                        tmp_file_info.filename = tmp_name;
+                        tmp_file_info.filename = file_name;
                         tmp_file_info.file_type = VOTable;
                         tmp_file_info.description = tmp_file_description;
                         file_list_response.files.push_back(tmp_file_info);
@@ -51,11 +51,11 @@ void Controller::OnFileListRequest(FileListRequest file_list_request, FileListRe
                 } else {
                     // Check is it a sub-directory
                     DIR* sub_path;
-                    std::string sub_directory = Concatenate(directory, current_entry->d_name);
+                    std::string sub_directory = Concatenate(directory, file_name);
                     if ((sub_path = opendir(sub_directory.c_str()))) {
                         file_list_response.subdirectories.push_back(sub_directory);
+                        closedir(sub_path);
                     }
-                    closedir(sub_path);
                 }
             }
         }
