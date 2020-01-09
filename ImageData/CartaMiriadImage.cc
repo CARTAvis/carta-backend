@@ -21,10 +21,7 @@ CartaMiriadImage::CartaMiriadImage(const std::string& filename, casacore::MaskSp
 }
 
 CartaMiriadImage::CartaMiriadImage(const CartaMiriadImage& other)
-    : casacore::MIRIADImage(other),
-      _filename(other._filename),
-      _mask_spec(other._mask_spec),
-      _pixel_mask(nullptr) {
+    : casacore::MIRIADImage(other), _filename(other._filename), _mask_spec(other._mask_spec), _pixel_mask(nullptr) {
     SetUp();
     if (other._pixel_mask != nullptr) {
         _pixel_mask = other._pixel_mask->clone();
