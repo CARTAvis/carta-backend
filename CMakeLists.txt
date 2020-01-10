@@ -115,17 +115,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Tests
-option(test "Build all tests." OFF)
+option(test "Build all tests." ON)
 if (test)
-    enable_testing()
-    find_package(GTest)
-    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
-
-    add_executable(testTileEncoding test/TestTileEncoding.cc)
-    target_link_libraries(testTileEncoding gtest gtest_main Threads::Threads fmt)
-
-    add_test(NAME TestTileEncoding COMMAND testTileEncoding)
+    add_subdirectory(test)
 endif (test)
-
-# Install executable
-install(TARGETS carta_backend DESTINATION bin)

@@ -92,17 +92,17 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
         success = true; // The directory exists
         while ((current_entry = readdir(current_path))) {
             if (strcmp(current_entry->d_name, ".") != 0 && strcmp(current_entry->d_name, "..") != 0) {
-                std::string tmp_name = current_entry->d_name;
+                std::string file_name = current_entry->d_name;
                 // Check is it a XML file
-                if (tmp_name.substr(tmp_name.find_last_of(".") + 1) == "xml") {
+                if (file_name.substr(file_name.find_last_of(".") + 1) == "xml") {
                     // Check is it a VOTable XML file
-                    std::string tmp_path_name = Concatenate(directory, tmp_name);
-                    if (VOTableParser::IsVOTable(tmp_path_name)) {
+                    std::string path_name = Concatenate(directory, file_name);
+                    if (VOTableParser::IsVOTable(path_name)) {
                         // Get the file size
-                        std::string tmp_file_description = GetFileSize(tmp_path_name);
+                        std::string tmp_file_description = GetFileSize(path_name);
                         // Fill the file info
                         auto file_info = file_list_response.add_files();
-                        file_info->set_name(tmp_name);
+                        file_info->set_name(file_name);
                         file_info->set_type(CARTA::CatalogFileType::VOTable);
                         file_info->set_description(tmp_file_description);
                     }
@@ -112,8 +112,8 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
                     std::string sub_directory = Concatenate(directory, current_entry->d_name);
                     if ((sub_path = opendir(sub_directory.c_str()))) {
                         file_list_response.add_subdirectories(sub_directory);
+                        closedir(sub_path);
                     }
-                    closedir(sub_path);
                 }
             }
         }
