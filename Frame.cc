@@ -1121,21 +1121,25 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
     const int req_width = bounds.x_max() - bounds.x_min();
     width = std::ceil((float)req_width / mip);
     height = std::ceil((float)req_height / mip);
-    
-    // TODO: decide to read from mipmap or tile cache or full image cache
+
+    bool loaded_data(0);
     
     if (mip > 1) {
-        // TODO read from mipmap if loader supports it (mip dataset exists), otherwise full image cache
-    } else {
-        // TODO image cache if it exists, otherwise:
-        // tile cache if loader supports it (dataset is chunked), otherwise
-        // populate image cache and use it
+        // Try to load downsampled data from the image file
+        loaded_data = _loader->GetDownsampledRasterData(tile_data, _channel_index, _stokes_index, bounds, mip, _image_mutex);
+    } else if (_image_cache.empty() && _loader->UseTileCache(_image_mutex)) {
+        // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
+        std::unique_lock<std::mutex> guard(_tile_cache.GetMutex());
+        loaded_data = _tile_cache.Get(tile_data, CachedTileKey(tile.x, tile.y), _loader, _image_mutex);
+        guard.unlock();
     }
     
+    // Fall back to using the full image cache. The cache will be populated by this function.
+    if (!loaded_data) {
+        loaded_data = GetRasterData(tile_data, bounds, mip, true);
+    }
     
-    
-    
-    return GetRasterData(tile_data, bounds, mip, true);
+    return loaded_data;
 }
 
 // ****************************************************

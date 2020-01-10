@@ -478,7 +478,12 @@ void Hdf5Loader::SetFramePtr(Frame* frame) {
 }
 
 bool Hdf5Loader::UseTileCache(std::mutex& image_mutex) const {
-//     return false;
+    auto dset = _image->Lattice().array();
+    
+    std::lock_guard<std::mutex> lguard(image_mutex);
+    auto layout = H5Pget_layout(H5Dget_create_plist(dset.getHid()));
+    
+    return layout == H5D_CHUNKED;
 }
 
 } // namespace carta
