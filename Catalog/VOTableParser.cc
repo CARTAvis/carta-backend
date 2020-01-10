@@ -285,6 +285,8 @@ void VOTableParser::FillElementValues(ElementName element_name, std::string valu
         case DESCRIPTION:
             if (_pre_element_name == FIELD) {
                 _carrier->FillFieldDescriptions(_field_counts, value);
+            } else {
+                _carrier->FillFileDescription(value);
             }
             break;
         case TD:

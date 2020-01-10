@@ -63,11 +63,13 @@ public:
 
     void SetFileName(std::string file_path_name);
     void FillVOTableAttributes(std::string name, std::string version);
+    void FillFileDescription(std::string description);
     void FillCoosysAttributes(int count, std::string name, std::string value);
     void FillFieldAttributes(int count, std::string name, std::string value);
     void FillFieldDescriptions(int count, std::string value);
     void FillTdValues(int column_index, std::string value);
     void UpdateNumOfTableRows();
+    std::string GetFileDescription();
     void GetHeaders(FileInfoResponse& file_info_response);
     void GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response);
     void GetHeadersAndData(OpenFileResponse& open_file_response, int preview_data_size);
@@ -95,6 +97,7 @@ private:
 
     std::string _filename;
     std::string _directory;
+    std::string _file_description = "";
     std::string _votable_version = "";       // VOTable version, "" means this is not the VOTable XML file.
     std::unordered_map<int, Coosys> _coosys; // Unordered map for the element <COOSYS>: <COOSYS count (Column Index), COOSYS attributes>
     std::unordered_map<int, Field> _fields;  // Unordered map for the element <FIELD>: <FIELD count, FIELD attributes>

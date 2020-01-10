@@ -17,6 +17,15 @@ void VOTableCarrier::FillVOTableAttributes(std::string name, std::string version
     }
 }
 
+void VOTableCarrier::FillFileDescription(std::string description) {
+    _file_description += description;
+    _file_description += ". ";
+}
+
+std::string VOTableCarrier::GetFileDescription() {
+    return _file_description;
+}
+
 void VOTableCarrier::FillCoosysAttributes(int count, std::string name, std::string value) {
     if (name == "ID") {
         _coosys[count].id = value;

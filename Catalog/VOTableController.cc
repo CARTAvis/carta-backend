@@ -182,7 +182,8 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
     auto file_info = file_info_response.mutable_file_info();
     file_info->set_name(filename);
     file_info->set_type(CARTA::CatalogFileType::VOTable);
-    file_info->set_description(GetFileSize(file_path_name));
+    file_info->set_file_size(GetFileKBSize(file_path_name));
+    file_info->set_description(carrier.GetFileDescription());
     carrier.GetHeaders(file_info_response);
     file_info_response.set_data_size(
         carrier.GetTableRowNumber()); // TODO: since we only read the headers, we don't know the number of table rows
