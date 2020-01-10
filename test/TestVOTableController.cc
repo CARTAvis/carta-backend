@@ -64,6 +64,7 @@ void Print(CARTA::CatalogListResponse file_list_response) {
 void Print(CARTA::CatalogFileInfo file_info) {
     cout << "name:        " << file_info.name() << endl;
     cout << "type:        " << file_info.type() << endl;
+    cout << "file_size:   " << file_info.file_size() << "(KB)" << endl;
     cout << "description: " << file_info.description() << endl;
     cout << endl;
 }

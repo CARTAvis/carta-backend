@@ -98,13 +98,11 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
                     // Check is it a VOTable XML file
                     std::string path_name = Concatenate(directory, file_name);
                     if (VOTableParser::IsVOTable(path_name)) {
-                        // Get the file size
-                        std::string tmp_file_description = GetFileSize(path_name);
                         // Fill the file info
                         auto file_info = file_list_response.add_files();
                         file_info->set_name(file_name);
                         file_info->set_type(CARTA::CatalogFileType::VOTable);
-                        file_info->set_description(tmp_file_description);
+                        file_info->set_file_size(GetFileKBSize(path_name));
                     }
                 } else {
                     // Check is it a sub-directory
@@ -322,6 +320,12 @@ std::string Controller::GetFileSize(std::string file_path_name) {
     struct stat file_status;
     stat(file_path_name.c_str(), &file_status);
     return (std::to_string(file_status.st_size) + " (bytes)");
+}
+
+int Controller::GetFileKBSize(std::string file_path_name) {
+    struct stat file_status;
+    stat(file_path_name.c_str(), &file_status);
+    return (std::round((float)file_status.st_size / 1000));
 }
 
 void Controller::ParseBasePath(std::string& file_path_name) {
