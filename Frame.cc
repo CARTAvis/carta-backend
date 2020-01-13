@@ -74,7 +74,10 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     // set current channel, stokes, imageCache
     _channel_index = default_channel;
     _stokes_index = DEFAULT_STOKES;
-    SetImageCache();
+    if (!SetImageCache()) {
+        _valid = false;
+        return;
+    }
 
     try {
         // Resize stats vectors and load data from image, if the format supports it.
@@ -736,15 +739,25 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
     return updated;
 }
 
-void Frame::SetImageCache() {
+bool Frame::SetImageCache() {
     // get image data for channel, stokes
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-    _image_cache.resize(_image_shape(0) * _image_shape(1));
+    try {
+        _image_cache.resize(_image_shape(0) * _image_shape(1));
+    } catch (std::bad_alloc& alloc_error) {
+        Log(_session_id, "Could not allocate memory for image data.");
+        return false;
+    }
+
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->GetSlice(tmp, section);
+    if (!_loader->GetSlice(tmp, section)) {
+        Log(_session_id, "Loading image cache failed.");
+        return false;
+    }
+    return true;
 }
 
 void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes) {
@@ -1927,8 +1940,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             // Perform contouring with an offset based on the block size, and a scale factor equal to block size
             offset = 0;
             scale = _contour_settings.smoothing_factor;
-            size_t dest_width = image_bounds.x_max() / _contour_settings.smoothing_factor;
-            size_t dest_height = image_bounds.y_max() / _contour_settings.smoothing_factor;
+            size_t dest_width = ceil(double(image_bounds.x_max()) / _contour_settings.smoothing_factor);
+            size_t dest_height = ceil(double(image_bounds.y_max()) / _contour_settings.smoothing_factor);
             TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
                 _contour_settings.chunk_size, partial_contour_callback, _verbose);
             return true;
