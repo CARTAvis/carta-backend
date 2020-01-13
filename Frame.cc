@@ -723,9 +723,17 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
             if (chan_ok && stokes_ok) {
                 _channel_index = new_channel;
                 _stokes_index = new_stokes;
+                
                 // invalidate the image cache, but don't load the new cache here
                 _image_cache_valid = false;
+                
+                // invalidate / clear the full resolution tile cache
+                std::unique_lock<std::mutex> guard(_tile_cache.GetMutex());
+                _tile_cache.reset();
+                guard.unlock();
+                
                 updated = true;
+                
                 for (auto& region : _regions) {
                     // force sending new profiles for new chan/stokes
                     region.second->SetAllProfilesUnsent();
