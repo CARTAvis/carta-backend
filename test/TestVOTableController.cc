@@ -72,14 +72,13 @@ void Print(CARTA::CatalogListResponse file_list_response) {
     cout << "message:   " << file_list_response.message() << endl;
     cout << "directory: " << file_list_response.directory() << endl;
     cout << "parent:    " << file_list_response.parent() << endl;
-    cout << "files:" << endl;
     for (int i = 0; i < file_list_response.files_size(); ++i) {
+        cout << "files(" << i << "):" << endl;
         auto file = file_list_response.files(i);
         Print(file);
     }
-    cout << "subdirectories:" << endl;
     for (int i = 0; i < file_list_response.subdirectories_size(); ++i) {
-        cout << file_list_response.subdirectories(i) << endl;
+        cout << "subdirectories(" << i << "): " << file_list_response.subdirectories(i) << endl;
     }
     cout << endl;
 }
@@ -106,8 +105,8 @@ void Print(CARTA::CatalogFileInfoResponse file_info_response) {
     cout << "file_info: " << endl;
     Print(file_info_response.file_info());
     cout << "data_size: " << file_info_response.data_size() << endl;
-    cout << "headers:" << endl;
     for (int i = 0; i < file_info_response.headers_size(); ++i) {
+        cout << "headers(" << i << "):" << endl;
         auto header = file_info_response.headers(i);
         Print(header);
     }

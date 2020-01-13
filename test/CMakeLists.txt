@@ -22,8 +22,8 @@ add_test(NAME TestTileEncoding COMMAND testTileEncoding)
 # testVOTableController
 set(CATALOG_LINK_LIBS ${CATALOG_LINK_LIBS} ${LIBXML2_LIBRARIES} ${PROTOBUF_LIBRARY} carta-protobuf)
 set(CATALOG_SOURCE_FILES ${CATALOG_SOURCE_FILES}
-        ../Catalog/VOTableParser.cc
-        ../Catalog/VOTableCarrier.cc
-        ../Catalog/VOTableController.cc)
+        ${CMAKE_SOURCE_DIR}/Catalog/VOTableParser.cc
+        ${CMAKE_SOURCE_DIR}/Catalog/VOTableCarrier.cc
+        ${CMAKE_SOURCE_DIR}/Catalog/VOTableController.cc)
 add_executable(testVOTableController TestVOTableController.cc ${CATALOG_SOURCE_FILES})
 target_link_libraries(testVOTableController ${CATALOG_LINK_LIBS})
