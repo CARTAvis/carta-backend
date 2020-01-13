@@ -33,7 +33,8 @@ using namespace std;
 
 namespace CARTA {
 int global_thread_count = 0;
-}
+const char* mongo_default_uri = "mongodb://localhost:27017/";
+} // namespace CARTA
 // key is current folder
 unordered_map<string, vector<string>> permissions_map;
 
@@ -50,6 +51,10 @@ namespace CARTA {
 string token;
 string mongo_db_contact_string;
 } // namespace CARTA
+
+void GetMongoURIString(string& uri) {
+    uri = CARTA::mongo_db_contact_string;
+}
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
@@ -407,6 +412,7 @@ int main(int argc, const char* argv[]) {
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
             inp.create("read_json_file", json_fname, "read in json file with secure token", "String");
             inp.create("use_mongodb", "False", "use mongo db", "Bool");
+            inp.create("mongo_uri", CARTA::mongo_db_contact_string, "URI to connect to MongoDB", "String");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
@@ -417,7 +423,11 @@ int main(int argc, const char* argv[]) {
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
             CARTA::token = inp.getString("token");
-            CARTA::mongo_db_contact_string = "mongodb://localhost:27017/";
+            if (inp.getString("mongo_uri").empty()) {
+                CARTA::mongo_db_contact_string = CARTA::mongo_default_uri;
+            }
+            { CARTA::mongo_db_contact_string = inp.getString("mongo_uri"); }
+
             if (use_mongodb) {
 #if _AUTH_SERVER_
                 ConnectToMongoDB();
