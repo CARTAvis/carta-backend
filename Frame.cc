@@ -31,6 +31,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _stokes_index(-1),
       _num_channels(1),
       _num_stokes(1),
+      _image_cache_valid(false),
       _verbose(verbose) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
@@ -722,6 +723,8 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
             if (chan_ok && stokes_ok) {
                 _channel_index = new_channel;
                 _stokes_index = new_stokes;
+                // invalidate the image cache, but don't load the new cache here
+                _image_cache_valid = false;
                 updated = true;
                 for (auto& region : _regions) {
                     // force sending new profiles for new chan/stokes
@@ -737,6 +740,7 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
 
 bool Frame::SetImageCache() {
     // get image data for channel, stokes
+    
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
     try {
@@ -749,10 +753,19 @@ bool Frame::SetImageCache() {
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
+    
+    // Exit early if the cache has already been loaded for this channel and stokes
+    if (_image_cache_valid) {
+        return true;
+    }
+    
     if (!_loader->GetSlice(tmp, section)) {
         Log(_session_id, "Loading image cache failed.");
         return false;
     }
+    
+    _image_cache_valid = true;
+    
     return true;
 }
 
@@ -973,9 +986,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     
     // This function should always use the full image cache.
     // Loading from mipmaps or the tile cache should be handled by the calling function.
-    if (_image_cache.empty()) {
-        SetImageCache();
-    }
+    // This function checks internally whether the cache was already loaded.
+    SetImageCache();
 
     const int x = bounds.x_min();
     const int y = bounds.y_min();
@@ -1006,7 +1018,6 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        // TODO TODO TODO: check if these bounds checks are correct
         auto range = tbb::blocked_range<size_t>(0, num_rows_region);
         auto loop = [&](const tbb::blocked_range<size_t>& r) {
             for (size_t j = r.begin(); j != r.end(); ++j) {

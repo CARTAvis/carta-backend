@@ -259,6 +259,7 @@ private:
 
     // Image data handling
     std::vector<float> _image_cache;    // image data for current channelIndex, stokesIndex
+    bool _image_cache_valid;            // cached image data is valid for current channel and stokes
     tbb::queuing_rw_mutex _cache_mutex; // allow concurrent reads but lock for write
     std::mutex _image_mutex;            // only one disk access at a time
     bool _cache_loaded;                 // channel cache is set
