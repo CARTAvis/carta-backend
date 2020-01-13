@@ -719,8 +719,8 @@ void VOTableCarrier::GetFilteredData(
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
                 int data_type_index = column_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->bool_column_size());
-                auto bool_column = tmp_columns_data->bool_column(data_type_index);
-                bool_column.add_bool_column(bool_vector.second[row]);
+                auto bool_column = tmp_columns_data->mutable_bool_column(data_type_index);
+                bool_column->add_bool_column(bool_vector.second[row]);
             }
         }
         for (std::pair<int, std::vector<std::string>> string_vector : _string_vectors) {
@@ -728,8 +728,8 @@ void VOTableCarrier::GetFilteredData(
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
                 int data_type_index = column_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->string_column_size());
-                auto string_column = tmp_columns_data->string_column(data_type_index);
-                string_column.add_string_column(string_vector.second[row]);
+                auto string_column = tmp_columns_data->mutable_string_column(data_type_index);
+                string_column->add_string_column(string_vector.second[row]);
             }
         }
         for (std::pair<int, std::vector<int>> int_vector : _int_vectors) {
@@ -737,8 +737,8 @@ void VOTableCarrier::GetFilteredData(
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
                 int data_type_index = column_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->int_column_size());
-                auto int_column = tmp_columns_data->int_column(data_type_index);
-                int_column.add_int_column(int_vector.second[row]);
+                auto int_column = tmp_columns_data->mutable_int_column(data_type_index);
+                int_column->add_int_column(int_vector.second[row]);
             }
         }
         for (std::pair<int, std::vector<long long>> ll_vector : _ll_vectors) {
@@ -746,8 +746,8 @@ void VOTableCarrier::GetFilteredData(
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
                 int data_type_index = column_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->ll_column_size());
-                auto ll_column = tmp_columns_data->ll_column(data_type_index);
-                ll_column.add_ll_column(ll_vector.second[row]);
+                auto ll_column = tmp_columns_data->mutable_ll_column(data_type_index);
+                ll_column->add_ll_column(ll_vector.second[row]);
             }
         }
         for (std::pair<int, std::vector<float>> float_vector : _float_vectors) {
@@ -755,8 +755,8 @@ void VOTableCarrier::GetFilteredData(
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
                 int data_type_index = column_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->float_column_size());
-                auto float_column = tmp_columns_data->float_column(data_type_index);
-                float_column.add_float_column(float_vector.second[row]);
+                auto float_column = tmp_columns_data->mutable_float_column(data_type_index);
+                float_column->add_float_column(float_vector.second[row]);
             }
         }
         for (std::pair<int, std::vector<double>> double_vector : _double_vectors) {
@@ -764,8 +764,8 @@ void VOTableCarrier::GetFilteredData(
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
                 int data_type_index = column_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->double_column_size());
-                auto double_column = tmp_columns_data->double_column(data_type_index);
-                double_column.add_double_column(double_vector.second[row]);
+                auto double_column = tmp_columns_data->mutable_double_column(data_type_index);
+                double_column->add_double_column(double_vector.second[row]);
             }
         }
 

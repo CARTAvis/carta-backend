@@ -11,6 +11,8 @@ void TestOnFileInfoRequest();
 void TestOnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request);
 void TestOnOpenFileRequest();
 void TestOnOpenFileRequest(CARTA::OpenCatalogFile open_file_request);
+void TestOnFilterRequest();
+void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request);
 
 void Print(CARTA::CatalogListRequest file_list_request);
 void Print(CARTA::CatalogListResponse file_list_response);
@@ -22,11 +24,16 @@ void Print(CARTA::OpenCatalogFile open_file_request);
 void Print(CARTA::OpenCatalogFileAck open_file_response);
 void Print(CARTA::CatalogColumnsData columns_data);
 void Print(CARTA::CloseCatalogFile close_file_request);
+void Print(CARTA::CatalogFilterRequest filter_request);
+void Print(CARTA::FilterConfig filter_config);
+void Print(CARTA::ImageBounds image_bounds);
+void Print(CARTA::CatalogFilterResponse filter_response);
 
 int main(int argc, char* argv[]) {
     // TestOnFileListRequest();
     // TestOnFileInfoRequest();
-    TestOnOpenFileRequest();
+    // TestOnOpenFileRequest();
+    TestOnFilterRequest();
 
     return 0;
 }
@@ -102,6 +109,59 @@ void TestOnOpenFileRequest(CARTA::OpenCatalogFile open_file_request) {
     Print(close_file_request);
 }
 
+void TestOnFilterRequest() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("images");
+    open_file_request.set_name("simple.xml");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(0);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(50);
+    filter_request.set_region_id(0);
+
+    auto image_bounds = filter_request.mutable_image_bounds();
+    image_bounds->set_x_min(-1);
+    image_bounds->set_x_max(-1);
+    image_bounds->set_y_min(-1);
+    image_bounds->set_y_max(-1);
+
+    filter_request.add_hided_headers("Name");
+    filter_request.add_hided_headers("RVel");
+    filter_request.add_hided_headers("e_RVel");
+    filter_request.add_hided_headers("R");
+
+    auto filter_config = filter_request.add_filter_configs();
+    filter_config->set_column_name("RA");
+    filter_config->set_comparison_operator(CARTA::ComparisonOperator::FromTo);
+    filter_config->set_min(0);
+    filter_config->set_max(100);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
+void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request) {
+    // Open file
+    CARTA::OpenCatalogFileAck open_file_response;
+    Controller controller = Controller();
+    controller.OnOpenFileRequest(open_file_request, open_file_response);
+
+    // Filter the file data
+    controller.OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
+        // Print partial or final results
+        Print(filter_request);
+        Print(filter_response);
+        std::cout << "\n------------------------------------------------------------------\n";
+    });
+
+    // Close file
+    CARTA::CloseCatalogFile close_file_request;
+    close_file_request.set_file_id(open_file_request.file_id());
+    controller.OnCloseFileRequest(close_file_request);
+}
+
 // Print functions
 
 void Print(CARTA::CatalogListRequest file_list_request) {
@@ -170,18 +230,18 @@ void Print(CARTA::CatalogHeader header) {
 
 void Print(CARTA::OpenCatalogFile open_file_request) {
     cout << "CARTA::OpenCatalogFile:" << endl;
-    cout << "directory: " << open_file_request.directory() << endl;
-    cout << "name: " << open_file_request.name() << endl;
-    cout << "file_id: " << open_file_request.file_id() << endl;
+    cout << "directory:         " << open_file_request.directory() << endl;
+    cout << "name:              " << open_file_request.name() << endl;
+    cout << "file_id:           " << open_file_request.file_id() << endl;
     cout << "preview_data_size: " << open_file_request.preview_data_size() << endl;
     cout << endl;
 }
 
 void Print(CARTA::OpenCatalogFileAck open_file_response) {
     cout << "CARTA::OpenCatalogFileAck" << endl;
-    cout << "success: " << open_file_response.success() << endl;
-    cout << "message: " << open_file_response.message() << endl;
-    cout << "file_id: " << open_file_response.file_id() << endl;
+    cout << "success:   " << open_file_response.success() << endl;
+    cout << "message:   " << open_file_response.message() << endl;
+    cout << "file_id:   " << open_file_response.file_id() << endl;
     Print(open_file_response.file_info());
     cout << "data_size: " << open_file_response.data_size() << endl;
     for (int i = 0; i < open_file_response.headers_size(); ++i) {
@@ -246,5 +306,58 @@ void Print(CARTA::CatalogColumnsData columns_data) {
 void Print(CARTA::CloseCatalogFile close_file_request) {
     cout << "CARTA::CloseCatalogFile:" << endl;
     cout << "file_id: " << close_file_request.file_id() << endl;
+    cout << endl;
+}
+
+void Print(CARTA::CatalogFilterRequest filter_request) {
+    cout << "CARTA::CatalogFilterRequest:" << endl;
+    cout << "file_id:           " << filter_request.file_id() << endl;
+    cout << "hided_headers:     " << endl;
+    for (int i = 0; i < filter_request.hided_headers_size(); ++i) {
+        cout << filter_request.hided_headers(i) << " | ";
+    }
+    cout << endl;
+    for (int i = 0; i < filter_request.filter_configs_size(); ++i) {
+        cout << "filter_config(" << i << "):" << endl;
+        auto filter = filter_request.filter_configs(i);
+        Print(filter);
+    }
+    cout << "subset_data_size:   " << filter_request.subset_data_size() << endl;
+    cout << "subset_start_index: " << filter_request.subset_start_index() << endl;
+    Print(filter_request.image_bounds());
+    cout << "region_id:          " << filter_request.region_id() << endl;
+    cout << endl;
+}
+
+void Print(CARTA::FilterConfig filter_config) {
+    cout << "CARTA::FilterConfig:" << endl;
+    cout << "column_name:         " << filter_config.column_name() << endl;
+    cout << "comparison_operator: " << filter_config.comparison_operator() << endl;
+    cout << "min:                 " << filter_config.min() << endl;
+    cout << "max:                 " << filter_config.max() << endl;
+    cout << "sub_string:          " << filter_config.sub_string() << endl;
+    cout << endl;
+}
+
+void Print(CARTA::ImageBounds image_bounds) {
+    cout << "CARTA::ImageBounds:" << endl;
+    cout << "x_min: " << image_bounds.x_min() << endl;
+    cout << "x_max: " << image_bounds.x_max() << endl;
+    cout << "y_min: " << image_bounds.y_min() << endl;
+    cout << "y_max: " << image_bounds.y_max() << endl;
+    cout << endl;
+}
+
+void Print(CARTA::CatalogFilterResponse filter_response) {
+    cout << "CARTA::CatalogFilterResponse:" << endl;
+    cout << "file_id:   " << filter_response.file_id() << endl;
+    cout << "region_id: " << filter_response.region_id() << endl;
+    for (int i = 0; i < filter_response.headers_size(); ++i) {
+        cout << "headers(" << i << "):" << endl;
+        auto header = filter_response.headers(i);
+        Print(header);
+    }
+    Print(filter_response.columns_data());
+    cout << "progress:  " << filter_response.progress() << endl;
     cout << endl;
 }
