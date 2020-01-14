@@ -12,6 +12,7 @@ void TestOnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request);
 void TestOnOpenFileRequest();
 void TestOnOpenFileRequest(CARTA::OpenCatalogFile open_file_request);
 void TestOnFilterRequest();
+void TestOnFilterRequest2();
 void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request);
 
 void Print(CARTA::CatalogListRequest file_list_request);
@@ -30,10 +31,34 @@ void Print(CARTA::ImageBounds image_bounds);
 void Print(CARTA::CatalogFilterResponse filter_response);
 
 int main(int argc, char* argv[]) {
-    // TestOnFileListRequest();
-    // TestOnFileInfoRequest();
-    // TestOnOpenFileRequest();
-    TestOnFilterRequest();
+    int test_case;
+    cout << "Choose a test case:" << endl;
+    cout << "    1) TestOnFileListRequest()" << endl;
+    cout << "    2) TestOnFileInfoRequest()" << endl;
+    cout << "    3) TestOnOpenFileRequest()" << endl;
+    cout << "    4) TestOnFilterRequest()" << endl;
+    cout << "    5) TestOnFilterRequest2()" << endl;
+    cin >> test_case;
+    switch (test_case) {
+        case 1:
+            TestOnFileListRequest();
+            break;
+        case 2:
+            TestOnFileInfoRequest();
+            break;
+        case 3:
+            TestOnOpenFileRequest();
+            break;
+        case 4:
+            TestOnFilterRequest();
+            break;
+        case 5:
+            TestOnFilterRequest2();
+            break;
+        default:
+            cout << "No such test case!" << endl;
+            break;
+    }
 
     return 0;
 }
@@ -138,6 +163,50 @@ void TestOnFilterRequest() {
     filter_config->set_comparison_operator(CARTA::ComparisonOperator::FromTo);
     filter_config->set_min(0);
     filter_config->set_max(100);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
+void TestOnFilterRequest2() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("images");
+    open_file_request.set_name("M17_SWex_simbad_2arcmin.xml");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(0);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(10);
+    filter_request.set_region_id(0);
+
+    auto image_bounds = filter_request.mutable_image_bounds();
+    image_bounds->set_x_min(-1);
+    image_bounds->set_x_max(-1);
+    image_bounds->set_y_min(-1);
+    image_bounds->set_y_max(-1);
+
+    filter_request.add_hided_headers("OID4");
+    filter_request.add_hided_headers("XMM:Obsno");
+    filter_request.add_hided_headers("IUE:bibcode");
+    filter_request.add_hided_headers("IUE:F");
+    filter_request.add_hided_headers("IUE:Comments");
+    filter_request.add_hided_headers("IUE:S");
+    filter_request.add_hided_headers("IUE:CEB");
+    filter_request.add_hided_headers("IUE:m");
+    filter_request.add_hided_headers("IUE:ExpTim");
+    filter_request.add_hided_headers("IUE:Time");
+    filter_request.add_hided_headers("IUE:ObsDate");
+    filter_request.add_hided_headers("IUE:MD");
+    filter_request.add_hided_headers("IUE:FES");
+    filter_request.add_hided_headers("IUE:A");
+    filter_request.add_hided_headers("IUE:IMAGE");
+
+    auto filter_config = filter_request.add_filter_configs();
+    filter_config->set_column_name("RA_d");
+    filter_config->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
+    filter_config->set_min(275.089);
+    filter_config->set_max(275.089);
 
     TestOnFilterRequest(open_file_request, filter_request);
 }
