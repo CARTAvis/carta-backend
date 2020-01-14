@@ -422,7 +422,7 @@ int main(int argc, const char* argv[]) {
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
             CARTA::token = inp.getString("token");
-			CARTA::mongo_db_contact_string = CARTA::mongo_default_uri;
+            CARTA::mongo_db_contact_string = CARTA::mongo_default_uri;
             if (!inp.getString("mongo_uri").empty()) {
                 CARTA::mongo_db_contact_string = inp.getString("mongo_uri");
             }
