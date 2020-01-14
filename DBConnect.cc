@@ -106,7 +106,7 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     BSON_APPEND_UTF8(&layout, "username", user);
     BSON_APPEND_UTF8(&layout, "name", name.c_str());
 
-    if (!strcmp(json_string.c_str(), "")) {
+    if (json_string.empty()) {
         if (!mongoc_collection_delete_one(collection, &layout, NULL, NULL, &error)) {
             fmt::format("Delete failed: {}", error.message);
             result = false;
@@ -141,7 +141,6 @@ bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     const bson_t* doc;
     char* str;
     char* uvalue = NULL;
-    bool retval;
     char user[16];
 
     initMongoDB(&database, &client, &collection, "layouts");
@@ -190,7 +189,6 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     bson_error_t error;
     char* str;
     char* uvalue = NULL;
-    bool retval;
     char user[16];
 
     initMongoDB(&database, &client, &collection, "preferences");
