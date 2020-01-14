@@ -993,8 +993,6 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     }
     
     // This function should always use the full image cache.
-    // Loading from mipmaps or the tile cache should be handled by the calling function.
-    // This function checks internally whether the cache was already loaded.
     SetImageCache();
 
     const int x = bounds.x_min();
@@ -1267,7 +1265,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
         bool point_in_image((x >= 0) && (x < _image_shape(0)) && (y >= 0) && (y < _image_shape(1)));
         ssize_t num_image_cols(_image_shape(0)), num_image_rows(_image_shape(1));
         float value(0.0);
-        if (!_image_cache.empty()) {
+        if (_image_cache_valid) {
             bool write_lock(false);
             tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
             value = _image_cache[(y * num_image_cols) + x];
@@ -1301,8 +1299,10 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
 
                     std::vector<float> profile;
                     int end(0);
-                    if ((profile_stokes == _stokes_index) && !_image_cache.empty()) {
+                    if ((profile_stokes == _stokes_index) && !_loader->UseTileCache()) {
+                        // TODO also check if number of required tiles exceeds tile cache capacity
                         // use stored channel cache
+                        SetImageCache();
                         bool write_lock(false);
                         switch (axis_stokes.first) {
                             case 0: { // x
@@ -1329,6 +1329,10 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                 break;
                             }
                         }
+                    } else if ((profile_stokes == _stokes_index) && _loader->UseTileCache()) {
+                        // TODO load tiles into tile cache
+                        // TODO load x and y from tiles
+                        // TODO add a utility function for this to the cache object?
                     } else {
                         // slice image data
                         casacore::Slicer section;
@@ -1582,6 +1586,8 @@ bool Frame::CalcRegionBasicStats(int region_id, int channel, int stokes, BasicSt
         auto& region = _regions[region_id];
         if (region_id == IMAGE_REGION_ID) {
             if (channel == _channel_index) { // use channel cache
+                // Only applies to non-HDF5 files.
+                SetImageCache();
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                 region->CalcBasicStats(channel, stokes, _image_cache, stats);
@@ -1660,6 +1666,8 @@ bool Frame::CalcRegionHistogram(
         num_bins = (num_bins == AUTO_BIN_SIZE ? CalcAutoNumBins(region_id) : num_bins);
         if (region_id == IMAGE_REGION_ID) {
             if (channel == _channel_index) { // use channel cache
+                // Only applies to non-HDF5 files.
+                SetImageCache();
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                 region->CalcHistogram(channel, stokes, num_bins, stats, _image_cache, histogram);
@@ -1934,9 +1942,7 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
 
 bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     // Always use the full image cache (for now)
-    if (_image_cache.empty()) {
-        SetImageCache();
-    }
+    SetImageCache();
     
     double scale = 1.0;
     double offset = 0;
