@@ -27,12 +27,13 @@ void Print(CARTA::CatalogColumnsData columns_data);
 void Print(CARTA::CloseCatalogFile close_file_request);
 void Print(CARTA::CatalogFilterRequest filter_request);
 void Print(CARTA::FilterConfig filter_config);
-void Print(CARTA::ImageBounds image_bounds);
+void Print(CARTA::CatalogImageBounds catalog_image_bounds);
 void Print(CARTA::CatalogFilterResponse filter_response);
 
 string GetDataType(CARTA::EntryType data_type);
 string GetBoolType(bool bool_type);
 string GetFileType(CARTA::CatalogFileType file_type);
+string GetComparisonOperator(CARTA::ComparisonOperator comparison_operator);
 
 int main(int argc, char* argv[]) {
     int test_case;
@@ -152,11 +153,14 @@ void TestOnFilterRequest() {
     filter_request.set_subset_data_size(50);
     filter_request.set_region_id(0);
 
-    auto image_bounds = filter_request.mutable_image_bounds();
-    image_bounds->set_x_min(-1);
-    image_bounds->set_x_max(-1);
-    image_bounds->set_y_min(-1);
-    image_bounds->set_y_max(-1);
+    auto catalog_image_bounds = filter_request.mutable_image_bounds();
+    catalog_image_bounds->set_x_column_name("RA");
+    catalog_image_bounds->set_y_column_name("Dec");
+    auto image_bounds = catalog_image_bounds->mutable_image_bounds();
+    image_bounds->set_x_min(0);
+    image_bounds->set_x_max(10);
+    image_bounds->set_y_min(0);
+    image_bounds->set_y_max(10);
 
     filter_request.add_hided_headers("Name");
     filter_request.add_hided_headers("RVel");
@@ -185,11 +189,14 @@ void TestOnFilterRequest2() {
     filter_request.set_subset_data_size(10);
     filter_request.set_region_id(0);
 
-    auto image_bounds = filter_request.mutable_image_bounds();
-    image_bounds->set_x_min(-1);
-    image_bounds->set_x_max(-1);
-    image_bounds->set_y_min(-1);
-    image_bounds->set_y_max(-1);
+    auto catalog_image_bounds = filter_request.mutable_image_bounds();
+    catalog_image_bounds->set_x_column_name("RA_d");
+    catalog_image_bounds->set_y_column_name("DEC_d");
+    auto image_bounds = catalog_image_bounds->mutable_image_bounds();
+    image_bounds->set_x_min(0);
+    image_bounds->set_x_max(100);
+    image_bounds->set_y_min(0);
+    image_bounds->set_y_max(100);
 
     filter_request.add_hided_headers("OID4");
     filter_request.add_hided_headers("XMM:Obsno");
@@ -406,15 +413,18 @@ void Print(CARTA::CatalogFilterRequest filter_request) {
 void Print(CARTA::FilterConfig filter_config) {
     cout << "CARTA::FilterConfig:" << endl;
     cout << "column_name:         " << filter_config.column_name() << endl;
-    cout << "comparison_operator: " << filter_config.comparison_operator() << endl;
+    cout << "comparison_operator: " << GetComparisonOperator(filter_config.comparison_operator()) << endl;
     cout << "min:                 " << filter_config.min() << endl;
     cout << "max:                 " << filter_config.max() << endl;
     cout << "sub_string:          " << filter_config.sub_string() << endl;
     cout << endl;
 }
 
-void Print(CARTA::ImageBounds image_bounds) {
-    cout << "CARTA::ImageBounds:" << endl;
+void Print(CARTA::CatalogImageBounds catalog_image_bounds) {
+    cout << "CARTA::CatalogImageBounds:" << endl;
+    cout << "x_column_name: " << catalog_image_bounds.x_column_name() << endl;
+    cout << "y_column_name: " << catalog_image_bounds.y_column_name() << endl;
+    auto image_bounds = catalog_image_bounds.image_bounds();
     cout << "x_min: " << image_bounds.x_min() << endl;
     cout << "x_max: " << image_bounds.x_max() << endl;
     cout << "y_min: " << image_bounds.y_min() << endl;
@@ -482,6 +492,40 @@ string GetFileType(CARTA::CatalogFileType file_type) {
             break;
         default:
             result = "unknown Catalog file type";
+            break;
+    }
+    return result;
+}
+
+string GetComparisonOperator(CARTA::ComparisonOperator comparison_operator) {
+    string result;
+    switch (comparison_operator) {
+        case CARTA::ComparisonOperator::EqualTo:
+            result = "==";
+            break;
+        case CARTA::ComparisonOperator::NotEqualTo:
+            result = "!=";
+            break;
+        case CARTA::ComparisonOperator::LessThan:
+            result = "<";
+            break;
+        case CARTA::ComparisonOperator::GreaterThan:
+            result = ">";
+            break;
+        case CARTA::ComparisonOperator::LessThanOrEqualTo:
+            result = "<=";
+            break;
+        case CARTA::ComparisonOperator::GreaterThanOrEqualTo:
+            result = ">=";
+            break;
+        case CARTA::ComparisonOperator::BetweenAnd:
+            result = "...";
+            break;
+        case CARTA::ComparisonOperator::FromTo:
+            result = "..";
+            break;
+        default:
+            result = "unknown comparison operator!";
             break;
     }
     return result;

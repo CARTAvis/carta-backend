@@ -261,7 +261,8 @@ void VOTableCarrier::GetFilteredData(
     int region_id(filter_request.region_id()); // TODO: Not implement yet
     int subset_data_size(filter_request.subset_data_size());
     int subset_start_index(filter_request.subset_start_index());
-    CARTA::ImageBounds image_bounds = filter_request.image_bounds(); // TODO: Not implement yet
+    CARTA::CatalogImageBounds catalog_image_bounds = filter_request.image_bounds();
+    CARTA::ImageBounds image_bounds = catalog_image_bounds.image_bounds();
 
     // Get column indices to hide
     std::set<int> hided_column_indices;
@@ -359,12 +360,35 @@ void VOTableCarrier::GetFilteredData(
     int row_size = subset_end_index - subset_start_index + 1;
     float check_progress_interval = 0.1;
     float last_progress = check_progress_interval;
+    int x_axis_count = 0;
+    int y_axis_count = 0;
     for (int row = subset_start_index; row <= subset_end_index; ++row) {
         // Loop the table column
         bool fill(true);
+        bool within_image_bounds(true);
+
+        // Apply the image bounds and determine whether to fill the row data
+        for (std::pair<int, Field> field : _fields) {
+            if (catalog_image_bounds.x_column_name() == field.second.name) {
+                ++x_axis_count;
+                if ((x_axis_count < image_bounds.x_min()) || (x_axis_count > image_bounds.x_max())) {
+                    within_image_bounds = false;
+                }
+            }
+            if (catalog_image_bounds.y_column_name() == field.second.name) {
+                ++y_axis_count;
+                if ((y_axis_count < image_bounds.y_min()) || (y_axis_count > image_bounds.y_max())) {
+                    within_image_bounds = false;
+                }
+            }
+        }
+
+        if (!within_image_bounds) { // Do not do the following process to fill the row data
+            continue;
+        }
 
         // Apply the filter and determine whether to fill the row data
-        for (int i = 0; i < filter_request.filter_configs_size(); ++i /*auto& filter : filter_configs*/) {
+        for (int i = 0; i < filter_request.filter_configs_size(); ++i) {
             auto filter = filter_request.filter_configs(i);
             if (!fill) { // Break the loop once the "fill" boolean becomes false
                 break;
