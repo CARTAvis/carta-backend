@@ -83,11 +83,13 @@ set(SOURCE_FILES
         Compression.cc
         ImageData/Hdf5Attributes.cc
         ImageData/FileLoader.cc
+        ImageData/Hdf5Loader.cc
         ImageData/CartaHdf5Image.cc
+        ImageData/CartaMiriadImage.cc
         FileList/FileExtInfoLoader.cc
         FileList/FileInfoLoader.cc
         FileList/FileListHandler.cc
-		FileList/FitsHduList.cc
+        FileList/FitsHduList.cc
         Region/Region.cc
         Region/RegionStats.cc
         Region/RegionProfiler.cc

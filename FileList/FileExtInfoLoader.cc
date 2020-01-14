@@ -14,6 +14,7 @@
 #include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/mirlib/miriad.h>
 
+#include "../ImageData/CartaMiriadImage.h"
 #include "../ImageData/FileLoader.h"
 
 using namespace carta;
@@ -51,11 +52,52 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                     return file_ok;
                 }
 
+                bool prefer_velocity(false), optical_velocity(false);
+                bool prefer_wavelength(false), air_wavelength(false);
+                casacore::CoordinateSystem coord_sys(image->coordinates());
+                if (coord_sys.hasSpectralAxis()) { // prefer spectral axis native type
+                    casacore::SpectralCoordinate::SpecType native_type;
+                    if (image->imageType() == "CartaMiriadImage") { // workaround to get correct native type
+                        CartaMiriadImage* miriad_image = static_cast<CartaMiriadImage*>(image);
+                        native_type = miriad_image->NativeType();
+                    } else {
+                        native_type = coord_sys.spectralCoordinate().nativeType();
+                    }
+                    switch (native_type) {
+                        case casacore::SpectralCoordinate::FREQ: {
+                            break;
+                        }
+                        case casacore::SpectralCoordinate::VRAD:
+                        case casacore::SpectralCoordinate::BETA: {
+                            prefer_velocity = true;
+                            break;
+                        }
+                        case casacore::SpectralCoordinate::VOPT: {
+                            prefer_velocity = true;
+
+                            // Check doppler type; oddly, native type can be VOPT but doppler is RADIO--?
+                            casacore::MDoppler::Types vel_doppler(coord_sys.spectralCoordinate().velocityDoppler());
+                            if ((vel_doppler == casacore::MDoppler::Z) || (vel_doppler == casacore::MDoppler::OPTICAL)) {
+                                optical_velocity = true;
+                            }
+                            break;
+                        }
+                        case casacore::SpectralCoordinate::WAVE: {
+                            prefer_wavelength = true;
+                            break;
+                        }
+                        case casacore::SpectralCoordinate::AWAV: {
+                            prefer_wavelength = true;
+                            air_wavelength = true;
+                            break;
+                        }
+                    }
+                }
+
                 // Add header_entries in FITS format
                 casacore::String error_string, origin_string;
                 casacore::ImageFITSHeaderInfo fhi;
-                bool prefer_velocity(false), optical_velocity(false), stokes_last(false), degenerate_last(false), prefer_wavelength(false),
-                    air_wavelength(false), verbose(false), prim_head(true), allow_append(false), history(false);
+                bool stokes_last(false), degenerate_last(false), verbose(false), prim_head(true), allow_append(false), history(false);
                 int bit_pix(-32);
                 float min_pix(1.0), max_pix(-1.0);
                 if (!casacore::ImageFITSConverter::ImageHeaderToFITS(error_string, fhi, *image, prefer_velocity, optical_velocity, bit_pix,
@@ -139,7 +181,13 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                             case casacore::FITS::DOUBLE:
                             case casacore::FITS::REAL: {
                                 double value(fkw->asDouble());
-                                std::string string_value = fmt::format("{:e}", value);
+                                std::string string_value;
+                                if ((name.find("PIX") != std::string::npos) || (name.find("EQUINOX") != std::string::npos) ||
+                                    (name.find("EPOCH") != std::string::npos)) {
+                                    string_value = fmt::format("{}", value);
+                                } else {
+                                    string_value = fmt::format("{:.12E}", value);
+                                }
                                 std::string comment(fkw->comm());
                                 if (!comment.empty()) {
                                     string_value.append(" / " + comment);
@@ -289,7 +337,11 @@ void FileExtInfoLoader::AddComputedEntries(
     }
 
     if (coord_system.hasDirectionCoordinate()) {
-        std::string projection(coord_system.directionCoordinate().projection().name());
+        casacore::DirectionCoordinate dir_coord(coord_system.directionCoordinate());
+        std::string projection(dir_coord.projection().name());
+        if ((projection == "SIN") && (dir_coord.isNCP())) {
+            projection = "SIN / NCP";
+        }
         if (!projection.empty()) {
             auto entry = extended_info->add_computed_entries();
             entry->set_name("Projection");
@@ -372,7 +424,7 @@ void FileExtInfoLoader::AddComputedEntries(
         entry->set_name("Pixel increment");
         casacore::Quantity inc0(increment(0), axis_units(0));
         casacore::Quantity inc1(increment(1), axis_units(1));
-        std::string pixel_inc = fmt::format("{:g}\", {:g}\"", inc0.getValue("arcsec"), inc1.getValue("arcsec"));
+        std::string pixel_inc = fmt::format("{:.3f}\", {:.3f}\"", inc0.getValue("arcsec"), inc1.getValue("arcsec"));
         entry->set_value(pixel_inc);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
