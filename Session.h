@@ -242,9 +242,6 @@ private:
 
     tbb::task_group_context _animation_context;
 
-    // Name of server version users.
-    //    string username;
-
     int _ref_count;
     bool _connected;
     static int _num_sessions;
