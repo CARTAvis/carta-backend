@@ -30,6 +30,10 @@ void Print(CARTA::FilterConfig filter_config);
 void Print(CARTA::ImageBounds image_bounds);
 void Print(CARTA::CatalogFilterResponse filter_response);
 
+string GetDataType(CARTA::EntryType data_type);
+string GetBoolType(bool bool_type);
+string GetFileType(CARTA::CatalogFileType file_type);
+
 int main(int argc, char* argv[]) {
     int test_case;
     cout << "Choose a test case:" << endl;
@@ -39,6 +43,7 @@ int main(int argc, char* argv[]) {
     cout << "    4) TestOnFilterRequest()" << endl;
     cout << "    5) TestOnFilterRequest2()" << endl;
     cin >> test_case;
+
     switch (test_case) {
         case 1:
             TestOnFileListRequest();
@@ -241,7 +246,7 @@ void Print(CARTA::CatalogListRequest file_list_request) {
 
 void Print(CARTA::CatalogListResponse file_list_response) {
     cout << "CatalogListResponse:" << endl;
-    cout << "success:   " << file_list_response.success() << endl;
+    cout << "success:   " << GetBoolType(file_list_response.success()) << endl;
     cout << "message:   " << file_list_response.message() << endl;
     cout << "directory: " << file_list_response.directory() << endl;
     cout << "parent:    " << file_list_response.parent() << endl;
@@ -258,7 +263,7 @@ void Print(CARTA::CatalogListResponse file_list_response) {
 
 void Print(CARTA::CatalogFileInfo file_info) {
     cout << "name:        " << file_info.name() << endl;
-    cout << "type:        " << file_info.type() << endl;
+    cout << "type:        " << GetFileType(file_info.type()) << endl;
     cout << "file_size:   " << file_info.file_size() << "(KB)" << endl;
     cout << "description: " << file_info.description() << endl;
     cout << endl;
@@ -273,7 +278,7 @@ void Print(CARTA::CatalogFileInfoRequest file_info_request) {
 
 void Print(CARTA::CatalogFileInfoResponse file_info_response) {
     cout << "CARTA::CatalogFileInfoResponse:" << endl;
-    cout << "success:   " << file_info_response.success() << endl;
+    cout << "success:   " << GetBoolType(file_info_response.success()) << endl;
     cout << "message:   " << file_info_response.message() << endl;
     cout << "file_info: " << endl;
     Print(file_info_response.file_info());
@@ -289,7 +294,7 @@ void Print(CARTA::CatalogFileInfoResponse file_info_response) {
 void Print(CARTA::CatalogHeader header) {
     cout << "CARTA::CatalogHeader:" << endl;
     cout << "name:            " << header.name() << endl;
-    cout << "data_type:       " << header.data_type() << endl;
+    cout << "data_type:       " << GetDataType(header.data_type()) << endl;
     cout << "column_index:    " << header.column_index() << endl;
     cout << "data_type_index: " << header.data_type_index() << endl;
     cout << "description:     " << header.description() << endl;
@@ -308,7 +313,7 @@ void Print(CARTA::OpenCatalogFile open_file_request) {
 
 void Print(CARTA::OpenCatalogFileAck open_file_response) {
     cout << "CARTA::OpenCatalogFileAck" << endl;
-    cout << "success:   " << open_file_response.success() << endl;
+    cout << "success:   " << GetBoolType(open_file_response.success()) << endl;
     cout << "message:   " << open_file_response.message() << endl;
     cout << "file_id:   " << open_file_response.file_id() << endl;
     Print(open_file_response.file_info());
@@ -429,4 +434,55 @@ void Print(CARTA::CatalogFilterResponse filter_response) {
     Print(filter_response.columns_data());
     cout << "progress:  " << filter_response.progress() << endl;
     cout << endl;
+}
+
+string GetDataType(CARTA::EntryType data_type) {
+    string result;
+    switch (data_type) {
+        case CARTA::EntryType::BOOL:
+            result = "bool";
+            break;
+        case CARTA::EntryType::STRING:
+            result = "string";
+            break;
+        case CARTA::EntryType::INT:
+            result = "int";
+            break;
+        case CARTA::EntryType::LONGLONG:
+            result = "long long";
+            break;
+        case CARTA::EntryType::FLOAT:
+            result = "float";
+            break;
+        case CARTA::EntryType::DOUBLE:
+            result = "double";
+            break;
+        default:
+            result = "unknown data type";
+            break;
+    }
+    return result;
+}
+
+string GetBoolType(bool bool_type) {
+    string result;
+    if (bool_type) {
+        result = "true";
+    } else {
+        result = "false";
+    }
+    return result;
+}
+
+string GetFileType(CARTA::CatalogFileType file_type) {
+    string result;
+    switch (file_type) {
+        case CARTA::CatalogFileType::VOTable:
+            result = "VOTable";
+            break;
+        default:
+            result = "unknown Catalog file type";
+            break;
+    }
+    return result;
 }
