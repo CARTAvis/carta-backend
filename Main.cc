@@ -326,7 +326,6 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 }
                 case CARTA::EventType::SET_USER_LAYOUT: {
                     CARTA::SetUserLayout message;
-                    std::cerr << "SET_USER_LAYOUT" << std::endl;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSetUserLayout(message, head.request_id);
                     } else {
