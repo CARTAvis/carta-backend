@@ -117,14 +117,14 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     }
 
     mongoc_collection_destroy(collection);
-    mongoc_database_destroy(database);
+	mongoc_database_destroy(database);
     mongoc_client_destroy(client);
     mongoc_cleanup();
 
     return result;
 }
 
-//
+
 bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     mongoc_client_t* client;
     mongoc_database_t* database;
@@ -137,11 +137,11 @@ bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
 
     initMongoDB(&database, &client, &collection, "layouts");
 
-    query = bson_new();
     database = mongoc_client_get_database(client, "CARTA");
     collection = mongoc_client_get_collection(client, "CARTA", "layouts");
 
     cuserid(user);
+
     query = bson_new();
     BSON_APPEND_UTF8(query, "username", user);
     cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
@@ -163,6 +163,7 @@ bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     }
     bson_destroy(query);
     mongoc_cursor_destroy(cursor);
+	mongoc_database_destroy(database);
     mongoc_collection_destroy(collection);
     mongoc_client_destroy(client);
     mongoc_cleanup();
@@ -182,7 +183,6 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
 
     initMongoDB(&database, &client, &collection, "preferences");
 
-    query = bson_new();
     database = mongoc_client_get_database(client, "CARTA");
 
     collection = mongoc_client_get_collection(client, "CARTA", "preferences");
@@ -211,7 +211,6 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
                     json_object_object_get_ex(parsed_json, cstr, &pref_str);
                     char_pref_name = cstr;
                     char_pref_str = json_object_get_string(pref_str);
-
                     (*(ack_message_ptr->mutable_user_preferences()))[char_pref_name] = char_pref_str;
                 }
             }
@@ -222,6 +221,7 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     mongoc_cursor_destroy(cursor);
     mongoc_collection_destroy(collection);
     mongoc_client_destroy(client);
+	mongoc_database_destroy(database);
     mongoc_cleanup();
 
     return true;
@@ -266,6 +266,7 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     }
     mongoc_collection_destroy(collection);
     mongoc_client_destroy(client);
+	mongoc_database_destroy(database);
     mongoc_cleanup();
 
     return result;
