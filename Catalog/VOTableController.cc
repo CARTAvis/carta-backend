@@ -11,6 +11,7 @@
 using namespace catalog;
 
 Controller::~Controller() {
+    std::unique_lock<std::mutex> lock(_carriers_mutex);
     for (auto& carrier : _carriers) {
         delete carrier.second;
         carrier.second = nullptr;
@@ -146,6 +147,7 @@ void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CAR
 
     // Move the VOTableCarrier with respect to its file_id to the cache
     CloseFile(file_id);
+    std::unique_lock<std::mutex> lock(_carriers_mutex);
     _carriers[file_id] = std::move(carrier);
 }
 
@@ -157,6 +159,7 @@ void Controller::OnCloseFileRequest(CARTA::CloseCatalogFile close_file_request) 
 void Controller::OnFilterRequest(
     CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback) {
     int file_id(filter_request.file_id());
+    std::unique_lock<std::mutex> lock(_carriers_mutex);
     if (!_carriers.count(file_id)) {
         std::cerr << "VOTable file does not exist (file ID: " << file_id << "!" << std::endl;
         return;
@@ -205,6 +208,7 @@ std::string Controller::Concatenate(std::string directory, std::string filename)
 }
 
 void Controller::CloseFile(int file_id) {
+    std::unique_lock<std::mutex> lock(_carriers_mutex);
     if (_carriers.count(file_id)) {
         delete _carriers[file_id];
         _carriers[file_id] = nullptr;

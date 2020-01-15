@@ -38,6 +38,7 @@ private:
     void CloseFile(int file_id);
 
     std::unordered_map<int, VOTableCarrier*> _carriers; // The unordered map for <File Id, VOTableCarrier Ptr>
+    std::mutex _carriers_mutex;
 };
 
 } // namespace catalog
