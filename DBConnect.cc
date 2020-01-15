@@ -90,38 +90,31 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     mongoc_client_t* client;
     mongoc_database_t* database;
     mongoc_collection_t* collection;
-    bson_t *command, reply, layout;
-    char* str;
+    bson_t layout;
     char user[16];
     bson_error_t error;
     bool result = true;
 
     initMongoDB(&database, &client, &collection, "layouts");
-
-    str = bson_as_json(&reply, NULL);
-
+ 
     cuserid(user);
 
     bson_init(&layout);
     BSON_APPEND_UTF8(&layout, "username", user);
     BSON_APPEND_UTF8(&layout, "name", name.c_str());
 
-    if (json_string.empty()) {
+    if (!json_string.empty()) {
         if (!mongoc_collection_delete_one(collection, &layout, NULL, NULL, &error)) {
             fmt::format("Delete failed: {}", error.message);
             result = false;
         }
     } else {
         BSON_APPEND_UTF8(&layout, "json_string", json_string.c_str());
-
         if (!mongoc_collection_insert_one(collection, &layout, NULL, NULL, &error)) {
             fmt::format("{}", error.message);
             result = false;
         }
     }
-    bson_destroy(&reply);
-    bson_destroy(command);
-    bson_free(str);
 
     mongoc_collection_destroy(collection);
     mongoc_database_destroy(database);
@@ -252,15 +245,6 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     bool result = true;
 
     initMongoDB(&database, &client, &collection, "preferences");
-
-    command = BCON_NEW("ping", BCON_INT32(1));
-    retval = mongoc_client_command_simple(client, "admin", command, NULL, &reply, &error);
-    if (!retval) {
-        fmt::format("{}", error.message);
-        return false;
-    }
-
-    str = bson_as_json(&reply, NULL);
 
     cuserid(user);
 
