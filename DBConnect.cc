@@ -96,7 +96,7 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     bool result = true;
 
     initMongoDB(&database, &client, &collection, "layouts");
- 
+
     cuserid(user);
 
     bson_init(&layout);
@@ -117,20 +117,19 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     }
 
     mongoc_collection_destroy(collection);
-	mongoc_database_destroy(database);
+    mongoc_database_destroy(database);
     mongoc_client_destroy(client);
     mongoc_cleanup();
 
     return result;
 }
 
-
 bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     mongoc_client_t* client;
     mongoc_database_t* database;
     mongoc_collection_t* collection;
     mongoc_cursor_t* cursor;
-    bson_t *query;
+    bson_t* query;
     const bson_t* doc;
     char* str;
     char user[16];
@@ -163,7 +162,7 @@ bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     }
     bson_destroy(query);
     mongoc_cursor_destroy(cursor);
-	mongoc_database_destroy(database);
+    mongoc_database_destroy(database);
     mongoc_collection_destroy(collection);
     mongoc_client_destroy(client);
     mongoc_cleanup();
@@ -176,7 +175,7 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     mongoc_database_t* database;
     mongoc_collection_t* collection;
     mongoc_cursor_t* cursor;
-    bson_t *query;
+    bson_t* query;
     const bson_t* doc;
     char* str;
     char user[16];
@@ -221,7 +220,7 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     mongoc_cursor_destroy(cursor);
     mongoc_collection_destroy(collection);
     mongoc_client_destroy(client);
-	mongoc_database_destroy(database);
+    mongoc_database_destroy(database);
     mongoc_cleanup();
 
     return true;
@@ -266,7 +265,7 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     }
     mongoc_collection_destroy(collection);
     mongoc_client_destroy(client);
-	mongoc_database_destroy(database);
+    mongoc_database_destroy(database);
     mongoc_cleanup();
 
     return result;
