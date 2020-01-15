@@ -1,23 +1,21 @@
 #include "Session.h"
 
+#include <carta-protobuf/contour_image.pb.h>
+#include <carta-protobuf/defs.pb.h>
+#include <carta-protobuf/error.pb.h>
+#include <carta-protobuf/raster_tile.pb.h>
+#include <casacore/casa/OS/File.h>
 #include <signal.h>
+#include <tbb/parallel_for.h>
+#include <tbb/task_group.h>
+#include <xmmintrin.h>
+#include <zstd.h>
+
 #include <algorithm>
 #include <chrono>
 #include <limits>
 #include <memory>
 #include <thread>
-
-#include <tbb/parallel_for.h>
-#include <tbb/task_group.h>
-
-#include <casacore/casa/OS/File.h>
-
-#include <carta-protobuf/contour_image.pb.h>
-#include <carta-protobuf/defs.pb.h>
-#include <carta-protobuf/error.pb.h>
-#include <carta-protobuf/raster_tile.pb.h>
-#include <xmmintrin.h>
-#include <zstd.h>
 
 #include "Carta.h"
 #include "Compression.h"
@@ -52,6 +50,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
+    _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller());
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
@@ -779,6 +778,12 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
         ack.set_message(err_message);
     }
     SendEvent(CARTA::EventType::RESUME_SESSION_ACK, request_id, ack);
+}
+
+void Session::OnCatalogFileListRequest(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
+    CARTA::CatalogListResponse file_list_response;
+    catalog::Controller::OnFileListRequest(file_list_request, file_list_response);
+    SendEvent(CARTA::EventType::CATALOG_FILE_LIST_RESPONSE, request_id, file_list_response);
 }
 
 // ******** SEND DATA STREAMS *********

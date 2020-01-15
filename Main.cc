@@ -1,16 +1,12 @@
 #if _AUTH_SERVER_
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/value.h>
+
 #include "DBConnect.h"
 #endif
 
-#include <fstream>
-#include <iostream>
-#include <mutex>
-#include <thread>
-#include <tuple>
-#include <vector>
-
+#include <casacore/casa/Inputs/Input.h>
+#include <casacore/casa/OS/HostInfo.h>
 #include <fmt/format.h>
 #include <signal.h>
 #include <tbb/concurrent_queue.h>
@@ -19,8 +15,12 @@
 #include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
 
-#include <casacore/casa/Inputs/Input.h>
-#include <casacore/casa/OS/HostInfo.h>
+#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <thread>
+#include <tuple>
+#include <vector>
 
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
@@ -314,6 +314,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::SetContourParameters message;
                     message.ParseFromArray(event_buf, event_length);
                     tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
+                    break;
+                }
+                case CARTA::EventType::CATALOG_FILE_LIST_REQUEST: {
+                    CARTA::CatalogListRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnCatalogFileListRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad CATALOG_FILE_LIST_REQUEST message!\n");
+                    }
                     break;
                 }
                 default: {

@@ -3,22 +3,6 @@
 #ifndef CARTA_BACKEND__SESSION_H_
 #define CARTA_BACKEND__SESSION_H_
 
-#include <cstdint>
-#include <cstdio>
-#include <mutex>
-#include <tuple>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
-#include <fmt/format.h>
-#include <tbb/atomic.h>
-#include <tbb/concurrent_queue.h>
-#include <tbb/concurrent_unordered_map.h>
-#include <uWS/uWS.h>
-
-#include <casacore/casa/aips.h>
-
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/contour.pb.h>
 #include <carta-protobuf/file_info.pb.h>
@@ -31,10 +15,24 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/tiles.pb.h>
-
+#include <casacore/casa/aips.h>
+#include <fmt/format.h>
+#include <tbb/atomic.h>
+#include <tbb/concurrent_queue.h>
+#include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
+#include <uWS/uWS.h>
+
+#include <cstdint>
+#include <cstdio>
+#include <mutex>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "AnimationObject.h"
+#include "Catalog/VOTableController.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
@@ -69,6 +67,7 @@ public:
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
+    void OnCatalogFileListRequest(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
@@ -213,6 +212,9 @@ private:
     // Frame
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
     std::mutex _frame_mutex;                                 // lock frames to create/destroy
+
+    // Catalog controller
+    std::unique_ptr<catalog::Controller> _catalog_controller;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
