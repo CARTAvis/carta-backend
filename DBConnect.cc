@@ -32,7 +32,7 @@ bool initMongoDB(mongoc_database_t** database, mongoc_client_t** client, mongoc_
 
     uri = mongoc_uri_new_with_error(uri_string.c_str(), &error);
     if (!uri) {
-        fmt::format(
+        fmt::print(
             "failed to parse URI: {}\n"
             "error message:       {}\n",
             uri_string, error.message);
@@ -105,13 +105,13 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
 
     if (!json_string.empty()) {
         if (!mongoc_collection_delete_one(collection, &layout, NULL, NULL, &error)) {
-            fmt::format("Delete failed: {}", error.message);
+            fmt::print("Delete failed: {}", error.message);
             result = false;
         }
     } else {
         BSON_APPEND_UTF8(&layout, "json_string", json_string.c_str());
         if (!mongoc_collection_insert_one(collection, &layout, NULL, NULL, &error)) {
-            fmt::format("{}", error.message);
+            fmt::print("{}", error.message);
             result = false;
         }
     }
@@ -248,7 +248,7 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
             BSON_APPEND_UTF8(doc, pair.first.c_str(), pair.second.c_str());
             const bson_t* doc1 = (const bson_t*)doc;
             if (!mongoc_collection_delete_one(collection, doc1, NULL, NULL, &error)) {
-                fmt::format("Delete failed: {}", error.message);
+                fmt::print("Delete failed: {}", error.message);
                 result = false;
             }
             bson_destroy(doc);
@@ -258,7 +258,7 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
             BSON_APPEND_UTF8(doc, "username", user);
             BSON_APPEND_UTF8(doc, pair.first.c_str(), pair.second.c_str());
             if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error)) {
-                fmt::format("{}", error.message);
+                fmt::print("{}", error.message);
                 result = false;
             }
             bson_free(doc);
