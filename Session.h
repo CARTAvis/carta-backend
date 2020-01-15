@@ -68,6 +68,7 @@ public:
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
     void OnCatalogFileListRequest(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
+    void OnCatalogFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {

@@ -325,6 +325,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::CATALOG_FILE_INFO_REQUEST: {
+                    CARTA::CatalogFileInfoRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnCatalogFileInfoRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad CATALOG_FILE_INFO_REQUEST message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];

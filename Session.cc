@@ -786,6 +786,12 @@ void Session::OnCatalogFileListRequest(CARTA::CatalogListRequest file_list_reque
     SendEvent(CARTA::EventType::CATALOG_FILE_LIST_RESPONSE, request_id, file_list_response);
 }
 
+void Session::OnCatalogFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {
+    CARTA::CatalogFileInfoResponse file_info_response;
+    catalog::Controller::OnFileInfoRequest(file_info_request, file_info_response);
+    SendEvent(CARTA::EventType::CATALOG_FILE_INFO_RESPONSE, request_id, file_info_response);
+}
+
 // ******** SEND DATA STREAMS *********
 
 CARTA::RegionHistogramData* Session::GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel) {
