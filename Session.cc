@@ -717,23 +717,30 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
 
 void Session::OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id) {
     CARTA::SetUserPreferencesAck ack_message;
+	bool result;
 
-    bool result = SaveUserPreferencesToDB(request);
-
+#ifdef _AUTH_SERVER_	
+    result = SaveUserPreferencesToDB(request);
+#endif
+	
     ack_message.set_success(result);
-    
+
     SendEvent(CARTA::EventType::SET_USER_PREFERENCES_ACK, request_id, ack_message);
 }
 
 void Session::OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id) {
     CARTA::SetUserLayoutAck ack_message;
 
+ #ifdef _AUTH_SERVER_
     if (SaveLayoutToDB(request.name(), request.value())) {
         ack_message.set_success(true);
     } else {
         ack_message.set_success(false);
     }
-
+#else
+	ack_message.set_success(false);
+#endif
+	
     SendEvent(CARTA::EventType::SET_USER_LAYOUT_ACK, request_id, ack_message);
 }
 
