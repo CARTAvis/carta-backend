@@ -89,7 +89,7 @@ Session::~Session() {
     _frames.clear();
     _outgoing_async->close();
     --_num_sessions;
-    DEBUG(fprintf(stderr, "%p  ~Session (%d)\n", this, _num_sessions));
+    DEBUG(std::cout << this << " ~Session " << _num_sessions << std::endl;)
     if (!_num_sessions) {
         std::cout << "No remaining sessions." << std::endl;
         if (_exit_when_all_sessions_closed) {
