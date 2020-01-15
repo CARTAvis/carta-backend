@@ -130,10 +130,9 @@ bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     mongoc_database_t* database;
     mongoc_collection_t* collection;
     mongoc_cursor_t* cursor;
-    bson_t *insert, *query;
+    bson_t *query;
     const bson_t* doc;
     char* str;
-    char* uvalue = NULL;
     char user[16];
 
     initMongoDB(&database, &client, &collection, "layouts");
@@ -172,16 +171,13 @@ bool GetLayoutsFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
 }
 
 bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
-    mongoc_uri_t* uri;
     mongoc_client_t* client;
     mongoc_database_t* database;
     mongoc_collection_t* collection;
     mongoc_cursor_t* cursor;
-    bson_t *command, reply, *insert, userconf, *query;
+    bson_t *query;
     const bson_t* doc;
-    bson_error_t error;
     char* str;
-    char* uvalue = NULL;
     char user[16];
 
     initMongoDB(&database, &client, &collection, "preferences");
@@ -198,7 +194,6 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
     cursor = mongoc_collection_find_with_opts(collection, query, NULL, NULL);
 
     struct json_object* parsed_json;
-    struct json_object* pref_name;
     struct json_object* pref_str;
 
     const char* char_pref_name;
@@ -233,14 +228,10 @@ bool GetPreferencesFromDB(CARTA::RegisterViewerAck* ack_message_ptr) {
 }
 
 bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
-    mongoc_uri_t* uri;
     mongoc_client_t* client;
     mongoc_database_t* database;
     mongoc_collection_t* collection;
-    bson_t *command, reply, *insert, prefs, *query;
     bson_error_t error;
-    bool retval;
-    char* str;
     char user[16];
     bool result = true;
 
