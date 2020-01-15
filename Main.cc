@@ -352,6 +352,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::CATALOG_FILTER_REQUEST: {
+                    CARTA::CatalogFilterRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnCatalogFilter(message, head.request_id);
+                    } else {
+                        fmt::print("Bad CATALOG_FILTER_REQUEST message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];

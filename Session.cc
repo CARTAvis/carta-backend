@@ -802,6 +802,13 @@ void Session::OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request) {
     _catalog_controller->OnCloseFileRequest(close_file_request);
 }
 
+void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id) {
+    _catalog_controller->OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
+        // Send partial or final results
+        SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response);
+    });
+}
+
 // ******** SEND DATA STREAMS *********
 
 CARTA::RegionHistogramData* Session::GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel) {
