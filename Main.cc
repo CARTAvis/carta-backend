@@ -319,7 +319,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::CATALOG_FILE_LIST_REQUEST: {
                     CARTA::CatalogListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnCatalogFileListRequest(message, head.request_id);
+                        session->OnCatalogFileList(message, head.request_id);
                     } else {
                         fmt::print("Bad CATALOG_FILE_LIST_REQUEST message!\n");
                     }
@@ -328,7 +328,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::CATALOG_FILE_INFO_REQUEST: {
                     CARTA::CatalogFileInfoRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnCatalogFileInfoRequest(message, head.request_id);
+                        session->OnCatalogFileInfo(message, head.request_id);
                     } else {
                         fmt::print("Bad CATALOG_FILE_INFO_REQUEST message!\n");
                     }
@@ -337,7 +337,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::OPEN_CATALOG_FILE: {
                     CARTA::OpenCatalogFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnOpenCatalogFileRequest(message, head.request_id);
+                        session->OnOpenCatalogFile(message, head.request_id);
                     } else {
                         fmt::print("Bad OPEN_CATALOG_FILE message!\n");
                     }

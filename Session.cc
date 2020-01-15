@@ -780,19 +780,19 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     SendEvent(CARTA::EventType::RESUME_SESSION_ACK, request_id, ack);
 }
 
-void Session::OnCatalogFileListRequest(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
+void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
     CARTA::CatalogListResponse file_list_response;
     catalog::Controller::OnFileListRequest(file_list_request, file_list_response);
     SendEvent(CARTA::EventType::CATALOG_FILE_LIST_RESPONSE, request_id, file_list_response);
 }
 
-void Session::OnCatalogFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {
+void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {
     CARTA::CatalogFileInfoResponse file_info_response;
     catalog::Controller::OnFileInfoRequest(file_info_request, file_info_response);
     SendEvent(CARTA::EventType::CATALOG_FILE_INFO_RESPONSE, request_id, file_info_response);
 }
 
-void Session::OnOpenCatalogFileRequest(CARTA::OpenCatalogFile open_file_request, uint32_t request_id) {
+void Session::OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id) {
     CARTA::OpenCatalogFileAck open_file_response;
     _catalog_controller->OnOpenFileRequest(open_file_request, open_file_response);
     SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);

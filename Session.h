@@ -67,9 +67,9 @@ public:
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
-    void OnCatalogFileListRequest(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
-    void OnCatalogFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
-    void OnOpenCatalogFileRequest(CARTA::OpenCatalogFile open_file_request, uint32_t request_id);
+    void OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
+    void OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
+    void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id);
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
 
     void SendPendingMessages();
