@@ -5,7 +5,7 @@
 using namespace catalog;
 using namespace std;
 
-unique_ptr<Controller> _controller;
+unique_ptr<Controller> _controller(nullptr);
 
 void TestOnFileListRequest();
 void TestOnFileListRequest(CARTA::CatalogListRequest file_list_request);
@@ -130,12 +130,16 @@ void TestOnOpenFileRequest(CARTA::OpenCatalogFile open_file_request) {
     CARTA::OpenCatalogFileAck open_file_response;
     cout << "Create an unique ptr for the Controller." << endl;
     _controller = unique_ptr<Controller>(new Controller());
-    _controller->OnOpenFileRequest(open_file_request, open_file_response);
+    if (_controller) {
+        _controller->OnOpenFileRequest(open_file_request, open_file_response);
+    }
 
     // Close file
     CARTA::CloseCatalogFile close_file_request;
     close_file_request.set_file_id(open_file_request.file_id());
-    _controller->OnCloseFileRequest(close_file_request);
+    if (_controller) {
+        _controller->OnCloseFileRequest(close_file_request);
+    }
 
     // Print results
     Print(open_file_request);
@@ -235,20 +239,26 @@ void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::Catalo
     CARTA::OpenCatalogFileAck open_file_response;
     cout << "Create an unique ptr for the Controller." << endl;
     _controller = unique_ptr<Controller>(new Controller());
-    _controller->OnOpenFileRequest(open_file_request, open_file_response);
+    if (_controller) {
+        _controller->OnOpenFileRequest(open_file_request, open_file_response);
+    }
 
     // Filter the file data
-    _controller->OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
-        // Print partial or final results
-        Print(filter_request);
-        Print(filter_response);
-        cout << "\n------------------------------------------------------------------\n";
-    });
+    if (_controller) {
+        _controller->OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
+            // Print partial or final results
+            Print(filter_request);
+            Print(filter_response);
+            cout << "\n------------------------------------------------------------------\n";
+        });
+    }
 
     // Close file
     CARTA::CloseCatalogFile close_file_request;
     close_file_request.set_file_id(open_file_request.file_id());
-    _controller->OnCloseFileRequest(close_file_request);
+    if (_controller) {
+        _controller->OnCloseFileRequest(close_file_request);
+    }
 
     // Delete the Controller
     cout << "Reset the unique ptr for the Controller." << endl;

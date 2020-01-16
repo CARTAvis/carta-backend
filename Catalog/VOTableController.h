@@ -6,6 +6,8 @@
 #include <carta-protobuf/catalog_list.pb.h>
 #include <carta-protobuf/open_catalog_file.pb.h>
 
+#include <cmath>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <unordered_map>

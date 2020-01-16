@@ -794,19 +794,25 @@ void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request,
 
 void Session::OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id) {
     CARTA::OpenCatalogFileAck open_file_response;
-    _catalog_controller->OnOpenFileRequest(open_file_request, open_file_response);
-    SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
+    if (_catalog_controller) {
+        _catalog_controller->OnOpenFileRequest(open_file_request, open_file_response);
+        SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
+    }
 }
 
 void Session::OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request) {
-    _catalog_controller->OnCloseFileRequest(close_file_request);
+    if (_catalog_controller) {
+        _catalog_controller->OnCloseFileRequest(close_file_request);
+    }
 }
 
 void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id) {
-    _catalog_controller->OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
-        // Send partial or final results
-        SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response);
-    });
+    if (_catalog_controller) {
+        _catalog_controller->OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
+            // Send partial or final results
+            SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response);
+        });
+    }
 }
 
 // ******** SEND DATA STREAMS *********
