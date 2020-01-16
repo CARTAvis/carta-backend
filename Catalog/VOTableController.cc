@@ -1,9 +1,9 @@
 #include "VOTableController.h"
 
 #include <dirent.h>
-#include <stdio.h> /* defines the FILENAME_MAX */
+#include <stdio.h>
 #include <sys/stat.h>
-#include <unistd.h> // Defines the function getcwd(...)
+#include <unistd.h>
 
 #include "VOTableCarrier.h"
 #include "VOTableParser.h"
