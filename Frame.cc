@@ -24,6 +24,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _z_profile_count(0),
       _cursor_set(false),
       _loader(loader),
+      _tile_cache(TILE_CACHE_CAPACITY),
       _spectral_axis(-1),
       _stokes_axis(-1),
       _channel_index(-1),
@@ -77,10 +78,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     _stokes_index = DEFAULT_STOKES;
     
     // reset the tile cache
-    int tiles_x = (_image_shape(0) - 1) / TILE_SIZE + 1;
-    int tiles_y (_image_shape(1) - 1) / TILE_SIZE + 1;
-    int tile_cache_capacity = std::max({TILE_CACHE_CAPACITY, 2 * tiles_x, 2 * tiles_y});
-    _tile_cache.reset(_channel_index, _stokes_index, tile_cache_capacity);
+    _tile_cache.reset(_channel_index, _stokes_index);
 
     try {
         // Resize stats vectors and load data from image, if the format supports it.
@@ -733,9 +731,7 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                 _image_cache_valid = false;
                 
                 // invalidate / clear the full resolution tile cache
-                std::unique_lock<std::mutex> guard(_tile_cache.GetMutex());
                 _tile_cache.reset(_channel_index, _stokes_index);
-                guard.unlock();
                 
                 updated = true;
                 
@@ -1151,9 +1147,7 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _channel_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (_image_cache.empty() && _loader->UseTileCache(_image_mutex)) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
-        std::unique_lock<std::mutex> guard(_tile_cache.GetMutex());
         loaded_data = _tile_cache.Get(tile_data, CachedTileKey(tile.x, tile.y), _loader, _image_mutex);
-        guard.unlock();
     }
     
     // Fall back to using the full image cache. The cache will be populated by this function.

@@ -594,7 +594,7 @@ bool FileLoader::GetDownsampledRasterData(std::vector<float>& data, int channel,
     return false;
 }
 
-bool FileLoader::GetTile(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
+bool FileLoader::GetChunk(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }

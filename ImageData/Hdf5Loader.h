@@ -34,7 +34,8 @@ public:
 
     bool HasMip(int mip, std::mutex& image_mutex) const override;
     bool UseTileCache(std::mutex& image_mutex) const override;
-
+    
+    static const int CHUNK_SIZE;
 private:
     std::string _filename;
     std::string _hdu;

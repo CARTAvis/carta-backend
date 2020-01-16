@@ -159,7 +159,7 @@ public:
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
     virtual bool GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
-    virtual bool GetTile(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex);
+    virtual bool GetChunk(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex);
     
     // Implemented in Hdf5Loader, used to interrupt loading spectral profile
     virtual void SetFramePtr(Frame* frame);

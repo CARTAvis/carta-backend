@@ -40,19 +40,20 @@ public:
     TileCache() {}
     TileCache(int capacity) : _capacity(capacity), _channel(0), _stokes(0) {}
     
+    // This is read-only and does not lock the cache
     bool Peek(std::vector<float>& tile_data, Key key);
+    
+    // These functions lock the cache
     bool Get(std::vector<float>& tile_data, Key key, carta::FileLoader* loader, std::mutex& image_mutex);
     bool GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, carta::FileLoader* loader, std::mutex& image_mutex);
-    
-    // Used to clear the cache when the channel changes, and to adjust the capacity when an image is loaded
-    void Reset(int32_t channel, int32_t stokes, int capacity = 0);
-    std::mutex GetMutex();
+    void Reset(int32_t channel, int32_t stokes);
     
 private:
     void CopyTileData(std::vector<float>& tile_data, TilePtr& tile);
     TilePtr UnsafePeek(Key key);
     void Touch(Key key);
-    bool Load(TilePtr& tile, Key key, carta::FileLoader* loader, std::mutex& image_mutex);
+    Key ChunkKey(Key tile_key);
+    bool LoadChunk(Key chunk_key, carta::FileLoader* loader, std::mutex& image_mutex);
     
     int32_t _channel;
     int32_t _stokes;
@@ -60,6 +61,10 @@ private:
     std::unordered_map<Key, std::list<TilePair>::iterator> _map;
     int _capacity;
     std::mutex _tile_cache_mutex;
+    
+    static const int _TILE_SQ;
+    static const int _CHUNK_SIZE;
+    static const int _CHUNK_SQ;
 };
 
 #endif // CARTA_BACKEND__TILE_CACHE_H_

@@ -448,18 +448,19 @@ bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel,
     return data_ok;
 }
 
-bool Hdf5Loader::GetTile(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
+bool Hdf5Loader::GetChunk(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
     bool data_ok(false);
     
     casacore::Slicer slicer;
     if (_num_dims == 4) {
-        slicer = casacore::Slicer(IPos(4, min_x, min_y, channel, stokes), IPos(4, TILE_SIZE, TILE_SIZE, 1, 1));
+        slicer = casacore::Slicer(IPos(4, min_x, min_y, channel, stokes), IPos(4, CHUNK_SIZE, CHUNK_SIZE, 1, 1));
     } else if (_num_dims == 3) {
-        slicer = casacore::Slicer(IPos(3, min_x, min_y, channel), IPos(3, TILE_SIZE, TILE_SIZE, 1));
+        slicer = casacore::Slicer(IPos(3, min_x, min_y, channel), IPos(3, CHUNK_SIZE, CHUNK_SIZE, 1));
     } else if (_num_dims == 2) {
-        slicer = casacore::Slicer(IPos(2, min_x, min_y), IPos(2, TILE_SIZE, TILE_SIZE));
+        slicer = casacore::Slicer(IPos(2, min_x, min_y), IPos(2, CHUNK_SIZE, CHUNK_SIZE));
     }
     
+    data.resize(CHUNK_SIZE * CHUNK_SIZE);
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     
     std::lock_guard<std::mutex> lguard(image_mutex);
@@ -485,5 +486,7 @@ bool Hdf5Loader::UseTileCache(std::mutex& image_mutex) const {
     
     return layout == H5D_CHUNKED;
 }
+
+const int Hdf5Loader::CHUNK_SIZE = 512;
 
 } // namespace carta
