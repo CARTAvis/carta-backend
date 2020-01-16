@@ -358,8 +358,7 @@ void VOTableCarrier::GetFilteredData(
 
     // Loop the table row data
     int row_size = subset_end_index - subset_start_index + 1;
-    float check_progress_interval = 0.1;
-    float last_progress = check_progress_interval;
+    float last_progress = _check_filter_progress_interval;
     int x_axis_count = 0;
     int y_axis_count = 0;
     for (int row = subset_start_index; row <= subset_end_index; ++row) {
@@ -501,7 +500,7 @@ void VOTableCarrier::GetFilteredData(
         float progress = (float)(row - subset_start_index + 1) / (float)row_size;
 
         if ((progress > last_progress) || (progress >= 1.0)) {
-            last_progress = progress + check_progress_interval;
+            last_progress = progress + _check_filter_progress_interval;
             filter_response.set_progress(progress);
 
             // Send partial results by the callback function
