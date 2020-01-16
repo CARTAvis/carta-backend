@@ -9,7 +9,7 @@ void setBuildStatus(String message, String state) {
 }
 
 pipeline {
-    agent macos-1
+    agent { label 'macos-1' }
     stages {
         stage('MacOS build backend') {
             steps {
@@ -51,7 +51,7 @@ pipeline {
 }
 
 pipeline {
-    agent centos7-1
+    agent { label 'centos7-1' }
     stages {
         stage('CentOS7 build backend') {
             steps {
