@@ -51,7 +51,8 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
                     DIR* sub_path;
                     std::string sub_directory = Concatenate(directory, current_entry->d_name);
                     if ((sub_path = opendir(sub_directory.c_str()))) {
-                        file_list_response.add_subdirectories(sub_directory);
+                        std::size_t found = sub_directory.find_last_of("/");
+                        file_list_response.add_subdirectories(sub_directory.substr(found + 1));
                         closedir(sub_path);
                     }
                 }
