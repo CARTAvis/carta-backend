@@ -1,6 +1,6 @@
 #include "TileCache.h"
 
-bool TileCache::Peek(std::vector<float>& tile_data, CachedTileKey key) {
+bool TileCache::Peek(std::vector<float>& tile_data, Key key) {
     // This is a read-only operation which it is safe to do in parallel.
     if (_map.find(key) == _map.end()) {
         return false;
@@ -9,9 +9,9 @@ bool TileCache::Peek(std::vector<float>& tile_data, CachedTileKey key) {
     }
 }
     
-bool TileCache::Get(std::vector<float>& tile_data, CachedTileKey key, carta::FileLoader* loader, std::mutex& image_mutex) {
+bool TileCache::Get(std::vector<float>& tile_data, Key key, carta::FileLoader* loader, std::mutex& image_mutex) {
     // Will be loaded or retrieved from cache
-    TileCache::CachedTilePtr tile;
+    TileCache::TilePtr tile;
     bool valid(1);
     
     if(_map.find(key) == _map.end()) { // Not in cache
@@ -41,15 +41,15 @@ bool TileCache::Get(std::vector<float>& tile_data, CachedTileKey key, carta::Fil
     return valid;
 }
 
-bool TileCache::GetMultiple(std::unordered_map<CachedTileKey, std::vector<float>>& tiles, carta::FileLoader* loader, std::mutex& image_mutex) {
-    std::vector<CachedTileKey> found;
-    std::vector<CachedTileKey> not_found;
+bool TileCache::GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, carta::FileLoader* loader, std::mutex& image_mutex) {
+    std::vector<Key> found;
+    std::vector<Key> not_found;
     bool valid(1);
     
     std::unique_lock<std::mutex> lock(_tile_cache_mutex);
     
     for (auto& kv : tiles) {
-        CachedTileKey& key = kv->first;
+        Key& key = kv->first;
         if (_map.find(key) == _map.end()) {
             not_found.push_back(key);
         } else {
@@ -75,10 +75,11 @@ bool TileCache::GetMultiple(std::unordered_map<CachedTileKey, std::vector<float>
     return valid;
 }
 
-
-// TODO don't forget to use this when channel or stokes changes
-void TileCache::Reset(int32_t channel, int32_t stokes) {
+void TileCache::Reset(int32_t channel, int32_t stokes, int capacity) {
     std::unique_lock<std::mutex> lock(_tile_cache_mutex);
+    if (capacity > 0) {
+        _capacity = capacity;
+    }
     _map.clear();
     _queue.clear();
     _channel = channel;
@@ -90,17 +91,17 @@ std::mutex TileCache::GetMutex() {
     return _tile_cache_mutex;
 }
 
-TileCache::CopyTileData(std::vector<float>& tile_data, CachedTilePtr& tile) {
+TileCache::CopyTileData(std::vector<float>& tile_data, TilePtr& tile) {
     tile_data.resize(tile->size());
     std::copy(tile->begin(), tile->end(), tile_data.begin());
 }
 
-TileCache::CachedTilePtr TileCache::UnsafePeek(CachedTileKey key) {
+TileCache::TilePtr TileCache::UnsafePeek(Key key) {
     // Assumes that the tile is in the cache
     return _map.find(key)->second->second;
 }
 
-void TileCache::Touch(CachedTileKey key) {
+void TileCache::Touch(Key key) {
     // Move tile to the front of the queue
     // Assumes that the tile is in the cache
     auto tile = _map.find(key)->second->second;
@@ -109,7 +110,7 @@ void TileCache::Touch(CachedTileKey key) {
     _map[key] = _queue.begin();
 }
 
-bool TileCache::Load(TileCache::CachedTilePtr& tile, CachedTileKey key, carta::FileLoader* loader, std::mutex& image_mutex) {
+bool TileCache::Load(TileCache::TilePtr& tile, Key key, carta::FileLoader* loader, std::mutex& image_mutex) {
     // load a tile from the file
     return loader->GetTile(*tile, key.x, key.y, _channel, _stokes, image_mutex);
 }

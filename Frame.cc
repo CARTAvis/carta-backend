@@ -24,7 +24,6 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _z_profile_count(0),
       _cursor_set(false),
       _loader(loader),
-      _tile_cache(TILE_CACHE_CAPACITY),
       _spectral_axis(-1),
       _stokes_axis(-1),
       _channel_index(-1),
@@ -76,6 +75,12 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     // set current channel, stokes
     _channel_index = default_channel;
     _stokes_index = DEFAULT_STOKES;
+    
+    // reset the tile cache
+    int tiles_x = (_image_shape(0) - 1) / TILE_SIZE + 1;
+    int tiles_y (_image_shape(1) - 1) / TILE_SIZE + 1;
+    int tile_cache_capacity = std::max({TILE_CACHE_CAPACITY, 2 * tiles_x, 2 * tiles_y});
+    _tile_cache.reset(_channel_index, _stokes_index, tile_cache_capacity);
 
     try {
         // Resize stats vectors and load data from image, if the format supports it.
@@ -729,7 +734,7 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                 
                 // invalidate / clear the full resolution tile cache
                 std::unique_lock<std::mutex> guard(_tile_cache.GetMutex());
-                _tile_cache.reset();
+                _tile_cache.reset(_channel_index, _stokes_index);
                 guard.unlock();
                 
                 updated = true;
@@ -1262,13 +1267,13 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
         std::vector<CARTA::Point> control_points = region->GetControlPoints();
         int x(static_cast<int>(std::round(control_points[0].x()))), y(static_cast<int>(std::round(control_points[0].y())));
         // check that control points in image
-        bool point_in_image((x >= 0) && (x < _image_shape(0)) && (y >= 0) && (y < _image_shape(1)));
-        ssize_t num_image_cols(_image_shape(0)), num_image_rows(_image_shape(1));
+        ssize_t width(_image_shape(0)), height(_image_shape(1));
+        bool point_in_image((x >= 0) && (x < width) && (y >= 0) && (y < height));
         float value(0.0);
         if (_image_cache_valid) {
             bool write_lock(false);
             tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-            value = _image_cache[(y * num_image_cols) + x];
+            value = _image_cache[(y * width) + x];
             cache_lock.release();
         }
         profile_data.set_x(x);
@@ -1300,51 +1305,97 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                     std::vector<float> profile;
                     int end(0);
                     if ((profile_stokes == _stokes_index) && !_loader->UseTileCache()) {
-                        // TODO also check if number of required tiles exceeds tile cache capacity
                         // use stored channel cache
                         SetImageCache();
                         bool write_lock(false);
                         switch (axis_stokes.first) {
                             case 0: { // x
                                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                                auto x_start = y * num_image_cols;
-                                profile.reserve(_image_shape(0));
-                                for (unsigned int j = 0; j < _image_shape(0); ++j) {
+                                auto x_start = y * width;
+                                profile.reserve(width);
+                                for (unsigned int j = 0; j < width; ++j) {
                                     auto idx = x_start + j;
                                     profile.push_back(_image_cache[idx]);
                                 }
                                 cache_lock.release();
-                                end = _image_shape(0);
+                                end = width;
                                 break;
                             }
                             case 1: { // y
                                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                                profile.reserve(_image_shape(1));
-                                for (unsigned int j = 0; j < _image_shape(1); ++j) {
-                                    auto idx = (j * num_image_cols) + x;
+                                profile.reserve(height);
+                                for (unsigned int j = 0; j < height; ++j) {
+                                    auto idx = (j * width) + x;
                                     profile.push_back(_image_cache[idx]);
                                 }
                                 cache_lock.release();
-                                end = _image_shape(1);
+                                end = height;
                                 break;
                             }
                         }
                     } else if ((profile_stokes == _stokes_index) && _loader->UseTileCache()) {
-                        // TODO load tiles into tile cache
-                        // TODO load x and y from tiles
-                        // TODO add a utility function for this to the cache object?
+                        std::unordered_map<TileCache::Key, std::vector<float> tiles;
+                        
+                        switch (axis_stokes.first) {
+                            case 0: { // x
+                                int tile_y = (y / TILE_SIZE) * TILE_SIZE;
+                                for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
+                                    // Create empty vector
+                                    tiles[TileCache::Key(tile_x, tile_y)];
+                                }
+                        
+                                if (!_tile_cache.GetMultiple(tiles, _loader, _image_mutex)) {
+                                    return profile_ok;
+                                }
+                                
+                                profile.resize(width);
+                                
+                                for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
+                                    auto & tile = tiles[TileCache::Key(tile_x, tile_y)];
+                                    // copy contiguous row
+                                    auto start = tile->begin() + TILE_SIZE * (y - tile_y);
+                                    auto end = start + width;
+                                    auto destination_start = profile.begin() + tile_x;
+                                    std::copy(start, end, destination_start);
+                                }
+                                
+                                break;
+                            }
+                            case 1: { // y
+                                int tile_x = (x / TILE_SIZE) * TILE_SIZE;
+                                for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
+                                    tiles[TileCache::Key(tile_x, tile_y)];
+                                }
+                        
+                                if (!_tile_cache.GetMultiple(tiles, _loader, _image_mutex)) {
+                                    return profile_ok;
+                                }
+                                
+                                profile.resize(height);
+                                
+                                for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
+                                    auto & tile = tiles[TileCache::Key(tile_x, tile_y)];
+                                    // copy non-contiguous column
+                                    for (int j = 0; j < TILE_SIZE; j++) {
+                                        profile[tile_x + j] = tile[(j * width) + (x - tile_x)];
+                                    }
+                                }
+                                
+                                break;
+                            }
+                        }
                     } else {
                         // slice image data
                         casacore::Slicer section;
                         switch (axis_stokes.first) {
                             case 0: { // x
                                 GetImageSlicer(section, -1, y, _channel_index, profile_stokes);
-                                end = _image_shape(0);
+                                end = width;
                                 break;
                             }
                             case 1: { // y
                                 GetImageSlicer(section, x, -1, _channel_index, profile_stokes);
-                                end = _image_shape(1);
+                                end = height;
                                 break;
                             }
                         }

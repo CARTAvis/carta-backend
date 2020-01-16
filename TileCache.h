@@ -10,11 +10,11 @@
 
 #include "ImageData/FileLoader.h"
 
-struct CachedTileKey {
-    CachedTileKey() {}
-    CachedTileKey(int32_t x, int32_t y) : x(x), y(y) {}
+struct Key {
+    Key() {}
+    Key(int32_t x, int32_t y) : x(x), y(y) {}
     
-    bool operator==(const CachedTileKey &other) const { 
+    bool operator==(const Key &other) const { 
         return (x == other.x && y == other.y);
     }
     
@@ -24,9 +24,9 @@ struct CachedTileKey {
 
 namespace std {
   template <>
-  struct hash<CachedTileKey>
+  struct hash<Key>
   {
-    std::size_t operator()(const CachedTileKey& k) const
+    std::size_t operator()(const Key& k) const
     {
         return std::hash<int32_t>()(k.x) ^ (std::hash<int32_t>()(k.x) << 1);
     }
@@ -34,29 +34,30 @@ namespace std {
 }
 
 class TileCache {
-using CachedTilePtr = std::shared_ptr<std::vector<float>>;
-using CachedTilePair = std::pair<CachedTileKey, CachedTilePtr>;
+using TilePtr = std::shared_ptr<std::vector<float>>;
+using TilePair = std::pair<Key, TilePtr>;
 public:
     TileCache() {}
-    TileCache(int capacity) : _capacity(capacity) {}
+    TileCache(int capacity) : _capacity(capacity), _channel(0), _stokes(0) {}
     
-    bool Peek(std::vector<float>& tile_data, CachedTileKey key);
-    bool Get(std::vector<float>& tile_data, CachedTileKey key, carta::FileLoader* loader, std::mutex& image_mutex);
-    bool GetMultiple(std::unordered_map<CachedTileKey, std::vector<float>>& tiles, carta::FileLoader* loader, std::mutex& image_mutex);
+    bool Peek(std::vector<float>& tile_data, Key key);
+    bool Get(std::vector<float>& tile_data, Key key, carta::FileLoader* loader, std::mutex& image_mutex);
+    bool GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, carta::FileLoader* loader, std::mutex& image_mutex);
     
-    void Reset(int32_t channel, int32_t stokes);
+    // Used to clear the cache when the channel changes, and to adjust the capacity when an image is loaded
+    void Reset(int32_t channel, int32_t stokes, int capacity = 0);
     std::mutex GetMutex();
     
 private:
-    void CopyTileData(std::vector<float>& tile_data, CachedTilePtr& tile);
-    CachedTilePtr UnsafePeek(CachedTileKey key);
-    void Touch(CachedTileKey key);
-    bool Load(CachedTilePtr& tile, CachedTileKey key, carta::FileLoader* loader, std::mutex& image_mutex);
+    void CopyTileData(std::vector<float>& tile_data, TilePtr& tile);
+    TilePtr UnsafePeek(Key key);
+    void Touch(Key key);
+    bool Load(TilePtr& tile, Key key, carta::FileLoader* loader, std::mutex& image_mutex);
     
     int32_t _channel;
     int32_t _stokes;
-    std::list<CachedTilePair> _queue;
-    std::unordered_map<CachedTileKey, std::list<CachedTilePair>::iterator> _map;
+    std::list<TilePair> _queue;
+    std::unordered_map<Key, std::list<TilePair>::iterator> _map;
     int _capacity;
     std::mutex _tile_cache_mutex;
 };
