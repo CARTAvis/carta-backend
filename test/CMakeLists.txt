@@ -9,8 +9,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Building tester options
 option(testTileEncoding "Build testTileEncoding." OFF)
-option(testVOTableController "Build all tests." ON)
+option(testVOTableController "Build testVOTableController." ON)
 
 if (testTileEncoding)
     enable_testing()

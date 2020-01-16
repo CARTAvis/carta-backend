@@ -159,79 +159,59 @@ void VOTableParser::Print(std::string name, std::string value) {
 }
 
 VOTableParser::ElementName VOTableParser::GetElementName(std::string name) {
+    VOTableParser::ElementName result;
     if (strcmp(name.c_str(), "VOTABLE") == 0) {
-        return VOTABLE;
+        result = VOTABLE;
+    } else if (strcmp(name.c_str(), "RESOURCE") == 0) {
+        result = RESOURCE;
+    } else if (strcmp(name.c_str(), "DESCRIPTION") == 0) {
+        result = DESCRIPTION;
+    } else if (strcmp(name.c_str(), "DEFINITIONS") == 0) {
+        result = DEFINITIONS;
+    } else if (strcmp(name.c_str(), "INFO") == 0) {
+        result = INFO;
+    } else if (strcmp(name.c_str(), "PARAM") == 0) {
+        result = PARAM;
+    } else if (strcmp(name.c_str(), "TABLE") == 0) {
+        result = TABLE;
+    } else if (strcmp(name.c_str(), "FIELD") == 0) {
+        result = FIELD;
+    } else if (strcmp(name.c_str(), "GROUP") == 0) {
+        result = GROUP;
+    } else if (strcmp(name.c_str(), "FIELDref") == 0) {
+        result = FIELDref;
+    } else if (strcmp(name.c_str(), "PARAMref") == 0) {
+        result = PARAMref;
+    } else if (strcmp(name.c_str(), "VALUES") == 0) {
+        result = VALUES;
+    } else if (strcmp(name.c_str(), "MIN") == 0) {
+        result = MIN;
+    } else if (strcmp(name.c_str(), "MAX") == 0) {
+        result = MAX;
+    } else if (strcmp(name.c_str(), "OPTION") == 0) {
+        result = OPTION;
+    } else if (strcmp(name.c_str(), "LINK") == 0) {
+        result = LINK;
+    } else if (strcmp(name.c_str(), "DATA") == 0) {
+        result = DATA;
+    } else if (strcmp(name.c_str(), "TABLEDATA") == 0) {
+        result = TABLEDATA;
+    } else if (strcmp(name.c_str(), "TD") == 0) {
+        result = TD;
+    } else if (strcmp(name.c_str(), "TR") == 0) {
+        result = TR;
+    } else if (strcmp(name.c_str(), "FITS") == 0) {
+        result = FITS;
+    } else if (strcmp(name.c_str(), "BINARY") == 0) {
+        result = BINARY;
+    } else if (strcmp(name.c_str(), "STREAM") == 0) {
+        result = STREAM;
+    } else if (strcmp(name.c_str(), "COOSYS") == 0) {
+        result = COOSYS;
+    } else {
+        result = NONE;
     }
-    if (strcmp(name.c_str(), "RESOURCE") == 0) {
-        return RESOURCE;
-    }
-    if (strcmp(name.c_str(), "DESCRIPTION") == 0) {
-        return DESCRIPTION;
-    }
-    if (strcmp(name.c_str(), "DEFINITIONS") == 0) {
-        return DEFINITIONS;
-    }
-    if (strcmp(name.c_str(), "INFO") == 0) {
-        return INFO;
-    }
-    if (strcmp(name.c_str(), "PARAM") == 0) {
-        return PARAM;
-    }
-    if (strcmp(name.c_str(), "TABLE") == 0) {
-        return TABLE;
-    }
-    if (strcmp(name.c_str(), "FIELD") == 0) {
-        return FIELD;
-    }
-    if (strcmp(name.c_str(), "GROUP") == 0) {
-        return GROUP;
-    }
-    if (strcmp(name.c_str(), "FIELDref") == 0) {
-        return FIELDref;
-    }
-    if (strcmp(name.c_str(), "PARAMref") == 0) {
-        return PARAMref;
-    }
-    if (strcmp(name.c_str(), "VALUES") == 0) {
-        return VALUES;
-    }
-    if (strcmp(name.c_str(), "MIN") == 0) {
-        return MIN;
-    }
-    if (strcmp(name.c_str(), "MAX") == 0) {
-        return MAX;
-    }
-    if (strcmp(name.c_str(), "OPTION") == 0) {
-        return OPTION;
-    }
-    if (strcmp(name.c_str(), "LINK") == 0) {
-        return LINK;
-    }
-    if (strcmp(name.c_str(), "DATA") == 0) {
-        return DATA;
-    }
-    if (strcmp(name.c_str(), "TABLEDATA") == 0) {
-        return TABLEDATA;
-    }
-    if (strcmp(name.c_str(), "TD") == 0) {
-        return TD;
-    }
-    if (strcmp(name.c_str(), "TR") == 0) {
-        return TR;
-    }
-    if (strcmp(name.c_str(), "FITS") == 0) {
-        return FITS;
-    }
-    if (strcmp(name.c_str(), "BINARY") == 0) {
-        return BINARY;
-    }
-    if (strcmp(name.c_str(), "STREAM") == 0) {
-        return STREAM;
-    }
-    if (strcmp(name.c_str(), "COOSYS") == 0) {
-        return COOSYS;
-    }
-    return NONE;
+    return result;
 }
 
 void VOTableParser::IncreaseElementCounts(ElementName element_name) {
