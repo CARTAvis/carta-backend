@@ -103,7 +103,8 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     BSON_APPEND_UTF8(&layout, "username", user);
     BSON_APPEND_UTF8(&layout, "name", name.c_str());
 
-    if (!json_string.empty()) {
+    if (json_string.empty()) {
+		// Remove entry from DB.
         if (!mongoc_collection_delete_one(collection, &layout, NULL, NULL, &error)) {
             fmt::print("Delete failed: {}", error.message);
             result = false;
