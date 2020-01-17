@@ -9,9 +9,10 @@ void setBuildStatus(String message, String state) {
 }
 
 pipeline {
-    agent { label 'macos-1' }
+    agent none
     stages {
         stage('MacOS build backend') {
+            agent { label 'macos-1' }
             steps {
                 sh "export PATH=/usr/local/bin:$PATH"
                 sh "git submodule init && git submodule update"
@@ -23,6 +24,7 @@ pipeline {
             }
         }
         stage('MacOS run full ICD test') {
+            agent { label 'macos-1' }
             steps {
                     sh "export PATH=/usr/local/bin:$PATH"
                     dir ('build') {
@@ -39,21 +41,8 @@ pipeline {
                     echo "Finished !!"
             }
         }
-    }
-  post {
-    success {
-        setBuildStatus("Build succeeded", "SUCCESS");
-    }
-    failure {
-        setBuildStatus("Build failed", "FAILURE");
-    }
-  }
-}
-
-pipeline {
-    agent { label 'centos7-1' }
-    stages {
         stage('CentOS7 build backend') {
+            agent { label 'centos7-1' }
             steps {
                 sh "export PATH=/usr/local/bin:$PATH"
                 sh "git submodule init && git submodule update"
@@ -65,6 +54,7 @@ pipeline {
             }
         }
         stage('CentOS7 run full ICD test') {
+            agent { label 'centos7-1' }
             steps {
                     sh "export PATH=/usr/local/bin:$PATH"
                     dir ('build') {
@@ -81,6 +71,7 @@ pipeline {
                     echo "Finished !!"
             }
         }
+
     }
   post {
     success {
@@ -91,4 +82,3 @@ pipeline {
     }
   }
 }
-
