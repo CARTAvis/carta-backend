@@ -11,7 +11,7 @@ bool TileCache::Peek(std::vector<float>& tile_data, Key key) {
     }
 }
     
-bool TileCache::Get(std::vector<float>& tile_data, Key key, carta::FileLoader* loader, std::mutex& image_mutex) {
+bool TileCache::Get(std::vector<float>& tile_data, Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
     // Will be loaded or retrieved from cache
     bool valid(1);
     
@@ -19,7 +19,7 @@ bool TileCache::Get(std::vector<float>& tile_data, Key key, carta::FileLoader* l
     
     if(_map.find(key) == _map.end()) { // Not in cache
         // Load 2x2 chunk of tiles from image
-        valid = LoadChunk(ChunkKey(key), tiles, loader, image_mutex);        
+        valid = LoadChunk(ChunkKey(key), loader, image_mutex);        
     } else {
         Touch(key);
     }
@@ -31,7 +31,7 @@ bool TileCache::Get(std::vector<float>& tile_data, Key key, carta::FileLoader* l
     return valid;
 }
 
-bool TileCache::GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, carta::FileLoader* loader, std::mutex& image_mutex) {
+bool TileCache::GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
     std::vector<Key> found;
     std::vector<Key> not_found;
     bool valid(1);
@@ -39,7 +39,7 @@ bool TileCache::GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, 
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
     
     for (auto& kv : tiles) {
-        Key& key = kv->first;
+        auto& key = kv.first;
         if (_map.find(key) == _map.end()) {
             not_found.push_back(key);
         } else {
@@ -50,7 +50,7 @@ bool TileCache::GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, 
     // First get all the tiles which are in the cache, in parallel
 #pragma omp parallel for
     for (auto& key : found) {
-        CopyData(tiles[key], UnsafePeek(key));
+        CopyTileData(tiles[key], UnsafePeek(key));
     }
 
     for (auto& key : found) {
@@ -66,12 +66,12 @@ bool TileCache::GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, 
     
     for (auto& kv : chunk_tiles) {
         // load the chunk
-        valid = valid && LoadChunk(kv->first, loader, image_mutex);
+        valid = valid && LoadChunk(kv.first, loader, image_mutex);
         
         // get the tiles (up to 4, probably 2) in parallel
 #pragma omp parallel for
-        for (auto& key : kv->second) {
-            CopyData(tiles[key], UnsafePeek(key));
+        for (auto& key : kv.second) {
+            CopyTileData(tiles[key], UnsafePeek(key));
         }
     }
 
@@ -86,7 +86,7 @@ void TileCache::Reset(int32_t channel, int32_t stokes) {
     _stokes = stokes;
 }
 
-void TileCache::CopyTileData(std::vector<float>& tile_data, TilePtr& tile) {
+void TileCache::CopyTileData(std::vector<float>& tile_data, TilePtr tile) {
     tile_data.resize(tile->size());
     std::copy(tile->begin(), tile->end(), tile_data.begin());
 }
@@ -105,28 +105,28 @@ void TileCache::Touch(Key key) {
     _map[key] = _queue.begin();
 }
 
-Key ChunkKey(Key tile_key) {
+TileCache::Key TileCache::ChunkKey(Key tile_key) {
     return Key(tile_key.x / _CHUNK_SIZE, tile_key.y / _CHUNK_SIZE);
 }
 
-bool TileCache::LoadChunk(Key chunk_key, carta::FileLoader* loader, std::mutex& image_mutex) {
+bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
     // load a chunk from the file
     std::vector<float> chunk;
 
-    if (!loader->GetChunk(*chunk, chunk_key.x, chunk_key.y, _channel, _stokes, image_mutex)) {
+    if (!loader->GetChunk(chunk, chunk_key.x, chunk_key.y, _channel, _stokes, image_mutex)) {
         return false;
     };
     
     // split the chunk into four tiles
     std::vector<TilePtr> tiles;
         
-    for (int i = 0; int < 4; i++) {
+    for (int i = 0; i < 4; i++) {
         tiles.push_back(std::make_shared<std::vector<float>>(_TILE_SQ));
     }        
     
     for (int tile_quad_row : {0, 1}) {
-        auto & left = tiles[tile_quad_row * 2]->begin();
-        auto & right = tiles[tile_quad_row * 1]->begin();
+        auto left = tiles[tile_quad_row * 2]->begin();
+        auto right = tiles[tile_quad_row * 1]->begin();
         for (int i = 0; i < _CHUNK_SQ / 2; i += _CHUNK_SIZE) {
             auto start = chunk.begin() + i;
             auto middle = start + TILE_SIZE;
@@ -153,14 +153,14 @@ bool TileCache::LoadChunk(Key chunk_key, carta::FileLoader* loader, std::mutex& 
             }
             
             // Insert the new tile
-            _queue.push_front(std::make_pair(key, tile));
+            _queue.push_front(std::make_pair(key, t));
             _map[key] = _queue.begin();
             
         } else { // touch the tile
             Touch(key);
         }
         
-        std::advance(tile_offset);
+        std::advance(tile_offset, 1);
     }
     
     return true;

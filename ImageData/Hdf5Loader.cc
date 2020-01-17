@@ -19,6 +19,21 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
                 new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)),
                     DataSetToString(FileInfo::Data::SWIZZLED), hdu));
         }
+        
+        // save the data layout and known mips
+        auto dset = _image->Lattice().array();
+        _layout = H5Pget_layout(H5Dget_create_plist(dset->getHid()));
+        
+        if (HasData("MipMaps/DATA")) {
+            casacore::HDF5Group mipmap_group(_image->Group()->getHid(), "MipMaps/DATA", true);
+            for (auto& name : casacore::HDF5Group::linkNames(mipmap_group)) {
+                std::regex re("DATA_XY_(\\d+)");
+                std::smatch match;
+                if (std::regex_match(name, match, re) && match.size() > 1) {
+                    _known_mips.insert(std::stoi(match.str(1)));
+                }
+            }
+        }
     }
 }
 
@@ -110,14 +125,8 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
     }
 }
 
-bool HasMip(int mip, std::mutex& image_mutex) const {
-    std::string ds_name("MipMaps/DATA/DATA_XY_" + std::to_string(mip));
-    
-    std::unique_lock<std::mutex> ulock(image_mutex);
-    bool has_mipmap(HasData(ds_name));
-    ulock.unlock();
-    
-    return has_mipmap;
+bool Hdf5Loader::HasMip(int mip) const {    
+    return _known_mips.find(mip) != _known_mips.end();
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
@@ -405,7 +414,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
 }
 
 bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
-    if (!HasMip(mip, image_mutex)) {
+    if (!HasMip(mip)) {
         return false;
     }
     
@@ -434,6 +443,7 @@ bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel,
     data.resize((xmax - xmin) * (ymax - ymin));
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     
+    std::string ds_name("MipMaps/DATA/DATA_XY_" + std::to_string(mip));
     auto mip_map_image = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(
             casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)), ds_name, _hdu));
         
@@ -478,13 +488,8 @@ void Hdf5Loader::SetFramePtr(Frame* frame) {
     _frame = frame;
 }
 
-bool Hdf5Loader::UseTileCache(std::mutex& image_mutex) const {
-    auto dset = _image->Lattice().array();
-    
-    std::lock_guard<std::mutex> lguard(image_mutex);
-    auto layout = H5Pget_layout(H5Dget_create_plist(dset.getHid()));
-    
-    return layout == H5D_CHUNKED;
+bool Hdf5Loader::UseTileCache() const {
+    return _layout == H5D_CHUNKED;
 }
 
 const int Hdf5Loader::CHUNK_SIZE = 512;

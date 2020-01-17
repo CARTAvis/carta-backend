@@ -164,9 +164,8 @@ public:
     // Implemented in Hdf5Loader, used to interrupt loading spectral profile
     virtual void SetFramePtr(Frame* frame);
     
-    // TODO TODO TODO populate this information once when the file is loaded, and eliminate the locks
-    virtual bool HasMip(int mip, std::mutex& image_mutex) const;
-    virtual bool UseTileCache(std::mutex& image_mutex) const;
+    virtual bool HasMip(int mip) const;
+    virtual bool UseTileCache() const;
 
 protected:
     // Dimension values used by stats functions

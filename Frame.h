@@ -242,7 +242,7 @@ private:
     tbb::atomic<int> _z_profile_count;
 
     // image loader for image type
-    std::unique_ptr<carta::FileLoader> _loader;
+    std::shared_ptr<carta::FileLoader> _loader;
 
     // shape, channel, and stokes
     casacore::IPosition _image_shape;  // (width, height, depth, stokes)

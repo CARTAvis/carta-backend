@@ -78,7 +78,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     _stokes_index = DEFAULT_STOKES;
     
     // reset the tile cache
-    _tile_cache.reset(_channel_index, _stokes_index);
+    _tile_cache.Reset(_channel_index, _stokes_index);
 
     try {
         // Resize stats vectors and load data from image, if the format supports it.
@@ -731,7 +731,7 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                 _image_cache_valid = false;
                 
                 // invalidate / clear the full resolution tile cache
-                _tile_cache.reset(_channel_index, _stokes_index);
+                _tile_cache.Reset(_channel_index, _stokes_index);
                 
                 updated = true;
                 
@@ -1145,9 +1145,9 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
     if (mip > 1) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _channel_index, _stokes_index, bounds, mip, _image_mutex);
-    } else if (_image_cache.empty() && _loader->UseTileCache(_image_mutex)) {
+    } else if (_image_cache.empty() && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
-        loaded_data = _tile_cache.Get(tile_data, CachedTileKey(tile.x, tile.y), _loader, _image_mutex);
+        loaded_data = _tile_cache.Get(tile_data, TileCache::Key(tile.x, tile.y), _loader, _image_mutex);
     }
     
     // Fall back to using the full image cache. The cache will be populated by this function.
@@ -1328,7 +1328,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                             }
                         }
                     } else if ((profile_stokes == _stokes_index) && _loader->UseTileCache()) {
-                        std::unordered_map<TileCache::Key, std::vector<float> tiles;
+                        std::unordered_map<TileCache::Key, std::vector<float>> tiles;
                         
                         switch (axis_stokes.first) {
                             case 0: { // x
@@ -1347,7 +1347,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                 for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
                                     auto & tile = tiles[TileCache::Key(tile_x, tile_y)];
                                     // copy contiguous row
-                                    auto start = tile->begin() + TILE_SIZE * (y - tile_y);
+                                    auto start = tile.begin() + TILE_SIZE * (y - tile_y);
                                     auto end = start + width;
                                     auto destination_start = profile.begin() + tile_x;
                                     std::copy(start, end, destination_start);

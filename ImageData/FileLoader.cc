@@ -603,10 +603,10 @@ void FileLoader::SetFramePtr(Frame* frame) {
     // Must be implemented in subclasses
 }
 
-bool FileLoader::HasMip(int mip, std::mutex& image_mutex) const {
+bool FileLoader::HasMip(int mip) const {
     return false;
 }
 
-bool FileLoader::UseTileCache(std::mutex& image_mutex) const {
+bool FileLoader::UseTileCache() const {
     return false;
 }
