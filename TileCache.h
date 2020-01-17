@@ -46,7 +46,7 @@ public:
     // These functions lock the cache
     bool Get(std::vector<float>& tile_data, Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
     bool GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
-    void Reset(int32_t channel, int32_t stokes);
+    void Reset(int32_t channel, int32_t stokes, int capacity = 0);
     
 private:
     using TilePtr = std::shared_ptr<std::vector<float>>;

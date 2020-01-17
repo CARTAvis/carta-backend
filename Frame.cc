@@ -78,7 +78,10 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     _stokes_index = DEFAULT_STOKES;
     
     // reset the tile cache
-    _tile_cache.Reset(_channel_index, _stokes_index);
+    int tiles_x = (_image_shape(0) - 1) / TILE_SIZE + 1;
+    int tiles_y = (_image_shape(1) - 1) / TILE_SIZE + 1;
+    int tile_cache_capacity = std::max(TILE_CACHE_CAPACITY, 2 * (tiles_x + tiles_y));
+    _tile_cache.Reset(_channel_index, _stokes_index, tile_cache_capacity);
 
     try {
         // Resize stats vectors and load data from image, if the format supports it.
