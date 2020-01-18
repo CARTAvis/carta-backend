@@ -13,7 +13,7 @@ pipeline {
     stages {
         stage('build backend') {
             parallel {
-                stage('CentOS7') {
+                stage('CentOS7 build') {
                     agent {
                         label "centos7-1"
                     }
@@ -35,7 +35,7 @@ pipeline {
                         }
                     }
                 }
-                stage('MacOS') {
+                stage('MacOS build') {
                     agent {
                         label "macos-1"
                     }
@@ -59,5 +59,41 @@ pipeline {
                 }
             }
         }
-    }
+        stage('ICD tests') {
+            parallel {
+                stage('CentOS7 ICD') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        sh "ls"
+                    }
+                    post {
+                        success {
+                            setBuildStatus("CentOS7 ICD tests succeeded", "SUCCESS");
+                        }
+                        failure {
+                            setBuildStatus("CentOS7 ICD tests failed", "FAILURE");
+                        }     
+                    }
+                 }
+                 stage('MacOS ICD') {
+                     agent {
+                         label "macos-1"
+                     }
+                     steps {
+                         sh "ls"
+                     }
+                     post {
+                         success {
+                             setBuildStatus("MacOS ICD tests succeeded", "SUCCESS");
+                         }
+                         failure {
+                             setBuildStatus("MacOS ICD tests failed", "FAILURE");
+                         }     
+                     }
+                  }
+              }
+          }
+     } 
 }
