@@ -13,7 +13,7 @@ pipeline {
       label "centos7-1"
     }   
     stages {
-        stage('test') {
+        stage('CentOS7 build backend') {
             steps {
                 sh "export PATH=/usr/local/bin:$PATH"
                 sh "git submodule init && git submodule update"
@@ -25,12 +25,36 @@ pipeline {
             }
         }
     }
-  post {
-    success {
-        setBuildStatus("Build succeeded", "SUCCESS");
+    post {
+      success {
+        setBuildStatus("CentOS7 build succeeded", "SUCCESS");
+      }
+      failure {
+        setBuildStatus("CentOS7 build failed", "FAILURE");
+    }
+  }
+  agent {
+     label "macos-1"
+  }
+  stages {
+        stage('MacOS build backend') {
+            steps {
+                sh "export PATH=/usr/local/bin:$PATH"
+                sh "git submodule init && git submodule update"
+                dir ('build') {
+                 sh "cp ../../cmake-command.sh ."
+                 sh "./cmake-command.sh"
+                 sh "make"
+                }
+            }
+        }
+    }
+    post {
+      success {
+        setBuildStatus("MacOS build succeeded", "SUCCESS");
     }
     failure {
-        setBuildStatus("Build failed", "FAILURE");
+        setBuildStatus("MacOS build failed", "FAILURE");
     }
   }
 }
