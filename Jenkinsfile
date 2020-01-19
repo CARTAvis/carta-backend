@@ -76,8 +76,9 @@ pipeline {
                             sh "./run.sh # run carta_backend in the background"
                             sh "lsof -i :3002 # check backend is running"
                             dir ('carta-backend-ICD-test') {
+                                sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
                                 dir ('protobuf') {
-                                    sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install && ./build_proto.sh # prepare the tests"
+                                     sh "./build_proto.sh"
                                 }
                                 sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
                             }
@@ -106,8 +107,9 @@ pipeline {
                              sh "./run.sh # run carta_backend in the background"
                              sh "lsof -i :3002 # check backend is running"
                              dir ('carta-backend-ICD-test') {
+                                 sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
                                  dir ('protobuf') {
-                                     sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install && ./build_proto.sh # prepare the tests"
+                                     sh "./build_proto.sh"
                                  }
                                  sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
                              }
