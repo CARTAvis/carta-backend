@@ -66,7 +66,19 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
-                        sh "ls"
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                            sh "./run.sh # run carta_backend in the background"
+                            sh "lsof -i :3002 # check backend is running"
+                            dir ('carta-backend-ICD-test') {
+                                dir ('protobuf') {
+                                    sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install && ./build_proto.sh # prepare the tests"
+                                }
+                                sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
                     }
                     post {
                         success {
@@ -82,7 +94,19 @@ pipeline {
                          label "macos-1"
                      }
                      steps {
-                         sh "ls"
+                         sh "export PATH=/usr/local/bin:$PATH"
+                         dir ('build') {
+                             sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                             sh "./run.sh # run carta_backend in the background"
+                             sh "lsof -i :3002 # check backend is running"
+                             dir ('carta-backend-ICD-test') {
+                                 dir ('protobuf') {
+                                     sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install && ./build_proto.sh # prepare the tests"
+                                 }
+                                 sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
+                             }
+                         }
+                         echo "Finished !!"
                      }
                      post {
                          success {
