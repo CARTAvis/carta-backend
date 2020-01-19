@@ -24,6 +24,7 @@ pipeline {
                         sh "cp ../../cmake-command.sh ."
                         sh "./cmake-command.sh"
                         sh "make"
+                        stash includes: "carta_backend", name: "centos7-1_carta_backend"
                         }
                     }
                     post {
@@ -46,6 +47,7 @@ pipeline {
                         sh "cp ../../cmake-command.sh ."
                         sh "./cmake-command.sh"
                         sh "make"
+                        stash includes: "carta_backend", name: "macos-1_carta_backend"
                         }
                     }
                     post {
@@ -68,6 +70,7 @@ pipeline {
                     steps {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
+                            unstash "centos7-1_carta_backend"
                             sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                             sh "./run.sh # run carta_backend in the background"
                             sh "lsof -i :3002 # check backend is running"
@@ -96,6 +99,7 @@ pipeline {
                      steps {
                          sh "export PATH=/usr/local/bin:$PATH"
                          dir ('build') {
+                             unstash "macos-1_carta_backend"
                              sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                              sh "./run.sh # run carta_backend in the background"
                              sh "lsof -i :3002 # check backend is running"
