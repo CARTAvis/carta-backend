@@ -71,6 +71,7 @@ pipeline {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend"
+                            sh "rm -rf carta-backend-ICD-test"
                             sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                             sh "./run.sh # run carta_backend in the background"
                             sh "lsof -i :3002 # check backend is running"
@@ -100,6 +101,7 @@ pipeline {
                          sh "export PATH=/usr/local/bin:$PATH"
                          dir ('build') {
                              unstash "macos-1_carta_backend"
+                             sh "rm -rf carta-backend-ICD-test"
                              sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                              sh "./run.sh # run carta_backend in the background"
                              sh "lsof -i :3002 # check backend is running"
