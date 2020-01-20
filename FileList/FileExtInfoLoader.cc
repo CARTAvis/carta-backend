@@ -14,6 +14,7 @@
 #include <casacore/measures/Measures/MFrequency.h>
 #include <casacore/mirlib/miriad.h>
 
+#include "../ImageData/CartaMiriadImage.h"
 #include "../ImageData/FileLoader.h"
 
 using namespace carta;
@@ -54,9 +55,15 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 bool prefer_velocity(false), optical_velocity(false);
                 bool prefer_wavelength(false), air_wavelength(false);
                 casacore::CoordinateSystem coord_sys(image->coordinates());
-                if (coord_sys.hasSpectralAxis()) {
-                    // retain spectral axis native type in headers
-                    switch (coord_sys.spectralCoordinate().nativeType()) {
+                if (coord_sys.hasSpectralAxis()) { // prefer spectral axis native type
+                    casacore::SpectralCoordinate::SpecType native_type;
+                    if (image->imageType() == "CartaMiriadImage") { // workaround to get correct native type
+                        CartaMiriadImage* miriad_image = static_cast<CartaMiriadImage*>(image);
+                        native_type = miriad_image->NativeType();
+                    } else {
+                        native_type = coord_sys.spectralCoordinate().nativeType();
+                    }
+                    switch (native_type) {
                         case casacore::SpectralCoordinate::FREQ: {
                             break;
                         }
@@ -67,7 +74,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                         }
                         case casacore::SpectralCoordinate::VOPT: {
                             prefer_velocity = true;
-                            // If VELREF is not set in headers, spectral native type (mirlib) is VOPT even when CTYPE is VRAD
+
+                            // Check doppler type; oddly, native type can be VOPT but doppler is RADIO--?
                             casacore::MDoppler::Types vel_doppler(coord_sys.spectralCoordinate().velocityDoppler());
                             if ((vel_doppler == casacore::MDoppler::Z) || (vel_doppler == casacore::MDoppler::OPTICAL)) {
                                 optical_velocity = true;
@@ -329,7 +337,11 @@ void FileExtInfoLoader::AddComputedEntries(
     }
 
     if (coord_system.hasDirectionCoordinate()) {
-        std::string projection(coord_system.directionCoordinate().projection().name());
+        casacore::DirectionCoordinate dir_coord(coord_system.directionCoordinate());
+        std::string projection(dir_coord.projection().name());
+        if ((projection == "SIN") && (dir_coord.isNCP())) {
+            projection = "SIN / NCP";
+        }
         if (!projection.empty()) {
             auto entry = extended_info->add_computed_entries();
             entry->set_name("Projection");
