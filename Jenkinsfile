@@ -105,7 +105,6 @@ pipeline {
                              sh "rm -rf carta-backend-ICD-test"
                              sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                              sh "JENKINS_NODE_COOKIE=dontKillMe ./run.sh # run carta_backend in the background"
-                             sh "ps aux | grep -v grep | grep -i carta_backend" # check backend is running"
                              dir ('carta-backend-ICD-test') {
                                  sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
                                  dir ('protobuf') {
