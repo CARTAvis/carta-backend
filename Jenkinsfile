@@ -104,7 +104,7 @@ pipeline {
                              unstash "macos-1_carta_backend"
                              sh "rm -rf carta-backend-ICD-test"
                              sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                             sh "./run.sh # run carta_backend in the background"
+                             sh "JENKINS_NODE_COOKIE=dontKillMe ./run.sh # run carta_backend in the background"
                              sh "lsof -i :3002 # check backend is running"
                              dir ('carta-backend-ICD-test') {
                                  sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
