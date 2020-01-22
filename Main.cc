@@ -339,12 +339,12 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
                     break;
                 }
-                case CARTA::EventType::CATALOG_FILE_LIST_REQUEST: {
+                case CARTA::EventType::CATALOG_LIST_REQUEST: {
                     CARTA::CatalogListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCatalogFileList(message, head.request_id);
                     } else {
-                        fmt::print("Bad CATALOG_FILE_LIST_REQUEST message!\n");
+                        fmt::print("Bad CATALOG_LIST_REQUEST message!\n");
                     }
                     break;
                 }

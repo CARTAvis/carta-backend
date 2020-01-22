@@ -833,7 +833,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
     CARTA::CatalogListResponse file_list_response;
     catalog::Controller::OnFileListRequest(file_list_request, file_list_response);
-    SendEvent(CARTA::EventType::CATALOG_FILE_LIST_RESPONSE, request_id, file_list_response);
+    SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
 }
 
 void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {

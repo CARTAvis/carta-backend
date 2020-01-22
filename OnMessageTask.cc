@@ -57,7 +57,7 @@ tbb::task* MultiMessageTask::execute() {
             break;
         }
         default: {
-            fmt::print("Bad event type in MultiMessageType:execute : ({})", _header.type);
+            fmt::print("Bad event type in MultiMessageType:execute : ({})\n", _header.type);
             break;
         }
     }
