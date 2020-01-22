@@ -753,6 +753,11 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
 bool Frame::SetImageCache() {
     // get image data for channel, stokes
     
+    // Exit early if the cache has already been loaded for this channel and stokes
+    if (_image_cache_valid) {
+        return true;
+    }
+    
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
     try {
@@ -765,11 +770,6 @@ bool Frame::SetImageCache() {
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
-    
-    // Exit early if the cache has already been loaded for this channel and stokes
-    if (_image_cache_valid) {
-        return true;
-    }
     
     if (!_loader->GetSlice(tmp, section)) {
         Log(_session_id, "Loading image cache failed.");
