@@ -67,6 +67,8 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
     std::string parent_directory;
     if (directory.find("/") != std::string::npos) {
         parent_directory = directory.substr(0, directory.find_last_of("/"));
+        std::size_t found = parent_directory.find_last_of("/");
+        parent_directory = parent_directory.substr(found + 1);
     }
 
     // Fill the file list response
