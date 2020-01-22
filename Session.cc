@@ -327,6 +327,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
                 feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
+                if (_loader->HasMip(2)) {
+                    feature_flags |= CARTA::FileFeatureFlags::MIP_DATASET;
+                }
             }
             ack.set_file_feature_flags(feature_flags);
 
