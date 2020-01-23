@@ -109,7 +109,7 @@ void TileCache::Touch(Key key) {
 }
 
 TileCache::Key TileCache::ChunkKey(Key tile_key) {
-    return Key(tile_key.x / _CHUNK_SIZE, tile_key.y / _CHUNK_SIZE);
+    return Key((tile_key.x / _CHUNK_SIZE) * _CHUNK_SIZE, (tile_key.y / _CHUNK_SIZE) * _CHUNK_SIZE);
 }
 
 bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
