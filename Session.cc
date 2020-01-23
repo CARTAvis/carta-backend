@@ -303,6 +303,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
         }
         // create Frame for image
         auto frame = std::unique_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _verbose_logging));
+        // query loader for mipmap dataset
+        bool has_mipmaps(_loader->HasMip(2));
         _loader.release();
 
         if (frame->IsValid()) {
@@ -327,7 +329,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
                 feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
-                if (_loader->HasMip(2)) {
+                if (has_mipmaps) {
                     feature_flags |= CARTA::FileFeatureFlags::MIP_DATASET;
                 }
             }
