@@ -1,8 +1,7 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
 
-#include <casacore/images/Images/MIRIADImage.h>
-
+#include "CartaMiriadImage.h"
 #include "FileLoader.h"
 
 namespace carta {
@@ -53,7 +52,7 @@ bool MiriadLoader::CanOpenFile(std::string& error) {
 
 void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
-        _image.reset(new casacore::MIRIADImage(_filename));
+        _image.reset(new CartaMiriadImage(_filename));
         _num_dims = _image->shape().size();
     }
 }

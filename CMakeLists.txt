@@ -43,7 +43,8 @@ if (AuthServer)
     set(LINK_LIBS
             jsoncpp
             mongoc-1.0
-            bson-1.0)
+            bson-1.0
+            json-c)
     set(SOURCE_FILES
             DBConnect.cc)
 endif (AuthServer)
@@ -84,6 +85,7 @@ set(SOURCE_FILES
         ImageData/FileLoader.cc
         ImageData/Hdf5Loader.cc
         ImageData/CartaHdf5Image.cc
+        ImageData/CartaMiriadImage.cc
         FileList/FileExtInfoLoader.cc
         FileList/FileInfoLoader.cc
         FileList/FileListHandler.cc

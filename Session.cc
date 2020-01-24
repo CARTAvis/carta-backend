@@ -6,6 +6,8 @@
 #include <limits>
 #include <memory>
 #include <thread>
+#include <tuple>
+#include <vector>
 
 #include <tbb/parallel_for.h>
 #include <tbb/task_group.h>
@@ -26,6 +28,9 @@
 #include "FileList/FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
+
+#include "DBConnect.h"
+#include "Util.h"
 
 #define DEBUG(_DB_TEXT_) \
     {}
@@ -84,7 +89,7 @@ Session::~Session() {
     _frames.clear();
     _outgoing_async->close();
     --_num_sessions;
-    DEBUG(fprintf(stderr, "%p  ~Session (%d)\n", this, _num_sessions));
+    DEBUG(std::cout << this << " ~Session " << _num_sessions << std::endl;)
     if (!_num_sessions) {
         std::cout << "No remaining sessions." << std::endl;
         if (_exit_when_all_sessions_closed) {
@@ -214,7 +219,21 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_success(success);
     ack_message.set_message(status);
     ack_message.set_session_type(type);
-    ack_message.set_server_feature_flags(CARTA::ServerFeatureFlags::SERVER_FEATURE_NONE);
+
+    uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+#ifdef _AUTH_SERVER_
+    feature_flags |= CARTA::ServerFeatureFlags::USER_LAYOUTS;
+    feature_flags |= CARTA::ServerFeatureFlags::USER_PREFERENCES;
+
+    if (!GetLayoutsFromDB(&ack_message)) {
+        // Can log failure here
+    }
+    if (!GetPreferencesFromDB(&ack_message)) {
+        // Can log failure here
+    }
+
+#endif
+    ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 }
 
@@ -699,6 +718,35 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
     }
+}
+
+void Session::OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id) {
+    CARTA::SetUserPreferencesAck ack_message;
+    bool result;
+
+#ifdef _AUTH_SERVER_
+    result = SaveUserPreferencesToDB(request);
+#endif
+
+    ack_message.set_success(result);
+
+    SendEvent(CARTA::EventType::SET_USER_PREFERENCES_ACK, request_id, ack_message);
+}
+
+void Session::OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id) {
+    CARTA::SetUserLayoutAck ack_message;
+
+#ifdef _AUTH_SERVER_
+    if (SaveLayoutToDB(request.name(), request.value())) {
+        ack_message.set_success(true);
+    } else {
+        ack_message.set_success(false);
+    }
+#else
+    ack_message.set_success(false);
+#endif
+
+    SendEvent(CARTA::EventType::SET_USER_LAYOUT_ACK, request_id, ack_message);
 }
 
 void Session::OnSetContourParameters(const CARTA::SetContourParameters& message) {
