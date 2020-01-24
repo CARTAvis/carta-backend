@@ -425,11 +425,10 @@ bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel,
     
     bool data_ok(false);
     
-    // TODO: check that this is correct
-    const int xmin = bounds.x_min() / mip;
-    const int ymin = bounds.y_min() / mip;
-    const int xmax = bounds.x_max() / mip;
-    const int ymax = bounds.y_max() / mip;
+    const int xmin = std::ceil((float)bounds.x_min() / mip);
+    const int ymin = std::ceil((float)bounds.y_min() / mip);
+    const int xmax = std::ceil((float)bounds.x_max() / mip);
+    const int ymax = std::ceil((float)bounds.y_max() / mip);
     
     const int w = xmax - xmin;
     const int h = ymax - ymin;
