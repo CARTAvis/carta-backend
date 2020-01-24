@@ -76,7 +76,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     // set current channel, stokes
     _channel_index = default_channel;
     _stokes_index = DEFAULT_STOKES;
-    
+
     // reset the tile cache
     int tiles_x = (_image_shape(0) - 1) / TILE_SIZE + 1;
     int tiles_y = (_image_shape(1) - 1) / TILE_SIZE + 1;
@@ -729,15 +729,15 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
             if (chan_ok && stokes_ok) {
                 _channel_index = new_channel;
                 _stokes_index = new_stokes;
-                
+
                 // invalidate the image cache, but don't load the new cache here
                 _image_cache_valid = false;
-                
+
                 // invalidate / clear the full resolution tile cache
                 _tile_cache.Reset(_channel_index, _stokes_index);
-                
+
                 updated = true;
-                
+
                 for (auto& region : _regions) {
                     // force sending new profiles for new chan/stokes
                     region.second->SetAllProfilesUnsent();
@@ -752,12 +752,12 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
 
 bool Frame::SetImageCache() {
     // get image data for channel, stokes
-    
+
     // Exit early if the cache has already been loaded for this channel and stokes
     if (_image_cache_valid) {
         return true;
     }
-    
+
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
     try {
@@ -770,14 +770,14 @@ bool Frame::SetImageCache() {
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
-    
+
     if (!_loader->GetSlice(tmp, section)) {
         Log(_session_id, "Loading image cache failed.");
         return false;
     }
-    
+
     _image_cache_valid = true;
-    
+
     return true;
 }
 
@@ -995,7 +995,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     if (!_valid) {
         return false;
     }
-    
+
     // This function should always use the full image cache.
     SetImageCache();
 
@@ -1144,7 +1144,7 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
     height = std::ceil((float)req_height / mip);
 
     bool loaded_data(0);
-    
+
     if (mip > 1) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _channel_index, _stokes_index, bounds, mip, _image_mutex);
@@ -1152,12 +1152,12 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
         loaded_data = _tile_cache.Get(tile_data, TileCache::Key(tile.x, tile.y), _loader, _image_mutex);
     }
-    
+
     // Fall back to using the full image cache. The cache will be populated by this function.
     if (!loaded_data) {
         loaded_data = GetRasterData(tile_data, bounds, mip, true);
     }
-    
+
     return loaded_data;
 }
 
@@ -1332,7 +1332,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                         }
                     } else if ((profile_stokes == _stokes_index) && _loader->UseTileCache()) {
                         std::unordered_map<TileCache::Key, std::vector<float>> tiles;
-                        
+
                         switch (axis_stokes.first) {
                             case 0: { // x
                                 int tile_y = (y / TILE_SIZE) * TILE_SIZE;
@@ -1340,22 +1340,22 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                     // Create empty vector
                                     tiles[TileCache::Key(tile_x, tile_y)];
                                 }
-                        
+
                                 if (!_tile_cache.GetMultiple(tiles, _loader, _image_mutex)) {
                                     return profile_ok;
                                 }
-                                
+
                                 profile.resize(width);
-                                
+
                                 for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
-                                    auto & tile = tiles[TileCache::Key(tile_x, tile_y)];
+                                    auto& tile = tiles[TileCache::Key(tile_x, tile_y)];
                                     // copy contiguous row
                                     auto start = tile.begin() + TILE_SIZE * (y - tile_y);
                                     auto end = start + std::min(TILE_SIZE, (int)width - tile_x);
                                     auto destination_start = profile.begin() + tile_x;
                                     std::copy(start, end, destination_start);
                                 }
-                                
+
                                 break;
                             }
                             case 1: { // y
@@ -1363,21 +1363,21 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                 for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
                                     tiles[TileCache::Key(tile_x, tile_y)];
                                 }
-                        
+
                                 if (!_tile_cache.GetMultiple(tiles, _loader, _image_mutex)) {
                                     return profile_ok;
                                 }
-                                
+
                                 profile.resize(height);
-                                
+
                                 for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
-                                    auto & tile = tiles[TileCache::Key(tile_x, tile_y)];
+                                    auto& tile = tiles[TileCache::Key(tile_x, tile_y)];
                                     // copy non-contiguous column
                                     for (int j = 0; j < std::min(TILE_SIZE, (int)height - tile_y); j++) {
                                         profile[tile_y + j] = tile[(j * TILE_SIZE) + (x - tile_x)];
                                     }
                                 }
-                                
+
                                 break;
                             }
                         }
@@ -1991,7 +1991,7 @@ bool Frame::GetRegionSpectralData(int region_id, int config_stokes, int profile_
 bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     // Always use the full image cache (for now)
     SetImageCache();
-    
+
     double scale = 1.0;
     double offset = 0;
     bool smooth_successful = false;

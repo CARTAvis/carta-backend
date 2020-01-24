@@ -10,34 +10,35 @@ bool TileCache::Peek(std::vector<float>& tile_data, Key key) {
         return true;
     }
 }
-    
+
 bool TileCache::Get(std::vector<float>& tile_data, Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
     // Will be loaded or retrieved from cache
     bool valid(1);
-    
+
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
-    
-    if(_map.find(key) == _map.end()) { // Not in cache
+
+    if (_map.find(key) == _map.end()) { // Not in cache
         // Load 2x2 chunk of tiles from image
-        valid = LoadChunk(ChunkKey(key), loader, image_mutex);        
+        valid = LoadChunk(ChunkKey(key), loader, image_mutex);
     } else {
         Touch(key);
     }
-    
+
     if (valid) {
         CopyTileData(tile_data, UnsafePeek(key));
     }
-    
+
     return valid;
 }
 
-bool TileCache::GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
+bool TileCache::GetMultiple(
+    std::unordered_map<Key, std::vector<float>>& tiles, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
     std::vector<Key> found;
     std::vector<Key> not_found;
     bool valid(1);
-    
+
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
-    
+
     for (auto& kv : tiles) {
         auto& key = kv.first;
         if (_map.find(key) == _map.end()) {
@@ -46,7 +47,7 @@ bool TileCache::GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, 
             found.push_back(key);
         }
     }
-    
+
     // First get all the tiles which are in the cache, in parallel
 #pragma omp parallel for
     for (auto& key : found) {
@@ -56,18 +57,18 @@ bool TileCache::GetMultiple(std::unordered_map<Key, std::vector<float>>& tiles, 
     for (auto& key : found) {
         Touch(key);
     }
-    
+
     // Then process each new chunk serially
     std::unordered_map<Key, std::vector<Key>> chunk_tiles;
-    
+
     for (auto& key : not_found) {
         chunk_tiles[ChunkKey(key)].push_back(key);
     }
-    
+
     for (auto& kv : chunk_tiles) {
         // load the chunk
         valid = valid && LoadChunk(kv.first, loader, image_mutex);
-        
+
         // get the tiles (up to 4, probably 2) in parallel
 #pragma omp parallel for
         for (auto& key : kv.second) {
@@ -124,7 +125,7 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
 
     // split the chunk into four tiles
     std::vector<TilePtr> tiles;
-    
+
     for (int i = 0; i < 4; i++) {
         tiles.push_back(std::make_shared<std::vector<float>>(_TILE_SQ, NAN));
     }
@@ -138,32 +139,32 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
             (*tiles[2 * tile_row + tile_col])[TILE_SIZE * tile_y + tile_x] = chunk[data_width * j + i];
         }
     }
-    
+
     // insert the 4 tiles into the cache
     std::vector<std::pair<int, int>> offsets = {{0, 0}, {TILE_SIZE, 0}, {0, TILE_SIZE}, {TILE_SIZE, TILE_SIZE}};
     auto tile_offset = offsets.begin();
     for (auto& t : tiles) {
         Key key(chunk_key.x + tile_offset->first, chunk_key.y + tile_offset->second);
-        
+
         // If the tile is not in the map
-        if(_map.find(key) == _map.end()) { // add if not found
+        if (_map.find(key) == _map.end()) { // add if not found
             // Evict oldest tile if necessary
-            if(_map.size() == _capacity) {
+            if (_map.size() == _capacity) {
                 _map.erase(_queue.back().first);
                 _queue.pop_back();
             }
-            
+
             // Insert the new tile
             _queue.push_front(std::make_pair(key, t));
             _map[key] = _queue.begin();
-            
+
         } else { // touch the tile
             Touch(key);
         }
-        
+
         std::advance(tile_offset, 1);
     }
-    
+
     return true;
 }
 

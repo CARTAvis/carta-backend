@@ -591,12 +591,14 @@ bool FileLoader::GetRegionSpectralData(int region_id, int config_stokes, int pro
     return false;
 }
 
-bool FileLoader::GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
+bool FileLoader::GetDownsampledRasterData(
+    std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
+bool FileLoader::GetChunk(
+    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }

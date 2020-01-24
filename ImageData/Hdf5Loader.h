@@ -1,9 +1,9 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_HDF5LOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_HDF5LOADER_H_
 
+#include <regex>
 #include <unordered_map>
 #include <unordered_set>
-#include <regex>
 
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
@@ -30,24 +30,27 @@ public:
     bool GetRegionSpectralData(int region_id, int profile_index, int stokes,
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
-    bool GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override;
-    bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) override;
+    bool GetDownsampledRasterData(
+        std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override;
+    bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes,
+        std::mutex& image_mutex) override;
     void SetFramePtr(Frame* frame) override;
 
     bool HasMip(int mip) const override;
     bool UseTileCache() const override;
-    
+
     static const int CHUNK_SIZE;
+
 private:
     std::string _filename;
     std::string _hdu;
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
     std::unordered_map<int, std::unique_ptr<casacore::HDF5Lattice<float>>> _mipmaps;
-    
+
     std::map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats> _region_stats;
     Frame* _frame;
-    
+
     H5D_layout_t _layout;
 
     std::string DataSetToString(FileInfo::Data ds) const;

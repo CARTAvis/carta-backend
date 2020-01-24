@@ -19,18 +19,20 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
                 new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)),
                     DataSetToString(FileInfo::Data::SWIZZLED), hdu));
         }
-        
+
         // save the data layout and known mips
         auto dset = _image->Lattice().array();
         _layout = H5Pget_layout(H5Dget_create_plist(dset->getHid()));
-        
+
         if (HasData("MipMaps/DATA")) {
             casacore::HDF5Group mipmap_group(_image->Group()->getHid(), "MipMaps/DATA", true);
             for (auto& name : casacore::HDF5Group::linkNames(mipmap_group)) {
                 std::regex re("DATA_XY_(\\d+)");
                 std::smatch match;
                 if (std::regex_match(name, match, re) && match.size() > 1) {
-                    _mipmaps[std::stoi(match.str(1))] = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)), fmt::format("MipMaps/DATA/{}", name), hdu));
+                    _mipmaps[std::stoi(match.str(1))] = std::unique_ptr<casacore::HDF5Lattice<float>>(
+                        new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)),
+                            fmt::format("MipMaps/DATA/{}", name), hdu));
                 }
             }
         }
@@ -130,7 +132,7 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
     }
 }
 
-bool Hdf5Loader::HasMip(int mip) const {    
+bool Hdf5Loader::HasMip(int mip) const {
     return _mipmaps.find(mip) != _mipmaps.end();
 }
 
@@ -418,21 +420,22 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
     return true;
 }
 
-bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
+bool Hdf5Loader::GetDownsampledRasterData(
+    std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) {
     if (!HasMip(mip)) {
         return false;
     }
-    
+
     bool data_ok(false);
-    
+
     const int xmin = std::ceil((float)bounds.x_min() / mip);
     const int ymin = std::ceil((float)bounds.y_min() / mip);
     const int xmax = std::ceil((float)bounds.x_max() / mip);
     const int ymax = std::ceil((float)bounds.y_max() / mip);
-    
+
     const int w = xmax - xmin;
     const int h = ymax - ymin;
-    
+
     casacore::Slicer slicer;
     if (_num_dims == 4) {
         slicer = casacore::Slicer(IPos(4, xmin, ymin, channel, stokes), IPos(4, w, h, 1, 1));
@@ -446,7 +449,7 @@ bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel,
 
     data.resize(w * h);
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
-        
+
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
         LoadMipMapData(mip)->doGetSlice(tmp, slicer);
@@ -454,13 +457,14 @@ bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel,
     } catch (casacore::AipsError& err) {
         std::cerr << "Could not load MipMap data. AIPS ERROR: " << err.getMesg() << std::endl;
     }
-    
+
     return data_ok;
 }
 
-bool Hdf5Loader::GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
+bool Hdf5Loader::GetChunk(
+    std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
     bool data_ok(false);
-    
+
     data_width = std::min(CHUNK_SIZE, (int)_width - min_x);
     data_height = std::min(CHUNK_SIZE, (int)_height - min_y);
 
@@ -472,10 +476,10 @@ bool Hdf5Loader::GetChunk(std::vector<float>& data, int& data_width, int& data_h
     } else if (_num_dims == 2) {
         slicer = casacore::Slicer(IPos(2, min_x, min_y), IPos(2, data_width, data_height));
     }
-    
+
     data.resize(data_width * data_height);
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
-    
+
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
         GetSlice(tmp, slicer);
@@ -483,7 +487,7 @@ bool Hdf5Loader::GetChunk(std::vector<float>& data, int& data_width, int& data_h
     } catch (casacore::AipsError& err) {
         std::cerr << "Could not load image tile. AIPS ERROR: " << err.getMesg() << std::endl;
     }
-    
+
     return data_ok;
 }
 
