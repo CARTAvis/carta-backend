@@ -30,7 +30,7 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
                 std::regex re("DATA_XY_(\\d+)");
                 std::smatch match;
                 if (std::regex_match(name, match, re) && match.size() > 1) {
-                    _known_mips.insert(std::stoi(match.str(1)));
+                    _mipmaps[std::stoi(match.str(1))] = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)), fmt::format("MipMaps/DATA/{}", name), hdu));
                 }
             }
         }
@@ -74,6 +74,11 @@ typename Hdf5Loader::ImageRef Hdf5Loader::GetImage() {
 casacore::Lattice<float>* Hdf5Loader::LoadSwizzledData() {
     // swizzled data returns a Lattice
     return _swizzled_image.get();
+}
+
+casacore::Lattice<float>* Hdf5Loader::LoadMipMapData(int mip) {
+    // mipmap data returns a Lattice
+    return _mipmaps[mip].get();
 }
 
 std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
@@ -126,7 +131,7 @@ std::string Hdf5Loader::DataSetToString(FileInfo::Data ds) const {
 }
 
 bool Hdf5Loader::HasMip(int mip) const {    
-    return _known_mips.find(mip) != _known_mips.end();
+    return _mipmaps.find(mip) != _mipmaps.end();
 }
 
 // TODO: The datatype used to create the HDF5DataSet has to match the native type exactly, but the data can be read into an array of the
@@ -439,17 +444,13 @@ bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel,
     } else {
         return false;
     }
-        
-    data.resize((xmax - xmin) * (ymax - ymin));
+
+    data.resize(w * h);
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
-    
-    std::string ds_name("MipMaps/DATA/DATA_XY_" + std::to_string(mip));
-    auto mip_map_image = std::unique_ptr<casacore::HDF5Lattice<float>>(new casacore::HDF5Lattice<float>(
-            casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)), ds_name, _hdu));
         
     std::lock_guard<std::mutex> lguard(image_mutex);
     try {
-        mip_map_image->doGetSlice(tmp, slicer);
+        LoadMipMapData(mip)->doGetSlice(tmp, slicer);
         data_ok = true;
     } catch (casacore::AipsError& err) {
         std::cerr << "Could not load MipMap data. AIPS ERROR: " << err.getMesg() << std::endl;

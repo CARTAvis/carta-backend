@@ -43,11 +43,12 @@ private:
     std::string _hdu;
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;
+    std::unordered_map<int, std::unique_ptr<casacore::HDF5Lattice<float>>> _mipmaps;
+    
     std::map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats> _region_stats;
     Frame* _frame;
     
     H5D_layout_t _layout;
-    std::unordered_set<int> _known_mips;
 
     std::string DataSetToString(FileInfo::Data ds) const;
     bool HasData(std::string ds_name) const;
@@ -61,6 +62,7 @@ private:
     casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
 
     casacore::Lattice<float>* LoadSwizzledData();
+    casacore::Lattice<float>* LoadMipMapData(int mip);
 };
 
 } // namespace carta
