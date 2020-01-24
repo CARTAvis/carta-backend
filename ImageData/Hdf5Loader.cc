@@ -458,19 +458,22 @@ bool Hdf5Loader::GetDownsampledRasterData(std::vector<float>& data, int channel,
     return data_ok;
 }
 
-bool Hdf5Loader::GetChunk(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
+bool Hdf5Loader::GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
     bool data_ok(false);
     
+    data_width = std::min(CHUNK_SIZE, (int)_width - min_x);
+    data_height = std::min(CHUNK_SIZE, (int)_height - min_y);
+
     casacore::Slicer slicer;
     if (_num_dims == 4) {
-        slicer = casacore::Slicer(IPos(4, min_x, min_y, channel, stokes), IPos(4, CHUNK_SIZE, CHUNK_SIZE, 1, 1));
+        slicer = casacore::Slicer(IPos(4, min_x, min_y, channel, stokes), IPos(4, data_width, data_height, 1, 1));
     } else if (_num_dims == 3) {
-        slicer = casacore::Slicer(IPos(3, min_x, min_y, channel), IPos(3, CHUNK_SIZE, CHUNK_SIZE, 1));
+        slicer = casacore::Slicer(IPos(3, min_x, min_y, channel), IPos(3, data_width, data_height, 1));
     } else if (_num_dims == 2) {
-        slicer = casacore::Slicer(IPos(2, min_x, min_y), IPos(2, CHUNK_SIZE, CHUNK_SIZE));
+        slicer = casacore::Slicer(IPos(2, min_x, min_y), IPos(2, data_width, data_height));
     }
     
-    data.resize(CHUNK_SIZE * CHUNK_SIZE);
+    data.resize(data_width * data_height);
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     
     std::lock_guard<std::mutex> lguard(image_mutex);

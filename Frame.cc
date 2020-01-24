@@ -1351,7 +1351,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                     auto & tile = tiles[TileCache::Key(tile_x, tile_y)];
                                     // copy contiguous row
                                     auto start = tile.begin() + TILE_SIZE * (y - tile_y);
-                                    auto end = start + width;
+                                    auto end = start + std::min(TILE_SIZE, (int)width - tile_x);
                                     auto destination_start = profile.begin() + tile_x;
                                     std::copy(start, end, destination_start);
                                 }
@@ -1373,8 +1373,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                 for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
                                     auto & tile = tiles[TileCache::Key(tile_x, tile_y)];
                                     // copy non-contiguous column
-                                    for (int j = 0; j < TILE_SIZE; j++) {
-                                        profile[tile_x + j] = tile[(j * width) + (x - tile_x)];
+                                    for (int j = 0; j < std::min(TILE_SIZE, (int)height - tile_y); j++) {
+                                        profile[tile_y + j] = tile[(j * TILE_SIZE) + (x - tile_x)];
                                     }
                                 }
                                 

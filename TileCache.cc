@@ -115,29 +115,27 @@ TileCache::Key TileCache::ChunkKey(Key tile_key) {
 bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
     // load a chunk from the file
     std::vector<float> chunk;
+    int data_width;
+    int data_height;
 
-    if (!loader->GetChunk(chunk, chunk_key.x, chunk_key.y, _channel, _stokes, image_mutex)) {
+    if (!loader->GetChunk(chunk, data_width, data_height, chunk_key.x, chunk_key.y, _channel, _stokes, image_mutex)) {
         return false;
     };
-    
+
     // split the chunk into four tiles
     std::vector<TilePtr> tiles;
-        
-    for (int i = 0; i < 4; i++) {
-        tiles.push_back(std::make_shared<std::vector<float>>(_TILE_SQ));
-    }        
     
-    for (int tile_quad_row : {0, 1}) {
-        auto left = tiles[tile_quad_row * 2]->begin();
-        auto right = tiles[tile_quad_row * 1]->begin();
-        for (int i = 0; i < _CHUNK_SQ / 2; i += _CHUNK_SIZE) {
-            auto start = chunk.begin() + i;
-            auto middle = start + TILE_SIZE;
-            auto end = middle + TILE_SIZE;
-            std::copy(start, middle, left);
-            std::copy(middle, end, right);
-            std::advance(left, TILE_SIZE);
-            std::advance(right, TILE_SIZE);
+    for (int i = 0; i < 4; i++) {
+        tiles.push_back(std::make_shared<std::vector<float>>(_TILE_SQ, NAN));
+    }
+
+    for (int j = 0; j < data_height; j++) {
+        auto tile_y = j % TILE_SIZE;
+        auto tile_row = j / TILE_SIZE;
+        for (int i = 0; i < data_width; i++) {
+            auto tile_x = i % TILE_SIZE;
+            auto tile_col = i / TILE_SIZE;
+            (*tiles[2 * tile_row + tile_col])[TILE_SIZE * tile_y + tile_x] = chunk[data_width * j + i];
         }
     }
     

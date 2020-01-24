@@ -159,7 +159,7 @@ public:
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
     virtual bool GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
-    virtual bool GetChunk(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex);
+    virtual bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex);
     
     // Implemented in Hdf5Loader, used to interrupt loading spectral profile
     virtual void SetFramePtr(Frame* frame);
@@ -169,7 +169,7 @@ public:
 
 protected:
     // Dimension values used by stats functions
-    size_t _num_channels, _num_stokes, _num_dims, _channel_size;
+    size_t _width, _height, _num_channels, _num_stokes, _num_dims, _channel_size;
 
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;

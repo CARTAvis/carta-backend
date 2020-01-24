@@ -31,7 +31,7 @@ public:
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
     bool GetDownsampledRasterData(std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override;
-    bool GetChunk(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) override;
+    bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) override;
     void SetFramePtr(Frame* frame) override;
 
     bool HasMip(int mip) const override;

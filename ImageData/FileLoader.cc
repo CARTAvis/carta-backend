@@ -81,6 +81,8 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
         message = "Image must be 2D, 3D, or 4D.";
         return false;
     }
+    _width = shape(0);
+    _height = shape(1);
     _channel_size = shape(0) * shape(1);
 
     casacore::CoordinateSystem coord_sys;
@@ -594,7 +596,7 @@ bool FileLoader::GetDownsampledRasterData(std::vector<float>& data, int channel,
     return false;
 }
 
-bool FileLoader::GetChunk(std::vector<float>& data, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
+bool FileLoader::GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes, std::mutex& image_mutex) {
     // Must be implemented in subclasses
     return false;
 }
