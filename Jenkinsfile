@@ -63,7 +63,7 @@ pipeline {
         }
         stage('ICD tests') {
             parallel {
-                stage('CentOS7 ICD') {
+                stage('MacOS ICD') {
                     agent {
                         label "centos7-1"
                     }
@@ -74,7 +74,7 @@ pipeline {
                             sh "rm -rf carta-backend-ICD-test"
                             sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                             sh "./run.sh # run carta_backend in the background"
-                            sh "lsof -i :3002 # check backend is running"
+                            sh "/usr/sbin/lsof -i :3002 # check backend is running"
                             dir ('carta-backend-ICD-test') {
                                 sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
                                 dir ('protobuf') {
@@ -87,14 +87,14 @@ pipeline {
                     }
                     post {
                         success {
-                            setBuildStatus("CentOS7 ICD tests succeeded", "SUCCESS");
+                            setBuildStatus("MacOS ICD tests succeeded", "SUCCESS");
                         }
                         failure {
-                            setBuildStatus("CentOS7 ICD tests failed", "FAILURE");
+                            setBuildStatus("MacOS ICD tests failed", "FAILURE");
                         }     
                     }
                  }
-                 stage('MacOS ICD') {
+                 stage('CentOS7 ICD') {
                      agent {
                          label "macos-1"
                      }
@@ -117,10 +117,10 @@ pipeline {
                      }
                      post {
                          success {
-                             setBuildStatus("MacOS ICD tests succeeded", "SUCCESS");
+                             setBuildStatus("CentOS7 ICD tests succeeded", "SUCCESS");
                          }
                          failure {
-                             setBuildStatus("MacOS ICD tests failed", "FAILURE");
+                             setBuildStatus("CentOS7 ICD tests failed", "FAILURE");
                          }     
                      }
                   }
