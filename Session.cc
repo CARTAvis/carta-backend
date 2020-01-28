@@ -406,7 +406,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
                         raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
                     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
                 } else {
-                    fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+                    fmt::print("Problem getting tile {}\n", tile);
                 }
             }
         };

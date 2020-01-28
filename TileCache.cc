@@ -1,5 +1,10 @@
 #include "TileCache.h"
 
+std::ostream& operator<<(std::ostream& os, const TileCacheKey& key) {
+    fmt::print(os, "x={}, y={}", key.x, key.y);
+    return os;
+}
+
 bool TileCache::Peek(std::vector<float>& tile_data, Key key) {
     // This is a read-only operation which it is safe to do in parallel.
     if (_map.find(key) == _map.end()) {

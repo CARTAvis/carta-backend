@@ -1150,7 +1150,7 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _channel_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (_image_cache.empty() && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
-        loaded_data = _tile_cache.Get(tile_data, TileCache::Key(tile.x, tile.y), _loader, _image_mutex);
+        loaded_data = _tile_cache.Get(tile_data, TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
     }
 
     // Fall back to using the full image cache. The cache will be populated by this function.

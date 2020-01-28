@@ -20,6 +20,8 @@ struct TileCacheKey {
 
     int32_t x;
     int32_t y;
+
+    friend std::ostream& operator<<(std::ostream& os, const TileCacheKey& key);
 };
 
 namespace std {
