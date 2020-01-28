@@ -79,8 +79,11 @@ pipeline {
                                 sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
                                 dir ('protobuf') {
                                      sh "./build_proto.sh"
+                                     sh "pwd; ls"
                                 }
+                                sh "pwd; ls"
                                 sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
+                                sh "sleep 30"
                             }
                         }
                         echo "Finished !!"
@@ -109,8 +112,11 @@ pipeline {
                                  sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
                                  dir ('protobuf') {
                                      sh "./build_proto.sh"
+                                     sh "pwd; ls"
                                  }
+                                 sh "pwd; ls"
                                  sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
+                                 sh "sleep 30"
                              }
                          }
                          echo "Finished !!"
