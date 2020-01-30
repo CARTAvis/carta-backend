@@ -199,7 +199,7 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                     bool_columns_data->add_bool_column(ref_column_data[i]);
                 }
                 // Fill the bool column index
-                header->set_data_type_index(bool_columns_data->bool_column_size() - 1);
+                header->set_data_type_index(columns_data->bool_column_size() - 1);
             } else if (_string_vectors.count(column_index)) {
                 std::vector<std::string>& ref_column_data = _string_vectors[column_index];
                 // Add a string column
@@ -209,7 +209,7 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                     string_columns_data->add_string_column(ref_column_data[i]);
                 }
                 // Fill the string column index
-                header->set_data_type_index(string_columns_data->string_column_size() - 1);
+                header->set_data_type_index(columns_data->string_column_size() - 1);
             } else if (_int_vectors.count(column_index)) {
                 std::vector<int>& ref_column_data = _int_vectors[column_index];
                 // Add a int column
@@ -219,7 +219,7 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                     int_columns_data->add_int_column(ref_column_data[i]);
                 }
                 // Fill the int column index
-                header->set_data_type_index(int_columns_data->int_column_size() - 1);
+                header->set_data_type_index(columns_data->int_column_size() - 1);
             } else if (_ll_vectors.count(column_index)) {
                 std::vector<long long>& ref_column_data = _ll_vectors[column_index];
                 // Add a long long column
@@ -229,7 +229,7 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                     ll_columns_data->add_ll_column(ref_column_data[i]);
                 }
                 // Fill the long long column index
-                header->set_data_type_index(ll_columns_data->ll_column_size() - 1);
+                header->set_data_type_index(columns_data->ll_column_size() - 1);
             } else if (_float_vectors.count(column_index)) {
                 std::vector<float>& ref_column_data = _float_vectors[column_index];
                 // Add a float column
@@ -239,7 +239,7 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                     float_columns_data->add_float_column(ref_column_data[i]);
                 }
                 // Fill the float column index
-                header->set_data_type_index(float_columns_data->float_column_size() - 1);
+                header->set_data_type_index(columns_data->float_column_size() - 1);
             } else if (_double_vectors.count(column_index)) {
                 std::vector<double>& ref_column_data = _double_vectors[column_index];
                 // Add a double column
@@ -249,7 +249,7 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                     double_columns_data->add_double_column(ref_column_data[i]);
                 }
                 // Fill the double column index
-                header->set_data_type_index(double_columns_data->double_column_size() - 1);
+                header->set_data_type_index(columns_data->double_column_size() - 1);
             }
         }
     }

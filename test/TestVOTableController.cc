@@ -108,6 +108,16 @@ void TestOnFileInfoRequest() {
     file_info_request2.set_directory("images");
     file_info_request2.set_name("M17_SWex_simbad_2arcmin.xml");
     TestOnFileInfoRequest(file_info_request2);
+
+    CARTA::CatalogFileInfoRequest file_info_request3;
+    file_info_request3.set_directory("images");
+    file_info_request3.set_name("test.xml");
+    TestOnFileInfoRequest(file_info_request3);
+
+    CARTA::CatalogFileInfoRequest file_info_request4;
+    file_info_request4.set_directory("images");
+    file_info_request4.set_name("vizier_votable.vot");
+    TestOnFileInfoRequest(file_info_request4);
 }
 
 void TestOnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request) {
@@ -131,6 +141,20 @@ void TestOnOpenFileRequest() {
     open_file_request2.set_file_id(0);
     open_file_request2.set_preview_data_size(10);
     TestOnOpenFileRequest(open_file_request2);
+
+    CARTA::OpenCatalogFile open_file_request3;
+    open_file_request3.set_directory("images");
+    open_file_request3.set_name("test.xml");
+    open_file_request3.set_file_id(0);
+    open_file_request3.set_preview_data_size(10);
+    TestOnOpenFileRequest(open_file_request3);
+
+    CARTA::OpenCatalogFile open_file_request4;
+    open_file_request4.set_directory("images");
+    open_file_request4.set_name("vizier_votable.vot");
+    open_file_request4.set_file_id(0);
+    open_file_request4.set_preview_data_size(10);
+    TestOnOpenFileRequest(open_file_request4);
 }
 
 void TestOnOpenFileRequest(CARTA::OpenCatalogFile open_file_request) {
