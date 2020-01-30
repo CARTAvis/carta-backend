@@ -301,12 +301,12 @@ void VOTableCarrier::GetFilteredData(
             // Only fill the header that its column index is not in the hided column set
             int column_index = field.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                CARTA::CatalogHeader header;
-                header.set_name(tmp_field.name);
-                header.set_data_type(tmp_data_type);
-                header.set_column_index(column_index); // The FIELD index in the VOTable
-                header.set_description(tmp_field.description);
-                header.set_units(tmp_field.unit);
+                auto header = filter_response.add_headers();
+                header->set_name(tmp_field.name);
+                header->set_data_type(tmp_data_type);
+                header->set_column_index(column_index); // The FIELD index in the VOTable
+                header->set_description(tmp_field.description);
+                header->set_units(tmp_field.unit);
 
                 // Assign the column data type index and column size
                 if (_bool_vectors.count(column_index)) {
@@ -336,7 +336,7 @@ void VOTableCarrier::GetFilteredData(
                 }
 
                 // Fill the data type index
-                header.set_data_type_index(column_to_data_type_index[column_index]);
+                header->set_data_type_index(column_to_data_type_index[column_index]);
             }
         }
     }
