@@ -1,4 +1,5 @@
 #include "TileCache.h"
+#include <fstream>
 
 std::ostream& operator<<(std::ostream& os, const TileCacheKey& key) {
     fmt::print(os, "x={}, y={}", key.x, key.y);
@@ -151,20 +152,24 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
     for (auto& t : tiles) {
         Key key(chunk_key.x + tile_offset->first, chunk_key.y + tile_offset->second);
 
-        // If the tile is not in the map
-        if (_map.find(key) == _map.end()) { // add if not found
-            // Evict oldest tile if necessary
-            if (_map.size() == _capacity) {
-                _map.erase(_queue.back().first);
-                _queue.pop_back();
+        if (key.x < chunk_key.x + data_width && key.y < chunk_key.y + data_height) {
+            // this tile is within the bounds of the image
+
+            // If the tile is not in the map
+            if (_map.find(key) == _map.end()) { // add if not found
+                // Evict oldest tile if necessary
+                if (_map.size() == _capacity) {
+                    _map.erase(_queue.back().first);
+                    _queue.pop_back();
+                }
+
+                // Insert the new tile
+                _queue.push_front(std::make_pair(key, t));
+                _map[key] = _queue.begin();
+
+            } else { // touch the tile
+                Touch(key);
             }
-
-            // Insert the new tile
-            _queue.push_front(std::make_pair(key, t));
-            _map[key] = _queue.begin();
-
-        } else { // touch the tile
-            Touch(key);
         }
 
         std::advance(tile_offset, 1);
