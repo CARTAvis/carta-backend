@@ -131,9 +131,15 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
 
     // split the chunk into four tiles
     std::vector<TilePtr> tiles;
+    std::vector<int> tile_widths;
+    std::vector<int> tile_heights;
 
-    for (int i = 0; i < 4; i++) {
-        tiles.push_back(std::make_shared<std::vector<float>>(_TILE_SQ, NAN));
+    for (int tile_row = 0; tile_row < 2; tile_row++) {
+        for (int tile_col = 0; tile_col < 2; tile_col++) {
+            tile_widths.push_back(std::max(0, std::min(TILE_SIZE, data_width - tile_col * TILE_SIZE)));
+            tile_heights.push_back(std::max(0, std::min(TILE_SIZE, data_height - tile_row * TILE_SIZE)));
+            tiles.push_back(std::make_shared<std::vector<float>>(tile_widths.back() * tile_heights.back(), NAN));
+        }
     }
 
     for (int j = 0; j < data_height; j++) {
@@ -142,7 +148,8 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
         for (int i = 0; i < data_width; i++) {
             auto tile_x = i % TILE_SIZE;
             auto tile_col = i / TILE_SIZE;
-            (*tiles[2 * tile_row + tile_col])[TILE_SIZE * tile_y + tile_x] = chunk[data_width * j + i];
+            auto tile_index = 2 * tile_row + tile_col;
+            (*tiles[tile_index])[tile_widths[tile_index] * tile_y + tile_x] = chunk[data_width * j + i];
         }
     }
 

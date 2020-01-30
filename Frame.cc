@@ -1349,9 +1349,12 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
 
                                 for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
                                     auto& tile = tiles[TileCache::Key(tile_x, tile_y)];
+                                    auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
+                                    auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
+
                                     // copy contiguous row
-                                    auto start = tile.begin() + TILE_SIZE * (y - tile_y);
-                                    auto end = start + std::min(TILE_SIZE, (int)width - tile_x);
+                                    auto start = tile.begin() + tile_height * (y - tile_y);
+                                    auto end = start + tile_width;
                                     auto destination_start = profile.begin() + tile_x;
                                     std::copy(start, end, destination_start);
                                 }
@@ -1372,9 +1375,12 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
 
                                 for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
                                     auto& tile = tiles[TileCache::Key(tile_x, tile_y)];
+                                    auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
+                                    auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
+
                                     // copy non-contiguous column
-                                    for (int j = 0; j < std::min(TILE_SIZE, (int)height - tile_y); j++) {
-                                        profile[tile_y + j] = tile[(j * TILE_SIZE) + (x - tile_x)];
+                                    for (int j = 0; j < tile_height; j++) {
+                                        profile[tile_y + j] = tile[(j * tile_width) + (x - tile_x)];
                                     }
                                 }
 
