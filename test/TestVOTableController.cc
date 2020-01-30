@@ -81,6 +81,14 @@ void TestOnFileListRequest() {
     CARTA::CatalogListRequest file_list_request2;
     file_list_request2.set_directory("$BASE/images");
     TestOnFileListRequest(file_list_request2);
+
+    CARTA::CatalogListRequest file_list_request3;
+    file_list_request3.set_directory("$BASE/.");
+    TestOnFileListRequest(file_list_request3);
+
+    CARTA::CatalogListRequest file_list_request4;
+    file_list_request4.set_directory("$BASE.");
+    TestOnFileListRequest(file_list_request4);
 }
 
 void TestOnFileListRequest(CARTA::CatalogListRequest file_list_request) {

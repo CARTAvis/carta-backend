@@ -194,7 +194,7 @@ int Controller::GetFileKBSize(std::string file_path_name) {
 void Controller::ParseBasePath(std::string& file_path_name) {
     std::string base_path("$BASE");
     if (file_path_name.find(base_path) != std::string::npos) {
-        std::string current_working_path = GetCurrentWorkingPath();
+        std::string current_working_path = GetCurrentWorkingPath() + "/";
         file_path_name.replace(file_path_name.find(base_path), base_path.length(), current_working_path);
     }
 }
