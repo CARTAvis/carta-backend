@@ -22,10 +22,10 @@ Controller::~Controller() {
 void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, CARTA::CatalogListResponse& file_list_response) {
     bool success(false);
     std::string message;
-    std::string directory(file_list_request.directory());
+    std::string directory(file_list_request.directory()); // Note that it is the relative path!
 
-    // Replace the $BASE with current working path
-    ParseBasePath(directory);
+    // Parse the relative path to the absolute path
+    ParseToAbsolutePath(directory);
 
     // Get a list of files under the directory
     DIR* current_path;
@@ -68,19 +68,14 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
     std::string parent_directory;
     if (directory.find("/") != std::string::npos) {
         parent_directory = directory.substr(0, directory.find_last_of("/"));
-        std::size_t found = parent_directory.find_last_of("/");
-        parent_directory = parent_directory.substr(found + 1);
-    }
-
-    // Remove the "/" at the start of the path string, if any.
-    if (directory.find("/") == 0) {
-        directory.erase(0, 1);
     }
 
     // Fill the file list response
     file_list_response.set_success(success);
     file_list_response.set_message(message);
+    GetRelativePath(directory);
     file_list_response.set_directory(directory);
+    GetRelativePath(parent_directory);
     file_list_response.set_parent(parent_directory);
 }
 
@@ -196,11 +191,16 @@ int Controller::GetFileKBSize(std::string file_path_name) {
     return (std::round((float)file_status.st_size / 1000));
 }
 
-void Controller::ParseBasePath(std::string& file_path_name) {
-    std::string base_path("$BASE");
-    if (file_path_name.find(base_path) != std::string::npos) {
-        std::string current_working_path = GetCurrentWorkingPath();
-        file_path_name.replace(file_path_name.find(base_path), base_path.length(), current_working_path);
+void Controller::ParseToAbsolutePath(std::string& file_path_name) {
+    std::string base_path = GetCurrentWorkingPath().replace(0, 1, "");
+    std::string alias_base_path("$BASE");
+    if (file_path_name.find(alias_base_path) != std::string::npos) {
+        file_path_name.replace(file_path_name.find(alias_base_path), alias_base_path.length(), base_path);
+        file_path_name = "/" + file_path_name;
+    } else if (file_path_name.find(base_path) == 0) {
+        file_path_name = "/" + file_path_name;
+    } else {
+        file_path_name = "/" + base_path + "/" + file_path_name;
     }
 }
 
@@ -211,7 +211,6 @@ std::string Controller::Concatenate(std::string directory, std::string filename)
     } else {
         file_path_name = directory + "/" + filename;
     }
-    ParseBasePath(file_path_name);
 
     return file_path_name;
 }
@@ -222,5 +221,17 @@ void Controller::CloseFile(int file_id) {
         delete _carriers[file_id];
         _carriers[file_id] = nullptr;
         _carriers.erase(file_id);
+    }
+}
+
+void Controller::GetRelativePath(std::string& folder) {
+    // For example: change to "relative/path"
+    if (folder.find("./") == 0) {
+        folder.replace(0, 2, ""); // remove leading "./"
+    } else if (folder.front() == '/') {
+        folder.replace(0, 1, ""); // remove leading '/'
+    }
+    if (folder.empty()) {
+        folder = ".";
     }
 }

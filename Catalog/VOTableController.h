@@ -35,9 +35,10 @@ private:
     static std::string GetCurrentWorkingPath();
     static std::string GetFileSize(std::string file_path_name);
     static int GetFileKBSize(std::string file_path_name);
-    static void ParseBasePath(std::string& file_path_name);
+    static void ParseToAbsolutePath(std::string& file_path_name);
     static std::string Concatenate(std::string directory, std::string filename);
     void CloseFile(int file_id);
+    static void GetRelativePath(std::string& folder);
 
     std::unordered_map<int, VOTableCarrier*> _carriers; // The unordered map for <File Id, VOTableCarrier Ptr>
     std::mutex _carriers_mutex;
