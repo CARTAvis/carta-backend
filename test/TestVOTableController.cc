@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <iostream>
 
 #include "../Catalog/VOTableController.h"
@@ -15,6 +16,7 @@ void TestOnOpenFileRequest();
 void TestOnOpenFileRequest(CARTA::OpenCatalogFile open_file_request);
 void TestOnFilterRequest();
 void TestOnFilterRequest2();
+void TestOnFilterRequest3();
 void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request);
 
 void Print(CARTA::CatalogListRequest file_list_request);
@@ -45,6 +47,7 @@ int main(int argc, char* argv[]) {
     cout << "    3) TestOnOpenFileRequest()" << endl;
     cout << "    4) TestOnFilterRequest()" << endl;
     cout << "    5) TestOnFilterRequest2()" << endl;
+    cout << "    6) TestOnFilterRequest3()" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -62,6 +65,9 @@ int main(int argc, char* argv[]) {
             break;
         case 5:
             TestOnFilterRequest2();
+            break;
+        case 6:
+            TestOnFilterRequest3();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -266,6 +272,42 @@ void TestOnFilterRequest2() {
     TestOnFilterRequest(open_file_request, filter_request);
 }
 
+void TestOnFilterRequest3() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("images");
+    open_file_request.set_name("vizier_votable.vot");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(0);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(10);
+    filter_request.set_region_id(0);
+
+    auto catalog_image_bounds = filter_request.mutable_image_bounds();
+    catalog_image_bounds->set_x_column_name("RA");
+    catalog_image_bounds->set_y_column_name("Dec");
+    auto image_bounds = catalog_image_bounds->mutable_image_bounds();
+    image_bounds->set_x_min(0);
+    image_bounds->set_x_max(10);
+    image_bounds->set_y_min(0);
+    image_bounds->set_y_max(10);
+
+    filter_request.add_hided_headers("MPCM");
+    filter_request.add_hided_headers("CID");
+    filter_request.add_hided_headers("R");
+    filter_request.add_hided_headers("recno");
+
+    auto filter_config = filter_request.add_filter_configs();
+    filter_config->set_column_name("RAJ2000");
+    filter_config->set_comparison_operator(CARTA::ComparisonOperator::FromTo);
+    filter_config->set_min(0);
+    filter_config->set_max(100);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
 void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request) {
     // Open file
     CARTA::OpenCatalogFileAck open_file_response;
@@ -424,7 +466,7 @@ void Print(CARTA::CatalogColumnsData columns_data) {
         cout << "float_columns(" << i << "):" << endl;
         auto column = columns_data.float_column(i);
         for (int j = 0; j < column.float_column_size(); ++j) {
-            cout << column.float_column(j) << " | ";
+            cout << std::setprecision(10) << column.float_column(j) << " | ";
         }
         cout << endl;
     }
@@ -432,7 +474,7 @@ void Print(CARTA::CatalogColumnsData columns_data) {
         cout << "double_columns(" << i << "):" << endl;
         auto column = columns_data.double_column(i);
         for (int j = 0; j < column.double_column_size(); ++j) {
-            cout << column.double_column(j) << " | ";
+            cout << std::setprecision(10) << column.double_column(j) << " | ";
         }
         cout << endl;
     }
