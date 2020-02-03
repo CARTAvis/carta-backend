@@ -7,10 +7,12 @@ VOTableParser::VOTableParser(std::string filename, VOTableCarrier* carrier, bool
     if (!IsVOTable(filename)) {
         std::cerr << "File: " << filename << " is NOT a VOTable!" << std::endl;
         _continue_read = false;
+        return;
     }
     _reader = xmlReaderForFile(filename.c_str(), NULL, 0);
     if (_reader == nullptr) {
         std::cerr << "Unable to open " << filename << std::endl;
+        return;
     }
     if (_carrier) {
         _carrier->SetFileName(filename);

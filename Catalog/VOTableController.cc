@@ -25,7 +25,7 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
     std::string directory(file_list_request.directory()); // Note that it is the relative path!
 
     // Parse the relative path to the absolute path
-    ParseToAbsolutePath(directory);
+    ParseBasePath(directory);
 
     // Get a list of files under the directory
     DIR* current_path;
@@ -73,9 +73,9 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
     // Fill the file list response
     file_list_response.set_success(success);
     file_list_response.set_message(message);
-    GetRelativePath(directory);
+    GetPathName(directory);
     file_list_response.set_directory(directory);
-    GetRelativePath(parent_directory);
+    GetPathName(parent_directory);
     file_list_response.set_parent(parent_directory);
 }
 
@@ -85,6 +85,7 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
     std::string directory(file_info_request.directory());
     std::string filename(file_info_request.name());
     std::string file_path_name = Concatenate(directory, filename);
+    ParseBasePath(file_path_name);
 
     // Get the VOTable data (only read to the headers)
     VOTableCarrier carrier = VOTableCarrier();
@@ -114,6 +115,7 @@ void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CAR
     std::string directory(open_file_request.directory());
     std::string filename(open_file_request.name());
     std::string file_path_name = Concatenate(directory, filename);
+    ParseBasePath(file_path_name);
 
     int file_id(open_file_request.file_id());
     int preview_data_size(open_file_request.preview_data_size());
@@ -191,17 +193,15 @@ int Controller::GetFileKBSize(std::string file_path_name) {
     return (std::round((float)file_status.st_size / 1000));
 }
 
-void Controller::ParseToAbsolutePath(std::string& file_path_name) {
+void Controller::ParseBasePath(std::string& file_path_name) {
+    // Get the current working path and remove the "/" at the start of the path name
     std::string base_path = GetCurrentWorkingPath().replace(0, 1, "");
+    // Replace the "$BASE" with the current working path
     std::string alias_base_path("$BASE");
     if (file_path_name.find(alias_base_path) != std::string::npos) {
         file_path_name.replace(file_path_name.find(alias_base_path), alias_base_path.length(), base_path);
-        file_path_name = "/" + file_path_name;
-    } else if (file_path_name.find(base_path) == 0) {
-        file_path_name = "/" + file_path_name;
-    } else {
-        file_path_name = "/" + base_path + "/" + file_path_name;
     }
+    file_path_name = "/" + file_path_name;
 }
 
 std::string Controller::Concatenate(std::string directory, std::string filename) {
@@ -211,7 +211,6 @@ std::string Controller::Concatenate(std::string directory, std::string filename)
     } else {
         file_path_name = directory + "/" + filename;
     }
-
     return file_path_name;
 }
 
@@ -224,7 +223,7 @@ void Controller::CloseFile(int file_id) {
     }
 }
 
-void Controller::GetRelativePath(std::string& folder) {
+void Controller::GetPathName(std::string& folder) {
     // For example: change to "relative/path"
     if (folder.find("./") == 0) {
         folder.replace(0, 2, ""); // remove leading "./"
