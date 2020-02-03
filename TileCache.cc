@@ -149,6 +149,12 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
         std::copy(start, start + width, destination);
         std::advance(destination, width);
     };
+        
+    auto left_copy = do_copy;
+    auto right_copy = (data_width > TILE_SIZE) ? do_copy : do_nothing;
+    
+    auto pos = chunk.begin();
+    auto row_read_end = pos;
     
     for (int tr : {0, 1}) {
         auto row_height = tile_heights[tr * 2];
@@ -159,19 +165,16 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
         
         auto left = tiles[tr * 2]->begin();
         auto right = tiles[tr * 2 + 1]->begin();
-        auto read_start = tr * data_width * TILE_SIZE;
-        auto read_end = read_start + data_width * row_height;
         
         auto left_width = tile_widths[tr * 2];
         auto right_width = tile_widths[tr * 2 + 1];
         
-        auto left_copy = do_copy;
-        auto right_copy = right_width ? do_copy : do_nothing;
+        row_read_end += data_width * row_height; 
         
-        for (int i = read_start; i < read_end; i += data_width) {
-            auto start = chunk.begin() + i;
-            left_copy(start, left_width, left);
-            right_copy(start + TILE_SIZE, right_width, right);
+        while (pos < row_read_end) {
+            left_copy(pos, left_width, left);
+            right_copy(pos + TILE_SIZE, right_width, right);
+            std::advance(pos, data_width);
         }
     }
 
