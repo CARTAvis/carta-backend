@@ -1,5 +1,4 @@
 #include "TileCache.h"
-#include <fstream>
 
 std::ostream& operator<<(std::ostream& os, const TileCacheKey& key) {
     fmt::print(os, "x={}, y={}", key.x, key.y);
