@@ -141,15 +141,31 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
             tiles.push_back(std::make_shared<std::vector<float>>(tile_widths.back() * tile_heights.back(), NAN));
         }
     }
-
-    for (int j = 0; j < data_height; j++) {
-        auto tile_y = j % TILE_SIZE;
-        auto tile_row = j / TILE_SIZE;
-        for (int i = 0; i < data_width; i++) {
-            auto tile_x = i % TILE_SIZE;
-            auto tile_col = i / TILE_SIZE;
-            auto tile_index = 2 * tile_row + tile_col;
-            (*tiles[tile_index])[tile_widths[tile_index] * tile_y + tile_x] = chunk[data_width * j + i];
+    
+    if (data_width == _CHUNK_SIZE && data_height == _CHUNK_SIZE) {
+        for (int tile_quad_row : {0, 1}) {
+            auto left = tiles[tile_quad_row * 2]->begin();
+            auto right = tiles[tile_quad_row * 1]->begin();
+            for (int i = 0; i < _CHUNK_SQ / 2; i += _CHUNK_SIZE) {
+                auto start = chunk.begin() + i;
+                auto middle = start + TILE_SIZE;
+                auto end = middle + TILE_SIZE;
+                std::copy(start, middle, left);
+                std::copy(middle, end, right);
+                std::advance(left, TILE_SIZE);
+                std::advance(right, TILE_SIZE);
+            }
+        }
+    } else {
+        for (int j = 0; j < data_height; j++) {
+            auto tile_y = j % TILE_SIZE;
+            auto tile_row = j / TILE_SIZE;
+            for (int i = 0; i < data_width; i++) {
+                auto tile_x = i % TILE_SIZE;
+                auto tile_col = i / TILE_SIZE;
+                auto tile_index = 2 * tile_row + tile_col;
+                (*tiles[tile_index])[tile_widths[tile_index] * tile_y + tile_x] = chunk[data_width * j + i];
+            }
         }
     }
 
