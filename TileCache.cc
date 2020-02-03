@@ -145,8 +145,10 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
     if (data_width == _CHUNK_SIZE && data_height == _CHUNK_SIZE) {
         for (int tile_quad_row : {0, 1}) {
             auto left = tiles[tile_quad_row * 2]->begin();
-            auto right = tiles[tile_quad_row * 1]->begin();
-            for (int i = 0; i < _CHUNK_SQ / 2; i += _CHUNK_SIZE) {
+            auto right = tiles[tile_quad_row * 2 + 1]->begin();
+            auto read_start = tile_quad_row * _CHUNK_SQ / 2;
+            auto read_end = read_start + _CHUNK_SQ / 2;
+            for (int i = read_start; i < read_end; i += _CHUNK_SIZE) {
                 auto start = chunk.begin() + i;
                 auto middle = start + TILE_SIZE;
                 auto end = middle + TILE_SIZE;
