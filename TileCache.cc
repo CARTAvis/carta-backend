@@ -1,5 +1,5 @@
 #include "TileCache.h"
-#include <fstream>
+#include <functional>
 
 std::ostream& operator<<(std::ostream& os, const TileCacheKey& key) {
     fmt::print(os, "x={}, y={}", key.x, key.y);
@@ -142,32 +142,36 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
         }
     }
     
-    if (data_width == _CHUNK_SIZE && data_height == _CHUNK_SIZE) {
-        for (int tile_quad_row : {0, 1}) {
-            auto left = tiles[tile_quad_row * 2]->begin();
-            auto right = tiles[tile_quad_row * 2 + 1]->begin();
-            auto read_start = tile_quad_row * _CHUNK_SQ / 2;
-            auto read_end = read_start + _CHUNK_SQ / 2;
-            for (int i = read_start; i < read_end; i += _CHUNK_SIZE) {
-                auto start = chunk.begin() + i;
-                auto middle = start + TILE_SIZE;
-                auto end = middle + TILE_SIZE;
-                std::copy(start, middle, left);
-                std::copy(middle, end, right);
-                std::advance(left, TILE_SIZE);
-                std::advance(right, TILE_SIZE);
-            }
+    std::function<void(TileIter, int, TileIter&)> do_nothing = [&] (TileIter start, int width, TileIter& destination) {
+    };
+    
+    std::function<void(TileIter, int, TileIter&)> do_copy = [&] (TileIter start, int width, TileIter& destination) {
+        std::copy(start, start + width, destination);
+        std::advance(destination, width);
+    };
+    
+    for (int tr : {0, 1}) {
+        auto row_height = tile_heights[tr * 2];
+        
+        if (!row_height) {
+            continue;
         }
-    } else {
-        for (int j = 0; j < data_height; j++) {
-            auto tile_y = j % TILE_SIZE;
-            auto tile_row = j / TILE_SIZE;
-            for (int i = 0; i < data_width; i++) {
-                auto tile_x = i % TILE_SIZE;
-                auto tile_col = i / TILE_SIZE;
-                auto tile_index = 2 * tile_row + tile_col;
-                (*tiles[tile_index])[tile_widths[tile_index] * tile_y + tile_x] = chunk[data_width * j + i];
-            }
+        
+        auto left = tiles[tr * 2]->begin();
+        auto right = tiles[tr * 2 + 1]->begin();
+        auto read_start = tr * data_width * TILE_SIZE;
+        auto read_end = read_start + data_width * row_height;
+        
+        auto left_width = tile_widths[tr * 2];
+        auto right_width = tile_widths[tr * 2 + 1];
+        
+        auto left_copy = do_copy;
+        auto right_copy = right_width ? do_copy : do_nothing;
+        
+        for (int i = read_start; i < read_end; i += data_width) {
+            auto start = chunk.begin() + i;
+            left_copy(start, left_width, left);
+            right_copy(start + TILE_SIZE, right_width, right);
         }
     }
 
