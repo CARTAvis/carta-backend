@@ -191,7 +191,7 @@ void TestOnFilterRequest() {
     CARTA::CatalogFilterRequest filter_request;
     filter_request.set_file_id(0);
     filter_request.set_subset_start_index(0);
-    filter_request.set_subset_data_size(50);
+    filter_request.set_subset_data_size(-1);
     filter_request.set_region_id(0);
 
     auto catalog_image_bounds = filter_request.mutable_image_bounds();
