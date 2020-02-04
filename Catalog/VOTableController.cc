@@ -89,7 +89,7 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
 
     // Get the VOTable data (only read to the headers)
     VOTableCarrier carrier = VOTableCarrier();
-    VOTableParser parser(file_path_name, &carrier, true);
+    VOTableParser parser(file_path_name, &carrier);
     if (carrier.IsValid()) {
         success = true;
     } else {
@@ -105,8 +105,7 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
     file_info->set_file_size(GetFileKBSize(file_path_name));
     file_info->set_description(carrier.GetFileDescription());
     carrier.GetHeaders(file_info_response);
-    file_info_response.set_data_size(
-        carrier.GetTableRowNumber()); // TODO: since we only read the headers, we don't know the number of table rows
+    file_info_response.set_data_size(carrier.GetTableRowNumber());
 }
 
 void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
