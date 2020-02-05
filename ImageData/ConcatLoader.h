@@ -2,6 +2,8 @@
 #define CARTA_BACKEND_IMAGEDATA_CONCATLOADER_H_
 
 #include <casacore/images/Images/ImageConcat.h>
+#include <casacore/casa/Json/JsonKVMap.h>
+#include <casacore/casa/Json/JsonParser.h>
 
 #include "FileLoader.h"
 
@@ -18,14 +20,15 @@ public:
 
 private:
     std::string _filename;
-    std::unique_ptr<casacore::PagedImage<float>> _image;
+    std::unique_ptr<casacore::ImageConcat<float>> _image;
 };
 
 ConcatLoader::ConcatLoader(const std::string& filename) : _filename(filename) {}
 
 void ConcatLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
-        _image.reset(new casacore::PagedImage<float>(_filename));
+        casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile (_filename + "/imageconcat.json");
+        _image.reset(new casacore::ImageConcat<float>(_jmap, _filename));
         _num_dims = _image->shape().size();
     }
 }

@@ -20,7 +20,7 @@ void FileListHandler::OnFileListRequest(
     tbb::mutex::scoped_lock lock(_file_list_mutex);
     _api_key = api_key; // different users may have different api keys, so it is necessary to lock this variable setting to avoid using the
                         // wrong key
-    string folder = request.directory();
+    std::string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == _filelist_folder) {
         return;
@@ -62,7 +62,7 @@ void FileListHandler::GetRelativePath(std::string& folder) {
     }
 }
 
-void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string folder, ResultMsg& result_msg, bool region_list) {
+void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, bool region_list) {
     // fill FileListResponse
     std::string requested_folder = ((folder.compare(".") == 0) ? _root_folder : folder);
     casacore::Path requested_path(_root_folder);
@@ -89,7 +89,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
         }
     }
     casacore::File folder_path(requested_folder);
-    string message;
+    std::string message;
 
     try {
         if (!folder_path.exists()) {
@@ -134,24 +134,31 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                     }
                     if (!is_region) {
                         bool add_image(false);
+                        auto image_type = casacore::ImageOpener::imageType(full_path);
                         if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
-                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
-                            if ((image_type == casacore::ImageOpener::AIPSPP) || (image_type == casacore::ImageOpener::MIRIAD)) {
-                                add_image = true;
-                            } else if (image_type == casacore::ImageOpener::UNKNOWN) {
-                                // Check if it is a directory and the user has permission to access it
-                                casacore::String dir_name(cc_file.path().baseName());
-                                string path_name_relative = (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
-                                if (CheckPermissionForDirectory(path_name_relative)) {
-                                    file_list.add_subdirectories(dir_name);
+                            switch (image_type) {
+                                case casacore::ImageOpener::AIPSPP:
+                                case casacore::ImageOpener::MIRIAD:
+                                case casacore::ImageOpener::IMAGECONCAT:
+                                    add_image = true;
+                                    break;
+                                case casacore::ImageOpener::UNKNOWN: {
+                                    // Check if it is a directory and the user has permission to access it
+                                    auto dir_name(cc_file.path().baseName());
+                                    string path_name_relative = (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
+                                    if (CheckPermissionForDirectory(path_name_relative)) {
+                                        file_list.add_subdirectories(dir_name);
+                                    }
+                                    break;
                                 }
-                            } else {
-                                std::string image_type_msg = fmt::format(
-                                    "{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
-                                result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                                default: {
+                                    std::string image_type_msg = fmt::format(
+                                        "{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
+                                    result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                                    break;
+                                }
                             }
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
                             if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
                                 add_image = true;
                             } else if (region_list) { // list unknown files: name, type, size
@@ -214,7 +221,7 @@ bool FileListHandler::CheckPermissionForDirectory(std::string prefix) {
         }
 
         auto last_slash = prefix.find_last_of('/');
-        if (last_slash == string::npos) {
+        if (last_slash == std::string::npos) {
             return false;
         }
 
@@ -223,7 +230,7 @@ bool FileListHandler::CheckPermissionForDirectory(std::string prefix) {
     return false;
 }
 
-bool FileListHandler::CheckPermissionForEntry(const string& entry) {
+bool FileListHandler::CheckPermissionForEntry(const std::string& entry) {
     // skip permissions map if we're not running with permissions enabled
     if (!_permissions_enabled) {
         return true;
@@ -263,7 +270,7 @@ std::string FileListHandler::GetCasacoreTypeString(casacore::ImageOpener::ImageT
     return type_str;
 }
 
-bool FileListHandler::FillFileInfo(CARTA::FileInfo* file_info, const string& filename) {
+bool FileListHandler::FillFileInfo(CARTA::FileInfo* file_info, const std::string& filename) {
     // fill FileInfo submessage
     FileInfoLoader info_loader = FileInfoLoader(filename);
     return info_loader.FillFileInfo(file_info);
@@ -273,7 +280,7 @@ void FileListHandler::OnRegionListRequest(
     const CARTA::RegionListRequest& region_request, CARTA::RegionListResponse& region_response, ResultMsg& result_msg) {
     // use tbb scoped lock so that it only processes the file list a time for one user
     tbb::mutex::scoped_lock lock(_region_list_mutex);
-    string folder = region_request.directory();
+    std::string folder = region_request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == _regionlist_folder) {
         return;
@@ -330,7 +337,7 @@ CARTA::FileType FileListHandler::GetRegionType(const std::string& filename) {
     return file_type;
 }
 
-bool FileListHandler::FillRegionFileInfo(CARTA::FileInfo* file_info, const string& filename, CARTA::FileType type) {
+bool FileListHandler::FillRegionFileInfo(CARTA::FileInfo* file_info, const std::string& filename, CARTA::FileType type) {
     // For region list and info response: name, type, size
     casacore::File cc_file(filename);
     if (!cc_file.exists()) {
