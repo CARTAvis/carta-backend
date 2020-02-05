@@ -145,7 +145,7 @@ void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CAR
     if (preview_data_size > total_row_number) {
         preview_data_size = total_row_number;
     }
-    open_file_response.set_data_size(preview_data_size);
+    open_file_response.set_data_size(total_row_number);
 
     // Fill the table headers and their columns data
     carrier->GetHeadersAndData(open_file_response, preview_data_size);
