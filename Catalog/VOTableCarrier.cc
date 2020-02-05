@@ -508,6 +508,10 @@ void VOTableCarrier::GetFilteredData(
             partial_results_callback(filter_response);
         }
     }
+
+    // Send final results by the callback function
+    filter_response.set_progress(1.0);
+    partial_results_callback(filter_response);
 }
 
 size_t VOTableCarrier::GetTableRowNumber() {
