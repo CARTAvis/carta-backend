@@ -56,7 +56,7 @@ void FileListHandler::GetRelativePath(std::string& folder) {
     }
 }
 
-void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string folder, ResultMsg& result_msg, bool region_list) {
+void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, bool region_list) {
     // fill FileListResponse
     std::string requested_folder = ((folder.compare(".") == 0) ? _root_folder : folder);
     casacore::Path requested_path(_root_folder);
@@ -83,7 +83,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
         }
     }
     casacore::File folder_path(requested_folder);
-    string message;
+    std::string message;
 
     try {
         if (!folder_path.exists()) {
@@ -123,21 +123,28 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                     }
                     if (!is_region) {
                         bool add_image(false);
+                        auto image_type = casacore::ImageOpener::imageType(full_path);
                         if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
-                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
-                            if ((image_type == casacore::ImageOpener::AIPSPP) || (image_type == casacore::ImageOpener::MIRIAD)) {
-                                add_image = true;
-                            } else if (image_type == casacore::ImageOpener::UNKNOWN) {
-                                // Check if it is a directory and the user has permission to access it
-                                casacore::String dir_name(cc_file.path().baseName());
-                                file_list.add_subdirectories(dir_name);
-                            } else {
-                                std::string image_type_msg = fmt::format(
-                                    "{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
-                                result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                            switch (image_type) {
+                                case casacore::ImageOpener::AIPSPP:
+                                case casacore::ImageOpener::MIRIAD:
+                                case casacore::ImageOpener::IMAGECONCAT:
+                                    add_image = true;
+                                    break;
+                                case casacore::ImageOpener::UNKNOWN: {
+                                    // Check if it is a directory and the user has permission to access it
+                                    casacore::String dir_name(cc_file.path().baseName());
+                                    file_list.add_subdirectories(dir_name);
+                                    break;
+                                }
+                                default: {
+                                    std::string image_type_msg = fmt::format(
+                                        "{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
+                                    result_msg = {image_type_msg, {"file_list"}, CARTA::ErrorSeverity::DEBUG};
+                                    break;
+                                }
                             }
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                            casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
                             if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
                                 add_image = true;
                             } else if (region_list) { // list unknown files: name, type, size
@@ -261,7 +268,7 @@ CARTA::FileType FileListHandler::GetRegionType(const std::string& filename) {
     return file_type;
 }
 
-bool FileListHandler::FillRegionFileInfo(CARTA::FileInfo& file_info, const string& filename, CARTA::FileType type) {
+bool FileListHandler::FillRegionFileInfo(CARTA::FileInfo& file_info, const std::string& filename, CARTA::FileType type) {
     // For region list and info response: name, type, size
     casacore::File cc_file(filename);
     if (!cc_file.exists()) {
