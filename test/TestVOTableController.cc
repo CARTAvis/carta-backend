@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 
 void TestOnFileListRequest() {
     CARTA::CatalogListRequest file_list_request;
-    file_list_request.set_directory("$BASE/images");
+    file_list_request.set_directory("$BASE/images/votable");
     TestOnFileListRequest(file_list_request);
 
     CARTA::CatalogListRequest file_list_request2;
@@ -98,22 +98,22 @@ void TestOnFileListRequest(CARTA::CatalogListRequest file_list_request) {
 
 void TestOnFileInfoRequest() {
     CARTA::CatalogFileInfoRequest file_info_request;
-    file_info_request.set_directory("$BASE/images");
+    file_info_request.set_directory("$BASE/images/votable");
     file_info_request.set_name("simple.xml");
     TestOnFileInfoRequest(file_info_request);
 
     CARTA::CatalogFileInfoRequest file_info_request2;
-    file_info_request2.set_directory("$BASE/images");
+    file_info_request2.set_directory("$BASE/images/votable");
     file_info_request2.set_name("M17_SWex_simbad_2arcmin.xml");
     TestOnFileInfoRequest(file_info_request2);
 
     CARTA::CatalogFileInfoRequest file_info_request3;
-    file_info_request3.set_directory("$BASE/images");
+    file_info_request3.set_directory("$BASE/images/votable");
     file_info_request3.set_name("test.xml");
     TestOnFileInfoRequest(file_info_request3);
 
     CARTA::CatalogFileInfoRequest file_info_request4;
-    file_info_request4.set_directory("$BASE/images");
+    file_info_request4.set_directory("$BASE/images/votable");
     file_info_request4.set_name("vizier_votable.vot");
     TestOnFileInfoRequest(file_info_request4);
 }
@@ -127,28 +127,28 @@ void TestOnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request) {
 
 void TestOnOpenFileRequest() {
     CARTA::OpenCatalogFile open_file_request;
-    open_file_request.set_directory("$BASE/images");
+    open_file_request.set_directory("$BASE/images/votable");
     open_file_request.set_name("simple.xml");
     open_file_request.set_file_id(0);
     open_file_request.set_preview_data_size(10);
     TestOnOpenFileRequest(open_file_request);
 
     CARTA::OpenCatalogFile open_file_request2;
-    open_file_request2.set_directory("$BASE/images");
+    open_file_request2.set_directory("$BASE/images/votable");
     open_file_request2.set_name("M17_SWex_simbad_2arcmin.xml");
     open_file_request2.set_file_id(0);
     open_file_request2.set_preview_data_size(10);
     TestOnOpenFileRequest(open_file_request2);
 
     CARTA::OpenCatalogFile open_file_request3;
-    open_file_request3.set_directory("$BASE/images");
+    open_file_request3.set_directory("$BASE/images/votable");
     open_file_request3.set_name("test.xml");
     open_file_request3.set_file_id(0);
     open_file_request3.set_preview_data_size(10);
     TestOnOpenFileRequest(open_file_request3);
 
     CARTA::OpenCatalogFile open_file_request4;
-    open_file_request4.set_directory("$BASE/images");
+    open_file_request4.set_directory("$BASE/images/votable");
     open_file_request4.set_name("vizier_votable.vot");
     open_file_request4.set_file_id(0);
     open_file_request4.set_preview_data_size(10);
@@ -183,7 +183,7 @@ void TestOnOpenFileRequest(CARTA::OpenCatalogFile open_file_request) {
 
 void TestOnFilterRequest() {
     CARTA::OpenCatalogFile open_file_request;
-    open_file_request.set_directory("$BASE/images");
+    open_file_request.set_directory("$BASE/images/votable");
     open_file_request.set_name("simple.xml");
     open_file_request.set_file_id(0);
     open_file_request.set_preview_data_size(0);
@@ -219,7 +219,7 @@ void TestOnFilterRequest() {
 
 void TestOnFilterRequest2() {
     CARTA::OpenCatalogFile open_file_request;
-    open_file_request.set_directory("$BASE/images");
+    open_file_request.set_directory("$BASE/images/votable");
     open_file_request.set_name("M17_SWex_simbad_2arcmin.xml");
     open_file_request.set_file_id(0);
     open_file_request.set_preview_data_size(0);
@@ -266,7 +266,7 @@ void TestOnFilterRequest2() {
 
 void TestOnFilterRequest3() {
     CARTA::OpenCatalogFile open_file_request;
-    open_file_request.set_directory("$BASE/images");
+    open_file_request.set_directory("$BASE/images/votable");
     open_file_request.set_name("vizier_votable.vot");
     open_file_request.set_file_id(0);
     open_file_request.set_preview_data_size(0);

@@ -3,6 +3,8 @@
 #include <cassert>
 #include <set>
 
+#include "../InterfaceConstants.h"
+
 using namespace catalog;
 
 void VOTableCarrier::SetFileName(std::string file_path_name) {
@@ -348,12 +350,12 @@ void VOTableCarrier::GetFilteredData(
         std::cerr << "Start row index is out of range!" << std::endl;
         return;
     }
-    if (subset_data_size < -1) {
-        std::cerr << "Subset data size is less than -1!" << std::endl;
+    if (subset_data_size < ALL_CATALOG_DATA) {
+        std::cerr << "Subset data size is unknown!" << std::endl;
         return;
     }
     int subset_end_index = subset_start_index + subset_data_size - 1;
-    if ((subset_end_index > total_row_num - 1) || (subset_data_size == -1)) {
+    if ((subset_end_index > total_row_num - 1) || (subset_data_size == ALL_CATALOG_DATA)) {
         subset_end_index = total_row_num - 1;
     }
 
