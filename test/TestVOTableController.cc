@@ -17,6 +17,7 @@ void TestOnOpenFileRequest(CARTA::OpenCatalogFile open_file_request);
 void TestOnFilterRequest();
 void TestOnFilterRequest2();
 void TestOnFilterRequest3();
+void TestOnFilterRequest4();
 void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request);
 
 void Print(CARTA::CatalogListRequest file_list_request);
@@ -48,6 +49,7 @@ int main(int argc, char* argv[]) {
     cout << "    4) TestOnFilterRequest()" << endl;
     cout << "    5) TestOnFilterRequest2()" << endl;
     cout << "    6) TestOnFilterRequest3()" << endl;
+    cout << "    7) TestOnFilterRequest4()" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -68,6 +70,9 @@ int main(int argc, char* argv[]) {
             break;
         case 6:
             TestOnFilterRequest3();
+            break;
+        case 7:
+            TestOnFilterRequest4();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -296,6 +301,37 @@ void TestOnFilterRequest3() {
     filter_config->set_comparison_operator(CARTA::ComparisonOperator::FromTo);
     filter_config->set_min(0);
     filter_config->set_max(100);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
+void TestOnFilterRequest4() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("$BASE/images/votable");
+    open_file_request.set_name("vizier_votable_47115.vot");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(10);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(100);
+    filter_request.set_region_id(0);
+
+    filter_request.add_hided_headers("z");
+    filter_request.add_hided_headers("Band");
+    filter_request.add_hided_headers("e_Flux");
+    filter_request.add_hided_headers("Freq");
+    filter_request.add_hided_headers("Obs.date");
+    filter_request.add_hided_headers("Name");
+    filter_request.add_hided_headers("_DEJ2000");
+    filter_request.add_hided_headers("_RAJ2000");
+
+    auto filter_config = filter_request.add_filter_configs();
+    filter_config->set_column_name("Flux");
+    filter_config->set_comparison_operator(CARTA::ComparisonOperator::FromTo);
+    filter_config->set_min(1.0);
+    filter_config->set_max(2.0);
 
     TestOnFilterRequest(open_file_request, filter_request);
 }
@@ -530,6 +566,8 @@ void Print(CARTA::CatalogFilterResponse filter_response) {
         Print(header);
     }
     Print(filter_response.columns_data());
+    cout << "subset_data_size: " << filter_response.subset_data_size() << endl;
+    cout << "subset_end_index: " << filter_response.subset_end_index() << endl;
     cout << "progress:  " << filter_response.progress() << endl;
     cout << endl;
 }
