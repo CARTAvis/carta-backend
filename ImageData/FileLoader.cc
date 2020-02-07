@@ -8,6 +8,7 @@
 #include "Hdf5Loader.h"
 #include "MiriadLoader.h"
 #include "ConcatLoader.h"
+#include "ExprLoader.h"
 
 using namespace carta;
 
@@ -30,7 +31,7 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
         case casacore::ImageOpener::IMAGECONCAT:
             return new ConcatLoader(filename);
         case casacore::ImageOpener::IMAGEEXPR:
-            break;
+            return new ExprLoader(filename);
         case casacore::ImageOpener::COMPLISTIMAGE:
             break;
         default:
