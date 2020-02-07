@@ -37,7 +37,8 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
                 std::string file_name = current_entry->d_name;
                 // Check is it a XML file
                 if ((file_name.substr(file_name.find_last_of(".") + 1) == "xml") ||
-                    ((file_name.substr(file_name.find_last_of(".") + 1) == "vot"))) {
+                    (file_name.substr(file_name.find_last_of(".") + 1) == "vot") ||
+                    (file_name.substr(file_name.find_last_of(".") + 1) == "votable")) {
                     // Check is it a VOTable XML file
                     std::string path_name = Concatenate(directory, file_name);
                     if (VOTableParser::IsVOTable(path_name)) {

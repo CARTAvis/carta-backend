@@ -18,6 +18,7 @@ void TestOnFilterRequest();
 void TestOnFilterRequest2();
 void TestOnFilterRequest3();
 void TestOnFilterRequest4();
+void TestOnFilterRequest5();
 void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request);
 
 void Print(CARTA::CatalogListRequest file_list_request);
@@ -50,6 +51,7 @@ int main(int argc, char* argv[]) {
     cout << "    5) TestOnFilterRequest2()" << endl;
     cout << "    6) TestOnFilterRequest3()" << endl;
     cout << "    7) TestOnFilterRequest4()" << endl;
+    cout << "    8) TestOnFilterRequest5()" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -73,6 +75,9 @@ int main(int argc, char* argv[]) {
             break;
         case 7:
             TestOnFilterRequest4();
+            break;
+        case 8:
+            TestOnFilterRequest5();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -332,6 +337,53 @@ void TestOnFilterRequest4() {
     filter_config->set_comparison_operator(CARTA::ComparisonOperator::FromTo);
     filter_config->set_min(1.0);
     filter_config->set_max(2.0);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
+void TestOnFilterRequest5() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("$BASE/images/votable");
+    open_file_request.set_name("2MRS.votable");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(10);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(10);
+    filter_request.set_region_id(0);
+
+    filter_request.add_hided_headers("prx10");
+    filter_request.add_hided_headers("prx5");
+    filter_request.add_hided_headers("prx2");
+    filter_request.add_hided_headers("Dm");
+    filter_request.add_hided_headers("zspec");
+    filter_request.add_hided_headers("Mstellar");
+    filter_request.add_hided_headers("dMabs");
+    filter_request.add_hided_headers("Kabs");
+    filter_request.add_hided_headers("Kmag");
+    filter_request.add_hided_headers("glat");
+    filter_request.add_hided_headers("glon");
+    filter_request.add_hided_headers("name");
+
+    auto filter_config = filter_request.add_filter_configs();
+    filter_config->set_column_name("Z");
+    filter_config->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
+    filter_config->set_min(0.0);
+    filter_config->set_max(0.0);
+
+    auto filter_config2 = filter_request.add_filter_configs();
+    filter_config2->set_column_name("Y");
+    filter_config2->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
+    filter_config2->set_min(0.0);
+    filter_config2->set_max(0.0);
+
+    auto filter_config3 = filter_request.add_filter_configs();
+    filter_config3->set_column_name("X");
+    filter_config3->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
+    filter_config3->set_min(0.0);
+    filter_config3->set_max(0.0);
 
     TestOnFilterRequest(open_file_request, filter_request);
 }
