@@ -20,6 +20,7 @@
 #include <carta-protobuf/raster_tile.pb.h>
 #include <xmmintrin.h>
 #include <zstd.h>
+#include <fmt/format.h>
 
 #include "Carta.h"
 #include "Compression.h"
@@ -1343,6 +1344,7 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
 
             _animation_object->_current_frame = curr_frame;
 
+            auto t_start_changeFrame = std::chrono::high_resolution_clock::now();
             if (frame->SetImageChannels(channel, stokes, err_message)) {
                 // RESPONSE: updated image raster/histogram
                 bool send_histogram(true);
@@ -1354,6 +1356,14 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
             } else {
                 if (!err_message.empty()) {
                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
+                }
+            }
+            // Measure duration for frame changing
+            if (_verbose_logging) {
+                auto t_end_changeFrame = std::chrono::high_resolution_clock::now();
+                auto dt_changeFrame = std::chrono::duration_cast<std::chrono::microseconds>(t_end_changeFrame - t_start_changeFrame).count();
+                if (channel_changed || stokes_changed) {
+                    fmt::print("Animator: Change frame in {} ms\n", dt_changeFrame * 1e-3);
                 }
             }
         } catch (std::out_of_range& range_error) {
