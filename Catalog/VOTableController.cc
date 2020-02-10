@@ -106,7 +106,6 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
     file_info->set_file_size(GetFileKBSize(file_path_name));
     file_info->set_description(carrier.GetFileDescription());
     carrier.GetHeaders(file_info_response);
-    file_info_response.set_data_size(carrier.GetTableRowNumber());
 }
 
 void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {

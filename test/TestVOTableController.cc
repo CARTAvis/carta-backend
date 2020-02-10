@@ -126,6 +126,11 @@ void TestOnFileInfoRequest() {
     file_info_request4.set_directory("$BASE/images/votable");
     file_info_request4.set_name("vizier_votable.vot");
     TestOnFileInfoRequest(file_info_request4);
+
+    CARTA::CatalogFileInfoRequest file_info_request5;
+    file_info_request5.set_directory("$BASE/images/votable");
+    file_info_request5.set_name("vizier_votable_47115.vot");
+    TestOnFileInfoRequest(file_info_request5);
 }
 
 void TestOnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request) {
@@ -465,7 +470,6 @@ void Print(CARTA::CatalogFileInfoResponse file_info_response) {
     cout << "message:   " << file_info_response.message() << endl;
     cout << "file_info: " << endl;
     Print(file_info_response.file_info());
-    cout << "data_size: " << file_info_response.data_size() << endl;
     for (int i = 0; i < file_info_response.headers_size(); ++i) {
         cout << "headers(" << i << "):" << endl;
         auto header = file_info_response.headers(i);
