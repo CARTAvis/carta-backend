@@ -1344,7 +1344,7 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
 
             _animation_object->_current_frame = curr_frame;
 
-            auto t_start_changeFrame = std::chrono::high_resolution_clock::now();
+            auto t_start_change_frame = std::chrono::high_resolution_clock::now();
             if (frame->SetImageChannels(channel, stokes, err_message)) {
                 // RESPONSE: updated image raster/histogram
                 bool send_histogram(true);
@@ -1360,10 +1360,10 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
             }
             // Measure duration for frame changing
             if (_verbose_logging) {
-                auto t_end_changeFrame = std::chrono::high_resolution_clock::now();
-                auto dt_changeFrame = std::chrono::duration_cast<std::chrono::microseconds>(t_end_changeFrame - t_start_changeFrame).count();
+                auto t_end_change_frame = std::chrono::high_resolution_clock::now();
+                auto dt_change_frame = std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
                 if (channel_changed || stokes_changed) {
-                    fmt::print("Animator: Change frame in {} ms\n", dt_changeFrame * 1e-3);
+                    fmt::print("Animator: Change frame in {} ms\n", dt_change_frame * 1e-3);
                 }
             }
         } catch (std::out_of_range& range_error) {
