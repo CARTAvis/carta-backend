@@ -90,7 +90,7 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
 
     // Get the VOTable data (only read to the headers)
     VOTableCarrier carrier = VOTableCarrier();
-    VOTableParser parser(file_path_name, &carrier);
+    VOTableParser parser(file_path_name, &carrier, true);
     if (carrier.IsValid()) {
         success = true;
     } else {
