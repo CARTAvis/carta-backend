@@ -45,10 +45,15 @@ if (AuthServer)
     set(LINK_LIBS
             jsoncpp
             mongoc-1.0
-            bson-1.0)
+            bson-1.0
+            json-c)
     set(SOURCE_FILES
             DBConnect.cc)
 endif (AuthServer)
+
+if (DisableContourCompression)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DISABLE_CONTOUR_COMPRESSION_")
+endif(DisableContourCompression)
 
 
 set(LINK_LIBS
@@ -63,7 +68,6 @@ set(LINK_LIBS
         zfp
         zstd
         tbb
-        json-c
         casa_casa
         casa_coordinates
         casa_tables

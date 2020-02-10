@@ -1207,8 +1207,11 @@ bool Session::SendContourData(int file_id) {
 
             std::vector<char> compression_buffer;
             const float pixel_rounding = std::max(1, std::min(32, settings.decimation));
+#if _DISABLE_CONTOUR_COMPRESSION_
+            const int compression_level = 0;
+#else
             const int compression_level = std::max(0, std::min(20, settings.compression_level));
-
+#endif
             // Fill contour set
             auto contour_set = partial_response.add_contour_sets();
             contour_set->set_level(level);
