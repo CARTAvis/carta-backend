@@ -378,8 +378,11 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
     if (!message.tiles().empty() && _frames.count(file_id)) {
-        // Update view settings if in an animation
-        _frames.at(file_id)->SetAnimationViewSettings(message);
+        if (AnimationRunning()) {
+            // Update view settings and skip sending data if in an animation
+            _frames.at(file_id)->SetAnimationViewSettings(message);
+            return;
+        }
         int n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
@@ -405,6 +408,15 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
             g.run([=] { lambda(j); });
         }
         g.wait();
+
+        // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
+        CARTA::RasterTileData final_message;
+        final_message.set_file_id(file_id);
+        final_message.set_channel(channel);
+        final_message.set_stokes(stokes);
+        final_message.set_compression_quality(compression_quality);
+        final_message.set_compression_type(compression_type);
+        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, final_message);
     }
 }
 
@@ -1349,7 +1361,7 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
                 UpdateRegionData(file_id, send_histogram, channel_changed, stokes_changed);
                 // Send Contour data if required
                 SendContourData(file_id);
-                //
+                // Send tile data
                 OnAddRequiredTiles(frame->GetAnimationViewSettings());
                 // RESPONSE: data for all regions; no histogram
                 UpdateRegionData(file_id, !send_histogram, channel_changed, stokes_changed);
