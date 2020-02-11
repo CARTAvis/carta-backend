@@ -55,7 +55,6 @@ public:
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
     void OnCloseFile(const CARTA::CloseFile& message);
-    void OnSetImageView(const CARTA::SetImageView& message);
     void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
@@ -188,7 +187,7 @@ private:
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
     // Send data streams
-    bool SendRasterImageData(int file_id, bool send_histogram = false);
+    //bool SendRasterImageData(int file_id, bool send_histogram = false);
     // Only set channel_changed and stokes_changed if they are the only trigger for new data
     // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
     bool SendSpatialProfileData(int file_id, int region_id, bool stokes_changed = false);

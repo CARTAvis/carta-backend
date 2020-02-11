@@ -24,20 +24,13 @@
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
+#include <carta-protobuf/tiles.pb.h>
 
 #include "Contouring.h"
 #include "ImageData/FileLoader.h"
 #include "InterfaceConstants.h"
 #include "Region/Region.h"
 #include "Tile.h"
-
-struct ViewSettings {
-    CARTA::ImageBounds image_bounds;
-    int mip;
-    CARTA::CompressionType compression_type;
-    float quality;
-    int num_subsets;
-};
 
 struct ContourSettings {
     std::vector<double> levels;
@@ -104,8 +97,13 @@ public:
         CARTA::ExportRegionAck& export_ack);
 
     // image view, channels
-    bool SetImageView(
-        const CARTA::ImageBounds& image_bounds, int new_mip, CARTA::CompressionType compression, float quality, int num_subsets);
+    inline void SetAnimationViewSettings(const CARTA::AddRequiredTiles& required_animation_tiles) {
+        _required_animation_tiles = required_animation_tiles;
+    }
+    inline CARTA::AddRequiredTiles GetAnimationViewSettings() {
+        return _required_animation_tiles;
+    };
+
     bool SetImageChannels(int new_channel, int new_stokes, std::string& message);
 
     // set requirements
@@ -116,7 +114,6 @@ public:
 
     // fill data, profiles, stats messages
     // For some messages, prevent sending data when current channel/stokes changes
-    bool FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::string& message);
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int channel, int stokes,
         CARTA::CompressionType compression_type, float compression_quality);
     bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& profile_data, bool stokes_changed = false);
@@ -182,13 +179,6 @@ private:
     void ExportDs9Regions(std::vector<int>& region_ids, CARTA::CoordinateType coord_type, const casacore::CoordinateSystem& coord_sys,
         std::string& ds9_filename, CARTA::ExportRegionAck& export_ack);
 
-    // Image view settings
-    void SetViewSettings(
-        const CARTA::ImageBounds& new_bounds, int new_mip, CARTA::CompressionType new_compression, float new_quality, int new_subsets);
-    inline ViewSettings GetViewSettings() {
-        return _view_settings;
-    };
-
     // validate channel, stokes index values
     bool CheckChannel(int channel);
     bool CheckStokes(int stokes);
@@ -251,7 +241,7 @@ private:
     size_t _num_stokes;
 
     // Image settings
-    ViewSettings _view_settings;
+    CARTA::AddRequiredTiles _required_animation_tiles;
 
     // Contour settings
     ContourSettings _contour_settings;

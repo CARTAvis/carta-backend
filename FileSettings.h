@@ -26,13 +26,7 @@ public:
 
 private:
     Session* _session;
-    tbb::queuing_rw_mutex _view_mutex, _cursor_mutex;
-
-    // pair is <message, requestId)
-    using view_info_t = std::pair<CARTA::SetImageView, uint32_t>;
-    using view_iter = tbb::concurrent_unordered_map<int, view_info_t>::iterator;
-    // map is <fileId, view info>
-    tbb::concurrent_unordered_map<int, view_info_t> _latest_view;
+    tbb::queuing_rw_mutex _cursor_mutex;
 
     // pair is <message, requestId)
     using cursor_info_t = std::pair<CARTA::SetCursor, uint32_t>;
