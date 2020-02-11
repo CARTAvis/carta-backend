@@ -421,11 +421,15 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
         const std::unique_ptr<Frame>& frame = _frames.at(file_id);
         try {
             std::string err_message;
-            auto channel = message.channel();
-            auto stokes = message.stokes();
-            bool channel_changed(channel != frame->CurrentChannel());
-            bool stokes_changed(stokes != frame->CurrentStokes());
-            if (frame->SetImageChannels(channel, stokes, err_message)) {
+            auto channel_target = message.channel();
+            auto stokes_target = message.stokes();
+            auto channel_current = frame->CurrentChannel();
+            auto stokes_current = frame->CurrentStokes();
+            bool channel_changed(channel_target != channel_current);
+            bool stokes_changed(stokes_target != stokes_current);
+
+            auto t_start_set_image_channel = std::chrono::high_resolution_clock::now();
+            if (frame->SetImageChannels(channel_target, stokes_target, err_message)) {
                 // RESPONSE: send data for all regions
                 bool send_histogram(true);
                 UpdateRegionData(file_id, send_histogram, channel_changed, stokes_changed);
@@ -435,6 +439,14 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                 if (!err_message.empty()) {
                     SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
                 }
+            }
+            // Measure duration for change image channel or stokes
+            if (_verbose_logging && (channel_changed || stokes_changed)) {
+                auto t_end_set_image_channel = std::chrono::high_resolution_clock::now();
+                auto dt_set_image_channel = std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_channel - t_start_set_image_channel).count();
+                fmt::print("Change channel or stokes from {} to {} in {} ms\n", 
+                    stokes_changed ? stokes_current : channel_current, 
+                    stokes_changed ? stokes_target : channel_target, dt_set_image_channel * 1e-3);
             }
 
             // Send any required tiles if they have been requested
