@@ -759,10 +759,11 @@ bool Frame::SetImageCache() {
         return false;
     } else if(_verbose) { // Measure duration for load image
         auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
-        auto dt_set_image_cache = std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
+        auto dt_set_image_cache = 
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
         fmt::print("Load image to cache in {} ms\n", dt_set_image_cache * 1e-3);
     }
-    
+
     return true;
 }
 

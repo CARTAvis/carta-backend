@@ -443,9 +443,9 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             // Measure duration for change image channel or stokes
             if (_verbose_logging && (channel_changed || stokes_changed)) {
                 auto t_end_set_image_channel = std::chrono::high_resolution_clock::now();
-                auto dt_set_image_channel = std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_channel - t_start_set_image_channel).count();
-                fmt::print("Change channel or stokes from {} to {} in {} ms\n", 
-                    stokes_changed ? stokes_current : channel_current, 
+                auto dt_set_image_channel = 
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_channel - t_start_set_image_channel).count();
+                fmt::print("Change channel or stokes from {} to {} in {} ms\n", stokes_changed ? stokes_current : channel_current, 
                     stokes_changed ? stokes_target : channel_target, dt_set_image_channel * 1e-3);
             }
 
@@ -1370,10 +1370,11 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
                 }
             }
-            // Measure duration for frame changing
+            // Measure duration for frame changing as animating
             if (_verbose_logging) {
                 auto t_end_change_frame = std::chrono::high_resolution_clock::now();
-                auto dt_change_frame = std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
+                auto dt_change_frame = 
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
                 if (channel_changed || stokes_changed) {
                     fmt::print("Animator: Change frame in {} ms\n", dt_change_frame * 1e-3);
                 }
