@@ -959,7 +959,15 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
                         subset_row_end - subset_row_start, precision);
                 }
             };
+            auto t_start_compress_raster_data = std::chrono::high_resolution_clock::now();
             tbb::parallel_for(range, loop);
+            // Measure duration for compress raster data
+            if (_verbose) {
+                auto t_end_compress_raster_data = std::chrono::high_resolution_clock::now();
+                auto dt_get_raster_data =
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_raster_data - t_start_compress_raster_data).count();
+                fmt::print("Compress raster data in {} ms\n", dt_get_raster_data * 1e-3);
+            }
 
             // Complete message
             for (auto i = 0; i < num_subsets_setting; i++) {
@@ -1009,10 +1017,10 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     bool write_lock(false);
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
 
-    if (mean_filter && mip > 1) {
+    auto range = tbb::blocked_range<size_t>(0, num_rows_region);
+    auto loop = [&](const tbb::blocked_range<size_t>& r) {
+        if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
-        auto loop = [&](const tbb::blocked_range<size_t>& r) {
             for (size_t j = r.begin(); j != r.end(); ++j) {
                 for (size_t i = 0; i != row_length_region; ++i) {
                     float pixel_sum = 0;
@@ -1039,12 +1047,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                     image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
                 }
             }
-        };
-        tbb::parallel_for(range, loop);
-    } else {
-        // Nearest neighbour filtering
-        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
-        auto loop = [&](const tbb::blocked_range<size_t>& r) {
+        } else {
+            // Nearest neighbour filtering
             for (size_t j = r.begin(); j != r.end(); ++j) {
                 for (auto i = 0; i < row_length_region; i++) {
                     auto image_row = y + j * mip;
@@ -1053,8 +1057,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                 }
             }
         };
-        tbb::parallel_for(range, loop);
-    }
+    };
+    tbb::parallel_for(range, loop);
     return true;
 }
 
