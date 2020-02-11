@@ -407,11 +407,19 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
             }
         };
 
+        auto t_start_get_tile_data = std::chrono::high_resolution_clock::now();
         tbb::task_group g;
         for (int j = 0; j < stride; j++) {
             g.run([=] { lambda(j); });
         }
         g.wait();
+        // Measure duration for get tiled data
+        if (_verbose_logging) {
+            auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
+            auto dt_get_tile_data =
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
+            fmt::print("Get tile data in {} ms\n", dt_get_tile_data * 1e-3);
+        }
     }
 }
 
@@ -446,7 +454,8 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                 auto dt_set_image_channel =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_channel - t_start_set_image_channel).count();
                 fmt::print("Change {} from {} to {} in {} ms\n", stokes_changed ? "stokes" : "channel",
-                    stokes_changed ? stokes_current : channel_current, stokes_changed ? stokes_target : channel_target, dt_set_image_channel * 1e-3);
+                    stokes_changed ? stokes_current : channel_current, stokes_changed ? stokes_target : channel_target,
+                    dt_set_image_channel * 1e-3);
             }
 
             // Send any required tiles if they have been requested
