@@ -750,13 +750,19 @@ bool Frame::SetImageCache() {
         return false;
     }
 
+    auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
     if (!_loader->GetSlice(tmp, section)) {
         Log(_session_id, "Loading image cache failed.");
         return false;
+    } else if(_verbose) { // Measure duration for load image
+        auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
+        auto dt_set_image_cache = std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
+        fmt::print("Load image to cache in {} ms\n", dt_set_image_cache * 1e-3);
     }
+    
     return true;
 }
 
