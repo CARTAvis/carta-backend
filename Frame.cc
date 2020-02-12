@@ -1056,8 +1056,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     if (_verbose) {
         auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
         auto dt_raster_data_filter =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter)
-            .count();
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
         fmt::print("Filter raster data in {} ms\n", dt_raster_data_filter * 1e-3);
     }
     return true;
