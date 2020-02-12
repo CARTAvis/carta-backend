@@ -418,7 +418,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
             auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_get_tile_data =
                 std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
-            fmt::print("Get tile data in {} ms\n", dt_get_tile_data * 1e-3);
+            fmt::print("Get tile data group in {} ms\n", dt_get_tile_data * 1e-3);
         }
     }
 }
@@ -436,7 +436,6 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             bool channel_changed(channel_target != channel_current);
             bool stokes_changed(stokes_target != stokes_current);
 
-            auto t_start_set_image_channel = std::chrono::high_resolution_clock::now();
             if (frame->SetImageChannels(channel_target, stokes_target, err_message)) {
                 // RESPONSE: send data for all regions
                 bool send_histogram(true);
@@ -447,15 +446,6 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
                 if (!err_message.empty()) {
                     SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
                 }
-            }
-            // Measure duration for change image channel or stokes
-            if (_verbose_logging && (channel_changed || stokes_changed)) {
-                auto t_end_set_image_channel = std::chrono::high_resolution_clock::now();
-                auto dt_set_image_channel =
-                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_channel - t_start_set_image_channel).count();
-                fmt::print("Change {} from {} to {} in {} ms\n", stokes_changed ? "stokes" : "channel",
-                    stokes_changed ? stokes_current : channel_current, stokes_changed ? stokes_target : channel_target,
-                    dt_set_image_channel * 1e-3);
             }
 
             // Send any required tiles if they have been requested
@@ -796,6 +786,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     close_file_msg.set_file_id(-1);
     OnCloseFile(close_file_msg);
 
+    auto t_start_resume = std::chrono::high_resolution_clock::now();
     // Open images
     for (int i = 0; i < message.images_size(); ++i) {
         const CARTA::ImageProperties& image = message.images(i);
@@ -839,6 +830,12 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
                 }
             }
         }
+    }
+    // Measure duration for resume
+    if (_verbose_logging) {
+        auto t_end_resume = std::chrono::high_resolution_clock::now();
+        auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
+        fmt::print("Resume in {} ms\n", dt_resume * 1e-3);
     }
 
     // RESPONSE

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <thread>
+#include "fmt/format.h"
 
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 #include <imageanalysis/Annotations/AnnotationBase.h>
@@ -1103,11 +1104,19 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 return false;
             }
 
+            auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+            // Measure duration for compress tiled data
+            if (_verbose) {
+                auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
+                auto dt_compress_tile_data =
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
+                fmt::print("Compress tile data in {} ms\n", dt_compress_tile_data * 1e-3);
+            }
 
             return !(ChannelsChanged(channel, stokes));
         }
@@ -1150,6 +1159,8 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
         int curr_stokes(CurrentStokes());
         histogram_data->set_stokes(curr_stokes);
         histogram_data->set_progress(1.0); // send entire histogram
+
+        auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
         for (size_t i = 0; i < num_histograms; ++i) {
             // get histogram requirements for this index
             CARTA::SetHistogramRequirements_HistogramConfig config = region->GetHistogramConfig(i);
@@ -1212,6 +1223,13 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                     }
                 }
             }
+        }
+        // Measure duration for region histogram
+        if (_verbose) {
+            auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
+            auto dt_region_histogram =
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
+            fmt::print("Fill region histogram in {} ms\n", dt_region_histogram * 1e-3);
         }
         histogram_ok = (histogram_data->histograms_size() > 0); // do not send if no histograms
     }
