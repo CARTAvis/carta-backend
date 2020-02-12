@@ -959,15 +959,7 @@ bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::
                         subset_row_end - subset_row_start, precision);
                 }
             };
-            auto t_start_compress_raster_data = std::chrono::high_resolution_clock::now();
             tbb::parallel_for(range, loop);
-            // Measure duration for compress raster data
-            if (_verbose) {
-                auto t_end_compress_raster_data = std::chrono::high_resolution_clock::now();
-                auto dt_get_raster_data =
-                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_raster_data - t_start_compress_raster_data).count();
-                fmt::print("Compress raster data in {} ms\n", dt_get_raster_data * 1e-3);
-            }
 
             // Complete message
             for (auto i = 0; i < num_subsets_setting; i++) {
@@ -1020,7 +1012,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     auto range = tbb::blocked_range<size_t>(0, num_rows_region);
     auto loop = [&](const tbb::blocked_range<size_t>& r) {
         if (mean_filter && mip > 1) {
-        // Perform down-sampling by calculating the mean for each MIPxMIP block
+            // Perform down-sampling by calculating the mean for each MIPxMIP block
             for (size_t j = r.begin(); j != r.end(); ++j) {
                 for (size_t i = 0; i != row_length_region; ++i) {
                     float pixel_sum = 0;
@@ -1058,7 +1050,16 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
             }
         };
     };
+    auto t_start_raster_data_filter = std::chrono::high_resolution_clock::now();
     tbb::parallel_for(range, loop);
+    // Measure duration for filter raster data
+    if (_verbose) {
+        auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
+        auto dt_raster_data_filter =
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter)
+            .count();
+        fmt::print("Compress raster data in {} ms\n", dt_raster_data_filter * 1e-3);
+    }
     return true;
 }
 
