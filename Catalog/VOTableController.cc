@@ -396,6 +396,7 @@ void Controller::Print(CARTA::CatalogFilterRequest filter_request) {
     std::cout << "subset_data_size:   " << filter_request.subset_data_size() << std::endl;
     std::cout << "subset_start_index: " << filter_request.subset_start_index() << std::endl;
     Print(filter_request.image_bounds());
+    std::cout << "image_file_id:      " << filter_request.image_file_id() << std::endl;
     std::cout << "region_id:          " << filter_request.region_id() << std::endl;
     std::cout << std::endl;
 }
@@ -424,8 +425,9 @@ void Controller::Print(CARTA::CatalogImageBounds catalog_image_bounds) {
 
 void Controller::Print(CARTA::CatalogFilterResponse filter_response) {
     std::cout << "CARTA::CatalogFilterResponse:" << std::endl;
-    std::cout << "file_id:   " << filter_response.file_id() << std::endl;
-    std::cout << "region_id: " << filter_response.region_id() << std::endl;
+    std::cout << "file_id:       " << filter_response.file_id() << std::endl;
+    std::cout << "image_file_id: " << filter_response.image_file_id() << std::endl;
+    std::cout << "region_id:     " << filter_response.region_id() << std::endl;
     for (int i = 0; i < filter_response.headers_size(); ++i) {
         std::cout << "headers(" << i << "):" << std::endl;
         auto header = filter_response.headers(i);

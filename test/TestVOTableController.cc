@@ -187,6 +187,7 @@ void TestOnFilterRequest() {
     filter_request.set_file_id(0);
     filter_request.set_subset_start_index(0);
     filter_request.set_subset_data_size(-1);
+    filter_request.set_image_file_id(0);
     filter_request.set_region_id(0);
 
     auto catalog_image_bounds = filter_request.mutable_image_bounds();
@@ -223,6 +224,7 @@ void TestOnFilterRequest2() {
     filter_request.set_file_id(0);
     filter_request.set_subset_start_index(0);
     filter_request.set_subset_data_size(10);
+    filter_request.set_image_file_id(0);
     filter_request.set_region_id(0);
 
     auto catalog_image_bounds = filter_request.mutable_image_bounds();
@@ -270,6 +272,7 @@ void TestOnFilterRequest3() {
     filter_request.set_file_id(0);
     filter_request.set_subset_start_index(0);
     filter_request.set_subset_data_size(10);
+    filter_request.set_image_file_id(0);
     filter_request.set_region_id(0);
 
     auto catalog_image_bounds = filter_request.mutable_image_bounds();
@@ -306,6 +309,7 @@ void TestOnFilterRequest4() {
     filter_request.set_file_id(0);
     filter_request.set_subset_start_index(0);
     filter_request.set_subset_data_size(100);
+    filter_request.set_image_file_id(0);
     filter_request.set_region_id(0);
 
     filter_request.add_hided_headers("z");
@@ -337,6 +341,7 @@ void TestOnFilterRequest5() {
     filter_request.set_file_id(0);
     filter_request.set_subset_start_index(0);
     filter_request.set_subset_data_size(10);
+    filter_request.set_image_file_id(0);
     filter_request.set_region_id(0);
 
     filter_request.add_hided_headers("prx10");
