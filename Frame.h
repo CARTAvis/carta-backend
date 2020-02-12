@@ -25,11 +25,11 @@
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
-#include "Contouring.h"
+#include "DataStream/Contouring.h"
+#include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
 #include "InterfaceConstants.h"
 #include "Region/Region.h"
-#include "Tile.h"
 
 struct ViewSettings {
     CARTA::ImageBounds image_bounds;
@@ -263,8 +263,7 @@ private:
     bool _cache_loaded;                 // channel cache is set
 
     // Region
-    std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID
-    bool _cursor_set;                                                 // cursor region set by frontend, not internally
+    bool _cursor_set; // cursor region set by frontend, not internally
     // Current cursor's x-y coordinate
     CursorXy _cursor_xy;
 

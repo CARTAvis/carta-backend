@@ -84,7 +84,10 @@ set(SOURCE_FILES
         Main.cc
         Session.cc
         Frame.cc
-        Compression.cc
+        DataStream/Compression.cc
+        DataStream/Contouring.cc
+        DataStream/Smoothing.cc
+        DataStream/Tile.cc
         ImageData/Hdf5Attributes.cc
         ImageData/FileLoader.cc
         ImageData/Hdf5Loader.cc
@@ -94,17 +97,14 @@ set(SOURCE_FILES
         FileList/FileInfoLoader.cc
         FileList/FileListHandler.cc
         FileList/FitsHduList.cc
+        Region/Ds9Parser.cc
         Region/Region.cc
         Region/RegionStats.cc
         Region/RegionProfiler.cc
         Region/Histogram.cc
         OnMessageTask.cc
         FileSettings.cc
-        Util.cc
-        Tile.cc
-        Ds9Parser.cc
-        Contouring.cc
-        Smoothing.cc)
+        Util.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

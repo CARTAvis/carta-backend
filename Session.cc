@@ -22,7 +22,7 @@
 #include <zstd.h>
 
 #include "Carta.h"
-#include "Compression.h"
+#include "DataStream/Compression.h"
 #include "EventHeader.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"

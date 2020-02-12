@@ -220,6 +220,9 @@ private:
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
     std::mutex _frame_mutex;                                 // lock frames to create/destroy
 
+    // Region
+    std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // <region_id, Region>: one per region
+
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
 

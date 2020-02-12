@@ -12,7 +12,7 @@
 #include <imageanalysis/Annotations/AnnRotBox.h>
 
 #include "Ds9Parser.h"
-#include "Util.h"
+#include "../Util.h"
 
 using namespace carta;
 

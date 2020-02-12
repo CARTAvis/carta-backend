@@ -11,10 +11,10 @@
 #include <imageanalysis/Annotations/AnnotationBase.h>
 #include <imageanalysis/Annotations/RegionTextList.h>
 
-#include "Compression.h"
-#include "Contouring.h"
-#include "Ds9Parser.h"
-#include "Smoothing.h"
+#include "DataStream/Compression.h"
+#include "DataStream/Contouring.h"
+#include "DataStream/Smoothing.h"
+#include "Region/Ds9Parser.h"
 
 using namespace carta;
 
