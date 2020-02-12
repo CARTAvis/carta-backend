@@ -186,10 +186,10 @@ std::string Controller::GetFileSize(std::string file_path_name) {
     return (std::to_string(file_status.st_size) + " (bytes)");
 }
 
-int Controller::GetFileKBSize(std::string file_path_name) {
+int64_t Controller::GetFileKBSize(std::string file_path_name) {
     struct stat file_status;
     stat(file_path_name.c_str(), &file_status);
-    return (std::round((float)file_status.st_size / 1000));
+    return file_status.st_size;
 }
 
 void Controller::ParseBasePath(std::string& file_path_name) {
@@ -262,7 +262,7 @@ void Controller::Print(CARTA::CatalogListResponse file_list_response) {
 void Controller::Print(CARTA::CatalogFileInfo file_info) {
     std::cout << "name:        " << file_info.name() << std::endl;
     std::cout << "type:        " << GetFileType(file_info.type()) << std::endl;
-    std::cout << "file_size:   " << file_info.file_size() << "(KB)" << std::endl;
+    std::cout << "file_size:   " << file_info.file_size() << " (Byte)" << std::endl;
     std::cout << "description: " << file_info.description() << std::endl;
     std::cout << std::endl;
 }

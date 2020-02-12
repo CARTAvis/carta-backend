@@ -56,7 +56,7 @@ public:
 private:
     static std::string GetCurrentWorkingPath();
     static std::string GetFileSize(std::string file_path_name);
-    static int GetFileKBSize(std::string file_path_name);
+    static int64_t GetFileKBSize(std::string file_path_name);
     static void ParseBasePath(std::string& file_path_name);
     static std::string Concatenate(std::string directory, std::string filename);
     void CloseFile(int file_id);
