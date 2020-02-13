@@ -526,14 +526,6 @@ void VOTableCarrier::GetFilteredData(
             partial_results_callback(filter_response);
         }
     }
-
-    if (latest_progress < CATALOG_FILTER_COMPLETE) {
-        // Send final results by the callback function
-        filter_response.set_progress(1.0);
-        filter_response.set_subset_data_size(accumulated_data_size);
-        filter_response.set_subset_end_index(row_index);
-        partial_results_callback(filter_response);
-    }
 }
 
 size_t VOTableCarrier::GetTableRowNumber() {
