@@ -36,9 +36,7 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
             if (strcmp(current_entry->d_name, ".") != 0 && strcmp(current_entry->d_name, "..") != 0) {
                 std::string file_name = current_entry->d_name;
                 // Check is it a XML file
-                if ((file_name.substr(file_name.find_last_of(".") + 1) == "xml") ||
-                    (file_name.substr(file_name.find_last_of(".") + 1) == "vot") ||
-                    (file_name.substr(file_name.find_last_of(".") + 1) == "votable")) {
+                if (IsVOTableFile(file_name)) {
                     // Check is it a VOTable XML file
                     std::string path_name = Concatenate(directory, file_name);
                     if (VOTableParser::IsVOTable(path_name)) {
@@ -171,6 +169,18 @@ void Controller::OnFilterRequest(
     }
     _carriers[file_id]->GetFilteredData(
         filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
+}
+
+bool Controller::IsVOTableFile(std::string file_name) {
+    bool result(false);
+    std::size_t found = file_name.find_last_of(".");
+    if (found < file_name.length()) {
+        if ((file_name.substr(found + 1) == "xml") || (file_name.substr(found + 1) == "vot") ||
+            (file_name.substr(found + 1) == "votable")) {
+            result = true;
+        }
+    }
+    return result;
 }
 
 std::string Controller::GetCurrentWorkingPath() {

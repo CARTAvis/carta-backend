@@ -54,6 +54,7 @@ public:
     static std::string GetComparisonOperator(CARTA::ComparisonOperator comparison_operator);
 
 private:
+    static bool IsVOTableFile(std::string file_name);
     static std::string GetCurrentWorkingPath();
     static std::string GetFileSize(std::string file_path_name);
     static int64_t GetFileKBSize(std::string file_path_name);
