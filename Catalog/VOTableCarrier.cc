@@ -359,7 +359,8 @@ void VOTableCarrier::GetFilteredData(
     }
 
     // Loop the table row data
-    float last_progress = _check_filter_progress_interval;
+    auto t_partial_filter_start = std::chrono::high_resolution_clock::now();
+    float latest_progress = 0;
     int x_axis_count = 0;
     int y_axis_count = 0;
     int row_index = subset_start_index;
@@ -508,8 +509,15 @@ void VOTableCarrier::GetFilteredData(
 
         ++row_index; // Proceed to the next row
 
-        if ((progress > last_progress) || (progress >= 1.0)) {
-            last_progress = progress + _check_filter_progress_interval;
+        // get the time elapse for this step
+        auto t_partial_filter_end = std::chrono::high_resolution_clock::now();
+        auto dt_partial_filter = std::chrono::duration<double, std::milli>(t_partial_filter_end - t_partial_filter_start).count();
+
+        if ((dt_partial_filter > TARGET_PARTIAL_CATALOG_FILTER_TIME) || (progress >= CATALOG_FILTER_COMPLETE)) {
+            // Reset the timer and latest progress
+            t_partial_filter_start = std::chrono::high_resolution_clock::now();
+            latest_progress = progress;
+
             filter_response.set_subset_data_size(accumulated_data_size);
             filter_response.set_subset_end_index(row_index);
             filter_response.set_progress(progress);
@@ -519,7 +527,7 @@ void VOTableCarrier::GetFilteredData(
         }
     }
 
-    if (last_progress < 1.0) {
+    if (latest_progress < CATALOG_FILTER_COMPLETE) {
         // Send final results by the callback function
         filter_response.set_progress(1.0);
         filter_response.set_subset_data_size(accumulated_data_size);

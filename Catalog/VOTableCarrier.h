@@ -57,8 +57,6 @@ class VOTableCarrier {
         }
     };
 
-    const float _check_filter_progress_interval = 0.1;
-
 public:
     VOTableCarrier(){};
     ~VOTableCarrier(){};
