@@ -524,6 +524,32 @@ void VOTableCarrier::GetFilteredData(
 
             // Send partial results by the callback function
             partial_results_callback(filter_response);
+
+            // Clear the columns_data message
+            for (int i = 0; i < tmp_columns_data->bool_column_size(); ++i) {
+                auto tmp_column = tmp_columns_data->mutable_bool_column(i);
+                tmp_column->clear_bool_column();
+            }
+            for (int i = 0; i < tmp_columns_data->string_column_size(); ++i) {
+                auto tmp_column = tmp_columns_data->mutable_string_column(i);
+                tmp_column->clear_string_column();
+            }
+            for (int i = 0; i < tmp_columns_data->int_column_size(); ++i) {
+                auto tmp_column = tmp_columns_data->mutable_int_column(i);
+                tmp_column->clear_int_column();
+            }
+            for (int i = 0; i < tmp_columns_data->ll_column_size(); ++i) {
+                auto tmp_column = tmp_columns_data->mutable_ll_column(i);
+                tmp_column->clear_ll_column();
+            }
+            for (int i = 0; i < tmp_columns_data->float_column_size(); ++i) {
+                auto tmp_column = tmp_columns_data->mutable_float_column(i);
+                tmp_column->clear_float_column();
+            }
+            for (int i = 0; i < tmp_columns_data->double_column_size(); ++i) {
+                auto tmp_column = tmp_columns_data->mutable_double_column(i);
+                tmp_column->clear_double_column();
+            }
         }
     }
 
