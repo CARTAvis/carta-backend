@@ -19,7 +19,6 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/import_region.pb.h>
-#include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>

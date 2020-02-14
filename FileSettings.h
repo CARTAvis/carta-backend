@@ -11,7 +11,6 @@
 #include <tbb/queuing_rw_mutex.h>
 
 #include <carta-protobuf/set_cursor.pb.h>
-#include <carta-protobuf/set_image_view.pb.h>
 
 class Session;
 
