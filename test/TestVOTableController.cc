@@ -85,7 +85,11 @@ void TestOnFileListRequest() {
 
 void TestOnFileListRequest(CARTA::CatalogListRequest file_list_request) {
     CARTA::CatalogListResponse file_list_response;
-    Controller::OnFileListRequest(file_list_request, file_list_response);
+    cout << "Create an unique ptr for the Controller." << endl;
+    _controller = unique_ptr<Controller>(new Controller());
+    if (_controller) {
+        _controller->OnFileListRequest(file_list_request, file_list_response);
+    }
     Controller::Print(file_list_request);
     Controller::Print(file_list_response);
 }
@@ -119,7 +123,11 @@ void TestOnFileInfoRequest() {
 
 void TestOnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request) {
     CARTA::CatalogFileInfoResponse file_info_response;
-    Controller::OnFileInfoRequest(file_info_request, file_info_response);
+    cout << "Create an unique ptr for the Controller." << endl;
+    _controller = unique_ptr<Controller>(new Controller());
+    if (_controller) {
+        _controller->OnFileInfoRequest(file_info_request, file_info_response);
+    }
     Controller::Print(file_info_request);
     Controller::Print(file_info_response);
 }

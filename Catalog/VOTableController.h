@@ -25,8 +25,8 @@ public:
     Controller(){};
     ~Controller();
 
-    static void OnFileListRequest(CARTA::CatalogListRequest file_list_request, CARTA::CatalogListResponse& file_list_response);
-    static void OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request, CARTA::CatalogFileInfoResponse& file_info_response);
+    void OnFileListRequest(CARTA::CatalogListRequest file_list_request, CARTA::CatalogListResponse& file_list_response);
+    void OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request, CARTA::CatalogFileInfoResponse& file_info_response);
     void OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CARTA::OpenCatalogFileAck& open_file_response);
     void OnCloseFileRequest(CARTA::CloseCatalogFile close_file_request);
     void OnFilterRequest(
@@ -54,14 +54,14 @@ public:
     static std::string GetComparisonOperator(CARTA::ComparisonOperator comparison_operator);
 
 private:
-    static bool IsVOTableFile(std::string file_name);
-    static std::string GetCurrentWorkingPath();
-    static std::string GetFileSize(std::string file_path_name);
-    static int64_t GetFileKBSize(std::string file_path_name);
-    static void ParseBasePath(std::string& file_path_name);
-    static std::string Concatenate(std::string directory, std::string filename);
+    bool IsVOTableFile(std::string file_name);
+    std::string GetCurrentWorkingPath();
+    std::string GetFileSize(std::string file_path_name);
+    int64_t GetFileKBSize(std::string file_path_name);
+    void ParseBasePath(std::string& file_path_name);
+    std::string Concatenate(std::string directory, std::string filename);
     void CloseFile(int file_id);
-    static void GetPathName(std::string& folder);
+    void GetPathName(std::string& folder);
 
     std::unordered_map<int, VOTableCarrier*> _carriers; // The unordered map for <File Id, VOTableCarrier Ptr>
     std::mutex _carriers_mutex;
