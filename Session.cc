@@ -834,16 +834,16 @@ void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uin
     CARTA::CatalogListResponse file_list_response;
     if (_catalog_controller) {
         _catalog_controller->OnFileListRequest(file_list_request, file_list_response);
+        SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
     }
-    SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
 }
 
 void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {
     CARTA::CatalogFileInfoResponse file_info_response;
     if (_catalog_controller) {
         _catalog_controller->OnFileInfoRequest(file_info_request, file_info_response);
+        SendEvent(CARTA::EventType::CATALOG_FILE_INFO_RESPONSE, request_id, file_info_response);
     }
-    SendEvent(CARTA::EventType::CATALOG_FILE_INFO_RESPONSE, request_id, file_info_response);
 }
 
 void Session::OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id) {
