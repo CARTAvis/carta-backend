@@ -57,7 +57,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
-    _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller());
+    _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller(_root_folder));
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));

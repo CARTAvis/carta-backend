@@ -3,12 +3,13 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 #include "VOTableCarrier.h"
 #include "VOTableParser.h"
 
 using namespace catalog;
+
+Controller::Controller(std::string root) : _root_folder(root) {}
 
 Controller::~Controller() {
     std::unique_lock<std::mutex> lock(_carriers_mutex);
@@ -63,18 +64,18 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
         message = "Can not open the directory: " + directory;
     }
 
+    // Fill the file list response
+    file_list_response.set_success(success);
+    file_list_response.set_message(message);
+    GetRelativePath(directory);
+    file_list_response.set_directory(directory);
+
     // Get the directory parent
     std::string parent_directory;
     if (directory.find("/") != std::string::npos) {
         parent_directory = directory.substr(0, directory.find_last_of("/"));
     }
-
-    // Fill the file list response
-    file_list_response.set_success(success);
-    file_list_response.set_message(message);
-    GetPathName(directory);
-    file_list_response.set_directory(directory);
-    GetPathName(parent_directory);
+    GetRelativePath(parent_directory);
     file_list_response.set_parent(parent_directory);
 }
 
@@ -183,13 +184,6 @@ bool Controller::IsVOTableFile(std::string file_name) {
     return result;
 }
 
-std::string Controller::GetCurrentWorkingPath() {
-    char buff[FILENAME_MAX];
-    getcwd(buff, FILENAME_MAX);
-    std::string current_working_path(buff);
-    return current_working_path;
-}
-
 std::string Controller::GetFileSize(std::string file_path_name) {
     struct stat file_status;
     stat(file_path_name.c_str(), &file_status);
@@ -203,14 +197,18 @@ int64_t Controller::GetFileKBSize(std::string file_path_name) {
 }
 
 void Controller::ParseBasePath(std::string& file_path_name) {
-    // Get the current working path and remove the "/" at the start of the path name
-    std::string base_path = GetCurrentWorkingPath().replace(0, 1, "");
-    // Replace the "$BASE" with the current working path
+    std::string root_folder = _root_folder;
+    root_folder.replace(0, 1, ""); // Remove "/" at the start of root path name
+    // Replace the "$BASE" with "."
     std::string alias_base_path("$BASE");
-    if (file_path_name.find(alias_base_path) != std::string::npos) {
-        file_path_name.replace(file_path_name.find(alias_base_path), alias_base_path.length(), base_path);
+    if (file_path_name.find(alias_base_path) == 0) { // For the path name "$BASE/images"
+        file_path_name.replace(file_path_name.find(alias_base_path), alias_base_path.length(), ".");
+    } else if (!root_folder.empty() && file_path_name.find(root_folder) != 0) {
+        // For the path name "base/path/images"
+        file_path_name = _root_folder + "/" + file_path_name; // Change to "/root/path/base/path/images"
+    } else {                                                  // For the path "root/path/base/path/images"
+        file_path_name = "/" + file_path_name;                // Change to "/root/path/base/path/images"
     }
-    file_path_name = "/" + file_path_name;
 }
 
 std::string Controller::Concatenate(std::string directory, std::string filename) {
@@ -232,12 +230,15 @@ void Controller::CloseFile(int file_id) {
     }
 }
 
-void Controller::GetPathName(std::string& folder) {
-    // For example: change to "relative/path"
+void Controller::GetRelativePath(std::string& folder) {
+    // Remove root folder path from given folder string
     if (folder.find("./") == 0) {
         folder.replace(0, 2, ""); // remove leading "./"
-    } else if (folder.front() == '/') {
-        folder.replace(0, 1, ""); // remove leading '/'
+    } else if (folder.find(_root_folder) == 0) {
+        folder.replace(0, _root_folder.length(), ""); // remove root folder path
+        if (folder.front() == '/') {
+            folder.replace(0, 1, ""); // remove leading '/'
+        }
     }
     if (folder.empty()) {
         folder = ".";

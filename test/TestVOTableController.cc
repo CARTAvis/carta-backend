@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include <iomanip>
 #include <iostream>
 
@@ -7,6 +9,7 @@ using namespace catalog;
 using namespace std;
 
 unique_ptr<Controller> _controller(nullptr);
+string _root_folder = "/";
 
 void TestOnFileListRequest();
 void TestOnFileListRequest(CARTA::CatalogListRequest file_list_request);
@@ -20,6 +23,8 @@ void TestOnFilterRequest3();
 void TestOnFilterRequest4();
 void TestOnFilterRequest5();
 void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request);
+
+string GetCurrentWorkingPath();
 
 int main(int argc, char* argv[]) {
     int test_case;
@@ -70,23 +75,29 @@ int main(int argc, char* argv[]) {
 // Test functions
 
 void TestOnFileListRequest() {
+    // Get the current working path and remove the "/" at the start of the path name
+    string base_path = GetCurrentWorkingPath().replace(0, 1, "");
+
     CARTA::CatalogListRequest file_list_request;
-    file_list_request.set_directory("$BASE/images/votable");
+    file_list_request.set_directory(base_path + "/images/votable");
     TestOnFileListRequest(file_list_request);
 
     CARTA::CatalogListRequest file_list_request2;
-    file_list_request2.set_directory("$BASE");
+    file_list_request2.set_directory(base_path);
     TestOnFileListRequest(file_list_request2);
 
     CARTA::CatalogListRequest file_list_request3;
-    file_list_request3.set_directory("$BASE/images");
+    file_list_request3.set_directory(base_path + "/images");
     TestOnFileListRequest(file_list_request3);
 }
 
 void TestOnFileListRequest(CARTA::CatalogListRequest file_list_request) {
     CARTA::CatalogListResponse file_list_response;
     cout << "Create an unique ptr for the Controller." << endl;
-    _controller = unique_ptr<Controller>(new Controller());
+
+    string root_folder = GetCurrentWorkingPath();
+
+    _controller = unique_ptr<Controller>(new Controller(root_folder));
     if (_controller) {
         _controller->OnFileListRequest(file_list_request, file_list_response);
     }
@@ -124,7 +135,7 @@ void TestOnFileInfoRequest() {
 void TestOnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_request) {
     CARTA::CatalogFileInfoResponse file_info_response;
     cout << "Create an unique ptr for the Controller." << endl;
-    _controller = unique_ptr<Controller>(new Controller());
+    _controller = unique_ptr<Controller>(new Controller(_root_folder));
     if (_controller) {
         _controller->OnFileInfoRequest(file_info_request, file_info_response);
     }
@@ -166,7 +177,7 @@ void TestOnOpenFileRequest(CARTA::OpenCatalogFile open_file_request) {
     // Open file
     CARTA::OpenCatalogFileAck open_file_response;
     cout << "Create an unique ptr for the Controller." << endl;
-    _controller = unique_ptr<Controller>(new Controller());
+    _controller = unique_ptr<Controller>(new Controller(_root_folder));
     if (_controller) {
         _controller->OnOpenFileRequest(open_file_request, open_file_response);
     }
@@ -394,7 +405,7 @@ void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::Catalo
     // Open file
     CARTA::OpenCatalogFileAck open_file_response;
     cout << "Create an unique ptr for the Controller." << endl;
-    _controller = unique_ptr<Controller>(new Controller());
+    _controller = unique_ptr<Controller>(new Controller(_root_folder));
     if (_controller) {
         _controller->OnOpenFileRequest(open_file_request, open_file_response);
     }
@@ -419,4 +430,11 @@ void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::Catalo
     // Delete the Controller
     cout << "Reset the unique ptr for the Controller." << endl;
     _controller.reset();
+}
+
+string GetCurrentWorkingPath() {
+    char buff[FILENAME_MAX];
+    getcwd(buff, FILENAME_MAX);
+    std::string current_working_path(buff);
+    return current_working_path;
 }

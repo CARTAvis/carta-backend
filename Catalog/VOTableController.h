@@ -10,6 +10,7 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -19,10 +20,11 @@ namespace catalog {
 class VOTableCarrier;
 
 class Controller {
+    std::string _root_folder;
     const int _default_preview_row_numbers = 50;
 
 public:
-    Controller(){};
+    Controller(std::string root);
     ~Controller();
 
     void OnFileListRequest(CARTA::CatalogListRequest file_list_request, CARTA::CatalogListResponse& file_list_response);
@@ -55,13 +57,12 @@ public:
 
 private:
     bool IsVOTableFile(std::string file_name);
-    std::string GetCurrentWorkingPath();
     std::string GetFileSize(std::string file_path_name);
     int64_t GetFileKBSize(std::string file_path_name);
     void ParseBasePath(std::string& file_path_name);
     std::string Concatenate(std::string directory, std::string filename);
     void CloseFile(int file_id);
-    void GetPathName(std::string& folder);
+    void GetRelativePath(std::string& folder);
 
     std::unordered_map<int, VOTableCarrier*> _carriers; // The unordered map for <File Id, VOTableCarrier Ptr>
     std::mutex _carriers_mutex;

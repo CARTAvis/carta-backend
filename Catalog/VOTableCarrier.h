@@ -1,6 +1,7 @@
 #ifndef CARTA_BACKEND__VOTABLECARRIER_H_
 #define CARTA_BACKEND__VOTABLECARRIER_H_
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <unordered_map>
