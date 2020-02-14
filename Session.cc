@@ -926,6 +926,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                 // stats for entire cube
                 carta::BasicStats<float> cube_stats;
                 size_t num_channels(_frames.at(file_id)->NumChannels());
+                auto t_start_cube_histogram = std::chrono::high_resolution_clock::now();
                 for (size_t chan = 0; chan < num_channels; ++chan) {
                     // stats for this channel
                     carta::BasicStats<float> channel_stats;
@@ -952,6 +953,14 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         t_start = t_end;
                     }
                 }
+                // Measure duration for cube histogram
+                if (_verbose_logging) {
+                    auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
+                    auto dt_cube_histogram =
+                        std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
+                    fmt::print("Fill cube histogram in {} ms\n", dt_cube_histogram * 1e-3);
+                }
+
                 // save min,max in cube region
                 if (!_histogram_context.is_group_execution_cancelled()) {
                     _frames.at(file_id)->SetRegionBasicStats(region_id, channel, stokes, cube_stats);
