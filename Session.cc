@@ -373,13 +373,13 @@ void Session::OnCloseFile(const CARTA::CloseFile& message) {
     DeleteFrame(message.file_id());
 }
 
-void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
+void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data) {
     auto file_id = message.file_id();
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
     if (!message.tiles().empty() && _frames.count(file_id)) {
-        if (AnimationRunning()) {
-            // Update view settings and skip sending data if in an animation
+        if (skip_data) {
+            // Update view settings and skip sending data
             _frames.at(file_id)->SetAnimationViewSettings(message);
             return;
         }

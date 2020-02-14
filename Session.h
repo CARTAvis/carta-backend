@@ -55,7 +55,7 @@ public:
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
     void OnCloseFile(const CARTA::CloseFile& message);
-    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message);
+    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);

@@ -113,7 +113,7 @@ tbb::task* AnimationTask::execute() {
 }
 
 tbb::task* OnAddRequiredTilesTask::execute() {
-    _session->OnAddRequiredTiles(_message);
+    _session->OnAddRequiredTiles(_message, _session->AnimationRunning());
     return nullptr;
 }
 
