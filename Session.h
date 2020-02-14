@@ -187,7 +187,6 @@ private:
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
     // Send data streams
-    //bool SendRasterImageData(int file_id, bool send_histogram = false);
     // Only set channel_changed and stokes_changed if they are the only trigger for new data
     // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
     bool SendSpatialProfileData(int file_id, int region_id, bool stokes_changed = false);

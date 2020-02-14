@@ -1034,35 +1034,6 @@ void Session::CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fi
     msg.set_progress(progress);
 }
 
-//bool Session::SendRasterImageData(int file_id, bool send_histogram) {
-//    // return true if data sent
-//    bool data_sent(false);
-//
-//    if (_frames.count(file_id)) {
-//        try {
-//            CARTA::RasterImageData raster_data;
-//            raster_data.set_file_id(file_id);
-//            std::string message;
-//            if (_frames.at(file_id)->FillRasterImageData(raster_data, message)) {
-//                if (send_histogram) {
-//                    CARTA::RegionHistogramData* histogram_data = GetRegionHistogramData(file_id, IMAGE_REGION_ID);
-//                    raster_data.set_allocated_channel_histogram_data(histogram_data);
-//                }
-//                SendFileEvent(file_id, CARTA::EventType::RASTER_IMAGE_DATA, 0, raster_data);
-//            } else {
-//                SendLogEvent(message, {"raster"}, CARTA::ErrorSeverity::ERROR);
-//            }
-//        } catch (std::out_of_range& range_error) {
-//            string error = fmt::format("File id {} closed", file_id);
-//            SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
-//        }
-//    } else {
-//        string error = fmt::format("File id {} not found", file_id);
-//        SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
-//    }
-//    return data_sent;
-//}
-
 bool Session::SendSpatialProfileData(int file_id, int region_id, bool stokes_changed) {
     // return true if data sent
     bool data_sent(false);
@@ -1311,8 +1282,8 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
 
     if (_frames.count(file_id)) {
         _frames.at(file_id)->SetAnimationViewSettings(msg.required_tiles());
-        _animation_object = std::unique_ptr<AnimationObject>(
-            new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame, frame_rate, looping, reverse_at_end, always_wait));
+        _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(
+            file_id, start_frame, first_frame, last_frame, delta_frame, frame_rate, looping, reverse_at_end, always_wait));
 
         ack_message.set_success(true);
         ack_message.set_message("Starting animation");
