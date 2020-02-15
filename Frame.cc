@@ -1375,6 +1375,7 @@ bool Frame::FillSpectralProfileData(
         // set profile parameters
         int curr_stokes(CurrentStokes());
         std::vector<SpectralProfile> profiles = region->GetSpectralProfiles();
+        auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
         for (auto& profile : profiles) {
             SpectralConfig spectral_config = profile.config;
             int config_stokes(spectral_config.stokes_index);
@@ -1489,6 +1490,13 @@ bool Frame::FillSpectralProfileData(
                     }
                 }
             }
+        }
+        // Measure duration for fill spectral profile
+        if (_verbose) {
+            auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+            auto dt_spectral_profile =
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+            fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
         }
     }
     return profile_ok;
