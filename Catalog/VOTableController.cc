@@ -62,6 +62,7 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
         closedir(current_path);
     } else {
         message = "Can not open the directory: " + directory;
+        return;
     }
 
     // Fill the file list response
@@ -94,6 +95,7 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
         success = true;
     } else {
         message = "Can not load the file: " + file_path_name;
+        return;
     }
 
     // Fill the file info response
@@ -128,6 +130,7 @@ void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CAR
         success = true;
     } else {
         message = "Can not load the file: " + file_path_name;
+        return;
     }
 
     // Fill the response of opening a file

@@ -57,8 +57,9 @@ void VOTableParser::CleanupParser() {
 void VOTableParser::Scan() {
     int result;
     do {
+        // 1 if the node was read successfully, 0 if there is no more nodes to read, or -1 in case of error
         result = xmlTextReaderRead(_reader);
-        if (result && _continue_read) {
+        if (result == 1 && _continue_read) {
             Parse(); // Parse the VOTable and store data in the VOTableCarrier
         } else {
             if (_verbose) {
@@ -74,6 +75,9 @@ void VOTableParser::Parse() {
     xmlChar* name_xmlchar;
     xmlChar* value_xmlchar;
     name_xmlchar = xmlTextReaderName(_reader);
+    if (name_xmlchar == NULL) {
+        name_xmlchar = xmlStrdup(BAD_CAST "--");
+    }
     value_xmlchar = xmlTextReaderValue(_reader);
 
     std::string name;
