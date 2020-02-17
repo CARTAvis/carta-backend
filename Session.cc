@@ -391,6 +391,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         start_message.set_stokes(stokes);
         start_message.set_end_sync(false);
         start_message.set_animation_id(animation_id);
+        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
 
         int n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
@@ -425,7 +426,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         final_message.set_stokes(stokes);
         final_message.set_end_sync(true);
         final_message.set_animation_id(animation_id);
-        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, final_message);
+        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
     }
 }
 
