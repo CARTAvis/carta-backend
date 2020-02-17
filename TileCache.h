@@ -52,6 +52,7 @@ public:
 private:
     using TilePtr = std::shared_ptr<std::vector<float>>;
     using TilePair = std::pair<Key, TilePtr>;
+    using TileIter = std::vector<float>::iterator;
 
     void CopyTileData(std::vector<float>& tile_data, TilePtr tile);
     TilePtr UnsafePeek(Key key);

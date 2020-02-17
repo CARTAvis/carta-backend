@@ -1,4 +1,5 @@
 #include "TileCache.h"
+#include <functional>
 
 std::ostream& operator<<(std::ostream& os, const TileCacheKey& key) {
     fmt::print(os, "x={}, y={}", key.x, key.y);
@@ -140,15 +141,40 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
             tiles.push_back(std::make_shared<std::vector<float>>(tile_widths.back() * tile_heights.back(), NAN));
         }
     }
-
-    for (int j = 0; j < data_height; j++) {
-        auto tile_y = j % TILE_SIZE;
-        auto tile_row = j / TILE_SIZE;
-        for (int i = 0; i < data_width; i++) {
-            auto tile_x = i % TILE_SIZE;
-            auto tile_col = i / TILE_SIZE;
-            auto tile_index = 2 * tile_row + tile_col;
-            (*tiles[tile_index])[tile_widths[tile_index] * tile_y + tile_x] = chunk[data_width * j + i];
+    
+    std::function<void(TileIter, int, TileIter&)> do_nothing = [&] (TileIter start, int width, TileIter& destination) {
+    };
+    
+    std::function<void(TileIter, int, TileIter&)> do_copy = [&] (TileIter start, int width, TileIter& destination) {
+        std::copy(start, start + width, destination);
+        std::advance(destination, width);
+    };
+        
+    auto left_copy = do_copy;
+    auto right_copy = (data_width > TILE_SIZE) ? do_copy : do_nothing;
+    
+    auto pos = chunk.begin();
+    auto row_read_end = pos;
+    
+    for (int tr : {0, 1}) {
+        auto row_height = tile_heights[tr * 2];
+        
+        if (!row_height) {
+            continue;
+        }
+        
+        auto left = tiles[tr * 2]->begin();
+        auto right = tiles[tr * 2 + 1]->begin();
+        
+        auto left_width = tile_widths[tr * 2];
+        auto right_width = tile_widths[tr * 2 + 1];
+        
+        row_read_end += data_width * row_height; 
+        
+        while (pos < row_read_end) {
+            left_copy(pos, left_width, left);
+            right_copy(pos + TILE_SIZE, right_width, right);
+            std::advance(pos, data_width);
         }
     }
 
