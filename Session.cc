@@ -864,7 +864,7 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
     if (_catalog_controller) {
         _catalog_controller->OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
             // Send partial or final results
-            SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response);
+            SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
         });
     }
 }
@@ -1282,7 +1282,7 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
 // SEND uWEBSOCKET MESSAGES
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
-void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message) {
+void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message, bool compress) {
     int message_length = message.ByteSize();
     size_t required_size = message_length + sizeof(carta::EventHeader);
     std::vector<char> msg(required_size, 0);
@@ -1292,7 +1292,7 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::
     head->icd_version = carta::ICD_VERSION;
     head->request_id = event_id;
     message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
-    _out_msgs.push(msg);
+    _out_msgs.push(std::make_pair(msg, compress));
     _outgoing_async->send();
 }
 
@@ -1306,10 +1306,14 @@ void Session::SendFileEvent(int32_t file_id, CARTA::EventType event_type, uint32
 void Session::SendPendingMessages() {
     // Do not parallelize: this must be done serially
     // due to the constraints of uWS.
-    std::vector<char> msg;
+    std::pair<std::vector<char>, bool> msg;
     if (_connected) {
         while (_out_msgs.try_pop(msg)) {
-            _socket->send(msg.data(), msg.size(), uWS::BINARY);
+            if (msg.second) { // Compress the message
+                _socket->send(msg.first.data(), msg.first.size(), uWS::BINARY, nullptr, nullptr, true);
+            } else { // Do not compress the message
+                _socket->send(msg.first.data(), msg.first.size(), uWS::BINARY);
+            }
         }
     }
 }

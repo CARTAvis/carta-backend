@@ -205,7 +205,7 @@ private:
     void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
 
     // Send protobuf messages
-    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
+    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = false);
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
@@ -240,8 +240,8 @@ private:
     float _histogram_progress;
 
     // Outgoing messages
-    uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
-    tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
+    uS::Async* _outgoing_async;                                          // Notification mechanism when messages are ready
+    tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs; // message queue <msg, compress>
 
     // TBB context that enables all tasks associated with a session to be cancelled.
     tbb::task_group_context _base_context;
