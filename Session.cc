@@ -41,7 +41,7 @@ bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async,
-    FileListHandler* file_list_handler, bool verbose)
+                 FileListHandler* file_list_handler, bool verbose)
     : _id(id),
       _socket(ws),
       _root_folder(root),
@@ -143,7 +143,7 @@ void Session::ConnectCalled() {
 // File browser
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const string& folder,
-    const string& filename, string hdu, string& message) {
+                                   const string& filename, string hdu, string& message) {
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool ext_file_info_ok(true);
     try {
@@ -377,12 +377,21 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
     auto file_id = message.file_id();
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
+    auto animation_id = AnimationRunning() ? 1 : 0;
     if (!message.tiles().empty() && _frames.count(file_id)) {
         if (skip_data) {
             // Update view settings and skip sending data
             _frames.at(file_id)->SetAnimationViewSettings(message);
             return;
         }
+
+        CARTA::RasterTileSync start_message;
+        start_message.set_file_id(file_id);
+        start_message.set_channel(channel);
+        start_message.set_stokes(stokes);
+        start_message.set_end_sync(false);
+        start_message.set_animation_id(animation_id);
+
         int n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
@@ -393,9 +402,9 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                 const auto& encoded_coordinate = message.tiles(i);
                 CARTA::RasterTileData raster_tile_data;
                 raster_tile_data.set_file_id(file_id);
+                raster_tile_data.set_animation_id(animation_id);
                 auto tile = Tile::Decode(encoded_coordinate);
-                if (_frames.at(file_id)->FillRasterTileData(
-                        raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
+                if (_frames.at(file_id)->FillRasterTileData(raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
                     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
                 } else {
                     fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
@@ -410,12 +419,12 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         g.wait();
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
-        CARTA::RasterTileData final_message;
+        CARTA::RasterTileSync final_message;
         final_message.set_file_id(file_id);
         final_message.set_channel(channel);
         final_message.set_stokes(stokes);
-        final_message.set_compression_quality(compression_quality);
-        final_message.set_compression_type(compression_type);
+        final_message.set_end_sync(true);
+        final_message.set_animation_id(animation_id);
         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, final_message);
     }
 }
@@ -629,7 +638,7 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
         try {
             auto region_id = message.region_id();
             if (_frames.at(file_id)->SetRegionSpatialRequirements(
-                    region_id, std::vector<std::string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
+                region_id, std::vector<std::string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
                 // RESPONSE
                 SendSpatialProfileData(file_id, region_id);
             } else {
@@ -652,8 +661,8 @@ void Session::OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
         try {
             auto region_id = message.region_id();
             if (_frames.at(file_id)->SetRegionHistogramRequirements(
-                    region_id, std::vector<CARTA::SetHistogramRequirements_HistogramConfig>(
-                                   message.histograms().begin(), message.histograms().end()))) {
+                region_id, std::vector<CARTA::SetHistogramRequirements_HistogramConfig>(
+                    message.histograms().begin(), message.histograms().end()))) {
                 // RESPONSE
                 if (region_id == CUBE_REGION_ID) {
                     SendCubeHistogramData(message, request_id);
@@ -680,8 +689,8 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
         try {
             auto region_id = message.region_id();
             if (_frames.at(file_id)->SetRegionSpectralRequirements(
-                    region_id, std::vector<CARTA::SetSpectralRequirements_SpectralConfig>(
-                                   message.spectral_profiles().begin(), message.spectral_profiles().end()))) {
+                region_id, std::vector<CARTA::SetSpectralRequirements_SpectralConfig>(
+                    message.spectral_profiles().begin(), message.spectral_profiles().end()))) {
                 // RESPONSE
                 SendSpectralProfileData(file_id, region_id);
             } else {
@@ -704,7 +713,7 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
         try {
             auto region_id = message.region_id();
             if (_frames.at(file_id)->SetRegionStatsRequirements(
-                    region_id, std::vector<int>(message.stats().begin(), message.stats().end()))) {
+                region_id, std::vector<int>(message.stats().begin(), message.stats().end()))) {
                 // RESPONSE
                 SendRegionStatsData(file_id, region_id);
             } else {
@@ -961,7 +970,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                             cube_bins = {chan_histogram.bins().begin(), chan_histogram.bins().end()};
                         } else { // add chan histogram bins to cube histogram bins
                             std::transform(chan_histogram.bins().begin(), chan_histogram.bins().end(), cube_bins.begin(), cube_bins.begin(),
-                                std::plus<int>());
+                                           std::plus<int>());
                         }
 
                         // check for cancel
@@ -1223,7 +1232,7 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::
     int message_length = message.ByteSize();
     size_t required_size = message_length + sizeof(carta::EventHeader);
     std::vector<char> msg(required_size, 0);
-    carta::EventHeader* head = (carta::EventHeader*)msg.data();
+    carta::EventHeader* head = (carta::EventHeader*) msg.data();
 
     head->type = event_type;
     head->icd_version = carta::ICD_VERSION;
@@ -1300,7 +1309,7 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
 
     if (stopped) {
         if (((_animation_object->_stop_frame.channel() == _animation_object->_current_frame.channel()) &&
-                (_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
+            (_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
             return;
         }
         curr_frame = _animation_object->_stop_frame;
@@ -1435,9 +1444,9 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
 
     if (_animation_object->_file_id != file_id) {
         std::fprintf(stderr,
-            "%p Session::StopAnimation called with file id %d."
-            "Expected file id %d",
-            this, file_id, _animation_object->_file_id);
+                     "%p Session::StopAnimation called with file id %d."
+                     "Expected file id %d",
+                     this, file_id, _animation_object->_file_id);
         return;
     }
 
@@ -1475,7 +1484,7 @@ void Session::HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message
     if (_animation_object->_waiting_flow_event) {
         if (gap <= CurrentFlowWindowSize()) {
             _animation_object->_waiting_flow_event = false;
-            OnMessageTask* tsk = new (tbb::task::allocate_root(_animation_context)) AnimationTask(this);
+            OnMessageTask* tsk = new(tbb::task::allocate_root(_animation_context)) AnimationTask(this);
             tbb::task::enqueue(*tsk);
         }
     }
