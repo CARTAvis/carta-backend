@@ -361,35 +361,21 @@ void VOTableCarrier::GetFilteredData(
     // Loop the table row data
     auto t_partial_filter_start = std::chrono::high_resolution_clock::now();
     float latest_progress = 0;
-    int x_axis_count = 0;
-    int y_axis_count = 0;
     int row_index = subset_start_index;
     int accumulated_data_size = 0;
 
     while ((accumulated_data_size < subset_data_size) && (row_index < total_row_num)) {
         // Loop the table column
         bool fill(true);
-        bool within_image_bounds(true);
 
         // Apply the image bounds and determine whether to fill the row data
         for (std::pair<int, Field> field : _fields) {
             if (catalog_image_bounds.x_column_name() == field.second.name) {
-                ++x_axis_count;
-                if ((x_axis_count < image_bounds.x_min()) || (x_axis_count > image_bounds.x_max())) {
-                    within_image_bounds = false;
-                }
+                // TODO: Set additional filter conditions
             }
             if (catalog_image_bounds.y_column_name() == field.second.name) {
-                ++y_axis_count;
-                if ((y_axis_count < image_bounds.y_min()) || (y_axis_count > image_bounds.y_max())) {
-                    within_image_bounds = false;
-                }
+                // TODO: Set additional filter conditions
             }
-        }
-
-        if (!within_image_bounds) { // Do not do the following process to fill the row_index data
-            ++row_index;            // Proceed to the next row
-            continue;
         }
 
         // Apply the filter and determine whether to fill the row data
