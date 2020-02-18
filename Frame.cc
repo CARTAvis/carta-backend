@@ -833,6 +833,7 @@ bool Frame::GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_imag
     // channel could be ALL_CHANNELS in region channel range (default) or
     //     a given channel (e.g. current channel).
     // Returns false if image region is invalid and cannot make subimage.
+    auto t_start_subimage = std::chrono::high_resolution_clock::now();
     bool sub_image_ok(false);
     if (CheckStokes(stokes) && (_regions.count(region_id))) {
         auto& region = _regions[region_id];
@@ -850,6 +851,12 @@ bool Frame::GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_imag
                 }
             }
         }
+    }
+    // Measure duration for get subimage
+    if (_verbose) {
+        auto t_end_subimage = std::chrono::high_resolution_clock::now();
+        auto dt_subimage = std::chrono::duration_cast<std::chrono::microseconds>(t_end_subimage - t_start_subimage).count();
+        fmt::print("Get subimage in {} ms\n", dt_subimage * 1e-3);
     }
     return sub_image_ok;
 }
@@ -1531,14 +1538,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
             stats_data.set_stokes(_stokes_index);
             casacore::SubImage<float> sub_image;
             std::unique_lock<std::mutex> ulock(_image_mutex);
-            auto t_start_subimage = std::chrono::high_resolution_clock::now();
             bool have_subimage = GetRegionSubImage(region_id, sub_image, _stokes_index, ChannelRange(_channel_index));
-            // Measure duration for get subimage
-            if (_verbose) {
-                auto t_end_subimage = std::chrono::high_resolution_clock::now();
-                auto dt_subimage = std::chrono::duration_cast<std::chrono::microseconds>(t_end_subimage - t_start_subimage).count();
-                fmt::print("Get subimage in {} ms\n", dt_subimage * 1e-3);
-            }
             ulock.unlock();
             if (have_subimage) {
                 std::lock_guard<std::mutex> guard(_image_mutex);
