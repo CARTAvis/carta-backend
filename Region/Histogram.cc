@@ -38,7 +38,7 @@ void Histogram::join(Histogram& h) { // NOLINT
 
 
 void Histogram::setup_bins(const int start, const int end) {
-    int i, j, stride, buckets;
+    int i, stride, buckets;
     int** bins_bin;
 
     auto calc_lambda = [&](int start, int lstride) {
@@ -71,13 +71,12 @@ void Histogram::setup_bins(const int start, const int end) {
 #pragma omp single
         {
             for (i = 0; i <= (buckets - stride * 2); i += stride * 2) {
-#pragma task
-                std::transform(&(bins_bin[i + stride])[j], &(bins_bin[i + stride])[_hist.size()], &(bins_bin[i])[j], &(bins_bin[i])[j],
-                    std::plus<int>());
+#pragma omp task
+                std::transform((bins_bin[i + stride]),&(bins_bin[i + stride][ _hist.size()]), (bins_bin[i]), (bins_bin[i]), std::plus<int>());
             }
             stride *= 2;
         }
-#pragma taskwait
+#pragma omp taskwait
     } while (stride <= buckets / 2);
     for (i = 0; i < _hist.size(); i++) {
         _hist[i] = bins_bin[0][i];
