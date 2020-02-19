@@ -240,6 +240,7 @@ private:
     tbb::task_group_context _animation_context;
 
     int _ref_count;
+    int _animation_id;
     bool _connected;
     static int _num_sessions;
     static int _exit_after_num_seconds;

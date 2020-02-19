@@ -52,6 +52,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
       _image_channel_task_active(false),
+      _animation_id(0),
       _file_settings(this) {
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
@@ -377,7 +378,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
     auto file_id = message.file_id();
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
-    auto animation_id = AnimationRunning() ? 1 : 0;
+    auto animation_id = AnimationRunning() ? _animation_id : 0;
     if (!message.tiles().empty() && _frames.count(file_id)) {
         if (skip_data) {
             // Update view settings and skip sending data
@@ -1288,6 +1289,7 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     looping = msg.looping();
     reverse_at_end = msg.reverse();
     always_wait = true;
+    _animation_id++;
 
     CARTA::StartAnimationAck ack_message;
 
@@ -1295,8 +1297,8 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
         _frames.at(file_id)->SetAnimationViewSettings(msg.required_tiles());
         _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(
             file_id, start_frame, first_frame, last_frame, delta_frame, frame_rate, looping, reverse_at_end, always_wait));
-
         ack_message.set_success(true);
+        ack_message.set_animation_id(_animation_id);
         ack_message.set_message("Starting animation");
         SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
     } else {
