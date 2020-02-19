@@ -201,8 +201,10 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                 for (int i = 0; i < preview_data_size; ++i) {
                     bool_columns_data->add_bool_column(ref_column_data[i]);
                 }
+                // Assign the mapping of column_index -> data_type_index
+                _column_index_to_data_type_index[column_index] = columns_data->bool_column_size() - 1;
                 // Fill the bool column index
-                header->set_data_type_index(columns_data->bool_column_size() - 1);
+                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
             } else if (_string_vectors.count(column_index)) {
                 std::vector<std::string>& ref_column_data = _string_vectors[column_index];
                 // Add a string column
@@ -211,8 +213,10 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                 for (int i = 0; i < preview_data_size; ++i) {
                     string_columns_data->add_string_column(ref_column_data[i]);
                 }
+                // Assign the mapping of column_index -> data_type_index
+                _column_index_to_data_type_index[column_index] = columns_data->string_column_size() - 1;
                 // Fill the string column index
-                header->set_data_type_index(columns_data->string_column_size() - 1);
+                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
             } else if (_int_vectors.count(column_index)) {
                 std::vector<int>& ref_column_data = _int_vectors[column_index];
                 // Add a int column
@@ -221,8 +225,10 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                 for (int i = 0; i < preview_data_size; ++i) {
                     int_columns_data->add_int_column(ref_column_data[i]);
                 }
+                // Assign the mapping of column_index -> data_type_index
+                _column_index_to_data_type_index[column_index] = columns_data->int_column_size() - 1;
                 // Fill the int column index
-                header->set_data_type_index(columns_data->int_column_size() - 1);
+                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
             } else if (_ll_vectors.count(column_index)) {
                 std::vector<long long>& ref_column_data = _ll_vectors[column_index];
                 // Add a long long column
@@ -231,8 +237,10 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                 for (int i = 0; i < preview_data_size; ++i) {
                     ll_columns_data->add_ll_column(ref_column_data[i]);
                 }
+                // Assign the mapping of column_index -> data_type_index
+                _column_index_to_data_type_index[column_index] = columns_data->ll_column_size() - 1;
                 // Fill the long long column index
-                header->set_data_type_index(columns_data->ll_column_size() - 1);
+                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
             } else if (_float_vectors.count(column_index)) {
                 std::vector<double>& ref_column_data = _float_vectors[column_index];
                 // Add a float column
@@ -241,8 +249,10 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                 for (int i = 0; i < preview_data_size; ++i) {
                     float_columns_data->add_float_column(ref_column_data[i]);
                 }
+                // Assign the mapping of column_index -> data_type_index
+                _column_index_to_data_type_index[column_index] = columns_data->float_column_size() - 1;
                 // Fill the float column index
-                header->set_data_type_index(columns_data->float_column_size() - 1);
+                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
             } else if (_double_vectors.count(column_index)) {
                 std::vector<double>& ref_column_data = _double_vectors[column_index];
                 // Add a double column
@@ -251,8 +261,10 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                 for (int i = 0; i < preview_data_size; ++i) {
                     double_columns_data->add_double_column(ref_column_data[i]);
                 }
+                // Assign the mapping of column_index -> data_type_index
+                _column_index_to_data_type_index[column_index] = columns_data->double_column_size() - 1;
                 // Fill the double column index
-                header->set_data_type_index(columns_data->double_column_size() - 1);
+                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
             }
         }
     }
@@ -287,61 +299,28 @@ void VOTableCarrier::GetFilteredData(
 
     // Initialize columns data with respect to their column indices
     auto tmp_columns_data = filter_response.mutable_columns_data();
-    int bool_vector_index = 0;
-    int string_vector_index = 0;
-    int int_vector_index = 0;
-    int ll_vector_index = 0;
-    int float_vector_index = 0;
-    int double_vector_index = 0;
-    std::unordered_map<int, int> column_to_data_type_index; // <Column Index, Data Type Index>
 
-    // Fill headers
+    // Initialize the columns data
     for (std::pair<int, Field> field : _fields) {
         Field& tmp_field = field.second;
         CARTA::EntryType tmp_data_type;
         GetDataType(tmp_field.datatype, tmp_data_type);
 
-        // Only fill the header that its data type is in our list
+        // Only fill the columns data that its data type is in our list
         if (tmp_data_type != CARTA::EntryType::UNKNOWN_TYPE) {
-            // Only fill the header that its column index is not in the hided column set
             int column_index = field.first;
-            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                auto header = filter_response.add_headers();
-                header->set_name(tmp_field.name);
-                header->set_data_type(tmp_data_type);
-                header->set_column_index(column_index); // The FIELD index in the VOTable
-                header->set_description(tmp_field.description);
-                header->set_units(tmp_field.unit);
-
-                // Assign the column data type index and column size
-                if (_bool_vectors.count(column_index)) {
-                    column_to_data_type_index[column_index] = bool_vector_index;
-                    ++bool_vector_index;
-                    tmp_columns_data->add_bool_column();
-                } else if (_string_vectors.count(column_index)) {
-                    column_to_data_type_index[column_index] = string_vector_index;
-                    ++string_vector_index;
-                    tmp_columns_data->add_string_column();
-                } else if (_int_vectors.count(column_index)) {
-                    column_to_data_type_index[column_index] = int_vector_index;
-                    ++int_vector_index;
-                    tmp_columns_data->add_int_column();
-                } else if (_ll_vectors.count(column_index)) {
-                    column_to_data_type_index[column_index] = ll_vector_index;
-                    ++ll_vector_index;
-                    tmp_columns_data->add_ll_column();
-                } else if (_float_vectors.count(column_index)) {
-                    column_to_data_type_index[column_index] = float_vector_index;
-                    ++float_vector_index;
-                    tmp_columns_data->add_float_column();
-                } else if (_double_vectors.count(column_index)) {
-                    column_to_data_type_index[column_index] = double_vector_index;
-                    ++double_vector_index;
-                    tmp_columns_data->add_double_column();
-                }
-
-                // Fill the data type index
-                header->set_data_type_index(column_to_data_type_index[column_index]);
+            if (_bool_vectors.count(column_index)) {
+                tmp_columns_data->add_bool_column();
+            } else if (_string_vectors.count(column_index)) {
+                tmp_columns_data->add_string_column();
+            } else if (_int_vectors.count(column_index)) {
+                tmp_columns_data->add_int_column();
+            } else if (_ll_vectors.count(column_index)) {
+                tmp_columns_data->add_ll_column();
+            } else if (_float_vectors.count(column_index)) {
+                tmp_columns_data->add_float_column();
+            } else if (_double_vectors.count(column_index)) {
+                tmp_columns_data->add_double_column();
             }
         }
     }
@@ -448,7 +427,7 @@ void VOTableCarrier::GetFilteredData(
         for (std::pair<int, std::vector<bool>> bool_vector : _bool_vectors) {
             int column_index = bool_vector.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = column_to_data_type_index[column_index];
+                int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->bool_column_size());
                 auto bool_column = tmp_columns_data->mutable_bool_column(data_type_index);
                 bool_column->add_bool_column(bool_vector.second[_row_indexes[row_index]]);
@@ -457,7 +436,7 @@ void VOTableCarrier::GetFilteredData(
         for (std::pair<int, std::vector<std::string>> string_vector : _string_vectors) {
             int column_index = string_vector.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = column_to_data_type_index[column_index];
+                int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->string_column_size());
                 auto string_column = tmp_columns_data->mutable_string_column(data_type_index);
                 string_column->add_string_column(string_vector.second[_row_indexes[row_index]]);
@@ -466,7 +445,7 @@ void VOTableCarrier::GetFilteredData(
         for (std::pair<int, std::vector<int>> int_vector : _int_vectors) {
             int column_index = int_vector.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = column_to_data_type_index[column_index];
+                int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->int_column_size());
                 auto int_column = tmp_columns_data->mutable_int_column(data_type_index);
                 int_column->add_int_column(int_vector.second[_row_indexes[row_index]]);
@@ -475,7 +454,7 @@ void VOTableCarrier::GetFilteredData(
         for (std::pair<int, std::vector<long long>> ll_vector : _ll_vectors) {
             int column_index = ll_vector.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = column_to_data_type_index[column_index];
+                int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->ll_column_size());
                 auto ll_column = tmp_columns_data->mutable_ll_column(data_type_index);
                 ll_column->add_ll_column(ll_vector.second[_row_indexes[row_index]]);
@@ -484,7 +463,7 @@ void VOTableCarrier::GetFilteredData(
         for (std::pair<int, std::vector<double>> float_vector : _float_vectors) {
             int column_index = float_vector.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = column_to_data_type_index[column_index];
+                int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->float_column_size());
                 auto float_column = tmp_columns_data->mutable_float_column(data_type_index);
                 float_column->add_float_column(float_vector.second[_row_indexes[row_index]]);
@@ -493,7 +472,7 @@ void VOTableCarrier::GetFilteredData(
         for (std::pair<int, std::vector<double>> double_vector : _double_vectors) {
             int column_index = double_vector.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = column_to_data_type_index[column_index];
+                int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->double_column_size());
                 auto double_column = tmp_columns_data->mutable_double_column(data_type_index);
                 double_column->add_double_column(double_vector.second[_row_indexes[row_index]]);

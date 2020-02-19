@@ -444,11 +444,6 @@ void Controller::Print(CARTA::CatalogFilterResponse filter_response) {
     std::cout << "file_id:       " << filter_response.file_id() << std::endl;
     std::cout << "image_file_id: " << filter_response.image_file_id() << std::endl;
     std::cout << "region_id:     " << filter_response.region_id() << std::endl;
-    for (int i = 0; i < filter_response.headers_size(); ++i) {
-        std::cout << "headers(" << i << "):" << std::endl;
-        auto header = filter_response.headers(i);
-        Print(header);
-    }
     Print(filter_response.columns_data());
     std::cout << "subset_data_size: " << filter_response.subset_data_size() << std::endl;
     std::cout << "subset_end_index: " << filter_response.subset_end_index() << std::endl;
