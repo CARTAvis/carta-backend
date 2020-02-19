@@ -74,11 +74,18 @@ void RegionStats::SetBasicStats(int channel, int stokes, const BasicStats<float>
 
 void RegionStats::CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats) {
     // Calculate and store min, max values in data; return min_val and maxval
+    auto t_start_calculate_min = std::chrono::high_resolution_clock::now();
     tbb::blocked_range<size_t> range(0, data.size());
     BasicStatsCalculator<float> mm(data);
     tbb::parallel_reduce(range, mm);
     stats = mm.GetStats();
     SetBasicStats(channel, stokes, stats);
+    // Measure duration for caculate min/max value
+    if (true) {
+        auto t_end_calculate_min = std::chrono::high_resolution_clock::now();
+        auto dt_calculate_min = std::chrono::duration_cast<std::chrono::microseconds>(t_end_calculate_min - t_start_calculate_min).count();
+        fmt::print("Caculate min/max value in {} ms\n", dt_calculate_min * 1e-3);
+    }
 }
 
 bool RegionStats::GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram) {
