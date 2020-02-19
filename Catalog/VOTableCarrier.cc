@@ -353,6 +353,7 @@ void VOTableCarrier::GetFilteredData(
     float latest_progress = 0;
     int row_index = subset_start_index;
     int accumulated_data_size = 0;
+    int sending_data_size = 0;
 
     while ((accumulated_data_size < subset_data_size) && (row_index < total_row_num)) {
         // Loop the table column
@@ -481,6 +482,7 @@ void VOTableCarrier::GetFilteredData(
 
         // Calculate the progress
         ++accumulated_data_size;
+        ++sending_data_size;
         float progress = (float)accumulated_data_size / (float)subset_data_size;
 
         ++row_index; // Proceed to the next row
@@ -494,12 +496,16 @@ void VOTableCarrier::GetFilteredData(
             t_partial_filter_start = std::chrono::high_resolution_clock::now();
             latest_progress = progress;
 
-            filter_response.set_subset_data_size(accumulated_data_size);
+            // Fill the progress message
+            filter_response.set_subset_data_size(sending_data_size);
             filter_response.set_subset_end_index(row_index);
             filter_response.set_progress(progress);
 
             // Send partial results by the callback function
             partial_results_callback(filter_response);
+
+            // Reset the sending data size
+            sending_data_size = 0;
 
             // Clear the columns_data message
             for (int i = 0; i < tmp_columns_data->bool_column_size(); ++i) {
