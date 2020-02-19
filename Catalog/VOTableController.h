@@ -54,6 +54,7 @@ public:
     static std::string GetBoolType(bool bool_type);
     static std::string GetFileType(CARTA::CatalogFileType file_type);
     static std::string GetComparisonOperator(CARTA::ComparisonOperator comparison_operator);
+    static std::string GetSortingType(CARTA::SortingType sorting_type);
 
 private:
     bool IsVOTableFile(std::string file_name);

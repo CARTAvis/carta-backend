@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <numeric>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -87,14 +88,20 @@ private:
     bool StringFilter(CARTA::FilterConfig filter, std::string value);
     template <typename T>
     bool NumericFilter(CARTA::FilterConfig filter, T value);
+    void SortColumn(std::string column_name, CARTA::SortingType sorting_type);
+    template <typename T>
+    void SortRowIndexes(const std::vector<T>& v, CARTA::SortingType sorting_type);
+    void ResetRowIndexes();
 
     std::string _filename;
     std::string _directory;
     std::string _file_description = "";
     std::string _votable_version = "";       // VOTable version, "" means this is not the VOTable XML file.
     std::unordered_map<int, Coosys> _coosys; // Unordered map for the element <COOSYS>: <COOSYS count (Column Index), COOSYS attributes>
-    std::unordered_map<int, Field> _fields;  // Unordered map for the element <FIELD>: <FIELD count, FIELD attributes>
+    std::unordered_map<int, Field> _fields;  // Unordered map for the element <FIELD>: <FIELD count (Column Index), FIELD attributes>
     size_t _num_of_rows = 0;                 // Number of table rows
+    std::vector<size_t> _row_indexes;
+    std::string _sort_column;
 
     // Unordered map for table columns: <Column Index, Column Vector>
     std::unordered_map<int, std::vector<bool>> _bool_vectors;          // For the column with datatype = "boolean"

@@ -412,6 +412,8 @@ void Controller::Print(CARTA::CatalogFilterRequest filter_request) {
     Print(filter_request.image_bounds());
     std::cout << "image_file_id:      " << filter_request.image_file_id() << std::endl;
     std::cout << "region_id:          " << filter_request.region_id() << std::endl;
+    std::cout << "sort_column:        " << filter_request.sort_column() << std::endl;
+    std::cout << "sorting_type:       " << GetSortingType(filter_request.sorting_type()) << std::endl;
     std::cout << std::endl;
 }
 
@@ -534,6 +536,22 @@ std::string Controller::GetComparisonOperator(CARTA::ComparisonOperator comparis
             break;
         default:
             result = "unknown comparison operator!";
+            break;
+    }
+    return result;
+}
+
+std::string Controller::GetSortingType(CARTA::SortingType sorting_type) {
+    std::string result;
+    switch (sorting_type) {
+        case CARTA::SortingType::Ascend:
+            result = "Ascend";
+            break;
+        case CARTA::SortingType::Descend:
+            result = "Descend";
+            break;
+        default:
+            result = "unknown sorting type";
             break;
     }
     return result;

@@ -22,6 +22,7 @@ void TestOnFilterRequest2();
 void TestOnFilterRequest3();
 void TestOnFilterRequest4();
 void TestOnFilterRequest5();
+void TestOnFilterRequest6();
 void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request);
 
 string GetCurrentWorkingPath();
@@ -37,6 +38,7 @@ int main(int argc, char* argv[]) {
     cout << "    6) TestOnFilterRequest3()" << endl;
     cout << "    7) TestOnFilterRequest4()" << endl;
     cout << "    8) TestOnFilterRequest5()" << endl;
+    cout << "    9) TestOnFilterRequest6()" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -63,6 +65,9 @@ int main(int argc, char* argv[]) {
             break;
         case 8:
             TestOnFilterRequest5();
+            break;
+        case 9:
+            TestOnFilterRequest6();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -397,6 +402,46 @@ void TestOnFilterRequest5() {
     filter_config3->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
     filter_config3->set_min(0.0);
     filter_config3->set_max(0.0);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
+void TestOnFilterRequest6() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("$BASE/images/votable");
+    open_file_request.set_name("vizier_votable_8594.vot");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(10);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(100);
+    filter_request.set_image_file_id(0);
+    filter_request.set_region_id(0);
+
+    filter_request.add_hided_headers("_RAJ2000");
+    filter_request.add_hided_headers("_DEJ2000");
+    filter_request.add_hided_headers("Seq");
+    filter_request.add_hided_headers("BGPSv2");
+    filter_request.add_hided_headers("Field");
+    filter_request.add_hided_headers("majAxis");
+    filter_request.add_hided_headers("minAxis");
+    filter_request.add_hided_headers("PA");
+    filter_request.add_hided_headers("Rad");
+    filter_request.add_hided_headers("S40");
+    filter_request.add_hided_headers("S80");
+    filter_request.add_hided_headers("S120");
+    filter_request.add_hided_headers("v1");
+
+    filter_request.set_sort_column("S");
+    filter_request.set_sorting_type(CARTA::SortingType::Descend);
+
+    auto filter_config = filter_request.add_filter_configs();
+    filter_config->set_column_name("S");
+    filter_config->set_comparison_operator(CARTA::ComparisonOperator::FromTo);
+    filter_config->set_min(36.952);
+    filter_config->set_max(292.047);
 
     TestOnFilterRequest(open_file_request, filter_request);
 }
