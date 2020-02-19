@@ -1167,7 +1167,6 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
         histogram_data->set_stokes(curr_stokes);
         histogram_data->set_progress(1.0); // send entire histogram
 
-        auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
         for (size_t i = 0; i < num_histograms; ++i) {
             // get histogram requirements for this index
             CARTA::SetHistogramRequirements_HistogramConfig config = region->GetHistogramConfig(i);
@@ -1196,6 +1195,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                 if (!GetRegionHistogram(region_id, config_channel, curr_stokes, num_bins, *new_histogram)) {
                     // Calculate histogram
                     BasicStats<float> stats;
+                    auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
                     if (region_id == IMAGE_REGION_ID) {
                         if (config_channel == _channel_index) { // use imageCache
                             if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
@@ -1228,15 +1228,17 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                             }
                         }
                     }
+                    // Measure duration for region or image histogram
+                    if (_verbose) {
+                        auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
+                        auto dt_region_histogram =
+                            std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram)
+                                .count();
+                        fmt::print(
+                            "Fill {} histogram in {} ms\n", region_id == IMAGE_REGION_ID ? "image" : "regions", dt_region_histogram * 1e-3);
+                    }
                 }
             }
-        }
-        // Measure duration for region histogram
-        if (_verbose) {
-            auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
-            auto dt_region_histogram =
-                std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-            fmt::print("Fill region histogram in {} ms\n", dt_region_histogram * 1e-3);
         }
         histogram_ok = (histogram_data->histograms_size() > 0); // do not send if no histograms
     }
