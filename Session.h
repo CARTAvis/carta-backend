@@ -21,8 +21,10 @@
 
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/contour.pb.h>
+#include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
+#include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
@@ -41,6 +43,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "Region/Region.h"
 #include "Util.h"
 
 class Session {
@@ -70,13 +73,12 @@ public:
     void OnSetContourParameters(const CARTA::SetContourParameters& message);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
-
     void OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id);
     void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
-
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
 
     void SendPendingMessages();
+
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
         // Empty current queue first.
@@ -167,8 +169,7 @@ public:
     inline uint32_t GetId() {
         return _id;
     }
-    // TODO: should these be public? NO!!!!!!!!
-    uint32_t _id;
+
     FileSettings _file_settings;
     tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
 
@@ -181,22 +182,28 @@ private:
     // Delete Frame(s)
     void DeleteFrame(int file_id);
 
+    // Assign next region ID
+    int GetNextRegionId();
+
     // Histogram
-    CARTA::RegionHistogramData* GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel = false);
-    bool SendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
+    CARTA::RegionHistogramData* GetRegionHistogramData(const int32_t file_id, const int32_t region_id);
+    // Specialized for cube; accumulate per-channel histograms
+    bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData* cube_histogram_message);
     // basic message to update progress
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
     // Send data streams
     bool SendRasterImageData(int file_id, bool send_histogram = false);
+    bool SendContourData(int file_id);
+
     // Only set channel_changed and stokes_changed if they are the only trigger for new data
     // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
     bool SendSpatialProfileData(int file_id, int region_id, bool stokes_changed = false);
     bool SendSpectralProfileData(int file_id, int region_id, bool channel_changed = false, bool stokes_changed = false);
-    bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
+    bool SendRegionHistogramData(int file_id, int region_id);
     bool SendRegionStatsData(int file_id, int region_id); // update stats in all cases
-    bool SendContourData(int file_id);
-    void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
+    void UpdateImageData(int file_id, bool send_image_histogram = true, bool stokes_changed = false);
+    void UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed);
 
     // Send protobuf messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
@@ -204,6 +211,7 @@ private:
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     uWS::WebSocket<uWS::SERVER>* _socket;
+    uint32_t _id;
     std::string _api_key;
     std::string _root_folder;
     bool _verbose_logging;
@@ -220,8 +228,10 @@ private:
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
     std::mutex _frame_mutex;                                 // lock frames to create/destroy
 
-    // Region
+    // Regions with unique ids
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // <region_id, Region>: one per region
+    // Regions with id 0 for each Frame
+    std::unordered_map<int, std::unique_ptr<carta::Region>> _cursors; // <file_id, Region>: one per cursor
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;

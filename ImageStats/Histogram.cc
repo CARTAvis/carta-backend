@@ -1,6 +1,7 @@
 #include "Histogram.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
@@ -8,9 +9,10 @@
 using namespace carta;
 
 Histogram::Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data)
-    : _bin_width((max_value - min_value) / num_bins), _min_val(min_value), _hist(num_bins, 0), _data(data) {}
+    : _num_bins(num_bins), _bin_width((max_value - min_value) / num_bins), _min_val(min_value), _hist(num_bins, 0), _data(data) {}
 
-Histogram::Histogram(Histogram& h, tbb::split) : _bin_width(h._bin_width), _min_val(h._min_val), _hist(h._hist.size(), 0), _data(h._data) {}
+Histogram::Histogram(Histogram& h, tbb::split)
+    : _num_bins(h._num_bins), _bin_width(h._bin_width), _min_val(h._min_val), _hist(h._hist.size(), 0), _data(h._data) {}
 
 void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
     std::vector<int> tmp(_hist);
@@ -32,4 +34,13 @@ void Histogram::join(Histogram& h) { // NOLINT
         std::transform(&h._hist[beg], &h._hist[end], &_hist[beg], &_hist[beg], std::plus<int>());
     };
     tbb::parallel_for(range, loop);
+}
+
+HistogramResults Histogram::GetHistogram() const {
+    HistogramResults results;
+    results.num_bins = _num_bins;
+    results.bin_width = _bin_width;
+    results.bin_center = _min_val + (_bin_width / 2.0);
+    results.histogram_bins = _hist;
+    return results;
 }

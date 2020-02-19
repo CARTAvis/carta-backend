@@ -3,18 +3,10 @@
 #include "RegionStats.h"
 
 #include <cmath>
-#include <limits>
 
 #include <fmt/format.h>
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_reduce.h>
-
-#include <casacore/casa/Arrays/ArrayMath.h>
-#include <casacore/images/Images/ImageStatistics.h>
 
 #include "../InterfaceConstants.h"
-#include "BasicStatsCalculator.h"
-#include "Histogram.h"
 
 using namespace carta;
 using namespace std;
@@ -49,9 +41,8 @@ CARTA::SetHistogramRequirements_HistogramConfig RegionStats::GetHistogramConfig(
     return config;
 }
 
-// min max
 bool RegionStats::GetBasicStats(int channel, int stokes, BasicStats<float>& stats) {
-    // Get stored min,max for given channel and stokes; return value indicates status
+    // Get stored BasicStats for given channel and stokes; return value indicates status
     bool have_basic_stats(false);
     if (_histograms_valid) {
         try {
@@ -65,19 +56,16 @@ bool RegionStats::GetBasicStats(int channel, int stokes, BasicStats<float>& stat
 }
 
 void RegionStats::SetBasicStats(int channel, int stokes, const BasicStats<float>& stats) {
-    // Save min, max for given channel and stokes
+    // Save BasicStats for given channel and stokes
     if (channel == ALL_CHANNELS) { // all channels (cube); don't save intermediate channel min/max
         _basic_stats[stokes].clear();
     }
     _basic_stats[stokes][channel] = stats;
 }
 
-void RegionStats::CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats) {
-    // Calculate and store min, max values in data; return min_val and maxval
-    tbb::blocked_range<size_t> range(0, data.size());
-    BasicStatsCalculator<float> mm(data);
-    tbb::parallel_reduce(range, mm);
-    stats = mm.GetStats();
+void RegionStats::CalcRegionBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats) {
+    // Calculate and store BasicStats
+    CalcBasicStats(data, stats);
     SetBasicStats(channel, stokes, stats);
 }
 
@@ -109,33 +97,22 @@ void RegionStats::SetHistogram(int channel, int stokes, CARTA::Histogram& histog
     _histograms_valid = true;
 }
 
-void RegionStats::CalcHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data,
+void RegionStats::CalcRegionHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data,
     CARTA::Histogram& histogram_msg) {
     // Calculate and store histogram for given channel, stokes, nbins; return histogram
-    float bin_width(0), bin_center(0);
-    std::vector<int> histogram_bins;
-    if ((stats.min_val == std::numeric_limits<float>::max()) || (stats.max_val == std::numeric_limits<float>::min()) || data.empty()) {
-        // empty / NaN region
-        histogram_bins.resize(num_bins, 0);
-    } else {
-        tbb::blocked_range<size_t> range(0, data.size());
-        Histogram hist(num_bins, stats.min_val, stats.max_val, data);
-        tbb::parallel_reduce(range, hist);
-        histogram_bins = hist.GetHistogram();
-        bin_width = hist.GetBinWidth();
-        bin_center = stats.min_val + (bin_width / 2.0);
-    }
+    HistogramResults results;
+    CalcHistogram(num_bins, stats, data, results);
 
     // fill histogram message
     histogram_msg.set_channel(channel);
     histogram_msg.set_num_bins(num_bins);
-    histogram_msg.set_bin_width(bin_width);
-    histogram_msg.set_first_bin_center(bin_center);
+    histogram_msg.set_bin_width(results.bin_width);
+    histogram_msg.set_first_bin_center(results.bin_center);
     histogram_msg.set_mean(stats.mean);
     histogram_msg.set_std_dev(stats.stdDev);
-    *histogram_msg.mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
+    *histogram_msg.mutable_bins() = {results.histogram_bins.begin(), results.histogram_bins.end()};
 
-    // save for next time
+    // save message for next time
     SetHistogram(channel, stokes, histogram_msg);
 }
 
@@ -177,7 +154,7 @@ void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, const casaco
             if (!_stats_valid)
                 _stats_data.clear();
             // per channel = false, stats for entire region
-            bool have_stats(CalcStatsValues(results, _stats_reqs, image, false));
+            bool have_stats = CalcRegionStats(results, _stats_reqs, image);
             // update message whether have stats or not
             for (size_t i = 0; i < _stats_reqs.size(); ++i) {
                 // add StatisticsValue to message
@@ -224,117 +201,14 @@ void RegionStats::FillStatsData(CARTA::RegionStatsData& stats_data, std::map<CAR
     }
 }
 
-bool RegionStats::CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
-    const casacore::ImageInterface<float>& image, bool per_channel) {
+bool RegionStats::CalcRegionStats(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
+    const casacore::ImageInterface<float>& image) {
     // Fill stats_values vector for requested stats; one vector<float> per stat if per channel,
     // else one value per stat per region.
-    if (image.shape().empty()) // outside image or all masked (NaN)
+    if (image.shape().empty()) { // outside image or all masked (NaN)
         return false;
-
-    // Use ImageStatistics to fill statistics values according to type;
-    // template type matches image type
-    casacore::ImageStatistics<float> image_stats = casacore::ImageStatistics<float>(image,
-        /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
-
-    if (per_channel) { // get stats per xy plane
-        casacore::Vector<int> display_axes(2);
-        display_axes(0) = 0;
-        display_axes(1) = 1;
-        if (!image_stats.setAxes(display_axes))
-            return false;
     }
 
-    casacore::Array<casacore::Double> num_points;
-    size_t num_stats(requested_stats.size());
-    for (size_t i = 0; i < num_stats; ++i) {
-        // get requested statistics values
-        casacore::LatticeStatsBase::StatisticsTypes lattice_stats_type(casacore::LatticeStatsBase::NSTATS);
-        auto carta_stats_type = static_cast<CARTA::StatsType>(requested_stats[i]);
-
-        std::vector<double> dbl_result; // lattice stats
-        std::vector<int> int_result;    // position stats
-        switch (carta_stats_type) {
-            case CARTA::StatsType::NumPixels:
-                lattice_stats_type = casacore::LatticeStatsBase::NPTS;
-                break;
-            case CARTA::StatsType::Sum:
-                lattice_stats_type = casacore::LatticeStatsBase::SUM;
-                break;
-            case CARTA::StatsType::FluxDensity:
-                lattice_stats_type = casacore::LatticeStatsBase::FLUX;
-                break;
-            case CARTA::StatsType::Mean:
-                lattice_stats_type = casacore::LatticeStatsBase::MEAN;
-                break;
-            case CARTA::StatsType::RMS:
-                lattice_stats_type = casacore::LatticeStatsBase::RMS;
-                break;
-            case CARTA::StatsType::Sigma:
-                lattice_stats_type = casacore::LatticeStatsBase::SIGMA;
-                break;
-            case CARTA::StatsType::SumSq:
-                lattice_stats_type = casacore::LatticeStatsBase::SUMSQ;
-                break;
-            case CARTA::StatsType::Min:
-                lattice_stats_type = casacore::LatticeStatsBase::MIN;
-                break;
-            case CARTA::StatsType::Max:
-                lattice_stats_type = casacore::LatticeStatsBase::MAX;
-                break;
-            case CARTA::StatsType::Blc: {
-                const casacore::IPosition blc(image.region().slicer().start());
-                int_result = blc.asStdVector();
-                break;
-            }
-            case CARTA::StatsType::Trc: {
-                const casacore::IPosition trc(image.region().slicer().end());
-                int_result = trc.asStdVector();
-                break;
-            }
-            case CARTA::StatsType::MinPos:
-            case CARTA::StatsType::MaxPos: {
-                if (!per_channel) { // only works when no display axes
-                    const casacore::IPosition blc(image.region().slicer().start());
-                    casacore::IPosition min_pos, max_pos;
-                    image_stats.getMinMaxPos(min_pos, max_pos);
-                    if (carta_stats_type == CARTA::StatsType::MinPos)
-                        int_result = (blc + min_pos).asStdVector();
-                    else // MaxPos
-                        int_result = (blc + max_pos).asStdVector();
-                }
-                break;
-            }
-            default:
-                break;
-        }
-        if (lattice_stats_type < casacore::LatticeStatsBase::NSTATS) { // get lattice statistic
-            casacore::Array<casacore::Double> result;                  // must be double
-            if (image_stats.getStatistic(result, lattice_stats_type)) {
-                if (anyEQ(result, 0.0)) { // actually 0, or NaN?
-                    // NaN if number of points is zero
-                    if (num_points.empty())
-                        image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
-                    for (size_t j = 0; j < result.size(); ++j) {
-                        casacore::IPosition index(1, j);
-                        if ((result(index) == 0.0) && (num_points(index) == 0.0)) {
-                            result(index) = std::numeric_limits<double>::quiet_NaN();
-                        }
-                    }
-                }
-                result.tovector(dbl_result);
-            }
-        }
-
-        if (!int_result.empty()) {
-            dbl_result.reserve(int_result.size());
-            for (unsigned int j = 0; j < int_result.size(); ++j) { // convert to double
-                dbl_result.push_back(static_cast<double>(int_result[j]));
-            }
-        }
-
-        if (!dbl_result.empty()) {
-            stats_values.emplace(carta_stats_type, dbl_result);
-        }
-    }
-    return true;
+    bool per_channel(false);
+    return CalcStatsValues(stats_values, requested_stats, image, per_channel);
 }

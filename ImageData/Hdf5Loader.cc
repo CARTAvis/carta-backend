@@ -268,6 +268,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
             }
         }
 
+        /* TODO: Interrupt spectral profile
         // get a copy of current region state
         RegionState region_state;
         if (!_frame->GetRegionState(region_id, region_state)) {
@@ -279,6 +280,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
         if (!_frame->GetRegionSpectralConfig(region_id, config_stokes, config_stats)) {
             return false;
         }
+        */
 
         std::map<CARTA::StatsType, std::vector<double>>* stats_values;
         float progress;
@@ -320,11 +322,13 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = x_start; x < num_x; x++) {
             // check if frontend's requirements changed
+            /* TODO: interrupt spectral profile
             if (_frame != nullptr && _frame->Interrupt(region_id, profile_stokes, region_state, config_stats, true)) {
                 // remember the latest x step
                 _region_stats[region_stats_id].latest_x = x;
                 return false;
             }
+            */
 
             bool have_spectral_data = GetCursorSpectralData(slice_data, profile_stokes, x + x_min, 1, y_min, num_y, image_mutex);
             if (!have_spectral_data) {

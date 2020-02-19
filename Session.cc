@@ -42,8 +42,8 @@ bool Session::_exit_when_all_sessions_closed = false;
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async,
     FileListHandler* file_list_handler, bool verbose)
-    : _id(id),
-      _socket(ws),
+    : _socket(ws),
+      _id(id),
       _root_folder(root),
       _verbose_logging(verbose),
       _file_info(nullptr),
@@ -82,12 +82,27 @@ void ExitNoSessions(int s) {
 }
 
 Session::~Session() {
+    // delete frames
     std::unique_lock<std::mutex> lock(_frame_mutex);
     for (auto& frame : _frames) {
-        frame.second.reset(); // delete Frame
+        frame.second.reset(); // deletes Frame
     }
     _frames.clear();
+
+    // delete regions
+    for (auto& region : _regions) {
+        region.second.reset(); // deletes Region
+    }
+    _regions.clear();
+
+    // delete cursors
+    for (auto& cursor : _cursors) {
+        cursor.second.reset(); // deletes Region
+    }
+    _cursors.clear();
+
     _outgoing_async->close();
+
     --_num_sessions;
     DEBUG(std::cout << this << " ~Session " << _num_sessions << std::endl;)
     if (!_num_sessions) {
@@ -362,7 +377,11 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     }
 
     if (success) {
-        UpdateRegionData(file_id);
+        // send histogram with default requirements
+        if (!SendRegionHistogramData(file_id, IMAGE_REGION_ID)) {
+            std::string message = fmt::format("Image histogram for file id {} failed", file_id);
+            SendLogEvent(message, {"open_file"}, CARTA::ErrorSeverity::ERROR);
+        }
     }
     return success;
 }
@@ -371,6 +390,22 @@ void Session::OnCloseFile(const CARTA::CloseFile& message) {
     CheckCancelAnimationOnFileClose(message.file_id());
     _file_settings.ClearSettings(message.file_id());
     DeleteFrame(message.file_id());
+}
+
+void Session::DeleteFrame(int file_id) {
+    // call destructor and erase from map
+    std::unique_lock<std::mutex> lock(_frame_mutex);
+    if (file_id == ALL_FILES) {
+        for (auto& frame : _frames) {
+            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+            frame.second.reset();             // delete Frame
+        }
+        _frames.clear();
+    } else if (_frames.count(file_id)) {
+        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        _frames[file_id].reset();
+        _frames.erase(file_id);
+    }
 }
 
 void Session::OnSetImageView(const CARTA::SetImageView& message) {
@@ -425,11 +460,12 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             bool channel_changed(channel != frame->CurrentChannel());
             bool stokes_changed(stokes != frame->CurrentStokes());
             if (frame->SetImageChannels(channel, stokes, err_message)) {
-                // RESPONSE: send data for all regions
-                bool send_histogram(true);
-                UpdateRegionData(file_id, send_histogram, channel_changed, stokes_changed);
                 // Send Contour data if required
                 SendContourData(file_id);
+                // TODO: RESPONSE: send data for all regions
+                bool send_histogram(true);
+                UpdateImageData(file_id, send_histogram, stokes_changed);
+                //UpdateRegionData(file_id, send_histogram, channel_changed, stokes_changed);
             } else {
                 if (!err_message.empty()) {
                     SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
@@ -451,24 +487,21 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
 }
 
 void Session::OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id) {
+    // Set point region with region_id 0 for image indicated by file_id
     auto file_id(message.file_id());
-    if (_frames.count(file_id)) {
-        try {
-            if (_frames.at(file_id)->SetCursorRegion(CURSOR_REGION_ID, message.point())) {
-                if (_frames.at(file_id)->RegionChanged(CURSOR_REGION_ID)) {
-                    // RESPONSE
-                    if (message.has_spatial_requirements()) {
-                        OnSetSpatialRequirements(message.spatial_requirements());
-                        SendSpectralProfileData(file_id, CURSOR_REGION_ID);
-                    } else {
-                        SendSpatialProfileData(file_id, CURSOR_REGION_ID);
-                        SendSpectralProfileData(file_id, CURSOR_REGION_ID);
-                    }
-                }
+    if (_frames.count(file_id)) { // reference Frame for Region exists
+        std::vector<CARTA::Point> points(1, message.point());
+        casacore::CoordinateSystem csys = _frames.at(file_id)->CoordinateSystem();
+        if (_cursors.count(file_id)) { // update cursor region
+            _cursors[file_id]->UpdateState("cursor", CARTA::POINT, points, 0.0, csys);
+        } else { // create cursor region
+            auto region = std::unique_ptr<carta::Region>(new carta::Region("cursor", CARTA::POINT, points, 0.0, csys));
+            if (region->IsValid()) {
+                _cursors[file_id] = move(region);
+            } else {
+                string error = fmt::format("Invalid control points for cursor in file {}", file_id);
+                SendLogEvent(error, {"cursor"}, CARTA::ErrorSeverity::DEBUG);
             }
-        } catch (std::out_of_range& range_error) {
-            string error = fmt::format("File id {} closed", file_id);
-            SendLogEvent(error, {"cursor"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -477,33 +510,41 @@ void Session::OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id) 
 }
 
 bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent) {
-    // set new Region or update existing one
+    // Create new Region or update existing Region
     auto file_id(message.file_id());
     auto region_id(message.region_id());
     std::string err_message;
     bool success(false);
 
-    if (_frames.count(file_id)) {
-        try {
-            if (message.region_id() < 0) {    // get region id unique across all frames
-                for (auto& frame : _frames) { // frames = map<file_id, unique_ptr<Frame>>
-                    region_id = std::max(region_id, frame.second->GetMaxRegionId());
-                }
-                ++region_id; // get next available
-                if (region_id == 0) {
-                    ++region_id;
-                } // reserved for cursor
+    if (_frames.count(file_id)) { // reference Frame for Region exists
+        casacore::CoordinateSystem csys = _frames.at(file_id)->CoordinateSystem();
+        std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
+        if (_regions.count(region_id)) {
+            // update region
+            _regions[region_id]->UpdateState(message.region_name(), message.region_type(), points, message.rotation(), csys);
+            success = _regions[region_id]->IsValid();
+        } else {
+            // create new region
+            if (region_id < 0) { // get unique region id
+                region_id = GetNextRegionId();
             }
-            std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
-            auto& frame = _frames[file_id]; // use frame in SetRegion message
-            success = _frames.at(file_id)->SetRegion(
-                region_id, message.region_name(), message.region_type(), points, message.rotation(), err_message);
-        } catch (std::out_of_range& range_error) {
-            err_message = fmt::format("File id {} closed", file_id);
+            auto region = std::unique_ptr<carta::Region>(
+                new carta::Region(message.region_name(), message.region_type(), points, message.rotation(), csys));
+            if (region->IsValid()) {
+                _regions[region_id] = move(region);
+                success = true;
+            }
+        }
+
+        // log error
+        if (!success) {
+            err_message = fmt::format("Region {} parameters for file {} failed", region_id, file_id);
+            SendLogEvent(err_message, {"region"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         err_message = fmt::format("File id {} not found", file_id);
     }
+
     // RESPONSE
     if (!silent) {
         CARTA::SetRegionAck ack;
@@ -512,30 +553,30 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         ack.set_message(err_message);
         SendEvent(CARTA::EventType::SET_REGION_ACK, request_id, ack);
     }
-    // update data streams if requirements set
-    if (success && _frames.at(file_id)->RegionChanged(region_id)) {
-        _frames.at(file_id)->IncreaseZProfileCount(region_id);
+
+    // update data streams if requirements set and region changed
+    if (success && _regions.at(region_id)->RegionChanged()) {
+        //_frames.at(file_id)->IncreaseZProfileCount(region_id);
         SendRegionStatsData(file_id, region_id);
         SendSpatialProfileData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
         SendSpectralProfileData(file_id, region_id);
-        _frames.at(file_id)->DecreaseZProfileCount(region_id);
+        //_frames.at(file_id)->DecreaseZProfileCount(region_id);
     }
+
     return success;
 }
 
 void Session::OnRemoveRegion(const CARTA::RemoveRegion& message) {
     auto region_id(message.region_id());
-    if ((region_id != CURSOR_REGION_ID) && (region_id != IMAGE_REGION_ID)) {
-        for (auto& frame : _frames) { // frames = map<fileId, unique_ptr<Frame>>
-            if (frame.second) {
-                frame.second->RemoveRegion(region_id);
-            }
-        }
+    if ((region_id != CURSOR_REGION_ID) && (region_id != IMAGE_REGION_ID)) { // should not happen
+        _regions[region_id].reset();
+        _regions.erase(region_id);
     }
 }
 
 void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t request_id) {
+    /*
     auto file_id(message.group_id()); // eventually, import into wcs group
     if (_frames.count(file_id)) {
         try {
@@ -586,9 +627,24 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         std::string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"import"}, CARTA::ErrorSeverity::DEBUG);
     }
+    */
+}
+
+int Session::GetNextRegionId() {
+    // returns maximum id + 1; start at 1 if no regions set
+    int max_id(0);
+    if (!_regions.empty()) {
+        std::vector<int> region_ids;
+        for (auto& region : _regions) {
+            region_ids.push_back(region.first);
+        }
+        max_id = *std::max_element(region_ids.begin(), region_ids.end());
+    }
+    return max_id + 1;
 }
 
 void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t request_id) {
+    /*
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
         try {
@@ -615,9 +671,11 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"export"}, CARTA::ErrorSeverity::DEBUG);
     }
+    */
 }
 
 void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& message) {
+    /*
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
         try {
@@ -638,29 +696,46 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
     }
+    */
 }
 
 void Session::OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t request_id) {
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
-        try {
-            auto region_id = message.region_id();
-            if (_frames.at(file_id)->SetRegionHistogramRequirements(
-                    region_id, std::vector<CARTA::SetHistogramRequirements_HistogramConfig>(
-                                   message.histograms().begin(), message.histograms().end()))) {
-                // RESPONSE
-                if (region_id == CUBE_REGION_ID) {
-                    SendCubeHistogramData(message, request_id);
+        auto region_id = message.region_id();
+
+        // Catch cube histogram cancel here
+        if ((region_id == CUBE_REGION_ID) && (message.histograms_size() == 0)) { // cancel!
+            _histogram_progress = HISTOGRAM_CANCEL;
+            _histogram_context.cancel_group_execution();
+            SendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
+            return;
+        }
+
+        if (region_id > IMAGE_REGION_ID) {
+            // use region data handler
+            // TODO: Set requirements
+            // SendRegionHistogramData(file_id, region_id);
+            string error = fmt::format("Histogram requirements for region id {} not implemented yet", region_id);
+            SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
+        } else {
+            // use frame
+            try {
+                std::vector<CARTA::SetHistogramRequirements_HistogramConfig> requirements = {
+                    message.histograms().begin(), message.histograms().end()};
+                if (_frames.at(file_id)->SetHistogramRequirements(region_id, requirements)) {
+                    if (!SendRegionHistogramData(file_id, region_id)) {
+                        std::string message = fmt::format("Histogram for file id {} failed or was cancelled", file_id);
+                        SendLogEvent(message, {"histogram"}, CARTA::ErrorSeverity::WARNING);
+                    }
                 } else {
-                    SendRegionHistogramData(file_id, region_id);
+                    string error = fmt::format("Histogram requirements for region id {} failed to validate ", region_id);
+                    SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
                 }
-            } else {
-                string error = fmt::format("Histogram requirements for region id {} failed to validate ", region_id);
-                SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
+            } catch (std::out_of_range& range_error) {
+                string error = fmt::format("File id {} closed", file_id);
+                SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
             }
-        } catch (std::out_of_range& range_error) {
-            string error = fmt::format("File id {} closed", file_id);
-            SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -669,6 +744,7 @@ void Session::OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
 }
 
 void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message) {
+    /*
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
         try {
@@ -690,24 +766,35 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::DEBUG);
     }
+    */
 }
 
 void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message) {
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
-        try {
-            auto region_id = message.region_id();
-            if (_frames.at(file_id)->SetRegionStatsRequirements(
-                    region_id, std::vector<int>(message.stats().begin(), message.stats().end()))) {
-                // RESPONSE
-                SendRegionStatsData(file_id, region_id);
-            } else {
-                string error = fmt::format("Stats requirements for region id {} failed to validate ", region_id);
-                SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
+        auto region_id = message.region_id();
+        if (region_id > IMAGE_REGION_ID) {
+            // region data handler
+            string error = fmt::format("Statistics requirements for region id {} not implemented yet", region_id);
+            SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
+        } else if (region_id == IMAGE_REGION_ID) {
+            try {
+                // frame
+                if (_frames.at(file_id)->SetStatsRequirements(
+                        region_id, std::vector<int>(message.stats().begin(), message.stats().end()))) {
+                    // RESPONSE
+                    SendRegionStatsData(file_id, region_id);
+                } else {
+                    string error = fmt::format("Stats requirements for region id {} failed to validate ", region_id);
+                    SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
+                }
+            } catch (std::out_of_range& range_error) {
+                string error = fmt::format("File id {} closed", file_id);
+                SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
             }
-        } catch (std::out_of_range& range_error) {
-            string error = fmt::format("File id {} closed", file_id);
-            SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
+        } else {
+            string error = fmt::format("Invalid region id {} for stats requirements", region_id);
+            SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
         }
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -831,22 +918,38 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 
 // ******** SEND DATA STREAMS *********
 
-CARTA::RegionHistogramData* Session::GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel) {
-    // Create HistogramData message; sent separately or within RasterImageData
+CARTA::RegionHistogramData* Session::GetRegionHistogramData(const int32_t file_id, const int32_t region_id) {
+    // Returns RegionHistogramData message for sending
     CARTA::RegionHistogramData* histogram_message(nullptr);
     if (_frames.count(file_id)) {
-        try {
-            histogram_message = new CARTA::RegionHistogramData();
-            if (_frames.at(file_id)->FillRegionHistogramData(region_id, histogram_message, check_current_channel)) {
-                histogram_message->set_file_id(file_id);
-                histogram_message->set_region_id(region_id);
-            } else {
-                delete histogram_message;
-                histogram_message = nullptr;
+        histogram_message = new CARTA::RegionHistogramData();
+        histogram_message->set_file_id(file_id);
+
+        if (region_id > IMAGE_REGION_ID) {
+            // use region data handler
+            SendLogEvent("Not implemented for regions yet", {"histogram"}, CARTA::ErrorSeverity::DEBUG);
+            delete histogram_message;
+            histogram_message = nullptr;
+        } else {
+            // use frame
+            try {
+                if (!_frames.at(file_id)->FillRegionHistogramData(region_id, histogram_message)) {
+                    if (region_id == IMAGE_REGION_ID) {
+                        // cache and calculation failed
+                        delete histogram_message;
+                        histogram_message = nullptr;
+                    } else if (region_id == CUBE_REGION_ID) {
+                        // not in cache, calculate cube histogram
+                        if (!CalculateCubeHistogram(file_id, histogram_message)) {
+                            delete histogram_message;
+                            histogram_message = nullptr;
+                        }
+                    }
+                }
+            } catch (std::out_of_range& range_error) {
+                string error = fmt::format("File id {} closed", file_id);
+                SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
             }
-        } catch (std::out_of_range& range_error) {
-            string error = fmt::format("File id {} closed", file_id);
-            SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -855,160 +958,142 @@ CARTA::RegionHistogramData* Session::GetRegionHistogramData(const int32_t file_i
     return histogram_message;
 }
 
-bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t request_id) {
-    bool data_sent(false);
-    auto file_id = message.file_id();
+bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData* cube_histogram_message) {
+    // Calculate cube histogram message fields, and set cache in Frame
+    // First try Frame::FillRegionHistogramData to get cached histogram before calculating it here.
+    bool calculated(false);
     if (_frames.count(file_id)) {
         try {
-            if (message.histograms_size() == 0) { // cancel!
-                _histogram_progress = HISTOGRAM_CANCEL;
-                _histogram_context.cancel_group_execution();
-                SendLogEvent("Histogram cancelled", {"histogram"}, CARTA::ErrorSeverity::INFO);
-                return data_sent;
-            }
-            auto region_id = message.region_id(); // CUBE_REGION_ID
-            auto channel = message.histograms(0).channel();
-            auto num_bins = message.histograms(0).num_bins();
             int stokes(_frames.at(file_id)->CurrentStokes());
-            CARTA::RegionHistogramData histogram_message;
-            CreateCubeHistogramMessage(histogram_message, file_id, stokes, 1.0);
-            CARTA::Histogram* message_histogram = histogram_message.add_histograms();
-            if (_frames.at(file_id)->GetRegionHistogram(region_id, channel, stokes, num_bins, *message_histogram)) {
-                // use stored cube histogram
-                SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
-                data_sent = true;
-            } else if (_frames.at(file_id)->GetImageHistogram(ALL_CHANNELS, stokes, num_bins, *message_histogram)) {
-                // use image cube histogram
-                SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
-                data_sent = true;
-            } else if (_frames.at(file_id)->NumChannels() == 1) {
-                int channel_num(0); // use per-channel histogram for channel 0
-                if (_frames.at(file_id)->GetRegionHistogram(IMAGE_REGION_ID, channel_num, stokes, num_bins, *message_histogram)) {
-                    // use stored channel 0 histogram
-                    SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
-                    data_sent = true;
-                } else if (_frames.at(file_id)->GetImageHistogram(channel_num, stokes, num_bins, *message_histogram)) {
-                    // use image channel 0 histogram
-                    SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
-                    data_sent = true;
-                } else { // calculate channel 0 histogram
-                    carta::BasicStats<float> stats;
-                    if (!_frames.at(file_id)->GetRegionBasicStats(IMAGE_REGION_ID, channel_num, stokes, stats)) {
-                        _frames.at(file_id)->CalcRegionBasicStats(IMAGE_REGION_ID, channel_num, stokes, stats);
-                    }
-                    _frames.at(file_id)->CalcRegionHistogram(IMAGE_REGION_ID, channel_num, stokes, num_bins, stats, *message_histogram);
-                    // send completed histogram
-                    SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
-                    data_sent = true;
+            HistogramConfig cube_histogram_config;
+            if (!_frames.at(file_id)->GetCubeHistogramConfig(cube_histogram_config)) {
+                return calculated; // no requirements
+            }
+
+            auto channel = cube_histogram_config.channel;
+            auto num_bins = cube_histogram_config.num_bins;
+
+            // To send periodic updates
+            _histogram_progress = HISTOGRAM_START;
+            auto t_start = std::chrono::high_resolution_clock::now();
+            int request_id(0);
+            size_t num_channels(_frames.at(file_id)->NumChannels());
+            size_t total_channels(num_channels * 2); // for progress; go through chans twice, for stats then histogram
+
+            // stats for entire cube
+            carta::BasicStats<float> cube_stats;
+            for (size_t chan = 0; chan < num_channels; ++chan) {
+                // stats for this channel
+                carta::BasicStats<float> channel_stats;
+                if (!_frames.at(file_id)->GetBasicStats(chan, stokes, channel_stats)) {
+                    return calculated;
                 }
-            } else { // calculate cube histogram
-                _histogram_progress = HISTOGRAM_START;
-                auto t_start = std::chrono::high_resolution_clock::now();
-                // stats for entire cube
-                carta::BasicStats<float> cube_stats;
-                size_t num_channels(_frames.at(file_id)->NumChannels());
+                cube_stats.join(channel_stats);
+
+                // check for cancel
+                if (_histogram_context.is_group_execution_cancelled()) {
+                    break;
+                }
+
+                // check for progress update
+                auto t_end = std::chrono::high_resolution_clock::now();
+                auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
+                if ((dt / 1e3) > 2.0) {
+                    // send progress
+                    float this_chan(chan);
+                    float progress = this_chan / total_channels;
+                    CARTA::RegionHistogramData progress_msg;
+                    CreateCubeHistogramMessage(progress_msg, file_id, stokes, progress);
+                    auto message_histogram = progress_msg.add_histograms();
+                    SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
+                    t_start = t_end;
+                }
+            }
+
+            // check cancel and proceed
+            if (!_histogram_context.is_group_execution_cancelled()) {
+                _frames.at(file_id)->CacheCubeStats(stokes, cube_stats);
+
+                // send progress message: half done
+                float progress = 0.50;
+                CARTA::RegionHistogramData half_progress;
+                CreateCubeHistogramMessage(half_progress, file_id, stokes, progress);
+                auto message_histogram = half_progress.add_histograms();
+                SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, half_progress);
+
+                // get histogram bins for each channel and accumulate bin counts in cube_bins
+                std::vector<int> cube_bins;
+                carta::HistogramResults chan_histogram; // histogram for each channel using cube stats
                 for (size_t chan = 0; chan < num_channels; ++chan) {
-                    // stats for this channel
-                    carta::BasicStats<float> channel_stats;
-                    if (!_frames.at(file_id)->GetRegionBasicStats(IMAGE_REGION_ID, chan, stokes, channel_stats)) {
-                        _frames.at(file_id)->CalcRegionBasicStats(IMAGE_REGION_ID, chan, stokes, channel_stats);
+                    if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, chan, stokes, num_bins, cube_stats, chan_histogram)) {
+                        return calculated; // channel histogram failed
                     }
-                    cube_stats.join(channel_stats);
+
+                    // add channel bins to cube bins
+                    if (chan == 0) {
+                        cube_bins = {chan_histogram.histogram_bins.begin(), chan_histogram.histogram_bins.end()};
+                    } else { // add chan histogram bins to cube histogram bins
+                        std::transform(chan_histogram.histogram_bins.begin(), chan_histogram.histogram_bins.end(), cube_bins.begin(),
+                            cube_bins.begin(), std::plus<int>());
+                    }
 
                     // check for cancel
                     if (_histogram_context.is_group_execution_cancelled()) {
                         break;
                     }
 
-                    // check for progress update
                     auto t_end = std::chrono::high_resolution_clock::now();
                     auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-                    if ((dt / 1e3) > 2.0) {                                 // send progress
-                        float this_chan(chan), all_chans(num_channels * 2); // go through chans twice
-                        float progress = this_chan / all_chans;
-                        CARTA::RegionHistogramData histogram_progress_msg;
-                        CreateCubeHistogramMessage(histogram_progress_msg, file_id, stokes, progress);
-                        message_histogram = histogram_progress_msg.add_histograms();
-                        SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_progress_msg);
-                        t_start = t_end;
-                    }
-                }
-                // save min,max in cube region
-                if (!_histogram_context.is_group_execution_cancelled()) {
-                    _frames.at(file_id)->SetRegionBasicStats(region_id, channel, stokes, cube_stats);
-                }
-
-                // check cancel and proceed
-                if (!_histogram_context.is_group_execution_cancelled()) {
-                    // send progress message: half done
-                    float progress = 0.50;
-                    histogram_message.set_progress(progress);
-                    SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_message);
-
-                    // get histogram bins for each channel and accumulate bin counts
-                    std::vector<int> cube_bins;
-                    CARTA::Histogram chan_histogram; // histogram for each channel
-                    for (size_t chan = 0; chan < num_channels; ++chan) {
-                        _frames.at(file_id)->CalcRegionHistogram(region_id, chan, stokes, num_bins, cube_stats, chan_histogram);
-                        // add channel bins to cube bins
-                        if (chan == 0) {
-                            cube_bins = {chan_histogram.bins().begin(), chan_histogram.bins().end()};
-                        } else { // add chan histogram bins to cube histogram bins
-                            std::transform(chan_histogram.bins().begin(), chan_histogram.bins().end(), cube_bins.begin(), cube_bins.begin(),
-                                std::plus<int>());
-                        }
-
-                        // check for cancel
-                        if (_histogram_context.is_group_execution_cancelled()) {
-                            break;
-                        }
-
-                        // check for progress update
-                        auto t_end = std::chrono::high_resolution_clock::now();
-                        auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-                        if ((dt / 1e3) > 2.0) {                                 // send progress
-                            float this_chan(chan), all_chans(num_channels * 2); // go through chans twice
-                            progress = 0.5 + (this_chan / all_chans);
-                            CARTA::RegionHistogramData histogram_progress_msg;
-                            CreateCubeHistogramMessage(histogram_progress_msg, file_id, stokes, progress);
-                            message_histogram = histogram_progress_msg.add_histograms();
-                            message_histogram->set_channel(ALL_CHANNELS);
-                            message_histogram->set_num_bins(chan_histogram.num_bins());
-                            message_histogram->set_bin_width(chan_histogram.bin_width());
-                            message_histogram->set_first_bin_center(chan_histogram.first_bin_center());
-                            message_histogram->set_mean(cube_stats.mean);
-                            message_histogram->set_std_dev(cube_stats.stdDev);
-                            *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
-                            SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, histogram_progress_msg);
-                            t_start = t_end;
-                        }
-                    }
-                    if (!_histogram_context.is_group_execution_cancelled()) {
-                        // send completed cube histogram
-                        progress = HISTOGRAM_COMPLETE;
-                        CARTA::RegionHistogramData final_histogram_message;
-                        CreateCubeHistogramMessage(final_histogram_message, file_id, stokes, progress);
-                        message_histogram = final_histogram_message.add_histograms();
-                        // fill histogram fields from last channel histogram
+                    if ((dt / 1e3) > 2.0) {
+                        // Send progress update
+                        float this_chan(chan);
+                        progress = 0.5 + (this_chan / total_channels);
+                        CARTA::RegionHistogramData progress_msg;
+                        CreateCubeHistogramMessage(progress_msg, file_id, stokes, progress);
+                        auto message_histogram = progress_msg.add_histograms();
                         message_histogram->set_channel(ALL_CHANNELS);
-                        message_histogram->set_num_bins(chan_histogram.num_bins());
-                        message_histogram->set_bin_width(chan_histogram.bin_width());
-                        message_histogram->set_first_bin_center(chan_histogram.first_bin_center());
+                        message_histogram->set_num_bins(chan_histogram.num_bins);
+                        message_histogram->set_bin_width(chan_histogram.bin_width);
+                        message_histogram->set_first_bin_center(chan_histogram.bin_center);
                         message_histogram->set_mean(cube_stats.mean);
                         message_histogram->set_std_dev(cube_stats.stdDev);
                         *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
-
-                        // save cube histogram
-                        _frames.at(file_id)->SetRegionHistogram(region_id, channel, stokes, *message_histogram);
-                        // send completed histogram message
-                        SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, final_histogram_message);
-                        data_sent = true;
-                        _histogram_progress = HISTOGRAM_COMPLETE;
+                        SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
+                        t_start = t_end;
                     }
                 }
-                _histogram_progress = HISTOGRAM_COMPLETE;
+
+                // set completed cube histogram
+                if (!_histogram_context.is_group_execution_cancelled()) {
+                    cube_histogram_message->set_file_id(file_id);
+                    cube_histogram_message->set_region_id(CUBE_REGION_ID);
+                    cube_histogram_message->set_stokes(stokes);
+                    cube_histogram_message->set_progress(HISTOGRAM_COMPLETE);
+                    // fill histogram fields from last channel histogram
+                    cube_histogram_message->clear_histograms();
+                    auto message_histogram = cube_histogram_message->add_histograms();
+                    message_histogram->set_channel(ALL_CHANNELS);
+                    message_histogram->set_num_bins(chan_histogram.num_bins);
+                    message_histogram->set_bin_width(chan_histogram.bin_width);
+                    message_histogram->set_first_bin_center(chan_histogram.bin_center);
+                    message_histogram->set_mean(cube_stats.mean);
+                    message_histogram->set_std_dev(cube_stats.stdDev);
+                    *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
+
+                    // cache cube histogram
+                    carta::HistogramResults cube_results;
+                    cube_results.num_bins = chan_histogram.num_bins;
+                    cube_results.bin_width = chan_histogram.bin_width;
+                    cube_results.bin_center = chan_histogram.bin_center;
+                    cube_results.histogram_bins = {cube_bins.begin(), cube_bins.end()};
+                    _frames.at(file_id)->CacheCubeHistogram(stokes, cube_results);
+
+                    calculated = true;
+                }
             }
+            _histogram_progress = HISTOGRAM_COMPLETE;
         } catch (std::out_of_range& range_error) {
+            _histogram_progress = HISTOGRAM_COMPLETE;
             string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
         }
@@ -1016,16 +1101,16 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
     }
-    return data_sent;
+    return calculated;
 }
 
 void Session::CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress) {
-    // update progress and make new message
-    _histogram_progress = progress;
+    // make new message and update progress
     msg.set_file_id(file_id);
     msg.set_region_id(CUBE_REGION_ID);
     msg.set_stokes(stokes);
     msg.set_progress(progress);
+    _histogram_progress = progress;
 }
 
 bool Session::SendRasterImageData(int file_id, bool send_histogram) {
@@ -1060,6 +1145,7 @@ bool Session::SendRasterImageData(int file_id, bool send_histogram) {
 bool Session::SendSpatialProfileData(int file_id, int region_id, bool stokes_changed) {
     // return true if data sent
     bool data_sent(false);
+    /*
     if (_frames.count(file_id)) {
         try {
             if (region_id == CURSOR_REGION_ID && !_frames.at(file_id)->IsCursorSet()) {
@@ -1080,12 +1166,14 @@ bool Session::SendSpatialProfileData(int file_id, int region_id, bool stokes_cha
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
     }
+    */
     return data_sent;
 }
 
 bool Session::SendSpectralProfileData(int file_id, int region_id, bool channel_changed, bool stokes_changed) {
     // return true if data sent
     bool data_sent(false);
+    /*
     if (_frames.count(file_id)) {
         try {
             if (region_id == CURSOR_REGION_ID && !_frames.at(file_id)->IsCursorSet()) {
@@ -1114,13 +1202,14 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool channel_c
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::DEBUG);
     }
+    */
     return data_sent;
 }
 
-bool Session::SendRegionHistogramData(int file_id, int region_id, bool channel_changed) {
+bool Session::SendRegionHistogramData(int file_id, int region_id) {
     // return true if data sent
     bool data_sent(false);
-    std::unique_ptr<CARTA::RegionHistogramData> histogram_data(GetRegionHistogramData(file_id, region_id, channel_changed));
+    std::unique_ptr<CARTA::RegionHistogramData> histogram_data(GetRegionHistogramData(file_id, region_id));
     if (histogram_data != nullptr) { // RESPONSE
         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, 0, *histogram_data);
         data_sent = true;
@@ -1132,18 +1221,26 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     // return true if data sent
     bool data_sent(false);
     if (_frames.count(file_id)) {
-        try {
-            CARTA::RegionStatsData region_stats_data;
-            if (_frames.at(file_id)->FillRegionStatsData(region_id, region_stats_data)) {
-                region_stats_data.set_file_id(file_id);
-                region_stats_data.set_region_id(region_id);
-                SendFileEvent(file_id, CARTA::EventType::REGION_STATS_DATA, 0, region_stats_data);
-                data_sent = true;
+        if (region_id == IMAGE_REGION_ID) { // use frame
+            try {
+                CARTA::RegionStatsData region_stats_data;
+                if (_frames.at(file_id)->FillRegionStatsData(region_id, region_stats_data)) {
+                    region_stats_data.set_file_id(file_id);
+                    region_stats_data.set_region_id(region_id);
+                    SendFileEvent(file_id, CARTA::EventType::REGION_STATS_DATA, 0, region_stats_data);
+                    data_sent = true;
+                }
+            } catch (std::out_of_range& range_error) {
+                string error = fmt::format("File id {} closed", file_id);
+                SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
             }
-        } catch (std::out_of_range& range_error) {
-            string error = fmt::format("File id {} closed", file_id);
-            SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::DEBUG);
+        } else if (region_id > IMAGE_REGION_ID) { // use region data handler
+            string error = fmt::format("No stats handler for region id {}", region_id);
+            SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
         }
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
     }
     return data_sent;
 }
@@ -1216,27 +1313,34 @@ bool Session::SendContourData(int file_id) {
     return false;
 }
 
-void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool channel_changed, bool stokes_changed) {
-    // Send updated data for all regions with requirements; do not send image histogram if already sent with raster data.
-    // Only set channel_changed and stokes_changed if they are the only trigger for new data,
-    // to prevent sending unneeded data streams.
+void Session::UpdateImageData(int file_id, bool send_image_histogram, bool stokes_changed) {
+    // Send updated data for image regions with requirements; do not send image histogram if already sent with raster data.
     if (_frames.count(file_id)) {
-        std::vector<int> regions(_frames.at(file_id)->GetRegionIds());
-        for (auto region_id : regions) {
-            // CHECK FOR CANCEL HERE ??
-            SendRegionStatsData(file_id, region_id);
-            SendSpatialProfileData(file_id, region_id, stokes_changed);
-            if ((region_id == IMAGE_REGION_ID) && send_image_histogram) {
-                SendRegionHistogramData(file_id, region_id, channel_changed);
-            } else if (region_id != IMAGE_REGION_ID) {
-                SendRegionHistogramData(file_id, region_id, channel_changed);
-            }
-            _frames.at(file_id)->IncreaseZProfileCount(region_id);
-            SendSpectralProfileData(file_id, region_id, channel_changed, stokes_changed);
-            _frames.at(file_id)->DecreaseZProfileCount(region_id);
+        // handle in frame
+        SendRegionStatsData(file_id, IMAGE_REGION_ID);
+        if (send_image_histogram) {
+            SendRegionHistogramData(file_id, IMAGE_REGION_ID);
+        }
+        if (stokes_changed) {
+            SendRegionHistogramData(file_id, CUBE_REGION_ID);
         }
     }
 }
+
+/*
+void Session::UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed) {
+    // Send updated data for regions with requirements
+    if (_frames.count(file_id)) {
+        // handle in region data handler
+        SendRegionStatsData(file_id, region_id);
+        SendRegionHistogramData(file_id, region_id);
+        SendSpatialProfileData(file_id, region_id, stokes_changed);
+        _frames.at(file_id)->IncreaseZProfileCount(region_id);
+        SendSpectralProfileData(file_id, region_id, channel_changed, stokes_changed);
+        _frames.at(file_id)->DecreaseZProfileCount(region_id);
+    }
+}
+*/
 
 // *********************************************************************************
 // SEND uWEBSOCKET MESSAGES
@@ -1284,6 +1388,9 @@ void Session::SendLogEvent(const std::string& message, std::vector<std::string> 
         Log(_id, message);
     }
 }
+
+// *********************************************************************************
+// ANIMATION
 
 void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id) {
     CARTA::AnimationFrame start_frame, first_frame, last_frame, delta_frame;
@@ -1350,7 +1457,8 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
                 // Send Contour data if required
                 SendContourData(file_id);
                 // RESPONSE: data for all regions; no histogram
-                UpdateRegionData(file_id, !send_histogram, channel_changed, stokes_changed);
+                UpdateImageData(file_id, !send_histogram, stokes_changed);
+                // UpdateRegionData(file_id, !send_histogram, channel_changed, stokes_changed);
             } else {
                 if (!err_message.empty()) {
                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
@@ -1508,20 +1616,5 @@ void Session::CancelExistingAnimation() {
     if (_animation_object) {
         _animation_object->CancelExecution();
         _animation_object = nullptr;
-    }
-}
-
-void Session::DeleteFrame(int file_id) {
-    std::unique_lock<std::mutex> lock(_frame_mutex);
-    if (file_id == ALL_FILES) {
-        for (auto& frame : _frames) {
-            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-            frame.second.reset();             // delete Frame
-        }
-        _frames.clear();
-    } else if (_frames.count(file_id)) {
-        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-        _frames[file_id].reset();
-        _frames.erase(file_id);
     }
 }

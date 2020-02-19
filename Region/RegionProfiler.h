@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "../Util.h"
+#include "../Requirements.h"
 
 #include <carta-protobuf/region_requirements.pb.h>
 

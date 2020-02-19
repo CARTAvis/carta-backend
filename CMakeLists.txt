@@ -32,7 +32,6 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
 INCLUDE_DIRECTORIES(/usr/include/casacore)
 INCLUDE_DIRECTORIES(/usr/local/include/casacode)
 
@@ -97,13 +96,14 @@ set(SOURCE_FILES
         FileList/FileInfoLoader.cc
         FileList/FileListHandler.cc
         FileList/FitsHduList.cc
-        Region/Ds9Parser.cc
         Region/Region.cc
-        Region/RegionStats.cc
         Region/RegionProfiler.cc
-        Region/Histogram.cc
+        Region/RegionStats.cc
+        RegionFile/Ds9Parser.cc
         OnMessageTask.cc
         FileSettings.cc
+        ImageStats/StatsCalculator.cc
+        ImageStats/Histogram.cc
         Util.cc)
 
 add_definitions(-DHAVE_HDF5)

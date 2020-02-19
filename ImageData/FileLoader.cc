@@ -1,5 +1,6 @@
 #include "FileLoader.h"
 
+#include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
 #include "../Util.h"
@@ -200,9 +201,10 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
         data.resize(slicer.length());
     }
 
-    // Get data slice with mask applied
-    casacore::SubImage<float> subimage(*image, slicer);               // apply slicer to image to get appropriate cursor
-    casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage); // read-only
+    // Get data slice with mask applied.
+    // Apply slicer to image first to get appropriate cursor, and use read-only iterator
+    casacore::SubImage<float> subimage(*image, slicer);
+    casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
     for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
         casacore::IPosition cursor_shape(lattice_iter.cursorShape());
         casacore::IPosition cursor_position(lattice_iter.position());
@@ -230,6 +232,16 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
         }
         data(cursor_slicer) = cursor_data;
     }
+    return true;
+}
+
+bool FileLoader::GetSubImage(casacore::Slicer& slicer, casacore::SubImage<float>& sub_image) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
+    }
+
+    sub_image = casacore::SubImage<float>(*image, slicer);
     return true;
 }
 

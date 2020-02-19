@@ -5,6 +5,7 @@
 #include <string>
 
 #include <casacore/images/Images/ImageInterface.h>
+#include <casacore/images/Images/SubImage.h>
 
 #include <carta-protobuf/enums.pb.h>
 
@@ -143,6 +144,9 @@ public:
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Slice image data (with mask applied)
     bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false);
+
+    // SubImage for image plane
+    bool GetSubImage(casacore::Slicer& slicer, casacore::SubImage<float>& sub_image);
 
     // Image Statistics
     // Load image statistics, if they exist, from the file

@@ -1,13 +1,11 @@
-#ifndef CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_H_
-#define CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_H_
+#ifndef CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_H_
+#define CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_H_
 
 #include <algorithm>
 
 #include <tbb/blocked_range2d.h>
 #include <tbb/blocked_range3d.h>
 #include <tbb/parallel_reduce.h>
-
-#include <casacore/casa/Arrays/Array.h>
 
 namespace carta {
 
@@ -48,4 +46,4 @@ public:
 
 #include "BasicStatsCalculator.tcc"
 
-#endif // CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_H_
+#endif // CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_H_

@@ -17,6 +17,7 @@
 #include <casacore/mirlib/miriad.h>
 
 #include <carta-protobuf/region_requirements.pb.h>
+#include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
 #include "InterfaceConstants.h"
@@ -47,6 +48,15 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
 
 CARTA::FileType GetCartaFileType(const std::string& filename);
+
+inline int ChannelStokesIndex(int channel, int stokes) {
+    // For convenience, need single index for storing cache by channel and stokes
+    return (channel * 10) + stokes;
+}
+
+// Fill RegionStatsData message StatisticsValue fields from map
+void FillStatisticsValuesFromMap(
+    CARTA::RegionStatsData& stats_data, std::vector<int>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
 
 // ************ structs *************
 //
@@ -92,72 +102,6 @@ struct CursorXy {
             return false;
         }
         return true;
-    }
-};
-
-struct RegionState {
-    std::string name;
-    CARTA::RegionType type;
-    std::vector<CARTA::Point> control_points;
-    float rotation;
-    RegionState() {}
-    RegionState(std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
-        name = name_;
-        type = type_;
-        control_points = control_points_;
-        rotation = rotation_;
-    }
-    void operator=(const RegionState& other) {
-        name = other.name;
-        type = other.type;
-        control_points = other.control_points;
-        rotation = other.rotation;
-    }
-    bool operator==(const RegionState& rhs) {
-        if (name != rhs.name || type != rhs.type || rotation != rhs.rotation || control_points.size() != rhs.control_points.size()) {
-            return false;
-        }
-        for (int i = 0; i < control_points.size(); ++i) {
-            float x(control_points[i].x()), y(control_points[i].y());
-            float rhs_x(rhs.control_points[i].x()), rhs_y(rhs.control_points[i].y());
-            if (x != rhs_x || y != rhs_y) {
-                return false;
-            }
-        }
-        return true;
-    }
-    bool operator!=(const RegionState& rhs) {
-        if (name != rhs.name || type != rhs.type || rotation != rhs.rotation || control_points.size() != rhs.control_points.size()) {
-            return true;
-        }
-        for (int i = 0; i < control_points.size(); ++i) {
-            float x(control_points[i].x()), y(control_points[i].y());
-            float rhs_x(rhs.control_points[i].x()), rhs_y(rhs.control_points[i].y());
-            if (x != rhs_x || y != rhs_y) {
-                return true;
-            }
-        }
-        return false;
-    }
-    void UpdateState(std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
-        name = name_;
-        type = type_;
-        control_points = control_points_;
-        rotation = rotation_;
-    }
-};
-
-struct SpectralConfig {
-    int stokes_index;
-    std::vector<int> stats_types;
-
-    SpectralConfig() {}
-    SpectralConfig(int stokes_index_, std::vector<int> stats_types_) {
-        stokes_index = stokes_index_;
-        stats_types = stats_types_;
-    }
-    bool operator==(const SpectralConfig& rhs) const {
-        return ((stokes_index == rhs.stokes_index) && (stats_types == rhs.stats_types));
     }
 };
 

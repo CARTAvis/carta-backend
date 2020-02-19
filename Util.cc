@@ -159,3 +159,24 @@ CARTA::FileType GetCartaFileType(const std::string& filename) {
             return CARTA::FileType::UNKNOWN;
     }
 }
+
+void FillStatisticsValuesFromMap(
+    CARTA::RegionStatsData& stats_data, std::vector<int>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map) {
+    // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
+    for (auto type : required_stats) {
+        double value(0.0); // default
+        auto carta_stats_type = static_cast<CARTA::StatsType>(type);
+        if (stats_value_map.find(carta_stats_type) != stats_value_map.end()) { // stat found
+            value = stats_value_map[carta_stats_type];
+        } else { // stat not provided
+            if (carta_stats_type != CARTA::StatsType::NumPixels) {
+                value = std::numeric_limits<double>::quiet_NaN();
+            }
+        }
+
+        // add StatisticsValue to message
+        auto stats_value = stats_data.add_statistics();
+        stats_value->set_stats_type(carta_stats_type);
+        stats_value->set_value(value);
+    }
+}

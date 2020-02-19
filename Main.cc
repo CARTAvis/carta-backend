@@ -24,7 +24,6 @@
 
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
-#include "FileSettings.h"
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "Util.h"
@@ -100,7 +99,7 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
     Session* session = (Session*)ws->getUserData();
 
     if (session) {
-        auto uuid = session->_id;
+        auto uuid = session->GetId();
         session->DisconnectCalled();
         Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address, Session::NumberOfSessions());
         if (!session->DecreaseRefCount()) {

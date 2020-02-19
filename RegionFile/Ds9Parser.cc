@@ -11,8 +11,8 @@
 #include <imageanalysis/Annotations/AnnRegion.h>
 #include <imageanalysis/Annotations/AnnRotBox.h>
 
-#include "Ds9Parser.h"
 #include "../Util.h"
+#include "Ds9Parser.h"
 
 using namespace carta;
 
