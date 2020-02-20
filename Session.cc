@@ -1310,19 +1310,10 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     }
 }
 
-void Session::ExecuteAnimationFrameInner(bool stopped) {
+void Session::ExecuteAnimationFrameInner() {
     CARTA::AnimationFrame curr_frame;
 
-    if (stopped) {
-        if (((_animation_object->_stop_frame.channel() == _animation_object->_current_frame.channel()) &&
-                (_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
-            return;
-        }
-        curr_frame = _animation_object->_stop_frame;
-    } else {
-        curr_frame = _animation_object->_next_frame;
-    }
-
+    curr_frame = _animation_object->_next_frame;
     auto file_id(_animation_object->_file_id);
     if (_frames.count(file_id)) {
         const std::unique_ptr<Frame>& frame = _frames.at(file_id);
@@ -1379,7 +1370,6 @@ bool Session::ExecuteAnimationFrame() {
     }
 
     if (_animation_object->_stop_called) {
-        ExecuteAnimationFrameInner(true);
         return false;
     }
 
@@ -1391,12 +1381,11 @@ bool Session::ExecuteAnimationFrame() {
         std::this_thread::sleep_for(wait_duration_ms);
 
         if (_animation_object->_stop_called) {
-            ExecuteAnimationFrameInner(true);
             return false;
         }
 
         curr_frame = _animation_object->_next_frame;
-        ExecuteAnimationFrameInner(false);
+        ExecuteAnimationFrameInner();
 
         CARTA::AnimationFrame tmp_frame;
         CARTA::AnimationFrame delta_frame = _animation_object->_delta_frame;
@@ -1456,7 +1445,6 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
         return;
     }
 
-    _animation_object->_stop_frame = frame;
     _animation_object->_stop_called = true;
 }
 

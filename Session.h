@@ -104,7 +104,7 @@ public:
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
-    void ExecuteAnimationFrameInner(bool stopped);
+    void ExecuteAnimationFrameInner();
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
     int CurrentFlowWindowSize() {
