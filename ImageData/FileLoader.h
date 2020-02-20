@@ -54,7 +54,7 @@ struct RegionSpectralStats {
         std::vector<CARTA::StatsType> supported_stats = {
             CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
             CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq,
-            CARTA::StatsType::Min, CARTA::StatsType::Max, CARTA::StatsType::Flux
+            CARTA::StatsType::Min, CARTA::StatsType::Max, CARTA::StatsType::FluxDensity
         };
 
         for (auto& s : supported_stats) {
