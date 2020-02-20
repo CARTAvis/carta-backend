@@ -185,12 +185,11 @@ protected:
     virtual void LoadStats3DHist();
     virtual void LoadStats3DPercent();
     
+    virtual double CalculateFlux(int stokes, int channel, double sum);
 
 private:
     // Find spectral and stokes coordinates
     void FindCoordinates(int& spectral_axis, int& stokes_axis);
-    // TODO what parameters do we actually need?
-    double CalculateFlux(int stokes, int channel, double sum);
 };
 
 } // namespace carta

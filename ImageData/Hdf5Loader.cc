@@ -396,4 +396,10 @@ void Hdf5Loader::SetFramePtr(Frame* frame) {
     _frame = frame;
 }
 
+double Hdf5Loader::CalculateFlux(int stokes, int channel, double sum) {
+    // TODO: get the relevant header values from the image
+    std::cerr << "+++ UNITS: " << image->units() << std::endl;
+    return NAN;
+}
+
 } // namespace carta

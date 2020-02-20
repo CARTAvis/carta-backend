@@ -598,6 +598,6 @@ void FileLoader::SetFramePtr(Frame* frame) {
 }
 
 double FileLoader::CalculateFlux(int stokes, int channel, double sum) {
-    // TODO we can implement it here
+    // Only used for HDF5 files, and implemented there
     return NAN;
 }

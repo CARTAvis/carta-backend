@@ -49,6 +49,8 @@ private:
     casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
 
     casacore::Lattice<float>* LoadSwizzledData();
+    
+    double CalculateFlux(int stokes, int channel, double sum) override;
 };
 
 } // namespace carta
