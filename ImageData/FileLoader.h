@@ -51,9 +51,11 @@ struct RegionSpectralStats {
     RegionSpectralStats() {}
 
     RegionSpectralStats(casacore::IPosition origin, casacore::IPosition shape, int num_channels) : origin(origin), shape(shape) {
-        std::vector<CARTA::StatsType> supported_stats = {CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
-            CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min,
-            CARTA::StatsType::Max};
+        std::vector<CARTA::StatsType> supported_stats = {
+            CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
+            CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq,
+            CARTA::StatsType::Min, CARTA::StatsType::Max, CARTA::StatsType::Flux
+        };
 
         for (auto& s : supported_stats) {
             stats.emplace(std::piecewise_construct, std::make_tuple(s), std::make_tuple(num_channels));
@@ -182,10 +184,13 @@ protected:
     virtual void LoadStats3DBasic(FileInfo::Data ds);
     virtual void LoadStats3DHist();
     virtual void LoadStats3DPercent();
+    
 
 private:
     // Find spectral and stokes coordinates
     void FindCoordinates(int& spectral_axis, int& stokes_axis);
+    // TODO what parameters do we actually need?
+    double CalculateFlux(int stokes, int channel, double sum);
 };
 
 } // namespace carta

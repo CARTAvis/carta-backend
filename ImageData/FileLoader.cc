@@ -525,6 +525,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                         stats[CARTA::StatsType::Mean] = sum / num_pixels;
                         stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                         stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                        stats[CARTA::StatsType::FluxDensity] = CalculateFlux(s, c, sum);
 
                         _channel_stats[s][c].full = true;
                     }
@@ -560,6 +561,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                     stats[CARTA::StatsType::Mean] = sum / num_pixels;
                     stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                     stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                    stats[CARTA::StatsType::FluxDensity] = CalculateFlux(s, -1, sum);
 
                     _cube_stats[s].full = true;
                 }
@@ -593,4 +595,9 @@ bool FileLoader::GetRegionSpectralData(int region_id, int config_stokes, int pro
 
 void FileLoader::SetFramePtr(Frame* frame) {
     // Must be implemented in subclasses
+}
+
+double FileLoader::CalculateFlux(int stokes, int channel, double sum) {
+    // TODO we can implement it here
+    return NAN;
 }
