@@ -398,7 +398,7 @@ void Hdf5Loader::SetFramePtr(Frame* frame) {
 
 double Hdf5Loader::CalculateFlux(int stokes, int channel, double sum) {
     // TODO: get the relevant header values from the image
-    std::cerr << "+++ UNITS: " << image->units() << std::endl;
+    std::cerr << "+++ UNITS: " << _image->units().getName() << std::endl;
     return NAN;
 }
 
