@@ -763,7 +763,7 @@ bool Frame::SetImageCache() {
         auto dt_set_image_cache =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
         fmt::print("Load {}x{} image to cache in {} ms at {} MPix/s\n", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
-            _image_shape(0) * _image_shape(1) / dt_set_image_cache);
+            (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
     }
 
     return true;
@@ -1067,7 +1067,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         auto dt_raster_data_filter =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
         fmt::print("{} filter {}x{} raster data in {} ms at {} MPix/s \n", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
-            num_rows_region, row_length_region, dt_raster_data_filter * 1e-3, num_rows_region * row_length_region / dt_raster_data_filter);
+            num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
+            (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
     }
     return true;
 }
@@ -1125,7 +1126,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 auto dt_compress_tile_data =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
                 fmt::print("Compress {}x{} tile data in {} ms at {} MPix/s\n", tile_width, tile_height, dt_compress_tile_data * 1e-3,
-                    tile_width * tile_height / dt_compress_tile_data);
+                    (float)(tile_width * tile_height) / dt_compress_tile_data);
             }
 
             return !(ChannelsChanged(channel, stokes));
@@ -1238,7 +1239,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                             std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram)
                                 .count();
                         fmt::print("Fill {} histogram in {} ms at {} MPix/s\n", region_id == IMAGE_REGION_ID ? "image" : "regions",
-                            dt_region_histogram * 1e-3, stats.num_pixels / dt_region_histogram);
+                            dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
                     }
                 }
             }

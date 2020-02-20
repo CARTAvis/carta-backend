@@ -413,7 +413,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
             g.run([=] { lambda(j); });
         }
         g.wait();
-        // Measure duration for get tiled data
+        // Measure duration for get tile data
         if (_verbose_logging) {
             auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_get_tile_data =
@@ -958,7 +958,8 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                     auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
                     auto dt_cube_histogram =
                         std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
-                    fmt::print("Fill cube histogram in {} ms\n", dt_cube_histogram * 1e-3);
+                    fmt::print("Fill cube histogram in {} ms at {} MPix/s\n", dt_cube_histogram * 1e-3,
+                        (float)cube_stats.num_pixels / dt_cube_histogram);
                 }
 
                 // save min,max in cube region
