@@ -762,7 +762,8 @@ bool Frame::SetImageCache() {
         auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
         auto dt_set_image_cache =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-        fmt::print("Load image to cache in {} ms\n", dt_set_image_cache * 1e-3);
+        fmt::print("Load {}x{} image to cache in {} ms at {} MPix/s\n", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
+            _image_shape(0) * _image_shape(1) / dt_set_image_cache);
     }
 
     return true;
@@ -1065,7 +1066,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
         auto dt_raster_data_filter =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
-        fmt::print("Filter raster data in {} ms\n", dt_raster_data_filter * 1e-3);
+        fmt::print("{} filter {}x{} raster data in {} ms at {} MPix/s \n", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
+            num_rows_region, row_length_region, dt_raster_data_filter * 1e-3, num_rows_region * row_length_region / dt_raster_data_filter);
     }
     return true;
 }
@@ -1117,12 +1119,13 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             int precision = lround(compression_quality);
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
-            // Measure duration for compress tiled data
+            // Measure duration for compress tile data
             if (_verbose) {
                 auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
                 auto dt_compress_tile_data =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
-                fmt::print("Compress tile data in {} ms\n", dt_compress_tile_data * 1e-3);
+                fmt::print("Compress {}x{} tile data in {} ms at {} MPix/s\n", tile_width, tile_height, dt_compress_tile_data * 1e-3,
+                    tile_width * tile_height / dt_compress_tile_data);
             }
 
             return !(ChannelsChanged(channel, stokes));
@@ -1234,8 +1237,8 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                         auto dt_region_histogram =
                             std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram)
                                 .count();
-                        fmt::print(
-                            "Fill {} histogram in {} ms\n", region_id == IMAGE_REGION_ID ? "image" : "regions", dt_region_histogram * 1e-3);
+                        fmt::print("Fill {} histogram in {} ms at {} MPix/s\n", region_id == IMAGE_REGION_ID ? "image" : "regions",
+                            dt_region_histogram * 1e-3, stats.num_pixels / dt_region_histogram);
                     }
                 }
             }
