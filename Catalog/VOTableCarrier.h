@@ -100,8 +100,8 @@ private:
     std::unordered_map<int, Coosys> _coosys; // Unordered map for the element <COOSYS>: <COOSYS count (Column Index), COOSYS attributes>
     std::unordered_map<int, Field> _fields;  // Unordered map for the element <FIELD>: <FIELD count (Column Index), FIELD attributes>
     size_t _num_of_rows = 0;                 // Number of table rows
-    std::vector<size_t> _row_indexes;
-    std::string _sort_column;
+    std::vector<size_t> _row_indexes;        // [0, 1, 2, ...] for primitive data without sorting
+    std::string _sort_column;                // Name of the column to sort
 
     // Unordered map for table columns: <Column Index, Column Vector>
     std::unordered_map<int, std::vector<bool>> _bool_vectors;          // For the column with datatype = "boolean"

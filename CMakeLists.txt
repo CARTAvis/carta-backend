@@ -122,7 +122,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Tests
-option(test "Build tests." ON)
+option(test "Build tests." OFF)
 if (test)
     add_subdirectory(test)
 endif ()
