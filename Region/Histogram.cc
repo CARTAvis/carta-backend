@@ -25,7 +25,6 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
     _hist = tmp;
 }
 
-
 void Histogram::join(Histogram& h) { // NOLINT
     auto range = tbb::blocked_range<size_t>(0, _hist.size());
     auto loop = [this, &h](const tbb::blocked_range<size_t>& r) {
@@ -35,7 +34,6 @@ void Histogram::join(Histogram& h) { // NOLINT
     };
     tbb::parallel_for(range, loop);
 }
-
 
 void Histogram::setup_bins(const int start, const int end) {
     int i, stride, buckets;
@@ -72,7 +70,8 @@ void Histogram::setup_bins(const int start, const int end) {
         {
             for (i = 0; i <= (buckets - stride * 2); i += stride * 2) {
 #pragma omp task
-                std::transform((bins_bin[i + stride]),&(bins_bin[i + stride][ _hist.size()]), (bins_bin[i]), (bins_bin[i]), std::plus<int>());
+                std::transform(
+                    (bins_bin[i + stride]), &(bins_bin[i + stride][_hist.size()]), (bins_bin[i]), (bins_bin[i]), std::plus<int>());
             }
             stride *= 2;
         }
