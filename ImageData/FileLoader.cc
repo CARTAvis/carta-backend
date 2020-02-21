@@ -525,7 +525,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                         stats[CARTA::StatsType::Mean] = sum / num_pixels;
                         stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                         stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
-                        stats[CARTA::StatsType::FluxDensity] = CalculateFlux(s, c, sum);
+                        stats[CARTA::StatsType::FluxDensity] = CalculateFlux(sum);
 
                         _channel_stats[s][c].full = true;
                     }
@@ -561,7 +561,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                     stats[CARTA::StatsType::Mean] = sum / num_pixels;
                     stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                     stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
-                    stats[CARTA::StatsType::FluxDensity] = CalculateFlux(s, -1, sum);
+                    stats[CARTA::StatsType::FluxDensity] = CalculateFlux(sum);
 
                     _cube_stats[s].full = true;
                 }
@@ -597,7 +597,18 @@ void FileLoader::SetFramePtr(Frame* frame) {
     // Must be implemented in subclasses
 }
 
-double FileLoader::CalculateFlux(int stokes, int channel, double sum) {
-    // Only used for HDF5 files, and implemented there
-    return NAN;
+// TODO this doesn't currently return an accurate value because of precision lost in the header conversion
+double FileLoader::CalculateFlux(double sum) {
+    ImageRef image = GetImage();
+    
+    auto& info = image->imageInfo();
+    auto& coord = image->coordinates();
+    
+    if (!info.hasSingleBeam() || !coord.hasDirectionCoordinate()) {
+        return NAN;
+    }
+
+    double beam_area = info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
+    
+    return sum/beam_area;
 }

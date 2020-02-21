@@ -184,8 +184,9 @@ protected:
     virtual void LoadStats3DBasic(FileInfo::Data ds);
     virtual void LoadStats3DHist();
     virtual void LoadStats3DPercent();
-    
-    virtual double CalculateFlux(int stokes, int channel, double sum);
+
+    // Basic flux density calculation
+    double CalculateFlux(double sum);
 
 private:
     // Find spectral and stokes coordinates

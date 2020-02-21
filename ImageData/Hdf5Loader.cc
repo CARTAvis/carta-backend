@@ -302,7 +302,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
                     mean[z] = sum_z / num_pixels_z;
                     rms[z] = sqrt(sum_sq_z / num_pixels_z);
                     sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
-                    flux[z] = CalculateFlux(profile_stokes, z, sum_z);
+                    flux[z] = CalculateFlux(sum_z);
                 } else {
                     // if there are no valid values, set all stats to NaN except the value and NaN counts
                     for (auto& kv : stats) {
@@ -394,21 +394,6 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
 
 void Hdf5Loader::SetFramePtr(Frame* frame) {
     _frame = frame;
-}
-
-// TODO this doesn't currently return an accurate value because of precision lost in the header conversion
-double Hdf5Loader::CalculateFlux(int stokes, int channel, double sum) {
-    // We don't currently use stokes or channel because we don't support multiple beams
-    auto& info = _image->imageInfo();
-    auto& coord = _image->coordinates();
-    
-    if (!info.hasSingleBeam() || !coord.hasDirectionCoordinate()) {
-        return NAN;
-    }
-
-    double beam_area = info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
-    
-    return sum/beam_area;
 }
 
 } // namespace carta
