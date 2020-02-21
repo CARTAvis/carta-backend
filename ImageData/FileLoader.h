@@ -50,12 +50,16 @@ struct RegionSpectralStats {
 
     RegionSpectralStats() {}
 
-    RegionSpectralStats(casacore::IPosition origin, casacore::IPosition shape, int num_channels) : origin(origin), shape(shape) {
+    RegionSpectralStats(casacore::IPosition origin, casacore::IPosition shape, int num_channels, bool has_flux=false) : origin(origin), shape(shape) {
         std::vector<CARTA::StatsType> supported_stats = {
             CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
             CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq,
-            CARTA::StatsType::Min, CARTA::StatsType::Max, CARTA::StatsType::FluxDensity
+            CARTA::StatsType::Min, CARTA::StatsType::Max
         };
+        
+        if (has_flux) {
+            supported_stats.push_back(CARTA::StatsType::FluxDensity);
+        }
 
         for (auto& s : supported_stats) {
             stats.emplace(std::piecewise_construct, std::make_tuple(s), std::make_tuple(num_channels));
@@ -186,6 +190,7 @@ protected:
     virtual void LoadStats3DPercent();
 
     // Basic flux density calculation
+    bool HasFlux();
     double CalculateFlux(double sum);
 
 private:
