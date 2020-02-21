@@ -1,5 +1,6 @@
 #include "Session.h"
 
+#include <omp.h>
 #include <signal.h>
 #include <algorithm>
 #include <chrono>
@@ -416,11 +417,10 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
             }
         };
 
-        tbb::task_group g;
+#pragma omp parallel for
         for (int j = 0; j < stride; j++) {
-            g.run([=] { lambda(j); });
+            lambda(j);
         }
-        g.wait();
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
         CARTA::RasterTileSync final_message;

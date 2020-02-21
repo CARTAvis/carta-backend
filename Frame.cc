@@ -878,49 +878,44 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
-        auto loop = [&](const tbb::blocked_range<size_t>& r) {
-            for (size_t j = r.begin(); j != r.end(); ++j) {
-                for (size_t i = 0; i != row_length_region; ++i) {
-                    float pixel_sum = 0;
-                    int pixel_count = 0;
-                    size_t image_row = y + (j * mip);
-                    for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-                        if (image_row >= _image_shape(1)) {
+#pragma omp parallel for
+        for (size_t j = 0; j < num_rows_region; ++j) {
+            for (size_t i = 0; i != row_length_region; ++i) {
+                float pixel_sum = 0;
+                int pixel_count = 0;
+                size_t image_row = y + (j * mip);
+                for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
+                    if (image_row >= _image_shape(1)) {
+                        continue;
+                    }
+                    size_t image_col = x + (i * mip);
+                    for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
+                        if (image_col >= _image_shape(0)) {
                             continue;
                         }
-                        size_t image_col = x + (i * mip);
-                        for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-                            if (image_col >= _image_shape(0)) {
-                                continue;
-                            }
-                            float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
-                            if (std::isfinite(pix_val)) {
-                                pixel_count++;
-                                pixel_sum += pix_val;
-                            }
-                            image_col++;
+                        float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
+                        if (std::isfinite(pix_val)) {
+                            pixel_count++;
+                            pixel_sum += pix_val;
                         }
-                        image_row++;
+                        image_col++;
                     }
-                    image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+                    image_row++;
                 }
+                image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
             }
-        };
-        tbb::parallel_for(range, loop);
+        }
+
     } else {
         // Nearest neighbour filtering
-        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
-        auto loop = [&](const tbb::blocked_range<size_t>& r) {
-            for (size_t j = r.begin(); j != r.end(); ++j) {
-                for (auto i = 0; i < row_length_region; i++) {
-                    auto image_row = y + j * mip;
-                    auto image_col = x + i * mip;
-                    image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
-                }
+#pragma omp parallel for
+        for (size_t j = 0; j < num_rows_region; ++j) {
+            for (auto i = 0; i < row_length_region; i++) {
+                auto image_row = y + j * mip;
+                auto image_col = x + i * mip;
+                image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
             }
-        };
-        tbb::parallel_for(range, loop);
+        }
     }
     return true;
 }
