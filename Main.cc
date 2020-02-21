@@ -174,15 +174,6 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
-                case CARTA::EventType::SET_IMAGE_VIEW: {
-                    CARTA::SetImageView message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnSetImageView(message);
-                    } else {
-                        fmt::print("Bad SET_IMAGE_VIEW message!\n");
-                    }
-                    break;
-                }
                 case CARTA::EventType::SET_CURSOR: {
                     CARTA::SetCursor message;
                     if (message.ParseFromArray(event_buf, event_length)) {
