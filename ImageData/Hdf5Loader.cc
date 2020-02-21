@@ -250,8 +250,13 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
         auto& sum_sq = stats[CARTA::StatsType::SumSq];
         auto& min = stats[CARTA::StatsType::Min];
         auto& max = stats[CARTA::StatsType::Max];
-        std::vector<double> dummy;
-        auto& flux = (HasFlux()) ? stats[CARTA::StatsType::FluxDensity] : dummy;
+
+        std::function<void(size_t, double)> do_flux = [&](size_t z, double sum_z) {};
+
+        if (HasFlux()) {
+            auto& flux = stats[CARTA::StatsType::FluxDensity];
+            do_flux = [&](size_t z, double sum_z) { flux[z] = CalculateFlux(sum_z); };
+        }
 
         std::vector<float> slice_data;
 
@@ -303,9 +308,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
                     mean[z] = sum_z / num_pixels_z;
                     rms[z] = sqrt(sum_sq_z / num_pixels_z);
                     sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
-                    if (HasFlux()) {
-                        flux[z] = CalculateFlux(sum_z);
-                    }
+                    do_flux(z, sum_z);
                 } else {
                     // if there are no valid values, set all stats to NaN except the value and NaN counts
                     for (auto& kv : stats) {
