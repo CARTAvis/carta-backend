@@ -397,8 +397,21 @@ void Hdf5Loader::SetFramePtr(Frame* frame) {
 }
 
 double Hdf5Loader::CalculateFlux(int stokes, int channel, double sum) {
-    // TODO: get the relevant header values from the image
-    std::cerr << "+++ UNITS: " << _image->units().getName() << std::endl;
+    // We don't currently use stokes or channel because we don't support multiple beams
+    auto& info = _image->imageInfo();
+    auto& coord = _image->coordinates();
+    
+    if (!info.hasSingleBeam() || !coord.hasDirectionCoordinate()) {
+        return NAN;
+    }
+    
+    auto beam_area = info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
+    
+    std::cerr << "SUM/BEAM: " << sum/beam_area << "; JUST SUM: " << sum << std::endl;
+    
+//     std::string units = _image->units().getName();
+//     
+//     std::cerr << "+++ UNITS: " << units << std::endl;
     return NAN;
 }
 
