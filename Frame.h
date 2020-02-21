@@ -17,6 +17,8 @@
 #include <carta-protobuf/raster_image.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/spatial_profile.pb.h>
+#include <carta-protobuf/spectral_profile.pb.h>
 
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
@@ -88,6 +90,9 @@ public:
         const CARTA::ImageBounds& image_bounds, int new_mip, CARTA::CompressionType compression, float quality, int num_subsets);
     bool SetImageChannels(int new_channel, int new_stokes, std::string& message);
 
+    // cursor
+    bool SetCursor(float x, float y);
+
     // raster data
     bool FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::string& message);
     bool FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Tile& tile, int channel, int stokes,
@@ -100,8 +105,8 @@ public:
     };
     bool ContourImage(ContourCallback& partial_contour_callback);
 
-    // histogram data
-    bool SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histograms);
+    // histograms: image and cube
+    bool SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs);
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data);
     bool FillHistogram(int channel, int stokes, int num_bins, carta::BasicStats<float>& stats, CARTA::Histogram* histogram);
     bool GetBasicStats(int channel, int stokes, carta::BasicStats<float>& stats);
@@ -111,14 +116,27 @@ public:
     void CacheCubeStats(int stokes, carta::BasicStats<float>& stats);
     void CacheCubeHistogram(int stokes, carta::HistogramResults& results);
 
-    // stats data
+    // stats: image
     bool SetStatsRequirements(int region_id, const std::vector<int>& stats_types);
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
+
+    // spatial: cursor
+    bool SetSpatialRequirements(int region_id, const std::vector<std::string>& spatial_profiles);
+    bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spatial_data);
+
+    // spectral: cursor
+    bool SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs);
+    bool FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool stokes_changed);
+    void IncreaseZProfileCount();
+    void DecreaseZProfileCount();
 
     // set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
 
 private:
+    // Check flag if Frame is to be destroyed
+    bool IsConnected();
+
     // Image view settings
     void SetViewSettings(
         const CARTA::ImageBounds& new_bounds, int new_mip, CARTA::CompressionType new_compression, float new_quality, int new_subsets);
@@ -144,8 +162,6 @@ private:
     void GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes);
     // get slicer for xy matrix with given channel and stokes
     casacore::Slicer GetChannelMatrixSlicer(size_t channel, size_t stokes);
-    // get image slicer: get full axis (x, y, chan, or stokes) if set to -1, else single index for that axis
-    void GetImageSlicer(casacore::Slicer& image_slicer, int x, int y, int channel, int stokes);
 
     // Histograms: channel is single channel number or ALL_CHANNELS for cube
     int AutoBinSize();
@@ -180,6 +196,9 @@ private:
     // Image settings
     ViewSettings _view_settings;
 
+    // Current cursor position
+    PointXy _cursor;
+
     // Contour settings
     ContourSettings _contour_settings;
 
@@ -189,16 +208,21 @@ private:
     std::mutex _image_mutex;            // only one disk access at a time
     bool _cache_loaded;                 // channel cache is set
 
-    // Histogram requirements and caches
+    // spectral profile counter, so Frame is not destroyed until finished
+    tbb::atomic<int> _z_profile_count;
+
+    // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;
     std::vector<HistogramConfig> _cube_histogram_configs;
-    // For image, key is ChannelStokesIndex; for cube, key is stokes. Results are for each config.
+    std::vector<int> _image_required_stats;
+    std::vector<std::string> _cursor_spatial_configs;
+    std::vector<SpectralConfig> _cursor_spectral_configs;
+
+    // Cache calculations: histograms, BasicStats, and Stats
+    // For image, key is ChannelStokesIndex; for cube, key is stokes.
     std::unordered_map<int, std::vector<carta::HistogramResults>> _image_histograms, _cube_histograms;
     std::unordered_map<int, carta::BasicStats<float>> _image_basic_stats, _cube_basic_stats;
-
-    // Stats requirements and cache
-    std::vector<int> _required_stats;                                          // index is CARTA::StatsType
-    std::unordered_map<int, std::map<CARTA::StatsType, double>> _stats_values; // map stats to ChannelStokesIndex
+    std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats; // map stats to ChannelStokesIndex
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

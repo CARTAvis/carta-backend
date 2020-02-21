@@ -118,9 +118,7 @@ private:
     // region definition (name, type, control points in pixel coordinates, rotation)
     RegionState _region_state;
 
-    // wcs
-    casacore::CoordinateSystem _coord_sys;               // coord sys of reference image, for pixel-world conversion
-    std::vector<casacore::Quantity> _wcs_control_points; // control points converted to wcs
+    casacore::CoordinateSystem _coord_sys; // coord sys of reference image
 
     // region flags
     bool _valid;

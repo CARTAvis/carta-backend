@@ -58,6 +58,8 @@ inline int ChannelStokesIndex(int channel, int stokes) {
 void FillStatisticsValuesFromMap(
     CARTA::RegionStatsData& stats_data, std::vector<int>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
 
+void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
+
 // ************ structs *************
 //
 // Usage of the ChannelRange:
@@ -82,26 +84,41 @@ struct ChannelRange {
     }
 };
 
-struct CursorXy {
+struct PointXy {
+    // Utilities for cursor and point region
     // CARTA::Point is float
     float x, y;
-    CursorXy() {
+    PointXy() {
         x = -1.0;
         y = -1.0;
     }
-    CursorXy(float x_, float y_) {
+    PointXy(float x_, float y_) {
         x = x_;
         y = y_;
     }
-    void operator=(const CursorXy& other) {
+    void operator=(const PointXy& other) {
         x = other.x;
         y = other.y;
     }
-    bool operator==(const CursorXy& rhs) const {
+    bool operator==(const PointXy& rhs) const {
         if ((x != rhs.x) || (y != rhs.y)) {
             return false;
         }
         return true;
+    }
+    void ToIndex(int& x_index, int& y_index) {
+        // convert float to int for index into image data array
+        x_index = static_cast<int>(std::round(x));
+        y_index = static_cast<int>(std::round(y));
+    }
+
+    bool InImage(int xrange, int yrange) {
+        // returns whether x, y are within image axis ranges
+        int x_index, y_index;
+        ToIndex(x_index, y_index);
+        bool x_in_image = (x_index >= 0) && (x_index < xrange);
+        bool y_in_image = (y_index >= 0) && (y_index < yrange);
+        return (x_in_image && y_in_image);
     }
 };
 

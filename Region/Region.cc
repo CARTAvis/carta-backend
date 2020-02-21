@@ -35,10 +35,6 @@ bool Region::UpdateState(const std::string name, const CARTA::RegionType type, c
         // set new region state and coord sys
         _region_state = new_state;
         _coord_sys = csys;
-
-        if (_region_changed) {
-            _wcs_control_points.clear();
-        }
     } else { // keep existing state
         _region_state_changed = false;
         _region_changed = false;

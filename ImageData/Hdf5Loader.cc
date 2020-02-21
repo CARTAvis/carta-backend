@@ -322,7 +322,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
         // Load each X slice of the swizzled region bounding box and update Z stats incrementally
         for (size_t x = x_start; x < num_x; x++) {
             // check if frontend's requirements changed
-            /* TODO: interrupt spectral profile
+            /*
             if (_frame != nullptr && _frame->Interrupt(region_id, profile_stokes, region_state, config_stats, true)) {
                 // remember the latest x step
                 _region_stats[region_stats_id].latest_x = x;

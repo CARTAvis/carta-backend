@@ -27,7 +27,8 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _channel_index(-1),
       _stokes_index(-1),
       _num_channels(1),
-      _num_stokes(1) {
+      _num_stokes(1),
+      _z_profile_count(0) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
@@ -136,8 +137,14 @@ bool Frame::ChannelsChanged(int channel, int stokes) {
 }
 
 void Frame::DisconnectCalled() {
-    _connected = false;
-    // TODO: check for jobs running in Hdf5Loader
+    _connected = false;        // file closed
+    while (_z_profile_count) { // wait for spectral profiles to complete to avoid crash
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
+bool Frame::IsConnected() {
+    return _connected; // whether file is to be closed
 }
 
 // ********************************************************************
@@ -215,6 +222,12 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
     return updated;
 }
 
+bool Frame::SetCursor(float x, float y) {
+    bool changed = ((x != _cursor.x) || (y != _cursor.y));
+    _cursor = PointXy(x, y);
+    return changed;
+}
+
 bool Frame::FillImageCache() {
     // get image data for channel, stokes
     bool write_lock(true);
@@ -263,37 +276,6 @@ casacore::Slicer Frame::GetChannelMatrixSlicer(size_t channel, size_t stokes) {
     // slicer for image data
     casacore::Slicer section(start, count);
     return section;
-}
-
-void Frame::GetImageSlicer(casacore::Slicer& image_slicer, int x, int y, int channel, int stokes) {
-    // to slice image data along axes (full axis indicated with -1)
-    // Start with entire image:
-    casacore::IPosition count(_image_shape);
-    casacore::IPosition start(_image_shape.size());
-    start = 0;
-
-    if (x >= 0) {
-        start(0) = x;
-        count(0) = 1;
-    }
-
-    if (y >= 0) {
-        start(1) = y;
-        count(1) = 1;
-    }
-
-    if ((channel >= 0) && (_spectral_axis >= 0)) {
-        start(_spectral_axis) = channel;
-        count(_spectral_axis) = 1;
-    }
-
-    if ((stokes >= 0) && (_stokes_axis >= 0)) {
-        start(_stokes_axis) = stokes;
-        count(_stokes_axis) = 1;
-    }
-
-    casacore::Slicer section(start, count);
-    image_slicer = section;
 }
 
 // ****************************************************
@@ -602,7 +584,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
 // ****************************************************
 // Histogram Requirements and Data
 
-bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histograms) {
+bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs) {
     // Set histogram requirements for image or cube
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
@@ -614,10 +596,10 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::Set
         _cube_histogram_configs.clear();
     }
 
-    for (auto& histogram : histograms) {
+    for (auto& histogram_config : histogram_configs) {
         HistogramConfig config;
-        config.channel = histogram.channel();
-        config.num_bins = histogram.num_bins();
+        config.channel = histogram_config.channel();
+        config.num_bins = histogram_config.num_bins();
         if (region_id == IMAGE_REGION_ID) {
             _image_histogram_configs.push_back(config);
         } else {
@@ -885,7 +867,7 @@ bool Frame::SetStatsRequirements(int region_id, const std::vector<int>& stats_ty
         return false;
     }
 
-    _required_stats = stats_types;
+    _image_required_stats = stats_types;
     return true;
 }
 
@@ -895,7 +877,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         return false;
     }
 
-    if (_required_stats.empty()) {
+    if (_image_required_stats.empty()) {
         return false; // not requested
     }
 
@@ -906,15 +888,15 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
     // Use loader image stats
     auto& image_stats = _loader->GetImageStats(stokes, channel);
     if (image_stats.full) {
-        FillStatisticsValuesFromMap(stats_data, _required_stats, image_stats.basic_stats);
+        FillStatisticsValuesFromMap(stats_data, _image_required_stats, image_stats.basic_stats);
         return true;
     }
 
     // Use cached stats
     int index(ChannelStokesIndex(channel, stokes));
-    if (_stats_values.count(index)) {
-        auto stats_map = _stats_values[index];
-        FillStatisticsValuesFromMap(stats_data, _required_stats, stats_map);
+    if (_image_stats.count(index)) {
+        auto stats_map = _image_stats[index];
+        FillStatisticsValuesFromMap(stats_data, _image_required_stats, stats_map);
         return true;
     }
 
@@ -924,7 +906,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
     casacore::Slicer slicer = GetChannelMatrixSlicer(channel, stokes);
     std::unique_lock<std::mutex> ulock(_image_mutex);
     if (_loader->GetSubImage(slicer, sub_image)) {
-        CalcStatsValues(stats_vector_map, _required_stats, sub_image, false); // not per-channel
+        CalcStatsValues(stats_vector_map, _image_required_stats, sub_image, false); // not per-channel
         ulock.unlock();
 
         // convert vector to single value in map
@@ -934,13 +916,276 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         }
 
         // complete message
-        FillStatisticsValuesFromMap(stats_data, _required_stats, stats_map);
+        FillStatisticsValuesFromMap(stats_data, _image_required_stats, stats_map);
 
         // cache results
-        _stats_values[index] = stats_map;
+        _image_stats[index] = stats_map;
         return true;
     }
 
     ulock.unlock();
     return false;
+}
+
+// ****************************************************
+// Spatial Requirements and Data
+
+bool Frame::SetSpatialRequirements(int region_id, const std::vector<std::string>& spatial_profiles) {
+    if (region_id != CURSOR_REGION_ID) {
+        return false;
+    }
+
+    _cursor_spatial_configs.clear();
+    for (auto& profile : spatial_profiles) {
+        _cursor_spatial_configs.push_back(profile);
+    }
+    return true;
+}
+
+bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spatial_data) {
+    // Fill spatial profile message for cursor only
+    if (region_id != CURSOR_REGION_ID) {
+        return false;
+    }
+
+    // No spatial profile requirements
+    if (_cursor_spatial_configs.empty()) {
+        return false;
+    }
+
+    // frontend does not set cursor outside of image, but just in case:
+    if (!_cursor.InImage(_image_shape(0), _image_shape(1))) {
+        return false;
+    }
+
+    ssize_t num_image_cols(_image_shape(0)), num_image_rows(_image_shape(1));
+    int x, y;
+    _cursor.ToIndex(x, y); // convert float to index into image array
+    float cursor_value(0.0);
+    if (!_image_cache.empty()) {
+        bool write_lock(false);
+        tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+        cursor_value = _image_cache[(y * num_image_cols) + x];
+        cache_lock.release();
+    }
+
+    // set message fields
+    spatial_data.set_x(x);
+    spatial_data.set_y(y);
+    spatial_data.set_channel(CurrentChannel());
+    spatial_data.set_stokes(CurrentStokes());
+    spatial_data.set_value(cursor_value);
+
+    // add profiles
+    int end(0);
+    std::vector<float> profile;
+    bool write_lock(false);
+    for (auto& coordinate : _cursor_spatial_configs) { // string coordinate
+        bool have_profile(false);
+        // can no longer select stokes, so can use image cache
+        if (coordinate == "x") {
+            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+            auto x_start = y * num_image_cols;
+            profile.reserve(_image_shape(0));
+            for (unsigned int j = 0; j < _image_shape(0); ++j) {
+                auto idx = x_start + j;
+                profile.push_back(_image_cache[idx]);
+            }
+            cache_lock.release();
+            end = _image_shape(0);
+            have_profile = true;
+        } else if (coordinate == "y") {
+            tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+            profile.reserve(_image_shape(1));
+            for (unsigned int j = 0; j < _image_shape(1); ++j) {
+                auto idx = (j * num_image_cols) + x;
+                profile.push_back(_image_cache[idx]);
+            }
+            cache_lock.release();
+            end = _image_shape(1);
+            have_profile = true;
+        }
+
+        if (have_profile) {
+            // add SpatialProfile to message
+            auto spatial_profile = spatial_data.add_profiles();
+            spatial_profile->set_coordinate(coordinate);
+            spatial_profile->set_start(0);
+            spatial_profile->set_end(end);
+            spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
+        }
+    }
+
+    return (spatial_data.profiles_size() > 0);
+}
+
+// ****************************************************
+// Spectral Requirements and Data
+
+bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_configs) {
+    if (region_id != CURSOR_REGION_ID) {
+        return false;
+    }
+
+    // frontend does not set cursor outside of image, but just in case:
+    _cursor_spectral_configs.clear();
+    for (auto& config : spectral_configs) {
+        std::string coordinate(config.coordinate());
+        int axis, stokes;
+        ConvertCoordinateToAxes(coordinate, axis, stokes);
+        std::vector<int> stats = std::vector<int>(config.stats_types().begin(), config.stats_types().end());
+        SpectralConfig new_config(coordinate, stokes, stats);
+        _cursor_spectral_configs.push_back(new_config);
+    }
+    return true;
+}
+
+bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool stokes_changed) {
+    // Send cursor profile data incrementally using callback cb
+    // If fixed stokes requirement and stokes changed, do not send that profile
+    if (region_id != CURSOR_REGION_ID) {
+        return false;
+    }
+
+    // No spectral axis
+    if (_spectral_axis < 0) {
+        return false;
+    }
+
+    // No spectral profile requirements
+    if (_cursor_spectral_configs.empty()) {
+        return false;
+    }
+
+    PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
+
+    for (auto& config : _cursor_spectral_configs) { // config is SpectralConfig struct
+        if (!(_cursor == start_cursor) || !IsConnected()) {
+            // cursor changed or file closed, cancel profiles
+            return false;
+        }
+
+        int config_stokes = config.stokes_index;
+        if ((config_stokes != CURRENT_STOKES) && stokes_changed) {
+            continue; // do not resend fixed stokes profile when stokes changes
+        }
+
+        // Create final profile message for callback
+        CARTA::SpectralProfileData profile_message;
+        profile_message.set_stokes(CurrentStokes());
+        profile_message.set_progress(1.0);
+        auto spectral_profile = profile_message.add_profiles();
+        spectral_profile->set_coordinate(config.coordinate);
+        // point spectral profiles only have one stats type
+        CARTA::StatsType stats_type = static_cast<CARTA::StatsType>(config.stats_types[0]);
+        spectral_profile->set_stats_type(stats_type);
+
+        // Send NaN if cursor outside image
+        if (!start_cursor.InImage(_image_shape(0), _image_shape(1))) {
+            double nan_value = std::numeric_limits<double>::quiet_NaN();
+            spectral_profile->set_raw_values_fp64(&nan_value, sizeof(double));
+            cb(profile_message);
+        } else {
+            int stokes = (config_stokes == CURRENT_STOKES ? CurrentStokes() : config_stokes);
+
+            std::vector<float> spectral_data;
+            int xy_count(1);
+            if (_loader->GetCursorSpectralData(
+                    spectral_data, stokes, (start_cursor.x + 0.5), xy_count, (start_cursor.y + 0.5), xy_count, _image_mutex)) {
+                // Use loader data
+                spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
+                cb(profile_message);
+            } else {
+                // Send image slices
+                // Set up slicer
+                int x_index, y_index;
+                start_cursor.ToIndex(x_index, y_index);
+                casacore::IPosition start(_image_shape.size());
+                start(0) = x_index;
+                start(1) = y_index;
+                start(_spectral_axis) = 0;
+                if (_stokes_axis >= 0) {
+                    start(_stokes_axis) = stokes;
+                }
+                casacore::IPosition count(_image_shape.size(), 1); // will adjust count for spectral axis
+
+                // Send incremental spectral profile when reach delta channel or delta time
+                size_t delta_channels = INIT_DELTA_CHANNEL;             // the increment of channels for each step
+                size_t dt_target = TARGET_DELTA_TIME;                   // the target time elapse for each step, in milliseconds
+                size_t dt_partial_profile = TARGET_PARTIAL_CURSOR_TIME; // time increment to send an update
+                size_t profile_size = NumChannels();                    // profile vector size
+                spectral_data.resize(profile_size, std::numeric_limits<float>::quiet_NaN());
+                float progress(0.0);
+
+                while (progress < PROFILE_COMPLETE) {
+                    if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel profiles
+                        return false;
+                    }
+
+                    // start timer for slice
+                    auto t_start = std::chrono::high_resolution_clock::now();
+
+                    // Slice image to get next delta_channels (not to exceed number of channels in image)
+                    size_t nchan =
+                        (start(_spectral_axis) + delta_channels < profile_size ? delta_channels : profile_size - start(_spectral_axis));
+                    count(_spectral_axis) = nchan;
+                    casacore::Slicer slicer(start, count);
+                    casacore::Array<float> buffer(slicer.length(), 0.0);
+                    std::unique_lock<std::mutex> guard(_image_mutex);
+                    bool success = _loader->GetSlice(buffer, slicer);
+                    guard.unlock();
+                    if (!success) {
+                        return false;
+                    }
+
+                    // copy buffer to spectral_data
+                    memcpy(&spectral_data[start(_spectral_axis)], buffer.data(), nchan * sizeof(float));
+
+                    // update start channel and determine progress
+                    start(_spectral_axis) += nchan;
+                    progress = (float)start(_spectral_axis) / profile_size;
+
+                    // get the time elapse for this slice
+                    auto t_end = std::chrono::high_resolution_clock::now();
+                    auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+
+                    // adjust the increment of channels per slice according to the time elapse
+                    if (delta_channels == INIT_DELTA_CHANNEL) {
+                        delta_channels *= dt_target / dt;
+                        if (delta_channels < 1) {
+                            delta_channels = 1;
+                        }
+                        if (delta_channels > profile_size) {
+                            delta_channels = profile_size;
+                        }
+                    }
+
+                    if (progress >= PROFILE_COMPLETE) {
+                        spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
+                        // send final profile message
+                        cb(profile_message);
+                    } else if (dt > dt_partial_profile) {
+                        CARTA::SpectralProfileData partial_data;
+                        partial_data.set_stokes(CurrentStokes());
+                        partial_data.set_progress(progress);
+                        auto partial_profile = partial_data.add_profiles();
+                        partial_profile->set_stats_type(stats_type);
+                        partial_profile->set_coordinate(config.coordinate);
+                        partial_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
+                        // send partial profile message
+                        cb(partial_data);
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
+void Frame::IncreaseZProfileCount() {
+    ++_z_profile_count;
+}
+
+void Frame::DecreaseZProfileCount() {
+    --_z_profile_count;
 }

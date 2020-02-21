@@ -198,12 +198,12 @@ private:
 
     // Only set channel_changed and stokes_changed if they are the only trigger for new data
     // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
-    bool SendSpatialProfileData(int file_id, int region_id, bool stokes_changed = false);
-    bool SendSpectralProfileData(int file_id, int region_id, bool channel_changed = false, bool stokes_changed = false);
+    void SendSpatialProfileData(int file_id, int region_id);
+    void SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
     bool SendRegionHistogramData(int file_id, int region_id);
-    bool SendRegionStatsData(int file_id, int region_id); // update stats in all cases
-    void UpdateImageData(int file_id, bool send_image_histogram = true, bool stokes_changed = false);
-    void UpdateRegionData(int file_id, bool channel_changed, bool stokes_changed);
+    void SendRegionStatsData(int file_id, int region_id);
+    void UpdateImageData(int file_id, bool send_image_histogram, bool channel_changed, bool stokes_changed);
+    void UpdateRegionData(int file_id, int region_id, bool channel_changed, bool stokes_changed);
 
     // Send protobuf messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
@@ -219,6 +219,9 @@ private:
     // File browser
     FileListHandler* _file_list_handler;
 
+    // Stores requirements and creates data stream messages
+    // std::unique_ptr<RegionDataHandler> _region_data_handler;
+
     // File info for browser, open file
     std::unique_ptr<CARTA::FileInfo> _file_info;
     std::unique_ptr<CARTA::FileInfoExtended> _file_info_extended;
@@ -230,8 +233,6 @@ private:
 
     // Regions with unique ids
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // <region_id, Region>: one per region
-    // Regions with id 0 for each Frame
-    std::unordered_map<int, std::unique_ptr<carta::Region>> _cursors; // <file_id, Region>: one per cursor
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;

@@ -180,3 +180,32 @@ void FillStatisticsValuesFromMap(
         stats_value->set_value(value);
     }
 }
+
+void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index) {
+    // converts profile string into axis, stokes index into image shape
+    // axis
+    char axis_char(coordinate.back());
+    if (axis_char == 'x') {
+        axis_index = 0;
+    } else if (axis_char == 'y') {
+        axis_index = 1;
+    } else if (axis_char == 'z') {
+        axis_index = -1; // not used
+    }
+
+    // stokes
+    if (coordinate.size() == 2) {
+        char stokes_char(coordinate.front());
+        if (stokes_char == 'I') {
+            stokes_index = 0;
+        } else if (stokes_char == 'Q') {
+            stokes_index = 1;
+        } else if (stokes_char == 'U') {
+            stokes_index = 2;
+        } else if (stokes_char == 'V') {
+            stokes_index = 3;
+        }
+    } else {
+        stokes_index = -1;
+    }
+}
