@@ -405,19 +405,27 @@ void Session::DeleteFrame(int file_id) {
     }
 }
 
-void Session::OnSetImageView(const CARTA::SetImageView& message) {
-    if (_frames.count(message.file_id())) {
-        _frames.at(message.file_id())
-            ->SetImageView(
-                message.image_bounds(), message.mip(), message.compression_type(), message.compression_quality(), message.num_subsets());
-    }
-}
-
-void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
+void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data) {
     auto file_id = message.file_id();
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
+    auto animation_id = AnimationRunning() ? _animation_id : 0;
     if (!message.tiles().empty() && _frames.count(file_id)) {
+        if (skip_data) {
+            // Update view settings and skip sending data
+            _frames.at(file_id)->SetAnimationViewSettings(message);
+            return;
+        }
+
+        CARTA::RasterTileSync start_message;
+        start_message.set_file_id(file_id);
+        start_message.set_channel(channel);
+        start_message.set_stokes(stokes);
+        start_message.set_animation_id(animation_id);
+        start_message.set_end_sync(false);
+        start_message.set_animation_id(animation_id);
+        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
+
         int n = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
@@ -428,6 +436,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
                 const auto& encoded_coordinate = message.tiles(i);
                 CARTA::RasterTileData raster_tile_data;
                 raster_tile_data.set_file_id(file_id);
+                raster_tile_data.set_animation_id(animation_id);
                 auto tile = Tile::Decode(encoded_coordinate);
                 if (_frames.at(file_id)->FillRasterTileData(
                         raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
@@ -438,11 +447,20 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message) {
             }
         };
 
-        tbb::task_group g;
+#pragma omp parallel for
         for (int j = 0; j < stride; j++) {
-            g.run([=] { lambda(j); });
+            lambda(j);
         }
-        g.wait();
+
+        // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
+        CARTA::RasterTileSync final_message;
+        final_message.set_file_id(file_id);
+        final_message.set_channel(channel);
+        final_message.set_stokes(stokes);
+        final_message.set_animation_id(animation_id);
+        final_message.set_end_sync(true);
+        final_message.set_animation_id(animation_id);
+        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
     }
 }
 
@@ -460,7 +478,7 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
             SendContourData(file_id);
             bool send_histogram(true);
             UpdateImageData(file_id, send_histogram, channel_changed, stokes_changed);
-            UpdateRegionData(file_id, channel_changed, stokes_changed, false); // region did not change
+            // UpdateRegionData(file_id, -1, channel_changed, stokes_changed);
         } else {
             if (!err_message.empty()) {
                 SendLogEvent(err_message, {"channels"}, CARTA::ErrorSeverity::ERROR);
@@ -1059,30 +1077,6 @@ void Session::CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int fi
     _histogram_progress = progress;
 }
 
-bool Session::SendRasterImageData(int file_id, bool send_histogram) {
-    // return true if data sent
-    bool data_sent(false);
-
-    if (_frames.count(file_id)) {
-        CARTA::RasterImageData raster_data;
-        raster_data.set_file_id(file_id);
-        std::string message;
-        if (_frames.at(file_id)->FillRasterImageData(raster_data, message)) {
-            if (send_histogram) {
-                CARTA::RegionHistogramData* histogram_data = GetRegionHistogramData(file_id, IMAGE_REGION_ID);
-                raster_data.set_allocated_channel_histogram_data(histogram_data);
-            }
-            SendFileEvent(file_id, CARTA::EventType::RASTER_IMAGE_DATA, 0, raster_data);
-        } else {
-            SendLogEvent(message, {"raster"}, CARTA::ErrorSeverity::ERROR);
-        }
-    } else {
-        string error = fmt::format("File id {} not found", file_id);
-        SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::DEBUG);
-    }
-    return data_sent;
-}
-
 void Session::SendSpatialProfileData(int file_id, int region_id) {
     // return true if data sent
     if (_frames.count(file_id)) {
@@ -1257,7 +1251,7 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool chann
 }
 
 void Session::UpdateRegionData(int file_id, int region_id, bool channel_changed, bool stokes_changed) {
-    /*
+    /* TODO: check animation! ExecuteAnimationFrameInner HOW DOES ANIMATION EVEN WORK?
     // Send updated data for regions with requirements
     if ((file_id >= 0) && !_frames.count(file_id)) {
         return; // file closed
@@ -1345,30 +1339,27 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     reverse_at_end = msg.reverse();
     always_wait = true;
 
-    OnSetImageView(msg.imageview());
-
-    _animation_object = std::unique_ptr<AnimationObject>(
-        new AnimationObject(file_id, start_frame, first_frame, last_frame, delta_frame, frame_rate, looping, reverse_at_end, always_wait));
-
     CARTA::StartAnimationAck ack_message;
-    ack_message.set_success(true);
-    ack_message.set_message("Starting animation");
-    SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
+
+    if (_frames.count(file_id)) {
+        _frames.at(file_id)->SetAnimationViewSettings(msg.required_tiles());
+        _animation_object = std::unique_ptr<AnimationObject>(new AnimationObject(
+            file_id, start_frame, first_frame, last_frame, delta_frame, frame_rate, looping, reverse_at_end, always_wait));
+        ack_message.set_success(true);
+        ack_message.set_animation_id(_animation_id);
+        ack_message.set_message("Starting animation");
+        SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
+    } else {
+        ack_message.set_success(false);
+        ack_message.set_message("Incorrect file ID");
+        SendEvent(CARTA::EventType::START_ANIMATION_ACK, request_id, ack_message);
+    }
 }
 
-void Session::ExecuteAnimationFrameInner(bool stopped) {
+void Session::ExecuteAnimationFrameInner() {
     CARTA::AnimationFrame curr_frame;
 
-    if (stopped) {
-        if (((_animation_object->_stop_frame.channel() == _animation_object->_current_frame.channel()) &&
-                (_animation_object->_stop_frame.stokes() == _animation_object->_current_frame.stokes()))) {
-            return;
-        }
-        curr_frame = _animation_object->_stop_frame;
-    } else {
-        curr_frame = _animation_object->_next_frame;
-    }
-
+    curr_frame = _animation_object->_next_frame;
     auto file_id(_animation_object->_file_id);
     if (_frames.count(file_id)) {
         const std::unique_ptr<Frame>& frame = _frames.at(file_id);
@@ -1388,14 +1379,18 @@ void Session::ExecuteAnimationFrameInner(bool stopped) {
             _animation_object->_current_frame = curr_frame;
 
             if (frame->SetImageChannels(channel, stokes, err_message)) {
-                // RESPONSE: updated image raster/histogram
+                // Send image histogram and profiles
                 bool send_histogram(true);
-                SendRasterImageData(file_id, send_histogram);
-                // Send Contour data if required
+                UpdateImageData(file_id, send_histogram, channel_changed, stokes_changed);
+
+                // Send contour data if required
                 SendContourData(file_id);
-                // RESPONSE: data for all regions; no histogram
-                UpdateImageData(file_id, !send_histogram, channel_changed, stokes_changed);
-                UpdateRegionData(file_id, channel_changed, stokes_changed, false); // region did not change
+
+                // Send tile data
+                OnAddRequiredTiles(frame->GetAnimationViewSettings());
+
+                // Send region histograms and profiles
+                // UpdateRegionData(file_id, -1, channel_changed, stokes_changed);
             } else {
                 if (!err_message.empty()) {
                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
@@ -1424,7 +1419,6 @@ bool Session::ExecuteAnimationFrame() {
     }
 
     if (_animation_object->_stop_called) {
-        ExecuteAnimationFrameInner(true);
         return false;
     }
 
@@ -1436,12 +1430,11 @@ bool Session::ExecuteAnimationFrame() {
         std::this_thread::sleep_for(wait_duration_ms);
 
         if (_animation_object->_stop_called) {
-            ExecuteAnimationFrameInner(true);
             return false;
         }
 
         curr_frame = _animation_object->_next_frame;
-        ExecuteAnimationFrameInner(false);
+        ExecuteAnimationFrameInner();
 
         CARTA::AnimationFrame tmp_frame;
         CARTA::AnimationFrame delta_frame = _animation_object->_delta_frame;
@@ -1501,7 +1494,6 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
         return;
     }
 
-    _animation_object->_stop_frame = frame;
     _animation_object->_stop_called = true;
 }
 

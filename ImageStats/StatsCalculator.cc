@@ -4,17 +4,13 @@
 
 #include <limits>
 
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_reduce.h>
-
 #include <casacore/casa/Arrays/ArrayMath.h>
 #include <casacore/images/Images/ImageStatistics.h>
 
 void CalcBasicStats(const std::vector<float>& data, BasicStats<float>& stats) {
     // Calculate stats in BasicStats struct
-    tbb::blocked_range<size_t> range(0, data.size());
     BasicStatsCalculator<float> mm(data);
-    tbb::parallel_reduce(range, mm);
+    mm.reduce(0, data.size());
     stats = mm.GetStats();
 }
 
@@ -26,9 +22,8 @@ void CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vect
         results.bin_center = 0;
         results.histogram_bins.resize(num_bins, 0);
     } else {
-        tbb::blocked_range<size_t> range(0, data.size());
         Histogram hist(num_bins, stats.min_val, stats.max_val, data);
-        tbb::parallel_reduce(range, hist);
+        hist.setup_bins(0, data.size());
         results = hist.GetHistogram();
     }
 }

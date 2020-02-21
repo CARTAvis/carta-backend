@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include <omp.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
 
@@ -34,6 +35,56 @@ void Histogram::join(Histogram& h) { // NOLINT
         std::transform(&h._hist[beg], &h._hist[end], &_hist[beg], &_hist[beg], std::plus<int>());
     };
     tbb::parallel_for(range, loop);
+}
+
+void Histogram::setup_bins(const int start, const int end) {
+    int i, stride, buckets;
+    int** bins_bin;
+
+    auto calc_lambda = [&](int start, int lstride) {
+        int* lbins = new int[_hist.size()];
+        int end = std::min((size_t)(start + lstride), _data.size());
+        memset(lbins, 0, _hist.size() * sizeof(int));
+        for (auto i = start; i < end; i++) {
+            auto v = _data[i];
+            if (std::isfinite(v)) {
+                int binN = std::max(std::min((int)((v - _min_val) / _bin_width), (int)_hist.size() - 1), 0);
+                ++lbins[binN];
+            }
+        }
+        return lbins;
+    };
+#pragma omp parallel
+#pragma omp single
+    { buckets = omp_get_num_threads(); }
+#pragma omp single
+    {
+        stride = _data.size() / buckets + 1;
+        bins_bin = new int*[buckets + 1];
+    }
+#pragma omp parallel for
+    for (i = 0; i < buckets; i++) {
+        bins_bin[i] = calc_lambda(i * stride, stride);
+    }
+    stride = 1;
+    do {
+#pragma omp single
+        {
+            for (i = 0; i <= (buckets - stride * 2); i += stride * 2) {
+#pragma omp task
+                std::transform(
+                    (bins_bin[i + stride]), &(bins_bin[i + stride][_hist.size()]), (bins_bin[i]), (bins_bin[i]), std::plus<int>());
+            }
+            stride *= 2;
+        }
+#pragma omp taskwait
+    } while (stride <= buckets / 2);
+    for (i = 0; i < _hist.size(); i++) {
+        _hist[i] = bins_bin[0][i];
+    }
+    for (i = 0; i < buckets; i++) {
+        delete[] bins_bin[i];
+    }
 }
 
 HistogramResults Histogram::GetHistogram() const {

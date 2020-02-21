@@ -31,7 +31,6 @@
 #include <carta-protobuf/resume_session.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
-#include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
@@ -58,8 +57,7 @@ public:
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
     void OnCloseFile(const CARTA::CloseFile& message);
-    void OnSetImageView(const CARTA::SetImageView& message);
-    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message);
+    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);
@@ -108,7 +106,7 @@ public:
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
-    void ExecuteAnimationFrameInner(bool stopped);
+    void ExecuteAnimationFrameInner();
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
     int CurrentFlowWindowSize() {
@@ -193,7 +191,6 @@ private:
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
     // Send data streams
-    bool SendRasterImageData(int file_id, bool send_histogram = false);
     bool SendContourData(int file_id);
 
     // Only set channel_changed and stokes_changed if they are the only trigger for new data
@@ -246,7 +243,7 @@ private:
 
     // Outgoing messages
     uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
-    tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
+    tbb::concurrent_queue<std::vector<char>> _out_msgs; // Message queue
 
     // TBB context that enables all tasks associated with a session to be cancelled.
     tbb::task_group_context _base_context;
@@ -257,6 +254,7 @@ private:
     tbb::task_group_context _animation_context;
 
     int _ref_count;
+    int _animation_id;
     bool _connected;
     static int _num_sessions;
     static int _exit_after_num_seconds;

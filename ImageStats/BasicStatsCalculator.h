@@ -38,6 +38,7 @@ public:
 
     void operator()(const tbb::blocked_range<size_t>& r);
     void join(BasicStatsCalculator& other); // NOLINT
+    void reduce(const int start, const int end);
 
     BasicStats<T> GetStats() const;
 };

@@ -6,6 +6,8 @@
 
 #include <fmt/format.h>
 
+#include "../ImageStats/BasicStatsCalculator.h"
+#include "../ImageStats/Histogram.h"
 #include "../InterfaceConstants.h"
 
 using namespace carta;
@@ -66,7 +68,6 @@ void RegionStats::SetBasicStats(int channel, int stokes, const BasicStats<float>
 void RegionStats::CalcRegionBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats) {
     // Calculate and store BasicStats
     CalcBasicStats(data, stats);
-    SetBasicStats(channel, stokes, stats);
 }
 
 bool RegionStats::GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram) {
@@ -99,7 +100,6 @@ void RegionStats::SetHistogram(int channel, int stokes, CARTA::Histogram& histog
 
 void RegionStats::CalcRegionHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data,
     CARTA::Histogram& histogram_msg) {
-    // Calculate and store histogram for given channel, stokes, nbins; return histogram
     HistogramResults results;
     CalcHistogram(num_bins, stats, data, results);
 
