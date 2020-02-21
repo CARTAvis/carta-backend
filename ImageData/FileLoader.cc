@@ -512,6 +512,8 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                 LoadStats2DPercent();
             }
 
+            bool has_flux = HasFlux();
+
             // If we loaded all the 2D stats successfully, assume all channel stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
                 for (size_t c = 0; c < _num_channels; c++) {
@@ -525,7 +527,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                         stats[CARTA::StatsType::Mean] = sum / num_pixels;
                         stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                         stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
-                        if (HasFlux()) {
+                        if (has_flux) {
                             stats[CARTA::StatsType::FluxDensity] = CalculateFlux(sum);
                         }
 
@@ -551,6 +553,8 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                 LoadStats3DPercent();
             }
 
+            bool has_flux = HasFlux();
+
             // If we loaded all the 3D stats successfully, assume all cube stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
                 auto& stats = _cube_stats[s].basic_stats;
@@ -563,7 +567,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                     stats[CARTA::StatsType::Mean] = sum / num_pixels;
                     stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                     stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
-                    if (HasFlux()) {
+                    if (has_flux) {
                         stats[CARTA::StatsType::FluxDensity] = CalculateFlux(sum);
                     }
 
@@ -608,15 +612,12 @@ bool FileLoader::HasFlux() {
     return (info.hasSingleBeam() && coord.hasDirectionCoordinate());
 }
 
+// Assumes that flux can be calculated
+// We call this inside loops after checking
 double FileLoader::CalculateFlux(double sum) {
     ImageRef image = GetImage();
-
     auto& info = image->imageInfo();
     auto& coord = image->coordinates();
-
-    if (!HasFlux()) {
-        return NAN;
-    }
 
     double beam_area = info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
 

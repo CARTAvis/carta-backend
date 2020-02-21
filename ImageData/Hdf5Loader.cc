@@ -219,9 +219,11 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
     bool recalculate(false);
     auto region_stats_id = FileInfo::RegionStatsId(region_id, profile_stokes);
 
+    bool has_flux = HasFlux();
+
     if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
         _region_stats.emplace(std::piecewise_construct, std::forward_as_tuple(region_id, profile_stokes),
-            std::forward_as_tuple(origin, mask->shape(), num_z, HasFlux()));
+            std::forward_as_tuple(origin, mask->shape(), num_z, has_flux));
         recalculate = true;
     } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
         _region_stats[region_stats_id].origin = origin;
@@ -251,12 +253,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
         auto& min = stats[CARTA::StatsType::Min];
         auto& max = stats[CARTA::StatsType::Max];
 
-        std::function<void(size_t, double)> do_flux = [&](size_t z, double sum_z) {};
-
-        if (HasFlux()) {
-            auto& flux = stats[CARTA::StatsType::FluxDensity];
-            do_flux = [&](size_t z, double sum_z) { flux[z] = CalculateFlux(sum_z); };
-        }
+        double* flux = has_flux ? stats[CARTA::StatsType::FluxDensity].data() : nullptr;
 
         std::vector<float> slice_data;
 
@@ -308,7 +305,9 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
                     mean[z] = sum_z / num_pixels_z;
                     rms[z] = sqrt(sum_sq_z / num_pixels_z);
                     sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
-                    do_flux(z, sum_z);
+                    if (has_flux) {
+                        flux[z] = CalculateFlux(sum_z);
+                    }
                 } else {
                     // if there are no valid values, set all stats to NaN except the value and NaN counts
                     for (auto& kv : stats) {
