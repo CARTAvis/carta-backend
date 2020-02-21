@@ -1066,8 +1066,8 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
         auto dt_raster_data_filter =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
-        fmt::print("{} filter {}x{} raster data in {} ms at {} MPix/s \n", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
-            num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
+        fmt::print("{} filter {}x{} raster data to {}x{} in {} ms at {} MPix/s \n", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
+            req_height, req_width, num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
             (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
     }
     return true;

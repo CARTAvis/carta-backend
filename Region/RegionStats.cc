@@ -80,11 +80,11 @@ void RegionStats::CalcBasicStats(int channel, int stokes, const std::vector<floa
     tbb::parallel_reduce(range, mm);
     stats = mm.GetStats();
     SetBasicStats(channel, stokes, stats);
-    // Measure duration for caculate min/max value
+    // Measure duration for calculate min/max value
     if (true) {
         auto t_end_calculate_min = std::chrono::high_resolution_clock::now();
         auto dt_calculate_min = std::chrono::duration_cast<std::chrono::microseconds>(t_end_calculate_min - t_start_calculate_min).count();
-        fmt::print("Caculate min/max value in {} ms at {} MPix/s\n", dt_calculate_min * 1e-3, (float)stats.num_pixels / dt_calculate_min);
+        fmt::print("Calculate min/max value in {} ms at {} MPix/s\n", dt_calculate_min * 1e-3, (float)stats.num_pixels / dt_calculate_min);
     }
 }
 
