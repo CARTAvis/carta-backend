@@ -3,8 +3,8 @@
 
 #include <unordered_map>
 
-#include <casacore/lattices/Lattices/HDF5Lattice.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 #include "../Frame.h"
 #include "../Util.h"
@@ -49,7 +49,7 @@ private:
     const IPos GetStatsDataShape(FileInfo::Data ds) override;
     casacore::ArrayBase* GetStatsData(FileInfo::Data ds) override;
 
-    casacore::Lattice<float>* LoadSwizzledData();    
+    casacore::Lattice<float>* LoadSwizzledData();
 };
 
 } // namespace carta

@@ -252,7 +252,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
         auto& max = stats[CARTA::StatsType::Max];
         std::vector<double> dummy;
         auto& flux = (HasFlux()) ? stats[CARTA::StatsType::FluxDensity] : dummy;
-        
+
         std::vector<float> slice_data;
 
         // get the start of X

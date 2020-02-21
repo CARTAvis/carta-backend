@@ -610,15 +610,15 @@ bool FileLoader::HasFlux() {
 
 double FileLoader::CalculateFlux(double sum) {
     ImageRef image = GetImage();
-    
+
     auto& info = image->imageInfo();
     auto& coord = image->coordinates();
-    
+
     if (!HasFlux()) {
         return NAN;
     }
 
     double beam_area = info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
-    
-    return sum/beam_area;
+
+    return sum / beam_area;
 }
