@@ -5,8 +5,15 @@
 #include "DBConnect.h"
 #endif
 
-#include <casacore/casa/Inputs/Input.h>
-#include <casacore/casa/OS/HostInfo.h>
+#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <thread>
+#include <tuple>
+#include <vector>
+
+#include <omp.h>
+
 #include <fmt/format.h>
 #include <signal.h>
 #include <tbb/concurrent_queue.h>
@@ -15,12 +22,8 @@
 #include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
 
-#include <fstream>
-#include <iostream>
-#include <mutex>
-#include <thread>
-#include <tuple>
-#include <vector>
+#include <casacore/casa/Inputs/Input.h>
+#include <casacore/casa/OS/HostInfo.h>
 
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
@@ -172,15 +175,6 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         session->ImageChannelUnlock();
                     } else {
                         fmt::print("Bad SET_IMAGE_CHANNELS message!\n");
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_IMAGE_VIEW: {
-                    CARTA::SetImageView message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnSetImageView(message);
-                    } else {
-                        fmt::print("Bad SET_IMAGE_VIEW message!\n");
                     }
                     break;
                 }
@@ -432,7 +426,8 @@ int main(int argc, const char* argv[]) {
 
         // define and get input arguments
         int port(3002);
-        int thread_count(tbb::task_scheduler_init::default_num_threads());
+        int thread_count = 2;
+        int omp_thread_count = 4;
         { // get values then let Input go out of scope
             casacore::Input inp;
             string json_fname;
@@ -442,6 +437,7 @@ int main(int argc, const char* argv[]) {
             inp.create("token", CARTA::token, "only accept connections with this authorization token", "String");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
+            inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
@@ -456,6 +452,7 @@ int main(int argc, const char* argv[]) {
             use_permissions = inp.getBool("permissions");
             port = inp.getInt("port");
             thread_count = inp.getInt("threads");
+            omp_thread_count = inp.getInt("omp_threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
             CARTA::token = inp.getString("token");
@@ -489,9 +486,9 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-        // Construct task scheduler, permissions
         tbb::task_scheduler_init task_scheduler(thread_count);
-        CARTA::global_thread_count = thread_count;
+        omp_set_num_threads(omp_thread_count);
+        CARTA::global_thread_count = omp_thread_count;
         if (use_permissions) {
             ReadPermissions("permissions.txt", permissions_map);
         }
@@ -510,8 +507,8 @@ int main(int argc, const char* argv[]) {
         websocket_hub.onError(&OnError);
 
         if (websocket_hub.listen(port, nullptr, 0, group)) {
-            fmt::print("Listening on port {} with root folder {}, base folder {}, and {} threads in thread pool\n", port, root_folder,
-                base_folder, thread_count);
+            fmt::print("Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP threads\n",
+                port, root_folder, base_folder, thread_count, omp_thread_count);
             websocket_hub.run();
         } else {
             fmt::print("Error listening on port {}\n", port);
