@@ -512,6 +512,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                 LoadStats2DPercent();
             }
 
+            double beam_area = CalculateBeamArea();
+            bool has_flux = !std::isnan(beam_area);
+
             // If we loaded all the 2D stats successfully, assume all channel stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
                 for (size_t c = 0; c < _num_channels; c++) {
@@ -525,6 +528,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                         stats[CARTA::StatsType::Mean] = sum / num_pixels;
                         stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                         stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                        if (has_flux) {
+                            stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
+                        }
 
                         _channel_stats[s][c].full = true;
                     }
@@ -548,6 +554,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                 LoadStats3DPercent();
             }
 
+            double beam_area = CalculateBeamArea();
+            bool has_flux = !std::isnan(beam_area);
+
             // If we loaded all the 3D stats successfully, assume all cube stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
                 auto& stats = _cube_stats[s].basic_stats;
@@ -560,6 +569,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                     stats[CARTA::StatsType::Mean] = sum / num_pixels;
                     stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                     stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                    if (has_flux) {
+                        stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
+                    }
 
                     _cube_stats[s].full = true;
                 }
@@ -593,4 +605,16 @@ bool FileLoader::GetRegionSpectralData(int region_id, int config_stokes, int pro
 
 void FileLoader::SetFramePtr(Frame* frame) {
     // Must be implemented in subclasses
+}
+
+double FileLoader::CalculateBeamArea() {
+    ImageRef image = GetImage();
+    auto& info = image->imageInfo();
+    auto& coord = image->coordinates();
+
+    if (!info.hasSingleBeam() || !coord.hasDirectionCoordinate()) {
+        return NAN;
+    }
+
+    return info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
 }
