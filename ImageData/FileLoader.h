@@ -189,8 +189,7 @@ protected:
     virtual void LoadStats3DPercent();
 
     // Basic flux density calculation
-    bool HasFlux();
-    double CalculateFlux(double sum);
+    double CalculateBeamArea();
 
 private:
     // Find spectral and stokes coordinates

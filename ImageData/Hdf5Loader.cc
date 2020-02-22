@@ -219,7 +219,8 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
     bool recalculate(false);
     auto region_stats_id = FileInfo::RegionStatsId(region_id, profile_stokes);
 
-    bool has_flux = HasFlux();
+    double beam_area = CalculateBeamArea();
+    bool has_flux = !std::isnan(beam_area);
 
     if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
         _region_stats.emplace(std::piecewise_construct, std::forward_as_tuple(region_id, profile_stokes),
@@ -306,7 +307,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
                     rms[z] = sqrt(sum_sq_z / num_pixels_z);
                     sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
                     if (has_flux) {
-                        flux[z] = CalculateFlux(sum_z);
+                        flux[z] = sum_z / beam_area;
                     }
                 } else {
                     // if there are no valid values, set all stats to NaN except the value and NaN counts

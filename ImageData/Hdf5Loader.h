@@ -3,7 +3,6 @@
 
 #include <unordered_map>
 
-#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
 #include "../Frame.h"
