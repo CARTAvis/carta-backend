@@ -240,3 +240,11 @@ casacore::Vector<casacore::String> CartaHdf5Image::Hdf5ToFITSHeaderStrings() {
     casacore::CountedPtr<casacore::HDF5Group> hdf5_group(_lattice.group());
     return Hdf5Attributes::ReadAttributes(hdf5_group.get()->getHid());
 }
+
+casacore::uInt CartaHdf5Image::advisedMaxPixels() const {
+    return _lattice.advisedMaxPixels();
+}
+
+casacore::IPosition CartaHdf5Image::doNiceCursorShape(casacore::uInt maxPixels) const {
+    return _lattice.niceCursorShape(maxPixels);
+}
