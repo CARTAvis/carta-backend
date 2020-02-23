@@ -55,9 +55,10 @@ bool TileCache::GetMultiple(
     }
 
     // First get all the tiles which are in the cache, in parallel
+    // We can't use a range-based loop after the pragma
 #pragma omp parallel for
-    for (auto& key : found) {
-        CopyTileData(tiles[key], UnsafePeek(key));
+    for (auto it = found.begin(); it < found.end(); it++) {
+        CopyTileData(tiles[*it], UnsafePeek(*it));
     }
 
     for (auto& key : found) {
@@ -76,9 +77,10 @@ bool TileCache::GetMultiple(
         valid = valid && LoadChunk(kv.first, loader, image_mutex);
 
         // get the tiles (up to 4, probably 2) in parallel
+        // We can't use a range-based loop after the pragma
 #pragma omp parallel for
-        for (auto& key : kv.second) {
-            CopyTileData(tiles[key], UnsafePeek(key));
+        for (auto it = kv.second.begin(); it < kv.second.end(); it++) {
+            CopyTileData(tiles[*it], UnsafePeek(*it));
         }
     }
 
