@@ -36,8 +36,6 @@ bool FileSettings::ExecuteOne(const std::string& event_name, const uint32_t file
 
 void FileSettings::ClearSettings(const uint32_t file_id) {
     bool write_lock(true);
-    tbb::queuing_rw_mutex::scoped_lock view_lock(_view_mutex, write_lock);
-    _latest_view.unsafe_erase(file_id);
     tbb::queuing_rw_mutex::scoped_lock cursor_lock(_cursor_mutex, write_lock);
     _latest_cursor.unsafe_erase(file_id);
 }
