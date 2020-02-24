@@ -1276,14 +1276,16 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message, bool compress) {
     int message_length = message.ByteSize();
     size_t required_size = message_length + sizeof(carta::EventHeader);
-    std::vector<char> msg(required_size, 0);
-    std::pair<std::vector<char>, bool> msg_vs_compress = std::make_pair(std::move(msg), compress);
-    carta::EventHeader* head = (carta::EventHeader*)msg_vs_compress.first.data();
+    std::pair<std::vector<char>, bool> msg_vs_compress;
+    std::vector<char>& msg = msg_vs_compress.first;
+    msg.resize(required_size, 0);
+    carta::EventHeader* head = (carta::EventHeader*)msg.data();
 
     head->type = event_type;
     head->icd_version = carta::ICD_VERSION;
     head->request_id = event_id;
-    message.SerializeToArray(msg_vs_compress.first.data() + sizeof(carta::EventHeader), message_length);
+    message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
+    msg_vs_compress.second = compress;
     _out_msgs.push(msg_vs_compress);
     _outgoing_async->send();
 }
