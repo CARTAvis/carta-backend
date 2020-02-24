@@ -38,71 +38,69 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
     const int64_t x_offset = vertical ? 0 : kernel_radius;
     const int64_t y_offset = vertical ? kernel_radius : 0;
 
-    auto loop = [&](const tbb::blocked_range<int>& r) {
-        for (int64_t dest_y = r.begin(); dest_y < r.end(); dest_y++) {
-            int64_t src_y = dest_y + y_offset;
-            // Handle row in steps of 4 or 8 using SSE or AVX
-            for (int64_t dest_x = 0; dest_x < dest_block_limit; dest_x += SIMD_WIDTH) {
-                int64_t dest_index = dest_x + dest_width * dest_y;
-                int64_t src_x = dest_x + x_offset;
+#pragma omp parallel for
+    for (int64_t dest_y = 0; dest_y < dest_height; dest_y++) {
+        int64_t src_y = dest_y + y_offset;
+        // Handle row in steps of 4 or 8 using SSE or AVX
+        for (int64_t dest_x = 0; dest_x < dest_block_limit; dest_x += SIMD_WIDTH) {
+            int64_t dest_index = dest_x + dest_width * dest_y;
+            int64_t src_x = dest_x + x_offset;
 #ifdef __AVX__
-                __m256 sum = _mm256_setzero_ps();
-                __m256 weight = _mm256_setzero_ps();
-                for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
-                    int64_t src_index = src_x + i * jump_size + src_width * src_y;
-                    __m256 val = _mm256_loadu_ps(src_data + src_index);
-                    __m256 w = _mm256_set1_ps(kernel[i + kernel_radius]);
-                    __m256 mask = _mm256_andnot_ps(IsInfinity(val), _mm256_cmp_ps(val, val, _CMP_EQ_OQ));
-                    w = _mm256_and_ps(w, mask);
-                    val = _mm256_and_ps(val, mask);
-                    sum += val * w;
-                    weight += w;
-                }
-                sum /= weight;
-                _mm256_storeu_ps(dest_data + dest_index, sum);
+            __m256 sum = _mm256_setzero_ps();
+            __m256 weight = _mm256_setzero_ps();
+            for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
+                int64_t src_index = src_x + i * jump_size + src_width * src_y;
+                __m256 val = _mm256_loadu_ps(src_data + src_index);
+                __m256 w = _mm256_set1_ps(kernel[i + kernel_radius]);
+                __m256 mask = _mm256_andnot_ps(IsInfinity(val), _mm256_cmp_ps(val, val, _CMP_EQ_OQ));
+                w = _mm256_and_ps(w, mask);
+                val = _mm256_and_ps(val, mask);
+                sum += val * w;
+                weight += w;
+            }
+            sum /= weight;
+            _mm256_storeu_ps(dest_data + dest_index, sum);
 #else
-                __m128 sum = _mm_setzero_ps();
-                __m128 weight = _mm_setzero_ps();
-                for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
-                    int64_t src_index = src_x + i * jump_size + src_width * src_y;
-                    __m128 val = _mm_loadu_ps(src_data + src_index);
-                    __m128 w = _mm_set_ps1(kernel[i + kernel_radius]);
-                    __m128 mask = _mm_andnot_ps(IsInfinity(val), _mm_cmpeq_ps(val, val));
-                    w = _mm_and_ps(w, mask);
-                    val = _mm_and_ps(val, mask);
+            __m128 sum = _mm_setzero_ps();
+            __m128 weight = _mm_setzero_ps();
+            for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
+                int64_t src_index = src_x + i * jump_size + src_width * src_y;
+                __m128 val = _mm_loadu_ps(src_data + src_index);
+                __m128 w = _mm_set_ps1(kernel[i + kernel_radius]);
+                __m128 mask = _mm_andnot_ps(IsInfinity(val), _mm_cmpeq_ps(val, val));
+                w = _mm_and_ps(w, mask);
+                val = _mm_and_ps(val, mask);
+                sum += val * w;
+                weight += w;
+            }
+            sum /= weight;
+            _mm_storeu_ps(dest_data + dest_index, sum);
+#endif
+        }
+
+        // Handle remainder of each block
+        for (int64_t dest_x = dest_block_limit; dest_x < dest_width; dest_x++) {
+            int64_t dest_index = dest_x + dest_width * dest_y;
+            int64_t src_x = dest_x + x_offset;
+            float sum = 0.0;
+            float weight = 0.0;
+            for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
+                int64_t src_index = src_x + i * jump_size + src_width * src_y;
+                float val = src_data[src_index];
+                if (!isnan(val)) {
+                    float w = kernel[i + kernel_radius];
                     sum += val * w;
                     weight += w;
                 }
+            }
+            if (weight > 0.0) {
                 sum /= weight;
-                _mm_storeu_ps(dest_data + dest_index, sum);
-#endif
+            } else {
+                sum = NAN;
             }
-
-            // Handle remainder of each block
-            for (int64_t dest_x = dest_block_limit; dest_x < dest_width; dest_x++) {
-                int64_t dest_index = dest_x + dest_width * dest_y;
-                int64_t src_x = dest_x + x_offset;
-                float sum = 0.0;
-                float weight = 0.0;
-                for (int64_t i = -kernel_radius; i <= kernel_radius; i++) {
-                    int64_t src_index = src_x + i * jump_size + src_width * src_y;
-                    float val = src_data[src_index];
-                    if (!isnan(val)) {
-                        float w = kernel[i + kernel_radius];
-                        sum += val * w;
-                        weight += w;
-                    }
-                }
-                if (weight > 0.0) {
-                    sum /= weight;
-                } else {
-                    sum = NAN;
-                }
-                dest_data[dest_index] = sum;
-            }
+            dest_data[dest_index] = sum;
         }
-    };
-    tbb::parallel_for(tbb::blocked_range<int>(0, dest_height), loop);
+    }
 
     return true;
 }
