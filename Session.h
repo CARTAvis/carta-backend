@@ -78,9 +78,9 @@ public:
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
         // Empty current queue first.
-        while (_set_channel_queue.try_pop(rp)) {
+        while (_set_channel_queues[message.file_id()].try_pop(rp)) {
         }
-        _set_channel_queue.push(std::make_pair(message, request_id));
+        _set_channel_queues[message.file_id()].push(std::make_pair(message, request_id));
     }
 
     // Task handling
@@ -115,22 +115,22 @@ public:
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _file_settings.AddCursorSetting(message, request_id);
     }
-    void ImageChannelLock() {
-        _image_channel_mutex.lock();
+    void ImageChannelLock(int fileId) {
+        _image_channel_mutexes[fileId].lock();
     }
-    void ImageChannelUnlock() {
-        _image_channel_mutex.unlock();
+    void ImageChannelUnlock(int fileId) {
+        _image_channel_mutexes[fileId].unlock();
     }
-    bool ImageChannelTaskTestAndSet() {
-        if (_image_channel_task_active) {
+    bool ImageChannelTaskTestAndSet(int fileId) {
+        if (_image_channel_task_active[fileId]) {
             return true;
         } else {
-            _image_channel_task_active = true;
+            _image_channel_task_active[fileId] = true;
             return false;
         }
     }
-    void ImageChannelTaskSetIdle() {
-        _image_channel_task_active = false;
+    void ImageChannelTaskSetIdle(int fileId) {
+        _image_channel_task_active[fileId] = false;
     }
     int IncreaseRefCount() {
         return ++_ref_count;
@@ -168,7 +168,7 @@ public:
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
-    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
+    std::unordered_map<int, tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
 private:
     // File info
@@ -221,8 +221,8 @@ private:
     std::unique_ptr<AnimationObject> _animation_object;
 
     // Manage image channel
-    std::mutex _image_channel_mutex;
-    bool _image_channel_task_active;
+    std::unordered_map<int, std::mutex> _image_channel_mutexes;
+    std::unordered_map<int, bool> _image_channel_task_active;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;

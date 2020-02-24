@@ -52,7 +52,6 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _loader(nullptr),
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
-      _image_channel_task_active(false),
       _animation_id(0),
       _file_settings(this) {
     _histogram_progress = HISTOGRAM_COMPLETE;

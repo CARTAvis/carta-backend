@@ -164,13 +164,13 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::SET_IMAGE_CHANNELS: {
                     CARTA::SetImageChannels message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        session->ImageChannelLock();
-                        if (!session->ImageChannelTaskTestAndSet()) {
-                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session);
+                        session->ImageChannelLock(message.file_id());
+                        if (!session->ImageChannelTaskTestAndSet(message.file_id())) {
+                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session, message.file_id());
                         }
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
-                        session->ImageChannelUnlock();
+                        session->ImageChannelUnlock(message.file_id());
                     } else {
                         fmt::print("Bad SET_IMAGE_CHANNELS message!\n");
                     }
