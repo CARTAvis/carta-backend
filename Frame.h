@@ -191,7 +191,7 @@ private:
     bool SetImageCache();
     // downsampled data from image cache
     bool GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter = true);
-    bool GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height);
+    bool GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height);
     // fill vector for given channel and stokes
     void GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes);
     // get slicer for xy matrix with given channel and stokes

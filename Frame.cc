@@ -965,20 +965,20 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     tile_ptr->set_x(tile.x);
     tile_ptr->set_y(tile.y);
 
-    std::vector<float> tile_image_data;
+    std::shared_ptr<std::vector<float>> tile_data_ptr;
     int tile_width;
     int tile_height;
-    if (GetRasterTileData(tile_image_data, tile, tile_width, tile_height)) {
+    if (GetRasterTileData(tile_data_ptr, tile, tile_width, tile_height)) {
         if (ChannelsChanged(channel, stokes)) {
             return false;
         }
         tile_ptr->set_width(tile_width);
         tile_ptr->set_height(tile_height);
         if (compression_type == CARTA::CompressionType::NONE) {
-            tile_ptr->set_image_data(tile_image_data.data(), sizeof(float) * tile_image_data.size());
+            tile_ptr->set_image_data(tile_data_ptr->data(), sizeof(float) * tile_data_ptr->size());
             return true;
         } else if (compression_type == CARTA::CompressionType::ZFP) {
-            auto nan_encodings = GetNanEncodingsBlock(tile_image_data, 0, tile_width, tile_height);
+            auto nan_encodings = GetNanEncodingsBlock(*tile_data_ptr, 0, tile_width, tile_height);
             tile_ptr->set_nan_encodings(nan_encodings.data(), sizeof(int32_t) * nan_encodings.size());
 
             if (ChannelsChanged(channel, stokes)) {
@@ -988,7 +988,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
-            Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
+            Compress(*tile_data_ptr, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
 
             return !(ChannelsChanged(channel, stokes));
@@ -997,7 +997,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     return false;
 }
 
-bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height) {
+bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr, const Tile& tile, int& width, int& height) {
     int mip = Tile::LayerToMip(tile.layer, _image_shape(0), _image_shape(1), TILE_SIZE, TILE_SIZE);
     int tile_size_original = TILE_SIZE * mip;
     CARTA::ImageBounds bounds;
@@ -1012,6 +1012,7 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
     width = std::ceil((float)req_width / mip);
     height = std::ceil((float)req_height / mip);
 
+    std::vector<float> tile_data;
     bool loaded_data(0);
 
     if (mip > 1) {
@@ -1019,17 +1020,19 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _channel_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (_image_cache.empty() && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
-        TileCache::TilePtr tile = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
-        if (tile) {
-            tile_data.resize(tile->size());
-            std::copy(tile->begin(), tile->end(), tile_data.begin());
-            loaded_data = true;
+        tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
+        if (tile_data_ptr) {
+            return true;
         }
     }
 
     // Fall back to using the full image cache. The cache will be populated by this function.
     if (!loaded_data) {
         loaded_data = GetRasterData(tile_data, bounds, mip, true);
+    }
+
+    if (loaded_data) {
+        tile_data_ptr = std::make_shared<std::vector<float>>(tile_data);
     }
 
     return loaded_data;
