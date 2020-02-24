@@ -50,10 +50,11 @@ public:
 };
 
 class SetImageChannelsTask : public OnMessageTask {
+    int fileId;
     tbb::task* execute() override;
 
 public:
-    SetImageChannelsTask(Session* session) : OnMessageTask(session) {}
+    SetImageChannelsTask(Session* session, int fileId) : OnMessageTask(session), fileId(fileId) {}
     ~SetImageChannelsTask() = default;
 };
 
