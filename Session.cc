@@ -1300,11 +1300,7 @@ void Session::SendPendingMessages() {
     std::pair<std::vector<char>, bool> msg;
     if (_connected) {
         while (_out_msgs.try_pop(msg)) {
-            if (msg.second) { // Compress the message
-                _socket->send(msg.first.data(), msg.first.size(), uWS::BINARY, nullptr, nullptr, true);
-            } else { // Do not compress the message
-                _socket->send(msg.first.data(), msg.first.size(), uWS::BINARY);
-            }
+            _socket->send(msg.first.data(), msg.first.size(), uWS::BINARY, nullptr, nullptr, msg.second);
         }
     }
 }
