@@ -1149,6 +1149,12 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
             tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
             value = _image_cache[(y * width) + x];
             cache_lock.release();
+        } else if (_loader->UseTileCache()) {
+            int tile_x = (x / TILE_SIZE) * TILE_SIZE;
+            int tile_y = (y / TILE_SIZE) * TILE_SIZE;
+            auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
+            auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
+            value = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
         }
         profile_data.set_x(x);
         profile_data.set_y(y);
