@@ -1506,9 +1506,13 @@ void Session::DeleteFrame(int file_id) {
             frame.second.reset();             // delete Frame
         }
         _frames.clear();
+        _image_channel_mutexes.clear();
+        _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
         _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
+        _image_channel_mutexes.erase(file_id);
+        _image_channel_task_active.erase(file_id);
     }
 }
