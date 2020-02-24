@@ -45,8 +45,7 @@ unordered_map<string, vector<string>> permissions_map;
 static FileListHandler* file_list_handler;
 
 static uint32_t session_number;
-static uWS::Hub websocket_hub;
-uWS::Group<uWS::SERVER>* group;
+static uWS::Hub websocket_hub(uWS::PERMESSAGE_DEFLATE);
 
 // command-line arguments
 static string root_folder("/"), base_folder(".");
@@ -498,15 +497,12 @@ int main(int argc, const char* argv[]) {
 
         session_number = 0;
 
-        // Create a hub group and pass the PERMESSAGE_DEFLATE option
-        group = websocket_hub.createGroup<uWS::SERVER>(uWS::PERMESSAGE_DEFLATE);
-        group->onMessage(&OnMessage);
-        group->onConnection(&OnConnect);
-        group->onDisconnection(&OnDisconnect);
-
+        websocket_hub.onMessage(&OnMessage);
+        websocket_hub.onConnection(&OnConnect);
+        websocket_hub.onDisconnection(&OnDisconnect);
         websocket_hub.onError(&OnError);
 
-        if (websocket_hub.listen(port, nullptr, 0, group)) {
+        if (websocket_hub.listen(port)) {
             fmt::print("Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP threads\n",
                 port, root_folder, base_folder, thread_count, omp_thread_count);
             websocket_hub.run();
@@ -521,8 +517,6 @@ int main(int argc, const char* argv[]) {
         fmt::print("Unknown error\n");
         return 1;
     }
-
-    delete group;
 
     return 0;
 }

@@ -85,6 +85,7 @@ set(LINK_LIBS
         casa_mirlib
         casa_scimath
         casa_imageanalysis
+        ${OpenMP_CXX_LIBRARIES}
         ${HDF5_LIBRARIES}
         ${LIBXML2_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
