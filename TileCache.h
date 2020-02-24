@@ -36,25 +36,24 @@ struct hash<TileCacheKey> {
 class TileCache {
 public:
     using Key = TileCacheKey;
+    using TilePtr = std::shared_ptr<std::vector<float>>;
 
     TileCache() {}
     TileCache(int capacity) : _capacity(capacity), _channel(0), _stokes(0) {}
 
     // This is read-only and does not lock the cache
-    bool Peek(std::vector<float>& tile_data, Key key);
+    TilePtr Peek(Key key);
 
     // These functions lock the cache
-    bool Get(std::vector<float>& tile_data, Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
-    bool GetMultiple(
-        std::unordered_map<Key, std::vector<float>>& tiles, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
+    TilePtr Get(Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
+    std::unordered_map<Key, TilePtr> GetMultiple(
+        std::vector<Key>& keys, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
     void Reset(int32_t channel, int32_t stokes, int capacity = 0);
 
 private:
-    using TilePtr = std::shared_ptr<std::vector<float>>;
     using TilePair = std::pair<Key, TilePtr>;
     using TileIter = std::vector<float>::iterator;
 
-    void CopyTileData(std::vector<float>& tile_data, TilePtr tile);
     TilePtr UnsafePeek(Key key);
     void Touch(Key key);
     Key ChunkKey(Key tile_key);

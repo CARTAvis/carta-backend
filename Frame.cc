@@ -1019,7 +1019,12 @@ bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, i
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _channel_index, _stokes_index, bounds, mip, _image_mutex);
     } else if (_image_cache.empty() && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
-        loaded_data = _tile_cache.Get(tile_data, TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
+        TileCache::TilePtr tile = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
+        if (tile) {
+            tile_data.resize(tile->size());
+            std::copy(tile->begin(), tile->end(), tile_data.begin());
+            loaded_data = true;
+        }
     }
 
     // Fall back to using the full image cache. The cache will be populated by this function.
@@ -1200,17 +1205,18 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                             }
                         }
                     } else if ((profile_stokes == _stokes_index) && _loader->UseTileCache()) {
-                        std::unordered_map<TileCache::Key, std::vector<float>> tiles;
+                        std::vector<TileCache::Key> keys;
 
                         switch (axis_stokes.first) {
                             case 0: { // x
                                 int tile_y = (y / TILE_SIZE) * TILE_SIZE;
                                 for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
-                                    // Create empty vector
-                                    tiles[TileCache::Key(tile_x, tile_y)];
+                                    keys.push_back(TileCache::Key(tile_x, tile_y));
                                 }
 
-                                if (!_tile_cache.GetMultiple(tiles, _loader, _image_mutex)) {
+                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex);
+
+                                if (tiles.empty()) {
                                     return profile_ok;
                                 }
 
@@ -1222,7 +1228,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                     auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
 
                                     // copy contiguous row
-                                    auto start = tile.begin() + tile_height * (y - tile_y);
+                                    auto start = tile->begin() + tile_height * (y - tile_y);
                                     auto end = start + tile_width;
                                     auto destination_start = profile.begin() + tile_x;
                                     std::copy(start, end, destination_start);
@@ -1233,10 +1239,12 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                             case 1: { // y
                                 int tile_x = (x / TILE_SIZE) * TILE_SIZE;
                                 for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
-                                    tiles[TileCache::Key(tile_x, tile_y)];
+                                    keys.push_back(TileCache::Key(tile_x, tile_y));
                                 }
 
-                                if (!_tile_cache.GetMultiple(tiles, _loader, _image_mutex)) {
+                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex);
+
+                                if (tiles.empty()) {
                                     return profile_ok;
                                 }
 
@@ -1249,7 +1257,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
 
                                     // copy non-contiguous column
                                     for (int j = 0; j < tile_height; j++) {
-                                        profile[tile_y + j] = tile[(j * tile_width) + (x - tile_x)];
+                                        profile[tile_y + j] = (*tile)[(j * tile_width) + (x - tile_x)];
                                     }
                                 }
 

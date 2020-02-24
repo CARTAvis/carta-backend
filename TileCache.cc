@@ -6,18 +6,16 @@ std::ostream& operator<<(std::ostream& os, const TileCacheKey& key) {
     return os;
 }
 
-bool TileCache::Peek(std::vector<float>& tile_data, Key key) {
+TileCache::TilePtr TileCache::Peek(Key key) {
     // This is a read-only operation which it is safe to do in parallel.
     if (_map.find(key) == _map.end()) {
-        return false;
+        return nullptr;
     } else {
-        auto tile = UnsafePeek(key);
-        CopyTileData(tile_data, tile);
-        return true;
+        return UnsafePeek(key);
     }
 }
 
-bool TileCache::Get(std::vector<float>& tile_data, Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
+TileCache::TilePtr TileCache::Get(Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
     // Will be loaded or retrieved from cache
     bool valid(1);
 
@@ -31,22 +29,23 @@ bool TileCache::Get(std::vector<float>& tile_data, Key key, std::shared_ptr<cart
     }
 
     if (valid) {
-        CopyTileData(tile_data, UnsafePeek(key));
+        return UnsafePeek(key);
     }
 
-    return valid;
+    return nullptr;
 }
 
-bool TileCache::GetMultiple(
-    std::unordered_map<Key, std::vector<float>>& tiles, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
+std::unordered_map<TileCache::Key, TileCache::TilePtr> TileCache::GetMultiple(
+    std::vector<Key>& keys, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
     std::vector<Key> found;
     std::vector<Key> not_found;
+    std::unordered_map<Key, TilePtr> tiles;
     bool valid(1);
 
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
 
-    for (auto& kv : tiles) {
-        auto& key = kv.first;
+    for (auto& key : keys) {
+        tiles[key]; // We have to reserve these serially
         if (_map.find(key) == _map.end()) {
             not_found.push_back(key);
         } else {
@@ -58,7 +57,7 @@ bool TileCache::GetMultiple(
     // We can't use a range-based loop after the pragma
 #pragma omp parallel for
     for (auto it = found.begin(); it < found.end(); it++) {
-        CopyTileData(tiles[*it], UnsafePeek(*it));
+        tiles[*it] = UnsafePeek(*it);
     }
 
     for (auto& key : found) {
@@ -80,11 +79,17 @@ bool TileCache::GetMultiple(
         // We can't use a range-based loop after the pragma
 #pragma omp parallel for
         for (auto it = kv.second.begin(); it < kv.second.end(); it++) {
-            CopyTileData(tiles[*it], UnsafePeek(*it));
+            tiles[*it] = UnsafePeek(*it);
         }
     }
 
-    return valid;
+    if (valid) {
+        return tiles;
+    }
+
+    // return all or nothing -- if there were any failures, invalidate the whole map
+    tiles.clear();
+    return tiles;
 }
 
 void TileCache::Reset(int32_t channel, int32_t stokes, int capacity) {
@@ -96,11 +101,6 @@ void TileCache::Reset(int32_t channel, int32_t stokes, int capacity) {
     _queue.clear();
     _channel = channel;
     _stokes = stokes;
-}
-
-void TileCache::CopyTileData(std::vector<float>& tile_data, TilePtr tile) {
-    tile_data.resize(tile->size());
-    std::copy(tile->begin(), tile->end(), tile_data.begin());
 }
 
 TileCache::TilePtr TileCache::UnsafePeek(Key key) {
