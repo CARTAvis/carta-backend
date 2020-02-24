@@ -244,8 +244,8 @@ private:
     std::mutex _stats_cache_mutex;
 
     // Define all stats types to calculate
-    std::vector<int> _all_stats = {CARTA::StatsType::Sum, CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma,
-        CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max};
+    std::vector<int> _all_stats = {CARTA::StatsType::Sum, CARTA::StatsType::FluxDensity, CARTA::StatsType::Mean, CARTA::StatsType::RMS,
+        CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min, CARTA::StatsType::Max};
 };
 
 } // namespace carta
