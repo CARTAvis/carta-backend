@@ -1233,6 +1233,7 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool chann
             SendRegionHistogramData(file_id, CUBE_REGION_ID);
             SendSpectralProfileData(file_id, CURSOR_REGION_ID, stokes_changed);
         }
+
         if (channel_changed || stokes_changed) {
             if (send_image_histogram) {
                 SendRegionHistogramData(file_id, IMAGE_REGION_ID);
@@ -1244,14 +1245,18 @@ void Session::UpdateImageData(int file_id, bool send_image_histogram, bool chann
 }
 
 void Session::UpdateRegionData(int file_id, int region_id, bool channel_changed, bool stokes_changed) {
-    // Send updated data for user-set regions with requirements when channel or stokes changes.
-    // If file_id is ALL_FILES, updates region for all files associated with region id.
-    // If region_id is ALL_REGIONS, update all regions associated with file id.
+    // Send updated data for user-set regions with requirements when channel, stokes, or region changes.
     if (stokes_changed) {
         SendSpectralProfileData(file_id, region_id, stokes_changed);
     }
 
     if (channel_changed || stokes_changed) {
+        SendRegionStatsData(file_id, region_id);
+        SendRegionHistogramData(file_id, region_id);
+    }
+
+    if (!channel_changed && !stokes_changed) { // region changed, update all
+        SendSpectralProfileData(file_id, region_id, stokes_changed);
         SendRegionStatsData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
     }
