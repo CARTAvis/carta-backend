@@ -709,6 +709,12 @@ bool Frame::SetImageCache() {
 
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+
+    // Exit early *after* acquiring lock if the cache has already been loaded by another thread
+    if (_image_cache_valid) {
+        return true;
+    }
+
     try {
         _image_cache.resize(_image_shape(0) * _image_shape(1));
     } catch (std::bad_alloc& alloc_error) {
