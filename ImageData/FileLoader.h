@@ -51,10 +51,15 @@ struct RegionSpectralStats {
 
     RegionSpectralStats() {}
 
-    RegionSpectralStats(casacore::IPosition origin, casacore::IPosition shape, int num_channels) : origin(origin), shape(shape) {
+    RegionSpectralStats(casacore::IPosition origin, casacore::IPosition shape, int num_channels, bool has_flux = false)
+        : origin(origin), shape(shape) {
         std::vector<CARTA::StatsType> supported_stats = {CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
             CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min,
             CARTA::StatsType::Max};
+
+        if (has_flux) {
+            supported_stats.push_back(CARTA::StatsType::FluxDensity);
+        }
 
         for (auto& s : supported_stats) {
             stats.emplace(std::piecewise_construct, std::make_tuple(s), std::make_tuple(num_channels));
@@ -162,8 +167,6 @@ public:
     virtual bool GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
-    // Implemented in Hdf5Loader, used to interrupt loading spectral profile
-    virtual void SetFramePtr(Frame* frame);
 
 protected:
     // Dimension values used by stats functions
@@ -186,6 +189,9 @@ protected:
     virtual void LoadStats3DBasic(FileInfo::Data ds);
     virtual void LoadStats3DHist();
     virtual void LoadStats3DPercent();
+
+    // Basic flux density calculation
+    double CalculateBeamArea();
 
 private:
     // Find spectral and stokes coordinates

@@ -45,6 +45,8 @@ public:
     const casacore::LatticeRegion* getRegionPtr() const override;
     casacore::ImageInterface<float>* cloneII() const override;
     void resize(const casacore::TiledShape& newShape) override;
+    casacore::uInt advisedMaxPixels() const override;
+    casacore::IPosition doNiceCursorShape(casacore::uInt maxPixels) const override;
 
     // implement functions in other casacore Image classes
     casacore::Bool isMasked() const override;

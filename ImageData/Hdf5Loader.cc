@@ -219,9 +219,12 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
     bool recalculate(false);
     auto region_stats_id = FileInfo::RegionStatsId(region_id, profile_stokes);
 
+    double beam_area = CalculateBeamArea();
+    bool has_flux = !std::isnan(beam_area);
+
     if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
         _region_stats.emplace(std::piecewise_construct, std::forward_as_tuple(region_id, profile_stokes),
-            std::forward_as_tuple(origin, mask->shape(), num_z));
+            std::forward_as_tuple(origin, mask->shape(), num_z, has_flux));
         recalculate = true;
     } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
         _region_stats[region_stats_id].origin = origin;
@@ -251,6 +254,8 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
         auto& min = stats[CARTA::StatsType::Min];
         auto& max = stats[CARTA::StatsType::Max];
 
+        double* flux = has_flux ? stats[CARTA::StatsType::FluxDensity].data() : nullptr;
+
         std::vector<float> slice_data;
 
         // get the start of X
@@ -268,7 +273,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
             }
         }
 
-        /* TODO: Interrupt spectral profile
+        /* TODO: Interrupt region spectral profile
         // get a copy of current region state
         RegionState region_state;
         if (!_frame->GetRegionState(region_id, region_state)) {
@@ -289,7 +294,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
         auto t_start = std::chrono::high_resolution_clock::now();
         auto t_latest = t_start;
 
-        // Lambda to calculate mean, sigma and RMS
+        // Lambda to calculate additional stats
         auto calculate_stats = [&]() {
             double sum_z, sum_sq_z;
             uint64_t num_pixels_z;
@@ -303,6 +308,9 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
                     mean[z] = sum_z / num_pixels_z;
                     rms[z] = sqrt(sum_sq_z / num_pixels_z);
                     sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
+                    if (has_flux) {
+                        flux[z] = sum_z / beam_area;
+                    }
                 } else {
                     // if there are no valid values, set all stats to NaN except the value and NaN counts
                     for (auto& kv : stats) {
@@ -392,10 +400,6 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
     partial_results_callback(stats_values, 1.0f);
 
     return true;
-}
-
-void Hdf5Loader::SetFramePtr(Frame* frame) {
-    _frame = frame;
 }
 
 } // namespace carta

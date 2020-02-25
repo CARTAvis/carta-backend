@@ -28,7 +28,6 @@ public:
     bool GetRegionSpectralData(int region_id, int profile_index, int stokes,
         const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
-    void SetFramePtr(Frame* frame) override;
 
 private:
     std::string _filename;
