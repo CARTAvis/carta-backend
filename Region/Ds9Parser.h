@@ -1,7 +1,7 @@
 //# Ds9Parser.h: parse ds9 region file to get CARTA::RegionInfo
 
-#ifndef CARTA_BACKEND__DS9PARSER_H_
-#define CARTA_BACKEND__DS9PARSER_H_
+#ifndef CARTA_BACKEND_REGION_DS9PARSER_H_
+#define CARTA_BACKEND_REGION_DS9PARSER_H_
 
 #include <unordered_map>
 
@@ -118,4 +118,4 @@ private:
 
 } // namespace carta
 
-#endif // CARTA_BACKEND__DS9PARSER_H_
+#endif // CARTA_BACKEND_REGION_DS9PARSER_H_

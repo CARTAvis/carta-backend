@@ -64,7 +64,8 @@ struct ContourSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, const std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, bool verbose,
+        int default_channel = DEFAULT_CHANNEL);
     ~Frame(){};
 
     bool IsValid();
@@ -102,7 +103,7 @@ public:
 
     // Histograms: image and cube
     bool SetHistogramRequirements(int region_id, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& histogram_configs);
-    bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data);
+    bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& histogram_data);
     bool FillHistogram(int channel, int stokes, int num_bins, carta::BasicStats<float>& stats, CARTA::Histogram* histogram);
     bool GetBasicStats(int channel, int stokes, carta::BasicStats<float>& stats);
     bool CalculateHistogram(
@@ -172,7 +173,7 @@ private:
     volatile bool _connected = true;
 
     // Image loader for image type
-    std::unique_ptr<carta::FileLoader> _loader;
+    std::shared_ptr<carta::FileLoader> _loader;
 
     // Shape, channel, and stokes
     casacore::IPosition _image_shape;  // (width, height, depth, stokes)

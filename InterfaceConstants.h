@@ -13,6 +13,7 @@
 #define CUBE_REGION_ID -2
 #define IMAGE_REGION_ID -1
 #define CURSOR_REGION_ID 0
+#define ALL_REGIONS -10
 
 // channels
 #define DEFAULT_CHANNEL 0

@@ -17,7 +17,8 @@
 
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel)
+Frame::Frame(
+    uint32_t session_id, const std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, bool verbose, int default_channel)
     : _session_id(session_id),
       _verbose(verbose),
       _valid(true),
@@ -37,8 +38,6 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _valid = false;
         return;
     }
-
-    _loader->SetFramePtr(this);
 
     try {
         _loader->OpenFile(hdu);
@@ -481,7 +480,7 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::Set
     return true;
 }
 
-bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* histogram_data) {
+bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& histogram_data) {
     // fill histogram message for image plane or cube
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
@@ -490,9 +489,9 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
     int stokes(CurrentStokes());
 
     // fill common message fields
-    histogram_data->set_region_id(region_id);
-    histogram_data->set_stokes(stokes);
-    histogram_data->set_progress(1.0);
+    histogram_data.set_region_id(region_id);
+    histogram_data.set_stokes(stokes);
+    histogram_data.set_progress(1.0);
 
     std::vector<HistogramConfig> requirements;
     if (region_id == IMAGE_REGION_ID) {
@@ -511,7 +510,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
         int num_bins = histogram_config.num_bins;
 
         // Histogram submessage for this config
-        auto histogram = histogram_data->add_histograms();
+        auto histogram = histogram_data.add_histograms();
         histogram->set_channel(channel);
 
         // fill histogram submessage from cache (loader or local)

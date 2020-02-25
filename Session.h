@@ -42,7 +42,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
-#include "Region/Region.h"
+#include "Region/RegionHandler.h"
 #include "Util.h"
 
 class Session {
@@ -180,25 +180,16 @@ private:
     // Delete Frame(s)
     void DeleteFrame(int file_id);
 
-    // Assign next region ID
-    int GetNextRegionId();
-
-    // Histogram
-    CARTA::RegionHistogramData* GetRegionHistogramData(const int32_t file_id, const int32_t region_id);
-    // Specialized for cube; accumulate per-channel histograms
-    bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData* cube_histogram_message);
-    // basic message to update progress
+    // Specialized for cube; accumulate per-channel histograms and send progress messages
+    bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message);
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
     // Send data streams
     bool SendContourData(int file_id);
-
-    // Only set channel_changed and stokes_changed if they are the only trigger for new data
-    // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
-    void SendSpatialProfileData(int file_id, int region_id);
-    void SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
+    bool SendSpatialProfileData(int file_id, int region_id);
+    bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
     bool SendRegionHistogramData(int file_id, int region_id);
-    void SendRegionStatsData(int file_id, int region_id);
+    bool SendRegionStatsData(int file_id, int region_id);
     void UpdateImageData(int file_id, bool send_image_histogram, bool channel_changed, bool stokes_changed);
     void UpdateRegionData(int file_id, int region_id, bool channel_changed, bool stokes_changed);
 
@@ -216,20 +207,21 @@ private:
     // File browser
     FileListHandler* _file_list_handler;
 
-    // Stores requirements and creates data stream messages
-    // std::unique_ptr<RegionDataHandler> _region_data_handler;
-
-    // File info for browser, open file
+    // Latest file info for browser, used for open file
     std::unique_ptr<CARTA::FileInfo> _file_info;
     std::unique_ptr<CARTA::FileInfoExtended> _file_info_extended;
+
+    // FileLoader for the FileListHandler
     std::unique_ptr<carta::FileLoader> _loader;
+    // The _loader is shared with Frame and RegionHandler for data streams, key is file_id
+    std::unordered_map<int, std::shared_ptr<carta::FileLoader>> _loaders;
 
-    // Frame
-    std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
-    std::mutex _frame_mutex;                                 // lock frames to create/destroy
+    // Frame; key is file_id
+    std::unordered_map<int, std::unique_ptr<Frame>> _frames;
+    std::mutex _frame_mutex;
 
-    // Regions with unique ids
-    std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // <region_id, Region>: one per region
+    // Handler for region creation, import/export, requirements, and data
+    std::unique_ptr<carta::RegionHandler> _region_handler;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;

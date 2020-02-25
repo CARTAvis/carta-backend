@@ -7,22 +7,23 @@
 
 using namespace carta;
 
-Region::Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, const float rotation,
-    casacore::CoordinateSystem& csys)
+Region::Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
+    const casacore::CoordinateSystem& csys)
     : _valid(false), _region_state_changed(false), _region_changed(false) {
     // validate and set region parameters
-    _valid = UpdateState(name, type, points, rotation, csys);
+    _valid = UpdateState(file_id, name, type, points, rotation, csys);
 }
 
 // *************************************************************************
 // Region settings
 
-bool Region::UpdateState(const std::string name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-    casacore::CoordinateSystem& csys) {
+bool Region::UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points,
+    float rotation, const casacore::CoordinateSystem& csys) {
     // Set region parameters and flags for state change
     bool valid_points = CheckPoints(points, type);
     if (valid_points) {
         RegionState new_state;
+        new_state.ref_file_id = file_id;
         new_state.name = name;
         new_state.type = type;
         new_state.control_points = points;
@@ -40,40 +41,6 @@ bool Region::UpdateState(const std::string name, const CARTA::RegionType type, c
         _region_changed = false;
     }
     return valid_points;
-}
-
-double Region::AngleToLength(casacore::Quantity angle, unsigned int pixel_axis) {
-    // world->pixel conversion of ellipse radius.
-    // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
-    int coord, coord_axis;
-    _coord_sys.findWorldAxis(coord, coord_axis, pixel_axis);
-    casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
-    angle.convert(units[coord_axis]);
-    casacore::Vector<casacore::Double> increments(_coord_sys.directionCoordinate().increment());
-    return fabs(angle.getValue() / increments[coord_axis]);
-}
-
-bool Region::CartaPointToWorld(const CARTA::Point& point, casacore::Vector<casacore::Quantity>& world_point) {
-    // Convert CARTA point (in pixel coordinates) to world coordinates.
-    // Returns world_point vector and boolean flag to indicate a successful conversion.
-    bool converted(false);
-
-    // Vectors must be same number of axes as in coord system for conversion, even though we only need xy axes
-    int naxes(_coord_sys.nPixelAxes());
-    casacore::Vector<casacore::Double> pixel_coords(naxes), world_coords(naxes);
-    pixel_coords = 0.0;
-    pixel_coords(0) = point.x();
-    pixel_coords(1) = point.y();
-
-    // convert pixel vector to world vector
-    if (_coord_sys.toWorld(world_coords, pixel_coords)) {
-        casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
-        world_point.resize(2);
-        world_point(0) = casacore::Quantity(world_coords(0), world_units(0));
-        world_point(1) = casacore::Quantity(world_coords(1), world_units(1));
-        converted = true;
-    }
-    return converted;
 }
 
 // *************************************************************************

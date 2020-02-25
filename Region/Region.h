@@ -14,19 +14,24 @@
 #include "../Frame.h"
 
 struct RegionState {
+    // struct used to determine whether region changed
+    int ref_file_id;
     std::string name;
     CARTA::RegionType type;
     std::vector<CARTA::Point> control_points;
     float rotation;
 
     RegionState() {}
-    RegionState(std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
+    RegionState(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
+        ref_file_id = ref_file_id_;
         name = name_;
         type = type_;
         control_points = control_points_;
         rotation = rotation_;
     }
-    void UpdateState(std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
+    void UpdateState(
+        int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
+        ref_file_id = ref_file_id_;
         name = name_;
         type = type_;
         control_points = control_points_;
@@ -34,6 +39,7 @@ struct RegionState {
     }
 
     void operator=(const RegionState& other) {
+        ref_file_id = other.ref_file_id;
         name = other.name;
         type = other.type;
         control_points = other.control_points;
@@ -53,7 +59,7 @@ struct RegionState {
     }
 
     bool RegionChanged(const RegionState& rhs) { // ignores name change (does not interrupt region calculations)
-        return (type != rhs.type) || (rotation != rhs.rotation) || PointsChanged(rhs);
+        return (ref_file_id != rhs.ref_file_id) || (type != rhs.type) || (rotation != rhs.rotation) || PointsChanged(rhs);
     }
     bool PointsChanged(const RegionState& rhs) {
         if (control_points.size() != rhs.control_points.size()) {
@@ -74,8 +80,8 @@ namespace carta {
 
 class Region {
 public:
-    Region(const std::string& name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, const float rotation,
-        casacore::CoordinateSystem& csys);
+    Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
+        const casacore::CoordinateSystem& csys);
 
     inline bool IsValid() { // control points validated
         return _valid;
@@ -86,8 +92,8 @@ public:
     };
 
     // set new region state and coord sys
-    bool UpdateState(const std::string name, const CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-        casacore::CoordinateSystem& csys);
+    bool UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
+        const casacore::CoordinateSystem& csys);
 
     // state accessors
     inline RegionState GetRegionState() {
@@ -96,7 +102,7 @@ public:
     inline bool RegionStateChanged() { // any params changed
         return _region_state_changed;
     };
-    inline bool RegionChanged() { // type, points, or rotation changed
+    inline bool RegionChanged() { // reference image, type, points, or rotation changed
         return _region_changed;
     }
 
@@ -111,10 +117,6 @@ private:
     bool CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionType type);
     bool PointsFinite(const std::vector<CARTA::Point>& points);
 
-    // conversion between world and pixel coordinates
-    double AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis);
-    bool CartaPointToWorld(const CARTA::Point& point, casacore::Vector<casacore::Quantity>& world_point);
-
     // region definition (name, type, control points in pixel coordinates, rotation)
     RegionState _region_state;
 
@@ -122,7 +124,6 @@ private:
 
     // region flags
     bool _valid;
-    bool _convert_to_wcs;
     bool _region_state_changed; // any parameters changed
     bool _region_changed;       // type, control points, or rotation changed
 

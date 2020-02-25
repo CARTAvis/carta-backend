@@ -103,10 +103,8 @@ set(SOURCE_FILES
         FileList/FileInfoLoader.cc
         FileList/FileListHandler.cc
         FileList/FitsHduList.cc
+		Region/RegionHandler.cc
         Region/Region.cc
-        Region/RegionProfiler.cc
-        Region/RegionStats.cc
-        RegionFile/Ds9Parser.cc
         OnMessageTask.cc
         FileSettings.cc
         ImageStats/StatsCalculator.cc
