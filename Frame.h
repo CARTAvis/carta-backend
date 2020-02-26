@@ -123,6 +123,7 @@ public:
 
     // Functions used for smoothing and contouring
     bool SetContourParameters(const CARTA::SetContourParameters& message);
+    inline void ClearContourParameters() { _contour_settings = ContourSettings(); }
     inline ContourSettings& GetContourParameters() {
         return _contour_settings;
     };

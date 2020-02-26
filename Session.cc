@@ -769,6 +769,9 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message)
         if (_frames.at(message.file_id())->SetContourParameters(message) && num_levels) {
             SendContourData(message.file_id());
         }
+        if (message.single_shot()) {
+            _frames.at(message.file_id())->ClearContourParameters();
+        }
     }
 }
 
