@@ -77,11 +77,19 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     _channel_index = default_channel;
     _stokes_index = DEFAULT_STOKES;
 
-    // reset the tile cache
-    int tiles_x = (_image_shape(0) - 1) / TILE_SIZE + 1;
-    int tiles_y = (_image_shape(1) - 1) / TILE_SIZE + 1;
-    int tile_cache_capacity = std::max(TILE_CACHE_CAPACITY, 2 * (tiles_x + tiles_y));
-    _tile_cache.Reset(_channel_index, _stokes_index, tile_cache_capacity);
+    // load full channel cache for loaders that don't use the tile cache and mipmaps
+    if (!(_loader->UseTileCache() && _loader->HasMip(2)) && !SetImageCache()) {
+        _valid = false;
+        return;
+    }
+
+    // reset the tile cache if the loader will use it
+    if (_loader->UseTileCache()) {
+        int tiles_x = (_image_shape(0) - 1) / TILE_SIZE + 1;
+        int tiles_y = (_image_shape(1) - 1) / TILE_SIZE + 1;
+        int tile_cache_capacity = std::max(TILE_CACHE_CAPACITY, 2 * (tiles_x + tiles_y));
+        _tile_cache.Reset(_channel_index, _stokes_index, tile_cache_capacity);
+    }
 
     try {
         // Resize stats vectors and load data from image, if the format supports it.
@@ -679,11 +687,18 @@ bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& messa
                 _channel_index = new_channel;
                 _stokes_index = new_stokes;
 
-                // invalidate the image cache, but don't load the new cache here
-                _image_cache_valid = false;
+                if (!(_loader->UseTileCache() && _loader->HasMip(2))) {
+                    // Reload the full channel cache for loaders which use it
+                    SetImageCache();
+                } else {
+                    // invalidate the image cache, but don't load the new cache here
+                    _image_cache_valid = false;
 
-                // invalidate / clear the full resolution tile cache
-                _tile_cache.Reset(_channel_index, _stokes_index);
+                    if (_loader->UseTileCache()) {
+                        // invalidate / clear the full resolution tile cache
+                        _tile_cache.Reset(_channel_index, _stokes_index);
+                    }
+                }
 
                 updated = true;
 
@@ -872,12 +887,9 @@ bool Frame::SetRegionStatsRequirements(int region_id, const std::vector<int>& st
 // Data for Image region
 bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter) {
     // apply bounds and downsample image cache
-    if (!_valid) {
+    if (!_valid || !_image_cache_valid) {
         return false;
     }
-
-    // This function should always use the full image cache.
-    SetImageCache();
 
     const int x = bounds.x_min();
     const int y = bounds.y_min();
@@ -1024,7 +1036,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
     if (mip > 1) {
         // Try to load downsampled data from the image file
         loaded_data = _loader->GetDownsampledRasterData(tile_data, _channel_index, _stokes_index, bounds, mip, _image_mutex);
-    } else if (_image_cache.empty() && _loader->UseTileCache()) {
+    } else if (!_image_cache_valid && _loader->UseTileCache()) {
         // Load a tile from the tile cache only if this is supported *and* the full image cache isn't populated
         tile_data_ptr = _tile_cache.Get(TileCache::Key(bounds.x_min(), bounds.y_min()), _loader, _image_mutex);
         if (tile_data_ptr) {
@@ -1532,8 +1544,7 @@ bool Frame::CalcRegionBasicStats(int region_id, int channel, int stokes, BasicSt
         auto& region = _regions[region_id];
         if (region_id == IMAGE_REGION_ID) {
             if (channel == _channel_index) { // use channel cache
-                // Only applies to non-HDF5 files.
-                SetImageCache();
+                // Only applies to non-HDF5 files, so we can assume that the channel cache exists
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                 region->CalcBasicStats(channel, stokes, _image_cache, stats);
@@ -1612,8 +1623,7 @@ bool Frame::CalcRegionHistogram(
         num_bins = (num_bins == AUTO_BIN_SIZE ? CalcAutoNumBins(region_id) : num_bins);
         if (region_id == IMAGE_REGION_ID) {
             if (channel == _channel_index) { // use channel cache
-                // Only applies to non-HDF5 files.
-                SetImageCache();
+                // Only applies to non-HDF5 files, so we can assume that the channel cache exists
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                 region->CalcHistogram(channel, stokes, num_bins, stats, _image_cache, histogram);
