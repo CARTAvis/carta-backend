@@ -250,8 +250,6 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 message = "Failed to open image at specified HDU.";
             } else if (message.find("No image at specified location") != std::string::npos) {
                 message = "No image at specified HDU.";
-            } else {
-                message = "Failed to open image: " + message;
             }
         }
     } else { // loader failed

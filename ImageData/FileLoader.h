@@ -134,6 +134,7 @@ public:
     virtual bool CanOpenFile(std::string& error);
     // Do anything required to open the file at given HDU (set up cache size, Image object)
     virtual void OpenFile(const std::string& hdu) = 0;
+    // Check image shape
 
     // Return the opened casacore image
     virtual ImageRef GetImage() = 0;

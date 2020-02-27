@@ -45,13 +45,14 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     try {
         _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
-        _open_image_error = fmt::format("Problem opening image: {}", err.getMesg());
+        _open_image_error = err.getMesg();
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
         _valid = false;
         return;
     }
+    
 
     // Get shape and axis values from the loader
     std::string log_message;
