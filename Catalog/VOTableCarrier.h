@@ -73,6 +73,7 @@ public:
     void UpdateNumOfTableRows();
     std::string GetFileDescription();
     void GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response);
+    void GetCooosys(CARTA::CatalogFileInfo* file_info_response);
     void GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size);
     void GetFilteredData(
         CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);

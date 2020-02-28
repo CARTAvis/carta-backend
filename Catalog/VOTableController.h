@@ -59,7 +59,7 @@ public:
 private:
     bool IsVOTableFile(std::string file_name);
     std::string GetFileSize(std::string file_path_name);
-    int64_t GetFileKBSize(std::string file_path_name);
+    int64_t GetFileByteSize(std::string file_path_name);
     void ParseBasePath(std::string& file_path_name);
     std::string Concatenate(std::string directory, std::string filename);
     void CloseFile(int file_id);

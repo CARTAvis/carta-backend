@@ -177,6 +177,19 @@ void VOTableCarrier::GetHeaders(CARTA::CatalogFileInfoResponse& file_info_respon
     }
 }
 
+void VOTableCarrier::GetCooosys(CARTA::CatalogFileInfo* file_info) {
+    if (_coosys.size() == 0) {
+        std::cerr << "COOSYS does not exist!" << std::endl;
+        return;
+    }
+    for (std::pair<int, Coosys> coosys : _coosys) {
+        auto coosys_info = file_info->add_coosys();
+        coosys_info->set_equinox(coosys.second.equinox);
+        coosys_info->set_epoch(coosys.second.epoch);
+        coosys_info->set_system(coosys.second.system);
+    }
+}
+
 void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size) {
     for (std::pair<int, Field> field : _fields) {
         Field& tmp_field = field.second;

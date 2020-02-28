@@ -45,7 +45,7 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
                         auto file_info = file_list_response.add_files();
                         file_info->set_name(file_name);
                         file_info->set_type(CARTA::CatalogFileType::VOTable);
-                        file_info->set_file_size(GetFileKBSize(path_name));
+                        file_info->set_file_size(GetFileByteSize(path_name));
                     }
                 } else {
                     // Check is it a sub-directory
@@ -104,9 +104,10 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
     auto file_info = file_info_response.mutable_file_info();
     file_info->set_name(filename);
     file_info->set_type(CARTA::CatalogFileType::VOTable);
-    file_info->set_file_size(GetFileKBSize(file_path_name));
+    file_info->set_file_size(GetFileByteSize(file_path_name));
     file_info->set_description(carrier.GetFileDescription());
     carrier.GetHeaders(file_info_response);
+    carrier.GetCooosys(file_info);
 }
 
 void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
@@ -141,6 +142,7 @@ void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CAR
     file_info->set_name(filename);
     file_info->set_type(CARTA::CatalogFileType::VOTable);
     file_info->set_description(GetFileSize(file_path_name));
+    carrier->GetCooosys(file_info);
 
     // Fill the number of raws
     size_t total_row_number = carrier->GetTableRowNumber();
@@ -193,7 +195,7 @@ std::string Controller::GetFileSize(std::string file_path_name) {
     return (std::to_string(file_status.st_size) + " (bytes)");
 }
 
-int64_t Controller::GetFileKBSize(std::string file_path_name) {
+int64_t Controller::GetFileByteSize(std::string file_path_name) {
     struct stat file_status;
     stat(file_path_name.c_str(), &file_status);
     return file_status.st_size;
@@ -278,7 +280,14 @@ void Controller::Print(CARTA::CatalogFileInfo file_info) {
     std::cout << "type:        " << GetFileType(file_info.type()) << std::endl;
     std::cout << "file_size:   " << file_info.file_size() << " (Byte)" << std::endl;
     std::cout << "description: " << file_info.description() << std::endl;
-    std::cout << std::endl;
+    for (int i = 0; i < file_info.coosys().size(); ++i) {
+        auto coosys = file_info.coosys(i);
+        std::cout << "Coosys(" << i << "):" << std::endl;
+        std::cout << "    equinox: " << coosys.equinox() << std::endl;
+        std::cout << "    epoch:   " << coosys.epoch() << std::endl;
+        std::cout << "    system:  " << coosys.system() << std::endl;
+        std::cout << std::endl;
+    }
 }
 
 void Controller::Print(CARTA::CatalogFileInfoRequest file_info_request) {
