@@ -207,15 +207,12 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
         }
     }
 
-    auto loop = [&](const tbb::blocked_range<int64_t>& r) {
-        for (int64_t l = r.begin(); l < r.end(); l++) {
-            vertex_data[l].clear();
-            index_data[l].clear();
-            TraceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l], chunk_size, partial_callback);
-        }
-    };
-
-    tbb::parallel_for(tbb::blocked_range<int64_t>(0, levels.size()), loop);
+#pragma omp parallel for
+    for (int64_t l = 0; l < levels.size(); l++) {
+        vertex_data[l].clear();
+        index_data[l].clear();
+        TraceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l], chunk_size, partial_callback);
+    }
 
     if (verbose_logging) {
         auto t_end_contours = std::chrono::high_resolution_clock::now();

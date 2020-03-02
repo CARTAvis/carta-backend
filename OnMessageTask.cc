@@ -69,20 +69,15 @@ tbb::task* SetImageChannelsTask::execute() {
     std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
     bool tester;
 
-    _session->ImageChannelLock();
-    tester = _session->_set_channel_queue.try_pop(request_pair);
-    _session->ImageChannelTaskSetIdle();
-    _session->ImageChannelUnlock();
+    _session->ImageChannelLock(fileId);
+    tester = _session->_set_channel_queues[fileId].try_pop(request_pair);
+    _session->ImageChannelTaskSetIdle(fileId);
+    _session->ImageChannelUnlock(fileId);
 
     if (tester) {
         _session->ExecuteSetChannelEvt(request_pair);
     }
 
-    return nullptr;
-}
-
-tbb::task* SetImageViewTask::execute() {
-    _session->_file_settings.ExecuteOne("SET_IMAGE_VIEW", _file_id);
     return nullptr;
 }
 
@@ -118,7 +113,7 @@ tbb::task* AnimationTask::execute() {
 }
 
 tbb::task* OnAddRequiredTilesTask::execute() {
-    _session->OnAddRequiredTiles(_message);
+    _session->OnAddRequiredTiles(_message, _session->AnimationRunning());
     return nullptr;
 }
 

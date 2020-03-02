@@ -29,7 +29,6 @@
 #include <carta-protobuf/resume_session.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
-#include <carta-protobuf/set_image_view.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
@@ -55,8 +54,7 @@ public:
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
     void OnCloseFile(const CARTA::CloseFile& message);
-    void OnSetImageView(const CARTA::SetImageView& message);
-    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message);
+    void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
     void OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id);
     bool OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, bool silent = false);
@@ -80,9 +78,9 @@ public:
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
         // Empty current queue first.
-        while (_set_channel_queue.try_pop(rp)) {
+        while (_set_channel_queues[message.file_id()].try_pop(rp)) {
         }
-        _set_channel_queue.push(std::make_pair(message, request_id));
+        _set_channel_queues[message.file_id()].push(std::make_pair(message, request_id));
     }
 
     // Task handling
@@ -106,7 +104,7 @@ public:
     }
     void BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_id);
     bool ExecuteAnimationFrame();
-    void ExecuteAnimationFrameInner(bool stopped);
+    void ExecuteAnimationFrameInner();
     void StopAnimation(int file_id, const ::CARTA::AnimationFrame& frame);
     void HandleAnimationFlowControlEvt(CARTA::AnimationFlowControl& message);
     int CurrentFlowWindowSize() {
@@ -117,22 +115,22 @@ public:
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _file_settings.AddCursorSetting(message, request_id);
     }
-    void ImageChannelLock() {
-        _image_channel_mutex.lock();
+    void ImageChannelLock(int fileId) {
+        _image_channel_mutexes[fileId].lock();
     }
-    void ImageChannelUnlock() {
-        _image_channel_mutex.unlock();
+    void ImageChannelUnlock(int fileId) {
+        _image_channel_mutexes[fileId].unlock();
     }
-    bool ImageChannelTaskTestAndSet() {
-        if (_image_channel_task_active) {
+    bool ImageChannelTaskTestAndSet(int fileId) {
+        if (_image_channel_task_active[fileId]) {
             return true;
         } else {
-            _image_channel_task_active = true;
+            _image_channel_task_active[fileId] = true;
             return false;
         }
     }
-    void ImageChannelTaskSetIdle() {
-        _image_channel_task_active = false;
+    void ImageChannelTaskSetIdle(int fileId) {
+        _image_channel_task_active[fileId] = false;
     }
     int IncreaseRefCount() {
         return ++_ref_count;
@@ -170,7 +168,7 @@ public:
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
-    tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>> _set_channel_queue;
+    std::unordered_map<int, tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
 private:
     // File info
@@ -188,7 +186,6 @@ private:
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
     // Send data streams
-    bool SendRasterImageData(int file_id, bool send_histogram = false);
     // Only set channel_changed and stokes_changed if they are the only trigger for new data
     // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
     bool SendSpatialProfileData(int file_id, int region_id, bool stokes_changed = false);
@@ -224,8 +221,8 @@ private:
     std::unique_ptr<AnimationObject> _animation_object;
 
     // Manage image channel
-    std::mutex _image_channel_mutex;
-    bool _image_channel_task_active;
+    std::unordered_map<int, std::mutex> _image_channel_mutexes;
+    std::unordered_map<int, bool> _image_channel_task_active;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
@@ -243,6 +240,7 @@ private:
     tbb::task_group_context _animation_context;
 
     int _ref_count;
+    int _animation_id;
     bool _connected;
     static int _num_sessions;
     static int _exit_after_num_seconds;

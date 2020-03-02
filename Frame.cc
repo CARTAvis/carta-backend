@@ -661,57 +661,6 @@ void Frame::ExportDs9Regions(std::vector<int>& region_ids, CARTA::CoordinateType
 
 // ********************************************************************
 // Image region parameters: view, channel/stokes, slicers
-
-bool Frame::SetImageView(
-    const CARTA::ImageBounds& image_bounds, int new_mip, CARTA::CompressionType compression, float quality, int num_subsets) {
-    // set image bounds and compression settings
-    if (!_valid) {
-        return false;
-    }
-    const int x_min = image_bounds.x_min();
-    const int x_max = image_bounds.x_max();
-    const int y_min = image_bounds.y_min();
-    const int y_max = image_bounds.y_max();
-    const int req_height = y_max - y_min;
-    const int req_width = x_max - x_min;
-
-    // out of bounds check
-    if ((req_height < 0) || (req_width < 0)) {
-        return false;
-    }
-    if ((_image_shape(1) < y_min + req_height) || (_image_shape(0) < x_min + req_width)) {
-        return false;
-    }
-    if (new_mip <= 0) {
-        return false;
-    }
-
-    // changed check
-    ViewSettings current_view_settings = GetViewSettings();
-    CARTA::ImageBounds current_view_bounds = current_view_settings.image_bounds;
-    if ((current_view_bounds.x_min() == x_min) && (current_view_bounds.x_max() == x_max) && (current_view_bounds.y_min() == y_min) &&
-        (current_view_bounds.y_max() == y_max) && (current_view_settings.mip == new_mip) &&
-        (current_view_settings.compression_type == compression) && (current_view_settings.quality == quality) &&
-        (current_view_settings.num_subsets == num_subsets)) {
-        return false;
-    }
-
-    SetViewSettings(image_bounds, new_mip, compression, quality, num_subsets);
-    return true;
-}
-
-void Frame::SetViewSettings(
-    const CARTA::ImageBounds& new_bounds, int new_mip, CARTA::CompressionType new_compression, float new_quality, int new_subsets) {
-    // save new view settings in atomic operation
-    ViewSettings settings;
-    settings.image_bounds = new_bounds;
-    settings.mip = new_mip;
-    settings.compression_type = new_compression;
-    settings.quality = new_quality;
-    settings.num_subsets = new_subsets;
-    _view_settings = settings;
-}
-
 bool Frame::SetImageChannels(int new_channel, int new_stokes, std::string& message) {
     bool updated(false);
 
@@ -894,81 +843,6 @@ bool Frame::SetRegionStatsRequirements(int region_id, const std::vector<int>& st
 
 // ****************************************************
 // Data for Image region
-
-bool Frame::FillRasterImageData(CARTA::RasterImageData& raster_image_data, std::string& message) {
-    // fill data message with compressed channel cache data
-    bool raster_data_ok(false);
-    // retrieve settings
-    ViewSettings view_settings = GetViewSettings();
-    // get downsampled raster data for message
-    std::vector<float> image_data;
-    CARTA::ImageBounds bounds_setting(view_settings.image_bounds);
-    int mip_setting(view_settings.mip);
-    if (GetRasterData(image_data, bounds_setting, mip_setting)) {
-        // set common message fields
-        raster_image_data.mutable_image_bounds()->set_x_min(bounds_setting.x_min());
-        raster_image_data.mutable_image_bounds()->set_x_max(bounds_setting.x_max());
-        raster_image_data.mutable_image_bounds()->set_y_min(bounds_setting.y_min());
-        raster_image_data.mutable_image_bounds()->set_y_max(bounds_setting.y_max());
-        raster_image_data.set_channel(_channel_index);
-        raster_image_data.set_stokes(_stokes_index);
-        raster_image_data.set_mip(mip_setting);
-        CARTA::CompressionType compression_setting = view_settings.compression_type;
-        raster_image_data.set_compression_type(compression_setting);
-
-        // add data
-        if (compression_setting == CARTA::CompressionType::NONE) {
-            raster_image_data.set_compression_quality(0);
-            raster_image_data.add_image_data(image_data.data(), image_data.size() * sizeof(float));
-            raster_data_ok = true;
-        } else if (compression_setting == CARTA::CompressionType::ZFP) {
-            // compression settings
-            float quality_setting(view_settings.quality);
-            int num_subsets_setting(view_settings.num_subsets);
-
-            int precision = lround(quality_setting);
-            raster_image_data.set_compression_quality(precision);
-
-            auto row_length = std::ceil((float)(bounds_setting.x_max() - bounds_setting.x_min()) / mip_setting);
-            auto num_rows = std::ceil((float)(bounds_setting.y_max() - bounds_setting.y_min()) / mip_setting);
-            std::vector<std::vector<char>> compression_buffers(num_subsets_setting);
-            std::vector<size_t> compressed_sizes(num_subsets_setting);
-            std::vector<std::vector<int32_t>> nan_encodings(num_subsets_setting);
-
-            auto num_subsets = std::min(num_subsets_setting, MAX_SUBSETS);
-            auto range = tbb::blocked_range<int>(0, num_subsets);
-            auto loop = [&](const tbb::blocked_range<int>& r) {
-                for (int i = r.begin(); i != r.end(); ++i) {
-                    int subset_row_start = i * (num_rows / num_subsets);
-                    int subset_row_end = (i + 1) * (num_rows / num_subsets);
-                    if (i == num_subsets - 1) {
-                        subset_row_end = num_rows;
-                    }
-                    int subset_element_start = subset_row_start * row_length;
-                    int subset_element_end = subset_row_end * row_length;
-                    nan_encodings[i] =
-                        GetNanEncodingsBlock(image_data, subset_element_start, row_length, subset_row_end - subset_row_start);
-                    Compress(image_data, subset_element_start, compression_buffers[i], compressed_sizes[i], row_length,
-                        subset_row_end - subset_row_start, precision);
-                }
-            };
-            tbb::parallel_for(range, loop);
-
-            // Complete message
-            for (auto i = 0; i < num_subsets_setting; i++) {
-                raster_image_data.add_image_data(compression_buffers[i].data(), compressed_sizes[i]);
-                raster_image_data.add_nan_encodings((char*)nan_encodings[i].data(), nan_encodings[i].size() * sizeof(int));
-            }
-            raster_data_ok = true;
-        } else {
-            message = "SZ compression not implemented";
-        }
-    } else {
-        message = "Raster image data failed to load";
-    }
-    return raster_data_ok;
-}
-
 bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bounds, int mip, bool mean_filter) {
     // apply bounds and downsample image cache
     if (!_valid || _image_cache.empty()) {
@@ -1004,49 +878,44 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
 
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
-        auto loop = [&](const tbb::blocked_range<size_t>& r) {
-            for (size_t j = r.begin(); j != r.end(); ++j) {
-                for (size_t i = 0; i != row_length_region; ++i) {
-                    float pixel_sum = 0;
-                    int pixel_count = 0;
-                    size_t image_row = y + (j * mip);
-                    for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-                        if (image_row >= _image_shape(1)) {
+#pragma omp parallel for
+        for (size_t j = 0; j < num_rows_region; ++j) {
+            for (size_t i = 0; i != row_length_region; ++i) {
+                float pixel_sum = 0;
+                int pixel_count = 0;
+                size_t image_row = y + (j * mip);
+                for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
+                    if (image_row >= _image_shape(1)) {
+                        continue;
+                    }
+                    size_t image_col = x + (i * mip);
+                    for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
+                        if (image_col >= _image_shape(0)) {
                             continue;
                         }
-                        size_t image_col = x + (i * mip);
-                        for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-                            if (image_col >= _image_shape(0)) {
-                                continue;
-                            }
-                            float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
-                            if (std::isfinite(pix_val)) {
-                                pixel_count++;
-                                pixel_sum += pix_val;
-                            }
-                            image_col++;
+                        float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
+                        if (std::isfinite(pix_val)) {
+                            pixel_count++;
+                            pixel_sum += pix_val;
                         }
-                        image_row++;
+                        image_col++;
                     }
-                    image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+                    image_row++;
                 }
+                image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
             }
-        };
-        tbb::parallel_for(range, loop);
+        }
+
     } else {
         // Nearest neighbour filtering
-        auto range = tbb::blocked_range<size_t>(0, num_rows_region);
-        auto loop = [&](const tbb::blocked_range<size_t>& r) {
-            for (size_t j = r.begin(); j != r.end(); ++j) {
-                for (auto i = 0; i < row_length_region; i++) {
-                    auto image_row = y + j * mip;
-                    auto image_col = x + i * mip;
-                    image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
-                }
+#pragma omp parallel for
+        for (size_t j = 0; j < num_rows_region; ++j) {
+            for (auto i = 0; i < row_length_region; i++) {
+                auto image_row = y + j * mip;
+                auto image_col = x + i * mip;
+                image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
             }
-        };
-        tbb::parallel_for(range, loop);
+        }
     }
     return true;
 }

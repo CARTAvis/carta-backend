@@ -50,22 +50,12 @@ public:
 };
 
 class SetImageChannelsTask : public OnMessageTask {
+    int fileId;
     tbb::task* execute() override;
 
 public:
-    SetImageChannelsTask(Session* session) : OnMessageTask(session) {}
+    SetImageChannelsTask(Session* session, int fileId) : OnMessageTask(session), fileId(fileId) {}
     ~SetImageChannelsTask() = default;
-};
-
-class SetImageViewTask : public OnMessageTask {
-    int _file_id;
-    tbb::task* execute() override;
-
-public:
-    SetImageViewTask(Session* session, int file_id) : OnMessageTask(session) {
-        _file_id = file_id;
-    }
-    ~SetImageViewTask() = default;
 };
 
 class SetCursorTask : public OnMessageTask {

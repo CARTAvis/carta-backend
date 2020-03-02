@@ -23,7 +23,6 @@ class AnimationObject {
     CARTA::AnimationFrame _delta_frame;
     CARTA::AnimationFrame _current_frame;
     CARTA::AnimationFrame _next_frame;
-    CARTA::AnimationFrame _stop_frame;
     CARTA::AnimationFrame _last_flow_frame;
     int _frame_rate;
     std::chrono::microseconds _frame_interval;
@@ -70,7 +69,6 @@ public:
         _file_open = true;
         _waiting_flow_event = false;
         _last_flow_frame = start_frame;
-        _stop_frame = start_frame;
     }
     int CurrentFlowWindowSize() {
         return (CARTA::AnimationFlowWindowConstant * CARTA::AnimationFlowWindowScaler * _frame_rate);

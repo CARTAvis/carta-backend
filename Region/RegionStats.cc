@@ -74,9 +74,8 @@ void RegionStats::SetBasicStats(int channel, int stokes, const BasicStats<float>
 
 void RegionStats::CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats) {
     // Calculate and store min, max values in data; return min_val and maxval
-    tbb::blocked_range<size_t> range(0, data.size());
     BasicStatsCalculator<float> mm(data);
-    tbb::parallel_reduce(range, mm);
+    mm.reduce(0, data.size());
     stats = mm.GetStats();
     SetBasicStats(channel, stokes, stats);
 }
@@ -118,9 +117,8 @@ void RegionStats::CalcHistogram(int channel, int stokes, int num_bins, const Bas
         // empty / NaN region
         histogram_bins.resize(num_bins, 0);
     } else {
-        tbb::blocked_range<size_t> range(0, data.size());
         Histogram hist(num_bins, stats.min_val, stats.max_val, data);
-        tbb::parallel_reduce(range, hist);
+        hist.setup_bins(0, data.size());
         histogram_bins = hist.GetHistogram();
         bin_width = hist.GetBinWidth();
         bin_center = stats.min_val + (bin_width / 2.0);
