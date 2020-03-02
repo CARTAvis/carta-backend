@@ -13,7 +13,7 @@
 namespace catalog {
 
 class VOTableParser {
-    enum ElementName {
+    enum class ElementName {
         VOTABLE = 0,
         RESOURCE = 1,
         DESCRIPTION = 2,
@@ -36,9 +36,10 @@ class VOTableParser {
         TR = 19,
         FITS = 20,
         BINARY = 21,
-        STREAM = 22,
-        COOSYS = 23,
-        NONE = 24
+        BINARY2 = 22,
+        STREAM = 23,
+        COOSYS = 24,
+        NONE = 25
     };
 
 public:
@@ -59,13 +60,13 @@ private:
 
     bool _verbose;
     xmlTextReaderPtr _reader;
-    ElementName _element_name = NONE;     // Current element name
-    ElementName _pre_element_name = NONE; // Previous element name
-    VOTableCarrier* _carrier;             // Store the VOTable skimming results
-    int _coosys_counts = 0;               // Element <COOSYS> counts (1 ~)
-    int _field_counts = 0;                // Element <FIELD> counts (1 ~)
-    int _tr_counts = 0;                   // Element <TR> counts (1 ~)
-    int _td_counts = 0;                   // Element <TD> counts (1 ~ _field_counts)
+    ElementName _element_name = ElementName::NONE;     // Current element name
+    ElementName _pre_element_name = ElementName::NONE; // Previous element name
+    VOTableCarrier* _carrier;                          // Store the VOTable skimming results
+    int _coosys_counts = 0;                            // Element <COOSYS> counts (1 ~)
+    int _field_counts = 0;                             // Element <FIELD> counts (1 ~)
+    int _tr_counts = 0;                                // Element <TR> counts (1 ~)
+    int _td_counts = 0;                                // Element <TD> counts (1 ~ _field_counts)
     bool _td_filled = false;
     bool _continue_read = true;
     bool _only_read_to_header;

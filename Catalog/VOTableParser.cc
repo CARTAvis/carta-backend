@@ -34,7 +34,7 @@ bool VOTableParser::IsVOTable(std::string filename) {
         if (xmlTextReaderNodeType(reader) == XML_READER_TYPE_ELEMENT) {
             name_xmlchar = xmlTextReaderName(reader);
             name = (char*)name_xmlchar;
-            if (GetElementName(name) == VOTABLE) {
+            if (GetElementName(name) == ElementName::VOTABLE) {
                 xmlFreeTextReader(reader);
                 CleanupParser();
                 return true;
@@ -94,7 +94,7 @@ void VOTableParser::Parse() {
             Print("<" + name + ">", value);
             _pre_element_name = _element_name;
             _element_name = GetElementName(name);
-            if (_only_read_to_header && _element_name == DATA) {
+            if (_only_read_to_header && _element_name == ElementName::DATA) {
                 _continue_read = false;
                 break;
             }
@@ -106,7 +106,7 @@ void VOTableParser::Parse() {
             break;
         case XML_READER_TYPE_END_ELEMENT:
             Print("</" + name + ">", value);
-            if (_element_name == TD && !_td_filled && _carrier) {
+            if (_element_name == ElementName::TD && !_td_filled && _carrier) {
                 // Fill the TR element values as "" if there is an empty column, i.e. <TD></TD>.
                 _carrier->FillTdValues(_td_counts, "");
                 _td_filled = true; // Decrease the TD counter in order to mark such TR element has been filled
@@ -167,71 +167,73 @@ void VOTableParser::Print(std::string name, std::string value) {
 VOTableParser::ElementName VOTableParser::GetElementName(std::string name) {
     VOTableParser::ElementName result;
     if (strcmp(name.c_str(), "VOTABLE") == 0) {
-        result = VOTABLE;
+        result = ElementName::VOTABLE;
     } else if (strcmp(name.c_str(), "RESOURCE") == 0) {
-        result = RESOURCE;
+        result = ElementName::RESOURCE;
     } else if (strcmp(name.c_str(), "DESCRIPTION") == 0) {
-        result = DESCRIPTION;
+        result = ElementName::DESCRIPTION;
     } else if (strcmp(name.c_str(), "DEFINITIONS") == 0) {
-        result = DEFINITIONS;
+        result = ElementName::DEFINITIONS;
     } else if (strcmp(name.c_str(), "INFO") == 0) {
-        result = INFO;
+        result = ElementName::INFO;
     } else if (strcmp(name.c_str(), "PARAM") == 0) {
-        result = PARAM;
+        result = ElementName::PARAM;
     } else if (strcmp(name.c_str(), "TABLE") == 0) {
-        result = TABLE;
+        result = ElementName::TABLE;
     } else if (strcmp(name.c_str(), "FIELD") == 0) {
-        result = FIELD;
+        result = ElementName::FIELD;
     } else if (strcmp(name.c_str(), "GROUP") == 0) {
-        result = GROUP;
+        result = ElementName::GROUP;
     } else if (strcmp(name.c_str(), "FIELDref") == 0) {
-        result = FIELDref;
+        result = ElementName::FIELDref;
     } else if (strcmp(name.c_str(), "PARAMref") == 0) {
-        result = PARAMref;
+        result = ElementName::PARAMref;
     } else if (strcmp(name.c_str(), "VALUES") == 0) {
-        result = VALUES;
+        result = ElementName::VALUES;
     } else if (strcmp(name.c_str(), "MIN") == 0) {
-        result = MIN;
+        result = ElementName::MIN;
     } else if (strcmp(name.c_str(), "MAX") == 0) {
-        result = MAX;
+        result = ElementName::MAX;
     } else if (strcmp(name.c_str(), "OPTION") == 0) {
-        result = OPTION;
+        result = ElementName::OPTION;
     } else if (strcmp(name.c_str(), "LINK") == 0) {
-        result = LINK;
+        result = ElementName::LINK;
     } else if (strcmp(name.c_str(), "DATA") == 0) {
-        result = DATA;
+        result = ElementName::DATA;
     } else if (strcmp(name.c_str(), "TABLEDATA") == 0) {
-        result = TABLEDATA;
+        result = ElementName::TABLEDATA;
     } else if (strcmp(name.c_str(), "TD") == 0) {
-        result = TD;
+        result = ElementName::TD;
     } else if (strcmp(name.c_str(), "TR") == 0) {
-        result = TR;
+        result = ElementName::TR;
     } else if (strcmp(name.c_str(), "FITS") == 0) {
-        result = FITS;
+        result = ElementName::FITS;
     } else if (strcmp(name.c_str(), "BINARY") == 0) {
-        result = BINARY;
+        result = ElementName::BINARY;
+    } else if (strcmp(name.c_str(), "BINARY2") == 0) {
+        result = ElementName::BINARY2;
     } else if (strcmp(name.c_str(), "STREAM") == 0) {
-        result = STREAM;
+        result = ElementName::STREAM;
     } else if (strcmp(name.c_str(), "COOSYS") == 0) {
-        result = COOSYS;
+        result = ElementName::COOSYS;
     } else {
-        result = NONE;
+        result = ElementName::NONE;
     }
     return result;
 }
 
 void VOTableParser::IncreaseElementCounts(ElementName element_name) {
     switch (element_name) {
-        case COOSYS:
+        case ElementName::COOSYS:
             ++_coosys_counts;
             break;
-        case FIELD:
+        case ElementName::FIELD:
             ++_field_counts;
             break;
-        case TR:
+        case ElementName::TR:
             ++_tr_counts;
             break;
-        case TD:
+        case ElementName::TD:
             if (_field_counts > 0) {
                 _td_counts = (((_td_counts + 1) % _field_counts) == 0) ? _field_counts : ((_td_counts + 1) % _field_counts);
             } else {
@@ -249,13 +251,13 @@ void VOTableParser::FillElementAttributes(ElementName element_name, std::string 
         return;
     }
     switch (element_name) {
-        case VOTABLE:
+        case ElementName::VOTABLE:
             _carrier->FillVOTableAttributes(name, value);
             break;
-        case COOSYS:
+        case ElementName::COOSYS:
             _carrier->FillCoosysAttributes(_coosys_counts, name, value);
             break;
-        case FIELD:
+        case ElementName::FIELD:
             _carrier->FillFieldAttributes(_field_counts, name, value);
             break;
         default:; // Do not fill any attributes
@@ -268,14 +270,14 @@ void VOTableParser::FillElementValues(ElementName element_name, std::string valu
         return;
     }
     switch (element_name) {
-        case DESCRIPTION:
-            if (_pre_element_name == FIELD) {
+        case ElementName::DESCRIPTION:
+            if (_pre_element_name == ElementName::FIELD) {
                 _carrier->FillFieldDescriptions(_field_counts, value);
             } else {
                 _carrier->FillFileDescription(value);
             }
             break;
-        case TD:
+        case ElementName::TD:
             if (!_td_filled) {
                 _carrier->FillTdValues(_td_counts, value);
                 _td_filled = true;
