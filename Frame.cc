@@ -1204,7 +1204,6 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                     int end(0);
                     if ((profile_stokes == _stokes_index) && !_loader->UseTileCache()) {
                         // use stored channel cache
-                        SetImageCache();
                         bool write_lock(false);
                         switch (axis_stokes.first) {
                             case 0: { // x
