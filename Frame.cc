@@ -1468,11 +1468,11 @@ bool Frame::CalcRegionBasicStats(int region_id, int channel, int stokes, BasicSt
             if (channel == _channel_index) { // use channel cache
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                region->CalcBasicStats(channel, stokes, _image_cache, stats);
+                region->CalcBasicStats(channel, stokes, _image_cache, stats, _verbose);
             } else {
                 std::vector<float> data;
                 GetChannelMatrix(data, channel, stokes);
-                region->CalcBasicStats(channel, stokes, data, stats);
+                region->CalcBasicStats(channel, stokes, data, stats, _verbose);
             }
             stats_ok = true;
         } else {
