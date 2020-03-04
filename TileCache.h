@@ -46,8 +46,8 @@ public:
 
     // These functions lock the cache
     TilePtr Get(Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
-    std::unordered_map<Key, TilePtr> GetMultiple(
-        std::vector<Key>& keys, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
+    std::unordered_map<Key, TilePtr> GetMultiple(std::vector<Key>& keys, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex,
+        const std::function<bool(Key chunk_key)>& interrupt);
     void Reset(int32_t channel, int32_t stokes, int capacity = 0);
 
 private:
@@ -65,10 +65,6 @@ private:
     std::unordered_map<Key, std::list<TilePair>::iterator> _map;
     int _capacity;
     std::mutex _tile_cache_mutex;
-
-    static const int _TILE_SQ;
-    static const int _CHUNK_SIZE;
-    static const int _CHUNK_SQ;
 };
 
 #endif // CARTA_BACKEND__TILE_CACHE_H_

@@ -35,8 +35,8 @@ TileCache::TilePtr TileCache::Get(Key key, std::shared_ptr<carta::FileLoader> lo
     return nullptr;
 }
 
-std::unordered_map<TileCache::Key, TileCache::TilePtr> TileCache::GetMultiple(
-    std::vector<Key>& keys, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
+std::unordered_map<TileCache::Key, TileCache::TilePtr> TileCache::GetMultiple(std::vector<Key>& keys,
+    std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex, const std::function<bool(Key chunk_key)>& interrupt) {
     std::vector<Key> found;
     std::vector<Key> not_found;
     std::unordered_map<Key, TilePtr> tiles;
@@ -72,8 +72,19 @@ std::unordered_map<TileCache::Key, TileCache::TilePtr> TileCache::GetMultiple(
     }
 
     for (auto& kv : chunk_tiles) {
+        // if we no longer need this chunk, exit early
+        if (interrupt(kv.first)) {
+            valid = false;
+            break;
+        }
+
         // load the chunk
         valid = valid && LoadChunk(kv.first, loader, image_mutex);
+
+        // If one chunk load fails, we're going to fail anyway, so there's no need to read the rest
+        if (!valid) {
+            break;
+        }
 
         // get the tiles (up to 4, probably 2) in parallel
         // We can't use a range-based loop after the pragma
@@ -118,7 +129,7 @@ void TileCache::Touch(Key key) {
 }
 
 TileCache::Key TileCache::ChunkKey(Key tile_key) {
-    return Key((tile_key.x / _CHUNK_SIZE) * _CHUNK_SIZE, (tile_key.y / _CHUNK_SIZE) * _CHUNK_SIZE);
+    return Key((tile_key.x / CHUNK_SIZE) * CHUNK_SIZE, (tile_key.y / CHUNK_SIZE) * CHUNK_SIZE);
 }
 
 bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex) {
@@ -210,7 +221,3 @@ bool TileCache::LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> load
 
     return true;
 }
-
-const int TileCache::_TILE_SQ = TILE_SIZE * TILE_SIZE;
-const int TileCache::_CHUNK_SIZE = TILE_SIZE * 2;
-const int TileCache::_CHUNK_SQ = TILE_SIZE * TILE_SIZE * 4;

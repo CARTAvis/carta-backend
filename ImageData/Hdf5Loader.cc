@@ -507,6 +507,4 @@ bool Hdf5Loader::UseTileCache() const {
     return _layout == H5D_CHUNKED;
 }
 
-const int Hdf5Loader::CHUNK_SIZE = 512;
-
 } // namespace carta

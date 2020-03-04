@@ -1240,7 +1240,23 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                     keys.push_back(TileCache::Key(tile_x, tile_y));
                                 }
 
-                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex);
+                                auto interrupt = [&](TileCache::Key chunk_key) {
+                                    // The profile is no longer needed
+                                    if (!this->_connected ||
+                                        (this->_regions.count(region_id) && (!this->_regions[region_id]->IsConnected() ||
+                                                                                this->_regions[region_id]->NumSpatialProfiles() == 0))) {
+                                        return true;
+                                    }
+
+                                    // The cursor has moved outside this chunk row
+                                    if (((int)(this->_cursor_xy.y) / CHUNK_SIZE) * CHUNK_SIZE != chunk_key.y) {
+                                        return true;
+                                    }
+
+                                    return false;
+                                };
+
+                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt);
 
                                 if (tiles.empty()) {
                                     return profile_ok;
@@ -1268,7 +1284,23 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                     keys.push_back(TileCache::Key(tile_x, tile_y));
                                 }
 
-                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex);
+                                auto interrupt = [&](TileCache::Key chunk_key) {
+                                    // The profile is no longer needed
+                                    if (!this->_connected ||
+                                        (this->_regions.count(region_id) && (!this->_regions[region_id]->IsConnected() ||
+                                                                                this->_regions[region_id]->NumSpatialProfiles() == 0))) {
+                                        return true;
+                                    }
+
+                                    // The cursor has moved outside this chunk column
+                                    if (((int)(this->_cursor_xy.x) / CHUNK_SIZE) * CHUNK_SIZE != chunk_key.x) {
+                                        return true;
+                                    }
+
+                                    return false;
+                                };
+
+                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt);
 
                                 if (tiles.empty()) {
                                     return profile_ok;

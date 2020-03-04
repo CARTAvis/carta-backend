@@ -39,8 +39,6 @@ public:
     bool HasMip(int mip) const override;
     bool UseTileCache() const override;
 
-    static const int CHUNK_SIZE;
-
 private:
     std::string _filename;
     std::string _hdu;
