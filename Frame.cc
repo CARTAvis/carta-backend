@@ -52,7 +52,6 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _valid = false;
         return;
     }
-    
 
     // Get shape and axis values from the loader
     std::string log_message;

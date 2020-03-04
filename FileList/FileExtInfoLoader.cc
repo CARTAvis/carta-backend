@@ -133,6 +133,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 while (fkw) {
                     casacore::String name(fkw->name());
                     name.trim();
+                    casacore::String comment(fkw->comm());
+                    comment.trim();
 
                     // Strangely, the FitsKeyword does not append axis/coord number
                     if ((name == "NAXIS")) { // increment axis number for NAXIS1, 2, 3, etc.
@@ -162,14 +164,18 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                         switch (fkw->type()) {
                             case casacore::FITS::LOGICAL: {
                                 bool value(fkw->asBool());
-                                std::string bool_string(value ? "T" : "F");
-                                std::string comment(fkw->comm());
-                                if (!comment.empty()) {
-                                    bool_string.append(" / " + comment);
+                                std::string string_value(value ? "T" : "F");
+
+                                std::string header_string;
+                                if (comment.empty()) {
+                                    header_string = fmt::format("{}", string_value);
+                                } else {
+                                    header_string = fmt::format("{} / {}", string_value, comment);
                                 }
+
                                 auto header_entry = extended_info->add_header_entries();
                                 header_entry->set_name(name);
-                                *header_entry->mutable_value() = bool_string;
+                                *header_entry->mutable_value() = header_string.substr(0, 67);
                                 header_entry->set_entry_type(CARTA::EntryType::INT);
                                 header_entry->set_numeric_value(value);
                                 break;
@@ -177,13 +183,17 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                             case casacore::FITS::LONG: {
                                 int value(fkw->asInt());
                                 std::string string_value = fmt::format("{:d}", value);
-                                std::string comment(fkw->comm());
-                                if (!comment.empty()) {
-                                    string_value.append(" / " + comment);
+
+                                std::string header_string;
+                                if (comment.empty()) {
+                                    header_string = fmt::format("{}", string_value);
+                                } else {
+                                    header_string = fmt::format("{} / {}", string_value, comment);
                                 }
+
                                 auto header_entry = extended_info->add_header_entries();
                                 header_entry->set_name(name);
-                                *header_entry->mutable_value() = string_value;
+                                *header_entry->mutable_value() = header_string.substr(0, 67);
                                 header_entry->set_entry_type(CARTA::EntryType::INT);
                                 header_entry->set_numeric_value(value);
                                 break;
@@ -201,13 +211,17 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                 } else {
                                     string_value = fmt::format("{:.12E}", value);
                                 }
-                                std::string comment(fkw->comm());
-                                if (!comment.empty()) {
-                                    string_value.append(" / " + comment);
+
+                                std::string header_string;
+                                if (comment.empty()) {
+                                    header_string = fmt::format("{}", string_value);
+                                } else {
+                                    header_string = fmt::format("{} / {}", string_value, comment);
                                 }
+
                                 auto header_entry = extended_info->add_header_entries();
                                 header_entry->set_name(name);
-                                *header_entry->mutable_value() = string_value;
+                                *header_entry->mutable_value() = header_string.substr(0, 67);
                                 header_entry->set_entry_type(CARTA::EntryType::FLOAT);
                                 header_entry->set_numeric_value(value);
                                 break;
@@ -215,22 +229,24 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                             case casacore::FITS::STRING:
                             case casacore::FITS::FSTRING: {
                                 // Do not include ORIGIN (casacore) or DATE (current) added by ImageHeaderToFITS
-                                if ((name != "DATE") && (name != "ORIGIN")) {
-                                    casacore::String fkw_string = fkw->asString();
-                                    fkw_string.trim(); // remove whitespace
-                                    // save without comment
+                                if (use_fits_header || (!use_fits_header && ((name != "DATE") && (name != "ORIGIN")))) {
+                                    casacore::String string_value = fkw->asString();
+                                    string_value.trim();
+
                                     if (name == "RADESYS") {
-                                        radesys = fkw_string;
+                                        radesys = string_value; // save for computed_entries
                                     }
-                                    // add comment
-                                    std::string comment(fkw->comm());
-                                    if (!comment.empty()) {
-                                        fkw_string.append(" / " + comment);
+
+                                    std::string header_string;
+                                    if (comment.empty()) {
+                                        header_string = fmt::format("{}", string_value);
+                                    } else {
+                                        header_string = fmt::format("{} / {}", string_value, comment);
                                     }
 
                                     auto header_entry = extended_info->add_header_entries();
                                     header_entry->set_name(name);
-                                    *header_entry->mutable_value() = fkw_string;
+                                    *header_entry->mutable_value() = header_string.substr(0, 67);
                                     header_entry->set_entry_type(CARTA::EntryType::STRING);
                                 }
                                 break;
@@ -464,7 +480,7 @@ void FileExtInfoLoader::AddComputedEntries(
 
 void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* extended_info, std::string& radesys) {
     // Convert header_entries into computed_entries; kludge for missing headers or headers which casacore/wcslib cannot process
-    std::string ctype1, ctype2, cunit1, cunit2, frame;
+    casacore::String ctype1, ctype2, cunit1, cunit2, frame;
     float crval1(0.0), crval2(0.0), crpix1(0.0), crpix2(0.0), cdelt1(0.0), cdelt2(0.0);
     bool need_ctype(true), need_crpix(true), need_crval(true), need_cunit(true), need_cdelt(true), need_frame(true);
     bool need_radesys(radesys.empty());
@@ -537,9 +553,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* e
         if (need_frame && ((entry_name.find("EQUINOX") != std::string::npos) || (entry_name.find("EPOCH") != std::string::npos))) {
             need_frame = false;
             frame = entry.value();
+            frame.trim();
             size_t comment = frame.find("/");
-            if (comment != std::string::npos) { // remove comment
-                frame = frame.substr(0, comment - 1);
+            if (frame.contains("/")) {
+                frame = frame.before("/");
             }
             std::unordered_map<std::string, std::string> frames = {{"2000", "J2000"}, {"1950", "B1950"}};
             if (frames.count(frame)) {
@@ -606,7 +623,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* e
         } else if (need_frame) {
             direction_frame = radesys;
         } else {
-            direction_frame = radesys + ", " + frame;
+            direction_frame = fmt::format("{}, {}", radesys, frame);
         }
         auto entry = extended_info->add_computed_entries();
         entry->set_name("Celestial frame");
