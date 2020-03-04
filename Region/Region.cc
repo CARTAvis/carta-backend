@@ -372,12 +372,12 @@ RegionState Region::GetRegionState() {
 double Region::AngleToLength(casacore::Quantity angle, unsigned int pixel_axis) {
     // world->pixel conversion of ellipse radius.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
-    int coord, coord_axis;
-    _coord_sys.findWorldAxis(coord, coord_axis, pixel_axis);
-    casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
-    angle.convert(units[coord_axis]);
-    casacore::Vector<casacore::Double> increments(_coord_sys.directionCoordinate().increment());
-    return fabs(angle.getValue() / increments[coord_axis]);
+    int world_axis, axis_in_coord;
+    _coord_sys.findWorldAxis(world_axis, axis_in_coord, pixel_axis);
+    casacore::Vector<casacore::String> units(_coord_sys.coordinate(world_axis).worldAxisUnits());
+    angle.convert(units[world_axis]);
+    casacore::Vector<casacore::Double> increments(_coord_sys.coordinate(world_axis).increment());
+    return fabs(angle.getValue() / increments[world_axis]);
 }
 
 bool Region::CartaPointToWorld(const CARTA::Point& point, casacore::Vector<casacore::Quantity>& world_point) {
