@@ -94,11 +94,11 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
     }
 
     // use CoordinateSystem to find coordinate axes
-    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
     spectral_axis = coord_sys.spectralAxisNumber();
     stokes_axis = coord_sys.polarizationAxisNumber();
 
     // pv images not supported (yet); spectral axis is 0 or 1, and the other is linear
+    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
     if (!linear_axes.empty() && (((spectral_axis == 0) && (linear_axes(0) == 1)) || ((spectral_axis == 1) && (linear_axes(0) == 0)))) {
         message = "Position-velocity (pv) images not supported yet.";
         return false;
