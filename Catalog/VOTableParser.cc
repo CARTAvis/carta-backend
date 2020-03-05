@@ -119,7 +119,7 @@ void VOTableParser::Parse() {
         case XML_READER_TYPE_END_ELEMENT:
             if (_element_name == ElementName::TD && !_td_filled && _carrier) {
                 // Fill the TR element values as "" if there is an empty column, i.e. <TD></TD>.
-                _carrier->FillTdValues(_td_counts, "");
+                _carrier->FillEmptyTd(_td_counts);
                 _td_filled = true; // Decrease the TD counter in order to mark such TR element has been filled
             }
             break;

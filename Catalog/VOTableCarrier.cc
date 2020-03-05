@@ -115,6 +115,22 @@ void VOTableCarrier::FillTdValues(int column_index, std::string value) {
     }
 }
 
+void VOTableCarrier::FillEmptyTd(int column_index) {
+    if (_fields[column_index].datatype == "char") {
+        _string_vectors[column_index].push_back("");
+    } else if (_fields[column_index].datatype == "boolean") {
+        _bool_vectors[column_index].push_back(false);
+    } else if ((_fields[column_index].datatype == "short") || (_fields[column_index].datatype == "int")) {
+        _int_vectors[column_index].push_back(std::numeric_limits<int>::quiet_NaN());
+    } else if (_fields[column_index].datatype == "long") {
+        _ll_vectors[column_index].push_back(std::numeric_limits<long long>::quiet_NaN());
+    } else if (_fields[column_index].datatype == "float") {
+        _float_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
+    } else if (_fields[column_index].datatype == "double") {
+        _double_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
+    }
+}
+
 void VOTableCarrier::UpdateNumOfTableRows() {
     if (_fields.empty()) {
         std::cerr << "There is no table column!" << std::endl;
@@ -502,7 +518,7 @@ void VOTableCarrier::GetFilteredData(
         // Calculate the progress
         ++accumulated_data_size;
         ++sending_data_size;
-        float progress = (float)accumulated_data_size / (float)subset_data_size;
+        float progress = (float) accumulated_data_size / (float) subset_data_size;
 
         ++row_index; // Proceed to the next row
 
@@ -660,37 +676,28 @@ bool VOTableCarrier::StringFilter(CARTA::FilterConfig filter, std::string value)
     return false;
 }
 
-template <typename T>
+template<typename T>
 bool VOTableCarrier::NumericFilter(CARTA::FilterConfig filter, T value) {
     bool result(true);
     CARTA::ComparisonOperator cmp_op = filter.comparison_operator();
     switch (cmp_op) {
-        case CARTA::ComparisonOperator::EqualTo:
-            result = (value == filter.min());
+        case CARTA::ComparisonOperator::EqualTo:result = (value == filter.min());
             break;
-        case CARTA::ComparisonOperator::NotEqualTo:
-            result = (value != filter.min());
+        case CARTA::ComparisonOperator::NotEqualTo:result = (value != filter.min());
             break;
-        case CARTA::ComparisonOperator::LessThan:
-            result = (value < filter.min());
+        case CARTA::ComparisonOperator::LessThan:result = (value < filter.min());
             break;
-        case CARTA::ComparisonOperator::GreaterThan:
-            result = (value > filter.min());
+        case CARTA::ComparisonOperator::GreaterThan:result = (value > filter.min());
             break;
-        case CARTA::ComparisonOperator::LessThanOrEqualTo:
-            result = (value <= filter.min());
+        case CARTA::ComparisonOperator::LessThanOrEqualTo:result = (value <= filter.min());
             break;
-        case CARTA::ComparisonOperator::GreaterThanOrEqualTo:
-            result = (value >= filter.min());
+        case CARTA::ComparisonOperator::GreaterThanOrEqualTo:result = (value >= filter.min());
             break;
-        case CARTA::ComparisonOperator::BetweenAnd:
-            result = (filter.min() <= value && value <= filter.max());
+        case CARTA::ComparisonOperator::BetweenAnd:result = (filter.min() <= value && value <= filter.max());
             break;
-        case CARTA::ComparisonOperator::FromTo:
-            result = (filter.min() < value && value < filter.max());
+        case CARTA::ComparisonOperator::FromTo:result = (filter.min() < value && value < filter.max());
             break;
-        default:
-            std::cerr << "Unknown comparison operator!" << std::endl;
+        default:std::cerr << "Unknown comparison operator!" << std::endl;
             break;
     }
     return result;
@@ -723,7 +730,7 @@ void VOTableCarrier::SortColumn(std::string column_name, CARTA::SortingType sort
     }
 }
 
-template <typename T>
+template<typename T>
 void VOTableCarrier::SortRowIndexes(const std::vector<T>& v, CARTA::SortingType sorting_type) {
     ResetRowIndexes();
     // Sort the column data and get the result as an index array
