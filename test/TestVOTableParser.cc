@@ -1,4 +1,5 @@
 #include <iostream>
+#include <limits>
 
 #include "../Catalog/VOTableCarrier.h"
 #include "../Catalog/VOTableParser.h"
@@ -22,6 +23,9 @@ int main(int argc, char* argv[]) {
      */
     LIBXML_TEST_VERSION
 
+    std::cout << "Press <Enter> to start: ";
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
     TestScanVOTable(filename);
 
     return 0;
@@ -36,11 +40,12 @@ void TestScanVOTable(std::string filename) {
     VOTableCarrier* carrier = new VOTableCarrier();
 
     auto t_start = std::chrono::high_resolution_clock::now();
-    VOTableParser parser(filename, carrier, false, true);
+    VOTableParser parser(filename, carrier, false, false);
     auto t_end = std::chrono::high_resolution_clock::now();
     auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
 
-    carrier->PrintData();
+    // Print the carrier data
+    // carrier->PrintData();
 
     std::cout << "Time spending for the parser: " << dt << "(ms)" << std::endl;
 
