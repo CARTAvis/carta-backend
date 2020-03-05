@@ -518,7 +518,7 @@ void VOTableCarrier::GetFilteredData(
         // Calculate the progress
         ++accumulated_data_size;
         ++sending_data_size;
-        float progress = (float) accumulated_data_size / (float) subset_data_size;
+        float progress = (float)accumulated_data_size / (float)subset_data_size;
 
         ++row_index; // Proceed to the next row
 
@@ -676,28 +676,37 @@ bool VOTableCarrier::StringFilter(CARTA::FilterConfig filter, std::string value)
     return false;
 }
 
-template<typename T>
+template <typename T>
 bool VOTableCarrier::NumericFilter(CARTA::FilterConfig filter, T value) {
     bool result(true);
     CARTA::ComparisonOperator cmp_op = filter.comparison_operator();
     switch (cmp_op) {
-        case CARTA::ComparisonOperator::EqualTo:result = (value == filter.min());
+        case CARTA::ComparisonOperator::EqualTo:
+            result = (value == filter.min());
             break;
-        case CARTA::ComparisonOperator::NotEqualTo:result = (value != filter.min());
+        case CARTA::ComparisonOperator::NotEqualTo:
+            result = (value != filter.min());
             break;
-        case CARTA::ComparisonOperator::LessThan:result = (value < filter.min());
+        case CARTA::ComparisonOperator::LessThan:
+            result = (value < filter.min());
             break;
-        case CARTA::ComparisonOperator::GreaterThan:result = (value > filter.min());
+        case CARTA::ComparisonOperator::GreaterThan:
+            result = (value > filter.min());
             break;
-        case CARTA::ComparisonOperator::LessThanOrEqualTo:result = (value <= filter.min());
+        case CARTA::ComparisonOperator::LessThanOrEqualTo:
+            result = (value <= filter.min());
             break;
-        case CARTA::ComparisonOperator::GreaterThanOrEqualTo:result = (value >= filter.min());
+        case CARTA::ComparisonOperator::GreaterThanOrEqualTo:
+            result = (value >= filter.min());
             break;
-        case CARTA::ComparisonOperator::BetweenAnd:result = (filter.min() <= value && value <= filter.max());
+        case CARTA::ComparisonOperator::BetweenAnd:
+            result = (filter.min() <= value && value <= filter.max());
             break;
-        case CARTA::ComparisonOperator::FromTo:result = (filter.min() < value && value < filter.max());
+        case CARTA::ComparisonOperator::FromTo:
+            result = (filter.min() < value && value < filter.max());
             break;
-        default:std::cerr << "Unknown comparison operator!" << std::endl;
+        default:
+            std::cerr << "Unknown comparison operator!" << std::endl;
             break;
     }
     return result;
@@ -730,7 +739,7 @@ void VOTableCarrier::SortColumn(std::string column_name, CARTA::SortingType sort
     }
 }
 
-template<typename T>
+template <typename T>
 void VOTableCarrier::SortRowIndexes(const std::vector<T>& v, CARTA::SortingType sorting_type) {
     ResetRowIndexes();
     // Sort the column data and get the result as an index array
