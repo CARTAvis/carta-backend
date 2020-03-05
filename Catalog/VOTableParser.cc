@@ -104,7 +104,6 @@ void VOTableParser::Parse() {
 
     switch (node_type) {
         case XML_READER_TYPE_ELEMENT:
-            Print("<" + name + ">", value);
             _pre_element_name = _element_name;
             _element_name = GetElementName(name);
             if (_only_read_to_header && _element_name == ElementName::DATA) {
@@ -118,7 +117,6 @@ void VOTableParser::Parse() {
             }
             break;
         case XML_READER_TYPE_END_ELEMENT:
-            Print("</" + name + ">", value);
             if (_element_name == ElementName::TD && !_td_filled && _carrier) {
                 // Fill the TR element values as "" if there is an empty column, i.e. <TD></TD>.
                 _carrier->FillTdValues(_td_counts, "");
@@ -126,11 +124,9 @@ void VOTableParser::Parse() {
             }
             break;
         case XML_READER_TYPE_ATTRIBUTE:
-            Print("    " + name, value);
             FillElementAttributes(_element_name, name, value);
             break;
         case XML_READER_TYPE_TEXT:
-            Print("    " + name, value);
             FillElementValues(_element_name, value);
             break;
 
@@ -162,18 +158,6 @@ void VOTableParser::Parse() {
 
         default:
             std::cerr << "Fail to parse the XML text!" << std::endl;
-    }
-}
-
-void VOTableParser::Print(std::string name, std::string value) {
-    if (_verbose) {
-        if (name.empty() && !value.empty()) {
-            std::cout << value << std::endl;
-        } else if (!name.empty() && value.empty()) {
-            std::cout << name << std::endl;
-        } else {
-            std::cout << name << " : " << value << std::endl;
-        }
     }
 }
 
