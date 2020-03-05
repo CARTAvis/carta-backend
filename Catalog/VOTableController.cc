@@ -12,8 +12,8 @@ using namespace catalog;
 Controller::Controller(std::string root) : _root_folder(root) {}
 
 Controller::~Controller() {
-    std::unique_lock<std::mutex> lock(_carriers_mutex);
     for (auto& carrier : _carriers) {
+        carrier.second->DisconnectCalled();
         delete carrier.second;
         carrier.second = nullptr;
     }
@@ -168,13 +168,14 @@ void Controller::OnCloseFileRequest(CARTA::CloseCatalogFile close_file_request) 
 void Controller::OnFilterRequest(
     CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback) {
     int file_id(filter_request.file_id());
-    std::unique_lock<std::mutex> lock(_carriers_mutex);
     if (!_carriers.count(file_id)) {
         std::cerr << "VOTable file does not exist (file ID: " << file_id << "!" << std::endl;
         return;
     }
+    _carriers[file_id]->IncreaseStreamCount();
     _carriers[file_id]->GetFilteredData(
         filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
+    _carriers[file_id]->DecreaseStreamCount();
 }
 
 bool Controller::IsVOTableFile(std::string file_name) {
@@ -227,8 +228,8 @@ std::string Controller::Concatenate(std::string directory, std::string filename)
 }
 
 void Controller::CloseFile(int file_id) {
-    std::unique_lock<std::mutex> lock(_carriers_mutex);
     if (_carriers.count(file_id)) {
+        _carriers[file_id]->DisconnectCalled();
         delete _carriers[file_id];
         _carriers[file_id] = nullptr;
         _carriers.erase(file_id);

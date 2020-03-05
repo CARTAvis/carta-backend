@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <set>
+#include <thread>
 
 #include "../InterfaceConstants.h"
 
@@ -369,6 +370,11 @@ void VOTableCarrier::GetFilteredData(
     int sending_data_size = 0;
 
     while ((accumulated_data_size < subset_data_size) && (row_index < total_row_num)) {
+        // Break the loop while closing the file
+        if (!_connected) {
+            break;
+        }
+
         // Loop the table column
         bool fill(true);
 
@@ -732,4 +738,15 @@ void VOTableCarrier::ResetRowIndexes() {
     // Initialize original index locations
     _row_indexes.resize(GetTableRowNumber());
     std::iota(_row_indexes.begin(), _row_indexes.end(), 0);
+}
+
+void VOTableCarrier::SetConnectionFlag(bool connected) {
+    _connected = connected;
+}
+
+void VOTableCarrier::DisconnectCalled() {
+    SetConnectionFlag(false); // set a false flag to interrupt the running jobs
+    while (_stream_count) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    } // wait for the jobs finished
 }

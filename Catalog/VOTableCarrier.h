@@ -1,6 +1,8 @@
 #ifndef CARTA_BACKEND__VOTABLECARRIER_H_
 #define CARTA_BACKEND__VOTABLECARRIER_H_
 
+#include <tbb/atomic.h>
+
 #include <algorithm>
 #include <iostream>
 #include <numeric>
@@ -60,7 +62,7 @@ class VOTableCarrier {
     };
 
 public:
-    VOTableCarrier(){};
+    VOTableCarrier() : _stream_count(0){};
     ~VOTableCarrier(){};
 
     void SetFileName(std::string file_path_name);
@@ -81,6 +83,14 @@ public:
     static void GetDataType(std::string data_type, CARTA::EntryType& catalog_data_type);
     bool IsValid();
 
+    void IncreaseStreamCount() {
+        ++_stream_count;
+    }
+    void DecreaseStreamCount() {
+        --_stream_count;
+    }
+    void DisconnectCalled();
+
     void PrintTableElement(int row, int column);
     void PrintData();
 
@@ -93,6 +103,7 @@ private:
     template <typename T>
     void SortRowIndexes(const std::vector<T>& v, CARTA::SortingType sorting_type);
     void ResetRowIndexes();
+    void SetConnectionFlag(bool connected);
 
     std::string _filename;
     std::string _directory;
@@ -117,6 +128,9 @@ private:
     std::unordered_map<int, int> _column_index_to_data_type_index; // <Column Index, Data Type Index>
 
     // PS: do not consider the datatypes: "bit", "unsignedByte", "unicodeChar", "floatComplex" and "doubleComplex"
+
+    volatile bool _connected = true;
+    tbb::atomic<int> _stream_count;
 };
 
 } // namespace catalog
