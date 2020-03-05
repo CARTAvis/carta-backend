@@ -42,6 +42,8 @@ class VOTableParser {
         NONE = 25
     };
 
+    static const std::unordered_map<std::string, VOTableParser::ElementName> elementEnumMap;
+
 public:
     VOTableParser(std::string filename, VOTableCarrier* carrier, bool only_read_to_header = false, bool verbose = false);
     ~VOTableParser();
