@@ -26,6 +26,10 @@ void TraceSegment(const float* image, std::vector<bool>& visited, int64_t width,
         double b = image[(j)*width + i + 1];
         double c = image[(j + 1) * width + i + 1];
         double d = image[(j + 1) * width + i];
+        a = isnan(a) ? -std::numeric_limits<float>::max() : a;
+        b = isnan(b) ? -std::numeric_limits<float>::max() : b;
+        c = isnan(c) ? -std::numeric_limits<float>::max() : c;
+        d = isnan(d) ? -std::numeric_limits<float>::max() : d;
 
         double x = 0;
         double y = 0;
@@ -141,7 +145,12 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
 
     // Search TopEdge
     for (j = 0, i = 0; i < width - 1; i++) {
-        if (image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
+        float pt_a = image[(j)*width + i];
+        float pt_b = image[(j)*width + i + 1];
+        pt_a = isnan(pt_a) ? -std::numeric_limits<float>::max() : pt_a;
+        pt_b = isnan(pt_b) ? -std::numeric_limits<float>::max() : pt_b;
+
+        if (pt_a < level && level <= pt_b) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::TopEdge, vertices);
             test_for_chunk_overflow();
@@ -151,7 +160,12 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
 
     // Search RightEdge
     for (j = 0; j < height - 1; j++) {
-        if (image[(j)*width + i] < level && level <= image[(j + 1) * width + i]) {
+        float pt_a = image[(j)*width + i];
+        float pt_b = image[(j + 1) * width + i];
+        pt_a = isnan(pt_a) ? -std::numeric_limits<float>::max() : pt_a;
+        pt_b = isnan(pt_b) ? -std::numeric_limits<float>::max() : pt_b;
+
+        if (pt_a < level && level <= pt_b) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i - 1, j, Edge::RightEdge, vertices);
             test_for_chunk_overflow();
@@ -161,7 +175,12 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
 
     // Search Bottom
     for (i--; i >= 0; i--) {
-        if (image[(j)*width + i + 1] < level && level <= image[(j)*width + i]) {
+        float pt_a = image[(j)*width + i + 1];
+        float pt_b = image[(j)*width + i];
+        pt_a = isnan(pt_a) ? -std::numeric_limits<float>::max() : pt_a;
+        pt_b = isnan(pt_b) ? -std::numeric_limits<float>::max() : pt_b;
+
+        if (pt_a < level && level <= pt_b) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i, j - 1, Edge::BottomEdge, vertices);
             test_for_chunk_overflow();
@@ -171,7 +190,12 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
 
     // Search Left
     for (i = 0, j--; j >= 0; j--) {
-        if (image[(j + 1) * width + i] < level && level <= image[(j)*width + i]) {
+        float pt_a = image[(j + 1) * width + i];
+        float pt_b = image[(j)*width + i];
+        pt_a = isnan(pt_a) ? -std::numeric_limits<float>::max() : pt_a;
+        pt_b = isnan(pt_b) ? -std::numeric_limits<float>::max() : pt_b;
+
+        if (pt_a < level && level <= pt_b) {
             indices.push_back(vertices.size());
             TraceSegment(image, visited, width, height, scale, offset, level, i, j, Edge::LeftEdge, vertices);
             test_for_chunk_overflow();
@@ -182,7 +206,12 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
     // Search each row of the image
     for (j = 1; j < height - 1; j++) {
         for (i = 0; i < width - 1; i++) {
-            if (!visited[j * width + i] && image[(j)*width + i] < level && level <= image[(j)*width + i + 1]) {
+            float pt_a = image[(j)*width + i];
+            float pt_b = image[(j)*width + i + 1];
+            pt_a = isnan(pt_a) ? -std::numeric_limits<float>::max() : pt_a;
+            pt_b = isnan(pt_b) ? -std::numeric_limits<float>::max() : pt_b;
+
+            if (!visited[j * width + i] && pt_a < level && level <= pt_b) {
                 indices.push_back(vertices.size());
                 TraceSegment(image, visited, width, height, scale, offset, level, i, j, TopEdge, vertices);
                 test_for_chunk_overflow();
@@ -199,13 +228,6 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
     auto t_start_contours = std::chrono::high_resolution_clock::now();
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
-
-    int64_t num_pixels = width * height;
-    for (int64_t i = 0; i < num_pixels; i++) {
-        if (isnan(image[i])) {
-            image[i] = -std::numeric_limits<float>::max();
-        }
-    }
 
 #pragma omp parallel for
     for (int64_t l = 0; l < levels.size(); l++) {
