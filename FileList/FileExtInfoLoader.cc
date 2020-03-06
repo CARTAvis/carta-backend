@@ -276,10 +276,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 }
 
                 int spectral_axis, stokes_axis;
-                _loader->FindCoordinateAxes(image_shape, spectral_axis, stokes_axis, message);
-                AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
-                AddComputedEntries(extended_info, image, radesys, use_fits_header);
-                file_ok = true;
+                if (_loader->FindCoordinateAxes(image_shape, spectral_axis, stokes_axis, message)) {
+                    AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
+                    AddComputedEntries(extended_info, image, radesys, use_fits_header);
+                    file_ok = true;
+                }
             } else { // image failed
                 message = "Image could not be opened.";
             }
@@ -504,13 +505,13 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* e
             if (entry_name == "CTYPE1") {
                 ctype1 = entry.value();
                 if (ctype1.contains("/")) {
-                    ctype1 = frame.before("/");
+                    ctype1 = ctype1.before("/");
                 }
                 ctype1.trim();
             } else if (entry_name == "CTYPE2") {
                 ctype2 = entry.value();
                 if (ctype2.contains("/")) {
-                    ctype2 = frame.before("/");
+                    ctype2 = ctype2.before("/");
                 }
                 ctype2.trim();
             }
@@ -548,15 +549,21 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* e
             if (entry_name.find("CUNIT1") != std::string::npos) {
                 cunit1 = entry.value();
                 if (cunit1.contains("/")) {
-                    cunit1 = frame.before("/");
+                    cunit1 = cunit1.before("/");
                 }
                 cunit1.trim();
+                if (cunit1 == "Degrees") { // nonstandard FITS value
+                    cunit1 = "deg";
+                }
             } else if (entry_name.find("CUNIT2") != std::string::npos) {
                 cunit2 = entry.value();
                 if (cunit2.contains("/")) {
-                    cunit2 = frame.before("/");
+                    cunit2 = cunit2.before("/");
                 }
                 cunit2.trim();
+                if (cunit2 == "Degrees") { // nonstandard FITS value
+                    cunit2 = "deg";
+                }
             }
             if (!cunit1.empty() && !cunit2.empty()) {
                 need_cunit = false;
