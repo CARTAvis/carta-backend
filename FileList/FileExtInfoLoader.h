@@ -29,7 +29,7 @@ private:
     void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* extended_info, std::string& radesys);
 
     // FITS keyword conversion
-    bool GetFitsKwList(casacore::FitsInput& fits_input, const std::string& hdu, casacore::FitsKeywordList& kwlist);
+    bool GetFitsKwList(casacore::FitsInput& fits_input, unsigned int hdu, casacore::FitsKeywordList& kwlist);
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit); // convert MVAngle to string
     void GetCoordNames(std::string& ctype1, std::string& ctype2, std::string& radesys, std::string& coord_name1, std::string& coord_name2,
         std::string& projection);

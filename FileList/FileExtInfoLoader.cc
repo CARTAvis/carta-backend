@@ -61,10 +61,20 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                     if (CasacoreImageType(filename) == casacore::ImageOpener::FITS) {
                         // dummy linear system when there is a wcslib error, get original headers
                         casacore::FitsInput fits_input(filename.c_str(), casacore::FITS::Disk);
-                        casacore::FitsKeywordList kwlist;
-                        if (GetFitsKwList(fits_input, hdu, kwlist)) {
-                            fhi.kw = kwlist;
-                            use_fits_header = true;
+                        if (!fits_input.err()) {
+                            unsigned int hdu_num(FileInfo::GetFitsHdu(hdu));
+                            for (unsigned int ihdu = 0; ihdu < hdu_num; ihdu++) {
+                                fits_input.skip_hdu();
+                                if (fits_input.err()) {
+                                    message = "Error advancing to requested hdu.";
+                                    return false;
+                                }
+                            }
+                            casacore::FitsKeywordList kwlist;
+                            if (GetFitsKwList(fits_input, hdu_num, kwlist)) {
+                                fhi.kw = kwlist;
+                                use_fits_header = true;
+                            }
                         }
                     }
                 }
@@ -493,8 +503,16 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* e
         if (need_ctype && (entry_name.find("CTYPE") != std::string::npos)) {
             if (entry_name == "CTYPE1") {
                 ctype1 = entry.value();
+                if (ctype1.contains("/")) {
+                    ctype1 = frame.before("/");
+                }
+                ctype1.trim();
             } else if (entry_name == "CTYPE2") {
                 ctype2 = entry.value();
+                if (ctype2.contains("/")) {
+                    ctype2 = frame.before("/");
+                }
+                ctype2.trim();
             }
             if (!ctype1.empty() && !ctype2.empty()) {
                 need_ctype = false;
@@ -529,8 +547,16 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* e
         if (need_cunit && (entry_name.find("CUNIT") != std::string::npos)) {
             if (entry_name.find("CUNIT1") != std::string::npos) {
                 cunit1 = entry.value();
+                if (cunit1.contains("/")) {
+                    cunit1 = frame.before("/");
+                }
+                cunit1.trim();
             } else if (entry_name.find("CUNIT2") != std::string::npos) {
                 cunit2 = entry.value();
+                if (cunit2.contains("/")) {
+                    cunit2 = frame.before("/");
+                }
+                cunit2.trim();
             }
             if (!cunit1.empty() && !cunit2.empty()) {
                 need_cunit = false;
@@ -553,11 +579,10 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* e
         if (need_frame && ((entry_name.find("EQUINOX") != std::string::npos) || (entry_name.find("EPOCH") != std::string::npos))) {
             need_frame = false;
             frame = entry.value();
-            frame.trim();
-            size_t comment = frame.find("/");
             if (frame.contains("/")) {
                 frame = frame.before("/");
             }
+            frame.trim();
             std::unordered_map<std::string, std::string> frames = {{"2000", "J2000"}, {"1950", "B1950"}};
             if (frames.count(frame)) {
                 frame = frames[frame];
@@ -643,9 +668,9 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* e
 
 // ***** FITS keyword conversion *****
 
-bool FileExtInfoLoader::GetFitsKwList(casacore::FitsInput& fits_input, const std::string& hdu, casacore::FitsKeywordList& kwlist) {
-    // Use casacore PrimaryArray (HeaderDataUnit) to get keyword list
-    if (hdu.empty() || (hdu == "0")) {
+bool FileExtInfoLoader::GetFitsKwList(casacore::FitsInput& fits_input, unsigned int hdu, casacore::FitsKeywordList& kwlist) {
+    // Use casacore HeaderDataUnit to get keyword list
+    if (hdu == 0) {
         switch (fits_input.datatype()) {
             case casacore::FITS::FLOAT: {
                 casacore::PrimaryArray<casacore::Float> fits_image(fits_input);
