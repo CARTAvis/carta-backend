@@ -80,6 +80,8 @@ public:
     void GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size);
     void GetFilteredData(
         CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
+    void GetFilteredDataFast(
+        CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
     size_t GetTableRowNumber();
     static void GetDataType(std::string data_type, CARTA::EntryType& catalog_data_type);
     bool IsValid();

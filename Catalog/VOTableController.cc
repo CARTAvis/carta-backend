@@ -172,9 +172,19 @@ void Controller::OnFilterRequest(
         std::cerr << "VOTable file does not exist (file ID: " << file_id << "!" << std::endl;
         return;
     }
+
     _carriers[file_id]->IncreaseStreamCount();
-    _carriers[file_id]->GetFilteredData(
-        filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
+
+    if (filter_request.filter_configs_size() == 0) {
+        // Execute the fast method
+        _carriers[file_id]->GetFilteredDataFast(
+            filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
+    } else {
+        // Execute the generic method
+        _carriers[file_id]->GetFilteredData(
+            filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
+    }
+
     _carriers[file_id]->DecreaseStreamCount();
 }
 
