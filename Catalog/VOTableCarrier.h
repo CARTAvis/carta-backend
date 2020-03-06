@@ -72,6 +72,7 @@ public:
     void FillFieldAttributes(int count, std::string name, std::string value);
     void FillFieldDescriptions(int count, std::string value);
     void FillTdValues(int column_index, std::string value);
+    void FillEmptyTd(int column_index);
     void UpdateNumOfTableRows();
     std::string GetFileDescription();
     void GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response);

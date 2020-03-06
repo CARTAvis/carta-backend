@@ -115,6 +115,22 @@ void VOTableCarrier::FillTdValues(int column_index, std::string value) {
     }
 }
 
+void VOTableCarrier::FillEmptyTd(int column_index) {
+    if (_fields[column_index].datatype == "char") {
+        _string_vectors[column_index].push_back("");
+    } else if (_fields[column_index].datatype == "boolean") {
+        _bool_vectors[column_index].push_back(false);
+    } else if ((_fields[column_index].datatype == "short") || (_fields[column_index].datatype == "int")) {
+        _int_vectors[column_index].push_back(std::numeric_limits<int>::quiet_NaN());
+    } else if (_fields[column_index].datatype == "long") {
+        _ll_vectors[column_index].push_back(std::numeric_limits<long long>::quiet_NaN());
+    } else if (_fields[column_index].datatype == "float") {
+        _float_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
+    } else if (_fields[column_index].datatype == "double") {
+        _double_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
+    }
+}
+
 void VOTableCarrier::UpdateNumOfTableRows() {
     if (_fields.empty()) {
         std::cerr << "There is no table column!" << std::endl;

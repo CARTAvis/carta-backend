@@ -2,6 +2,19 @@
 
 using namespace catalog;
 
+const std::unordered_map<std::string, VOTableParser::ElementName> VOTableParser::elementEnumMap = {
+    {"VOTABLE", VOTableParser::ElementName::VOTABLE}, {"RESOURCE", VOTableParser::ElementName::RESOURCE},
+    {"DESCRIPTION", VOTableParser::ElementName::DESCRIPTION}, {"DEFINITIONS", VOTableParser::ElementName::DEFINITIONS},
+    {"INFO", VOTableParser::ElementName::INFO}, {"PARAM", VOTableParser::ElementName::PARAM}, {"TABLE", VOTableParser::ElementName::TABLE},
+    {"FIELD", VOTableParser::ElementName::FIELD}, {"GROUP", VOTableParser::ElementName::GROUP},
+    {"FIELDref", VOTableParser::ElementName::FIELDref}, {"PARAMref", VOTableParser::ElementName::PARAMref},
+    {"VALUES", VOTableParser::ElementName::VALUES}, {"MIN", VOTableParser::ElementName::MIN}, {"MAX", VOTableParser::ElementName::MAX},
+    {"OPTION", VOTableParser::ElementName::OPTION}, {"LINK", VOTableParser::ElementName::LINK}, {"DATA", VOTableParser::ElementName::DATA},
+    {"TABLEDATA", VOTableParser::ElementName::TABLEDATA}, {"TD", VOTableParser::ElementName::TD}, {"TR", VOTableParser::ElementName::TR},
+    {"FITS", VOTableParser::ElementName::FITS}, {"BINARY", VOTableParser::ElementName::BINARY},
+    {"BINARY2", VOTableParser::ElementName::BINARY2}, {"STREAM", VOTableParser::ElementName::STREAM},
+    {"COOSYS", VOTableParser::ElementName::COOSYS}};
+
 VOTableParser::VOTableParser(std::string filename, VOTableCarrier* carrier, bool only_read_to_header, bool verbose)
     : _carrier(carrier), _only_read_to_header(only_read_to_header), _verbose(verbose) {
     if (!IsVOTable(filename)) {
@@ -91,7 +104,6 @@ void VOTableParser::Parse() {
 
     switch (node_type) {
         case XML_READER_TYPE_ELEMENT:
-            Print("<" + name + ">", value);
             _pre_element_name = _element_name;
             _element_name = GetElementName(name);
             if (_only_read_to_header && _element_name == ElementName::DATA) {
@@ -105,19 +117,16 @@ void VOTableParser::Parse() {
             }
             break;
         case XML_READER_TYPE_END_ELEMENT:
-            Print("</" + name + ">", value);
             if (_element_name == ElementName::TD && !_td_filled && _carrier) {
                 // Fill the TR element values as "" if there is an empty column, i.e. <TD></TD>.
-                _carrier->FillTdValues(_td_counts, "");
+                _carrier->FillEmptyTd(_td_counts);
                 _td_filled = true; // Decrease the TD counter in order to mark such TR element has been filled
             }
             break;
         case XML_READER_TYPE_ATTRIBUTE:
-            Print("    " + name, value);
             FillElementAttributes(_element_name, name, value);
             break;
         case XML_READER_TYPE_TEXT:
-            Print("    " + name, value);
             FillElementValues(_element_name, value);
             break;
 
@@ -152,74 +161,12 @@ void VOTableParser::Parse() {
     }
 }
 
-void VOTableParser::Print(std::string name, std::string value) {
-    if (_verbose) {
-        if (name.empty() && !value.empty()) {
-            std::cout << value << std::endl;
-        } else if (!name.empty() && value.empty()) {
-            std::cout << name << std::endl;
-        } else {
-            std::cout << name << " : " << value << std::endl;
-        }
-    }
-}
-
 VOTableParser::ElementName VOTableParser::GetElementName(std::string name) {
-    VOTableParser::ElementName result;
-    if (strcmp(name.c_str(), "VOTABLE") == 0) {
-        result = ElementName::VOTABLE;
-    } else if (strcmp(name.c_str(), "RESOURCE") == 0) {
-        result = ElementName::RESOURCE;
-    } else if (strcmp(name.c_str(), "DESCRIPTION") == 0) {
-        result = ElementName::DESCRIPTION;
-    } else if (strcmp(name.c_str(), "DEFINITIONS") == 0) {
-        result = ElementName::DEFINITIONS;
-    } else if (strcmp(name.c_str(), "INFO") == 0) {
-        result = ElementName::INFO;
-    } else if (strcmp(name.c_str(), "PARAM") == 0) {
-        result = ElementName::PARAM;
-    } else if (strcmp(name.c_str(), "TABLE") == 0) {
-        result = ElementName::TABLE;
-    } else if (strcmp(name.c_str(), "FIELD") == 0) {
-        result = ElementName::FIELD;
-    } else if (strcmp(name.c_str(), "GROUP") == 0) {
-        result = ElementName::GROUP;
-    } else if (strcmp(name.c_str(), "FIELDref") == 0) {
-        result = ElementName::FIELDref;
-    } else if (strcmp(name.c_str(), "PARAMref") == 0) {
-        result = ElementName::PARAMref;
-    } else if (strcmp(name.c_str(), "VALUES") == 0) {
-        result = ElementName::VALUES;
-    } else if (strcmp(name.c_str(), "MIN") == 0) {
-        result = ElementName::MIN;
-    } else if (strcmp(name.c_str(), "MAX") == 0) {
-        result = ElementName::MAX;
-    } else if (strcmp(name.c_str(), "OPTION") == 0) {
-        result = ElementName::OPTION;
-    } else if (strcmp(name.c_str(), "LINK") == 0) {
-        result = ElementName::LINK;
-    } else if (strcmp(name.c_str(), "DATA") == 0) {
-        result = ElementName::DATA;
-    } else if (strcmp(name.c_str(), "TABLEDATA") == 0) {
-        result = ElementName::TABLEDATA;
-    } else if (strcmp(name.c_str(), "TD") == 0) {
-        result = ElementName::TD;
-    } else if (strcmp(name.c_str(), "TR") == 0) {
-        result = ElementName::TR;
-    } else if (strcmp(name.c_str(), "FITS") == 0) {
-        result = ElementName::FITS;
-    } else if (strcmp(name.c_str(), "BINARY") == 0) {
-        result = ElementName::BINARY;
-    } else if (strcmp(name.c_str(), "BINARY2") == 0) {
-        result = ElementName::BINARY2;
-    } else if (strcmp(name.c_str(), "STREAM") == 0) {
-        result = ElementName::STREAM;
-    } else if (strcmp(name.c_str(), "COOSYS") == 0) {
-        result = ElementName::COOSYS;
-    } else {
-        result = ElementName::NONE;
+    auto itr = elementEnumMap.find(name);
+    if (itr == elementEnumMap.end()) {
+        return ElementName::NONE;
     }
-    return result;
+    return itr->second;
 }
 
 void VOTableParser::IncreaseElementCounts(ElementName element_name) {
