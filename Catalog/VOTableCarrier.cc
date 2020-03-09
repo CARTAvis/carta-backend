@@ -306,286 +306,7 @@ void VOTableCarrier::GetFilteredData(
     int region_id(filter_request.region_id()); // TODO: Not implement yet
     int subset_data_size(filter_request.subset_data_size());
     int subset_start_index(filter_request.subset_start_index());
-    CARTA::CatalogImageBounds catalog_image_bounds = filter_request.image_bounds();
-    CARTA::ImageBounds image_bounds = catalog_image_bounds.image_bounds();
-    std::string sort_column(filter_request.sort_column());
-    CARTA::SortingType sorting_type = filter_request.sorting_type();
-
-    // Get column indices to hide
-    std::set<int> hided_column_indices;
-    for (int i = 0; i < filter_request.hided_headers_size(); ++i) {
-        std::string hided_header = filter_request.hided_headers(i);
-        for (std::pair<int, Field> field : _fields) {
-            if (hided_header == field.second.name) {
-                hided_column_indices.insert(field.first);
-            }
-        }
-    }
-
-    // Fill the filter response
-    CARTA::CatalogFilterResponse filter_response;
-    filter_response.set_file_id(file_id);
-    filter_response.set_region_id(region_id);
-
-    // Initialize columns data with respect to their column indices
-    auto tmp_columns_data = filter_response.mutable_columns_data();
-
-    // Initialize the columns data
-    for (std::pair<int, Field> field : _fields) {
-        Field& tmp_field = field.second;
-        CARTA::EntryType tmp_data_type;
-        GetDataType(tmp_field.datatype, tmp_data_type);
-
-        // Only fill the columns data that its data type is in our list
-        if (tmp_data_type != CARTA::EntryType::UNKNOWN_TYPE) {
-            int column_index = field.first;
-            if (_bool_vectors.count(column_index)) {
-                tmp_columns_data->add_bool_column();
-            } else if (_string_vectors.count(column_index)) {
-                tmp_columns_data->add_string_column();
-            } else if (_int_vectors.count(column_index)) {
-                tmp_columns_data->add_int_column();
-            } else if (_ll_vectors.count(column_index)) {
-                tmp_columns_data->add_ll_column();
-            } else if (_float_vectors.count(column_index)) {
-                tmp_columns_data->add_float_column();
-            } else if (_double_vectors.count(column_index)) {
-                tmp_columns_data->add_double_column();
-            }
-        }
-    }
-
-    // Get the end index of row
-    int total_row_num = GetTableRowNumber();
-    if (subset_start_index > total_row_num - 1) {
-        std::cerr << "Start row index is out of range!" << std::endl;
-        return;
-    }
-    if (subset_data_size < ALL_CATALOG_DATA) {
-        std::cerr << "Subset data size is unknown!" << std::endl;
-        return;
-    }
-    if (subset_data_size == ALL_CATALOG_DATA) {
-        subset_data_size = total_row_num;
-    }
-
-    // Sort the column and set row indexes
-    if (sort_column.empty()) {
-        ResetRowIndexes(); // Set the default table row indexes as [0, 1, 2, ...]
-    } else if (!sort_column.empty() && (sort_column != _sort_column)) {
-        // Sort the column and renew the row indexes
-        SortColumn(sort_column, sorting_type);
-        _sort_column = sort_column;
-    }
-
-    // Loop the table row data
-    auto t_partial_filter_start = std::chrono::high_resolution_clock::now();
-    float latest_progress = 0;
-    int row_index = subset_start_index;
-    int accumulated_data_size = 0;
-    int sending_data_size = 0;
-
-    while ((accumulated_data_size < subset_data_size) && (row_index < total_row_num)) {
-        // Break the loop while closing the file
-        if (!_connected) {
-            break;
-        }
-
-        // Loop the table column
-        bool fill(true);
-
-        // Apply the image bounds and determine whether to fill the row data
-        for (std::pair<int, Field> field : _fields) {
-            if (catalog_image_bounds.x_column_name() == field.second.name) {
-                // TODO: Set additional filter conditions
-            }
-            if (catalog_image_bounds.y_column_name() == field.second.name) {
-                // TODO: Set additional filter conditions
-            }
-        }
-
-        // Apply the filter and determine whether to fill the row data
-        for (int i = 0; i < filter_request.filter_configs_size(); ++i) {
-            auto filter = filter_request.filter_configs(i);
-            if (!fill) { // Break the loop once the "fill" boolean becomes false
-                break;
-            }
-            for (std::pair<int, Field> field : _fields) {
-                if (filter.column_name() == field.second.name) {
-                    int column_index = field.first;
-                    if (_bool_vectors.count(column_index)) {
-                        bool tmp_value = _bool_vectors[column_index][_row_indexes[row_index]];
-                        if (!BoolFilter(filter, tmp_value)) {
-                            fill = false;
-                            break; // Break the loop once the row data does not pass the filter
-                        }
-                    } else if (_string_vectors.count(column_index)) {
-                        std::string tmp_value = _string_vectors[column_index][_row_indexes[row_index]];
-                        if (!StringFilter(filter, tmp_value)) {
-                            fill = false;
-                            break; // Break the loop once the row data does not pass the filter
-                        }
-                    } else if (_int_vectors.count(column_index)) {
-                        int tmp_value = _int_vectors[column_index][_row_indexes[row_index]];
-                        if (!NumericFilter<int>(filter, tmp_value)) {
-                            fill = false;
-                            break; // Break the loop once the row data does not pass the filter
-                        }
-                    } else if (_ll_vectors.count(column_index)) {
-                        long long tmp_value = _ll_vectors[column_index][_row_indexes[row_index]];
-                        if (!NumericFilter<long long>(filter, tmp_value)) {
-                            fill = false;
-                            break; // Break the loop once the row data does not pass the filter
-                        }
-                    } else if (_float_vectors.count(column_index)) {
-                        float tmp_value = _float_vectors[column_index][_row_indexes[row_index]];
-                        if (!NumericFilter<float>(filter, tmp_value)) {
-                            fill = false;
-                            break; // Break the loop once the row data does not pass the filter
-                        }
-                    } else if (_double_vectors.count(column_index)) {
-                        double tmp_value = _double_vectors[column_index][_row_indexes[row_index]];
-                        if (!NumericFilter<double>(filter, tmp_value)) {
-                            fill = false;
-                            break; // Break the loop once the row data does not pass the filter
-                        }
-                    }
-                }
-            }
-        }
-
-        if (!fill) {     // Do not do the following process to fill the row data
-            ++row_index; // Proceed to the next row
-            continue;
-        }
-
-        // Fill the row data
-        for (std::pair<int, std::vector<bool>> bool_vector : _bool_vectors) {
-            int column_index = bool_vector.first;
-            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = _column_index_to_data_type_index[column_index];
-                assert(data_type_index < tmp_columns_data->bool_column_size());
-                auto bool_column = tmp_columns_data->mutable_bool_column(data_type_index);
-                bool_column->add_bool_column(bool_vector.second[_row_indexes[row_index]]);
-            }
-        }
-        for (std::pair<int, std::vector<std::string>> string_vector : _string_vectors) {
-            int column_index = string_vector.first;
-            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = _column_index_to_data_type_index[column_index];
-                assert(data_type_index < tmp_columns_data->string_column_size());
-                auto string_column = tmp_columns_data->mutable_string_column(data_type_index);
-                string_column->add_string_column(string_vector.second[_row_indexes[row_index]]);
-            }
-        }
-        for (std::pair<int, std::vector<int>> int_vector : _int_vectors) {
-            int column_index = int_vector.first;
-            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = _column_index_to_data_type_index[column_index];
-                assert(data_type_index < tmp_columns_data->int_column_size());
-                auto int_column = tmp_columns_data->mutable_int_column(data_type_index);
-                int_column->add_int_column(int_vector.second[_row_indexes[row_index]]);
-            }
-        }
-        for (std::pair<int, std::vector<long long>> ll_vector : _ll_vectors) {
-            int column_index = ll_vector.first;
-            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = _column_index_to_data_type_index[column_index];
-                assert(data_type_index < tmp_columns_data->ll_column_size());
-                auto ll_column = tmp_columns_data->mutable_ll_column(data_type_index);
-                ll_column->add_ll_column(ll_vector.second[_row_indexes[row_index]]);
-            }
-        }
-        for (std::pair<int, std::vector<double>> float_vector : _float_vectors) {
-            int column_index = float_vector.first;
-            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = _column_index_to_data_type_index[column_index];
-                assert(data_type_index < tmp_columns_data->float_column_size());
-                auto float_column = tmp_columns_data->mutable_float_column(data_type_index);
-                float_column->add_float_column(float_vector.second[_row_indexes[row_index]]);
-            }
-        }
-        for (std::pair<int, std::vector<double>> double_vector : _double_vectors) {
-            int column_index = double_vector.first;
-            if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
-                int data_type_index = _column_index_to_data_type_index[column_index];
-                assert(data_type_index < tmp_columns_data->double_column_size());
-                auto double_column = tmp_columns_data->mutable_double_column(data_type_index);
-                double_column->add_double_column(double_vector.second[_row_indexes[row_index]]);
-            }
-        }
-
-        // Calculate the progress
-        ++accumulated_data_size;
-        ++sending_data_size;
-        float progress = (float)accumulated_data_size / (float)subset_data_size;
-
-        ++row_index; // Proceed to the next row
-
-        // get the time elapse for this step
-        auto t_partial_filter_end = std::chrono::high_resolution_clock::now();
-        auto dt_partial_filter = std::chrono::duration<double, std::milli>(t_partial_filter_end - t_partial_filter_start).count();
-
-        if ((dt_partial_filter > TARGET_PARTIAL_CATALOG_FILTER_TIME) || (progress >= CATALOG_FILTER_COMPLETE)) {
-            // Reset the timer and latest progress
-            t_partial_filter_start = std::chrono::high_resolution_clock::now();
-            latest_progress = progress;
-
-            // Fill the progress message
-            filter_response.set_subset_data_size(sending_data_size);
-            filter_response.set_subset_end_index(row_index);
-            filter_response.set_progress(progress);
-
-            // Send partial results by the callback function
-            partial_results_callback(filter_response);
-
-            // Reset the sending data size
-            sending_data_size = 0;
-
-            // Clear the columns_data message
-            for (int i = 0; i < tmp_columns_data->bool_column_size(); ++i) {
-                auto tmp_column = tmp_columns_data->mutable_bool_column(i);
-                tmp_column->clear_bool_column();
-            }
-            for (int i = 0; i < tmp_columns_data->string_column_size(); ++i) {
-                auto tmp_column = tmp_columns_data->mutable_string_column(i);
-                tmp_column->clear_string_column();
-            }
-            for (int i = 0; i < tmp_columns_data->int_column_size(); ++i) {
-                auto tmp_column = tmp_columns_data->mutable_int_column(i);
-                tmp_column->clear_int_column();
-            }
-            for (int i = 0; i < tmp_columns_data->ll_column_size(); ++i) {
-                auto tmp_column = tmp_columns_data->mutable_ll_column(i);
-                tmp_column->clear_ll_column();
-            }
-            for (int i = 0; i < tmp_columns_data->float_column_size(); ++i) {
-                auto tmp_column = tmp_columns_data->mutable_float_column(i);
-                tmp_column->clear_float_column();
-            }
-            for (int i = 0; i < tmp_columns_data->double_column_size(); ++i) {
-                auto tmp_column = tmp_columns_data->mutable_double_column(i);
-                tmp_column->clear_double_column();
-            }
-        }
-    }
-
-    if (latest_progress < CATALOG_FILTER_COMPLETE) {
-        // Send final results by the callback function
-        filter_response.set_subset_data_size(accumulated_data_size);
-        filter_response.set_subset_end_index(row_index);
-        filter_response.set_progress(1.0);
-        partial_results_callback(filter_response);
-    }
-}
-
-void VOTableCarrier::GetFilteredDataFast(
-    CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback) {
-    int file_id(filter_request.file_id());
-    int region_id(filter_request.region_id()); // TODO: Not implement yet
-    int subset_data_size(filter_request.subset_data_size());
-    int subset_start_index(filter_request.subset_start_index());
-    CARTA::CatalogImageBounds catalog_image_bounds = filter_request.image_bounds();
+    CARTA::CatalogImageBounds catalog_image_bounds = filter_request.image_bounds(); // TODO: Not implement yet
     CARTA::ImageBounds image_bounds = catalog_image_bounds.image_bounds();
     std::string sort_column(filter_request.sort_column());
     CARTA::SortingType sorting_type = filter_request.sorting_type();
@@ -633,12 +354,14 @@ void VOTableCarrier::GetFilteredDataFast(
         }
     }
 
-    // Get the end index of row
+    // Get the total number of row
     int total_row_num = GetTableRowNumber();
     if (subset_start_index > total_row_num - 1) {
         std::cerr << "Start row index is out of range!" << std::endl;
         return;
     }
+
+    // Reset the subset data size with the condition
     if (subset_data_size < ALL_CATALOG_DATA) {
         std::cerr << "Subset data size is unknown!" << std::endl;
         return;
@@ -668,13 +391,100 @@ void VOTableCarrier::GetFilteredDataFast(
             break;
         }
 
-        // Reset the row chunk if it is larger than the requested subset size
-        if (row_chunk > subset_data_size) {
-            row_chunk = subset_data_size;
-        }
         // Reset the row chunk if it reaches the end of data
         if ((row_index + row_chunk) > total_row_num) {
             row_chunk = total_row_num - row_index;
+        }
+
+        // Initialize the "bool" vector "fill" as an int type vector
+        std::vector<int> fill(row_chunk, 1);
+
+        // Loop filters
+        for (int i = 0; i < filter_request.filter_configs_size(); ++i) {
+            auto filter = filter_request.filter_configs(i);
+            // Loop columns for each filter
+            for (std::pair<int, Field> field : _fields) {
+                if (filter.column_name() == field.second.name) {
+                    int column_index = field.first;
+                    if (_bool_vectors.count(column_index)) {
+                        // Loop a row chunk with the filter
+                        for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                            int j = i - row_index;
+                            if (fill[j] && !BoolFilter(filter, _bool_vectors[column_index][_row_indexes[i]])) {
+                                fill[j] = 0; // Do not fill this row index
+                            }
+                        }
+                    } else if (_string_vectors.count(column_index)) {
+                        // Loop a row chunk with the filter
+                        for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                            int j = i - row_index;
+                            if (fill[j] && !StringFilter(filter, _string_vectors[column_index][_row_indexes[i]])) {
+                                fill[j] = 0; // Do not fill this row index
+                            }
+                        }
+                    } else if (_int_vectors.count(column_index)) {
+                        // Loop a row chunk with the filter
+                        for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                            int j = i - row_index;
+                            if (fill[j] && !NumericFilter<int>(filter, _int_vectors[column_index][_row_indexes[i]])) {
+                                fill[j] = 0; // Do not fill this row index
+                            }
+                        }
+                    } else if (_ll_vectors.count(column_index)) {
+                        // Loop a row chunk with the filter
+                        for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                            int j = i - row_index;
+                            if (fill[j] && !NumericFilter<long long>(filter, _ll_vectors[column_index][_row_indexes[i]])) {
+                                fill[j] = 0; // Do not fill this row index
+                            }
+                        }
+                    } else if (_float_vectors.count(column_index)) {
+                        // Loop a row chunk with the filter
+                        for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                            int j = i - row_index;
+                            if (fill[j] && !NumericFilter<float>(filter, _float_vectors[column_index][_row_indexes[i]])) {
+                                fill[j] = 0; // Do not fill this row index
+                            }
+                        }
+                    } else if (_double_vectors.count(column_index)) {
+                        // Loop a row data chunk with the filter
+                        for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                            int j = i - row_index;
+                            if (fill[j] && !NumericFilter<double>(filter, _double_vectors[column_index][_row_indexes[i]])) {
+                                fill[j] = 0; // Do not fill this row index
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Get the sending data size
+        sending_data_size = std::count(fill.begin(), fill.end(), 1);
+
+        // Reset the sending data size if it reaches the end of required subset data
+        if ((accumulated_data_size + sending_data_size) > subset_data_size) {
+            sending_data_size = subset_data_size - accumulated_data_size;
+            accumulated_data_size = subset_data_size;
+            // Reset the row chunk to fit the sending data size
+            row_chunk = 0;
+            int row_count = 0;
+            while (row_count < sending_data_size) {
+                if (fill[row_chunk]) {
+                    ++row_count;
+                }
+                ++row_chunk;
+            }
+        } else {
+            accumulated_data_size += sending_data_size;
+        }
+
+        // Set the progress
+        float progress;
+        if ((row_index + row_chunk) >= total_row_num) {
+            progress = 1.0;
+        } else {
+            progress = (float)accumulated_data_size / (float)subset_data_size;
         }
 
         // Fill the row data chunk by chunk
@@ -684,12 +494,14 @@ void VOTableCarrier::GetFilteredDataFast(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->bool_column_size());
                 auto bool_column = tmp_columns_data->mutable_bool_column(data_type_index);
-                if (sort_column.empty()) {
+                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
                     *bool_column->mutable_bool_column() = {
                         bool_vector.second.begin() + row_index, bool_vector.second.begin() + row_index + row_chunk};
                 } else {
                     for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        bool_column->add_bool_column(bool_vector.second[_row_indexes[i]]);
+                        if (fill[i - row_index]) {
+                            bool_column->add_bool_column(bool_vector.second[_row_indexes[i]]);
+                        }
                     }
                 }
             }
@@ -700,12 +512,14 @@ void VOTableCarrier::GetFilteredDataFast(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->string_column_size());
                 auto string_column = tmp_columns_data->mutable_string_column(data_type_index);
-                if (sort_column.empty()) {
+                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
                     *string_column->mutable_string_column() = {
                         string_vector.second.begin() + row_index, string_vector.second.begin() + row_index + row_chunk};
                 } else {
                     for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        string_column->add_string_column(string_vector.second[_row_indexes[i]]);
+                        if (fill[i - row_index]) {
+                            string_column->add_string_column(string_vector.second[_row_indexes[i]]);
+                        }
                     }
                 }
             }
@@ -716,12 +530,14 @@ void VOTableCarrier::GetFilteredDataFast(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->int_column_size());
                 auto int_column = tmp_columns_data->mutable_int_column(data_type_index);
-                if (sort_column.empty()) {
+                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
                     *int_column->mutable_int_column() = {
                         int_vector.second.begin() + row_index, int_vector.second.begin() + row_index + row_chunk};
                 } else {
                     for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        int_column->add_int_column(int_vector.second[_row_indexes[i]]);
+                        if (fill[i - row_index]) {
+                            int_column->add_int_column(int_vector.second[_row_indexes[i]]);
+                        }
                     }
                 }
             }
@@ -732,12 +548,14 @@ void VOTableCarrier::GetFilteredDataFast(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->ll_column_size());
                 auto ll_column = tmp_columns_data->mutable_ll_column(data_type_index);
-                if (sort_column.empty()) {
+                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
                     *ll_column->mutable_ll_column() = {
                         ll_vector.second.begin() + row_index, ll_vector.second.begin() + row_index + row_chunk};
                 } else {
                     for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        ll_column->add_ll_column(ll_vector.second[_row_indexes[i]]);
+                        if (fill[i - row_index]) {
+                            ll_column->add_ll_column(ll_vector.second[_row_indexes[i]]);
+                        }
                     }
                 }
             }
@@ -748,12 +566,14 @@ void VOTableCarrier::GetFilteredDataFast(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->float_column_size());
                 auto float_column = tmp_columns_data->mutable_float_column(data_type_index);
-                if (sort_column.empty()) {
+                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
                     *float_column->mutable_float_column() = {
                         float_vector.second.begin() + row_index, float_vector.second.begin() + row_index + row_chunk};
                 } else {
                     for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        float_column->add_float_column(float_vector.second[_row_indexes[i]]);
+                        if (fill[i - row_index]) {
+                            float_column->add_float_column(float_vector.second[_row_indexes[i]]);
+                        }
                     }
                 }
             }
@@ -764,21 +584,18 @@ void VOTableCarrier::GetFilteredDataFast(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->double_column_size());
                 auto double_column = tmp_columns_data->mutable_double_column(data_type_index);
-                if (sort_column.empty()) {
+                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
                     *double_column->mutable_double_column() = {
                         double_vector.second.begin() + row_index, double_vector.second.begin() + row_index + row_chunk};
                 } else {
                     for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        double_column->add_double_column(double_vector.second[_row_indexes[i]]);
+                        if (fill[i - row_index]) {
+                            double_column->add_double_column(double_vector.second[_row_indexes[i]]);
+                        }
                     }
                 }
             }
         }
-
-        // Calculate the progress
-        accumulated_data_size += row_chunk;
-        sending_data_size = row_chunk;
-        float progress = (float)accumulated_data_size / (float)subset_data_size;
 
         // Proceed to the next chunk
         row_index += row_chunk;
@@ -908,7 +725,7 @@ bool VOTableCarrier::BoolFilter(CARTA::FilterConfig filter, bool value) {
     return true;
 }
 
-bool VOTableCarrier::StringFilter(CARTA::FilterConfig filter, std::string value) {
+bool VOTableCarrier::StringFilter(CARTA::FilterConfig filter, const std::string& value) {
     std::string sub_string = filter.sub_string();
     if (value.find(sub_string) != std::string::npos) {
         return true;
@@ -917,7 +734,7 @@ bool VOTableCarrier::StringFilter(CARTA::FilterConfig filter, std::string value)
 }
 
 template <typename T>
-bool VOTableCarrier::NumericFilter(CARTA::FilterConfig filter, T value) {
+bool VOTableCarrier::NumericFilter(CARTA::FilterConfig filter, const T& value) {
     bool result(true);
     CARTA::ComparisonOperator cmp_op = filter.comparison_operator();
     switch (cmp_op) {

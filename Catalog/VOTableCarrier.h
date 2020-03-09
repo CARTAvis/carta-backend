@@ -80,8 +80,6 @@ public:
     void GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size);
     void GetFilteredData(
         CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
-    void GetFilteredDataFast(
-        CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
     size_t GetTableRowNumber();
     static void GetDataType(std::string data_type, CARTA::EntryType& catalog_data_type);
     bool IsValid();
@@ -99,9 +97,9 @@ public:
 
 private:
     bool BoolFilter(CARTA::FilterConfig filter, bool value);
-    bool StringFilter(CARTA::FilterConfig filter, std::string value);
+    bool StringFilter(CARTA::FilterConfig filter, const std::string& value);
     template <typename T>
-    bool NumericFilter(CARTA::FilterConfig filter, T value);
+    bool NumericFilter(CARTA::FilterConfig filter, const T& value);
     void SortColumn(std::string column_name, CARTA::SortingType sorting_type);
     template <typename T>
     void SortRowIndexes(const std::vector<T>& v, CARTA::SortingType sorting_type);
