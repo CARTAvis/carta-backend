@@ -210,14 +210,10 @@ private:
     // Latest file info for browser, used for open file
     std::unique_ptr<CARTA::FileInfo> _file_info;
     std::unique_ptr<CARTA::FileInfoExtended> _file_info_extended;
-
-    // FileLoader for the FileListHandler
     std::unique_ptr<carta::FileLoader> _loader;
-    // The _loader is shared with Frame and RegionHandler for data streams, key is file_id
-    std::unordered_map<int, std::shared_ptr<carta::FileLoader>> _loaders;
 
-    // Frame; key is file_id
-    std::unordered_map<int, std::unique_ptr<Frame>> _frames;
+    // Frame; key is file_id; shared with RegionHandler for data streamss
+    std::unordered_map<int, std::shared_ptr<Frame>> _frames;
     std::mutex _frame_mutex;
 
     // Handler for region creation, import/export, requirements, and data

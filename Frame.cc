@@ -17,8 +17,7 @@
 
 using namespace carta;
 
-Frame::Frame(
-    uint32_t session_id, const std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, bool verbose, int default_channel)
+Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel)
     : _session_id(session_id),
       _verbose(verbose),
       _valid(true),

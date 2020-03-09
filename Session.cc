@@ -82,14 +82,6 @@ void ExitNoSessions(int s) {
 }
 
 Session::~Session() {
-    // delete frames
-    DeleteFrame(ALL_FILES);
-
-    // delete regions
-    if (_region_handler) {
-        _region_handler->RemoveRegion(ALL_REGIONS);
-    }
-
     _outgoing_async->close();
 
     --_num_sessions;
@@ -325,9 +317,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             }
         }
         // create Frame for image
-        std::shared_ptr<carta::FileLoader> shared_loader = std::move(_loader);
-        _loaders[file_id] = shared_loader;
-        auto frame = std::unique_ptr<Frame>(new Frame(_id, shared_loader, hdu, _verbose_logging));
+        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _verbose_logging));
+        _loader.release();
 
         if (frame->IsValid()) {
             // Check if the old _frames[file_id] object exists. If so, delete it.
@@ -400,6 +391,9 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_mutexes.erase(file_id);
         _image_channel_task_active.erase(file_id);
     }
+    if (_region_handler) {
+        _region_handler->RemoveFrame(file_id);
+    }
 }
 
 void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data) {
@@ -464,7 +458,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
 void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
-        const std::unique_ptr<Frame>& frame = _frames.at(file_id);
+        auto frame = _frames.at(file_id);
         std::string err_message;
         auto channel = message.channel();
         auto stokes = message.stokes();
@@ -679,24 +673,24 @@ void Session::OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& 
                 SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
                 return;
             }
-            requirements_set = _region_handler->SetHistogramRequirements(region_id, file_id, requirements);
+            requirements_set = _region_handler->SetHistogramRequirements(region_id, file_id, _frames.at(file_id), requirements);
         } else {
             requirements_set = _frames.at(file_id)->SetHistogramRequirements(region_id, requirements);
+        }
+
+        if (requirements_set) {
+            if ((message.histograms_size() > 0) && !SendRegionHistogramData(file_id, region_id)) {
+                std::string message = fmt::format("Histogram calculation for region {} failed", region_id);
+                SendLogEvent(message, {"histogram"}, CARTA::ErrorSeverity::WARNING);
+            }
+        } else {
+            std::string error = fmt::format("Histogram requirements not valid for region id {}", region_id);
+            SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
         }
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::DEBUG);
         return;
-    }
-
-    if (requirements_set) {
-        if (!SendRegionHistogramData(file_id, region_id)) {
-            std::string message = fmt::format("Histogram calculation for region {} failed or was cancelled", region_id);
-            SendLogEvent(message, {"histogram"}, CARTA::ErrorSeverity::WARNING);
-        }
-    } else {
-        std::string error = fmt::format("Histogram requirements not valid for region id {}", region_id);
-        SendLogEvent(error, {"histogram"}, CARTA::ErrorSeverity::ERROR);
     }
 }
 
@@ -715,23 +709,23 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
                 SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
                 return;
             }
-            requirements_set = _region_handler->SetSpectralRequirements(region_id, file_id, requirements);
+            requirements_set = _region_handler->SetSpectralRequirements(region_id, file_id, _frames.at(file_id), requirements);
         } else {
             requirements_set = _frames.at(file_id)->SetSpectralRequirements(region_id, requirements);
+        }
+
+        if (requirements_set) {
+            if ((message.spectral_profiles_size() > 0) && !SendSpectralProfileData(file_id, region_id)) {
+                std::string error = fmt::format("Spectral profile calculation for region {} failed", region_id);
+                SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
+            }
+        } else if (region_id != IMAGE_REGION_ID) { // not sure why frontend sends this
+            string error = fmt::format("Spectral requirements not valid for region id {}", region_id);
+            SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
         }
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::DEBUG);
-    }
-
-    if (requirements_set) {
-        if (!SendSpectralProfileData(file_id, region_id)) {
-            std::string error = fmt::format("Spectral profile calculation for region {} failed", region_id);
-            SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
-        }
-    } else {
-        string error = fmt::format("Spectral requirements not valid for region id {}", region_id);
-        SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
     }
 }
 
@@ -749,23 +743,23 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
                 SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
                 return;
             }
-            requirements_set = _region_handler->SetStatsRequirements(region_id, file_id, requirements);
+            requirements_set = _region_handler->SetStatsRequirements(region_id, file_id, _frames.at(file_id), requirements);
         } else {
             requirements_set = _frames.at(file_id)->SetStatsRequirements(region_id, requirements);
+        }
+
+        if (requirements_set) {
+            if ((message.stats_size() > 0) && !SendRegionStatsData(file_id, region_id)) {
+                std::string error = fmt::format("Statistics calculation for region {} failed", region_id);
+                SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
+            }
+        } else {
+            string error = fmt::format("Stats requirements not valid for region id {}", region_id);
+            SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
         }
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
-    }
-
-    if (requirements_set) {
-        if (!SendRegionStatsData(file_id, region_id)) {
-            std::string error = fmt::format("Statistics calculation for region {} failed", region_id);
-            SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
-        }
-    } else {
-        string error = fmt::format("Stats requirements not valid for region id {}", region_id);
-        SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
     }
 }
 
@@ -1162,7 +1156,7 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
 
 bool Session::SendContourData(int file_id) {
     if (_frames.count(file_id)) {
-        std::unique_ptr<Frame>& frame = _frames.at(file_id);
+        auto frame = _frames.at(file_id);
         const ContourSettings settings = frame->GetContourParameters();
         int num_levels = settings.levels.size();
 
@@ -1354,7 +1348,7 @@ void Session::ExecuteAnimationFrameInner() {
     curr_frame = _animation_object->_next_frame;
     auto file_id(_animation_object->_file_id);
     if (_frames.count(file_id)) {
-        const std::unique_ptr<Frame>& frame = _frames.at(file_id);
+        auto frame = _frames.at(file_id);
 
         try {
             std::string err_message;

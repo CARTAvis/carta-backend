@@ -64,8 +64,7 @@ struct ContourSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, const std::shared_ptr<carta::FileLoader> loader, const std::string& hdu, bool verbose,
-        int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel = DEFAULT_CHANNEL);
     ~Frame(){};
 
     bool IsValid();
@@ -173,7 +172,7 @@ private:
     volatile bool _connected = true;
 
     // Image loader for image type
-    std::shared_ptr<carta::FileLoader> _loader;
+    std::unique_ptr<carta::FileLoader> _loader;
 
     // Shape, channel, and stokes
     casacore::IPosition _image_shape;  // (width, height, depth, stokes)

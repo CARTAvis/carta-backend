@@ -6,6 +6,13 @@ struct HistogramConfig {
     int num_bins;
 };
 
+struct RegionHistogramConfig {
+    int file_id;
+    std::vector<HistogramConfig> configs;
+};
+
+// -------------------------------
+
 struct SpectralConfig {
     std::string coordinate;
     int stokes_index;
@@ -22,15 +29,12 @@ struct SpectralConfig {
     }
 };
 
-struct RegionHistogramConfig {
-    int file_id;
-    std::vector<HistogramConfig> configs;
-};
-
 struct RegionSpectralConfig {
     int file_id;
     std::vector<SpectralConfig> configs;
 };
+
+// -------------------------------
 
 struct RegionStatsConfig {
     int file_id;
