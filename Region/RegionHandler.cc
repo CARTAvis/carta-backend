@@ -311,6 +311,10 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
         // Fill histograms for specific region with file_id requirement (specific file_id or all files)
         for (auto region_config : _histogram_req[region_id]) { // RegionHistogramConfig in vector
             if ((file_id == ALL_FILES) || (region_config.file_id == file_id)) {
+                if (region_config.configs.empty()) { // requirements removed for this region
+                    continue;
+                }
+
                 int channel(_frames.at(region_config.file_id)->CurrentChannel());
                 int stokes(_frames.at(region_config.file_id)->CurrentStokes());
 
@@ -390,6 +394,10 @@ bool RegionHandler::FillSpectralProfileData(
         // Fill spectral profile for specific region with file_id requirement (specific file_id or all files)
         for (auto region_config : _spectral_req[region_id]) { // RegionSpectralConfig in vector
             if ((file_id == ALL_FILES) || (region_config.file_id == file_id)) {
+                if (region_config.configs.empty()) { // requirements removed for this region
+                    continue;
+                }
+
                 // return profile for this requirement
                 CARTA::SpectralProfileData profile_message;
                 profile_message.set_file_id(region_config.file_id);
@@ -486,6 +494,10 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
         for (auto region_config : _stats_req[region_id]) { // RegionStatsConfig in vector
             auto config_file_id(region_config.file_id);
             if ((file_id == ALL_FILES) || (config_file_id == file_id)) {
+                if (region_config.stats_types.empty()) { // requirements removed for this region
+                    continue;
+                }
+
                 int channel(_frames.at(config_file_id)->CurrentChannel());
                 int stokes(_frames.at(config_file_id)->CurrentStokes());
 
