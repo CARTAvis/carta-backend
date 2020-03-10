@@ -99,10 +99,9 @@ void VOTableCarrier::FillTdValues(int column_index, std::string value) {
         }
     } else if (_fields[column_index].datatype == "float") {
         try {
-            // TODO: Due to the precision problem for the float type, we convert it as a double type instead.
-            _float_vectors[column_index].push_back(std::stod(value));
+            _float_vectors[column_index].push_back(std::stof(value));
         } catch (...) {
-            _float_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
+            _float_vectors[column_index].push_back(std::numeric_limits<float>::quiet_NaN());
         }
     } else if (_fields[column_index].datatype == "double") {
         try {
@@ -272,7 +271,7 @@ void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_resp
                 // Fill the long long column index
                 header->set_data_type_index(_column_index_to_data_type_index[column_index]);
             } else if (_float_vectors.count(column_index)) {
-                std::vector<double>& ref_column_data = _float_vectors[column_index];
+                std::vector<float>& ref_column_data = _float_vectors[column_index];
                 // Add a float column
                 auto float_columns_data = columns_data->add_float_column();
                 // Fill float column elements
@@ -560,7 +559,7 @@ void VOTableCarrier::GetFilteredData(
                 }
             }
         }
-        for (std::pair<int, std::vector<double>> float_vector : _float_vectors) {
+        for (std::pair<int, std::vector<float>> float_vector : _float_vectors) {
             int column_index = float_vector.first;
             if (hided_column_indices.find(column_index) == hided_column_indices.end()) {
                 int data_type_index = _column_index_to_data_type_index[column_index];

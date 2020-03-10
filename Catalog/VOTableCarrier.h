@@ -122,9 +122,7 @@ private:
     std::unordered_map<int, std::vector<int>> _int_vectors;            // For the column with datdtype = "int"
     std::unordered_map<int, std::vector<long long>> _ll_vectors;       // For the column with datdtype = "long long"
     std::unordered_map<int, std::vector<double>> _double_vectors;      // For the column with datdtype = "double"
-
-    // TODO: Due to the precision problem for the float type, we store its value as a double type instead.
-    std::unordered_map<int, std::vector<double>> _float_vectors; // For the column with datdtype = "float"
+    std::unordered_map<int, std::vector<float>> _float_vectors;        // For the column with datdtype = "float"
 
     std::unordered_map<int, int> _column_index_to_data_type_index; // <Column Index, Data Type Index>
 
