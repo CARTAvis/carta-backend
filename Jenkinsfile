@@ -59,6 +59,29 @@ pipeline {
                         }
                     }
                 }
+                stage('Ubuntu build') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        sh "git submodule init && git submodule update"
+                        dir ('build') {
+                        sh "cp ../../cmake-command.sh ."
+                        sh "./cmake-command.sh"
+                        sh "make"
+                        stash includes: "carta_backend", name: "ubuntu-1_carta_backend"
+                        }
+                    }
+                    post {
+                        success {
+                            setBuildStatus("MacOS build succeeded", "SUCCESS");
+                        }
+                        failure {
+                            setBuildStatus("MacOS build failed", "FAILURE");
+                        }
+                    }
+                }
             }
         }
         stage('ICD tests') {
@@ -99,6 +122,39 @@ pipeline {
                  }
                  stage('CentOS7 ICD') {
                      agent {
+                         label "ubuntu-1"
+                     }
+                     steps {
+                         sh "export PATH=/usr/local/bin:$PATH"
+                         dir ('build') {
+                             unstash "ubuntu-1_carta_backend"
+                             sh "rm -rf carta-backend-ICD-test"
+                             sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                             sh "./run.sh # run carta_backend in the background"
+                             dir ('carta-backend-ICD-test') {
+                                 sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
+                                 dir ('protobuf') {
+                                     sh "source ~/emsdk/emsdk_env.sh && ./build_proto.sh"
+                                     sh "pwd; ls"
+                                 }
+                                 sh "pwd; ls"
+                                 sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
+                                 sh "sleep 30"
+                             }
+                         }
+                         echo "Finished !!"
+                     }
+                     post {
+                         success {
+                             setBuildStatus("CentOS7 ICD tests succeeded", "SUCCESS");
+                         }
+                         failure {
+                             setBuildStatus("CentOS7 ICD tests failed", "FAILURE");
+                         }     
+                     }
+                  }
+                 stage('Ubuntu ICD') {
+                     agent {
                          label "macos-1"
                      }
                      steps {
@@ -123,11 +179,11 @@ pipeline {
                      }
                      post {
                          success {
-                             setBuildStatus("CentOS7 ICD tests succeeded", "SUCCESS");
+                             setBuildStatus("Ubuntu ICD tests succeeded", "SUCCESS");
                          }
                          failure {
-                             setBuildStatus("CentOS7 ICD tests failed", "FAILURE");
-                         }     
+                             setBuildStatus("Ubuntu ICD tests failed", "FAILURE");
+                         }
                      }
                   }
               }
