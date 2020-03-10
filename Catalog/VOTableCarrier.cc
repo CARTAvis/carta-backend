@@ -493,14 +493,9 @@ void VOTableCarrier::GetFilteredData(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->bool_column_size());
                 auto bool_column = tmp_columns_data->mutable_bool_column(data_type_index);
-                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
-                    *bool_column->mutable_bool_column() = {
-                        bool_vector.second.begin() + row_index, bool_vector.second.begin() + row_index + row_chunk};
-                } else {
-                    for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        if (fill[i - row_index]) {
-                            bool_column->add_bool_column(bool_vector.second[_row_indexes[i]]);
-                        }
+                for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                    if (fill[i - row_index]) {
+                        bool_column->add_bool_column(bool_vector.second[_row_indexes[i]]);
                     }
                 }
             }
@@ -511,14 +506,9 @@ void VOTableCarrier::GetFilteredData(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->string_column_size());
                 auto string_column = tmp_columns_data->mutable_string_column(data_type_index);
-                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
-                    *string_column->mutable_string_column() = {
-                        string_vector.second.begin() + row_index, string_vector.second.begin() + row_index + row_chunk};
-                } else {
-                    for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        if (fill[i - row_index]) {
-                            string_column->add_string_column(string_vector.second[_row_indexes[i]]);
-                        }
+                for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                    if (fill[i - row_index]) {
+                        string_column->add_string_column(string_vector.second[_row_indexes[i]]);
                     }
                 }
             }
@@ -529,14 +519,9 @@ void VOTableCarrier::GetFilteredData(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->int_column_size());
                 auto int_column = tmp_columns_data->mutable_int_column(data_type_index);
-                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
-                    *int_column->mutable_int_column() = {
-                        int_vector.second.begin() + row_index, int_vector.second.begin() + row_index + row_chunk};
-                } else {
-                    for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        if (fill[i - row_index]) {
-                            int_column->add_int_column(int_vector.second[_row_indexes[i]]);
-                        }
+                for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                    if (fill[i - row_index]) {
+                        int_column->add_int_column(int_vector.second[_row_indexes[i]]);
                     }
                 }
             }
@@ -547,14 +532,9 @@ void VOTableCarrier::GetFilteredData(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->ll_column_size());
                 auto ll_column = tmp_columns_data->mutable_ll_column(data_type_index);
-                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
-                    *ll_column->mutable_ll_column() = {
-                        ll_vector.second.begin() + row_index, ll_vector.second.begin() + row_index + row_chunk};
-                } else {
-                    for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        if (fill[i - row_index]) {
-                            ll_column->add_ll_column(ll_vector.second[_row_indexes[i]]);
-                        }
+                for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                    if (fill[i - row_index]) {
+                        ll_column->add_ll_column(ll_vector.second[_row_indexes[i]]);
                     }
                 }
             }
@@ -565,14 +545,9 @@ void VOTableCarrier::GetFilteredData(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->float_column_size());
                 auto float_column = tmp_columns_data->mutable_float_column(data_type_index);
-                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
-                    *float_column->mutable_float_column() = {
-                        float_vector.second.begin() + row_index, float_vector.second.begin() + row_index + row_chunk};
-                } else {
-                    for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        if (fill[i - row_index]) {
-                            float_column->add_float_column(float_vector.second[_row_indexes[i]]);
-                        }
+                for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                    if (fill[i - row_index]) {
+                        float_column->add_float_column(float_vector.second[_row_indexes[i]]);
                     }
                 }
             }
@@ -583,14 +558,9 @@ void VOTableCarrier::GetFilteredData(
                 int data_type_index = _column_index_to_data_type_index[column_index];
                 assert(data_type_index < tmp_columns_data->double_column_size());
                 auto double_column = tmp_columns_data->mutable_double_column(data_type_index);
-                if (sort_column.empty() && (filter_request.filter_configs_size() == 0)) {
-                    *double_column->mutable_double_column() = {
-                        double_vector.second.begin() + row_index, double_vector.second.begin() + row_index + row_chunk};
-                } else {
-                    for (int i = row_index; i < (row_index + row_chunk); ++i) {
-                        if (fill[i - row_index]) {
-                            double_column->add_double_column(double_vector.second[_row_indexes[i]]);
-                        }
+                for (int i = row_index; i < (row_index + row_chunk); ++i) {
+                    if (fill[i - row_index]) {
+                        double_column->add_double_column(double_vector.second[_row_indexes[i]]);
                     }
                 }
             }

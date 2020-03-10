@@ -552,10 +552,11 @@ void TestOnFilterRequest10() {
     filter_config->set_min(10);
     filter_config->set_max(10);
 
-    filter_config->set_column_name("RA_d");
-    filter_config->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
-    filter_config->set_min(10.685);
-    filter_config->set_max(10.685);
+    auto filter_config2 = filter_request.add_filter_configs();
+    filter_config2->set_column_name("RA_d");
+    filter_config2->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
+    filter_config2->set_min(10.685);
+    filter_config2->set_max(10.685);
 
     TestOnFilterRequest(open_file_request, filter_request);
 }
