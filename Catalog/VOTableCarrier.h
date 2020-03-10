@@ -97,9 +97,9 @@ public:
 
 private:
     bool BoolFilter(CARTA::FilterConfig filter, bool value);
-    bool StringFilter(CARTA::FilterConfig filter, const std::string& value);
+    bool StringFilter(const CARTA::FilterConfig& filter, const std::string& value);
     template <typename T>
-    bool NumericFilter(CARTA::FilterConfig filter, const T& value);
+    bool NumericFilter(const CARTA::FilterConfig& filter, const T& value);
     void SortColumn(std::string column_name, CARTA::SortingType sorting_type);
     template <typename T>
     void SortRowIndexes(const std::vector<T>& v, CARTA::SortingType sorting_type);

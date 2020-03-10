@@ -694,16 +694,13 @@ bool VOTableCarrier::BoolFilter(CARTA::FilterConfig filter, bool value) {
     return true;
 }
 
-bool VOTableCarrier::StringFilter(CARTA::FilterConfig filter, const std::string& value) {
+bool VOTableCarrier::StringFilter(const CARTA::FilterConfig& filter, const std::string& value) {
     std::string sub_string = filter.sub_string();
-    if (value.find(sub_string) != std::string::npos) {
-        return true;
-    }
-    return false;
+    return (value.find(sub_string) != std::string::npos);
 }
 
 template <typename T>
-bool VOTableCarrier::NumericFilter(CARTA::FilterConfig filter, const T& value) {
+bool VOTableCarrier::NumericFilter(const CARTA::FilterConfig& filter, const T& value) {
     bool result(true);
     CARTA::ComparisonOperator cmp_op = filter.comparison_operator();
     switch (cmp_op) {
