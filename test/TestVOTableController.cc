@@ -23,6 +23,10 @@ void TestOnFilterRequest3();
 void TestOnFilterRequest4();
 void TestOnFilterRequest5();
 void TestOnFilterRequest6();
+void TestOnFilterRequest7();
+void TestOnFilterRequest8();
+void TestOnFilterRequest9();
+void TestOnFilterRequest10();
 void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request);
 
 string GetCurrentWorkingPath();
@@ -39,6 +43,10 @@ int main(int argc, char* argv[]) {
     cout << "    7) TestOnFilterRequest4()" << endl;
     cout << "    8) TestOnFilterRequest5()" << endl;
     cout << "    9) TestOnFilterRequest6()" << endl;
+    cout << "    10) TestOnFilterRequest7()" << endl;
+    cout << "    11) TestOnFilterRequest8()" << endl;
+    cout << "    12) TestOnFilterRequest9()" << endl;
+    cout << "    13) TestOnFilterRequest10()" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -68,6 +76,18 @@ int main(int argc, char* argv[]) {
             break;
         case 9:
             TestOnFilterRequest6();
+            break;
+        case 10:
+            TestOnFilterRequest7();
+            break;
+        case 11:
+            TestOnFilterRequest8();
+            break;
+        case 12:
+            TestOnFilterRequest9();
+            break;
+        case 13:
+            TestOnFilterRequest10();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -446,6 +466,100 @@ void TestOnFilterRequest6() {
     TestOnFilterRequest(open_file_request, filter_request);
 }
 
+void TestOnFilterRequest7() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("$BASE/images/set_catalog_overlay");
+    open_file_request.set_name("m31_2deg_simbad.xml");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(50);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(-1);
+    filter_request.set_image_file_id(0);
+    filter_request.set_region_id(0);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
+void TestOnFilterRequest8() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("$BASE/images/set_catalog_overlay");
+    open_file_request.set_name("m31_2deg_simbad.xml");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(50);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(-1);
+    filter_request.set_image_file_id(0);
+    filter_request.set_region_id(0);
+
+    filter_request.set_sort_column("ANG_DIST");
+    filter_request.set_sorting_type(CARTA::SortingType::Descend);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
+void TestOnFilterRequest9() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("$BASE/images/set_catalog_overlay");
+    open_file_request.set_name("m31_2deg_simbad.xml");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(50);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(-1);
+    filter_request.set_image_file_id(0);
+    filter_request.set_region_id(0);
+
+    filter_request.set_sort_column("ANG_DIST");
+    filter_request.set_sorting_type(CARTA::SortingType::Descend);
+
+    auto filter_config = filter_request.add_filter_configs();
+    filter_config->set_column_name("ANG_DIST");
+    filter_config->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
+    filter_config->set_min(10);
+    filter_config->set_max(10);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
+void TestOnFilterRequest10() {
+    CARTA::OpenCatalogFile open_file_request;
+    open_file_request.set_directory("$BASE/images/set_catalog_overlay");
+    open_file_request.set_name("m31_2deg_simbad.xml");
+    open_file_request.set_file_id(0);
+    open_file_request.set_preview_data_size(50);
+
+    CARTA::CatalogFilterRequest filter_request;
+    filter_request.set_file_id(0);
+    filter_request.set_subset_start_index(0);
+    filter_request.set_subset_data_size(-1);
+    filter_request.set_image_file_id(0);
+    filter_request.set_region_id(0);
+
+    filter_request.set_sort_column("ANG_DIST");
+    filter_request.set_sorting_type(CARTA::SortingType::Descend);
+
+    auto filter_config = filter_request.add_filter_configs();
+    filter_config->set_column_name("ANG_DIST");
+    filter_config->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
+    filter_config->set_min(10);
+    filter_config->set_max(10);
+
+    filter_config->set_column_name("RA_d");
+    filter_config->set_comparison_operator(CARTA::ComparisonOperator::GreaterThan);
+    filter_config->set_min(10.685);
+    filter_config->set_max(10.685);
+
+    TestOnFilterRequest(open_file_request, filter_request);
+}
+
 void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::CatalogFilterRequest filter_request) {
     // Open file
     CARTA::OpenCatalogFileAck open_file_response;
@@ -455,15 +569,20 @@ void TestOnFilterRequest(CARTA::OpenCatalogFile open_file_request, CARTA::Catalo
         _controller->OnOpenFileRequest(open_file_request, open_file_response);
     }
 
+    Controller::Print(filter_request);
+
     // Filter the file data
+    auto t_start = std::chrono::high_resolution_clock::now();
     if (_controller) {
         _controller->OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
             // Print partial or final results
-            Controller::Print(filter_request);
-            Controller::Print(filter_response);
+            // Controller::Print(filter_response);
             cout << "\n------------------------------------------------------------------\n";
         });
     }
+    auto t_end = std::chrono::high_resolution_clock::now();
+    auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+    std::cout << "Time spending to get the filter data: " << dt << "(ms)" << std::endl;
 
     // Close file
     CARTA::CloseCatalogFile close_file_request;
