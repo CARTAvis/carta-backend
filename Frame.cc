@@ -188,9 +188,7 @@ bool Frame::FillImageCache() {
     }
 
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
-    casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
-    std::lock_guard<std::mutex> guard(_image_mutex);
-    if (!_loader->GetSlice(tmp, section)) {
+    if (!GetSlicerData(section, _image_cache)) {
         Log(_session_id, "Loading image cache failed.");
         return false;
     }
@@ -200,11 +198,7 @@ bool Frame::FillImageCache() {
 void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes) {
     // fill matrix for given channel and stokes
     casacore::Slicer section = GetChannelMatrixSlicer(channel, stokes);
-    chan_matrix.resize(_image_shape(0) * _image_shape(1));
-    casacore::Array<float> tmp(section.length(), chan_matrix.data(), casacore::StorageInitPolicy::SHARE);
-    // slice image data
-    std::lock_guard<std::mutex> guard(_image_mutex);
-    _loader->GetSlice(tmp, section);
+    GetSlicerData(section, chan_matrix);
 }
 
 casacore::Slicer Frame::GetChannelMatrixSlicer(size_t channel, size_t stokes) {
@@ -527,7 +521,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 HistogramResults results;
                 histogram_filled = CalculateHistogram(region_id, channel, stokes, num_bins, stats, results);
                 if (histogram_filled) {
-                    FillHistogramFromResults(stats, results, histogram);
+                    FillHistogramFromResults(histogram, stats, results);
                 }
             }
         }
@@ -593,7 +587,7 @@ bool Frame::FillHistogramFromFrameCache(int channel, int stokes, int num_bins, C
         // add stats to message
         BasicStats<float> stats;
         if (GetBasicStats(channel, stokes, stats)) {
-            FillHistogramFromResults(stats, histogram_results, histogram);
+            FillHistogramFromResults(histogram, stats, histogram_results);
         }
     }
     return have_histogram;
@@ -703,15 +697,6 @@ bool Frame::CalculateHistogram(int region_id, int channel, int stokes, int num_b
     return true;
 }
 
-void Frame::FillHistogramFromResults(BasicStats<float>& stats, HistogramResults& results, CARTA::Histogram* histogram) {
-    histogram->set_num_bins(results.num_bins);
-    histogram->set_bin_width(results.bin_width);
-    histogram->set_first_bin_center(results.bin_center);
-    *histogram->mutable_bins() = {results.histogram_bins.begin(), results.histogram_bins.end()};
-    histogram->set_mean(stats.mean);
-    histogram->set_std_dev(stats.stdDev);
-}
-
 bool Frame::GetCubeHistogramConfig(HistogramConfig& config) {
     bool have_config(!_cube_histogram_configs.empty());
     if (have_config) {
@@ -769,15 +754,11 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         return true;
     }
 
-    // Calculate stats map using SubImage
-    std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
-    casacore::SubImage<float> sub_image;
+    // Calculate stats map using slicer
     casacore::Slicer slicer = GetChannelMatrixSlicer(channel, stokes);
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    if (_loader->GetSubImage(slicer, sub_image)) {
-        CalcStatsValues(stats_vector_map, _image_required_stats, sub_image, false); // not per-channel
-        ulock.unlock();
-
+    bool per_channel(false);
+    std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
+    if (GetSlicerStats(slicer, _image_required_stats, per_channel, stats_vector_map)) {
         // convert vector to single value in map
         std::map<CARTA::StatsType, double> stats_map;
         for (auto& value : stats_vector_map) {
@@ -791,8 +772,6 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         _image_stats[index] = stats_map;
         return true;
     }
-
-    ulock.unlock();
     return false;
 }
 
@@ -999,11 +978,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         (start(_spectral_axis) + delta_channels < profile_size ? delta_channels : profile_size - start(_spectral_axis));
                     count(_spectral_axis) = nchan;
                     casacore::Slicer slicer(start, count);
-                    casacore::Array<float> buffer(slicer.length(), 0.0);
-                    std::unique_lock<std::mutex> guard(_image_mutex);
-                    bool success = _loader->GetSlice(buffer, slicer);
-                    guard.unlock();
-                    if (!success) {
+                    std::vector<float> buffer;
+                    if (!GetSlicerData(slicer, buffer)) {
                         return false;
                     }
 
@@ -1057,4 +1033,86 @@ void Frame::IncreaseZProfileCount() {
 
 void Frame::DecreaseZProfileCount() {
     --_z_profile_count;
+}
+
+// ****************************************************
+// Region/Slicer Support (Frame manages image mutex)
+
+casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& region) {
+    // Returns image shape with a region applied
+    casacore::IPosition ipos;
+
+    casacore::SubImage<float> sub_image;
+    std::unique_lock<std::mutex> ulock(_image_mutex);
+    bool subimage_ok = _loader->GetSubImage(region, sub_image);
+    ulock.unlock();
+
+    if (subimage_ok) {
+        ipos = sub_image.shape();
+    }
+    return ipos;
+}
+
+bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data) {
+    // Get image data with a region applied
+    casacore::SubImage<float> sub_image;
+    std::unique_lock<std::mutex> ulock(_image_mutex);
+    bool subimage_ok = _loader->GetSubImage(region, sub_image);
+    ulock.unlock();
+    
+    if (!subimage_ok) {
+        return false;
+    }
+
+    casacore::IPosition subimage_shape = sub_image.shape();
+    if (subimage_shape.empty()) {
+        return false;
+    }
+
+    data.resize(subimage_shape.product());
+    casacore::Array<float> tmp(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
+    try {
+        casacore::Slicer slicer; // entire subimage
+        sub_image.doGetSlice(tmp, slicer);
+        return true;
+    } catch (casacore::AipsError& err) {
+        data.clear();
+    }
+
+    return false;
+}
+
+bool Frame::GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data) {
+    // Get image data with a slicer applied
+    casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
+    std::unique_lock<std::mutex> ulock(_image_mutex);
+    bool data_ok = _loader->GetSlice(tmp, slicer);
+    ulock.unlock();
+    return data_ok;
+}
+
+bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, std::vector<int>& required_stats, bool per_channel,
+    std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
+    // Get stats for image data with a region applied
+    casacore::SubImage<float> sub_image;
+    std::unique_lock<std::mutex> ulock(_image_mutex);
+    bool subimage_ok = _loader->GetSubImage(region, sub_image);
+    ulock.unlock();
+    if (subimage_ok) {
+        return CalcStatsValues(stats_values, required_stats, sub_image, per_channel);
+    }
+    return subimage_ok;
+}
+
+bool Frame::GetSlicerStats(const casacore::Slicer& slicer, std::vector<int>& required_stats, bool per_channel,
+        std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
+    // Get stats for image data with a slicer applied
+    casacore::SubImage<float> sub_image;
+    std::unique_lock<std::mutex> ulock(_image_mutex);
+    bool subimage_ok = _loader->GetSubImage(slicer, sub_image);
+    ulock.unlock();
+    if (subimage_ok) {
+        return CalcStatsValues(stats_values, required_stats, sub_image, per_channel);
+    }
+    return subimage_ok;
 }

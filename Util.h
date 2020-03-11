@@ -20,7 +20,11 @@
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
+#include "ImageStats/BasicStatsCalculator.h"
+#include "ImageStats/Histogram.h"
 #include "InterfaceConstants.h"
+
+// ************ Logging *************
 
 void Log(uint32_t id, const std::string& log_message);
 
@@ -34,6 +38,8 @@ inline void Log(uint32_t id, const std::string& template_string, Args... args) {
     Log(id, fmt::format(template_string, args...));
 }
 
+// ************ Utilities *************
+
 void ReadPermissions(const std::string& filename, std::unordered_map<std::string, std::vector<std::string>>& permissions_map);
 bool CheckRootBaseFolders(std::string& root, std::string& base);
 
@@ -45,20 +51,26 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
     return casacore::ImageOpener::imageType(filename);
 }
 
+// Image info: filename, type
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
-
 CARTA::FileType GetCartaFileType(const std::string& filename);
 
+// For convenience, create single index for storing cache by channel and stokes
 inline int ChannelStokesIndex(int channel, int stokes) {
-    // For convenience, need single index for storing cache by channel and stokes
     return (channel * 10) + stokes;
 }
 
-// Fill RegionStatsData message StatisticsValue fields from map
-void FillStatisticsValuesFromMap(
-    CARTA::RegionStatsData& stats_data, std::vector<int>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
+// ************ Data Stream Helpers *************
 
 void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
+
+void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results);
+
+void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate, std::vector<int>& required_stats,
+    std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
+
+void FillStatisticsValuesFromMap(
+    CARTA::RegionStatsData& stats_data, std::vector<int>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
 
 // ************ structs *************
 //
@@ -85,9 +97,9 @@ struct ChannelRange {
 };
 
 struct PointXy {
-    // Utilities for cursor and point region
-    // CARTA::Point is float
+    // Utilities for cursor and point regions
     float x, y;
+
     PointXy() {
         x = -1.0;
         y = -1.0;
@@ -111,9 +123,8 @@ struct PointXy {
         x_index = static_cast<int>(std::round(x));
         y_index = static_cast<int>(std::round(y));
     }
-
     bool InImage(int xrange, int yrange) {
-        // returns whether x, y are within image axis ranges
+        // returns whether x, y are within given image axis ranges
         int x_index, y_index;
         ToIndex(x_index, y_index);
         bool x_in_image = (x_index >= 0) && (x_index < xrange);

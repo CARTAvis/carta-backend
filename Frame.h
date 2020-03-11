@@ -128,6 +128,17 @@ public:
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
 
+    // Apply Region/Slicer to image (Frame manages image mutex)
+	casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
+    // Returns data vector
+    bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
+    bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
+    // Returns stats_values map
+    bool GetRegionStats(const casacore::LattRegionHolder& region, std::vector<int>& required_stats, bool per_channel,
+        std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+    bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<int>& required_stats, bool per_channel,
+        std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+
 private:
     // Check flag if Frame is to be destroyed
     bool IsConnected();
@@ -158,7 +169,6 @@ private:
     bool FillHistogramFromFrameCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram);
     bool GetCachedImageHistogram(int channel, int stokes, int num_bins, carta::HistogramResults& histogram_results);
     bool GetCachedCubeHistogram(int stokes, int num_bins, carta::HistogramResults& histogram_results);
-    void FillHistogramFromResults(carta::BasicStats<float>& stats, carta::HistogramResults& results, CARTA::Histogram* histogram);
 
     // Setup
     uint32_t _session_id;

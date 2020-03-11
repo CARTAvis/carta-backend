@@ -191,14 +191,18 @@ void FileLoader::FindCoordinates(int& spectral_axis, int& stokes_axis) {
     }
 }
 
-bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes) {
+bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer) {
     ImageRef image = GetImage();
     if (!image) {
         return false;
     }
 
     if (data.shape() != slicer.length()) {
-        data.resize(slicer.length());
+        try {
+            data.resize(slicer.length());
+        } catch (casacore::AipsError& err) {
+            return false;
+        }
     }
 
     // Get data slice with mask applied.
@@ -230,18 +234,29 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
             cursor_mask.freeStorage(pCursorMask, del_mask_ptr);
             masked_data.putStorage(pMaskedData, del_data_ptr);
         }
+
         data(cursor_slicer) = cursor_data;
     }
     return true;
 }
 
-bool FileLoader::GetSubImage(casacore::Slicer& slicer, casacore::SubImage<float>& sub_image) {
+bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image) {
     ImageRef image = GetImage();
     if (!image) {
         return false;
     }
 
     sub_image = casacore::SubImage<float>(*image, slicer);
+    return true;
+}
+
+bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
+    }
+
+    sub_image = casacore::SubImage<float>(*image, region);
     return true;
 }
 

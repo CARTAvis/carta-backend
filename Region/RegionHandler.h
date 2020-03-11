@@ -58,6 +58,16 @@ private:
 
     // Clear requirements for closed region(s)
     void ClearRequirements(int region_id);
+    bool SpectralConfigExists(int region_id, int file_id, SpectralConfig spectral_config);
+
+    // Fill data stream messages
+    bool CheckRegionFileIds(int region_id, int file_id);
+    bool ApplyRegionToFile(int region_id, int file_id, ChannelRange& channel, int stokes, casacore::ImageRegion& region);
+    bool FillRegionFileHistogramData(
+        int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
+    bool GetRegionFileSpectralData(int region_id, int file_id, SpectralConfig& spectral_config,
+        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
+    bool FillRegionFileStatsData(int region_id, int file_id, std::vector<int>& required_stats, CARTA::RegionStatsData& stats_message);
 
     // Trigger job cancellation when true
     volatile bool _cancel_all_jobs = false;

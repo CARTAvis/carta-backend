@@ -160,6 +160,38 @@ CARTA::FileType GetCartaFileType(const std::string& filename) {
     }
 }
 
+void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results) {
+    if (histogram == nullptr) {
+        return;
+    }
+
+    histogram->set_num_bins(results.num_bins);
+    histogram->set_bin_width(results.bin_width);
+    histogram->set_first_bin_center(results.bin_center);
+    *histogram->mutable_bins() = {results.histogram_bins.begin(), results.histogram_bins.end()};
+    histogram->set_mean(stats.mean);
+    histogram->set_std_dev(stats.stdDev);
+}
+
+void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate, std::vector<int>& required_stats,
+    std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
+    for (auto stat : required_stats) {
+        // one SpectralProfile per stats type
+        auto stats_type = static_cast<CARTA::StatsType>(stat);
+
+        auto new_profile = profile_message.add_profiles();
+        new_profile->set_coordinate(coordinate);
+        new_profile->set_stats_type(stats_type);
+
+        if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
+            double nan_value = std::numeric_limits<double>::quiet_NaN();
+            new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
+        } else {
+            new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
+        }
+    }
+}
+
 void FillStatisticsValuesFromMap(
     CARTA::RegionStatsData& stats_data, std::vector<int>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map) {
     // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler

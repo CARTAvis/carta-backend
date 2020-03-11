@@ -148,10 +148,11 @@ public:
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Slice image data (with mask applied)
-    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false);
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer);
 
-    // SubImage for image plane
-    bool GetSubImage(casacore::Slicer& slicer, casacore::SubImage<float>& sub_image);
+    // SubImage
+    bool GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
 
     // Image Statistics
     // Load image statistics, if they exist, from the file
