@@ -99,13 +99,13 @@ pipeline {
                             sh "./run.sh # run carta_backend in the background"
                             sh "/usr/sbin/lsof -i :3002 # check backend is running"
                             dir ('carta-backend-ICD-test') {
-                                sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
+                                sh "git submodule init && git submodule update && npm install"
                                 dir ('protobuf') {
-                                     sh "source ~/emsdk/emsdk_env.sh && ./build_proto.sh"
+                                     sh "./build_proto.sh"
                                      sh "pwd; ls"
                                 }
                                 sh "pwd; ls"
-                                sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
+                                sh "cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
                                 sh "sleep 30"
                             }
                         }
@@ -132,13 +132,13 @@ pipeline {
                              sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                              sh "./run.sh # run carta_backend in the background"
                              dir ('carta-backend-ICD-test') {
-                                 sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
+                                 sh "git submodule init && git submodule update && npm install"
                                  dir ('protobuf') {
-                                     sh "source ~/emsdk/emsdk_env.sh && ./build_proto.sh"
+                                     sh "./build_proto.sh"
                                      sh "pwd; ls"
                                  }
                                  sh "pwd; ls"
-                                 sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
+                                 sh "cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
                                  sh "sleep 30"
                              }
                          }
@@ -165,13 +165,13 @@ pipeline {
                              sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
                              sh "./run.sh # run carta_backend in the background"
                              dir ('carta-backend-ICD-test') {
-                                 sh "source ~/emsdk/emsdk_env.sh && git submodule init && git submodule update && npm install"
+                                 sh "git submodule init && git submodule update && npm install"
                                  dir ('protobuf') {
-                                     sh "source ~/emsdk/emsdk_env.sh && ./build_proto.sh"
+                                     sh "./build_proto.sh"
                                      sh "pwd; ls"
                                  }
                                  sh "pwd; ls"
-                                 sh "source ~/emsdk/emsdk_env.sh && cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
+                                 sh "cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
                                  sh "sleep 30"
                              }
                          }
