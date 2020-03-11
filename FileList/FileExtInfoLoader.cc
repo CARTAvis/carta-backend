@@ -148,8 +148,12 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                     comment.trim();
 
                     // Strangely, the FitsKeyword does not append axis/coord number
-                    if ((name == "NAXIS")) { // increment axis number for NAXIS1, 2, 3, etc.
-                        naxis++;
+                    if ((name == "NAXIS")) {
+                        if (naxis > 0) {
+                            name += casacore::String::toString(naxis++);
+                        } else {
+                            naxis++;
+                        }
                     }
 
                     // Modify names
