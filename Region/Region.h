@@ -111,8 +111,9 @@ public:
     bool IsConnected();
     void DisconnectCalled();
 
-    // Apply 2D region to image; returns WCRegion
-    casacore::WCRegion* GetImageRegion(int file_id, std::shared_ptr<Frame> frame);
+    // 2D region in reference image
+    casacore::WCRegion* GetReferenceImageRegion();
+    bool RegionValid();
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -121,17 +122,11 @@ private:
     bool CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionType type);
     bool PointsFinite(const std::vector<CARTA::Point>& points);
 
-    // Apply region to image
-    bool GetReferenceWcsPoints(std::vector<casacore::Quantity>& ref_points);
+    // Apply region to reference image, ultimately to get LCRegion
+    void SetReferenceRegion();
     bool CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
     bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
     bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
-    bool ConvertWcsPoints(casacore::MDirection::Types from_direction_frame, casacore::MDirection::Types to_direction_frame,
-        std::vector<casacore::Quantity>& from_points, std::vector<casacore::Quantity>& to_points);
-    bool ConvertEllipseWcsPoints(casacore::MDirection::Types from_direction_frame, casacore::MDirection::Types to_direction_frame,
-        std::vector<casacore::Quantity>& from_points, std::vector<casacore::Quantity>& to_points, const casacore::CoordinateSystem& to_csys,
-        int to_file_id);
-    casacore::WCRegion* CreateWcRegion(std::vector<casacore::Quantity>& control_points);
 
     // region definition (name, type, control points in pixel coordinates, rotation)
     RegionState _region_state;
@@ -139,15 +134,17 @@ private:
     // coord sys of reference image
     casacore::CoordinateSystem _coord_sys;
 
-    // Save region calculations; key is file_id
-    std::unordered_map<int, std::vector<casacore::Quantity>> _wcs_control_points;
-    std::unordered_map<int, std::shared_ptr<casacore::WCRegion>> _wcregions;
-    std::unordered_map<int, float> _ellipse_rotation; // (deg) may be adjusted from pixel rotation
+    // Region applied to reference image
+    std::mutex _region_mutex; // creation of casacore regions is not threadsafe
+    std::vector<casacore::Quantity> _wcs_control_points; // needed for region export
+	std::shared_ptr<casacore::WCRegion> _wcregion;
+    float _ellipse_rotation; // (deg), may be adjusted from pixel rotation value
 
     // region flags
     bool _valid;
     bool _region_state_changed; // any parameters changed
     bool _region_changed;       // type, control points, or rotation changed
+    bool _wcregion_set;
 
     // Communication
     volatile bool _connected = true;

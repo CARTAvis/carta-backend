@@ -320,7 +320,7 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, ChannelRange& 
         return false;
     }
 
-    casacore::WCRegion* wcregion = _regions.at(region_id)->GetImageRegion(file_id, _frames.at(file_id));
+    casacore::WCRegion* wcregion = _regions.at(region_id)->GetReferenceImageRegion();
     if (wcregion == nullptr) {
         return false;
     }
