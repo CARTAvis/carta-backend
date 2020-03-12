@@ -49,7 +49,7 @@ void VOTableCarrier::FillFieldAttributes(int count, std::string name, std::strin
     } else if (name == "ID") {
         _fields[count].id = value;
     } else if (name == "datatype") {
-        _fields[count].datatype = value;
+        _fields[count].datatype = GetDataType(value);
     } else if (name == "arraysize") {
         _fields[count].arraysize = value;
     } else if (name == "width") {
@@ -78,32 +78,32 @@ void VOTableCarrier::FillFieldDescriptions(int count, std::string value) {
 }
 
 void VOTableCarrier::FillTdValues(int column_index, std::string value) {
-    if (_fields[column_index].datatype == "boolean") {
+    if (_fields[column_index].datatype == CARTA::EntryType::BOOL) {
         // Convert the string to lowercase
         std::transform(value.begin(), value.end(), value.begin(), ::tolower);
         _bool_vectors[column_index].push_back(value == "true");
-    } else if (_fields[column_index].datatype == "char") {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::STRING) {
         _string_vectors[column_index].push_back(value);
-    } else if ((_fields[column_index].datatype == "short") || (_fields[column_index].datatype == "int")) {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::INT) {
         // PS: C++ has no function to convert the "string" to "short", so we just convert it to "int"
         try {
             _int_vectors[column_index].push_back(std::stoi(value));
         } catch (...) {
             _int_vectors[column_index].push_back(std::numeric_limits<int>::quiet_NaN());
         }
-    } else if (_fields[column_index].datatype == "long") {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::LONGLONG) {
         try {
             _ll_vectors[column_index].push_back(std::stoll(value));
         } catch (...) {
             _ll_vectors[column_index].push_back(std::numeric_limits<long long>::quiet_NaN());
         }
-    } else if (_fields[column_index].datatype == "float") {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::FLOAT) {
         try {
             _float_vectors[column_index].push_back(std::stof(value));
         } catch (...) {
             _float_vectors[column_index].push_back(std::numeric_limits<float>::quiet_NaN());
         }
-    } else if (_fields[column_index].datatype == "double") {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::DOUBLE) {
         try {
             _double_vectors[column_index].push_back(std::stod(value));
         } catch (...) {
@@ -115,17 +115,17 @@ void VOTableCarrier::FillTdValues(int column_index, std::string value) {
 }
 
 void VOTableCarrier::FillEmptyTd(int column_index) {
-    if (_fields[column_index].datatype == "char") {
+    if (_fields[column_index].datatype == CARTA::EntryType::STRING) {
         _string_vectors[column_index].push_back("");
-    } else if (_fields[column_index].datatype == "boolean") {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::BOOL) {
         _bool_vectors[column_index].push_back(false);
-    } else if ((_fields[column_index].datatype == "short") || (_fields[column_index].datatype == "int")) {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::INT) {
         _int_vectors[column_index].push_back(std::numeric_limits<int>::quiet_NaN());
-    } else if (_fields[column_index].datatype == "long") {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::LONGLONG) {
         _ll_vectors[column_index].push_back(std::numeric_limits<long long>::quiet_NaN());
-    } else if (_fields[column_index].datatype == "float") {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::FLOAT) {
         _float_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
-    } else if (_fields[column_index].datatype == "double") {
+    } else if (_fields[column_index].datatype == CARTA::EntryType::DOUBLE) {
         _double_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
     }
 }
@@ -179,12 +179,10 @@ void VOTableCarrier::UpdateNumOfTableRows() {
 void VOTableCarrier::GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response) {
     for (std::pair<int, Field> field : _fields) {
         Field& tmp_field = field.second;
-        CARTA::EntryType catalog_data_type;
-        GetDataType(tmp_field.datatype, catalog_data_type);
-        if (catalog_data_type != CARTA::EntryType::UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
+        if (tmp_field.datatype != CARTA::EntryType::UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
             auto header = file_info_response.add_headers();
             header->set_name(tmp_field.name);
-            header->set_data_type(catalog_data_type);
+            header->set_data_type(tmp_field.datatype);
             header->set_column_index(field.first); // The FIELD index in the VOTable
             header->set_data_type_index(-1);       // -1 means there is no corresponding data vector in the CatalogColumnsData
             header->set_description(tmp_field.description);
@@ -209,12 +207,10 @@ void VOTableCarrier::GetCooosys(CARTA::CatalogFileInfo* file_info) {
 void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size) {
     for (std::pair<int, Field> field : _fields) {
         Field& tmp_field = field.second;
-        CARTA::EntryType data_type;
-        GetDataType(tmp_field.datatype, data_type);
-        if (data_type != CARTA::EntryType::UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
+        if (tmp_field.datatype != CARTA::EntryType::UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
             auto header = open_file_response.add_headers();
             header->set_name(tmp_field.name);
-            header->set_data_type(data_type);
+            header->set_data_type(tmp_field.datatype);
             header->set_column_index(field.first); // The FIELD index in the VOTable
             header->set_description(tmp_field.description);
             header->set_units(tmp_field.unit);
@@ -312,8 +308,7 @@ void VOTableCarrier::GetFilteredData(
 
     // Get column indices to hide
     std::set<int> hided_column_indices;
-    for (int i = 0; i < filter_request.hided_headers_size(); ++i) {
-        std::string hided_header = filter_request.hided_headers(i);
+    for (auto hided_header : filter_request.hided_headers()) {
         for (std::pair<int, Field> field : _fields) {
             if (hided_header == field.second.name) {
                 hided_column_indices.insert(field.first);
@@ -331,11 +326,9 @@ void VOTableCarrier::GetFilteredData(
 
     for (std::pair<int, Field> field : _fields) {
         Field& tmp_field = field.second;
-        CARTA::EntryType tmp_data_type;
-        GetDataType(tmp_field.datatype, tmp_data_type);
 
         // Only fill the columns data that its data type is in our list
-        if (tmp_data_type != CARTA::EntryType::UNKNOWN_TYPE) {
+        if (tmp_field.datatype != CARTA::EntryType::UNKNOWN_TYPE) {
             int column_index = field.first;
             if (_bool_vectors.count(column_index)) {
                 tmp_columns_data->add_bool_column();
@@ -399,8 +392,7 @@ void VOTableCarrier::GetFilteredData(
         std::vector<int> fill(row_chunk, 1);
 
         // Loop filters
-        for (int i = 0; i < filter_request.filter_configs_size(); ++i) {
-            auto filter = filter_request.filter_configs(i);
+        for (auto filter : filter_request.filter_configs()) {
             // Loop columns for each filter
             for (std::pair<int, Field> field : _fields) {
                 if (filter.column_name() == field.second.name) {
@@ -610,21 +602,21 @@ size_t VOTableCarrier::GetTableRowNumber() {
     return _num_of_rows;
 }
 
-void VOTableCarrier::GetDataType(std::string data_type, CARTA::EntryType& catalog_data_type) {
+CARTA::EntryType VOTableCarrier::GetDataType(const std::string& data_type) {
     if (data_type == "boolean") {
-        catalog_data_type = CARTA::EntryType::BOOL;
+        return CARTA::EntryType::BOOL;
     } else if (data_type == "char") {
-        catalog_data_type = CARTA::EntryType::STRING;
+        return CARTA::EntryType::STRING;
     } else if (data_type == "short" || data_type == "int") {
-        catalog_data_type = CARTA::EntryType::INT;
+        return CARTA::EntryType::INT;
     } else if (data_type == "long") {
-        catalog_data_type = CARTA::EntryType::LONGLONG;
+        return CARTA::EntryType::LONGLONG;
     } else if (data_type == "float") {
-        catalog_data_type = CARTA::EntryType::FLOAT;
+        return CARTA::EntryType::FLOAT;
     } else if (data_type == "double") {
-        catalog_data_type = CARTA::EntryType::DOUBLE;
+        return CARTA::EntryType::DOUBLE;
     } else {
-        catalog_data_type = CARTA::EntryType::UNKNOWN_TYPE;
+        return CARTA::EntryType::UNKNOWN_TYPE;
     }
 }
 
