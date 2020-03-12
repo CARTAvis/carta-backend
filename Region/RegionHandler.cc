@@ -316,7 +316,17 @@ bool RegionHandler::CheckRegionFileIds(int region_id, int file_id) {
 
 bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, ChannelRange& channel, int stokes, casacore::ImageRegion& region) {
     // Returns image region for given region (region_id) applied to given image (file_id)
-	// TODO: get ImageRegion
+    if (!RegionSet(region_id) || !FrameSet(file_id)) {
+        return false;
+    }
+
+	casacore::WCRegion* wcregion = _regions.at(region_id)->GetImageRegion(file_id, _frames.at(file_id));
+    if (wcregion == nullptr) {
+        return false;
+    }
+
+    // TODO extend region here by chan range and stokes
+    // TODO convert to ImageRegion
     return false;
 }
 

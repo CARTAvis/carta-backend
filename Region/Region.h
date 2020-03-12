@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
+#include <casacore/images/Regions/WCRegion.h>
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
@@ -15,7 +16,7 @@
 
 struct RegionState {
     // struct used to determine whether region changed
-    int ref_file_id;
+    int reference_file_id;
     std::string name;
     CARTA::RegionType type;
     std::vector<CARTA::Point> control_points;
@@ -23,7 +24,7 @@ struct RegionState {
 
     RegionState() {}
     RegionState(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
-        ref_file_id = ref_file_id_;
+        reference_file_id = ref_file_id_;
         name = name_;
         type = type_;
         control_points = control_points_;
@@ -31,7 +32,7 @@ struct RegionState {
     }
     void UpdateState(
         int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
-        ref_file_id = ref_file_id_;
+        reference_file_id = ref_file_id_;
         name = name_;
         type = type_;
         control_points = control_points_;
@@ -39,7 +40,7 @@ struct RegionState {
     }
 
     void operator=(const RegionState& other) {
-        ref_file_id = other.ref_file_id;
+        reference_file_id = other.reference_file_id;
         name = other.name;
         type = other.type;
         control_points = other.control_points;
@@ -59,7 +60,7 @@ struct RegionState {
     }
 
     bool RegionChanged(const RegionState& rhs) { // ignores name change (does not interrupt region calculations)
-        return (ref_file_id != rhs.ref_file_id) || (type != rhs.type) || (rotation != rhs.rotation) || PointsChanged(rhs);
+        return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || (rotation != rhs.rotation) || PointsChanged(rhs);
     }
     bool PointsChanged(const RegionState& rhs) {
         if (control_points.size() != rhs.control_points.size()) {
@@ -110,6 +111,9 @@ public:
     bool IsConnected();
     void DisconnectCalled();
 
+    // Apply 2D region to image; returns WCRegion
+    casacore::WCRegion* GetImageRegion(int file_id, std::shared_ptr<Frame> frame);
+
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
 
@@ -117,10 +121,27 @@ private:
     bool CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionType type);
     bool PointsFinite(const std::vector<CARTA::Point>& points);
 
+    // Apply region to image
+    bool GetReferenceWcsPoints(std::vector<casacore::Quantity>& ref_points);
+    bool CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
+    bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
+    bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
+    bool ConvertWcsPoints(casacore::MDirection::Types from_direction_frame, casacore::MDirection::Types to_direction_frame,
+        std::vector<casacore::Quantity>& from_points, std::vector<casacore::Quantity>& to_points);
+    bool ConvertEllipseWcsPoints(casacore::MDirection::Types from_direction_frame, casacore::MDirection::Types to_direction_frame,
+        std::vector<casacore::Quantity>& from_points, std::vector<casacore::Quantity>& to_points,
+        const casacore::CoordinateSystem& to_csys, int to_file_id);
+
     // region definition (name, type, control points in pixel coordinates, rotation)
     RegionState _region_state;
 
-    casacore::CoordinateSystem _coord_sys; // coord sys of reference image
+    // coord sys of reference image
+    casacore::CoordinateSystem _coord_sys;
+
+    // Save region calculations; key is file_id
+    std::unordered_map<int, std::vector<casacore::Quantity>> _wcs_control_points;
+    std::unordered_map<int, std::shared_ptr<casacore::WCRegion>> _wcregions;
+    std::unordered_map<int, float> _ellipse_rotation; // (deg) may be adjusted from pixel rotation
 
     // region flags
     bool _valid;
