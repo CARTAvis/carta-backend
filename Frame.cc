@@ -1059,7 +1059,7 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool subimage_ok = _loader->GetSubImage(region, sub_image);
     ulock.unlock();
-    
+
     if (!subimage_ok) {
         return false;
     }
@@ -1105,7 +1105,7 @@ bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, std::vector
 }
 
 bool Frame::GetSlicerStats(const casacore::Slicer& slicer, std::vector<int>& required_stats, bool per_channel,
-        std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
+    std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a slicer applied
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);

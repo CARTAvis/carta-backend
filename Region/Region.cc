@@ -5,8 +5,8 @@
 #include <atomic>
 
 #include <casacore/casa/Quanta/Quantum.h>
-#include <casacore/measures/Measures/MCDirection.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/measures/Measures/MCDirection.h>
 
 using namespace carta;
 
@@ -141,8 +141,9 @@ casacore::WCRegion* Region::GetImageRegion(int file_id, std::shared_ptr<Frame> f
                 _wcs_control_points[file_id] = image_wcs_points;
             } else {
                 // wcs points conversion needed from ref direction frame to image direction frame; returns image_wcs_points
-                if ((_region_state.type == CARTA::RegionType::ELLIPSE) && !ConvertEllipseWcsPoints(ref_direction_frame,
-                    image_direction_frame, reference_wcs_points, image_wcs_points, frame->CoordinateSystem(), file_id)) {
+                if ((_region_state.type == CARTA::RegionType::ELLIPSE) &&
+                    !ConvertEllipseWcsPoints(ref_direction_frame, image_direction_frame, reference_wcs_points, image_wcs_points,
+                        frame->CoordinateSystem(), file_id)) {
                     return wcregion; // nullptr
                 } else if (!ConvertWcsPoints(ref_direction_frame, image_direction_frame, reference_wcs_points, image_wcs_points)) {
                     return wcregion; // nullptr
@@ -151,12 +152,14 @@ casacore::WCRegion* Region::GetImageRegion(int file_id, std::shared_ptr<Frame> f
         }
     }
 
-    /* TODO
     wcregion = CreateWcRegion(image_wcs_points);
-    _wcregions.at(file_id) = std::make_shared(wc_region); // store under file_id
+    _wcregions.at(file_id) = std::shared_ptr<casacore::WCRegion>(wcregion); // store under file_id
 
-    */
-    return wcregion; 
+    if (wcregion == nullptr) {
+        return wcregion;
+    } else {
+        return wcregion->cloneRegion();
+    }
 }
 
 bool Region::GetReferenceWcsPoints(std::vector<casacore::Quantity>& ref_points) {
@@ -169,7 +172,6 @@ bool Region::GetReferenceWcsPoints(std::vector<casacore::Quantity>& ref_points) 
 
     // convert from pixel to wcs
     std::vector<CARTA::Point> pixel_points(_region_state.control_points);
-    //std::vector<casacore::Quantity> wcs_points;
     std::vector<casacore::Quantity> world_points; // one CARTA point is two world points (x, y)
 
     switch (_region_state.type) {
@@ -180,13 +182,13 @@ bool Region::GetReferenceWcsPoints(std::vector<casacore::Quantity>& ref_points) 
             }
             break;
         }
-       case CARTA::RegionType::RECTANGLE: { // two points (cx, cy), (width, height)
+        case CARTA::RegionType::RECTANGLE: { // two points (cx, cy), (width, height)
             if (!RectanglePointsToWorld(pixel_points, ref_points)) {
                 ref_points.clear();
-            }    
+            }
             break;
         }
-       case CARTA::RegionType::ELLIPSE: { // two points (cx, cy), (bmaj, bmin)
+        case CARTA::RegionType::ELLIPSE: { // two points (cx, cy), (bmaj, bmin)
             if (!EllipsePointsToWorld(pixel_points, ref_points)) {
                 ref_points.clear();
             }
@@ -302,7 +304,7 @@ bool Region::RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std
     }
 
     // Save x and y values, units as quantities
-    casacore::Vector<double> x_wcs= world_coords.row(0);
+    casacore::Vector<double> x_wcs = world_coords.row(0);
     casacore::Vector<double> y_wcs = world_coords.row(1);
     casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
     // reference points: corners (x0, y0, x1, y1, x2, y2, x3, y3) in world coordinates
@@ -411,4 +413,12 @@ bool Region::ConvertEllipseWcsPoints(casacore::MDirection::Types from_direction_
     }
 
     return true;
+}
+
+casacore::WCRegion* Region::CreateWcRegion(std::vector<casacore::Quantity>& control_points) {
+    // Create WCRegion (world coordinate region in an image) according to type using input wcs control points
+    // Returns nullptr if region fails
+    casacore::WCRegion* region(nullptr);
+
+    return region;
 }

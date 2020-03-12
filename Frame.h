@@ -128,8 +128,8 @@ public:
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
 
-    // Apply Region/Slicer to image (Frame manages image mutex)
-	casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
+    // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
+    casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
     bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);

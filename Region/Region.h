@@ -129,8 +129,9 @@ private:
     bool ConvertWcsPoints(casacore::MDirection::Types from_direction_frame, casacore::MDirection::Types to_direction_frame,
         std::vector<casacore::Quantity>& from_points, std::vector<casacore::Quantity>& to_points);
     bool ConvertEllipseWcsPoints(casacore::MDirection::Types from_direction_frame, casacore::MDirection::Types to_direction_frame,
-        std::vector<casacore::Quantity>& from_points, std::vector<casacore::Quantity>& to_points,
-        const casacore::CoordinateSystem& to_csys, int to_file_id);
+        std::vector<casacore::Quantity>& from_points, std::vector<casacore::Quantity>& to_points, const casacore::CoordinateSystem& to_csys,
+        int to_file_id);
+    casacore::WCRegion* CreateWcRegion(std::vector<casacore::Quantity>& control_points);
 
     // region definition (name, type, control points in pixel coordinates, rotation)
     RegionState _region_state;
