@@ -92,7 +92,7 @@ public:
     size_t NumHistogramConfigs();
     bool GetBasicStats(int channel, int stokes, BasicStats<float>& stats);
     void SetBasicStats(int channel, int stokes, const BasicStats<float>& stats);
-    void CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats);
+    void CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats, bool verbose = false);
     bool GetHistogram(int channel, int stokes, int num_bins, CARTA::Histogram& histogram);
     void SetHistogram(int channel, int stokes, CARTA::Histogram& histogram);
     void CalcHistogram(int channel, int stokes, int num_bins, const BasicStats<float>& stats, const std::vector<float>& data,

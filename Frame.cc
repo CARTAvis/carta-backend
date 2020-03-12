@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <thread>
+#include "fmt/format.h"
 
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 #include <imageanalysis/Annotations/AnnotationBase.h>
@@ -699,13 +700,21 @@ bool Frame::SetImageCache() {
         return false;
     }
 
+    auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
     if (!_loader->GetSlice(tmp, section)) {
         Log(_session_id, "Loading image cache failed.");
         return false;
+    } else if (_verbose) { // Measure duration for load image
+        auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
+        auto dt_set_image_cache =
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
+        fmt::print("Load {}x{} image to cache in {} ms at {} MPix/s\n", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
+            (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
     }
+
     return true;
 }
 
@@ -774,6 +783,7 @@ bool Frame::GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_imag
     // channel could be ALL_CHANNELS in region channel range (default) or
     //     a given channel (e.g. current channel).
     // Returns false if image region is invalid and cannot make subimage.
+    auto t_start_subimage = std::chrono::high_resolution_clock::now();
     bool sub_image_ok(false);
     if (CheckStokes(stokes) && (_regions.count(region_id))) {
         auto& region = _regions[region_id];
@@ -791,6 +801,12 @@ bool Frame::GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_imag
                 }
             }
         }
+    }
+    // Measure duration for get subimage
+    if (_verbose) {
+        auto t_end_subimage = std::chrono::high_resolution_clock::now();
+        auto dt_subimage = std::chrono::duration_cast<std::chrono::microseconds>(t_end_subimage - t_start_subimage).count();
+        fmt::print("Get subimage in {} ms\n", dt_subimage * 1e-3);
     }
     return sub_image_ok;
 }
@@ -876,6 +892,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     bool write_lock(false);
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
 
+    auto t_start_raster_data_filter = std::chrono::high_resolution_clock::now();
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
 #pragma omp parallel for
@@ -916,6 +933,15 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                 image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
             }
         }
+    }
+    // Measure duration for filter raster data
+    if (_verbose) {
+        auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
+        auto dt_raster_data_filter =
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
+        fmt::print("{} filter {}x{} raster data to {}x{} in {} ms at {} MPix/s \n", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
+            req_height, req_width, num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
+            (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
     }
     return true;
 }
@@ -961,11 +987,20 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 return false;
             }
 
+            auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+            // Measure duration for compress tile data
+            if (_verbose) {
+                auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
+                auto dt_compress_tile_data =
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
+                fmt::print("Compress {}x{} tile data in {} ms at {} MPix/s\n", tile_width, tile_height, dt_compress_tile_data * 1e-3,
+                    (float)(tile_width * tile_height) / dt_compress_tile_data);
+            }
 
             return !(ChannelsChanged(channel, stokes));
         }
@@ -1008,6 +1043,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
         int curr_stokes(CurrentStokes());
         histogram_data->set_stokes(curr_stokes);
         histogram_data->set_progress(1.0); // send entire histogram
+
         for (size_t i = 0; i < num_histograms; ++i) {
             // get histogram requirements for this index
             CARTA::SetHistogramRequirements_HistogramConfig config = region->GetHistogramConfig(i);
@@ -1036,6 +1072,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                 if (!GetRegionHistogram(region_id, config_channel, curr_stokes, num_bins, *new_histogram)) {
                     // Calculate histogram
                     BasicStats<float> stats;
+                    auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
                     if (region_id == IMAGE_REGION_ID) {
                         if (config_channel == _channel_index) { // use imageCache
                             if (!GetRegionBasicStats(region_id, config_channel, curr_stokes, stats)) {
@@ -1067,6 +1104,15 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData* h
                                 region->CalcHistogram(config_channel, curr_stokes, num_bins, stats, region_data, *new_histogram);
                             }
                         }
+                    }
+                    // Measure duration for region or image histogram
+                    if (_verbose) {
+                        auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
+                        auto dt_region_histogram =
+                            std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram)
+                                .count();
+                        fmt::print("Fill {} histogram in {} ms at {} MPix/s\n", region_id == IMAGE_REGION_ID ? "image" : "regions",
+                            dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
                     }
                 }
             }
@@ -1215,6 +1261,7 @@ bool Frame::FillSpectralProfileData(
         // set profile parameters
         int curr_stokes(CurrentStokes());
         std::vector<SpectralProfile> profiles = region->GetSpectralProfiles();
+        auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
         for (auto& profile : profiles) {
             SpectralConfig spectral_config = profile.config;
             int config_stokes(spectral_config.stokes_index);
@@ -1330,6 +1377,13 @@ bool Frame::FillSpectralProfileData(
                 }
             }
         }
+        // Measure duration for fill spectral profile
+        if (_verbose) {
+            auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+            auto dt_spectral_profile =
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+            fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
+        }
     }
     return profile_ok;
 }
@@ -1414,11 +1468,11 @@ bool Frame::CalcRegionBasicStats(int region_id, int channel, int stokes, BasicSt
             if (channel == _channel_index) { // use channel cache
                 bool write_lock(false);
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                region->CalcBasicStats(channel, stokes, _image_cache, stats);
+                region->CalcBasicStats(channel, stokes, _image_cache, stats, _verbose);
             } else {
                 std::vector<float> data;
                 GetChannelMatrix(data, channel, stokes);
-                region->CalcBasicStats(channel, stokes, data, stats);
+                region->CalcBasicStats(channel, stokes, data, stats, _verbose);
             }
             stats_ok = true;
         } else {

@@ -19,6 +19,7 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
+#include <fmt/format.h>
 #include <xmmintrin.h>
 #include <zstd.h>
 
@@ -416,9 +417,17 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
             }
         };
 
+        auto t_start_get_tile_data = std::chrono::high_resolution_clock::now();
 #pragma omp parallel for
         for (int j = 0; j < stride; j++) {
             lambda(j);
+        }
+        // Measure duration for get tile data
+        if (_verbose_logging) {
+            auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
+            auto dt_get_tile_data =
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
+            fmt::print("Get tile data group in {} ms\n", dt_get_tile_data * 1e-3);
         }
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
@@ -439,11 +448,14 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
         const std::unique_ptr<Frame>& frame = _frames.at(file_id);
         try {
             std::string err_message;
-            auto channel = message.channel();
-            auto stokes = message.stokes();
-            bool channel_changed(channel != frame->CurrentChannel());
-            bool stokes_changed(stokes != frame->CurrentStokes());
-            if (frame->SetImageChannels(channel, stokes, err_message)) {
+            auto channel_target = message.channel();
+            auto stokes_target = message.stokes();
+            auto channel_current = frame->CurrentChannel();
+            auto stokes_current = frame->CurrentStokes();
+            bool channel_changed(channel_target != channel_current);
+            bool stokes_changed(stokes_target != stokes_current);
+
+            if (frame->SetImageChannels(channel_target, stokes_target, err_message)) {
                 // RESPONSE: send data for all regions
                 bool send_histogram(true);
                 UpdateRegionData(file_id, send_histogram, channel_changed, stokes_changed);
@@ -793,6 +805,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     close_file_msg.set_file_id(-1);
     OnCloseFile(close_file_msg);
 
+    auto t_start_resume = std::chrono::high_resolution_clock::now();
     // Open images
     for (int i = 0; i < message.images_size(); ++i) {
         const CARTA::ImageProperties& image = message.images(i);
@@ -836,6 +849,12 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
                 }
             }
         }
+    }
+    // Measure duration for resume
+    if (_verbose_logging) {
+        auto t_end_resume = std::chrono::high_resolution_clock::now();
+        auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
+        fmt::print("Resume in {} ms\n", dt_resume * 1e-3);
     }
 
     // RESPONSE
@@ -926,6 +945,7 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                 // stats for entire cube
                 carta::BasicStats<float> cube_stats;
                 size_t num_channels(_frames.at(file_id)->NumChannels());
+                auto t_start_cube_histogram = std::chrono::high_resolution_clock::now();
                 for (size_t chan = 0; chan < num_channels; ++chan) {
                     // stats for this channel
                     carta::BasicStats<float> channel_stats;
@@ -952,6 +972,15 @@ bool Session::SendCubeHistogramData(const CARTA::SetHistogramRequirements& messa
                         t_start = t_end;
                     }
                 }
+                // Measure duration for cube histogram
+                if (_verbose_logging) {
+                    auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
+                    auto dt_cube_histogram =
+                        std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
+                    fmt::print("Fill cube histogram in {} ms at {} MPix/s\n", dt_cube_histogram * 1e-3,
+                        (float)cube_stats.num_pixels / dt_cube_histogram);
+                }
+
                 // save min,max in cube region
                 if (!_histogram_context.is_group_execution_cancelled()) {
                     _frames.at(file_id)->SetRegionBasicStats(region_id, channel, stokes, cube_stats);
@@ -1331,6 +1360,7 @@ void Session::ExecuteAnimationFrameInner() {
 
             _animation_object->_current_frame = curr_frame;
 
+            auto t_start_change_frame = std::chrono::high_resolution_clock::now();
             if (frame->SetImageChannels(channel, stokes, err_message)) {
                 // RESPONSE: updated image raster/histogram
                 bool send_histogram(true);
@@ -1344,6 +1374,15 @@ void Session::ExecuteAnimationFrameInner() {
             } else {
                 if (!err_message.empty()) {
                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
+                }
+            }
+            // Measure duration for frame changing as animating
+            if (_verbose_logging) {
+                auto t_end_change_frame = std::chrono::high_resolution_clock::now();
+                auto dt_change_frame =
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
+                if (channel_changed || stokes_changed) {
+                    fmt::print("Animator: Change frame in {} ms\n", dt_change_frame * 1e-3);
                 }
             }
         } catch (std::out_of_range& range_error) {
