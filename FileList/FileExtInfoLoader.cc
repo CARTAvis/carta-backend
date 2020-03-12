@@ -205,10 +205,15 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                 if ((name != "DATE") && (name != "ORIGIN")) {
                                     casacore::String fkw_string = fkw->asString();
                                     fkw_string.trim(); // remove whitespace
-                                    // save without comment
+                                    // save radesys without comment
                                     if (name == "RADESYS") {
                                         radesys = fkw_string;
                                     }
+                                    // fix ctype freq value
+                                    if (name.contains("CTYPE") && fkw_string.contains("FREQ")) {
+                                        fkw_string = "FREQ";
+                                    }
+
                                     // add comment
                                     std::string comment(fkw->comm());
                                     if (!comment.empty()) {
