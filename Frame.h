@@ -72,10 +72,14 @@ public:
 
     // Frame info
     casacore::CoordinateSystem CoordinateSystem();
+    casacore::IPosition ImageShape();
     size_t NumChannels(); // if no channel axis, nchan=1
     size_t NumStokes();   // if no stokes axis, nstokes=1
     int CurrentChannel();
     int CurrentStokes();
+
+    // Slicer to set channel and stokes ranges with full xy plane
+    casacore::Slicer GetImageSlicer(const ChannelRange& chan_range, int stokes);
 
     // Image view, channels
     inline void SetAnimationViewSettings(const CARTA::AddRequiredTiles& required_animation_tiles) {
@@ -159,8 +163,6 @@ private:
 
     // Fill vector for given channel and stokes
     void GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes);
-    // Get slicer for xy matrix with given channel and stokes
-    casacore::Slicer GetChannelMatrixSlicer(size_t channel, size_t stokes);
 
     // Histograms: channel is single channel number or ALL_CHANNELS for cube
     int AutoBinSize();

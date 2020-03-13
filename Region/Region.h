@@ -111,9 +111,8 @@ public:
     bool IsConnected();
     void DisconnectCalled();
 
-    // 2D region in reference image
-    casacore::WCRegion* GetReferenceImageRegion();
-    bool RegionValid();
+    // 2D region in reference image applied to input image parameters
+    casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem coord_sys, const casacore::IPosition image_shape);
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -123,6 +122,7 @@ private:
     bool PointsFinite(const std::vector<CARTA::Point>& points);
 
     // Apply region to reference image, ultimately to get LCRegion
+    bool ReferenceRegionValid();
     void SetReferenceRegion();
     bool CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
     bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
@@ -139,6 +139,9 @@ private:
     std::vector<casacore::Quantity> _wcs_control_points; // needed for region export
     std::shared_ptr<casacore::WCRegion> _wcregion;       // 2D region applied to reference image
     float _ellipse_rotation;                             // (deg), may be adjusted from pixel rotation value
+
+    // WCRegion applied to other images, used for different data streams; key is file_id
+    std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
     // region flags
     bool _valid;

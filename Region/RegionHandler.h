@@ -62,7 +62,7 @@ private:
 
     // Fill data stream messages
     bool CheckRegionFileIds(int region_id, int file_id);
-    bool ApplyRegionToFile(int region_id, int file_id, ChannelRange& channel, int stokes, casacore::ImageRegion& region);
+    bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
     bool FillRegionFileHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
     bool GetRegionFileSpectralData(int region_id, int file_id, SpectralConfig& spectral_config,

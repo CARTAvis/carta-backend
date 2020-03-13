@@ -4,6 +4,9 @@
 
 #include <thread>
 
+#include <casacore/lattices/LRegions/LCBox.h>
+#include <casacore/lattices/LRegions/LCIntersection.h>
+
 #include "../ImageStats/StatsCalculator.h"
 #include "../InterfaceConstants.h"
 #include "../Util.h"
@@ -298,7 +301,7 @@ bool RegionHandler::FrameSet(int file_id) {
 }
 
 // ********************************************************************
-// Region data streams
+// Region data stream helpers
 
 bool RegionHandler::CheckRegionFileIds(int region_id, int file_id) {
     // Check error conditions and preconditions
@@ -314,20 +317,37 @@ bool RegionHandler::CheckRegionFileIds(int region_id, int file_id) {
     return true;
 }
 
-bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, ChannelRange& channel, int stokes, casacore::ImageRegion& region) {
+bool RegionHandler::ApplyRegionToFile(
+    int region_id, int file_id, const ChannelRange& chan_range, int stokes, casacore::ImageRegion& region) {
     // Returns image region for given region (region_id) applied to given image (file_id)
     if (!RegionSet(region_id) || !FrameSet(file_id)) {
         return false;
     }
 
-    casacore::WCRegion* reference_region = _regions.at(region_id)->GetReferenceImageRegion();
-    if (reference_region == nullptr) {
-        return false;
+    try {
+        casacore::CoordinateSystem coord_sys(_frames.at(file_id)->CoordinateSystem());
+        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
+        casacore::LCRegion* applied_region = _regions.at(region_id)->GetImageRegion(file_id, coord_sys, image_shape);
+        if (applied_region == nullptr) {
+            return false;
+        }
+
+        // Create LCRegion with chan range and stokes using a slicer
+        casacore::Slicer chan_stokes_slicer = _frames.at(file_id)->GetImageSlicer(chan_range, stokes);
+        casacore::LCBox chan_stokes_box(chan_stokes_slicer, image_shape);
+
+        // Intersection combines applied_region limits in xy axes and chan_stokes_box limits in channel and stokes axes
+        casacore::LCIntersection final_region(*applied_region, chan_stokes_box);
+
+        // Return ImageRegion
+        region = casacore::ImageRegion(final_region);
+        return true;
+    } catch (const casacore::AipsError& err) {
+        std::cerr << "Error applying region " << region_id << " to file " << file_id << ": " << err.getMesg() << std::endl;
+    } catch (std::out_of_range& range_error) {
+        std::cerr << "Cannot apply region " << region_id << " to closed file " << file_id << std::endl;
     }
 
-    // TODO convert to LCRegion for requested image (file_id)
-    // TODO extend region by chan range and stokes
-    // TODO convert to ImageRegion
     return false;
 }
 

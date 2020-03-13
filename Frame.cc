@@ -106,6 +106,14 @@ casacore::CoordinateSystem Frame::CoordinateSystem() {
     return csys;
 }
 
+casacore::IPosition Frame::ImageShape() {
+    casacore::IPosition ipos;
+    if (IsValid()) {
+        ipos = _image_shape;
+    }
+    return ipos;
+}
+
 size_t Frame::NumChannels() {
     return _num_channels;
 }
@@ -120,6 +128,42 @@ int Frame::CurrentChannel() {
 
 int Frame::CurrentStokes() {
     return _stokes_index;
+}
+
+casacore::Slicer Frame::GetImageSlicer(const ChannelRange& chan_range, int stokes) {
+    // Slicer to apply channel range and stokes to image shape
+
+    // Normalize any constants
+    ChannelRange range(chan_range.from, chan_range.to);
+    if (range.from < 0) {
+        range.from = (range.from == ALL_CHANNELS ? 0 : range.from);
+        range.from = (range.from == CURRENT_CHANNEL ? CurrentChannel() : range.from);
+    }
+    if (range.to < 0) {
+        range.to = (range.to == ALL_CHANNELS ? NumChannels() - 1 : range.to);
+        range.to = (range.to == CURRENT_CHANNEL ? CurrentChannel() : range.to);
+    }
+    stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
+
+    // Start with entire image
+    casacore::IPosition start(_image_shape.size());
+    start = 0;
+    casacore::IPosition end(_image_shape);
+    end -= 1; // last position, not length
+
+    // Set start and end for channel, stokes axis
+    if (_spectral_axis >= 0) {
+        start(_spectral_axis) = range.from;
+        end(_spectral_axis) = range.to;
+    }
+    if (_stokes_axis >= 0) {
+        start(_stokes_axis) = stokes;
+        end(_stokes_axis) = stokes;
+    }
+
+    // slicer for image data
+    casacore::Slicer section(start, end, casacore::Slicer::endIsLast);
+    return section;
 }
 
 bool Frame::CheckChannel(int channel) {
@@ -187,7 +231,7 @@ bool Frame::FillImageCache() {
         return false;
     }
 
-    casacore::Slicer section = GetChannelMatrixSlicer(_channel_index, _stokes_index);
+    casacore::Slicer section = GetImageSlicer(ChannelRange(_channel_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
         Log(_session_id, "Loading image cache failed.");
         return false;
@@ -197,27 +241,8 @@ bool Frame::FillImageCache() {
 
 void Frame::GetChannelMatrix(std::vector<float>& chan_matrix, size_t channel, size_t stokes) {
     // fill matrix for given channel and stokes
-    casacore::Slicer section = GetChannelMatrixSlicer(channel, stokes);
+    casacore::Slicer section = GetImageSlicer(ChannelRange(channel), stokes);
     GetSlicerData(section, chan_matrix);
-}
-
-casacore::Slicer Frame::GetChannelMatrixSlicer(size_t channel, size_t stokes) {
-    // slicer for spectral and stokes axes to select channel, stokes
-    casacore::IPosition count(_image_shape);
-    casacore::IPosition start(_image_shape.size());
-    start = 0;
-
-    if (_spectral_axis >= 0) {
-        start(_spectral_axis) = channel;
-        count(_spectral_axis) = 1;
-    }
-    if (_stokes_axis >= 0) {
-        start(_stokes_axis) = stokes;
-        count(_stokes_axis) = 1;
-    }
-    // slicer for image data
-    casacore::Slicer section(start, count);
-    return section;
 }
 
 // ****************************************************
@@ -755,7 +780,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
     }
 
     // Calculate stats map using slicer
-    casacore::Slicer slicer = GetChannelMatrixSlicer(channel, stokes);
+    casacore::Slicer slicer = GetImageSlicer(ChannelRange(channel), stokes);
     bool per_channel(false);
     std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
     if (GetSlicerStats(slicer, _image_required_stats, per_channel, stats_vector_map)) {
@@ -1099,6 +1124,7 @@ bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, std::vector
     bool subimage_ok = _loader->GetSubImage(region, sub_image);
     ulock.unlock();
     if (subimage_ok) {
+        std::lock_guard<std::mutex> guard(_image_mutex);
         return CalcStatsValues(stats_values, required_stats, sub_image, per_channel);
     }
     return subimage_ok;
@@ -1112,6 +1138,7 @@ bool Frame::GetSlicerStats(const casacore::Slicer& slicer, std::vector<int>& req
     bool subimage_ok = _loader->GetSubImage(slicer, sub_image);
     ulock.unlock();
     if (subimage_ok) {
+        std::lock_guard<std::mutex> guard(_image_mutex);
         return CalcStatsValues(stats_values, required_stats, sub_image, per_channel);
     }
     return subimage_ok;

@@ -108,39 +108,64 @@ void Region::DisconnectCalled() { // to interrupt the running jobs in the Region
 }
 
 // *************************************************************************
-// Apply region to reference image
+// Apply region to reference image (LCRegion)
 
-bool Region::RegionValid() {
-    return _wcregion_set && bool(_wcregion);
-}
+casacore::LCRegion* Region::GetImageRegion(int file_id, const casacore::CoordinateSystem coord_sys, const casacore::IPosition image_shape) {
+    // Convert 2D reference region to image region with input coord_sys and shape
+    // Sets _applied_regions item and returns LCRegion
+    casacore::LCRegion* null_region(nullptr);
 
-casacore::WCRegion* Region::GetReferenceImageRegion() {
-    // Apply (2D) region to reference image
-
-    // Return stored region if possible
-    if (RegionValid()) {
-        std::shared_ptr<const casacore::WCRegion> current_region = std::atomic_load(&_wcregion);
+    if (_applied_regions.count(file_id)) {
         std::lock_guard<std::mutex> guard(_region_mutex);
-        return current_region->cloneRegion(); // copy: this ptr will be owned by ImageRegion
+        return _applied_regions.at(file_id)->cloneRegion();
+    }
+
+    if (ReferenceRegionValid()) {
+        // Create from stored wcregion
+        std::shared_ptr<const casacore::WCRegion> current_region = std::atomic_load(&_wcregion);
+        try {
+            std::lock_guard<std::mutex> guard(_region_mutex);
+            auto lc_region = std::shared_ptr<casacore::LCRegion>(current_region->toLCRegion(coord_sys, image_shape));
+            _applied_regions[file_id] = std::move(lc_region);
+            return _applied_regions.at(file_id)->cloneRegion(); // copy: this ptr will be owned by ImageRegion
+        } catch (const casacore::AipsError& err) {
+            std::cerr << "ERROR: applying region to file " << file_id << " failed: " << err.getMesg() << std::endl;
+            return null_region;
+        }
     }
 
     // Set region
     if (!_wcregion_set) {
         SetReferenceRegion();
-        _wcregion_set = true; // indicates that attempt was made
+        _wcregion_set = true; // indicates that attempt was made, to avoid repeated attempts
     }
 
-    if (RegionValid()) {
+    if (ReferenceRegionValid()) {
+        // Create from stored wcregion
         std::shared_ptr<const casacore::WCRegion> current_region = std::atomic_load(&_wcregion);
-        std::lock_guard<std::mutex> guard(_region_mutex);
-        return current_region->cloneRegion(); // copy: this ptr will be owned by ImageRegion
+        try {
+            std::lock_guard<std::mutex> guard(_region_mutex);
+            auto lc_region = std::shared_ptr<casacore::LCRegion>(current_region->toLCRegion(coord_sys, image_shape));
+            _applied_regions[file_id] = std::move(lc_region);
+            return _applied_regions.at(file_id)->cloneRegion(); // copy: this ptr will be owned by ImageRegion
+        } catch (const casacore::AipsError& err) {
+            std::cerr << "ERROR: applying region to file " << file_id << " failed: " << err.getMesg() << std::endl;
+            return null_region;
+        }
     }
 
-    return nullptr;
+    return null_region;
+}
+
+// *************************************************************************
+// Apply region to reference image (WCRegion)
+
+bool Region::ReferenceRegionValid() {
+    return _wcregion_set && bool(_wcregion);
 }
 
 void Region::SetReferenceRegion() {
-    // Create WCRegion (world coordinate region in the reference image) according to type using wcs control points
+    // Create WCRegion (world coordinate region) in the reference image according to type using wcs control points
     // Sets _wcregion (maybe to nullptr)
     casacore::WCRegion* region;
     std::vector<CARTA::Point> pixel_points(_region_state.control_points);
