@@ -1,6 +1,5 @@
 #include "VOTableController.h"
 
-#include <casacore/casa/OS/File.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -27,11 +26,7 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
     std::string directory(file_list_request.directory()); // Note that it is the relative path!
 
     // Parse the relative path to the absolute path
-    GetAbsBasePath(directory);
-
-    // Check is this directory a subdirectory of root path
-    if (!IsSubdirectory(directory)) {
-        std::cerr << "ERROR: Base path must be a subdirectory of root path!\n";
+    if (!GetAbsBasePath(directory)) {
         return;
     }
 
@@ -69,12 +64,16 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
         closedir(current_path);
     } else {
         message = "Can not open the directory: " + directory;
-        return;
     }
 
     // Fill the file list response
     file_list_response.set_success(success);
     file_list_response.set_message(message);
+
+    if (!success) {
+        return;
+    }
+
     GetRelativePath(directory);
     file_list_response.set_directory(directory);
 
@@ -93,11 +92,7 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
     std::string directory(file_info_request.directory());
 
     // Parse the relative path to the absolute path
-    GetAbsBasePath(directory);
-
-    // Check is this directory a subdirectory of root path
-    if (!IsSubdirectory(directory)) {
-        std::cerr << "ERROR: Base path must be a subdirectory of root path!\n";
+    if (!GetAbsBasePath(directory)) {
         return;
     }
 
@@ -132,11 +127,7 @@ void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CAR
     std::string directory(open_file_request.directory());
 
     // Parse the relative path to the absolute path
-    GetAbsBasePath(directory);
-
-    // Check is this directory a subdirectory of root path
-    if (!IsSubdirectory(directory)) {
-        std::cerr << "ERROR: Base path must be a subdirectory of root path!\n";
+    if (!GetAbsBasePath(directory)) {
         return;
     }
 
@@ -228,18 +219,22 @@ int64_t Controller::GetFileByteSize(std::string file_path_name) {
     return file_status.st_size;
 }
 
-void Controller::GetAbsBasePath(std::string& directory) {
+bool Controller::GetAbsBasePath(std::string& directory) {
+    bool success(false);
     std::string root_folder = _root_folder;
     root_folder.replace(0, 1, ""); // Remove "/" at the start of root path name
-    if (!root_folder.empty() && (directory.find(root_folder) == string::npos)) {
+    if (!root_folder.empty() && (directory.find(root_folder) == std::string::npos) && (directory.find("../") == std::string::npos)) {
         // For the path name "base/path/images", change to "/root/path/base/path/images"
         directory = _root_folder + "/" + directory;
+        success = true;
     } else if (root_folder.empty() || (!root_folder.empty() && (directory.find(root_folder) == 0))) {
         // For the path "root/path/base/path/images", change to "/root/path/base/path/images"
         directory = "/" + directory;
+        success = true;
     } else {
         std::cerr << "Unknown directory: " << directory << "!\n";
     }
+    return success;
 }
 
 std::string Controller::Concatenate(std::string directory, std::string filename) {
@@ -274,30 +269,6 @@ void Controller::GetRelativePath(std::string& folder) {
     if (folder.empty()) {
         folder = ".";
     }
-}
-
-bool Controller::IsSubdirectory(std::string& base) {
-    bool is_subdirectory(false);
-    if (base != _root_folder && _root_folder != "/") {
-        casacore::String root_string(_root_folder);
-        casacore::Path base_path(base);
-        casacore::String parent_string(base_path.dirName());
-        if (parent_string == root_string) {
-            is_subdirectory = true;
-        }
-        while (!is_subdirectory && (parent_string != root_string)) { // navigate up directory tree
-            base_path = casacore::Path(parent_string);
-            parent_string = base_path.dirName();
-            if (parent_string == root_string) {
-                is_subdirectory = true;
-            } else if (parent_string == "/") {
-                break;
-            }
-        }
-    } else {
-        is_subdirectory = true;
-    }
-    return is_subdirectory;
 }
 
 // Print functions for the protobuf message

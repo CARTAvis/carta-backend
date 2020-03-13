@@ -29,16 +29,6 @@ if (testVOTableController)
             ${CATALOG_LINK_LIBS}
             ${LIBXML2_LIBRARIES}
             ${PROTOBUF_LIBRARY}
-            casa_casa
-            casa_coordinates
-            casa_tables
-            casa_images
-            casa_lattices
-            casa_fits
-            casa_measures
-            casa_mirlib
-            casa_scimath
-            casa_imageanalysis
             carta-protobuf)
     set(CATALOG_SOURCE_FILES ${CATALOG_SOURCE_FILES}
             ${CMAKE_SOURCE_DIR}/Catalog/VOTableParser.cc
