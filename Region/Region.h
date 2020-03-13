@@ -134,11 +134,11 @@ private:
     // coord sys of reference image
     casacore::CoordinateSystem _coord_sys;
 
-    // Region applied to reference image
-    std::mutex _region_mutex; // creation of casacore regions is not threadsafe
+    // casacore WCRegion
+    std::mutex _region_mutex;                            // creation of casacore regions is not threadsafe
     std::vector<casacore::Quantity> _wcs_control_points; // needed for region export
-	std::shared_ptr<casacore::WCRegion> _wcregion;
-    float _ellipse_rotation; // (deg), may be adjusted from pixel rotation value
+    std::shared_ptr<casacore::WCRegion> _wcregion;       // 2D region applied to reference image
+    float _ellipse_rotation;                             // (deg), may be adjusted from pixel rotation value
 
     // region flags
     bool _valid;

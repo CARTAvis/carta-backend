@@ -135,16 +135,16 @@ casacore::WCRegion* Region::GetReferenceImageRegion() {
         std::lock_guard<std::mutex> guard(_region_mutex);
         return current_region->cloneRegion(); // copy: this ptr will be owned by ImageRegion
     }
-        
+
     return nullptr;
 }
 
 void Region::SetReferenceRegion() {
     // Create WCRegion (world coordinate region in the reference image) according to type using wcs control points
     // Sets _wcregion (maybe to nullptr)
-	casacore::WCRegion* region;
+    casacore::WCRegion* region;
     std::vector<CARTA::Point> pixel_points(_region_state.control_points);
-    std::vector<casacore::Quantity> world_points;       // point holder; one CARTA point is two world points (x, y)
+    std::vector<casacore::Quantity> world_points; // point holder; one CARTA point is two world points (x, y)
     casacore::IPosition pixel_axes(2, 0, 1);
     casacore::Vector<casacore::Int> abs_rel;
 
@@ -161,7 +161,7 @@ void Region::SetReferenceRegion() {
             }
             case CARTA::RECTANGLE: // [(x,y)] for 4 corners
             case CARTA::POLYGON: { // [(x, y)] for vertices
-                if (type == CARTA::RECTANGLE) { 
+                if (type == CARTA::RECTANGLE) {
                     if (!RectanglePointsToWorld(pixel_points, _wcs_control_points)) {
                         _wcs_control_points.clear();
                     }
@@ -194,7 +194,7 @@ void Region::SetReferenceRegion() {
 
                     std::lock_guard<std::mutex> guard(_region_mutex);
                     region = new casacore::WCPolygon(qx, qy, pixel_axes, _coord_sys);
-	    		}
+                }
                 break;
             }
             case CARTA::ELLIPSE: { // [(cx,cy), (bmaj, bmin)]
@@ -213,7 +213,7 @@ void Region::SetReferenceRegion() {
         }
     } catch (casacore::AipsError& err) { // region failed
         std::cerr << "ERROR: region type " << type << " failed: " << err.getMesg() << std::endl;
-    } 
+    }
 
     std::shared_ptr<casacore::WCRegion> shared_region = std::shared_ptr<casacore::WCRegion>(region);
     std::atomic_store(&_wcregion, shared_region);

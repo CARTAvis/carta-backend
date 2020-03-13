@@ -320,12 +320,13 @@ bool RegionHandler::ApplyRegionToFile(int region_id, int file_id, ChannelRange& 
         return false;
     }
 
-    casacore::WCRegion* wcregion = _regions.at(region_id)->GetReferenceImageRegion();
-    if (wcregion == nullptr) {
+    casacore::WCRegion* reference_region = _regions.at(region_id)->GetReferenceImageRegion();
+    if (reference_region == nullptr) {
         return false;
     }
 
-    // TODO extend region here by chan range and stokes
+    // TODO convert to LCRegion for requested image (file_id)
+    // TODO extend region by chan range and stokes
     // TODO convert to ImageRegion
     return false;
 }
