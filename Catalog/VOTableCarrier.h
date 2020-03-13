@@ -33,7 +33,7 @@ class VOTableCarrier {
     struct Field {
         std::string name;
         std::string id;
-        std::string datatype;
+        CARTA::EntryType datatype;
         std::string arraysize;
         std::string width;
         std::string precision;
@@ -81,7 +81,7 @@ public:
     void GetFilteredData(
         CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
     size_t GetTableRowNumber();
-    static void GetDataType(std::string data_type, CARTA::EntryType& catalog_data_type);
+    static CARTA::EntryType GetDataType(const std::string& data_type);
     bool IsValid();
 
     void IncreaseStreamCount() {
