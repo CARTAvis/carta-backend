@@ -60,10 +60,11 @@ private:
     bool IsVOTableFile(std::string file_name);
     std::string GetFileSize(std::string file_path_name);
     int64_t GetFileByteSize(std::string file_path_name);
-    void ParseBasePath(std::string& file_path_name);
+    void GetAbsBasePath(std::string& directory);
     std::string Concatenate(std::string directory, std::string filename);
     void CloseFile(int file_id);
     void GetRelativePath(std::string& folder);
+    bool IsSubdirectory(std::string& base);
 
     std::unordered_map<int, VOTableCarrier*> _carriers; // The unordered map for <File Id, VOTableCarrier Ptr>
     std::mutex _carriers_mutex;

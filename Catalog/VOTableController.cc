@@ -1,5 +1,6 @@
 #include "VOTableController.h"
 
+#include <casacore/casa/OS/File.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -26,7 +27,13 @@ void Controller::OnFileListRequest(CARTA::CatalogListRequest file_list_request, 
     std::string directory(file_list_request.directory()); // Note that it is the relative path!
 
     // Parse the relative path to the absolute path
-    ParseBasePath(directory);
+    GetAbsBasePath(directory);
+
+    // Check is this directory a subdirectory of root path
+    if (!IsSubdirectory(directory)) {
+        std::cerr << "ERROR: Base path must be a subdirectory of root path!\n";
+        return;
+    }
 
     // Get a list of files under the directory
     DIR* current_path;
@@ -84,9 +91,18 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
     bool success(false);
     std::string message;
     std::string directory(file_info_request.directory());
+
+    // Parse the relative path to the absolute path
+    GetAbsBasePath(directory);
+
+    // Check is this directory a subdirectory of root path
+    if (!IsSubdirectory(directory)) {
+        std::cerr << "ERROR: Base path must be a subdirectory of root path!\n";
+        return;
+    }
+
     std::string filename(file_info_request.name());
     std::string file_path_name = Concatenate(directory, filename);
-    ParseBasePath(file_path_name);
 
     // Get the VOTable data (only read to the headers)
     VOTableCarrier carrier = VOTableCarrier();
@@ -114,9 +130,18 @@ void Controller::OnOpenFileRequest(CARTA::OpenCatalogFile open_file_request, CAR
     bool success(false);
     std::string message;
     std::string directory(open_file_request.directory());
+
+    // Parse the relative path to the absolute path
+    GetAbsBasePath(directory);
+
+    // Check is this directory a subdirectory of root path
+    if (!IsSubdirectory(directory)) {
+        std::cerr << "ERROR: Base path must be a subdirectory of root path!\n";
+        return;
+    }
+
     std::string filename(open_file_request.name());
     std::string file_path_name = Concatenate(directory, filename);
-    ParseBasePath(file_path_name);
 
     int file_id(open_file_request.file_id());
     int preview_data_size(open_file_request.preview_data_size());
@@ -169,7 +194,7 @@ void Controller::OnFilterRequest(
     CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback) {
     int file_id(filter_request.file_id());
     if (!_carriers.count(file_id)) {
-        std::cerr << "VOTable file does not exist (file ID: " << file_id << "!" << std::endl;
+        std::cerr << "VOTable file does not exist (file ID: " << file_id << ") !" << std::endl;
         return;
     }
 
@@ -203,18 +228,17 @@ int64_t Controller::GetFileByteSize(std::string file_path_name) {
     return file_status.st_size;
 }
 
-void Controller::ParseBasePath(std::string& file_path_name) {
+void Controller::GetAbsBasePath(std::string& directory) {
     std::string root_folder = _root_folder;
     root_folder.replace(0, 1, ""); // Remove "/" at the start of root path name
-    // Replace the "$BASE" with "."
-    std::string alias_base_path("$BASE");
-    if (file_path_name.find(alias_base_path) == 0) { // For the path name "$BASE/images"
-        file_path_name.replace(file_path_name.find(alias_base_path), alias_base_path.length(), ".");
-    } else if (!root_folder.empty() && file_path_name.find(root_folder) != 0) {
-        // For the path name "base/path/images"
-        file_path_name = _root_folder + "/" + file_path_name; // Change to "/root/path/base/path/images"
-    } else {                                                  // For the path "root/path/base/path/images"
-        file_path_name = "/" + file_path_name;                // Change to "/root/path/base/path/images"
+    if (!root_folder.empty() && (directory.find(root_folder) == string::npos)) {
+        // For the path name "base/path/images", change to "/root/path/base/path/images"
+        directory = _root_folder + "/" + directory;
+    } else if (root_folder.empty() || (!root_folder.empty() && (directory.find(root_folder) == 0))) {
+        // For the path "root/path/base/path/images", change to "/root/path/base/path/images"
+        directory = "/" + directory;
+    } else {
+        std::cerr << "Unknown directory: " << directory << "!\n";
     }
 }
 
@@ -250,6 +274,30 @@ void Controller::GetRelativePath(std::string& folder) {
     if (folder.empty()) {
         folder = ".";
     }
+}
+
+bool Controller::IsSubdirectory(std::string& base) {
+    bool is_subdirectory(false);
+    if (base != _root_folder && _root_folder != "/") {
+        casacore::String root_string(_root_folder);
+        casacore::Path base_path(base);
+        casacore::String parent_string(base_path.dirName());
+        if (parent_string == root_string) {
+            is_subdirectory = true;
+        }
+        while (!is_subdirectory && (parent_string != root_string)) { // navigate up directory tree
+            base_path = casacore::Path(parent_string);
+            parent_string = base_path.dirName();
+            if (parent_string == root_string) {
+                is_subdirectory = true;
+            } else if (parent_string == "/") {
+                break;
+            }
+        }
+    } else {
+        is_subdirectory = true;
+    }
+    return is_subdirectory;
 }
 
 // Print functions for the protobuf message
