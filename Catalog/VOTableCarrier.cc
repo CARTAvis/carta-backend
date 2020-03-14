@@ -124,7 +124,7 @@ void VOTableCarrier::FillEmptyTd(int column_index) {
     } else if (_fields[column_index].datatype == CARTA::EntryType::LONGLONG) {
         _ll_vectors[column_index].push_back(std::numeric_limits<long long>::quiet_NaN());
     } else if (_fields[column_index].datatype == CARTA::EntryType::FLOAT) {
-        _float_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
+        _float_vectors[column_index].push_back(std::numeric_limits<float>::quiet_NaN());
     } else if (_fields[column_index].datatype == CARTA::EntryType::DOUBLE) {
         _double_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
     }
