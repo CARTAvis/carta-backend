@@ -210,9 +210,6 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
     casacore::SubImage<float> subimage(*image, slicer);
     casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
     for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
-        casacore::IPosition cursor_shape(lattice_iter.cursorShape());
-        casacore::IPosition cursor_position(lattice_iter.position());
-        casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
         casacore::Array<float> cursor_data = lattice_iter.cursor();
 
         if (image->isMasked()) {
@@ -235,6 +232,9 @@ bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& 
             masked_data.putStorage(pMaskedData, del_data_ptr);
         }
 
+        casacore::IPosition cursor_shape(lattice_iter.cursorShape());
+        casacore::IPosition cursor_position(lattice_iter.position());
+        casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
         data(cursor_slicer) = cursor_data;
     }
     return true;

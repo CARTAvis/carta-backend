@@ -224,13 +224,6 @@ bool Frame::FillImageCache() {
     // get image data for channel, stokes
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-    try {
-        _image_cache.resize(_image_shape(0) * _image_shape(1));
-    } catch (std::bad_alloc& alloc_error) {
-        Log(_session_id, "Could not allocate memory for image data.");
-        return false;
-    }
-
     casacore::Slicer section = GetImageSlicer(ChannelRange(_channel_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
         Log(_session_id, "Loading image cache failed.");
@@ -1109,6 +1102,7 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
 
 bool Frame::GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data) {
     // Get image data with a slicer applied
+    data.resize(slicer.length().product()); // must have vector the right size before share it with Array
     casacore::Array<float> tmp(slicer.length(), data.data(), casacore::StorageInitPolicy::SHARE);
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool data_ok = _loader->GetSlice(tmp, slicer);
