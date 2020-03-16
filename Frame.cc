@@ -1090,8 +1090,12 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
     data.resize(subimage_shape.product());
     casacore::Array<float> tmp(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
     try {
-        casacore::Slicer slicer; // entire subimage
+        casacore::IPosition start(subimage_shape.size(), 0);
+        casacore::IPosition count(subimage_shape);
+        casacore::Slicer slicer(start, count); // entire subimage
+        std::unique_lock<std::mutex> ulock(_image_mutex);
         sub_image.doGetSlice(tmp, slicer);
+        ulock.unlock();
         return true;
     } catch (casacore::AipsError& err) {
         data.clear();

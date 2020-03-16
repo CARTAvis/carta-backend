@@ -448,6 +448,7 @@ bool RegionHandler::FillRegionFileHistogramData(
         histogram->set_channel(channel);
         FillHistogramFromResults(histogram, stats, results);
     }
+    return true;
 }
 
 // ***** Fill spectral profile *****
@@ -478,7 +479,7 @@ bool RegionHandler::FillSpectralProfileData(
                         continue;
                     }
                     if (stokes == CURRENT_STOKES) {
-                        stokes = _frames.at(file_id)->CurrentStokes();
+                        stokes = _frames.at(region_config.file_id)->CurrentStokes();
                     }
 
                     // Return spectral profile for this requirement
@@ -548,8 +549,15 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
     }
     RegionState initial_state = _regions.at(region_id)->GetRegionState();
 
+    // Initialize results to NaN
     size_t profile_size = _frames.at(file_id)->NumChannels(); // total number of channels
     std::map<CARTA::StatsType, std::vector<double>> results;
+    std::vector<double> init_spectral(profile_size, std::numeric_limits<double>::quiet_NaN());
+    for (const auto& stat : spectral_config.stats_types) {
+        auto carta_stat = static_cast<CARTA::StatsType>(stat);
+        results[carta_stat] = init_spectral;
+    }
+
     size_t start_channel(0), count(0), end_channel(0);
     float progress(0);
     int delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step

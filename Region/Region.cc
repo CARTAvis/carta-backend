@@ -42,6 +42,9 @@ bool Region::UpdateState(int file_id, const std::string& name, CARTA::RegionType
         if (_region_changed) {
             _wcs_control_points.clear();
             _wcregion_set = false;
+            if (_applied_regions.count(file_id)) {
+                _applied_regions.at(file_id).reset();
+            }
         }
 
         // set new region state and coord sys
@@ -115,7 +118,7 @@ casacore::LCRegion* Region::GetImageRegion(int file_id, const casacore::Coordina
     // Sets _applied_regions item and returns LCRegion
     casacore::LCRegion* null_region(nullptr);
 
-    if (_applied_regions.count(file_id)) {
+    if (_applied_regions.count(file_id) && _applied_regions.at(file_id)) { // map may contain nullptr when region changes
         std::lock_guard<std::mutex> guard(_region_mutex);
         return _applied_regions.at(file_id)->cloneRegion();
     }
@@ -167,12 +170,11 @@ bool Region::ReferenceRegionValid() {
 void Region::SetReferenceRegion() {
     // Create WCRegion (world coordinate region) in the reference image according to type using wcs control points
     // Sets _wcregion (maybe to nullptr)
-    casacore::WCRegion* region;
+    casacore::WCRegion* region(nullptr);
     std::vector<CARTA::Point> pixel_points(_region_state.control_points);
     std::vector<casacore::Quantity> world_points; // point holder; one CARTA point is two world points (x, y)
     casacore::IPosition pixel_axes(2, 0, 1);
     casacore::Vector<casacore::Int> abs_rel;
-
     auto type(_region_state.type);
     try {
         switch (type) {
@@ -180,7 +182,7 @@ void Region::SetReferenceRegion() {
                 if (CartaPointToWorld(pixel_points[0], _wcs_control_points)) {
                     // WCBox blc and trc are same point
                     std::lock_guard<std::mutex> guard(_region_mutex);
-                    region = new casacore::WCBox(world_points, world_points, pixel_axes, _coord_sys, abs_rel);
+                    region = new casacore::WCBox(_wcs_control_points, _wcs_control_points, pixel_axes, _coord_sys, abs_rel);
                 }
                 break;
             }
@@ -332,14 +334,14 @@ bool Region::RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std
     }
 
     // Save x and y values, units as quantities
+    casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
     casacore::Vector<double> x_wcs = world_coords.row(0);
     casacore::Vector<double> y_wcs = world_coords.row(1);
-    casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
     // reference points: corners (x0, y0, x1, y1, x2, y2, x3, y3) in world coordinates
     wcs_points.resize(num_points * 2);
-    for (int i = 0; i < num_points; i += 2) {
-        wcs_points[i] = casacore::Quantity(x_wcs(i), world_units(0));
-        wcs_points[i + 1] = casacore::Quantity(y_wcs(i), world_units(1));
+    for (int i = 0; i < num_points; ++i) {
+        wcs_points[i * 2] = casacore::Quantity(x_wcs(i), world_units(0));
+        wcs_points[(i * 2) + 1] = casacore::Quantity(y_wcs(i), world_units(1));
     }
     return true;
 }

@@ -549,7 +549,9 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 }
 
 void Session::OnRemoveRegion(const CARTA::RemoveRegion& message) {
-    _region_handler->RemoveRegion(message.region_id());
+    if (_region_handler) {
+        _region_handler->RemoveRegion(message.region_id());
+    }
 }
 
 void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t request_id) {
@@ -1058,6 +1060,10 @@ bool Session::SendSpatialProfileData(int file_id, int region_id) {
 bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_changed) {
     // return true if data sent
     bool data_sent(false);
+    if (region_id == ALL_REGIONS && !_region_handler) {
+        return data_sent;
+    }
+
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region spectral profile
         CARTA::SpectralProfileData profile_data;
@@ -1093,6 +1099,10 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
 bool Session::SendRegionHistogramData(int file_id, int region_id) {
     // return true if data sent
     bool data_sent(false);
+    if (region_id == ALL_REGIONS && !_region_handler) {
+        return data_sent;
+    }
+
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region histogram
         CARTA::RegionHistogramData histogram_data;
@@ -1129,6 +1139,10 @@ bool Session::SendRegionHistogramData(int file_id, int region_id) {
 bool Session::SendRegionStatsData(int file_id, int region_id) {
     // return true if data sent
     bool data_sent(false);
+    if (region_id == ALL_REGIONS && !_region_handler) {
+        return data_sent;
+    }
+
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region stats
         CARTA::RegionStatsData stats_data;
