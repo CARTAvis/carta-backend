@@ -4,8 +4,10 @@
 #include <tbb/parallel_for.h>
 
 #include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <thread>
+#include "fmt/format.h"
 
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 
@@ -224,11 +226,21 @@ bool Frame::FillImageCache() {
     // get image data for channel, stokes
     bool write_lock(true);
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+    auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetImageSlicer(ChannelRange(_channel_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
         Log(_session_id, "Loading image cache failed.");
         return false;
     }
+
+    if (_verbose) {
+        auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
+        auto dt_set_image_cache =
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
+        fmt::print("Load {}x{} image to cache in {} ms at {} MPix/s\n", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
+            (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
+    }
+
     return true;
 }
 
@@ -274,6 +286,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     bool write_lock(false);
     tbb::queuing_rw_mutex::scoped_lock lock(_cache_mutex, write_lock);
 
+    auto t_start_raster_data_filter = std::chrono::high_resolution_clock::now();
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
 #pragma omp parallel for
@@ -303,7 +316,6 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                 image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
             }
         }
-
     } else {
         // Nearest neighbour filtering
 #pragma omp parallel for
@@ -315,6 +327,16 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
             }
         }
     }
+
+    if (_verbose) {
+        auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
+        auto dt_raster_data_filter =
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
+        fmt::print("{} filter {}x{} raster data to {}x{} in {} ms at {} MPix/s\n", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
+            req_height, req_width, num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
+            (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
+    }
+
     return true;
 }
 
@@ -325,6 +347,9 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
     if (ChannelsChanged(channel, stokes)) {
         return false;
     }
+
+    auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
+
     raster_tile_data.set_channel(channel);
     raster_tile_data.set_stokes(stokes);
     raster_tile_data.set_compression_type(compression_type);
@@ -365,9 +390,18 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
 
+            if (_verbose) {
+                auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
+                auto dt_compress_tile_data =
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
+                fmt::print("Compress {}x{} tile data in {} ms at {} MPix/s\n", tile_width, tile_height, dt_compress_tile_data * 1e-3,
+                    (float)(tile_width * tile_height) / dt_compress_tile_data);
+            }
+
             return !(ChannelsChanged(channel, stokes));
         }
     }
+
     return false;
 }
 
@@ -455,6 +489,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             size_t dest_height = ceil(double(image_bounds.y_max()) / _contour_settings.smoothing_factor);
             TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
                 _contour_settings.chunk_size, partial_contour_callback, _verbose);
+
             return true;
         }
         fmt::print("Smoothing mode not implemented yet!\n");
@@ -496,6 +531,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
     }
+
     // Use number of bins in requirements
     int stokes(CurrentStokes());
 
@@ -513,6 +549,8 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
 
     bool have_valid_histogram(false);
     for (auto& histogram_config : requirements) {
+        auto t_start_image_histogram = std::chrono::high_resolution_clock::now();
+
         // set value for single channel
         int channel = histogram_config.channel;
         if ((channel == CURRENT_CHANNEL) || (NumChannels() == 1)) {
@@ -541,6 +579,14 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 if (histogram_filled) {
                     FillHistogramFromResults(histogram, stats, results);
                 }
+            }
+
+            if (_verbose && histogram_filled) {
+                auto t_end_image_histogram = std::chrono::high_resolution_clock::now();
+                auto dt_image_histogram =
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_histogram - t_start_image_histogram).count();
+                fmt::print("Fill image histogram in {} ms at {} MPix/s\n", dt_image_histogram * 1e-3,
+                    (float)stats.num_pixels / dt_image_histogram);
             }
         }
         have_valid_histogram |= histogram_filled;
@@ -772,6 +818,8 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         return true;
     }
 
+    auto t_start_image_stats = std::chrono::high_resolution_clock::now();
+
     // Calculate stats map using slicer
     casacore::Slicer slicer = GetImageSlicer(ChannelRange(channel), stokes);
     bool per_channel(false);
@@ -788,8 +836,15 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 
         // cache results
         _image_stats[index] = stats_map;
+
+        if (_verbose) {
+            auto t_end_image_stats = std::chrono::high_resolution_clock::now();
+            auto dt_image_stats = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_image_stats - t_start_image_stats).count();
+            fmt::print("Fill image stats in {} ms\n", dt_image_stats);
+        }
         return true;
     }
+
     return false;
 }
 
@@ -823,6 +878,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     if (!_cursor.InImage(_image_shape(0), _image_shape(1))) {
         return false;
     }
+
+    auto t_start_spatial_profile = std::chrono::high_resolution_clock::now();
 
     ssize_t num_image_cols(_image_shape(0)), num_image_rows(_image_shape(1));
     int x, y;
@@ -884,7 +941,15 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         }
     }
 
-    return (spatial_data.profiles_size() > 0);
+    bool have_spatial_profiles = (spatial_data.profiles_size() > 0);
+    if (_verbose && have_spatial_profiles) {
+        auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
+        auto dt_spatial_profile =
+            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
+        fmt::print("Fill spatial profile in {} ms\n", dt_spatial_profile);
+    }
+
+    return have_spatial_profiles;
 }
 
 // ****************************************************
@@ -926,6 +991,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
     }
 
     PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
+
+    auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
 
     for (auto& config : _cursor_spectral_configs) { // config is SpectralConfig struct
         if (!(_cursor == start_cursor) || !IsConnected()) {
@@ -1044,6 +1111,14 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             }
         }
     }
+
+    if (_verbose) {
+        auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+        auto dt_spectral_profile =
+            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
+    }
+
     return true;
 }
 
@@ -1075,6 +1150,7 @@ casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& regi
 
 bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data) {
     // Get image data with a region applied
+    auto t_start_get_subimage_data = std::chrono::high_resolution_clock::now();
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
     bool subimage_ok = _loader->GetSubImage(region, sub_image);
@@ -1089,7 +1165,7 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         return false;
     }
 
-    data.resize(subimage_shape.product());
+    data.resize(subimage_shape.product()); // must size correctly before sharing
     casacore::Array<float> tmp(subimage_shape, data.data(), casacore::StorageInitPolicy::SHARE);
     try {
         casacore::IPosition start(subimage_shape.size(), 0);
@@ -1098,6 +1174,13 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         std::unique_lock<std::mutex> ulock(_image_mutex);
         sub_image.doGetSlice(tmp, slicer);
         ulock.unlock();
+
+        if (_verbose) {
+            auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
+            auto dt_get_subimage_data =
+                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
+            fmt::print("Get region subimage data in {} ms\n", dt_get_subimage_data);
+        }
         return true;
     } catch (casacore::AipsError& err) {
         data.clear();

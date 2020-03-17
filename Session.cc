@@ -9,17 +9,17 @@
 #include <tuple>
 #include <vector>
 
+#include <casacore/casa/OS/File.h>
+#include <fmt/format.h>
 #include <tbb/parallel_for.h>
 #include <tbb/task_group.h>
-
-#include <casacore/casa/OS/File.h>
+#include <xmmintrin.h>
+#include <zstd.h>
 
 #include <carta-protobuf/contour_image.pb.h>
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
-#include <xmmintrin.h>
-#include <zstd.h>
 
 #include "Carta.h"
 #include "DataStream/Compression.h"
@@ -438,9 +438,19 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
             }
         };
 
+        auto t_start_get_tile_data = std::chrono::high_resolution_clock::now();
+
 #pragma omp parallel for
         for (int j = 0; j < stride; j++) {
             lambda(j);
+        }
+
+        if (_verbose_logging) {
+            // Measure duration for get tile data
+            auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
+            auto dt_get_tile_data =
+                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
+            fmt::print("Get tile data group in {} ms\n", dt_get_tile_data);
         }
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
@@ -460,11 +470,11 @@ void Session::OnSetImageChannels(const CARTA::SetImageChannels& message) {
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         std::string err_message;
-        auto channel = message.channel();
-        auto stokes = message.stokes();
-        bool channel_changed(channel != frame->CurrentChannel());
-        bool stokes_changed(stokes != frame->CurrentStokes());
-        if (frame->SetImageChannels(channel, stokes, err_message)) {
+        auto channel_target = message.channel();
+        auto stokes_target = message.stokes();
+        bool channel_changed(channel_target != frame->CurrentChannel());
+        bool stokes_changed(stokes_target != frame->CurrentStokes());
+        if (frame->SetImageChannels(channel_target, stokes_target, err_message)) {
             // Send Contour data if required
             SendContourData(file_id);
             bool send_histogram(true);
@@ -516,7 +526,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         casacore::CoordinateSystem csys = _frames.at(file_id)->CoordinateSystem();
 
         if (!_region_handler) { // created on demand only
-            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler());
+            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_verbose_logging));
         }
         std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
         success =
@@ -824,6 +834,8 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     close_file_msg.set_file_id(-1);
     OnCloseFile(close_file_msg);
 
+    auto t_start_resume = std::chrono::high_resolution_clock::now();
+
     // Open images
     for (int i = 0; i < message.images_size(); ++i) {
         const CARTA::ImageProperties& image = message.images(i);
@@ -869,6 +881,12 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
         }
     }
 
+    if (_verbose_logging) {
+        auto t_end_resume = std::chrono::high_resolution_clock::now();
+        auto dt_resume = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_resume - t_start_resume).count();
+        fmt::print("Resume in {} ms\n", dt_resume);
+    }
+
     // RESPONSE
     CARTA::ResumeSessionAck ack;
     ack.set_success(success);
@@ -892,6 +910,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
             if (!_frames.at(file_id)->GetCubeHistogramConfig(cube_histogram_config)) {
                 return calculated; // no requirements
             }
+
+            auto t_start_cube_histogram = std::chrono::high_resolution_clock::now();
 
             auto channel = cube_histogram_config.channel;
             auto num_bins = cube_histogram_config.num_bins;
@@ -1010,6 +1030,14 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_results.bin_center = chan_histogram.bin_center;
                     cube_results.histogram_bins = {cube_bins.begin(), cube_bins.end()};
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_results);
+
+                    if (_verbose_logging) {
+                        auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
+                        auto dt_cube_histogram =
+                            std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
+                        fmt::print("Fill cube histogram in {} ms at {} MPix/s\n", dt_cube_histogram * 1e-3,
+                            (float)cube_stats.num_pixels / dt_cube_histogram);
+                    }
 
                     calculated = true;
                 }
@@ -1373,6 +1401,8 @@ void Session::ExecuteAnimationFrameInner() {
                 return;
             }
 
+            auto t_start_change_frame = std::chrono::high_resolution_clock::now();
+
             bool channel_changed(channel != frame->CurrentChannel());
             bool stokes_changed(stokes != frame->CurrentStokes());
 
@@ -1396,6 +1426,14 @@ void Session::ExecuteAnimationFrameInner() {
                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
                 }
             }
+
+            if (_verbose_logging) {
+                auto t_end_change_frame = std::chrono::high_resolution_clock::now();
+                auto dt_change_frame =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(t_end_change_frame - t_start_change_frame).count();
+                fmt::print("Animator: Change frame in {} ms\n", dt_change_frame);
+            }
+
         } catch (std::out_of_range& range_error) {
             string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);

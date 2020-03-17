@@ -13,7 +13,7 @@
 
 using namespace carta;
 
-RegionHandler::RegionHandler() : _z_profile_count(0) {}
+RegionHandler::RegionHandler(bool verbose) : _verbose(verbose), _z_profile_count(0) {}
 
 // ********************************************************************
 // Region handling
@@ -409,6 +409,8 @@ bool RegionHandler::FillRegionFileHistogramData(
         return false; // requirements removed for this region
     }
 
+    auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
+
     // Get image region
     int channel(_frames.at(file_id)->CurrentChannel());
     int stokes(_frames.at(file_id)->CurrentStokes());
@@ -448,6 +450,14 @@ bool RegionHandler::FillRegionFileHistogramData(
         histogram->set_channel(channel);
         FillHistogramFromResults(histogram, stats, results);
     }
+
+    if (_verbose) {
+        auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
+        auto dt_region_histogram =
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
+        fmt::print("Fill region histogram in {} ms at {} MPix/s\n", dt_region_histogram, (float)stats.num_pixels / dt_region_histogram);
+    }
+
     return true;
 }
 
@@ -540,6 +550,8 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
     const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
     // Fill spectral profile message for given region, file, and requirement
 
+    auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
+
     // Get initial stokes and region state to cancel profile if either changes
     bool use_current_stokes(false);
     int initial_stokes(spectral_config.stokes_index);
@@ -630,6 +642,13 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
         }
     }
 
+    if (_verbose) {
+        auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+        auto dt_spectral_profile =
+            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
+    }
+
     return true;
 }
 
@@ -688,6 +707,8 @@ bool RegionHandler::FillRegionFileStatsData(
         return false; // requirements removed for this region
     }
 
+    auto t_start_region_stats = std::chrono::high_resolution_clock::now();
+
     int channel(_frames.at(file_id)->CurrentChannel());
     int stokes(_frames.at(file_id)->CurrentStokes());
     ChannelRange chan_range(channel);
@@ -714,6 +735,12 @@ bool RegionHandler::FillRegionFileStatsData(
 
         // add values to message
         FillStatisticsValuesFromMap(stats_message, required_stats, stats_values_single);
+
+        if (_verbose) {
+            auto t_end_region_stats = std::chrono::high_resolution_clock::now();
+            auto dt_region_stats = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_region_stats - t_start_region_stats).count();
+            fmt::print("Fill region stats in {} ms\n", dt_region_stats);
+        }
         return true;
     }
 

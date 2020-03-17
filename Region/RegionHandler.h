@@ -17,7 +17,7 @@ namespace carta {
 
 class RegionHandler {
 public:
-    RegionHandler();
+    RegionHandler(bool verbose);
 
     // Regions
     bool SetRegion(int& region_id, int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points,
@@ -68,6 +68,9 @@ private:
     bool GetRegionFileSpectralData(int region_id, int file_id, SpectralConfig& spectral_config,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool FillRegionFileStatsData(int region_id, int file_id, std::vector<int>& required_stats, CARTA::RegionStatsData& stats_message);
+
+    // Logging
+    bool _verbose;
 
     // Trigger job cancellation when true
     volatile bool _cancel_all_jobs = false;
