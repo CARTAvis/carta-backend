@@ -852,6 +852,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         if (coordinate == "x") {
             tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
             auto x_start = y * num_image_cols;
+            profile.clear();
             profile.reserve(_image_shape(0));
             for (unsigned int j = 0; j < _image_shape(0); ++j) {
                 auto idx = x_start + j;
@@ -862,6 +863,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
             have_profile = true;
         } else if (coordinate == "y") {
             tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+            profile.clear();
             profile.reserve(_image_shape(1));
             for (unsigned int j = 0; j < _image_shape(1); ++j) {
                 auto idx = (j * num_image_cols) + x;
