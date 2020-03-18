@@ -9,6 +9,8 @@
 #include <thread>
 #include "fmt/format.h"
 
+#include <casacore/images/Regions/WCRegion.h>
+#include <casacore/lattices/LRegions/LCSlicer.h>
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 
 #include "DataStream/Compression.h"
@@ -1135,17 +1137,15 @@ void Frame::DecreaseZProfileCount() {
 
 casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& region) {
     // Returns image shape with a region applied
-    casacore::IPosition ipos;
-
-    casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(region, sub_image);
-    ulock.unlock();
-
-    if (subimage_ok) {
-        ipos = sub_image.shape();
+    if (region.isLCRegion()) {
+        return region.asLCRegionPtr()->shape();
+    } else if (region.isLCSlicer()) {
+        return region.asLCSlicerPtr()->toSlicer(CoordinateSystem().referencePixel(), ImageShape()).length();
+    } else if (region.isWCRegion()) {
+        return region.asWCRegionPtr()->toLCRegion(CoordinateSystem(), ImageShape())->shape();
+    } else {
+        return casacore::IPosition();
     }
-    return ipos;
 }
 
 bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data) {

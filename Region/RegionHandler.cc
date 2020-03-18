@@ -411,13 +411,31 @@ bool RegionHandler::FillRegionFileHistogramData(
 
     auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
 
-    // Get image region
     int channel(_frames.at(file_id)->CurrentChannel());
     int stokes(_frames.at(file_id)->CurrentStokes());
+
+    // Set histogram fields
+    histogram_message.set_file_id(file_id);
+    histogram_message.set_region_id(region_id);
+    histogram_message.set_stokes(stokes);
+    histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
+
+    // Get image region
     ChannelRange chan_range(channel);
     casacore::ImageRegion region;
     if (!ApplyRegionToFile(region_id, file_id, chan_range, stokes, region)) {
-        return false;
+        // region outside image, send default histogram
+        auto default_histogram = histogram_message.add_histograms();
+        default_histogram->set_channel(channel);
+        default_histogram->set_num_bins(1);
+        default_histogram->set_bin_width(0.0);
+        default_histogram->set_first_bin_center(0.0);
+        std::vector<float> histogram_bins(1, 0.0);
+        *default_histogram->mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
+        float float_nan = std::numeric_limits<float>::quiet_NaN();
+        default_histogram->set_mean(float_nan);
+        default_histogram->set_std_dev(float_nan);
+        return true;
     }
 
     // Get data for image region
@@ -428,11 +446,6 @@ bool RegionHandler::FillRegionFileHistogramData(
 
     BasicStats<float> stats;
     CalcBasicStats(data, stats);
-
-    // Set histogram fields
-    histogram_message.set_file_id(file_id);
-    histogram_message.set_region_id(region_id);
-    histogram_message.set_stokes(stokes);
 
     // Calculate histogram for each requirement
     for (auto& hist_config : configs) {
@@ -552,6 +565,16 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
 
     auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
 
+    // Initialize results to NaN, progress to complete
+    size_t profile_size = _frames.at(file_id)->NumChannels(); // total number of channels
+    std::map<CARTA::StatsType, std::vector<double>> results;
+    std::vector<double> init_spectral(profile_size, std::numeric_limits<double>::quiet_NaN());
+    for (const auto& stat : spectral_config.stats_types) {
+        auto carta_stat = static_cast<CARTA::StatsType>(stat);
+        results[carta_stat] = init_spectral;
+    }
+    float progress(PROFILE_COMPLETE);
+
     // Get initial stokes and region state to cancel profile if either changes
     bool use_current_stokes(false);
     int initial_stokes(spectral_config.stokes_index);
@@ -561,17 +584,15 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
     }
     RegionState initial_state = _regions.at(region_id)->GetRegionState();
 
-    // Initialize results to NaN
-    size_t profile_size = _frames.at(file_id)->NumChannels(); // total number of channels
-    std::map<CARTA::StatsType, std::vector<double>> results;
-    std::vector<double> init_spectral(profile_size, std::numeric_limits<double>::quiet_NaN());
-    for (const auto& stat : spectral_config.stats_types) {
-        auto carta_stat = static_cast<CARTA::StatsType>(stat);
-        results[carta_stat] = init_spectral;
+    // Get region with all channels
+    ChannelRange chan_range(ALL_CHANNELS);
+    casacore::ImageRegion region;
+    if (!ApplyRegionToFile(region_id, file_id, chan_range, initial_stokes, region)) {
+        partial_results_callback(results, progress); // region outside image, send NaNs
+        return true;
     }
 
     size_t start_channel(0), count(0), end_channel(0);
-    float progress(0);
     int delta_channels = INIT_DELTA_CHANNEL; // the increment of channels for each step
     int dt_target = TARGET_DELTA_TIME;       // the target time elapse for each step, in the unit of milliseconds
     auto t_partial_profile_start = std::chrono::high_resolution_clock::now();
@@ -711,11 +732,6 @@ bool RegionHandler::FillRegionFileStatsData(
 
     int channel(_frames.at(file_id)->CurrentChannel());
     int stokes(_frames.at(file_id)->CurrentStokes());
-    ChannelRange chan_range(channel);
-    casacore::ImageRegion region;
-    if (!ApplyRegionToFile(region_id, file_id, chan_range, stokes, region)) {
-        return false;
-    }
 
     // Start filling message
     stats_message.set_file_id(file_id);
@@ -723,18 +739,36 @@ bool RegionHandler::FillRegionFileStatsData(
     stats_message.set_channel(channel);
     stats_message.set_stokes(stokes);
 
+    // Get region
+    ChannelRange chan_range(channel);
+    casacore::ImageRegion region;
+    if (!ApplyRegionToFile(region_id, file_id, chan_range, stokes, region)) {
+        // region outside image: NaN results
+        std::map<CARTA::StatsType, double> stats_results;
+        for (const auto& stat : required_stats) {
+            auto carta_stat = static_cast<CARTA::StatsType>(stat);
+            if (carta_stat == CARTA::StatsType::NumPixels) {
+                stats_results[carta_stat] = 0.0;
+            } else {
+                stats_results[carta_stat] = std::numeric_limits<double>::quiet_NaN();
+            }
+        }
+        FillStatisticsValuesFromMap(stats_message, required_stats, stats_results);
+        return true;
+    }
+
     // calculate stats
-    std::map<CARTA::StatsType, std::vector<double>> stats_values_vector;
     bool per_channel(false);
-    if (_frames.at(file_id)->GetRegionStats(region, required_stats, per_channel, stats_values_vector)) {
+    std::map<CARTA::StatsType, std::vector<double>> stats_map;
+    if (_frames.at(file_id)->GetRegionStats(region, required_stats, per_channel, stats_map)) {
         // convert vector to single value in map
-        std::map<CARTA::StatsType, double> stats_values_single;
-        for (auto& value : stats_values_vector) {
-            stats_values_single[value.first] = value.second[0];
+        std::map<CARTA::StatsType, double> stats_results;
+        for (auto& value : stats_map) {
+            stats_results[value.first] = value.second[0];
         }
 
         // add values to message
-        FillStatisticsValuesFromMap(stats_message, required_stats, stats_values_single);
+        FillStatisticsValuesFromMap(stats_message, required_stats, stats_results);
 
         if (_verbose) {
             auto t_end_region_stats = std::chrono::high_resolution_clock::now();
