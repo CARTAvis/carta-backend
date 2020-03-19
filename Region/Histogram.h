@@ -13,22 +13,22 @@ namespace carta {
 class Histogram {
     float _bin_width;
     float _min_val;
-    std::vector<int> _hist;
+    std::vector<uint64_t> _hist;
     const std::vector<float>& _data;
 
 public:
     Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data);
     Histogram(Histogram& h, tbb::split);
 
-    void operator()(const tbb::blocked_range<size_t>& r);
+    void operator()(const tbb::blocked_range<uint64_t>& r);
     void join(Histogram& h); // NOLINT
-    void setup_bins(const int start, const int end);
+    void setup_bins(const uint64_t start, const uint64_t end);
 
     float GetBinWidth() const {
         return _bin_width;
     }
 
-    std::vector<int> GetHistogram() const {
+    std::vector<uint64_t> GetHistogram() const {
         return _hist;
     }
 };
