@@ -20,7 +20,7 @@ void BasicStats<T>::join(BasicStats<T>& other) {
 }
 
 template <typename T>
-BasicStats<T>::BasicStats(uint64_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq)
+BasicStats<T>::BasicStats(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq)
     : num_pixels(num_pixels), sum(sum), mean(mean), stdDev(stdDev), min_val(min_val), max_val(max_val), rms(rms), sumSq(sumSq) {}
 template <typename T>
 BasicStats<T>::BasicStats()
@@ -52,10 +52,10 @@ BasicStatsCalculator<T>::BasicStatsCalculator(BasicStatsCalculator<T>& mm, tbb::
       _data(mm._data) {}
 
 template <typename T>
-void BasicStatsCalculator<T>::operator()(const tbb::blocked_range<uint64_t>& r) {
+void BasicStatsCalculator<T>::operator()(const tbb::blocked_range<size_t>& r) {
     T t_min = _min_val;
     T t_max = _max_val;
-    for (uint64_t i = r.begin(); i != r.end(); ++i) {
+    for (size_t i = r.begin(); i != r.end(); ++i) {
         T val = _data[i];
         if (std::isfinite(val)) {
             if (val < t_min) {
@@ -74,8 +74,8 @@ void BasicStatsCalculator<T>::operator()(const tbb::blocked_range<uint64_t>& r) 
 }
 
 template <typename T>
-void BasicStatsCalculator<T>::reduce(const uint64_t start, const uint64_t end) {
-    uint64_t i;
+void BasicStatsCalculator<T>::reduce(const size_t start, const size_t end) {
+    size_t i;
 #pragma omp parallel for private(i) shared(_data) reduction(min: _min_val) reduction(max:_max_val) reduction(+:_num_pixels) reduction(+:_sum) reduction(+:_sum_squares)
     for (i = start; i < end; i++) {
         T val = _data[i];
