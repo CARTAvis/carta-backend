@@ -43,7 +43,7 @@ void Histogram::setup_bins(const size_t start, const size_t end) {
     auto calc_lambda = [&](size_t start, size_t lstride) {
         size_t* lbins = new size_t[_hist.size()];
         size_t end = std::min((size_t)(start + lstride), _data.size());
-        memset(lbins, 0, _hist.size() * sizeof(int));
+        memset(lbins, 0, _hist.size() * sizeof(size_t));
         for (size_t i = start; i < end; i++) {
             auto v = _data[i];
             if (std::isfinite(v)) {
