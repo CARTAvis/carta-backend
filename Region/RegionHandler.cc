@@ -633,6 +633,14 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
                     return false;
                 }
             }
+
+            if (_verbose) {
+                auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+                auto dt_spectral_profile =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+                fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
+            }
+
             return true;
         }
     }
