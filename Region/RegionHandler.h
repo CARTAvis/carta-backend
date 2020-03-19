@@ -79,7 +79,7 @@ private:
     tbb::atomic<int> _z_profile_count;
 
     // Regions: key is region_id
-    std::unordered_map<int, std::unique_ptr<Region>> _regions;
+    std::unordered_map<int, std::shared_ptr<Region>> _regions;
 
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;

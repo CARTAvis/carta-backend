@@ -134,14 +134,20 @@ public:
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
+    // Returns mask array
+    bool GetRegionMask(const casacore::LattRegionHolder& region, casacore::Array<casacore::Bool>& mask);
     // Returns data vector
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
     bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
-    // Returns stats_values map
+    // Returns stats_values map for spectral profiles and stats data
     bool GetRegionStats(const casacore::LattRegionHolder& region, std::vector<int>& required_stats, bool per_channel,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<int>& required_stats, bool per_channel,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
+    // Whether to use loader for spectral profiles
+    bool UseLoaderSpectralData(const casacore::LattRegionHolder& region);
+    bool GetLoaderSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask, const casacore::IPosition origin,
+        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
 private:
     // Check flag if Frame is to be destroyed

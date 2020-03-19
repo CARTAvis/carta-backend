@@ -109,6 +109,8 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
     if (_num_dims == 2) {
         _num_channels = 1;
         _num_stokes = 1;
+        _spectral_axis = spectral_axis;
+        _stokes_axis = stokes_axis;
         return true;
     }
 
@@ -117,14 +119,12 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
         spectral_axis = (spectral_axis < 0 ? 2 : spectral_axis);
         _num_channels = shape(spectral_axis);
         _num_stokes = 1;
+        _spectral_axis = spectral_axis;
+        _stokes_axis = stokes_axis;
         return true;
     }
 
     // 4D image
-    if ((spectral_axis < 0) || (stokes_axis < 0)) {
-        // workaround when header incomplete or invalid values for creating proper coordinate system
-        FindCoordinates(spectral_axis, stokes_axis);
-    }
     if ((spectral_axis < 0) || (stokes_axis < 0)) {
         if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
             spectral_axis = (stokes_axis == 3 ? 2 : 3);
@@ -147,48 +147,10 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
     }
     _num_channels = (spectral_axis == -1 ? 1 : shape(spectral_axis));
     _num_stokes = (stokes_axis == -1 ? 1 : shape(stokes_axis));
+    _spectral_axis = spectral_axis;
+    _stokes_axis = stokes_axis;
 
     return true;
-}
-
-void FileLoader::FindCoordinates(int& spectral_axis, int& stokes_axis) {
-    // TODO
-    // read ctypes from file info header entries to determine spectral and stokes axes
-    casacore::String ctype1, ctype2, ctype3, ctype4;
-    /*
-    for (int i = 0; i < info->header_entries_size(); ++i) {
-        CARTA::HeaderEntry entry = info->header_entries(i);
-        if (entry.name() == "CTYPE1") {
-            ctype1 = casacore::String(entry.value());
-            ctype1.upcase();
-        } else if (entry.name() == "CTYPE2") {
-            ctype2 = casacore::String(entry.value());
-            ctype2.upcase();
-        } else if (entry.name() == "CTYPE3") {
-            ctype3 = casacore::String(entry.value());
-            ctype3.upcase();
-        } else if (entry.name() == "CTYPE4") {
-            ctype4 = casacore::String(entry.value());
-            ctype4.upcase();
-        }
-    }
-    */
-
-    // find axes from ctypes
-    size_t ntypes(4);
-    const casacore::String ctypes[] = {ctype1, ctype2, ctype3, ctype4};
-    const casacore::String spectral_types[] = {"FELO", "FREQ", "VELO", "VOPT", "VRAD", "WAVE", "AWAV"};
-    const casacore::String stokes_type = "STOKES";
-    for (size_t i = 0; i < ntypes; ++i) {
-        for (auto& spectral_type : spectral_types) {
-            if (ctypes[i].contains(spectral_type)) {
-                spectral_axis = i;
-            }
-        }
-        if (ctypes[i] == stokes_type) {
-            stokes_axis = i;
-        }
-    }
 }
 
 bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer) {
@@ -618,14 +580,13 @@ bool FileLoader::GetCursorSpectralData(
     return false;
 }
 
-bool FileLoader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) {
-    // Must be implemented in subclasses
+bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
+    // Must be implemented in subclasses; should call before GetRegionSpectralData
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
-    const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
-    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
+bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask,
+    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Must be implemented in subclasses
     return false;
 }

@@ -24,10 +24,9 @@ public:
 
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
-    bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) override;
-    bool GetRegionSpectralData(int region_id, int profile_index, int stokes,
-        const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
-        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
+    bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) override;
+    bool GetRegionSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask, const casacore::IPosition& origin,
+        std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) override;
 
 private:
     std::string _filename;

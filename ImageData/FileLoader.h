@@ -160,18 +160,19 @@ public:
     // Retrieve stats for a particular channel or all channels
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
-    // Spectral profiles
+    // Spectral profiles for cursor and region
     virtual bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
-    // check if one can apply swizzled data under such image format and region condition
-    virtual bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex);
-    virtual bool GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
-        const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
-        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
+    // Check if one can apply swizzled data under such image format and region condition
+    virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
+    virtual bool GetRegionSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask,
+        const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
+        float& progress);
 
 protected:
     // Dimension values used by stats functions
     size_t _num_channels, _num_stokes, _num_dims, _channel_size;
+    int _spectral_axis, _stokes_axis;
 
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
@@ -193,10 +194,6 @@ protected:
 
     // Basic flux density calculation
     double CalculateBeamArea();
-
-private:
-    // Find spectral and stokes coordinates
-    void FindCoordinates(int& spectral_axis, int& stokes_axis);
 };
 
 } // namespace carta
