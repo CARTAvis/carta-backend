@@ -2,7 +2,8 @@
 
 #include "Region.h"
 
-#include <atomic>
+#include <chrono>
+#include <thread>
 
 #include <casacore/casa/Quanta/Quantum.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
@@ -15,7 +16,7 @@ using namespace carta;
 
 Region::Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
     const casacore::CoordinateSystem& csys)
-    : _valid(false), _region_state_changed(false), _region_changed(false), _wcregion_set(false) {
+    : _valid(false), _region_state_changed(false), _region_changed(false), _wcregion_set(false), _z_profile_count(0) {
     // validate and set region parameters
     _valid = UpdateState(file_id, name, type, points, rotation, csys);
 }
@@ -108,6 +109,17 @@ bool Region::IsConnected() {
 
 void Region::DisconnectCalled() { // to interrupt the running jobs in the Region
     _connected = false;
+    while (_z_profile_count > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
+void Region::IncreaseZProfileCount() {
+    ++_z_profile_count;
+}
+
+void Region::DecreaseZProfileCount() {
+    --_z_profile_count;
 }
 
 // *************************************************************************

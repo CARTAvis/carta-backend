@@ -3,16 +3,16 @@
 #ifndef CARTA_BACKEND_REGION_REGION_H_
 #define CARTA_BACKEND_REGION_REGION_H_
 
+#include <atomic>
 #include <string>
 #include <vector>
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/images/Regions/WCRegion.h>
+#include <casacore/lattices/LRegions/LCRegion.h>
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
-
-#include "../Frame.h"
 
 struct RegionState {
     // struct used to determine whether region changed
@@ -110,6 +110,8 @@ public:
     // Communication
     bool IsConnected();
     void DisconnectCalled();
+    void IncreaseZProfileCount();
+    void DecreaseZProfileCount();
 
     // 2D region in reference image applied to input image parameters
     casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem coord_sys, const casacore::IPosition image_shape);
@@ -144,12 +146,13 @@ private:
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
     // region flags
-    bool _valid;
+    bool _valid;                // RegionState set properly
     bool _region_state_changed; // any parameters changed
     bool _region_changed;       // type, control points, or rotation changed
-    bool _wcregion_set;
+    bool _wcregion_set;         // indicates attempt was made; may be null wcregion outside image
 
     // Communication
+    std::atomic<int> _z_profile_count;
     volatile bool _connected = true;
 };
 

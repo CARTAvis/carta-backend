@@ -25,23 +25,21 @@ public:
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
 
+    // Frames
+    void RemoveFrame(int file_id);
+
     // Requirements
     bool SetHistogramRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs);
     bool SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs);
     bool SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<int>& stats_types);
-    void RemoveFrame(int file_id);
 
     // Calculations
     bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id);
     bool FillSpectralProfileData(
         std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
-
-    // Handle jobs so handler is not deleted until finished
-    void IncreaseZProfileCount(int file_id, int region_id);
-    void DecreaseZProfileCount(int file_id, int region_id);
 
 private:
     // Get unique region id (max id + 1)
@@ -57,11 +55,12 @@ private:
     bool ShouldCancelJob(int region_id);
 
     // Clear requirements for closed region(s)
-    void ClearRequirements(int region_id);
+    void RemoveRegionRequirements(int region_id);
+    void RemoveFileRequirements(int file_id);
     bool SpectralConfigExists(int region_id, int file_id, SpectralConfig spectral_config);
 
     // Fill data stream messages
-    bool CheckRegionFileIds(int region_id, int file_id);
+    bool RegionFileIdsValid(int region_id, int file_id);
     bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
     bool FillRegionFileHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);

@@ -5,11 +5,11 @@
 #define CARTA_BACKEND__FRAME_H_
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
 
-#include <tbb/atomic.h>
 #include <tbb/queuing_rw_mutex.h>
 
 #include <carta-protobuf/contour.pb.h>
@@ -131,6 +131,8 @@ public:
 
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished
     void DisconnectCalled();
+    // Check flag if Frame is to be destroyed
+    bool IsConnected();
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
@@ -150,9 +152,6 @@ public:
         std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
 private:
-    // Check flag if Frame is to be destroyed
-    bool IsConnected();
-
     // Validate channel, stokes index values
     bool CheckChannel(int channel);
     bool CheckStokes(int stokes);
@@ -214,7 +213,7 @@ private:
     std::mutex _image_mutex;            // only one disk access at a time
 
     // Spectral profile counter, so Frame is not destroyed until finished
-    tbb::atomic<int> _z_profile_count;
+    std::atomic<int> _z_profile_count;
 
     // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;

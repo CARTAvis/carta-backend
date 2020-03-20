@@ -728,7 +728,7 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
 
         if (requirements_set) {
             if ((message.spectral_profiles_size() > 0) && !SendSpectralProfileData(file_id, region_id)) {
-                std::string error = fmt::format("Spectral profile calculation for region {} failed", region_id);
+                std::string error = fmt::format("Spectral profile calculation for region {} failed or was canceled", region_id);
                 SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
             }
         } else if (region_id != IMAGE_REGION_ID) { // not sure why frontend sends this
@@ -1107,7 +1107,6 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
         // Cursor spectral profile
         if (_frames.count(file_id)) {
             CARTA::SpectralProfileData profile_data;
-            _frames.at(file_id)->IncreaseZProfileCount();
             data_sent = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
                     if (profile_data.profiles_size() > 0) {
@@ -1118,7 +1117,6 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
                     }
                 },
                 region_id, stokes_changed);
-            _frames.at(file_id)->DecreaseZProfileCount();
         }
     }
     return data_sent;

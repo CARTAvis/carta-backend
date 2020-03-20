@@ -1,8 +1,5 @@
 #include "Frame.h"
 
-#include <tbb/blocked_range2d.h>
-#include <tbb/parallel_for.h>
-
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -183,14 +180,22 @@ bool Frame::ChannelsChanged(int channel, int stokes) {
 }
 
 void Frame::DisconnectCalled() {
-    _connected = false;        // file closed
-    while (_z_profile_count) { // wait for spectral profiles to complete to avoid crash
+    _connected = false;            // file closed
+    while (_z_profile_count > 0) { // wait for spectral profiles to complete to avoid crash
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
 bool Frame::IsConnected() {
     return _connected; // whether file is to be closed
+}
+
+void Frame::IncreaseZProfileCount() {
+    _z_profile_count++;
+}
+
+void Frame::DecreaseZProfileCount() {
+    _z_profile_count--;
 }
 
 // ********************************************************************
@@ -992,6 +997,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         return false;
     }
 
+    IncreaseZProfileCount();
     PointXy start_cursor = _cursor; // if cursor changes, cancel profiles
 
     auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
@@ -999,6 +1005,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
     for (auto& config : _cursor_spectral_configs) { // config is SpectralConfig struct
         if (!(_cursor == start_cursor) || !IsConnected()) {
             // cursor changed or file closed, cancel profiles
+            DecreaseZProfileCount();
             return false;
         }
 
@@ -1056,6 +1063,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
                 while (progress < PROFILE_COMPLETE) {
                     if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel profiles
+                        DecreaseZProfileCount();
                         return false;
                     }
 
@@ -1069,6 +1077,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     casacore::Slicer slicer(start, count);
                     std::vector<float> buffer;
                     if (!GetSlicerData(slicer, buffer)) {
+                        DecreaseZProfileCount();
                         return false;
                     }
 
@@ -1121,15 +1130,8 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
     }
 
+    DecreaseZProfileCount();
     return true;
-}
-
-void Frame::IncreaseZProfileCount() {
-    ++_z_profile_count;
-}
-
-void Frame::DecreaseZProfileCount() {
-    --_z_profile_count;
 }
 
 // ****************************************************

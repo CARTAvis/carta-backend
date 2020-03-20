@@ -2,7 +2,7 @@
 
 #include "RegionHandler.h"
 
-#include <thread>
+#include <chrono>
 
 #include <casacore/lattices/LRegions/LCBox.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
@@ -64,15 +64,16 @@ void RegionHandler::RemoveRegion(int region_id) {
         return;
     }
 
-    CancelJobs(region_id);
-
     if (region_id == ALL_REGIONS) {
+        for (auto& region : _regions) {
+            region.second->DisconnectCalled();
+        }
         _regions.clear();
-        ClearRequirements(region_id);
     } else if (_regions.count(region_id)) {
+        _regions.at(region_id)->DisconnectCalled();
         _regions.erase(region_id);
-        ClearRequirements(region_id);
     }
+    RemoveRegionRequirements(region_id);
 }
 
 bool RegionHandler::RegionSet(int region_id) {
@@ -80,62 +81,66 @@ bool RegionHandler::RegionSet(int region_id) {
     if (region_id == ALL_REGIONS) {
         return _regions.size();
     } else {
-        return _regions.count(region_id);
+        return _regions.count(region_id) && _regions.at(region_id)->IsConnected();
     }
 }
 
 // ********************************************************************
-// Region job handling
+// Frame handling
 
-void RegionHandler::CancelJobs(int region_id) {
-    // cancel jobs for given region which has been removed
-    if (region_id == ALL_REGIONS) {
-        CancelAllJobs();
+bool RegionHandler::FrameSet(int file_id) {
+    // Check whether a particular file is set or any files are set
+    if (file_id == ALL_FILES) {
+        return _frames.size();
     } else {
-        // TODO: do something for region
+        return _frames.count(file_id) && _frames.at(file_id)->IsConnected();
     }
 }
 
-bool RegionHandler::ShouldCancelJob(int region_id) {
-    // check if job should be canceled for region or all regions
-    bool cancel = _cancel_all_jobs;
-
-    if (!cancel) {
-        // TODO: check something for region
-    }
-    return cancel;
-}
-
-void RegionHandler::CancelAllJobs() {
-    // notify that handler will be deleted
-    _cancel_all_jobs = true;
-
-    while (_z_profile_count) {
-        // wait for spectral profiles to complete to avoid crash
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+void RegionHandler::RemoveFrame(int file_id) {
+    if (file_id == ALL_FILES) {
+        _frames.clear();
+        RemoveRegion(ALL_REGIONS); // removes all regions and requirements
+    } else if (_frames.count(file_id)) {
+        _frames.erase(file_id);
+        RemoveFileRequirements(file_id);
     }
 }
 
-void RegionHandler::IncreaseZProfileCount(int file_id, int region_id) {
-    if (region_id < 0) {
-        // TODO: all regions with this file_id in requirements
-        // TODO: ++_z_profile_count; for each region
-    } else if (_regions.count(region_id)) {
-        // TODO: _regions.at(region_id)->IncreaseZProfileCount();
-        ++_z_profile_count;
+void RegionHandler::RemoveFileRequirements(int file_id) {
+    if (file_id == ALL_FILES) {
+        RemoveRegionRequirements(ALL_REGIONS); // removes all requirements
+    } else {
+        // Iterate through requirements for all regions and remove those for given file_id
+        for (auto& req : _histogram_req) { // req is <region_id, vector<RegionHistogramConfig>>
+            for (auto it = req.second.begin(); it != req.second.end();) {
+                if ((*it).file_id == file_id) {
+                    it = req.second.erase(it); // erase config with file_id and update iterator
+                } else {
+                    ++it;
+                }
+            }
+        }
+        for (auto& req : _spectral_req) { // req is <region_id, vector<RegionSpectralonfig>>
+            for (auto it = req.second.begin(); it != req.second.end();) {
+                if ((*it).file_id == file_id) {
+                    it = req.second.erase(it); // erase config with file_id and update iterator
+                } else {
+                    ++it;
+                }
+            }
+        }
+        for (auto& req : _stats_req) { // req is <region_id, vector<RegionStatsonfig>>
+            for (auto it = req.second.begin(); it != req.second.end();) {
+                if ((*it).file_id == file_id) {
+                    it = req.second.erase(it); // erase config with file_id and update iterator
+                } else {
+                    ++it;
+                }
+            }
+        }
     }
 }
-
-void RegionHandler::DecreaseZProfileCount(int file_id, int region_id) {
-    if (region_id < 0) {
-        // TODO: all regions with this file_id in requirements
-        // TODO: --_z_profile_count; for each region
-    } else if (_regions.count(region_id)) {
-        // TODO: _regions.at(region_id)->DecreaseZProfileCount();
-        --_z_profile_count;
-    }
-}
-
 // ********************************************************************
 // Region requirements handling
 
@@ -271,7 +276,7 @@ bool RegionHandler::SetStatsRequirements(int region_id, int file_id, std::shared
     return false;
 }
 
-void RegionHandler::ClearRequirements(int region_id) {
+void RegionHandler::RemoveRegionRequirements(int region_id) {
     // clear requirements for a specific region or for all regions when closed
     if (region_id == ALL_REGIONS) {
         _histogram_req.clear();
@@ -284,35 +289,18 @@ void RegionHandler::ClearRequirements(int region_id) {
     }
 }
 
-void RegionHandler::RemoveFrame(int file_id) {
-    if (file_id == ALL_FILES) {
-        _frames.clear();
-    } else if (_frames.count(file_id)) {
-        _frames.erase(file_id);
-    }
-}
-
-bool RegionHandler::FrameSet(int file_id) {
-    // Check whether a particular file is set or any files are set
-    if (file_id == ALL_FILES) {
-        return _frames.size();
-    } else {
-        return _frames.count(file_id);
-    }
-}
-
 // ********************************************************************
 // Region data stream helpers
 
-bool RegionHandler::CheckRegionFileIds(int region_id, int file_id) {
+bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     // Check error conditions and preconditions
     if (((region_id < 0) && (file_id < 0)) || (region_id == 0)) { // not allowed
         return false;
     }
-    if (!RegionSet(region_id)) { // no Region(s) for this id
+    if (!RegionSet(region_id)) { // no Region(s) for this id or Region is closing
         return false;
     }
-    if (!FrameSet(file_id)) { // no Frame(s) for this id
+    if (!FrameSet(file_id)) { // no Frame(s) for this id or Frame is closing
         return false;
     }
     return true;
@@ -365,7 +353,7 @@ bool RegionHandler::ApplyRegionToFile(
 
 bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
     // Fill histogram data for given region and file
-    if (!CheckRegionFileIds(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
     if ((region_id > 0) && !_histogram_req.count(region_id)) { // no requirements for this region
@@ -445,11 +433,19 @@ bool RegionHandler::FillRegionFileHistogramData(
         return false;
     }
 
+    if (!RegionFileIdsValid(region_id, file_id)) {
+        return false;
+    }
+
     BasicStats<float> stats;
     CalcBasicStats(data, stats);
 
     // Calculate histogram for each requirement
     for (auto& hist_config : configs) {
+        if (!RegionFileIdsValid(region_id, file_id)) {
+            return false;
+        }
+
         int num_bins(hist_config.num_bins);
         if (num_bins == AUTO_BIN_SIZE) {
             casacore::IPosition region_shape = _frames.at(file_id)->GetRegionShape(region);
@@ -480,7 +476,7 @@ bool RegionHandler::FillRegionFileHistogramData(
 bool RegionHandler::FillSpectralProfileData(
     std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed) {
     // Fill spectral profiles for given region and file
-    if (!CheckRegionFileIds(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
     if ((region_id > 0) && !_spectral_req.count(region_id)) { // no requirements for this region
@@ -563,7 +559,13 @@ bool RegionHandler::FillSpectralProfileData(
 bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, SpectralConfig& spectral_config,
     const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
     // Fill spectral profile message for given region, file, and requirement
+    if (!RegionFileIdsValid(region_id, file_id)) {
+        return false;
+    }
+
     auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
+    _frames.at(file_id)->IncreaseZProfileCount();
+    _regions.at(region_id)->IncreaseZProfileCount();
 
     // Initialize results to NaN, progress to complete
     size_t profile_size = _frames.at(file_id)->NumChannels(); // total number of channels
@@ -590,6 +592,8 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
     casacore::ImageRegion region;
     if (!ApplyRegionToFile(region_id, file_id, chan_range, initial_stokes, region)) {
         partial_results_callback(results, progress); // region outside image, send NaNs
+        _frames.at(file_id)->DecreaseZProfileCount();
+        _regions.at(region_id)->DecreaseZProfileCount();
         return true;
     }
 
@@ -608,13 +612,25 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
             // Get partial profiles until complete (do once if cached)
             while (progress < PROFILE_COMPLETE) {
                 // Cancel if region, current stokes, or spectral requirements changed
-                if (!_regions.at(region_id)->IsConnected() || (_regions.at(region_id)->GetRegionState() != initial_state)) {
+                if (!RegionFileIdsValid(region_id, file_id)) {
+                    _frames.at(file_id)->DecreaseZProfileCount();
+                    _regions.at(region_id)->DecreaseZProfileCount();
+                    return false;
+                }
+
+                if (_regions.at(region_id)->GetRegionState() != initial_state) {
+                    _frames.at(file_id)->DecreaseZProfileCount();
+                    _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
                 if (use_current_stokes && (initial_stokes != _frames.at(file_id)->CurrentStokes())) {
+                    _frames.at(file_id)->DecreaseZProfileCount();
+                    _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
                 if (!SpectralConfigExists(region_id, file_id, spectral_config)) {
+                    _frames.at(file_id)->DecreaseZProfileCount();
+                    _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
 
@@ -630,6 +646,8 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
                     }
                     partial_results_callback(results, progress);
                 } else {
+                    _frames.at(file_id)->DecreaseZProfileCount();
+                    _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
             }
@@ -641,6 +659,8 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
                 fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
             }
 
+            _frames.at(file_id)->DecreaseZProfileCount();
+            _regions.at(region_id)->DecreaseZProfileCount();
             return true;
         }
     }
@@ -655,14 +675,26 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
         // start the timer
         auto t_start = std::chrono::high_resolution_clock::now();
 
+        // Cancel if region or frame is closing
+        if (!RegionFileIdsValid(region_id, file_id)) {
+            _frames.at(file_id)->DecreaseZProfileCount();
+            _regions.at(region_id)->DecreaseZProfileCount();
+            return false;
+        }
         // Cancel if region, current stokes, or spectral requirements changed
-        if (!_regions.at(region_id)->IsConnected() || (_regions.at(region_id)->GetRegionState() != initial_state)) {
+        if (_regions.at(region_id)->GetRegionState() != initial_state) {
+            _frames.at(file_id)->DecreaseZProfileCount();
+            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
         if (use_current_stokes && (initial_stokes != _frames.at(file_id)->CurrentStokes())) {
+            _frames.at(file_id)->DecreaseZProfileCount();
+            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
         if (!SpectralConfigExists(region_id, file_id, spectral_config)) {
+            _frames.at(file_id)->DecreaseZProfileCount();
+            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
 
@@ -673,6 +705,8 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
         ChannelRange chan_range(start_channel, end_channel);
         casacore::ImageRegion region;
         if (!ApplyRegionToFile(region_id, file_id, chan_range, initial_stokes, region)) {
+            _frames.at(file_id)->DecreaseZProfileCount();
+            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
 
@@ -680,6 +714,8 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
         bool per_channel(true);
         std::map<CARTA::StatsType, std::vector<double>> partial_profiles;
         if (!_frames.at(file_id)->GetRegionStats(region, spectral_config.stats_types, per_channel, partial_profiles)) {
+            _frames.at(file_id)->DecreaseZProfileCount();
+            _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
 
@@ -723,6 +759,8 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
         fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
     }
 
+    _frames.at(file_id)->DecreaseZProfileCount();
+    _regions.at(region_id)->DecreaseZProfileCount();
     return true;
 }
 
@@ -730,7 +768,7 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
 
 bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id) {
     // Fill stats data for given region and file
-    if (!CheckRegionFileIds(region_id, file_id)) {
+    if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
     if ((region_id > 0) && !_stats_req.count(region_id)) { // no requirements for this region
@@ -777,6 +815,9 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 bool RegionHandler::FillRegionFileStatsData(
     int region_id, int file_id, std::vector<int>& required_stats, CARTA::RegionStatsData& stats_message) {
     // Fill stats message for given region, file
+    if (!RegionFileIdsValid(region_id, file_id)) {
+        return false;
+    }
     if (required_stats.empty()) {
         return false; // requirements removed for this region
     }
@@ -814,6 +855,10 @@ bool RegionHandler::FillRegionFileStatsData(
     bool per_channel(false);
     std::map<CARTA::StatsType, std::vector<double>> stats_map;
     if (_frames.at(file_id)->GetRegionStats(region, required_stats, per_channel, stats_map)) {
+        if (!RegionFileIdsValid(region_id, file_id)) {
+            return false;
+        }
+
         // convert vector to single value in map
         std::map<CARTA::StatsType, double> stats_results;
         for (auto& value : stats_map) {
