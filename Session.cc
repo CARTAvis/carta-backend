@@ -1250,9 +1250,7 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
             } else if (region_id != IMAGE_REGION_ID) {
                 SendRegionHistogramData(file_id, region_id, channel_changed);
             }
-            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             SendSpectralProfileData(file_id, region_id, channel_changed, stokes_changed);
-            _frames.at(file_id)->DecreaseZProfileCount(region_id);
         }
     }
 }
