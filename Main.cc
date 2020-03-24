@@ -388,7 +388,7 @@ int main(int argc, const char* argv[]) {
 
         // define and get input arguments
         int port(3002);
-        int thread_count = 2;
+        int thread_count = 4;
         int omp_thread_count = 4;
         { // get values then let Input go out of scope
             casacore::Input inp;
