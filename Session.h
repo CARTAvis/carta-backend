@@ -165,6 +165,10 @@ public:
     inline uint32_t GetId() {
         return _id;
     }
+
+    // Region data streams
+    void RegionDataStreams(int file_id, int region_id);
+
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;

@@ -38,15 +38,6 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
-        case CARTA::EventType::SET_REGION: {
-            CARTA::SetRegion message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnSetRegion(message, _header.request_id);
-            } else {
-                fmt::print("Bad SET_REGION message!\n");
-            }
-            break;
-        }
         case CARTA::EventType::REMOVE_REGION: {
             CARTA::RemoveRegion message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
@@ -119,5 +110,10 @@ tbb::task* OnAddRequiredTilesTask::execute() {
 
 tbb::task* OnSetContourParametersTask::execute() {
     _session->OnSetContourParameters(_message);
+    return nullptr;
+}
+
+tbb::task* RegionDataStreamsTask::execute() {
+    _session->RegionDataStreams(_file_id, _region_id);
     return nullptr;
 }
