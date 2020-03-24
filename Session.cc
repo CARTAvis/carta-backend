@@ -704,7 +704,8 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
                     region_id, std::vector<CARTA::SetSpectralRequirements_SpectralConfig>(
                                    message.spectral_profiles().begin(), message.spectral_profiles().end()))) {
                 // RESPONSE
-                SendSpectralProfileData(file_id, region_id);
+                OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) SpectralProfileTask(this, file_id, region_id);
+                tbb::task::enqueue(*tsk);
             } else {
                 string error = fmt::format("Spectral requirements for region id {} failed to validate ", region_id);
                 SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);

@@ -20,15 +20,6 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
-        case CARTA::EventType::SET_SPECTRAL_REQUIREMENTS: {
-            CARTA::SetSpectralRequirements message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnSetSpectralRequirements(message);
-            } else {
-                fmt::print("Bad SET_SPECTRAL_REQUIREMENTS message!\n");
-            }
-            break;
-        }
         case CARTA::EventType::SET_STATS_REQUIREMENTS: {
             CARTA::SetStatsRequirements message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
@@ -115,5 +106,10 @@ tbb::task* OnSetContourParametersTask::execute() {
 
 tbb::task* RegionDataStreamsTask::execute() {
     _session->RegionDataStreams(_file_id, _region_id);
+    return nullptr;
+}
+
+tbb::task* SpectralProfileTask::execute() {
+    _session->SendSpectralProfileData(_file_id, _region_id);
     return nullptr;
 }

@@ -128,4 +128,16 @@ public:
     ~RegionDataStreamsTask() = default;
 };
 
+class SpectralProfileTask : public OnMessageTask {
+    tbb::task* execute() override;
+    int _file_id, _region_id;
+
+public:
+    SpectralProfileTask(Session* session, int file_id, int region_id) : OnMessageTask(session) {
+        _file_id = file_id;
+        _region_id = region_id;
+    }
+    ~SpectralProfileTask() = default;
+};
+
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_
