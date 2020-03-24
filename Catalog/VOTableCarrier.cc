@@ -565,6 +565,7 @@ void VOTableCarrier::GetFilteredData(
         filter_response.set_subset_data_size(sending_data_size);
         filter_response.set_subset_end_index(row_index);
         filter_response.set_progress(progress);
+        filter_response.set_filter_data_size(accumulated_data_size);
 
         // Send partial results by the callback function
         partial_results_callback(filter_response);
