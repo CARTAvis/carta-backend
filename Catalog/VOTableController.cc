@@ -190,7 +190,9 @@ void Controller::OnFilterRequest(
     }
 
     _carriers[file_id]->IncreaseStreamCount();
-    _carriers[file_id]->GetFilteredData(
+    //_carriers[file_id]->GetFilterData(
+    //    filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
+    _carriers[file_id]->GetFilterData2(
         filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
     _carriers[file_id]->DecreaseStreamCount();
 }
@@ -478,6 +480,7 @@ void Controller::Print(CARTA::CatalogFilterResponse filter_response) {
     std::cout << "subset_data_size: " << filter_response.subset_data_size() << std::endl;
     std::cout << "subset_end_index: " << filter_response.subset_end_index() << std::endl;
     std::cout << "progress:  " << filter_response.progress() << std::endl;
+    std::cout << "filter_data_size:  " << filter_response.filter_data_size() << std::endl;
     std::cout << std::endl;
 }
 

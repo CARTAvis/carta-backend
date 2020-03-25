@@ -62,7 +62,7 @@ class VOTableCarrier {
     };
 
 public:
-    VOTableCarrier() : _stream_count(0){};
+    VOTableCarrier();
     ~VOTableCarrier(){};
 
     void SetFileName(std::string file_path_name);
@@ -78,7 +78,9 @@ public:
     void GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response);
     void GetCooosys(CARTA::CatalogFileInfo* file_info_response);
     void GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size);
-    void GetFilteredData(
+    void GetFilterData(
+        CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
+    void GetFilterData2(
         CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
     size_t GetTableRowNumber();
     static CARTA::EntryType GetDataType(const std::string& data_type);
@@ -104,6 +106,8 @@ private:
     template <typename T>
     void SortRowIndexes(const std::vector<T>& v, CARTA::SortingType sorting_type);
     void ResetRowIndexes();
+    void FilterData(const CARTA::CatalogFilterRequest& filter_request);
+    bool IsSameFilterRequest(const CARTA::CatalogFilterRequest& filter_request);
     void SetConnectionFlag(bool connected);
 
     std::string _filename;
@@ -127,6 +131,10 @@ private:
     std::unordered_map<int, int> _column_index_to_data_type_index; // <Column Index, Data Type Index>
 
     // PS: do not consider the datatypes: "bit", "unsignedByte", "unicodeChar", "floatComplex" and "doubleComplex"
+
+    CARTA::CatalogFilterRequest _filter_request;
+    std::vector<int> _fill;       // Bool vector for the filter data, 1 is passed, and 0 is not passed after the filter
+    size_t _filter_data_size = 0; // Data size after the filter
 
     volatile bool _connected = true;
     tbb::atomic<int> _stream_count;
