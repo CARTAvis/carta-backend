@@ -119,7 +119,7 @@ void RegionStats::CalcHistogram(int channel, int stokes, int num_bins, const Bas
     CARTA::Histogram& histogram_msg) {
     // Calculate and store histogram for given channel, stokes, nbins; return histogram
     float bin_width(0), bin_center(0);
-    std::vector<size_t> histogram_bins;
+    std::vector<int> histogram_bins;
     if ((stats.min_val == std::numeric_limits<float>::max()) || (stats.max_val == std::numeric_limits<float>::min()) || data.empty()) {
         // empty / NaN region
         histogram_bins.resize(num_bins, 0);

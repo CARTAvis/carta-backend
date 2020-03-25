@@ -13,7 +13,7 @@ namespace carta {
 class Histogram {
     float _bin_width;
     float _min_val;
-    std::vector<size_t> _hist;
+    std::vector<int> _hist;
     const std::vector<float>& _data;
 
 public:
@@ -28,7 +28,7 @@ public:
         return _bin_width;
     }
 
-    std::vector<size_t> GetHistogram() const {
+    std::vector<int> GetHistogram() const {
         return _hist;
     }
 };
