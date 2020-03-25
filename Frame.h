@@ -26,7 +26,7 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "InterfaceConstants.h"
-#include "Requirements.h"
+#include "RequirementsCache.h"
 
 struct ContourSettings {
     std::vector<double> levels;

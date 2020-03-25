@@ -10,7 +10,7 @@
 #include <carta-protobuf/region_requirements.pb.h>
 
 #include "../Frame.h"
-#include "../Requirements.h"
+#include "../RequirementsCache.h"
 #include "Region.h"
 
 namespace carta {
@@ -57,7 +57,7 @@ private:
     // Clear requirements for closed region(s)
     void RemoveRegionRequirements(int region_id);
     void RemoveFileRequirements(int file_id);
-    bool SpectralConfigExists(int region_id, int file_id, SpectralConfig spectral_config);
+    bool SpectralConfigExists(int region_id, int file_id, SpectralConfig& spectral_config);
 
     // Fill data stream messages
     bool RegionFileIdsValid(int region_id, int file_id);
@@ -83,10 +83,10 @@ private:
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
-    // Requirements: key is region_id
-    std::unordered_map<int, std::vector<RegionHistogramConfig>> _histogram_req;
-    std::unordered_map<int, std::vector<RegionSpectralConfig>> _spectral_req;
-    std::unordered_map<int, std::vector<RegionStatsConfig>> _stats_req;
+    // Requirements
+    std::vector<RegionHistogramConfig> _histogram_req;
+    std::vector<RegionSpectralConfig> _spectral_req;
+    std::vector<RegionStatsConfig> _stats_req;
 };
 
 } // namespace carta

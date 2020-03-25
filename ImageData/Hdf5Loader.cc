@@ -313,7 +313,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
             mask_pos(1) = y;
             mask_pos(_spectral_axis) = z;
             if (_stokes_axis >= 0) {
-                mask_pos(_stokes_axis) = stokes;
+                mask_pos(_stokes_axis) = 0;
             }
             // skip all Z values for masked pixels
             if (!mask(mask_pos)) {
@@ -341,8 +341,13 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
     // Calculate partial stats
     calculate_stats();
+
     results = _region_stats[region_stats_id].stats;
-    progress = (float)x_start / num_x;
+    if (x_start == (num_x - 1)) {
+        progress = PROFILE_COMPLETE;
+    } else {
+        progress = (float)x_start / num_x;
+    }
 
     // Increment starting x for next time
     _region_stats[region_stats_id].latest_x = ++x_start;

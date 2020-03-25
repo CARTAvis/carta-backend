@@ -107,40 +107,6 @@ void RegionHandler::RemoveFrame(int file_id) {
     }
 }
 
-void RegionHandler::RemoveFileRequirements(int file_id) {
-    if (file_id == ALL_FILES) {
-        RemoveRegionRequirements(ALL_REGIONS); // removes all requirements
-    } else {
-        // Iterate through requirements for all regions and remove those for given file_id
-        for (auto& req : _histogram_req) { // req is <region_id, vector<RegionHistogramConfig>>
-            for (auto it = req.second.begin(); it != req.second.end();) {
-                if ((*it).file_id == file_id) {
-                    it = req.second.erase(it); // erase config with file_id and update iterator
-                } else {
-                    ++it;
-                }
-            }
-        }
-        for (auto& req : _spectral_req) { // req is <region_id, vector<RegionSpectralonfig>>
-            for (auto it = req.second.begin(); it != req.second.end();) {
-                if ((*it).file_id == file_id) {
-                    it = req.second.erase(it); // erase config with file_id and update iterator
-                } else {
-                    ++it;
-                }
-            }
-        }
-        for (auto& req : _stats_req) { // req is <region_id, vector<RegionStatsonfig>>
-            for (auto it = req.second.begin(); it != req.second.end();) {
-                if ((*it).file_id == file_id) {
-                    it = req.second.erase(it); // erase config with file_id and update iterator
-                } else {
-                    ++it;
-                }
-            }
-        }
-    }
-}
 // ********************************************************************
 // Region requirements handling
 
@@ -165,23 +131,23 @@ bool RegionHandler::SetHistogramRequirements(
             input_configs.push_back(hist_config);
         }
 
-        // Replace file_id requirements
-        if (_histogram_req.count(region_id)) {
-            for (auto& region_hist_config : _histogram_req[region_id]) {
-                if (region_hist_config.file_id == file_id) {
-                    region_hist_config.configs = input_configs;
-                    return true;
-                }
+        // Replace requirements
+        for (auto& region_hist_config : _histogram_req) {
+            if ((region_hist_config.file_id == file_id) && (region_hist_config.region_id == region_id)) {
+                region_hist_config.configs = input_configs;
+                return true;
             }
         }
 
-        // Add new file_id requirements
+        // Add new requirements
         RegionHistogramConfig rhconfig;
         rhconfig.file_id = file_id;
+        rhconfig.region_id = region_id;
         rhconfig.configs = input_configs;
-        _histogram_req[region_id].push_back(rhconfig);
+        _histogram_req.push_back(rhconfig);
         return true;
     }
+
     return false;
 }
 
@@ -208,40 +174,39 @@ bool RegionHandler::SetSpectralRequirements(
             input_configs.push_back(spec_config);
         }
 
-        // Replace file_id requirements
-        if (_spectral_req.count(region_id)) {
-            for (auto& region_spec_config : _spectral_req[region_id]) {
-                if (region_spec_config.file_id == file_id) {
-                    region_spec_config.configs = input_configs;
-                    return true;
-                }
+        // Replace requirements
+        for (auto& region_spec_config : _spectral_req) {
+            if ((region_spec_config.file_id == file_id) && (region_spec_config.region_id == region_id)) {
+                region_spec_config.configs = input_configs;
+                return true;
             }
         }
 
-        // Add new file_id requirements
-        RegionSpectralConfig rsconfig;
-        rsconfig.file_id = file_id;
-        rsconfig.configs = input_configs;
-        _spectral_req[region_id].push_back(rsconfig);
+        // Add new requirements
+        RegionSpectralConfig spectral_config;
+        spectral_config.file_id = file_id;
+        spectral_config.region_id = region_id;
+        spectral_config.configs = input_configs;
+        _spectral_req.push_back(spectral_config);
         return true;
     }
+
     return false;
 }
 
-bool RegionHandler::SpectralConfigExists(int region_id, int file_id, SpectralConfig spectral_config) {
-    // Find spectral config in _spectral_req
-    if (!_spectral_req.count(region_id)) {
-        return false;
-    }
-    for (auto& region_config : _spectral_req[region_id]) { // region_config is RegionSpectralConfig in vector
-        if (region_config.file_id == file_id) {
-            for (auto& stored_config : region_config.configs) { // stored_config is SpectralConfig in vector
-                if (stored_config == spectral_config) {
+bool RegionHandler::SpectralConfigExists(int region_id, int file_id, SpectralConfig& input_config) {
+    // Find spectral config in _spectral_req to check for cancellation
+    std::vector<RegionSpectralConfig> region_configs = _spectral_req;
+    for (auto& region_config : region_configs) {
+        if ((region_config.file_id == file_id) && (region_config.region_id == region_id)) {
+            for (auto& spectral_config : region_config.configs) {
+                if (spectral_config == input_config) {
                     return true;
                 }
             }
         }
     }
+
     return false;
 }
 
@@ -257,20 +222,19 @@ bool RegionHandler::SetStatsRequirements(int region_id, int file_id, std::shared
         _frames[file_id] = frame;
 
         // Replace file_id requirements
-        if (_stats_req.count(region_id)) {
-            for (auto& region_stats_config : _stats_req[region_id]) {
-                if (region_stats_config.file_id == file_id) {
-                    region_stats_config.stats_types = stats_types;
-                    return true;
-                }
+        for (auto& region_stats_config : _stats_req) {
+            if ((region_stats_config.file_id == file_id) && (region_stats_config.region_id == region_id)) {
+                region_stats_config.stats_types = stats_types;
+                return true;
             }
         }
 
         // Add new file_id requirements
-        RegionStatsConfig rsconfig;
-        rsconfig.file_id = file_id;
-        rsconfig.stats_types = stats_types;
-        _stats_req[region_id].push_back(rsconfig);
+        RegionStatsConfig stats_config;
+        stats_config.file_id = file_id;
+        stats_config.region_id = region_id;
+        stats_config.stats_types = stats_types;
+        _stats_req.push_back(stats_config);
         return true;
     }
     return false;
@@ -283,9 +247,63 @@ void RegionHandler::RemoveRegionRequirements(int region_id) {
         _spectral_req.clear();
         _stats_req.clear();
     } else {
-        _histogram_req.erase(region_id);
-        _spectral_req.erase(region_id);
-        _stats_req.erase(region_id);
+        // Iterate through requirements and remove those for given region_id
+        for (auto it = _histogram_req.begin(); it != _histogram_req.end();) {
+            if ((*it).region_id == region_id) {
+                it = _histogram_req.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        for (auto it = _spectral_req.begin(); it != _spectral_req.end();) {
+            if ((*it).region_id == region_id) {
+                it = _spectral_req.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        for (auto it = _stats_req.begin(); it != _stats_req.end();) {
+            if ((*it).region_id == region_id) {
+                it = _stats_req.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
+void RegionHandler::RemoveFileRequirements(int file_id) {
+    if (file_id == ALL_FILES) {
+        _histogram_req.clear();
+        _spectral_req.clear();
+        _stats_req.clear();
+    } else {
+        // Iterate through requirements and remove those for given file_id
+        for (auto it = _histogram_req.begin(); it != _histogram_req.end();) {
+            if ((*it).file_id == file_id) {
+                it = _histogram_req.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        for (auto it = _spectral_req.begin(); it != _spectral_req.end();) {
+            if ((*it).file_id == file_id) {
+                it = _spectral_req.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        for (auto it = _stats_req.begin(); it != _stats_req.end();) {
+            if ((*it).file_id == file_id) {
+                it = _stats_req.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
 }
 
@@ -356,15 +374,20 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
-    if ((region_id > 0) && !_histogram_req.count(region_id)) { // no requirements for this region
-        return false;
-    }
 
     bool message_filled(false);
     if (region_id > 0) {
         // Fill histograms for specific region with file_id requirement (specific file_id or all files)
-        for (auto region_config : _histogram_req[region_id]) { // region_config is RegionHistogramConfig
-            if ((file_id == ALL_FILES) || (region_config.file_id == file_id)) {
+        std::vector<RegionHistogramConfig> region_configs = _histogram_req;
+        for (auto& region_config : region_configs) {
+            if ((region_config.region_id == region_id) && ((region_config.file_id == file_id) || (file_id == ALL_FILES))) {
+                if (region_config.configs.empty()) { // no requirements
+                    continue;
+                }
+                if (!RegionFileIdsValid(region_id, region_config.file_id)) { // check specific ids
+                    continue;
+                }
+
                 // return histograms for this requirement
                 CARTA::RegionHistogramData histogram_message;
                 if (FillRegionFileHistogramData(region_id, region_config.file_id, region_config.configs, histogram_message)) {
@@ -375,15 +398,21 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
         }
     } else {
         // (region_id < 0) Fill histograms for all regions with specific file_id requirement
-        for (auto& req : _histogram_req) {           // req is <region_id, vector<RegionHistogramConfig>>
-            for (auto& region_config : req.second) { // region_config is RegionHistogramConfig
-                if (region_config.file_id == file_id) {
-                    // return histograms for this requirement
-                    CARTA::RegionHistogramData histogram_message;
-                    if (FillRegionFileHistogramData(req.first, file_id, region_config.configs, histogram_message)) {
-                        cb(histogram_message); // send data
-                        message_filled = true;
-                    }
+        std::vector<RegionHistogramConfig> region_configs = _histogram_req;
+        for (auto& region_config : region_configs) {
+            if (region_config.file_id == file_id) {
+                if (region_config.configs.empty()) { // requirements removed
+                    continue;
+                }
+                if (!RegionFileIdsValid(region_config.region_id, file_id)) { // check specific ids
+                    continue;
+                }
+
+                // return histograms for this requirement
+                CARTA::RegionHistogramData histogram_message;
+                if (FillRegionFileHistogramData(region_config.region_id, file_id, region_config.configs, histogram_message)) {
+                    cb(histogram_message); // send data
+                    message_filled = true;
                 }
             }
         }
@@ -433,6 +462,7 @@ bool RegionHandler::FillRegionFileHistogramData(
         return false;
     }
 
+    // Check if should cancel
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
@@ -479,25 +509,27 @@ bool RegionHandler::FillSpectralProfileData(
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
-    if ((region_id > 0) && !_spectral_req.count(region_id)) { // no requirements for this region
-        return false;
-    }
 
     bool profile_ok(false);
     if (region_id > 0) {
         // Fill spectral profile for specific region with file_id requirement (specific file_id or all files)
-        for (auto region_config : _spectral_req[region_id]) { // region_config is RegionSpectralConfig in vector
-            if ((file_id == ALL_FILES) || (region_config.file_id == file_id)) {
-                if (region_config.configs.empty()) {
-                    continue; // no spectral requirements
+        std::vector<RegionSpectralConfig> region_configs = _spectral_req;
+        for (auto& region_config : region_configs) {
+            if ((region_config.region_id == region_id) && ((region_config.file_id == file_id) || (file_id == ALL_FILES))) {
+                if (region_config.configs.empty()) { // no requirements
+                    continue;
+                }
+                if (!RegionFileIdsValid(region_id, region_config.file_id)) { // check specific ids
+                    continue;
                 }
 
-                for (auto& spectral_config : region_config.configs) { // spectral_config is SpectralConfig in vector
+                for (auto& spectral_config : region_config.configs) {
                     // Do not update for specific stokes when stokes changes
                     int stokes(spectral_config.stokes_index);
                     if ((stokes != CURRENT_STOKES) && stokes_changed) {
                         continue;
                     }
+
                     if (stokes == CURRENT_STOKES) {
                         stokes = _frames.at(region_config.file_id)->CurrentStokes();
                     }
@@ -519,36 +551,39 @@ bool RegionHandler::FillSpectralProfileData(
         }
     } else {
         // (region_id < 0) Fill spectral profile for all regions with specific file_id requirement
-        for (auto& req : _spectral_req) {            // req is <region_id, vector<RegionSpectralConfig>>
-            for (auto& region_config : req.second) { // region_config is RegionSpectralConfig in vector
-                if (region_config.file_id == file_id) {
-                    if (region_config.configs.empty()) {
-                        continue; // no spectral requirements
+        std::vector<RegionSpectralConfig> region_configs = _spectral_req;
+        for (auto& region_config : region_configs) {
+            if (region_config.file_id == file_id) {
+                if (region_config.configs.empty()) { // no requirements
+                    continue;
+                }
+                if (!RegionFileIdsValid(region_config.region_id, file_id)) { // check specific ids
+                    continue;
+                }
+
+                for (auto& spectral_config : region_config.configs) {
+                    // Do not update for specific stokes when stokes changes
+                    int stokes(spectral_config.stokes_index);
+                    if ((stokes != CURRENT_STOKES) && stokes_changed) {
+                        continue;
                     }
 
-                    for (auto spectral_config : region_config.configs) { // spectral_config is SpectralConfig in vector
-                        // Do not update for specific stokes when stokes changes
-                        int stokes(spectral_config.stokes_index);
-                        if ((stokes != CURRENT_STOKES) && stokes_changed) {
-                            continue;
-                        }
-                        if (stokes == CURRENT_STOKES) {
-                            stokes = _frames.at(file_id)->CurrentStokes();
-                        }
-
-                        // Return profile(s) for this requirement; each stats type is its own spectral data message
-                        profile_ok = GetRegionFileSpectralData(req.first, file_id, spectral_config,
-                            [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
-                                CARTA::SpectralProfileData profile_message;
-                                profile_message.set_file_id(file_id);
-                                profile_message.set_region_id(req.first);
-                                profile_message.set_stokes(stokes);
-                                profile_message.set_progress(progress);
-                                FillSpectralProfileDataMessage(
-                                    profile_message, spectral_config.coordinate, spectral_config.stats_types, results);
-                                cb(profile_message); // send (partial profile) data
-                            });
+                    if (stokes == CURRENT_STOKES) {
+                        stokes = _frames.at(file_id)->CurrentStokes();
                     }
+
+                    // Return profile(s) for this requirement; each stats type is its own spectral data message
+                    profile_ok = GetRegionFileSpectralData(region_config.region_id, file_id, spectral_config,
+                        [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
+                            CARTA::SpectralProfileData profile_message;
+                            profile_message.set_file_id(file_id);
+                            profile_message.set_region_id(region_config.region_id);
+                            profile_message.set_stokes(stokes);
+                            profile_message.set_progress(progress);
+                            FillSpectralProfileDataMessage(
+                                profile_message, spectral_config.coordinate, spectral_config.stats_types, results);
+                            cb(profile_message); // send (partial profile) data
+                        });
                 }
             }
         }
@@ -771,20 +806,23 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
-    if ((region_id > 0) && !_stats_req.count(region_id)) { // no requirements for this region
-        return false;
-    }
 
     bool message_filled(false);
     if (region_id > 0) {
         // Fill stats data for specific region with file_id requirement (specific file_id or all files)
-        // Get requirements for region_id
-        for (auto region_config : _stats_req[region_id]) { // region_config is RegionStatsConfig in vector
-            auto config_file_id(region_config.file_id);
-            if ((file_id == ALL_FILES) || (config_file_id == file_id)) {
+        std::vector<RegionStatsConfig> region_configs = _stats_req;
+        for (auto& region_config : region_configs) {
+            if ((region_config.region_id == region_id) && ((region_config.file_id == file_id) || (file_id == ALL_FILES))) {
+                if (region_config.stats_types.empty()) { // no requirements
+                    continue;
+                }
+                if (!RegionFileIdsValid(region_id, region_config.file_id)) { // check specific ids
+                    continue;
+                }
+
                 // return stats for this requirement
                 CARTA::RegionStatsData stats_message;
-                if (FillRegionFileStatsData(region_id, config_file_id, region_config.stats_types, stats_message)) {
+                if (FillRegionFileStatsData(region_id, region_config.file_id, region_config.stats_types, stats_message)) {
                     cb(stats_message); // send data
                     message_filled = true;
                 }
@@ -796,15 +834,21 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
         int stokes(_frames.at(file_id)->CurrentStokes());
 
         // Find requirements with file_id
-        for (auto& req : _stats_req) {               // req is <region_id, vector<RegionStatsConfig>>
-            for (auto& region_config : req.second) { // region_config is RegionStatsConfig in vector
-                if (region_config.file_id == file_id) {
-                    // return stats for this requirement
-                    CARTA::RegionStatsData stats_message;
-                    if (FillRegionFileStatsData(req.first, file_id, region_config.stats_types, stats_message)) {
-                        cb(stats_message); // send data
-                        message_filled = true;
-                    }
+        std::vector<RegionStatsConfig> region_configs = _stats_req;
+        for (auto& region_config : region_configs) {
+            if (region_config.file_id == file_id) {
+                if (region_config.stats_types.empty()) { // no requirements
+                    continue;
+                }
+                if (!RegionFileIdsValid(region_config.region_id, file_id)) { // check specific ids
+                    continue;
+                }
+
+                // return stats for this requirement
+                CARTA::RegionStatsData stats_message;
+                if (FillRegionFileStatsData(region_config.region_id, file_id, region_config.stats_types, stats_message)) {
+                    cb(stats_message); // send data
+                    message_filled = true;
                 }
             }
         }
@@ -815,13 +859,6 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 bool RegionHandler::FillRegionFileStatsData(
     int region_id, int file_id, std::vector<int>& required_stats, CARTA::RegionStatsData& stats_message) {
     // Fill stats message for given region, file
-    if (!RegionFileIdsValid(region_id, file_id)) {
-        return false;
-    }
-    if (required_stats.empty()) {
-        return false; // requirements removed for this region
-    }
-
     auto t_start_region_stats = std::chrono::high_resolution_clock::now();
 
     int channel(_frames.at(file_id)->CurrentChannel());
@@ -855,10 +892,6 @@ bool RegionHandler::FillRegionFileStatsData(
     bool per_channel(false);
     std::map<CARTA::StatsType, std::vector<double>> stats_map;
     if (_frames.at(file_id)->GetRegionStats(region, required_stats, per_channel, stats_map)) {
-        if (!RegionFileIdsValid(region_id, file_id)) {
-            return false;
-        }
-
         // convert vector to single value in map
         std::map<CARTA::StatsType, double> stats_results;
         for (auto& value : stats_map) {
