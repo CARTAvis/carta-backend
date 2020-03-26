@@ -341,6 +341,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::REMOVE_REGION: {
+                    CARTA::RemoveRegion message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnRemoveRegion(message);
+                    } else {
+                        fmt::print("Bad REMOVE_REGION message!\n");
+                    }
+                    break;
+                }
                 case CARTA::EventType::SET_SPECTRAL_REQUIREMENTS: {
                     CARTA::SetSpectralRequirements message;
                     if (message.ParseFromArray(event_buf, event_length)) {
