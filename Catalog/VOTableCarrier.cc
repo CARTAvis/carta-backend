@@ -1127,7 +1127,7 @@ bool VOTableCarrier::IsSameFilterRequest(const CARTA::CatalogFilterRequest& filt
             for (int i = 0; i < filter_request.filter_configs_size(); ++i) {
                 auto m_filter_configs = _filter_request.filter_configs(i);
                 auto filter_configs = filter_request.filter_configs(i);
-                if ((!m_filter_configs.column_name().empty() && !filter_configs.column_name().empty()) &&
+                if ((!m_filter_configs.column_name().empty() || !filter_configs.column_name().empty()) &&
                     (m_filter_configs.column_name() != filter_configs.column_name())) {
                     return false;
                 }
@@ -1140,7 +1140,7 @@ bool VOTableCarrier::IsSameFilterRequest(const CARTA::CatalogFilterRequest& filt
                 if (m_filter_configs.max() != filter_configs.max()) {
                     return false;
                 }
-                if ((!m_filter_configs.sub_string().empty() && !filter_configs.sub_string().empty()) &&
+                if ((!m_filter_configs.sub_string().empty() || !filter_configs.sub_string().empty()) &&
                     (m_filter_configs.sub_string() != filter_configs.sub_string())) {
                     return false;
                 }
@@ -1150,11 +1150,11 @@ bool VOTableCarrier::IsSameFilterRequest(const CARTA::CatalogFilterRequest& filt
     // Check image_bounds
     auto _image_bounds = _filter_request.image_bounds();
     auto image_bounds = filter_request.image_bounds();
-    if ((!_image_bounds.x_column_name().empty() && !image_bounds.x_column_name().empty()) &&
+    if ((!_image_bounds.x_column_name().empty() || !image_bounds.x_column_name().empty()) &&
         (_image_bounds.x_column_name() != image_bounds.x_column_name())) {
         return false;
     }
-    if ((!_image_bounds.y_column_name().empty() && !image_bounds.y_column_name().empty()) &&
+    if ((!_image_bounds.y_column_name().empty() || !image_bounds.y_column_name().empty()) &&
         (_image_bounds.y_column_name() != image_bounds.y_column_name())) {
         return false;
     }
@@ -1179,7 +1179,7 @@ bool VOTableCarrier::IsSameFilterRequest(const CARTA::CatalogFilterRequest& filt
         return false;
     }
     // Check sort_column and sorting_type
-    if (!_filter_request.sort_column().empty() && !filter_request.sort_column().empty()) {
+    if (!_filter_request.sort_column().empty() || !filter_request.sort_column().empty()) {
         if (_filter_request.sort_column() != filter_request.sort_column()) {
             return false;
         } else {
