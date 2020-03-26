@@ -190,9 +190,7 @@ void Controller::OnFilterRequest(
     }
 
     _carriers[file_id]->IncreaseStreamCount();
-    //_carriers[file_id]->GetFilterData(
-    //    filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
-    _carriers[file_id]->GetFilterData2(
+    _carriers[file_id]->GetFilterData(
         filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
     _carriers[file_id]->DecreaseStreamCount();
 }
