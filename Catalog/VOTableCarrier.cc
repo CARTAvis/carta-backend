@@ -493,7 +493,7 @@ void VOTableCarrier::GetFilterData2(
         if ((row_index + row_chunk) >= total_row_num) {
             progress = 1.0;
         } else {
-            progress = (float)(row_index + row_chunk - subset_start_index) / (float)subset_data_size;
+            progress = (float)(accumulated_data_size) / (float)subset_data_size;
         }
 
         // Fill the row data chunk by chunk
@@ -796,7 +796,7 @@ void VOTableCarrier::GetFilterData(
         if ((row_index + row_chunk) >= total_row_num) {
             progress = 1.0;
         } else {
-            progress = (float)(row_index + row_chunk - subset_start_index) / (float)subset_data_size;
+            progress = (float)(accumulated_data_size) / (float)subset_data_size;
         }
 
         // Fill the row data chunk by chunk
