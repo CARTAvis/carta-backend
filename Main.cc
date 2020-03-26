@@ -415,8 +415,8 @@ int main(int argc, const char* argv[]) {
 
         // define and get input arguments
         int port(3002);
-        int thread_count = 2;
-        int omp_thread_count = 4;
+        int thread_count = TBB_THREAD_COUNT;
+        int omp_thread_count = OMP_THREAD_COUNT;
         { // get values then let Input go out of scope
             casacore::Input inp;
             string json_fname;

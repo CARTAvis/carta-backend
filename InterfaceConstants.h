@@ -6,6 +6,10 @@
 // version
 #define VERSION_ID "1.3"
 
+// thread counts
+#define TBB_THREAD_COUNT 2
+#define OMP_THREAD_COUNT 4
+
 // file ids
 #define ALL_FILES -1
 
