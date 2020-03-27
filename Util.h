@@ -55,11 +55,6 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
 CARTA::FileType GetCartaFileType(const std::string& filename);
 
-// For convenience, create single index for storing cache by channel and stokes
-inline int ChannelStokesIndex(int channel, int stokes) {
-    return (channel * 10) + stokes;
-}
-
 // ************ Data Stream Helpers *************
 
 void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);

@@ -673,9 +673,9 @@ bool Frame::GetBasicStats(int channel, int stokes, carta::BasicStats<float>& sta
         }
         return false; // calculate and cache in Session
     } else {
-        int index(ChannelStokesIndex(channel, stokes));
-        if (_image_basic_stats.count(index)) {
-            stats = _image_basic_stats[index]; // get from cache
+        int cache_key(CacheKey(channel, stokes));
+        if (_image_basic_stats.count(cache_key)) {
+            stats = _image_basic_stats[cache_key]; // get from cache
             return true;
         }
 
@@ -686,7 +686,7 @@ bool Frame::GetBasicStats(int channel, int stokes, carta::BasicStats<float>& sta
                 return false;
             }
             CalcBasicStats(_image_cache, stats);
-            _image_basic_stats[index] = stats;
+            _image_basic_stats[cache_key] = stats;
             return true;
         }
 
@@ -694,7 +694,9 @@ bool Frame::GetBasicStats(int channel, int stokes, carta::BasicStats<float>& sta
         std::vector<float> data;
         GetChannelMatrix(data, channel, stokes);
         CalcBasicStats(data, stats);
-        _image_basic_stats[index] = stats;
+
+        // cache results
+        _image_basic_stats[cache_key] = stats;
         return true;
     }
     return false;
@@ -702,11 +704,12 @@ bool Frame::GetBasicStats(int channel, int stokes, carta::BasicStats<float>& sta
 
 bool Frame::GetCachedImageHistogram(int channel, int stokes, int num_bins, HistogramResults& histogram_results) {
     // Get image histogram results from cache
-    int index(ChannelStokesIndex(channel, stokes));
-    if (_image_histograms.count(index)) {
+    int cache_key(CacheKey(channel, stokes));
+    if (_image_histograms.count(cache_key)) {
         // get from cache if correct num_bins
-        auto results_for_index = _image_histograms[index];
-        for (auto& result : results_for_index) {
+        auto results_for_key = _image_histograms[cache_key];
+
+        for (auto& result : results_for_key) {
             if (result.num_bins == num_bins) {
                 histogram_results = result;
                 return true;
@@ -761,8 +764,8 @@ bool Frame::CalculateHistogram(int region_id, int channel, int stokes, int num_b
 
     // cache image histogram
     if ((region_id == IMAGE_REGION_ID) || (NumChannels() == 1)) {
-        int index(ChannelStokesIndex(channel, stokes));
-        _image_histograms[index].push_back(results);
+        int cache_key(CacheKey(channel, stokes));
+        _image_histograms[cache_key].push_back(results);
     }
 
     return true;
@@ -818,9 +821,9 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
     }
 
     // Use cached stats
-    int index(ChannelStokesIndex(channel, stokes));
-    if (_image_stats.count(index)) {
-        auto stats_map = _image_stats[index];
+    int cache_key(CacheKey(channel, stokes));
+    if (_image_stats.count(cache_key)) {
+        auto stats_map = _image_stats[cache_key];
         FillStatisticsValuesFromMap(stats_data, _image_required_stats, stats_map);
         return true;
     }
@@ -842,7 +845,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         FillStatisticsValuesFromMap(stats_data, _image_required_stats, stats_map);
 
         // cache results
-        _image_stats[index] = stats_map;
+        _image_stats[cache_key] = stats_map;
 
         if (_verbose) {
             auto t_end_image_stats = std::chrono::high_resolution_clock::now();

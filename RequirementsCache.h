@@ -3,62 +3,99 @@
 
 #include "ImageStats/Histogram.h"
 
+struct ConfigId {
+    int file_id;
+    int region_id;
+
+    ConfigId() {}
+    ConfigId(int file, int region) : file_id(file), region_id(region) {}
+
+    bool operator==(const ConfigId& rhs) const {
+        return (file_id == rhs.file_id) && (region_id == rhs.region_id);
+    }
+};
+
+struct ConfigIdHash {
+    std::size_t operator()(ConfigId const& id) const noexcept {
+        std::size_t h1 = std::hash<int>{}(id.file_id);
+        std::size_t h2 = std::hash<int>{}(id.region_id);
+        return h1 ^ (h2 << 1);
+    }
+};
+
+// -------------------------------
+
+struct CacheId {
+    int file_id;
+    int region_id;
+    int stokes;
+    int channel;
+
+    CacheId() {}
+    CacheId(int file, int region, int stokes, int channel = -1) : file_id(file), region_id(region), stokes(stokes), channel(channel) {}
+
+    bool operator==(const CacheId& rhs) const {
+        return (file_id == rhs.file_id) && (region_id == rhs.region_id) && (stokes == rhs.stokes) && (channel == rhs.channel);
+    }
+};
+
+struct CacheIdHash {
+    std::size_t operator()(CacheId const& id) const noexcept {
+        std::size_t h1 = std::hash<int>{}(id.file_id);
+        std::size_t h2 = std::hash<int>{}(id.region_id);
+        std::size_t h3 = std::hash<int>{}(id.stokes);
+        std::size_t h4 = std::hash<int>{}(id.channel);
+        return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+    }
+};
+
+// -------------------------------
+
 struct HistogramConfig {
     int channel;
     int num_bins;
+
+    HistogramConfig() {}
+    HistogramConfig(int chan, int bins) : channel(chan), num_bins(bins) {}
 };
 
 struct RegionHistogramConfig {
-    int file_id;
-    int region_id;
     std::vector<HistogramConfig> configs;
 };
 
-struct HistogramStats {
-    // subset of BasicStats for CARTA::Histogram submessage
-    double mean;
-    double std_dev;
-};
-
 struct HistogramCache {
-    int channel;
-    int stokes;
-    HistogramStats stats;
-    carta::HistogramResults results;
+    carta::BasicStats<float> stats;
+    std::unordered_map<int, carta::HistogramResults> results; // key is num_bins
 
-    HistogramCache(int channel_, int stokes_, HistogramStats& stats_, carta::HistogramResults& results_) {
-        channel = channel_;
-        stokes = stokes_;
-        stats = stats_;
-        results = results_;
-    }
-};
+    HistogramCache() {}
 
-struct RegionHistogramCache {
-    int file_id;
-    int region_id;
-    std::vector<HistogramCache> histogram_cache;
-
-    void SetHistogramCache(int file_id_, int channel_, int stokes_, HistogramStats& stats_, carta::HistogramResults& results_) {
-        file_id = file_id_;
-        HistogramCache cache(channel_, stokes_, stats_, results_);
-        histogram_cache.push_back(cache);
-    }
-
-    bool GetHistogramCache(
-        int file_id_, int channel_, int stokes_, int num_bins_, HistogramStats& stats_, carta::HistogramResults& results_) {
-        if (file_id != file_id_) {
-            return false;
-        }
-
-        for (auto& cache : histogram_cache) {
-            if ((cache.channel == channel_) && (cache.stokes == stokes_) && (cache.results.num_bins == num_bins_)) {
-                stats_ = cache.stats;
-                results_ = cache.results;
-                return true;
-            }
+    bool GetBasicStats(carta::BasicStats<float>& stats_) {
+        if (stats.num_pixels > 0) {
+            stats_ = stats;
+            return true;
         }
         return false;
+    }
+
+    void SetBasicStats(carta::BasicStats<float>& stats_) {
+        stats = stats_;
+    }
+
+    bool GetHistogram(int num_bins_, carta::HistogramResults& results_) {
+        if (results.count(num_bins_)) {
+            results_ = results.at(num_bins_);
+            return true;
+        }
+        return false;
+    }
+
+    void SetHistogram(int num_bins_, carta::HistogramResults& results_) {
+        results[num_bins_] = results_;
+    }
+
+    void ClearHistograms() {
+        stats = carta::BasicStats<float>();
+        results.clear();
     }
 };
 
@@ -69,7 +106,6 @@ struct SpectralConfig {
     int stokes_index;
     std::vector<int> stats_types;
 
-    SpectralConfig() {}
     SpectralConfig(std::string& coordinate_, int stokes_index_, std::vector<int>& stats_types_) {
         coordinate = coordinate_;
         stokes_index = stokes_index_;
@@ -82,32 +118,26 @@ struct SpectralConfig {
 };
 
 struct RegionSpectralConfig {
-    int file_id;
-    int region_id;
     std::vector<SpectralConfig> configs;
 };
 
 struct SpectralCache {
-    int stokes;
-    std::unordered_map<CARTA::StatsType, std::vector<double>> profiles;
-};
+    std::map<CARTA::StatsType, std::vector<double>> profiles;
 
-struct RegionSpectralCache {
-    int file_id;
-    int region_id;
-    std::vector<SpectralCache> profile_cache;
+    SpectralCache() {}
+    SpectralCache(std::map<CARTA::StatsType, std::vector<double>>& profiles_) : profiles(profiles_) {}
 
-    bool GetProfile(int file_id_, int stokes_, CARTA::StatsType type_, std::vector<double>& profile_) {
-        if (file_id != file_id) {
-            return false;
-        }
-        for (auto& cache : profile_cache) {
-            if ((cache.stokes == stokes_) && cache.profiles.count(type_)) {
-                profile_ = cache.profiles.at(type_);
-                return true;
-            }
+    bool GetProfile(CARTA::StatsType type_, std::vector<double>& profile_) {
+        if (!profiles.empty() && profiles.count(type_)) {
+            profile_ = profiles.at(type_);
+            return true;
         }
         return false;
+    }
+
+    void ClearProfiles() {
+        // when region changes
+        profiles.clear();
     }
 };
 
@@ -120,27 +150,24 @@ struct RegionStatsConfig {
 };
 
 struct StatsCache {
-    int channel;
-    int stokes;
     std::map<CARTA::StatsType, double> stats;
-};
 
-struct RegionStatsCache {
-    int file_id;
-    int region_id;
-    std::vector<StatsCache> stats;
+    StatsCache() {}
+    StatsCache(std::map<CARTA::StatsType, double>& stats_) {
+        stats = stats_;
+    }
 
-    bool GetStats(int file_id_, int channel_, int stokes_, std::map<CARTA::StatsType, double>& stats_) {
-        if (file_id != file_id) {
-            return false;
-        }
-        for (auto& cache : stats) {
-            if ((cache.channel == channel_) && (cache.stokes == stokes_)) {
-                stats_ = cache.stats;
-                return true;
-            }
+    bool GetStats(std::map<CARTA::StatsType, double>& stats_) {
+        if (!stats.empty()) {
+            stats_ = stats;
+            return true;
         }
         return false;
+    }
+
+    void ClearStats() {
+        // When region changes
+        stats.clear();
     }
 };
 

@@ -54,9 +54,13 @@ private:
     void CancelAllJobs();
     bool ShouldCancelJob(int region_id);
 
-    // Clear requirements for closed region(s)
-    void RemoveRegionRequirements(int region_id);
-    void RemoveFileRequirements(int file_id);
+    // Clear requirements for closed region(s) or file(s)
+    void RemoveRegionRequirementsCache(int region_id);
+    void RemoveFileRequirementsCache(int file_id);
+    // Clear cache for changed region
+    void ClearRegionCache(int region_id);
+
+    // Check if spectral config has been cancelled
     bool SpectralConfigExists(int region_id, int file_id, SpectralConfig& spectral_config);
 
     // Fill data stream messages
@@ -84,9 +88,14 @@ private:
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
     // Requirements
-    std::vector<RegionHistogramConfig> _histogram_req;
-    std::vector<RegionSpectralConfig> _spectral_req;
-    std::vector<RegionStatsConfig> _stats_req;
+    std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _histogram_req;
+    std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> _spectral_req;
+    std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _stats_req;
+
+    // Cache
+    std::unordered_map<CacheId, HistogramCache, CacheIdHash> _histogram_cache;
+    std::unordered_map<CacheId, SpectralCache, CacheIdHash> _spectral_cache;
+    std::unordered_map<CacheId, StatsCache, CacheIdHash> _stats_cache;
 };
 
 } // namespace carta

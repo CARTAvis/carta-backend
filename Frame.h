@@ -177,6 +177,11 @@ private:
     bool GetCachedImageHistogram(int channel, int stokes, int num_bins, carta::HistogramResults& histogram_results);
     bool GetCachedCubeHistogram(int stokes, int num_bins, carta::HistogramResults& histogram_results);
 
+    // For convenience, create int map key for storing cache by channel and stokes
+    inline int CacheKey(int channel, int stokes) {
+        return (channel * 10) + stokes;
+    }
+
     // Setup
     uint32_t _session_id;
     bool _verbose;
@@ -223,7 +228,7 @@ private:
     std::vector<SpectralConfig> _cursor_spectral_configs;
 
     // Cache maps
-    // For image, key is ChannelStokesIndex; for cube, key is stokes.
+    // For image, key is CacheKey (channel/stokes); for cube, key is stokes.
     std::unordered_map<int, std::vector<carta::HistogramResults>> _image_histograms, _cube_histograms;
     std::unordered_map<int, carta::BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
