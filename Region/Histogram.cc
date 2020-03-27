@@ -19,8 +19,8 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
         auto v = _data[i];
         if (std::isnan(v) || std::isinf(v))
             continue;
-        int bin = std::max(std::min((int)((v - _min_val) / _bin_width), (int)_hist.size() - 1), 0);
-        ++tmp[bin];
+        size_t bin_number = std::max<size_t>(std::min<size_t>((size_t)((v - _min_val) / _bin_width), (size_t)_hist.size() - 1), 0);
+        ++tmp[bin_number];
     }
     _hist = tmp;
 }
@@ -35,19 +35,19 @@ void Histogram::join(Histogram& h) { // NOLINT
     tbb::parallel_for(range, loop);
 }
 
-void Histogram::setup_bins(const int start, const int end) {
-    int i, stride, buckets;
+void Histogram::setup_bins(const size_t start, const size_t end) {
+    size_t i, stride, buckets;
     int** bins_bin;
 
     auto calc_lambda = [&](int start, int lstride) {
         int* lbins = new int[_hist.size()];
-        int end = std::min((size_t)(start + lstride), _data.size());
+        size_t end = std::min((size_t)(start + lstride), _data.size());
         memset(lbins, 0, _hist.size() * sizeof(int));
-        for (auto i = start; i < end; i++) {
+        for (size_t i = start; i < end; i++) {
             auto v = _data[i];
             if (std::isfinite(v)) {
-                int binN = std::max(std::min((int)((v - _min_val) / _bin_width), (int)_hist.size() - 1), 0);
-                ++lbins[binN];
+                size_t bin_number = std::max<size_t>(std::min<size_t>((size_t)((v - _min_val) / _bin_width), (size_t)_hist.size() - 1), 0);
+                ++lbins[bin_number];
             }
         }
         return lbins;

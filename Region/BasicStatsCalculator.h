@@ -40,7 +40,7 @@ public:
 
     void operator()(const tbb::blocked_range<size_t>& r);
     void join(BasicStatsCalculator& other); // NOLINT
-    void reduce(const int start, const int end);
+    void reduce(const size_t start, const size_t end);
 
     BasicStats<T> GetStats() const;
 };
