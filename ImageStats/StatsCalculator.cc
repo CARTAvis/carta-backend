@@ -28,7 +28,7 @@ void CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vect
     }
 }
 
-bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
+bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel) {
     // Use ImageStatistics to fill statistics values according to type;
     // template type matches image type
@@ -48,10 +48,11 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
     for (size_t i = 0; i < num_stats; ++i) {
         // get requested statistics values
         casacore::LatticeStatsBase::StatisticsTypes lattice_stats_type(casacore::LatticeStatsBase::NSTATS);
-        auto carta_stats_type = static_cast<CARTA::StatsType>(requested_stats[i]);
 
         std::vector<double> dbl_result; // lattice stats
         std::vector<int> int_result;    // position stats
+        auto carta_stats_type = requested_stats[i];
+
         switch (carta_stats_type) {
             case CARTA::StatsType::NumPixels:
                 lattice_stats_type = casacore::LatticeStatsBase::NPTS;

@@ -61,11 +61,11 @@ void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int
 
 void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results);
 
-void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate, std::vector<int>& required_stats,
-    std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
+void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
+    std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
 
 void FillStatisticsValuesFromMap(
-    CARTA::RegionStatsData& stats_data, std::vector<int>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
+    CARTA::RegionStatsData& stats_data, std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
 
 // ************ structs *************
 //

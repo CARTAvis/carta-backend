@@ -159,7 +159,10 @@ bool RegionHandler::SetSpectralRequirements(
             std::string coordinate(config.coordinate());
             int axis, stokes;
             ConvertCoordinateToAxes(coordinate, axis, stokes);
-            std::vector<int> stats = std::vector<int>(config.stats_types().begin(), config.stats_types().end());
+            std::vector<CARTA::StatsType> stats;
+            for (size_t i = 0; i < config.stats_types_size(); ++i) {
+                stats.push_back(config.stats_types(i));
+            }
             SpectralConfig spec_config(coordinate, stokes, stats);
             input_configs.push_back(spec_config);
         }
@@ -186,7 +189,8 @@ bool RegionHandler::SpectralConfigExists(int region_id, int file_id, SpectralCon
     return false;
 }
 
-bool RegionHandler::SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<int>& stats_types) {
+bool RegionHandler::SetStatsRequirements(
+    int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::StatsType>& stats_types) {
     // Set stats data requirements for given region and file
     if (stats_types.empty() && !RegionSet(region_id)) {
         // frontend clears requirements after region removed, prevent error in log
@@ -433,7 +437,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 // return histograms for this requirement
                 CARTA::RegionHistogramData histogram_message;
                 std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
-                if (FillRegionFileHistogramData(region_id, config_file_id, histogram_configs, histogram_message)) {
+                if (GetRegionHistogramData(region_id, config_file_id, histogram_configs, histogram_message)) {
                     cb(histogram_message); // send data
                     message_filled = true;
                 }
@@ -455,7 +459,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 // return histograms for this requirement
                 std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
                 CARTA::RegionHistogramData histogram_message;
-                if (FillRegionFileHistogramData(config_region_id, file_id, histogram_configs, histogram_message)) {
+                if (GetRegionHistogramData(config_region_id, file_id, histogram_configs, histogram_message)) {
                     cb(histogram_message); // send data
                     message_filled = true;
                 }
@@ -465,7 +469,7 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
     return message_filled;
 }
 
-bool RegionHandler::FillRegionFileHistogramData(
+bool RegionHandler::GetRegionHistogramData(
     int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message) {
     // Fill stats message for given region, file
     auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
@@ -685,8 +689,7 @@ bool RegionHandler::GetRegionFileSpectralData(int region_id, int file_id, Spectr
     std::map<CARTA::StatsType, std::vector<double>> results;
     std::vector<double> init_spectral(profile_size, std::numeric_limits<double>::quiet_NaN());
     for (const auto& stat : spectral_config.stats_types) {
-        auto carta_stat = static_cast<CARTA::StatsType>(stat);
-        results[carta_stat] = init_spectral;
+        results[stat] = init_spectral;
     }
     float progress(0.0);
 
@@ -925,7 +928,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 
                 // return stats for this requirement
                 CARTA::RegionStatsData stats_message;
-                if (FillRegionFileStatsData(region_id, config_file_id, region_config.second.stats_types, stats_message)) {
+                if (GetRegionStatsData(region_id, config_file_id, region_config.second.stats_types, stats_message)) {
                     cb(stats_message); // send data
                     message_filled = true;
                 }
@@ -950,7 +953,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 
                 // return stats for this requirement
                 CARTA::RegionStatsData stats_message;
-                if (FillRegionFileStatsData(config_region_id, file_id, region_config.second.stats_types, stats_message)) {
+                if (GetRegionStatsData(config_region_id, file_id, region_config.second.stats_types, stats_message)) {
                     cb(stats_message); // send data
                     message_filled = true;
                 }
@@ -960,8 +963,8 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
     return message_filled;
 }
 
-bool RegionHandler::FillRegionFileStatsData(
-    int region_id, int file_id, std::vector<int>& required_stats, CARTA::RegionStatsData& stats_message) {
+bool RegionHandler::GetRegionStatsData(
+    int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
     // Fill stats message for given region, file
     auto t_start_region_stats = std::chrono::high_resolution_clock::now();
 
@@ -990,8 +993,7 @@ bool RegionHandler::FillRegionFileStatsData(
     if (!ApplyRegionToFile(region_id, file_id, chan_range, stokes, region)) {
         // region outside image: NaN results
         std::map<CARTA::StatsType, double> stats_results;
-        for (const auto& stat : required_stats) {
-            auto carta_stat = static_cast<CARTA::StatsType>(stat);
+        for (const auto& carta_stat : required_stats) {
             if (carta_stat == CARTA::StatsType::NumPixels) {
                 stats_results[carta_stat] = 0.0;
             } else {

@@ -104,9 +104,9 @@ struct HistogramCache {
 struct SpectralConfig {
     std::string coordinate;
     int stokes_index;
-    std::vector<int> stats_types;
+    std::vector<CARTA::StatsType> stats_types;
 
-    SpectralConfig(std::string& coordinate_, int stokes_index_, std::vector<int>& stats_types_) {
+    SpectralConfig(std::string& coordinate_, int stokes_index_, std::vector<CARTA::StatsType>& stats_types_) {
         coordinate = coordinate_;
         stokes_index = stokes_index_;
         stats_types = stats_types_;
@@ -146,7 +146,7 @@ struct SpectralCache {
 struct RegionStatsConfig {
     int file_id;
     int region_id;
-    std::vector<int> stats_types;
+    std::vector<CARTA::StatsType> stats_types;
 };
 
 struct StatsCache {

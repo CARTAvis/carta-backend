@@ -33,7 +33,7 @@ public:
         const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs);
     bool SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs);
-    bool SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<int>& stats_types);
+    bool SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::StatsType>& stats_types);
 
     // Calculations
     bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id);
@@ -66,11 +66,12 @@ private:
     // Fill data stream messages
     bool RegionFileIdsValid(int region_id, int file_id);
     bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
-    bool FillRegionFileHistogramData(
+    bool GetRegionHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
     bool GetRegionFileSpectralData(int region_id, int file_id, SpectralConfig& spectral_config,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
-    bool FillRegionFileStatsData(int region_id, int file_id, std::vector<int>& required_stats, CARTA::RegionStatsData& stats_message);
+    bool GetRegionStatsData(
+        int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
 
     // Logging
     bool _verbose;

@@ -747,7 +747,10 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
     bool requirements_set(false);
 
     if (_frames.count(file_id)) {
-        std::vector<int> requirements = {message.stats().begin(), message.stats().end()};
+        std::vector<CARTA::StatsType> requirements;
+        for (size_t i = 0; i < message.stats_size(); ++i) {
+            requirements.push_back(message.stats(i));
+        }
 
         if (region_id > CURSOR_REGION_ID) {
             if (!_region_handler) {

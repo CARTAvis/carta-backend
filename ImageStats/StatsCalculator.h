@@ -17,7 +17,7 @@ void CalcBasicStats(const std::vector<float>& data, BasicStats<float>& stats);
 
 void CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data, HistogramResults& results);
 
-bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<int>& requested_stats,
+bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel = true);
 
 #endif // CARTA_BACKEND_IMAGESTATS_STATSCALCULATOR_H_

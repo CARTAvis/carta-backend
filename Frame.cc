@@ -790,7 +790,7 @@ void Frame::CacheCubeHistogram(int stokes, carta::HistogramResults& results) {
 // ****************************************************
 // Stats Requirements and Data
 
-bool Frame::SetStatsRequirements(int region_id, const std::vector<int>& stats_types) {
+bool Frame::SetStatsRequirements(int region_id, const std::vector<CARTA::StatsType>& stats_types) {
     if (region_id != IMAGE_REGION_ID) {
         return false;
     }
@@ -976,7 +976,11 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
         std::string coordinate(config.coordinate());
         int axis, stokes;
         ConvertCoordinateToAxes(coordinate, axis, stokes);
-        std::vector<int> stats = std::vector<int>(config.stats_types().begin(), config.stats_types().end());
+        size_t nstats = config.stats_types_size();
+        std::vector<CARTA::StatsType> stats;
+        for (size_t i = 0; i < config.stats_types_size(); ++i) {
+            stats.push_back(config.stats_types(i));
+        }
         SpectralConfig new_config(coordinate, stokes, stats);
         _cursor_spectral_configs.push_back(new_config);
     }
@@ -1024,8 +1028,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         auto spectral_profile = profile_message.add_profiles();
         spectral_profile->set_coordinate(config.coordinate);
         // point spectral profiles only have one stats type
-        CARTA::StatsType stats_type = static_cast<CARTA::StatsType>(config.stats_types[0]);
-        spectral_profile->set_stats_type(stats_type);
+        spectral_profile->set_stats_type(config.stats_types[0]);
 
         // Send NaN if cursor outside image
         if (!start_cursor.InImage(_image_shape(0), _image_shape(1))) {
@@ -1115,7 +1118,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         partial_data.set_stokes(CurrentStokes());
                         partial_data.set_progress(progress);
                         auto partial_profile = partial_data.add_profiles();
-                        partial_profile->set_stats_type(stats_type);
+                        partial_profile->set_stats_type(config.stats_types[0]);
                         partial_profile->set_coordinate(config.coordinate);
                         partial_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                         // send partial profile message
@@ -1238,7 +1241,7 @@ bool Frame::GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& da
     return data_ok;
 }
 
-bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, std::vector<int>& required_stats, bool per_channel,
+bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
     std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a region applied
     casacore::SubImage<float> sub_image;
@@ -1252,7 +1255,7 @@ bool Frame::GetRegionStats(const casacore::LattRegionHolder& region, std::vector
     return subimage_ok;
 }
 
-bool Frame::GetSlicerStats(const casacore::Slicer& slicer, std::vector<int>& required_stats, bool per_channel,
+bool Frame::GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
     std::map<CARTA::StatsType, std::vector<double>>& stats_values) {
     // Get stats for image data with a slicer applied
     casacore::SubImage<float> sub_image;

@@ -173,12 +173,10 @@ void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<flo
     histogram->set_std_dev(stats.stdDev);
 }
 
-void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate, std::vector<int>& required_stats,
-    std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
-    for (auto stat : required_stats) {
+void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
+    std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
+    for (auto stats_type : required_stats) {
         // one SpectralProfile per stats type
-        auto stats_type = static_cast<CARTA::StatsType>(stat);
-
         auto new_profile = profile_message.add_profiles();
         new_profile->set_coordinate(coordinate);
         new_profile->set_stats_type(stats_type);
@@ -192,8 +190,8 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
     }
 }
 
-void FillStatisticsValuesFromMap(
-    CARTA::RegionStatsData& stats_data, std::vector<int>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map) {
+void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, double>& stats_value_map) {
     // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
     for (auto type : required_stats) {
         double value(0.0); // default

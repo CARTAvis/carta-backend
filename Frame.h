@@ -116,7 +116,7 @@ public:
     void CacheCubeHistogram(int stokes, carta::HistogramResults& results);
 
     // Stats: image
-    bool SetStatsRequirements(int region_id, const std::vector<int>& stats_types);
+    bool SetStatsRequirements(int region_id, const std::vector<CARTA::StatsType>& stats_types);
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
 
     // Spatial: cursor
@@ -142,9 +142,9 @@ public:
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
     bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
     // Returns stats_values map for spectral profiles and stats data
-    bool GetRegionStats(const casacore::LattRegionHolder& region, std::vector<int>& required_stats, bool per_channel,
+    bool GetRegionStats(const casacore::LattRegionHolder& region, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<int>& required_stats, bool per_channel,
+    bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     // Whether to use loader for spectral profiles
     bool UseLoaderSpectralData(const casacore::LattRegionHolder& region);
@@ -223,12 +223,12 @@ private:
     // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;
     std::vector<HistogramConfig> _cube_histogram_configs;
-    std::vector<int> _image_required_stats;
+    std::vector<CARTA::StatsType> _image_required_stats;
     std::vector<std::string> _cursor_spatial_configs;
     std::vector<SpectralConfig> _cursor_spectral_configs;
 
     // Cache maps
-    // For image, key is CacheKey (channel/stokes); for cube, key is stokes.
+    // For image, key is cache key (channel/stokes); for cube, key is stokes.
     std::unordered_map<int, std::vector<carta::HistogramResults>> _image_histograms, _cube_histograms;
     std::unordered_map<int, carta::BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
