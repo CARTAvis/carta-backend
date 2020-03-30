@@ -106,11 +106,7 @@ struct SpectralConfig {
     int stokes_index;
     std::vector<CARTA::StatsType> stats_types;
 
-    SpectralConfig(std::string& coordinate_, int stokes_index_, std::vector<CARTA::StatsType>& stats_types_) {
-        coordinate = coordinate_;
-        stokes_index = stokes_index_;
-        stats_types = stats_types_;
-    }
+    SpectralConfig(std::string& coordinate_, int stokes_index_, std::vector<CARTA::StatsType>& stats_types_) : coordinate(coordinate_), stokes_index(stokes_index_), stats_types(stats_types_) {}
 
     bool operator==(const SpectralConfig& rhs) const {
         return ((coordinate == rhs.coordinate) && (stokes_index == rhs.stokes_index) && (stats_types == rhs.stats_types));
@@ -144,8 +140,6 @@ struct SpectralCache {
 // -------------------------------
 
 struct RegionStatsConfig {
-    int file_id;
-    int region_id;
     std::vector<CARTA::StatsType> stats_types;
 };
 

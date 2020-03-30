@@ -88,12 +88,12 @@ private:
     // Frames: key is file_id
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
 
-    // Requirements
+    // Requirements; ConfigId key contains file, region
     std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _histogram_req;
     std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> _spectral_req;
     std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _stats_req;
 
-    // Cache
+    // Cache; CacheId key contains file, region, stokes, (optional) channel
     std::unordered_map<CacheId, HistogramCache, CacheIdHash> _histogram_cache;
     std::unordered_map<CacheId, SpectralCache, CacheIdHash> _spectral_cache;
     std::unordered_map<CacheId, StatsCache, CacheIdHash> _stats_cache;
