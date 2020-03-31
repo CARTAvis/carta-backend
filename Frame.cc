@@ -1016,7 +1016,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             return false;
         }
 
-        int config_stokes = config.stokes_index;
+        int config_stokes = config.stokes;
         if ((config_stokes != CURRENT_STOKES) && stokes_changed) {
             continue; // do not resend fixed stokes profile when stokes changes
         }
@@ -1028,7 +1028,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         auto spectral_profile = profile_message.add_profiles();
         spectral_profile->set_coordinate(config.coordinate);
         // point spectral profiles only have one stats type
-        spectral_profile->set_stats_type(config.stats_types[0]);
+        spectral_profile->set_stats_type(config.all_stats[0]);
 
         // Send NaN if cursor outside image
         if (!start_cursor.InImage(_image_shape(0), _image_shape(1))) {
@@ -1118,7 +1118,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         partial_data.set_stokes(CurrentStokes());
                         partial_data.set_progress(progress);
                         auto partial_profile = partial_data.add_profiles();
-                        partial_profile->set_stats_type(config.stats_types[0]);
+                        partial_profile->set_stats_type(config.all_stats[0]);
                         partial_profile->set_coordinate(config.coordinate);
                         partial_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                         // send partial profile message

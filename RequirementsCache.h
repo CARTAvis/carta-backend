@@ -103,13 +103,35 @@ struct HistogramCache {
 
 struct SpectralConfig {
     std::string coordinate;
-    int stokes_index;
-    std::vector<CARTA::StatsType> stats_types;
+    int stokes;
+    std::vector<CARTA::StatsType> all_stats;
+    std::vector<CARTA::StatsType> new_stats;
 
-    SpectralConfig(std::string& coordinate_, int stokes_index_, std::vector<CARTA::StatsType>& stats_types_) : coordinate(coordinate_), stokes_index(stokes_index_), stats_types(stats_types_) {}
+    SpectralConfig(std::string& coordinate_, int stokes_index_, std::vector<CARTA::StatsType>& stats_types_)
+        : coordinate(coordinate_), stokes(stokes_index_), all_stats(stats_types_), new_stats(stats_types_) {}
 
-    bool operator==(const SpectralConfig& rhs) const {
-        return ((coordinate == rhs.coordinate) && (stokes_index == rhs.stokes_index) && (stats_types == rhs.stats_types));
+    void SetNewRequirements(const std::vector<CARTA::StatsType>& required_stats) {
+        // Set all_stats to required_stats.  New profiles go in new_stats.
+        std::vector<CARTA::StatsType> new_stats_types;
+        for (auto requirement : required_stats) {
+            bool found(false);
+            for (auto stat : all_stats) {
+                if (requirement == stat) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                new_stats_types.push_back(requirement);
+            }
+        }
+        all_stats = required_stats;
+        new_stats = new_stats_types;
+    }
+
+    void SetAllNewStats() {
+        // When region changes, all stats must be sent
+        new_stats = all_stats;
     }
 };
 
