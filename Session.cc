@@ -546,12 +546,8 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     }
     // update data streams if requirements set
     if (success && _frames.at(file_id)->RegionChanged(region_id)) {
-        _frames.at(file_id)->IncreaseZProfileCount(region_id);
-        SendRegionStatsData(file_id, region_id);
-        SendSpatialProfileData(file_id, region_id);
-        SendRegionHistogramData(file_id, region_id);
-        SendSpectralProfileData(file_id, region_id);
-        _frames.at(file_id)->DecreaseZProfileCount(region_id);
+        OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) RegionDataStreamsTask(this, file_id, region_id);
+        tbb::task::enqueue(*tsk);
     }
     return success;
 }
@@ -709,7 +705,8 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
                     region_id, std::vector<CARTA::SetSpectralRequirements_SpectralConfig>(
                                    message.spectral_profiles().begin(), message.spectral_profiles().end()))) {
                 // RESPONSE
-                SendSpectralProfileData(file_id, region_id);
+                OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) SpectralProfileTask(this, file_id, region_id);
+                tbb::task::enqueue(*tsk);
             } else {
                 string error = fmt::format("Spectral requirements for region id {} failed to validate ", region_id);
                 SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
@@ -1290,11 +1287,18 @@ void Session::UpdateRegionData(int file_id, bool send_image_histogram, bool chan
             } else if (region_id != IMAGE_REGION_ID) {
                 SendRegionHistogramData(file_id, region_id, channel_changed);
             }
-            _frames.at(file_id)->IncreaseZProfileCount(region_id);
             SendSpectralProfileData(file_id, region_id, channel_changed, stokes_changed);
-            _frames.at(file_id)->DecreaseZProfileCount(region_id);
         }
     }
+}
+
+void Session::RegionDataStreams(int file_id, int region_id) {
+    _frames.at(file_id)->IncreaseZProfileCount(region_id);
+    SendRegionStatsData(file_id, region_id);
+    SendSpatialProfileData(file_id, region_id);
+    SendRegionHistogramData(file_id, region_id);
+    SendSpectralProfileData(file_id, region_id);
+    _frames.at(file_id)->DecreaseZProfileCount(region_id);
 }
 
 // *********************************************************************************

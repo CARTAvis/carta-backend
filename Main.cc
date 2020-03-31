@@ -333,6 +333,33 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
                     break;
                 }
+                case CARTA::EventType::SET_REGION: {
+                    CARTA::SetRegion message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnSetRegion(message, head.request_id);
+                    } else {
+                        fmt::print("Bad SET_REGION message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::REMOVE_REGION: {
+                    CARTA::RemoveRegion message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnRemoveRegion(message);
+                    } else {
+                        fmt::print("Bad REMOVE_REGION message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::SET_SPECTRAL_REQUIREMENTS: {
+                    CARTA::SetSpectralRequirements message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnSetSpectralRequirements(message);
+                    } else {
+                        fmt::print("Bad SET_SPECTRAL_REQUIREMENTS message!\n");
+                    }
+                    break;
+                }
                 case CARTA::EventType::CATALOG_LIST_REQUEST: {
                     CARTA::CatalogListRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
@@ -425,8 +452,8 @@ int main(int argc, const char* argv[]) {
 
         // define and get input arguments
         int port(3002);
-        int thread_count = 2;
-        int omp_thread_count = 4;
+        int thread_count = TBB_THREAD_COUNT;
+        int omp_thread_count = OMP_THREAD_COUNT;
         { // get values then let Input go out of scope
             casacore::Input inp;
             string json_fname;
