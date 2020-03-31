@@ -301,40 +301,48 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         }
     };
 
-    std::vector<float> slice_data;
-    if (!GetCursorSpectralData(slice_data, stokes, x_start + x_min, 1, y_min, num_y, image_mutex)) {
-        return false;
+    size_t delta_x = INIT_DELTA_CHANNEL; // since data is swizzled, third axis is x not channel
+    size_t max_x = x_start + delta_x;
+    if (max_x > num_x) {
+        max_x = num_x;
     }
+    std::vector<float> slice_data;
 
-    for (size_t y = 0; y < num_y; y++) {
-        for (size_t z = 0; z < num_z; z++) {
-            casacore::IPosition mask_pos(mask_shape.size());
-            mask_pos(0) = x_start;
-            mask_pos(1) = y;
-            mask_pos(_spectral_axis) = z;
-            if (_stokes_axis >= 0) {
-                mask_pos(_stokes_axis) = 0;
-            }
-            // skip all Z values for masked pixels
-            if (!mask(mask_pos)) {
-                continue;
-            }
+    for (size_t x = x_start; x < max_x; ++x) {
+        if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y, image_mutex)) {
+            return false;
+        }
 
-            double v = slice_data[y * num_z + z];
-
-            if (std::isfinite(v)) {
-                num_pixels[z] += 1;
-
-                sum[z] += v;
-                sum_sq[z] += v * v;
-
-                if (v < min[z]) {
-                    min[z] = v;
-                } else if (v > max[z]) {
-                    max[z] = v;
+        for (size_t y = 0; y < num_y; y++) {
+            for (size_t z = 0; z < num_z; z++) {
+                casacore::IPosition mask_pos(mask_shape.size());
+                mask_pos(0) = x;
+                mask_pos(1) = y;
+                mask_pos(_spectral_axis) = z;
+                if (_stokes_axis >= 0) {
+                    mask_pos(_stokes_axis) = 0;
                 }
-            } else {
-                nan_count[z] += 1;
+                // skip all Z values for masked pixels
+                if (!mask(mask_pos)) {
+                    continue;
+                }
+
+                double v = slice_data[y * num_z + z];
+
+                if (std::isfinite(v)) {
+                    num_pixels[z] += 1;
+
+                    sum[z] += v;
+                    sum_sq[z] += v * v;
+
+                    if (v < min[z]) {
+                        min[z] = v;
+                    } else if (v > max[z]) {
+                        max[z] = v;
+                    }
+                } else {
+                    nan_count[z] += 1;
+                }
             }
         }
     }
@@ -343,14 +351,14 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     calculate_stats();
 
     results = _region_stats[region_stats_id].stats;
-    if (x_start == (num_x - 1)) {
+    if (max_x == (num_x - 1)) {
         progress = PROFILE_COMPLETE;
     } else {
-        progress = (float)x_start / num_x;
+        progress = (float)max_x / num_x;
     }
 
-    // Increment starting x for next time
-    _region_stats[region_stats_id].latest_x = ++x_start;
+    // Update starting x for next time
+    _region_stats[region_stats_id].latest_x = max_x;
 
     if (progress >= PROFILE_COMPLETE) {
         // the stats calculation is completed
