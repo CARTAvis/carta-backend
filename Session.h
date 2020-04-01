@@ -168,6 +168,10 @@ public:
         return _id;
     }
 
+    // RegionDataStreams
+    void RegionDataStreams(int file_id, int region_id);
+    bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
+
     FileSettings _file_settings;
     std::unordered_map<int, tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
@@ -187,7 +191,6 @@ private:
     // Send data streams
     bool SendContourData(int file_id);
     bool SendSpatialProfileData(int file_id, int region_id);
-    bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
     bool SendRegionHistogramData(int file_id, int region_id);
     bool SendRegionStatsData(int file_id, int region_id);
     void UpdateImageData(int file_id, bool send_image_histogram, bool channel_changed, bool stokes_changed);

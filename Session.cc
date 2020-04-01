@@ -552,7 +552,8 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
     // update data streams if requirements set and region changed
     if (success && _region_handler->RegionChanged(region_id)) {
-        UpdateRegionData(ALL_FILES, region_id, false, false); // channel and stokes did not change
+        OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) RegionDataStreamsTask(this, ALL_FILES, region_id);
+        tbb::task::enqueue(*tsk);
     }
 
     return success;
@@ -727,10 +728,9 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
         }
 
         if (requirements_set) {
-            if ((message.spectral_profiles_size() > 0) && !SendSpectralProfileData(file_id, region_id)) {
-                std::string error = fmt::format("Spectral profile calculation for region {} failed or was canceled", region_id);
-                SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
-            }
+            // RESPONSE
+            OnMessageTask* tsk = new (tbb::task::allocate_root(this->Context())) SpectralProfileTask(this, file_id, region_id);
+            tbb::task::enqueue(*tsk);
         } else if (region_id != IMAGE_REGION_ID) { // not sure why frontend sends this
             string error = fmt::format("Spectral requirements not valid for region id {}", region_id);
             SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::ERROR);
@@ -1299,6 +1299,18 @@ void Session::UpdateRegionData(int file_id, int region_id, bool channel_changed,
         SendSpectralProfileData(file_id, region_id, stokes_changed);
         SendRegionStatsData(file_id, region_id);
         SendRegionHistogramData(file_id, region_id);
+    }
+}
+
+void Session::RegionDataStreams(int file_id, int region_id) {
+    bool changed(false); // channel and stokes
+    if (region_id > CURSOR_REGION_ID) {
+        UpdateRegionData(file_id, region_id, changed, changed);
+    } else {
+        // Not needed, triggered by SET_REGION which does not apply to image, cube, or cursor.
+        // Added for completeness to avoid future problems.
+        bool send_histogram(false);
+        UpdateImageData(file_id, send_histogram, changed, changed);
     }
 }
 
