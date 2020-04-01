@@ -1137,9 +1137,9 @@ void Region::SetBasicStats(int channel, int stokes, const BasicStats<float>& sta
     }
 }
 
-void Region::CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats) {
+void Region::CalcBasicStats(int channel, int stokes, const std::vector<float>& data, BasicStats<float>& stats, bool verbose) {
     if (_region_stats) {
-        _region_stats->CalcBasicStats(channel, stokes, data, stats);
+        _region_stats->CalcBasicStats(channel, stokes, data, stats, verbose);
     }
 }
 
