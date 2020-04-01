@@ -6,7 +6,7 @@
 #include <string>
 
 #include <casacore/casa/Arrays/IPosition.h>
-#include <casacore/fits/FITS/fitsio.h>
+#include <casacore/fits/FITS/hdu.h>
 #include <casacore/images/Images/ImageInterface.h>
 
 #include <carta-protobuf/file_info.pb.h>
