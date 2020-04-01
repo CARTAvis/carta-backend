@@ -252,8 +252,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                         radesys = string_value; // save for computed_entries
                                     }
 
-                                    if (name.contains("CTYPE") && fkw_string.contains("FREQ")) {
-                                        fkw_string = "FREQ";
+                                    if (name.contains("CTYPE") && string_value.contains("FREQ")) {
+                                        string_value = "FREQ";
                                     }
 
                                     std::string header_string;
