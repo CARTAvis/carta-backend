@@ -5,7 +5,6 @@
 
 #include <tbb/blocked_range2d.h>
 #include <tbb/blocked_range3d.h>
-#include <tbb/parallel_reduce.h>
 
 namespace carta {
 
@@ -38,7 +37,7 @@ public:
 
     void operator()(const tbb::blocked_range<size_t>& r);
     void join(BasicStatsCalculator& other); // NOLINT
-    void reduce(const int start, const int end);
+    void reduce(const size_t start, const size_t end);
 
     BasicStats<T> GetStats() const;
 };
