@@ -30,6 +30,7 @@ struct RegionState {
         control_points = control_points_;
         rotation = rotation_;
     }
+
     void UpdateState(
         int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
         reference_file_id = ref_file_id_;
@@ -83,6 +84,7 @@ class Region {
 public:
     Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
         const casacore::CoordinateSystem& csys);
+    Region(const RegionState& state, const casacore::CoordinateSystem& csys);
 
     inline bool IsValid() { // control points validated
         return _valid;
@@ -95,6 +97,7 @@ public:
     // set new region state and coord sys
     bool UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
         const casacore::CoordinateSystem& csys);
+    bool UpdateState(const RegionState& state, const casacore::CoordinateSystem& csys);
 
     // state accessors
     inline RegionState GetRegionState() {

@@ -566,7 +566,6 @@ void Session::OnRemoveRegion(const CARTA::RemoveRegion& message) {
 }
 
 void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t request_id) {
-    /* TODO
     auto file_id(message.group_id()); // eventually, import into wcs group
     if (_frames.count(file_id)) {
         CARTA::FileType file_type(message.type());
@@ -574,7 +573,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         std::vector<std::string> contents = {message.contents().begin(), message.contents().end()};
         CARTA::ImportRegionAck import_ack; // response
 
-        // check for valid file or contents
+        // check for file or contents set
         bool import_file(!directory.empty() && !filename.empty()), import_contents(!contents.empty());
         if (!import_file && !import_contents) {
             import_ack.set_success(false);
@@ -584,21 +583,30 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             return;
         }
 
-        std::string abs_filename;
+        std::string region_file; // name or contents
         if (import_file) {
-            abs_filename = GetResolvedFilename(_root_folder, directory, filename);
-            casacore::File region_file(abs_filename);
-            // check file
-            if (!region_file.exists() || !region_file.isReadable()) {
+            // check that file can be opened
+            region_file = GetResolvedFilename(_root_folder, directory, filename);
+            casacore::File ccfile(region_file);
+            if (!ccfile.exists() || !ccfile.isReadable()) {
                 import_ack.set_success(false);
                 import_ack.set_message("Import region failed: cannot open file.");
                 import_ack.add_regions();
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
                 return;
             }
+        } else {
+            // combine vector into one string
+            for (auto& line : contents) {
+                region_file.append(line);
+            }
         }
 
-        _frames.at(file_id)->ImportRegion(file_type, abs_filename, contents, import_ack);
+        if (!_region_handler) { // created on demand only
+            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_verbose_logging));
+        }
+
+        _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
 
         // send any errors to log
         std::string ack_message(import_ack.message());
@@ -612,7 +620,6 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         std::string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"import"}, CARTA::ErrorSeverity::DEBUG);
     }
-    */
 }
 
 void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t request_id) {

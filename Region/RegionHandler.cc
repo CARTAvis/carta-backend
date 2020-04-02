@@ -10,6 +10,7 @@
 #include "../ImageStats/StatsCalculator.h"
 #include "../InterfaceConstants.h"
 #include "../Util.h"
+#include "RegionImporter.h"
 
 using namespace carta;
 
@@ -53,6 +54,49 @@ bool RegionHandler::SetRegion(int& region_id, int file_id, const std::string& na
         }
     }
     return valid_region;
+}
+
+void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
+    const std::string& region_file, bool file_is_filename, CARTA::ImportRegionAck& import_ack) {
+    // Set regions from region file
+    const casacore::CoordinateSystem csys = frame->CoordinateSystem();
+    const casacore::IPosition shape = frame->ImageShape();
+    RegionImporter importer = RegionImporter(region_file, region_file_type, csys, shape, file_is_filename);
+
+    // Get region states from parser or error message
+    std::string error;
+    std::vector<RegionState> region_states = importer.GetRegions(file_id, error);
+    if (!error.empty()) {
+        import_ack.set_success(false);
+        import_ack.set_message(error);
+        import_ack.add_regions();
+        return;
+    }
+
+    // Set reference file pointer
+    _frames[file_id] = frame;
+
+    // Set regions and complete message
+    import_ack.set_success(true);
+    int region_id = GetNextRegionId();
+    for (auto& region_state : region_states) {
+        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
+        if (region && region->IsValid()) {
+            _regions[region_id] = std::move(region);
+
+            // Set RegionProperties and its RegionInfo
+            auto region_properties = import_ack.add_regions();
+            region_properties->set_region_id(region_id);
+            auto region_info = region_properties->mutable_region_info();
+            region_info->set_region_name(region_state.name);
+            region_info->set_region_type(region_state.type);
+            *region_info->mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
+            region_info->set_rotation(region_state.rotation);
+
+            // increment region id for next region
+            region_id++;
+        }
+    }
 }
 
 bool RegionHandler::RegionChanged(int region_id) {

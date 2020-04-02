@@ -21,41 +21,52 @@ Region::Region(int file_id, const std::string& name, CARTA::RegionType type, con
     _valid = UpdateState(file_id, name, type, points, rotation, csys);
 }
 
+Region::Region(const RegionState& state, const casacore::CoordinateSystem& csys)
+    : _valid(false), _region_state_changed(false), _region_changed(false), _wcregion_set(false), _z_profile_count(0) {
+    _valid = UpdateState(state, csys);
+}
+
 // *************************************************************************
 // Region settings
 
 bool Region::UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points,
     float rotation, const casacore::CoordinateSystem& csys) {
-    // Set region parameters and flags for state change
-    bool valid_points = CheckPoints(points, type);
-    if (valid_points) {
-        RegionState new_state;
-        new_state.reference_file_id = file_id;
-        new_state.name = name;
-        new_state.type = type;
-        new_state.control_points = points;
-        new_state.rotation = rotation;
+    // Set region state and update
+    RegionState new_state;
+    new_state.reference_file_id = file_id;
+    new_state.name = name;
+    new_state.type = type;
+    new_state.control_points = points;
+    new_state.rotation = rotation;
+    return UpdateState(new_state, csys);
+}
 
+bool Region::UpdateState(const RegionState& state, const casacore::CoordinateSystem& csys) {
+    // Update region from region state
+    bool valid = CheckPoints(state.control_points, state.type);
+
+    if (valid) {
         // discern changes
-        _region_state_changed = (_region_state != new_state);
-        _region_changed = (_region_state.RegionChanged(new_state));
+        _region_state_changed = (_region_state != state);
+        _region_changed = (_region_state.RegionChanged(state));
 
         if (_region_changed) {
             _wcs_control_points.clear();
             _wcregion_set = false;
-            if (_applied_regions.count(file_id)) {
-                _applied_regions.at(file_id).reset();
+            if (_applied_regions.count(state.reference_file_id)) {
+                _applied_regions.at(state.reference_file_id).reset();
             }
         }
 
         // set new region state and coord sys
-        _region_state = new_state;
+        _region_state = state;
         _coord_sys = csys;
     } else { // keep existing state
         _region_state_changed = false;
         _region_changed = false;
     }
-    return valid_points;
+
+    return valid;
 }
 
 // *************************************************************************
