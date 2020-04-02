@@ -10,6 +10,32 @@
 
 #include "ImageData/FileLoader.h"
 
+using TilePtr = std::shared_ptr<std::vector<float>>;
+
+struct TilePool : std::enable_shared_from_this<TilePool> {
+    TilePool() : _capacity(4) {}
+    void Grow(int size);
+    TilePtr Pull();
+    void Push(std::unique_ptr<std::vector<float>>& unique_tile) noexcept;
+    bool Full();
+
+private:
+    TilePtr Create();
+
+    std::mutex _tile_pool_mutex;
+    std::stack<TilePtr> _stack;
+    // The capacity of the pool should be 4 more than the capacity of the cache, so that we can always load a chunk before evicting
+    // anything.
+    int _capacity;
+
+    struct TilePtrDeleter {
+        std::weak_ptr<TilePool> _pool;
+        TilePtrDeleter() noexcept = default;
+        explicit TilePtrDeleter(std::weak_ptr<TilePool>&& pool) noexcept : _pool(std::move(pool)) {}
+        void operator()(std::vector<float>* raw_tile) const noexcept;
+    };
+};
+
 struct TileCacheKey {
     TileCacheKey() {}
     TileCacheKey(int32_t x, int32_t y) : x(x), y(y) {}
@@ -36,10 +62,9 @@ struct hash<TileCacheKey> {
 class TileCache {
 public:
     using Key = TileCacheKey;
-    using TilePtr = std::shared_ptr<std::vector<float>>;
 
     TileCache() {}
-    TileCache(int capacity) : _capacity(capacity), _channel(0), _stokes(0) {}
+    TileCache(int capacity);
 
     // This is read-only and does not lock the cache
     TilePtr Peek(Key key);
@@ -65,6 +90,9 @@ private:
     std::unordered_map<Key, std::list<TilePair>::iterator> _map;
     int _capacity;
     std::mutex _tile_cache_mutex;
+
+    std::vector<float> _chunk;
+    std::shared_ptr<TilePool> _pool;
 };
 
 #endif // CARTA_BACKEND__TILE_CACHE_H_
