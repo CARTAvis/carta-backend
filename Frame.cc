@@ -969,6 +969,9 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
     if (region_id != CURSOR_REGION_ID) {
         return false;
     }
+    if (_image_shape.size() < 3) {
+        return false;
+    }
 
     // frontend does not set cursor outside of image, but just in case:
     _cursor_spectral_configs.clear();

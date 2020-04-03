@@ -194,6 +194,11 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
         return true;
     }
 
+    if (frame->ImageShape().size() < 3) {
+        // Invalid for 2D image
+        return false;
+    }
+
     if (_regions.count(region_id)) {
         // Save frame pointer
         _frames[file_id] = frame;
