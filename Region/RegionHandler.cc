@@ -10,7 +10,7 @@
 #include "../ImageStats/StatsCalculator.h"
 #include "../InterfaceConstants.h"
 #include "../Util.h"
-#include "RegionImporter.h"
+#include "RegionImportExport.h"
 
 using namespace carta;
 
@@ -61,12 +61,12 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Set regions from region file
     const casacore::CoordinateSystem csys = frame->CoordinateSystem();
     const casacore::IPosition shape = frame->ImageShape();
-    RegionImporter importer = RegionImporter(region_file, region_file_type, csys, shape, file_is_filename);
+    RegionImportExport importer = RegionImportExport(region_file, region_file_type, csys, shape, file_is_filename);
 
     // Get region states from parser or error message
     std::string error;
-    std::vector<RegionState> region_states = importer.GetRegions(file_id, error);
-    if (!error.empty()) {
+    std::vector<RegionState> region_states = importer.GetImportedRegions(file_id, error);
+    if (region_states.empty()) {
         import_ack.set_success(false);
         import_ack.set_message(error);
         import_ack.add_regions();
@@ -78,6 +78,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 
     // Set regions and complete message
     import_ack.set_success(true);
+    import_ack.set_message(error);
     int region_id = GetNextRegionId();
     for (auto& region_state : region_states) {
         auto region = std::shared_ptr<Region>(new Region(region_state, csys));

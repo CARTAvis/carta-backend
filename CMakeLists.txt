@@ -104,7 +104,9 @@ set(SOURCE_FILES
         FileList/FileListHandler.cc
         FileList/FitsHduList.cc
         Region/RegionHandler.cc
-        Region/RegionImporter.cc
+        Region/RegionImportExport.cc
+        Region/CrtfImportExport.cc
+        Region/Ds9ImportExport.cc
         Region/Region.cc
         OnMessageTask.cc
         FileSettings.cc
