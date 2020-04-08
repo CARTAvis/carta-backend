@@ -90,6 +90,7 @@ private:
     std::unordered_map<Key, std::list<TilePair>::iterator> _map;
     int _capacity;
     std::mutex _tile_cache_mutex;
+    std::mutex _ignore_interrupt_mutex;
 
     std::vector<float> _chunk;
     std::shared_ptr<TilePool> _pool;

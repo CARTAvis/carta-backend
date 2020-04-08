@@ -115,6 +115,7 @@ std::unordered_map<TileCache::Key, TilePtr> TileCache::GetMultiple(std::vector<K
     std::vector<Key> not_found;
     std::unordered_map<Key, TilePtr> tiles;
     bool valid(1);
+    bool ignore_interrupt(_ignore_interrupt_mutex.try_lock());
 
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
 
@@ -147,7 +148,7 @@ std::unordered_map<TileCache::Key, TilePtr> TileCache::GetMultiple(std::vector<K
 
     for (auto& kv : chunk_tiles) {
         // if we no longer need this chunk, exit early
-        if (interrupt(kv.first)) {
+        if (!ignore_interrupt && interrupt(kv.first)) {
             valid = false;
             break;
         }
