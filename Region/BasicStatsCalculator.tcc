@@ -5,7 +5,7 @@
 
 namespace carta {
 
-template<typename T>
+template <typename T>
 void BasicStats<T>::join(BasicStats<T>& other) {
     if (other.num_pixels) {
         sum += other.sum;
@@ -14,29 +14,44 @@ void BasicStats<T>::join(BasicStats<T>& other) {
         min_val = std::min(min_val, other.min_val);
         max_val = std::max(max_val, other.max_val);
         mean = sum / num_pixels;
-        stdDev = num_pixels > 1 ? sqrt((sumSq - (sum * sum / num_pixels)) / (num_pixels - 1)): NAN;
+        stdDev = num_pixels > 1 ? sqrt((sumSq - (sum * sum / num_pixels)) / (num_pixels - 1)) : NAN;
         rms = sqrt(sumSq / num_pixels);
     }
 }
 
-template<typename T>
+template <typename T>
 BasicStats<T>::BasicStats(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq)
-    : num_pixels(num_pixels), sum(sum), mean(mean), stdDev(stdDev), min_val(min_val), max_val(max_val), rms(rms), sumSq(sumSq){
-}
-template<typename T>
+    : num_pixels(num_pixels), sum(sum), mean(mean), stdDev(stdDev), min_val(min_val), max_val(max_val), rms(rms), sumSq(sumSq) {}
+template <typename T>
 BasicStats<T>::BasicStats()
-    : num_pixels(0), sum(0), mean(0), stdDev(0), min_val(std::numeric_limits<T>::max()), max_val(std::numeric_limits<T>::lowest()), rms(0), sumSq(0) {
-}
+    : num_pixels(0),
+      sum(0),
+      mean(0),
+      stdDev(0),
+      min_val(std::numeric_limits<T>::max()),
+      max_val(std::numeric_limits<T>::lowest()),
+      rms(0),
+      sumSq(0) {}
 
-template<typename T>
+template <typename T>
 BasicStatsCalculator<T>::BasicStatsCalculator(const std::vector<T>& data)
-    : _min_val(std::numeric_limits<T>::max()), _max_val(std::numeric_limits<T>::lowest()), _sum(0), _sum_squares(0), _num_pixels(0), _data(data) {}
+    : _min_val(std::numeric_limits<T>::max()),
+      _max_val(std::numeric_limits<T>::lowest()),
+      _sum(0),
+      _sum_squares(0),
+      _num_pixels(0),
+      _data(data) {}
 
-template<typename T>
+template <typename T>
 BasicStatsCalculator<T>::BasicStatsCalculator(BasicStatsCalculator<T>& mm, tbb::split)
-    : _min_val(std::numeric_limits<T>::max()), _max_val(std::numeric_limits<T>::lowest()), _sum(0), _sum_squares(0), _num_pixels(0), _data(mm._data) {}
+    : _min_val(std::numeric_limits<T>::max()),
+      _max_val(std::numeric_limits<T>::lowest()),
+      _sum(0),
+      _sum_squares(0),
+      _num_pixels(0),
+      _data(mm._data) {}
 
-template<typename T>
+template <typename T>
 void BasicStatsCalculator<T>::operator()(const tbb::blocked_range<size_t>& r) {
     T t_min = _min_val;
     T t_max = _max_val;
@@ -58,11 +73,11 @@ void BasicStatsCalculator<T>::operator()(const tbb::blocked_range<size_t>& r) {
     _max_val = t_max;
 }
 
-template<typename T>
-void BasicStatsCalculator<T>::reduce(const int start, const int end) {
-    int i;
+template <typename T>
+void BasicStatsCalculator<T>::reduce(const size_t start, const size_t end) {
+    size_t i;
 #pragma omp parallel for private(i) shared(_data) reduction(min: _min_val) reduction(max:_max_val) reduction(+:_num_pixels) reduction(+:_sum) reduction(+:_sum_squares)
-    for (i = start; i < end ; i++) {
+    for (i = start; i < end; i++) {
         T val = _data[i];
         if (std::isfinite(val)) {
             if (val < _min_val) {
@@ -78,8 +93,7 @@ void BasicStatsCalculator<T>::reduce(const int start, const int end) {
     }
 }
 
-
-template<typename T>
+template <typename T>
 void BasicStatsCalculator<T>::join(BasicStatsCalculator<T>& other) { // NOLINT
     _min_val = std::min(_min_val, other._min_val);
     _max_val = std::max(_max_val, other._max_val);
@@ -88,7 +102,7 @@ void BasicStatsCalculator<T>::join(BasicStatsCalculator<T>& other) { // NOLINT
     _sum_squares += other._sum_squares;
 }
 
-template<typename T>
+template <typename T>
 BasicStats<T> BasicStatsCalculator<T>::GetStats() const {
     double mean;
     double stdDev;
@@ -96,7 +110,7 @@ BasicStats<T> BasicStatsCalculator<T>::GetStats() const {
 
     if (_num_pixels > 0) {
         mean = _sum / _num_pixels;
-        stdDev = _num_pixels > 1 ? sqrt((_sum_squares - (_sum * _sum / _num_pixels)) / (_num_pixels - 1)): NAN;
+        stdDev = _num_pixels > 1 ? sqrt((_sum_squares - (_sum * _sum / _num_pixels)) / (_num_pixels - 1)) : NAN;
         rms = sqrt(_sum_squares / _num_pixels);
     } else {
         mean = NAN;
@@ -104,18 +118,9 @@ BasicStats<T> BasicStatsCalculator<T>::GetStats() const {
         rms = NAN;
     }
 
-    return BasicStats<T>{
-        _num_pixels,
-        _sum,
-        mean,
-        stdDev,
-        _min_val,
-        _max_val,
-        rms,
-        _sum_squares
-    };
+    return BasicStats<T>{_num_pixels, _sum, mean, stdDev, _min_val, _max_val, rms, _sum_squares};
 }
 
 } // namespace carta
 
-#endif //CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_TCC_
+#endif // CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_TCC_

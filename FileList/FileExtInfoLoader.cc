@@ -209,6 +209,10 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                     if (name == "RADESYS") {
                                         radesys = fkw_string;
                                     }
+                                    if (name.contains("CTYPE") && fkw_string.contains("FREQ")) {
+                                        fkw_string = "FREQ";
+                                    }
+
                                     // add comment
                                     std::string comment(fkw->comm());
                                     if (!comment.empty()) {
@@ -237,10 +241,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                 }
 
                 int spectral_axis, stokes_axis;
-                _loader->FindCoordinateAxes(image_shape, spectral_axis, stokes_axis, message);
-                AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
-                AddComputedEntries(extended_info, image, radesys);
-                file_ok = true;
+                if (_loader->FindCoordinateAxes(image_shape, spectral_axis, stokes_axis, message)) {
+                    AddShapeEntries(extended_info, image_shape, spectral_axis, stokes_axis);
+                    AddComputedEntries(extended_info, image, radesys);
+                    file_ok = true;
+                }
             } else { // image failed
                 message = "Image could not be opened.";
             }

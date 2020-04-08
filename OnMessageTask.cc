@@ -20,39 +20,12 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
-        case CARTA::EventType::SET_SPECTRAL_REQUIREMENTS: {
-            CARTA::SetSpectralRequirements message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnSetSpectralRequirements(message);
-            } else {
-                fmt::print("Bad SET_SPECTRAL_REQUIREMENTS message!\n");
-            }
-            break;
-        }
         case CARTA::EventType::SET_STATS_REQUIREMENTS: {
             CARTA::SetStatsRequirements message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetStatsRequirements(message);
             } else {
                 fmt::print("Bad SET_STATS_REQUIREMENTS message!\n");
-            }
-            break;
-        }
-        case CARTA::EventType::SET_REGION: {
-            CARTA::SetRegion message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnSetRegion(message, _header.request_id);
-            } else {
-                fmt::print("Bad SET_REGION message!\n");
-            }
-            break;
-        }
-        case CARTA::EventType::REMOVE_REGION: {
-            CARTA::RemoveRegion message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnRemoveRegion(message);
-            } else {
-                fmt::print("Bad REMOVE_REGION message!\n");
             }
             break;
         }
@@ -69,10 +42,10 @@ tbb::task* SetImageChannelsTask::execute() {
     std::pair<CARTA::SetImageChannels, uint32_t> request_pair;
     bool tester;
 
-    _session->ImageChannelLock();
-    tester = _session->_set_channel_queue.try_pop(request_pair);
-    _session->ImageChannelTaskSetIdle();
-    _session->ImageChannelUnlock();
+    _session->ImageChannelLock(fileId);
+    tester = _session->_set_channel_queues[fileId].try_pop(request_pair);
+    _session->ImageChannelTaskSetIdle(fileId);
+    _session->ImageChannelUnlock(fileId);
 
     if (tester) {
         _session->ExecuteSetChannelEvt(request_pair);
@@ -119,5 +92,15 @@ tbb::task* OnAddRequiredTilesTask::execute() {
 
 tbb::task* OnSetContourParametersTask::execute() {
     _session->OnSetContourParameters(_message);
+    return nullptr;
+}
+
+tbb::task* RegionDataStreamsTask::execute() {
+    _session->RegionDataStreams(_file_id, _region_id);
+    return nullptr;
+}
+
+tbb::task* SpectralProfileTask::execute() {
+    _session->SendSpectralProfileData(_file_id, _region_id);
     return nullptr;
 }
