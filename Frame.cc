@@ -1275,43 +1275,21 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                             }
                         }
                     } else if ((profile_stokes == _stokes_index) && _loader->UseTileCache()) {
-                        std::vector<TileCache::Key> keys;
-
                         switch (axis_stokes.first) {
                             case 0: { // x
                                 int tile_y = (y / TILE_SIZE) * TILE_SIZE;
-                                for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
-                                    keys.push_back(TileCache::Key(tile_x, tile_y));
-                                }
-
-                                auto interrupt = [&](TileCache::Key chunk_key) {
-                                    // The profile is no longer needed
-                                    if (!this->_connected ||
-                                        (this->_regions.count(region_id) && (!this->_regions[region_id]->IsConnected() ||
-                                                                                this->_regions[region_id]->NumSpatialProfiles() == 0))) {
-                                        return true;
-                                    }
-
-                                    // The cursor has moved outside this chunk row
-                                    if (((int)(this->_cursor_xy.y) / CHUNK_SIZE) * CHUNK_SIZE != chunk_key.y) {
-                                        return true;
-                                    }
-
-                                    return false;
-                                };
-
                                 bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
-
-                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt, ignore_interrupt);
-
-                                if (tiles.empty()) {
-                                    return profile_ok;
-                                }
-
                                 profile.resize(width);
 
+#pragma omg parallel for
                                 for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
-                                    auto& tile = tiles[TileCache::Key(tile_x, tile_y)];
+                                    auto key = TileCache::Key(tile_x, tile_y);
+                                    // The cursor has moved outside this chunk row
+                                    if (!ignore_interrupt &&
+                                        ((int)(_cursor_xy.y) / CHUNK_SIZE) * CHUNK_SIZE != TileCache::ChunkKey(key).y) {
+                                        return profile_ok;
+                                    }
+                                    auto tile = _tile_cache.Get(key, _loader, _image_mutex);
                                     auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
                                     auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
 
@@ -1326,38 +1304,18 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                             }
                             case 1: { // y
                                 int tile_x = (x / TILE_SIZE) * TILE_SIZE;
-                                for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
-                                    keys.push_back(TileCache::Key(tile_x, tile_y));
-                                }
-
-                                auto interrupt = [&](TileCache::Key chunk_key) {
-                                    // The profile is no longer needed
-                                    if (!this->_connected ||
-                                        (this->_regions.count(region_id) && (!this->_regions[region_id]->IsConnected() ||
-                                                                                this->_regions[region_id]->NumSpatialProfiles() == 0))) {
-                                        return true;
-                                    }
-
-                                    // The cursor has moved outside this chunk column
-                                    if (((int)(this->_cursor_xy.x) / CHUNK_SIZE) * CHUNK_SIZE != chunk_key.x) {
-                                        return true;
-                                    }
-
-                                    return false;
-                                };
-
                                 bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
-
-                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt, ignore_interrupt);
-
-                                if (tiles.empty()) {
-                                    return profile_ok;
-                                }
-
                                 profile.resize(height);
 
+#pragma omg parallel for
                                 for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
-                                    auto& tile = tiles[TileCache::Key(tile_x, tile_y)];
+                                    auto key = TileCache::Key(tile_x, tile_y);
+                                    // The cursor has moved outside this chunk column
+                                    if (!ignore_interrupt &&
+                                        ((int)(_cursor_xy.x) / CHUNK_SIZE) * CHUNK_SIZE != TileCache::ChunkKey(key).x) {
+                                        return profile_ok;
+                                    }
+                                    auto tile = _tile_cache.Get(key, _loader, _image_mutex);
                                     auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
                                     auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
 
@@ -1366,7 +1324,6 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                         profile[tile_y + j] = (*tile)[(j * tile_width) + (x - tile_x)];
                                     }
                                 }
-
                                 break;
                             }
                         }

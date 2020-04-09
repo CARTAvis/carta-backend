@@ -71,9 +71,9 @@ public:
 
     // These functions lock the cache
     TilePtr Get(Key key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
-    std::unordered_map<Key, TilePtr> GetMultiple(std::vector<Key>& keys, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex,
-        const std::function<bool(Key chunk_key)>& interrupt, bool ignore_interrupt);
     void Reset(int32_t channel, int32_t stokes, int capacity = 0);
+
+    static Key ChunkKey(Key tile_key);
 
 private:
     using TilePair = std::pair<Key, TilePtr>;
@@ -81,7 +81,6 @@ private:
 
     TilePtr UnsafePeek(Key key);
     void Touch(Key key);
-    Key ChunkKey(Key tile_key);
     bool LoadChunk(Key chunk_key, std::shared_ptr<carta::FileLoader> loader, std::mutex& image_mutex);
 
     int32_t _channel;
