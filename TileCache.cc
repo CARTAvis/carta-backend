@@ -110,12 +110,11 @@ TilePtr TileCache::Get(Key key, std::shared_ptr<carta::FileLoader> loader, std::
 }
 
 std::unordered_map<TileCache::Key, TilePtr> TileCache::GetMultiple(std::vector<Key>& keys, std::shared_ptr<carta::FileLoader> loader,
-    std::mutex& image_mutex, const std::function<bool(Key chunk_key)>& interrupt) {
+    std::mutex& image_mutex, const std::function<bool(Key chunk_key)>& interrupt, bool ignore_interrupt) {
     std::vector<Key> found;
     std::vector<Key> not_found;
     std::unordered_map<Key, TilePtr> tiles;
     bool valid(1);
-    bool ignore_interrupt(_ignore_interrupt_mutex.try_lock());
 
     std::unique_lock<std::mutex> guard(_tile_cache_mutex);
 

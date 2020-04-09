@@ -253,6 +253,8 @@ private:
     std::mutex _image_mutex;            // only one disk access at a time
     bool _cache_loaded;                 // channel cache is set
     TileCache _tile_cache;              // cache for full-resolution image tiles
+    std::mutex _ignore_interrupt_X_mutex;
+    std::mutex _ignore_interrupt_Y_mutex;
 
     // Region
     std::unordered_map<int, std::unique_ptr<carta::Region>> _regions; // key is region ID

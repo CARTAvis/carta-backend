@@ -1300,7 +1300,9 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                     return false;
                                 };
 
-                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt);
+                                bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
+
+                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt, ignore_interrupt);
 
                                 if (tiles.empty()) {
                                     return profile_ok;
@@ -1344,7 +1346,9 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& pro
                                     return false;
                                 };
 
-                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt);
+                                bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
+
+                                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt, ignore_interrupt);
 
                                 if (tiles.empty()) {
                                     return profile_ok;
