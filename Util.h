@@ -21,16 +21,16 @@
 
 #include "InterfaceConstants.h"
 
-void Log(uint32_t id, const std::string& log_message);
+void PrintLog(uint32_t id, const std::string& log_message);
 
 template <typename... Args>
-inline void Log(uint32_t id, const char* template_string, Args... args) {
-    Log(id, fmt::format(template_string, args...));
+inline void PrintLog(uint32_t id, const char* template_string, Args... args) {
+    PrintLog(id, fmt::format(template_string, args...));
 }
 
 template <typename... Args>
-inline void Log(uint32_t id, const std::string& template_string, Args... args) {
-    Log(id, fmt::format(template_string, args...));
+inline void PrintLog(uint32_t id, const std::string& template_string, Args... args) {
+    PrintLog(id, fmt::format(template_string, args...));
 }
 
 void ReadPermissions(const std::string& filename, std::unordered_map<std::string, std::vector<std::string>>& permissions_map);

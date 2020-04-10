@@ -35,7 +35,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            PrintLog(session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -48,7 +48,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem opening image: {}", err.getMesg());
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            PrintLog(session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -59,7 +59,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            PrintLog(session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -87,7 +87,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            PrintLog(session_id, _open_image_error);
         }
     }
 }
@@ -696,7 +696,7 @@ bool Frame::SetImageCache() {
     try {
         _image_cache.resize(_image_shape(0) * _image_shape(1));
     } catch (std::bad_alloc& alloc_error) {
-        Log(_session_id, "Could not allocate memory for image data.");
+        PrintLog(_session_id, "Could not allocate memory for image data.");
         return false;
     }
 
@@ -705,7 +705,7 @@ bool Frame::SetImageCache() {
     casacore::Array<float> tmp(section.length(), _image_cache.data(), casacore::StorageInitPolicy::SHARE);
     std::lock_guard<std::mutex> guard(_image_mutex);
     if (!_loader->GetSlice(tmp, section)) {
-        Log(_session_id, "Loading image cache failed.");
+        PrintLog(_session_id, "Loading image cache failed.");
         return false;
     } else if (_verbose) { // Measure duration for load image
         auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
@@ -797,7 +797,7 @@ bool Frame::GetRegionSubImage(int region_id, casacore::SubImage<float>& sub_imag
                         sub_image_ok = true;
                     }
                 } catch (casacore::AipsError& err) {
-                    Log(_session_id, "Region creation for {} failed: {}", region->Name(), err.getMesg());
+                    PrintLog(_session_id, "Region creation for {} failed: {}", region->Name(), err.getMesg());
                 }
             }
         }
