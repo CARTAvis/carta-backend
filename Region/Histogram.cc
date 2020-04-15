@@ -36,7 +36,7 @@ void Histogram::join(Histogram& h) { // NOLINT
     tbb::parallel_for(range, loop);
 }
 
-void Histogram::setup_bins(const size_t start, const size_t end) {
+void Histogram::setup_bins() {
     int64_t i, stride, buckets;
     int** bins_bin;
 
