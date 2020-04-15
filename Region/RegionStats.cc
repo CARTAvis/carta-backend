@@ -125,7 +125,7 @@ void RegionStats::CalcHistogram(int channel, int stokes, int num_bins, const Bas
         histogram_bins.resize(num_bins, 0);
     } else {
         Histogram hist(num_bins, stats.min_val, stats.max_val, data);
-        hist.setup_bins(0, data.size());
+        hist.setup_bins();
         histogram_bins = hist.GetHistogram();
         bin_width = hist.GetBinWidth();
         bin_center = stats.min_val + (bin_width / 2.0);
