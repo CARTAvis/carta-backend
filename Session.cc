@@ -59,6 +59,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
+    _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller(_root_folder));
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
@@ -869,6 +870,45 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     SendEvent(CARTA::EventType::RESUME_SESSION_ACK, request_id, ack);
 }
 
+void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
+    CARTA::CatalogListResponse file_list_response;
+    if (_catalog_controller) {
+        _catalog_controller->OnFileListRequest(file_list_request, file_list_response);
+        SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
+    }
+}
+
+void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {
+    CARTA::CatalogFileInfoResponse file_info_response;
+    if (_catalog_controller) {
+        _catalog_controller->OnFileInfoRequest(file_info_request, file_info_response);
+        SendEvent(CARTA::EventType::CATALOG_FILE_INFO_RESPONSE, request_id, file_info_response);
+    }
+}
+
+void Session::OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id) {
+    CARTA::OpenCatalogFileAck open_file_response;
+    if (_catalog_controller) {
+        _catalog_controller->OnOpenFileRequest(open_file_request, open_file_response);
+        SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
+    }
+}
+
+void Session::OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request) {
+    if (_catalog_controller) {
+        _catalog_controller->OnCloseFileRequest(close_file_request);
+    }
+}
+
+void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id) {
+    if (_catalog_controller) {
+        _catalog_controller->OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
+            // Send partial or final results
+            SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
+        });
+    }
+}
+
 // ******** SEND DATA STREAMS *********
 
 CARTA::RegionHistogramData* Session::GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel) {
@@ -1270,17 +1310,20 @@ void Session::RegionDataStreams(int file_id, int region_id) {
 // SEND uWEBSOCKET MESSAGES
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
-void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message) {
+void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message, bool compress) {
     int message_length = message.ByteSize();
     size_t required_size = message_length + sizeof(carta::EventHeader);
-    std::vector<char> msg(required_size, 0);
+    std::pair<std::vector<char>, bool> msg_vs_compress;
+    std::vector<char>& msg = msg_vs_compress.first;
+    msg.resize(required_size, 0);
     carta::EventHeader* head = (carta::EventHeader*)msg.data();
 
     head->type = event_type;
     head->icd_version = carta::ICD_VERSION;
     head->request_id = event_id;
     message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
-    _out_msgs.push(msg);
+    msg_vs_compress.second = compress;
+    _out_msgs.push(msg_vs_compress);
     _outgoing_async->send();
 }
 
@@ -1294,10 +1337,10 @@ void Session::SendFileEvent(int32_t file_id, CARTA::EventType event_type, uint32
 void Session::SendPendingMessages() {
     // Do not parallelize: this must be done serially
     // due to the constraints of uWS.
-    std::vector<char> msg;
+    std::pair<std::vector<char>, bool> msg;
     if (_connected) {
         while (_out_msgs.try_pop(msg)) {
-            _socket->send(msg.data(), msg.size(), uWS::BINARY);
+            _socket->send(msg.first.data(), msg.first.size(), uWS::BINARY, nullptr, nullptr, msg.second);
         }
     }
 }

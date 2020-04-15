@@ -1,6 +1,7 @@
 #if _AUTH_SERVER_
 #include <jsoncpp/json/json.h>
 #include <jsoncpp/json/value.h>
+
 #include "DBConnect.h"
 #endif
 
@@ -44,7 +45,7 @@ unordered_map<string, vector<string>> permissions_map;
 static FileListHandler* file_list_handler;
 
 static uint32_t session_number;
-static uWS::Hub websocket_hub;
+static uWS::Hub websocket_hub(uWS::PERMESSAGE_DEFLATE);
 
 // command-line arguments
 static string root_folder("/"), base_folder(".");
@@ -359,6 +360,42 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::CATALOG_LIST_REQUEST: {
+                    CARTA::CatalogListRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnCatalogFileList(message, head.request_id);
+                    } else {
+                        fmt::print("Bad CATALOG_LIST_REQUEST message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::CATALOG_FILE_INFO_REQUEST: {
+                    CARTA::CatalogFileInfoRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnCatalogFileInfo(message, head.request_id);
+                    } else {
+                        fmt::print("Bad CATALOG_FILE_INFO_REQUEST message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::OPEN_CATALOG_FILE: {
+                    CARTA::OpenCatalogFile message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnOpenCatalogFile(message, head.request_id);
+                    } else {
+                        fmt::print("Bad OPEN_CATALOG_FILE message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::CLOSE_CATALOG_FILE: {
+                    CARTA::CloseCatalogFile message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnCloseCatalogFile(message);
+                    } else {
+                        fmt::print("Bad CLOSE_CATALOG_FILE message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
@@ -491,6 +528,7 @@ int main(int argc, const char* argv[]) {
         websocket_hub.onConnection(&OnConnect);
         websocket_hub.onDisconnection(&OnDisconnect);
         websocket_hub.onError(&OnError);
+
         if (websocket_hub.listen(port)) {
             fmt::print("Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP threads\n",
                 port, root_folder, base_folder, thread_count, omp_thread_count);
@@ -506,5 +544,6 @@ int main(int argc, const char* argv[]) {
         fmt::print("Unknown error\n");
         return 1;
     }
+
     return 0;
 }
