@@ -37,14 +37,14 @@ void Histogram::join(Histogram& h) { // NOLINT
 }
 
 void Histogram::setup_bins(const size_t start, const size_t end) {
-    size_t i, stride, buckets;
+    int64_t i, stride, buckets;
     int** bins_bin;
 
     auto calc_lambda = [&](size_t start, size_t lstride) {
         int* lbins = new int[_hist.size()];
         size_t end = std::min((size_t)(start + lstride), _data.size());
         memset(lbins, 0, _hist.size() * sizeof(int));
-        for (size_t i = start; i < end; i++) {
+        for (auto i = start; i < end; i++) {
             auto v = _data[i];
             if (std::isfinite(v)) {
                 size_t bin_number = std::max<size_t>(std::min<size_t>((size_t)((v - _min_val) / _bin_width), (size_t)_hist.size() - 1), 0);
