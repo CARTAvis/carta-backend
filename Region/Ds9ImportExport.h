@@ -49,11 +49,22 @@ private:
 
     // Import regions
     void SetRegion(std::string& region_description);
+    void ImportPointRegion(std::string& formatted_region, std::string& name, bool exclude_region);
+    void ImportCircleRegion(std::string& formatted_region, std::string& name, bool exclude_region);
+    void ImportEllipseRegion(std::string& formatted_region, std::string& name, bool exclude_region);
+    void ImportRectangleRegion(std::string& formatted_region, std::string& name, bool exclude_region);
+    void ImportPolygonRegion(std::string& formatted_region, std::string& name, bool exclude_region);
+
     bool ParseRegion(std::string& region_definition, std::vector<std::string>& parameters, int nparams);
     casacore::String GetRegionName(std::string& region_properties);
+
+    // Convert DS9 syntax -> CASA
     bool CheckAndConvertParameter(std::string& parameter, const std::string& region_type);
     casacore::String ConvertTimeFormatToDeg(std::string& parameter);
-    void AddImportError(std::string& error);
+
+    // Convert wcs -> pixel
+    bool ConvertPointToPixels(std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords);
+    double AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis);
 
     /*
     // export regions

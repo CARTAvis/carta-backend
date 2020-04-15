@@ -4,6 +4,7 @@
 
 // #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/measures/Measures/MCDirection.h>
 
 #include "../Util.h"
 
@@ -119,9 +120,8 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         if (IsDs9CoordSysKeyword(line)) {
             ds9_coord_sys_ok = SetDirectionRefFrame(line);
             if (!ds9_coord_sys_ok) {
-                std::string csys_error = "coord sys " + line + " not supported";
-                AddImportError(csys_error);
-                std::cerr << "Ds9ImportExport import error: " << csys_error << std::endl;
+                std::string csys_error = "coord sys " + line + " not supported.\n";
+                _import_errors.append(csys_error);
             }
             continue;
         }
@@ -134,7 +134,7 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
             }
 
             // process region
-            // SetRegion(line);
+            SetRegion(line);
         }
     }
 }
@@ -228,8 +228,369 @@ void Ds9ImportExport::SetRegion(std::string& region_description) {
     // Retrieve label from region properties
     casacore::String label = GetRegionName(region_properties);
 
-    // Create Annotation Region based on type
-    // ProcessRegion(ann_region_type, region_definition, label, exclude_region);
+    // Create RegionState based on type
+    // Order is important, could be a shaped point e.g. "circle point" is a point
+    if (formatted_region.contains("point")) {
+        ImportPointRegion(formatted_region, label, exclude_region);
+    } else if (formatted_region.contains("circle")) {
+        ImportCircleRegion(formatted_region, label, exclude_region);
+    } else if (formatted_region.contains("ellipse")) {
+        ImportEllipseRegion(formatted_region, label, exclude_region);
+    } else if (formatted_region.contains("box")) {
+        ImportRectangleRegion(formatted_region, label, exclude_region);
+    } else if (formatted_region.contains("polygon")) {
+        ImportPolygonRegion(formatted_region, label, exclude_region);
+    } else if (formatted_region.contains("line")) {
+        _import_errors.append("DS9 line region not supported.\n");
+    } else if (formatted_region.contains("vector")) {
+        _import_errors.append("DS9 vector region not supported.\n");
+    } else if (formatted_region.contains("text")) {
+        _import_errors.append("DS9 text not supported.\n");
+    } else if (formatted_region.contains("annulus")) {
+        _import_errors.append("DS9 annulus region not supported.\n");
+    }
+}
+
+void Ds9ImportExport::ImportPointRegion(std::string& region, std::string& name, bool exclude_region) {
+    // Import DS9 point into CARTA RegionState
+    // point x y, circle point x y
+    std::vector<std::string> params;
+    int first_param;
+    if (ParseRegion(region, params, 3)) {
+        first_param = 1;
+    } else if (ParseRegion(region, params, 4)) {
+        first_param = 2;
+    } else {
+        std::string syntax_error = "point syntax error: " + region + "\n";
+        _import_errors.append(syntax_error);
+        return;
+    }
+
+    std::vector<casacore::Quantity> param_quantities;
+    for (size_t i = first_param; i < params.size(); ++i) {
+        std::string param(params[i]);
+        if (CheckAndConvertParameter(param, "point")) {
+            casacore::String param_string(param);
+
+            if (i == first_param + 1) {
+                // DS9 degrees use time format ":" instead of CASA "."
+                param_string = ConvertTimeFormatToDeg(param_string);
+            }
+
+            // Read string into casacore::Quantity, add to vector
+            casacore::Quantity param_quantity;
+            if (readQuantity(param_quantity, param_string)) {
+                if (param_quantity.getUnit().empty()) {
+                    if (_file_pixel_coord) {
+                        param_quantity.setUnit("pix");
+                    } else {
+                        param_quantity.setUnit("deg");
+                    }
+                }
+                param_quantities.push_back(param_quantity);
+            } else {
+                std::string invalid_param("invalid point parameter " + param + "\n");
+                _import_errors.append(invalid_param);
+                return;
+            }
+        } else {
+            return;
+        }
+    }
+
+    // Control points in pixel coordinates
+    std::vector<CARTA::Point> control_points;
+    if (_file_pixel_coord) {
+        CARTA::Point point;
+        point.set_x(param_quantities[0].getValue());
+        point.set_y(param_quantities[1].getValue());
+        control_points.push_back(point);
+    } else {
+        casacore::Vector<casacore::Double> pixel_coords;
+        if (ConvertPointToPixels(param_quantities, pixel_coords)) {
+            CARTA::Point point;
+            point.set_x(pixel_coords(0));
+            point.set_y(pixel_coords(1));
+            control_points.push_back(point);
+        } else {
+            std::string invalid_param("Failed to apply point to image: " + region + "\n");
+            _import_errors.append(invalid_param);
+            return;
+        }
+    }
+
+    // Create RegionState
+    CARTA::RegionType type(CARTA::RegionType::POINT);
+    float rotation(0.0);
+    RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
+    _regions.push_back(region_state);
+}
+
+void Ds9ImportExport::ImportCircleRegion(std::string& region, std::string& name, bool exclude_region) {
+    // Import DS9 circle into CARTA RegionState
+    // circle x y radius
+    std::vector<std::string> params;
+    if (ParseRegion(region, params, 4)) {
+        // Convert params to ellipse region (CARTA only has ellipse region), angle = 0
+        std::string ellipse_region = fmt::format("ellipse {} {} {} {} 0", params[1], params[2], params[3], params[3]);
+        ImportEllipseRegion(ellipse_region, name, exclude_region);
+    } else {
+        std::string syntax_error = "circle syntax error: " + region + "\n";
+        _import_errors.append(syntax_error);
+    }
+}
+
+void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name, bool exclude_region) {
+    // Import DS9 ellipse into CARTA RegionState
+    // ellipse x y radius radius angle
+    bool is_circle(false);
+    std::vector<std::string> params;
+    if (ParseRegion(region, params, 6)) {
+        is_circle = (params[3] == params[4]);
+        // convert strings to Quantities
+        std::vector<casacore::Quantity> param_quantities;
+        std::vector<casacore::String> units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
+        size_t nparams(params.size());
+        for (size_t i = 1; i < nparams; ++i) {
+            std::string param(params[i]);
+            if (CheckAndConvertParameter(param, "ellipse")) {
+                casacore::String param_string(param);
+                if (i == 2) {
+                    param_string = ConvertTimeFormatToDeg(param);
+                }
+                casacore::Quantity param_quantity;
+                if (readQuantity(param_quantity, param_string)) {
+                    if (param_quantity.getUnit().empty()) {
+                        if ((i == nparams - 1) || !_file_pixel_coord) {
+                            param_quantity.setUnit(units[i]);
+                        } else {
+                            param_quantity.setUnit("pix");
+                        }
+                    }
+                    param_quantities.push_back(param_quantity);
+                } else {
+                    std::string invalid_param("invalid ellipse parameter " + param + "\n");
+                    _import_errors.append(invalid_param);
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+
+        // Control points in pixel coordinates
+        std::vector<CARTA::Point> control_points;
+        if (_file_pixel_coord) {
+            CARTA::Point point;
+            point.set_x(param_quantities[0].getValue());
+            point.set_y(param_quantities[1].getValue());
+            control_points.push_back(point);
+            point.set_x(param_quantities[2].getValue());
+            point.set_y(param_quantities[3].getValue());
+            control_points.push_back(point);
+        } else {
+            // cx, cy
+            std::vector<casacore::Quantity> center_coords;
+            center_coords.push_back(param_quantities[0]);
+            center_coords.push_back(param_quantities[1]);
+            casacore::Vector<casacore::Double> pixel_coords;
+            if (ConvertPointToPixels(center_coords, pixel_coords)) {
+                CARTA::Point point;
+                point.set_x(pixel_coords(0));
+                point.set_y(pixel_coords(1));
+                control_points.push_back(point);
+            } else {
+                std::string invalid_param("Failed to apply ellipse to image: " + region + "\n");
+                _import_errors.append(invalid_param);
+                return;
+            }
+
+            // bmaj, bmin
+            CARTA::Point point;
+            point.set_x(AngleToLength(param_quantities[2], 0));
+            point.set_y(AngleToLength(param_quantities[3], 1));
+            control_points.push_back(point);
+        }
+
+        // Create RegionState
+        CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
+        float rotation = param_quantities[4].getValue();
+        if (!is_circle) {
+            rotation -= 90.0;
+        }
+        RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
+        _regions.push_back(region_state);
+    } else if (ParseRegion(region, params, 0)) {
+        // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
+        std::string invalid_params = "unsupported ellipse definition " + region + "\n";
+        _import_errors.append(invalid_params);
+    } else {
+        std::string syntax_error = "ellipse syntax error: " + region + "\n";
+        _import_errors.append(syntax_error);
+    }
+}
+
+void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& name, bool exclude_region) {
+    // Import DS9 box into CARTA RegionState
+    // box x y width height angle
+    std::vector<std::string> params;
+    if (ParseRegion(region, params, 6)) {
+        // convert strings to Quantities
+        std::vector<casacore::Quantity> param_quantities;
+        // DS9 wcs default units
+        std::vector<casacore::String> ds9_units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
+        size_t nparams(params.size());
+        for (size_t i = 1; i < nparams; ++i) {
+            std::string param(params[i]);
+            if (CheckAndConvertParameter(param, "box")) {
+                casacore::String param_string(param);
+                if (i == 2) { // degree format, not time
+                    param_string = ConvertTimeFormatToDeg(param);
+                }
+                casacore::Quantity param_quantity;
+                if (readQuantity(param_quantity, param_string)) {
+                    if (param_quantity.getUnit().empty()) {
+                        if ((i == nparams - 1) || !_file_pixel_coord) {
+                            param_quantity.setUnit(ds9_units[i]);
+                        } else {
+                            param_quantity.setUnit("pix");
+                        }
+                    }
+                    param_quantities.push_back(param_quantity);
+                } else {
+                    std::string invalid_param("invalid box parameter " + param + "\n");
+                    _import_errors.append(invalid_param);
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+
+        // Control points in pixel coordinates
+        std::vector<CARTA::Point> control_points;
+        if (_file_pixel_coord) {
+            CARTA::Point point;
+            point.set_x(param_quantities[0].getValue());
+            point.set_y(param_quantities[1].getValue());
+            control_points.push_back(point);
+            point.set_x(param_quantities[2].getValue());
+            point.set_y(param_quantities[3].getValue());
+            control_points.push_back(point);
+        } else {
+            // cx, cy
+            std::vector<casacore::Quantity> center_coords;
+            center_coords.push_back(param_quantities[0]);
+            center_coords.push_back(param_quantities[1]);
+            casacore::Vector<casacore::Double> pixel_coords;
+            if (ConvertPointToPixels(center_coords, pixel_coords)) {
+                CARTA::Point point;
+                point.set_x(pixel_coords(0));
+                point.set_y(pixel_coords(1));
+                control_points.push_back(point);
+            } else {
+                std::string invalid_param("Failed to apply ellipse to image: " + region + "\n");
+                _import_errors.append(invalid_param);
+                return;
+            }
+
+            // width, height
+            CARTA::Point point;
+            point.set_x(AngleToLength(param_quantities[2], 0));
+            point.set_y(AngleToLength(param_quantities[3], 1));
+            control_points.push_back(point);
+        }
+
+        // Create RegionState
+        CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
+        float rotation = param_quantities[4].getValue();
+        RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
+        _regions.push_back(region_state);
+    } else if (ParseRegion(region, params, 0)) {
+        // unsupported box annulus: box x y w1 h1 w2 h2 [angle]
+        std::string invalid_params = "unsupported box definition " + region + "\n";
+        _import_errors.append(invalid_params);
+    } else {
+        std::string syntax_error = "box syntax error: " + region + "\n";
+        _import_errors.append(syntax_error);
+    }
+}
+
+void Ds9ImportExport::ImportPolygonRegion(std::string& region, std::string& name, bool exclude_region) {
+    // Import DS9 polygon into CARTA RegionState
+    // polygon x1 y1 x2 y2 x3 y3 ...
+    std::vector<std::string> params;
+    if (ParseRegion(region, params, 0)) {
+        if (params.size() % 2 != 1) {
+            std::string syntax_error = "polygon syntax error: " + region + "\n";
+            _import_errors.append(syntax_error);
+            return;
+        }
+
+        // convert strings to Quantities
+        std::vector<casacore::Quantity> param_quantities;
+        for (size_t i = 1; i < params.size(); ++i) {
+            std::string param(params[i]);
+            if (CheckAndConvertParameter(param, "polygon")) {
+                casacore::String param_string(param);
+                if ((i % 2) == 0) {
+                    param_string = ConvertTimeFormatToDeg(param_string);
+                }
+                casacore::Quantity param_quantity;
+                if (readQuantity(param_quantity, param_string)) {
+                    if (param_quantity.getUnit().empty()) {
+                        if (_file_pixel_coord) {
+                            param_quantity.setUnit("pix");
+                        } else {
+                            param_quantity.setUnit("deg");
+                        }
+                    }
+                    param_quantities.push_back(param_quantity);
+                } else {
+                    std::string invalid_param("invalid polygon parameter " + param + "\n");
+                    _import_errors.append(invalid_param);
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+
+        // Control points in pixel coordinates
+        std::vector<CARTA::Point> control_points;
+        for (size_t i = 0; i < param_quantities.size(); i += 2) {
+            if (_file_pixel_coord) {
+                CARTA::Point point;
+                point.set_x(param_quantities[i].getValue());
+                point.set_y(param_quantities[i + 1].getValue());
+                control_points.push_back(point);
+            } else {
+                std::vector<casacore::Quantity> point;
+                point.push_back(param_quantities[i]);
+                point.push_back(param_quantities[i + 1]);
+                casacore::Vector<casacore::Double> pixel_coords;
+                if (ConvertPointToPixels(point, pixel_coords)) {
+                    CARTA::Point point;
+                    point.set_x(pixel_coords(0));
+                    point.set_y(pixel_coords(1));
+                    control_points.push_back(point);
+                } else {
+                    std::string invalid_param("Failed to apply polygon to image: " + region + "\n");
+                    _import_errors.append(invalid_param);
+                    return;
+                }
+            }
+        }
+
+        // Create RegionState
+        CARTA::RegionType type(CARTA::RegionType::POLYGON);
+        float rotation(0.0);
+        RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
+        _regions.push_back(region_state);
+    } else {
+        std::string syntax_error = "polygon syntax error: " + region + "\n";
+        _import_errors.append(syntax_error);
+    }
 }
 
 bool Ds9ImportExport::ParseRegion(std::string& region_definition, std::vector<std::string>& parameters, int nparams) {
@@ -286,9 +647,8 @@ bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std
     try {
         double val = stod(parameter, &idx); // string to double
     } catch (std::invalid_argument& err) {
-        std::string invalid_arg(error_prefix + parameter + ", not a numeric value");
-        AddImportError(invalid_arg);
-        std::cerr << "Ds9ImportExport import error: " << invalid_arg << std::endl;
+        std::string invalid_arg(error_prefix + parameter + ", not a numeric value.\n");
+        _import_errors.append(invalid_arg);
         return valid;
     }
 
@@ -316,9 +676,8 @@ bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std
                 // casacore unit for min, sec is the same
                 valid = true;
             } else {
-                std::string invalid_unit(error_prefix + "unit " + parameter);
-                AddImportError(invalid_unit);
-                std::cerr << "Ds9ImportExport import error: " << invalid_unit << std::endl;
+                std::string invalid_unit(error_prefix + "unit " + parameter + "\n");
+                _import_errors.append(invalid_unit);
                 valid = false;
             }
 
@@ -335,9 +694,8 @@ bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std
                      (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3));
             if (!valid) {
                 // Unit not a single character or time/angle format
-                std::string invalid_unit(error_prefix + "unit " + parameter);
-                AddImportError(invalid_unit);
-                std::cerr << "Ds9ImportExport import error: " << invalid_unit << std::endl;
+                std::string invalid_unit(error_prefix + "unit " + parameter + "\n");
+                _import_errors.append(invalid_unit);
             }
         }
     }
@@ -353,14 +711,67 @@ casacore::String Ds9ImportExport::ConvertTimeFormatToDeg(std::string& parameter)
     return converted_format;
 }
 
-void Ds9ImportExport::AddImportError(std::string& error) {
-    // append error string
-    if (_import_errors.empty()) {
-        _import_errors.append("Ds9ImportExport warning: ");
-    } else {
-        _import_errors.append(", ");
+bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords) {
+    if (point.size() != 2) {
+        return false;
     }
-    _import_errors.append(error);
+
+    // must have matched coordinates
+    bool x_is_pix = point[0].getUnit() == "pix";
+    bool y_is_pix = point[1].getUnit() == "pix";
+    if (x_is_pix != y_is_pix) {
+        return false;
+    }
+
+    // if unit is pixels, just get values
+    if (x_is_pix) {
+        pixel_coords.resize(2);
+        pixel_coords(0) = point[0].getValue();
+        pixel_coords(1) = point[1].getValue();
+        return true;
+    }
+
+    if (_coord_sys.hasDirectionCoordinate()) {
+        // Make MDirection from wcs parameter
+        casacore::MDirection::Types from_dir_type;
+        if (!casacore::MDirection::getType(from_dir_type, _direction_ref_frame)) {
+            return false;
+        }
+        casacore::MDirection direction(point[0], point[1], from_dir_type);
+
+        // Convert to image coordinate system
+        casacore::MDirection::Types to_dir_type = _coord_sys.directionCoordinate().directionType(false);
+        if (from_dir_type != to_dir_type) {
+            try {
+                direction = casacore::MDirection::Convert(direction, to_dir_type)();
+            } catch (casacore::AipsError& err) {
+                _import_errors.append("Conversion of region parameters to image coordinate system failed.\n");
+                return false;
+            }
+        }
+
+        // Get world coordinate values from MDirection
+        casacore::Vector<casacore::Double> angle = direction.getAngle().getValue();
+        casacore::Vector<casacore::Double> world_coords(2);
+        world_coords(0) = angle(0);
+        world_coords(1) = angle(1);
+
+        // Convert world to pixel coordinates
+        return _coord_sys.directionCoordinate().toPixel(pixel_coords, world_coords);
+    }
+
+    return false;
+}
+
+double Ds9ImportExport::AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis) {
+    // Convert input quantity to pixel length for given pixel axis for ellipse radius
+    // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
+    int coord, world_axis;
+    _coord_sys.findWorldAxis(coord, world_axis, pixel_axis);
+    casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
+    casacore::Vector<casacore::Double> increments(_coord_sys.directionCoordinate().increment());
+    angle.convert(units[world_axis]);
+    return fabs(angle.getValue() / increments[world_axis]);
 }
 
 /*
