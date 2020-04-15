@@ -71,8 +71,8 @@ void Histogram::setup_bins() {
         {
             for (omp_index = 0; omp_index <= (buckets - stride * 2); omp_index += stride * 2) {
 #pragma omp task
-                std::transform(
-                    (bins_bin[omp_index + stride]), &(bins_bin[omp_index + stride][_hist.size()]), (bins_bin[omp_index]), (bins_bin[omp_index]), std::plus<int>());
+                std::transform((bins_bin[omp_index + stride]), &(bins_bin[omp_index + stride][_hist.size()]), (bins_bin[omp_index]),
+                    (bins_bin[omp_index]), std::plus<int>());
             }
             stride *= 2;
         }
