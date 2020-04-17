@@ -28,7 +28,7 @@ public:
 
     void operator()(const tbb::blocked_range<size_t>& r);
     void join(Histogram& h); // NOLINT
-    void setup_bins(const size_t start, const size_t end);
+    void setup_bins();
 
     HistogramResults GetHistogram() const;
 };

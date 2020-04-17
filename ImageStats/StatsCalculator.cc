@@ -23,7 +23,7 @@ void CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vect
         results.histogram_bins.resize(num_bins, 0);
     } else {
         Histogram hist(num_bins, stats.min_val, stats.max_val, data);
-        hist.setup_bins(0, data.size());
+        hist.setup_bins();
         results = hist.GetHistogram();
     }
 }
