@@ -35,7 +35,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
+FIND_PACKAGE(LibXml2 REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -82,7 +84,9 @@ set(LINK_LIBS
         casa_mirlib
         casa_scimath
         casa_imageanalysis
+		${OpenMP_CXX_LIBRARIES}
         ${HDF5_LIBRARIES}
+		${LIBXML2_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
 set(SOURCE_FILES
@@ -108,6 +112,9 @@ set(SOURCE_FILES
         Region/CrtfImportExport.cc
         Region/Ds9ImportExport.cc
         Region/Region.cc
+        Catalog/VOTableParser.cc
+		Catalog/VOTableCarrier.cc
+		Catalog/VOTableController.cc
         OnMessageTask.cc
         FileSettings.cc
         ImageStats/StatsCalculator.cc
@@ -124,17 +131,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Tests
-option(test "Build all tests." OFF)
+option(test "Build tests." OFF)
 if (test)
-    enable_testing()
-    find_package(GTest)
-    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
-
-    add_executable(testTileEncoding test/TestTileEncoding.cc)
-    target_link_libraries(testTileEncoding gtest gtest_main Threads::Threads fmt)
-
-    add_test(NAME TestTileEncoding COMMAND testTileEncoding)
+    add_subdirectory(test)
 endif (test)
-
-# Install executable
-install(TARGETS carta_backend DESTINATION bin)

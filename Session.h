@@ -38,6 +38,7 @@
 #include <tbb/task.h>
 
 #include "AnimationObject.h"
+#include "Catalog/VOTableController.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
@@ -71,9 +72,17 @@ public:
     void OnSetContourParameters(const CARTA::SetContourParameters& message);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
+
     void OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id);
     void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
+
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
+
+    void OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
+    void OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
+    void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id);
+    void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
+    void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
 
     void SendPendingMessages();
 
@@ -197,7 +206,7 @@ private:
     void UpdateRegionData(int file_id, int region_id, bool channel_changed, bool stokes_changed);
 
     // Send protobuf messages
-    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
+    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = false);
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
@@ -219,6 +228,9 @@ private:
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
     std::mutex _frame_mutex;
 
+    // Catalog controller
+    std::unique_ptr<catalog::Controller> _catalog_controller;
+
     // Handler for region creation, import/export, requirements, and data
     std::unique_ptr<carta::RegionHandler> _region_handler;
 
@@ -232,9 +244,11 @@ private:
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
 
-    // Outgoing messages
-    uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
-    tbb::concurrent_queue<std::vector<char>> _out_msgs; // Message queue
+    // Outgoing messages:
+    // Notification mechanism when messages are ready
+    uS::Async* _outgoing_async;
+    // message queue <msg, compress>
+    tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
     // TBB context that enables all tasks associated with a session to be cancelled.
     tbb::task_group_context _base_context;
