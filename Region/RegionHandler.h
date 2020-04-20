@@ -7,6 +7,7 @@
 
 #include <tbb/atomic.h>
 
+#include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
 
@@ -25,8 +26,12 @@ public:
         float rotation, const casacore::CoordinateSystem& csys);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
+
+    // Region Import/Export
     void ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, const std::string& region_file,
         bool file_is_filename, CARTA::ImportRegionAck& import_ack);
+    void ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, CARTA::CoordinateType coord_type,
+        std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Frames
     void RemoveFrame(int file_id);

@@ -56,6 +56,39 @@ bool RegionHandler::SetRegion(int& region_id, int file_id, const std::string& na
     return valid_region;
 }
 
+bool RegionHandler::RegionChanged(int region_id) {
+    if (!_regions.count(region_id)) {
+        return false;
+    }
+    return _regions.at(region_id)->RegionChanged();
+}
+
+void RegionHandler::RemoveRegion(int region_id) {
+    // call destructor and erase from map
+    if (!RegionSet(region_id)) {
+        return;
+    }
+
+    if (region_id == ALL_REGIONS) {
+        for (auto& region : _regions) {
+            region.second->DisconnectCalled();
+        }
+        _regions.clear();
+    } else if (_regions.count(region_id)) {
+        _regions.at(region_id)->DisconnectCalled();
+        _regions.erase(region_id);
+    }
+    RemoveRegionRequirementsCache(region_id);
+}
+
+bool RegionHandler::RegionSet(int region_id) {
+    // Check whether a particular region is set or any regions are set
+    if (region_id == ALL_REGIONS) {
+        return _regions.size();
+    } else {
+        return _regions.count(region_id) && _regions.at(region_id)->IsConnected();
+    }
+}
 void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
     const std::string& region_file, bool file_is_filename, CARTA::ImportRegionAck& import_ack) {
     // Set regions from region file
@@ -100,38 +133,37 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 }
 
-bool RegionHandler::RegionChanged(int region_id) {
-    if (!_regions.count(region_id)) {
-        return false;
-    }
-    return _regions.at(region_id)->RegionChanged();
-}
+void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
+    CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack) {
+    // Export regions to given filename, or return export file contents in ack
 
-void RegionHandler::RemoveRegion(int region_id) {
-    // call destructor and erase from map
-    if (!RegionSet(region_id)) {
+    // Check if regions to export
+    if (region_ids.empty()) {
+        export_ack.set_success(false);
+        export_ack.set_message("Export failed: no regions requested.");
+        export_ack.add_contents();
         return;
     }
 
-    if (region_id == ALL_REGIONS) {
-        for (auto& region : _regions) {
-            region.second->DisconnectCalled();
+    // Check export file before creating file contents
+    if (!filename.empty()) {
+        casacore::File export_file(filename);
+        if (!export_file.canCreate()) {
+            export_ack.set_success(false);
+            export_ack.set_message("Export region failed: cannot create file.");
+            export_ack.add_contents();
+            return;
         }
-        _regions.clear();
-    } else if (_regions.count(region_id)) {
-        _regions.at(region_id)->DisconnectCalled();
-        _regions.erase(region_id);
     }
-    RemoveRegionRequirementsCache(region_id);
-}
 
-bool RegionHandler::RegionSet(int region_id) {
-    // Check whether a particular region is set or any regions are set
-    if (region_id == ALL_REGIONS) {
-        return _regions.size();
-    } else {
-        return _regions.count(region_id) && _regions.at(region_id)->IsConnected();
-    }
+    // Response fields
+    bool success(false);
+    std::string message;
+
+    // TODO: RegionImportExport
+
+    export_ack.set_success(success);
+    export_ack.set_message(message);
 }
 
 // ********************************************************************
@@ -193,11 +225,6 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     if (spectral_profiles.empty() && !RegionSet(region_id)) {
         // Frontend clears requirements after region removed, prevent error in log by returning true.
         return true;
-    }
-
-    if (frame->ImageShape().size() < 3) {
-        // Invalid for 2D image
-        return false;
     }
 
     if (_regions.count(region_id)) {

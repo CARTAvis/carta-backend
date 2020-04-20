@@ -624,29 +624,34 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
 }
 
 void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t request_id) {
-    /* TODO
     auto file_id(message.file_id());
     if (_frames.count(file_id)) {
-        CARTA::ExportRegionAck export_ack; // response
-        CARTA::FileType file_type(message.type());
-        CARTA::CoordinateType coord_type(message.coord_type());
+        if (!_region_handler) {
+            std::string error = fmt::format("No region handler for export");
+            SendLogEvent(error, {"export"}, CARTA::ErrorSeverity::ERROR);
+            return;
+        }
+
+        // Export filename (optional, for server-side export)
         std::string directory(message.directory()), filename(message.file());
-        std::vector<int> region_ids = {message.region_id().begin(), message.region_id().end()};
         std::string abs_filename;
-        if (!directory.empty() && !filename.empty()) { // export file on server
-            // form path with filename
+        if (!directory.empty() && !filename.empty()) {
+            // export file is on server, form path with filename
             casacore::Path root_path(_root_folder);
             root_path.append(directory);
             root_path.append(filename);
             abs_filename = root_path.absoluteName();
         }
-        _frames.at(file_id)->ExportRegion(file_type, coord_type, region_ids, abs_filename, export_ack);
+
+        std::vector<int> region_ids = {message.region_id().begin(), message.region_id().end()};
+        CARTA::ExportRegionAck export_ack;
+        _region_handler->ExportRegion(
+            file_id, _frames.at(file_id), message.type(), message.coord_type(), region_ids, abs_filename, export_ack);
         SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
     } else {
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"export"}, CARTA::ErrorSeverity::DEBUG);
     }
-    */
 }
 
 void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& message) {
@@ -721,6 +726,12 @@ void Session::OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& me
     bool requirements_set(false);
 
     if (_frames.count(file_id)) {
+        if (_frames.at(file_id)->ImageShape().size() < 3) {
+            string error = "Spectral profile not valid for 2D image.";
+            SendLogEvent(error, {"spectral"}, CARTA::ErrorSeverity::WARNING);
+            return;
+        }
+
         std::vector<CARTA::SetSpectralRequirements_SpectralConfig> requirements = {
             message.spectral_profiles().begin(), message.spectral_profiles().end()};
 

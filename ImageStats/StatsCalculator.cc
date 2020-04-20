@@ -35,12 +35,17 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
     casacore::ImageStatistics<float> image_stats = casacore::ImageStatistics<float>(image,
         /*showProgress*/ false, /*forceDisk*/ false, /*clone*/ false);
 
-    if (per_channel) { // get stats per xy plane
+    size_t result_size(1); // expected size of returned vector per stat
+    if (per_channel) {     // get stats per xy plane
         casacore::Vector<int> display_axes(2);
         display_axes(0) = 0;
         display_axes(1) = 1;
-        if (!image_stats.setAxes(display_axes))
+        if (!image_stats.setAxes(display_axes)) {
             return false;
+        }
+
+        casacore::IPosition xy_axes(display_axes);
+        result_size = image.shape().removeAxes(xy_axes).product();
     }
 
     casacore::Array<casacore::Double> num_points;
@@ -107,21 +112,30 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
             default:
                 break;
         }
-        if (lattice_stats_type < casacore::LatticeStatsBase::NSTATS) { // get lattice statistic
-            casacore::Array<casacore::Double> result;                  // must be double
-            if (image_stats.getStatistic(result, lattice_stats_type)) {
-                if (anyEQ(result, 0.0)) { // actually 0, or NaN?
-                    // NaN if number of points is zero
-                    if (num_points.empty())
-                        image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
-                    for (size_t j = 0; j < result.size(); ++j) {
-                        casacore::IPosition index(1, j);
-                        if ((result(index) == 0.0) && (num_points(index) == 0.0)) {
-                            result(index) = std::numeric_limits<double>::quiet_NaN();
+        if (lattice_stats_type < casacore::LatticeStatsBase::NSTATS) {
+            casacore::Array<casacore::Double> result;
+            try {
+                if (image_stats.getStatistic(result, lattice_stats_type)) { // return result Array for stats type
+                    if (anyEQ(result, 0.0)) {
+                        // Convert 0 result to NaN if number of points is zero
+                        if (num_points.empty()) {
+                            image_stats.getStatistic(num_points, casacore::LatticeStatsBase::NPTS);
+                        }
+
+                        for (size_t j = 0; j < result.size(); ++j) {
+                            casacore::IPosition index(1, j);
+                            if ((result(index) == 0.0) && (num_points(index) == 0.0)) {
+                                result(index) = std::numeric_limits<double>::quiet_NaN();
+                            }
                         }
                     }
+                    result.tovector(dbl_result);
                 }
-                result.tovector(dbl_result);
+            } catch (const casacore::AipsError& err) {
+                // Catch exception for calculated stat, e.g. flux density; set result to NaN
+                for (size_t j = 0; j < result_size; ++j) {
+                    dbl_result.push_back(std::numeric_limits<double>::quiet_NaN());
+                }
             }
         }
 
