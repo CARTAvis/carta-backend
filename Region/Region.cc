@@ -1067,20 +1067,17 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
             case CARTA::ELLIPSE: {
                 casacore::Quantity cx, cy, bmaj, bmin;
                 if (pixel_coord) {
-                    std::cout << "PDEBUG: AnnEllipse export pixel" << std::endl;
                     cx = casacore::Quantity(_control_points[0].x(), "pix");
                     cy = casacore::Quantity(_control_points[0].y(), "pix");
                     bmaj = casacore::Quantity(_control_points[1].x(), "pix");
                     bmin = casacore::Quantity(_control_points[1].y(), "pix");
                 } else {
-                    std::cout << "PDEBUG: AnnEllipse export world" << std::endl;
                     cx = _control_points_wcs[0];
                     cy = _control_points_wcs[1];
                     bmaj = _control_points_wcs[2];
                     bmin = _control_points_wcs[3];
                 }
                 casacore::Quantity position_angle(_rotation, "deg");
-                std::cout << "PDEBUG: AnnEllipse wcs ctrl points bmaj=" << bmaj << " bmin=" << bmin << std::endl;
                 ann_region =
                     new casa::AnnEllipse(cx, cy, bmaj, bmin, position_angle, _coord_sys, _image_shape, stokes_types, require_region);
                 break;
