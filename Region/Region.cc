@@ -295,8 +295,14 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                         casacore::Quantum<casacore::Vector<casacore::Double>> angle = center_position.getAngle();
                         _control_points_wcs.push_back(casacore::Quantity(angle.getValue()[0], angle.getUnit()));
                         _control_points_wcs.push_back(casacore::Quantity(angle.getValue()[1], angle.getUnit()));
-                        _control_points_wcs.push_back(bmaj);
-                        _control_points_wcs.push_back(bmin);
+                        if (bmaj.getUnit() != "pix") {
+                            _control_points_wcs.push_back(bmaj);
+                            _control_points_wcs.push_back(bmin);
+                        } else { // convert to wcs
+                            _control_points_wcs.push_back(_coord_sys.toWorldLength(bmaj.getValue(), 0));
+                            _control_points_wcs.push_back(_coord_sys.toWorldLength(bmin.getValue(), 0));
+                        }
+
                         _valid = true;
                     }
                     break;
@@ -398,6 +404,12 @@ RegionState Region::GetRegionState() {
 double Region::AngleToLength(casacore::Quantity angle, unsigned int pixel_axis) {
     // world->pixel conversion of ellipse radius.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
+
+    // If already pixel, just return value
+    if (angle.getUnit() == "pix") {
+        return angle.getValue();
+    }
+
     int coord, coord_axis;
     _coord_sys.findWorldAxis(coord, coord_axis, pixel_axis);
     casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
@@ -1055,17 +1067,20 @@ casacore::CountedPtr<const casa::AnnotationBase> Region::AnnotationRegion(bool p
             case CARTA::ELLIPSE: {
                 casacore::Quantity cx, cy, bmaj, bmin;
                 if (pixel_coord) {
+                    std::cout << "PDEBUG: AnnEllipse export pixel" << std::endl;
                     cx = casacore::Quantity(_control_points[0].x(), "pix");
                     cy = casacore::Quantity(_control_points[0].y(), "pix");
                     bmaj = casacore::Quantity(_control_points[1].x(), "pix");
                     bmin = casacore::Quantity(_control_points[1].y(), "pix");
                 } else {
+                    std::cout << "PDEBUG: AnnEllipse export world" << std::endl;
                     cx = _control_points_wcs[0];
                     cy = _control_points_wcs[1];
                     bmaj = _control_points_wcs[2];
                     bmin = _control_points_wcs[3];
                 }
                 casacore::Quantity position_angle(_rotation, "deg");
+                std::cout << "PDEBUG: AnnEllipse wcs ctrl points bmaj=" << bmaj << " bmin=" << bmin << std::endl;
                 ann_region =
                     new casa::AnnEllipse(cx, cy, bmaj, bmin, position_angle, _coord_sys, _image_shape, stokes_types, require_region);
                 break;
