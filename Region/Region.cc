@@ -295,8 +295,14 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                         casacore::Quantum<casacore::Vector<casacore::Double>> angle = center_position.getAngle();
                         _control_points_wcs.push_back(casacore::Quantity(angle.getValue()[0], angle.getUnit()));
                         _control_points_wcs.push_back(casacore::Quantity(angle.getValue()[1], angle.getUnit()));
-                        _control_points_wcs.push_back(bmaj);
-                        _control_points_wcs.push_back(bmin);
+                        if (bmaj.getUnit() != "pix") {
+                            _control_points_wcs.push_back(bmaj);
+                            _control_points_wcs.push_back(bmin);
+                        } else { // convert to wcs
+                            _control_points_wcs.push_back(_coord_sys.toWorldLength(bmaj.getValue(), 0));
+                            _control_points_wcs.push_back(_coord_sys.toWorldLength(bmin.getValue(), 0));
+                        }
+
                         _valid = true;
                     }
                     break;
@@ -398,6 +404,12 @@ RegionState Region::GetRegionState() {
 double Region::AngleToLength(casacore::Quantity angle, unsigned int pixel_axis) {
     // world->pixel conversion of ellipse radius.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
+
+    // If already pixel, just return value
+    if (angle.getUnit() == "pix") {
+        return angle.getValue();
+    }
+
     int coord, coord_axis;
     _coord_sys.findWorldAxis(coord, coord_axis, pixel_axis);
     casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
