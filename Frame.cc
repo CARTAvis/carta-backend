@@ -839,12 +839,16 @@ bool Frame::SetRegionSpatialRequirements(int region_id, const std::vector<std::s
 
 bool Frame::SetRegionSpectralRequirements(int region_id, const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& profiles) {
     // set requested spectral profiles e.g. ["Qz", "Uz"] or just ["z"] to use current stokes
-    bool region_ok(false);
+    bool req_set(false);
+    if (_image_shape.size() < 3) { // not valid for 2D image
+        return req_set;
+    }
+
     if (_regions.count(region_id)) {
         auto& region = _regions[region_id];
-        region_ok = region->SetSpectralRequirements(profiles, NumStokes());
+        req_set = region->SetSpectralRequirements(profiles, NumStokes());
     }
-    return region_ok;
+    return req_set;
 }
 
 bool Frame::SetRegionStatsRequirements(int region_id, const std::vector<int>& stats_types) {
