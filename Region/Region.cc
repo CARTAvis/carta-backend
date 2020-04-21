@@ -233,8 +233,34 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                             bmin = ellipse->getSemiMinorAxis();
                             position_angle = ellipse->getPositionAngle();
                             have_region_info = true;
+
+                            // Issue 495 check if axes were swapped: print file ellipse parameters
+                            std::ostringstream ellipse_output;
+                            ellipse->print(ellipse_output);
+                            casacore::String outputstr(ellipse_output.str()); // "ellipse [[x, y], [bmaj, bmin], rotang]"
+                            // create comma-delimited string of quantities
+                            casacore::String params(outputstr.after("ellipse ")); // remove "ellipse "
+                            params.gsub("[", "");                                 // remove [
+                            params.gsub("] ", "],");                              // add comma delimiter
+                            params.gsub("]", "");                                 // remove ]
+                            // split string by comma into string vector
+                            std::vector<std::string> quantities;
+                            SplitString(params, ',', quantities);
+                            // check if rotang changed
+                            casacore::Quantity file_rotang;
+                            casacore::readQuantity(file_rotang, quantities[4]);
+                            if (file_rotang != position_angle) {
+                                // values were swapped, restore file values
+                                casacore::Quantity file_bmaj, file_bmin;
+                                casacore::readQuantity(file_bmaj, quantities[2]);
+                                casacore::readQuantity(file_bmin, quantities[3]);
+                                bmaj = file_bmaj;
+                                bmin = file_bmin;
+                                position_angle = file_rotang;
+                            }
                         }
                     }
+
                     if (have_region_info) {
                         // set control point: cx, cy in pixel coords
                         casacore::Vector<casacore::Double> pixel_coords;
@@ -269,8 +295,14 @@ Region::Region(casacore::CountedPtr<const casa::AnnotationBase> annotation_regio
                         casacore::Quantum<casacore::Vector<casacore::Double>> angle = center_position.getAngle();
                         _control_points_wcs.push_back(casacore::Quantity(angle.getValue()[0], angle.getUnit()));
                         _control_points_wcs.push_back(casacore::Quantity(angle.getValue()[1], angle.getUnit()));
-                        _control_points_wcs.push_back(bmaj);
-                        _control_points_wcs.push_back(bmin);
+                        if (bmaj.getUnit() != "pix") {
+                            _control_points_wcs.push_back(bmaj);
+                            _control_points_wcs.push_back(bmin);
+                        } else { // convert to wcs
+                            _control_points_wcs.push_back(_coord_sys.toWorldLength(bmaj.getValue(), 0));
+                            _control_points_wcs.push_back(_coord_sys.toWorldLength(bmin.getValue(), 0));
+                        }
+
                         _valid = true;
                     }
                     break;
@@ -372,6 +404,12 @@ RegionState Region::GetRegionState() {
 double Region::AngleToLength(casacore::Quantity angle, unsigned int pixel_axis) {
     // world->pixel conversion of ellipse radius.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
+
+    // If already pixel, just return value
+    if (angle.getUnit() == "pix") {
+        return angle.getValue();
+    }
+
     int coord, coord_axis;
     _coord_sys.findWorldAxis(coord, coord_axis, pixel_axis);
     casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
@@ -721,28 +759,33 @@ casacore::WCRegion* Region::MakeEllipseRegion(const std::vector<CARTA::Point>& p
             return ellipse; // nullptr, conversion failed
         }
 
-        // Make Quantities for ellipsoid radii (point 1); major axis > minor axis.
-        // rotation is in degrees from y-axis, ellipse rotation angle is in radians from x-axis;
-        // adjust by 90 degrees unless swapped maj/min axes
+        // Input control points
         float bmaj(points[1].x()), bmin(points[1].y()), rotation_degrees;
-        casacore::Quantity major_axis, minor_axis;
+        casacore::Quantity major_axis = casacore::Quantity(bmaj, "pix");
+        casacore::Quantity minor_axis = casacore::Quantity(bmin, "pix");
+
+        // WCEllipsoid requires major axis > minor axis.
+        // WCEllipsoid rotation is in degrees from y-axis, ellipse rotation angle is in radians from x-axis; adjust by 90 degrees
+        casacore::Quantity wc_major, wc_minor;
         if (bmaj > bmin) {
-            major_axis = casacore::Quantity(bmaj, "pix");
-            minor_axis = casacore::Quantity(bmin, "pix");
+            // keep major/minor axes and adjust rotation
+            wc_major = major_axis;
+            wc_minor = minor_axis;
             rotation_degrees = rotation + 90.0;
         } else {
-            major_axis = casacore::Quantity(bmin, "pix");
-            minor_axis = casacore::Quantity(bmaj, "pix");
+            // swap major/minor axes and do not adjust rotation
+            wc_major = minor_axis;
+            wc_minor = major_axis;
             rotation_degrees = rotation;
         }
         casacore::Quantity theta = casacore::Quantity(rotation_degrees * (M_PI / 180.0f), "rad");
 
         std::unique_lock<std::mutex> guard(_casacore_region_mutex);
-        ellipse = new casacore::WCEllipsoid(
-            center_world(0), center_world(1), major_axis, minor_axis, theta, _xy_axes(0), _xy_axes(1), _coord_sys);
+        ellipse =
+            new casacore::WCEllipsoid(center_world(0), center_world(1), wc_major, wc_minor, theta, _xy_axes(0), _xy_axes(1), _coord_sys);
         guard.unlock();
 
-        // Set control points as quantities in wcs
+        // Set input control points as quantities in wcs
         _control_points_wcs.clear();
         _control_points_wcs.push_back(center_world(0));
         _control_points_wcs.push_back(center_world(1));
