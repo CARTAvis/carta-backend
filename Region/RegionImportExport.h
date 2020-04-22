@@ -16,21 +16,30 @@ class RegionImportExport {
 public:
     RegionImportExport() {}
 
-    // Import: boolean indicates whether file string is file name or file contents
-    RegionImportExport(const std::string& region_file, CARTA::FileType type, const casacore::CoordinateSystem& image_coord_sys,
-        const casacore::IPosition& image_shape, bool file_is_filename = true);
+    // Import constructor: file_id to add to RegionState
+    RegionImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id);
+    // Export constructor
+    RegionImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape);
 
-    std::vector<RegionState> GetImportedRegions(int file_id, std::string& error);
+    // Retrieve imported regions as RegionState vector
+    std::vector<RegionState> GetImportedRegions(std::string& error);
 
-private:
-    // Region file info
-    CARTA::FileType _file_type;
-    std::string _filename;
-    std::string _contents;
+    // Add region to export: RegionState for pixel coords in reference image,
+    // Record for world coordinates or for either coordinate type applied to another image
+    bool AddExportRegion(const RegionState& region);
+    bool AddExportRegion(const casacore::RecordInterface& region);
+    // Perform export; ostream could be for output file (ofstream) or string (ostringstream)
+    bool ExportRegions(std::ostream& os, std::string& error);
 
+protected:
     // Image info to which region is applied
     casacore::CoordinateSystem _coord_sys;
     casacore::IPosition _image_shape;
+
+    // For import
+    int _file_id;
+    std::string _import_errors;
+    std::vector<RegionState> _regions;
 };
 
 } // namespace carta

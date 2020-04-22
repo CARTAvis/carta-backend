@@ -10,83 +10,66 @@
 
 using namespace carta;
 
-Ds9ImportExport::Ds9ImportExport(
-    std::string& filename, const casacore::CoordinateSystem& image_coord_sys, casacore::IPosition& image_shape, int file_id)
-    : _coord_sys(image_coord_sys), _image_shape(image_shape), _direction_ref_frame(""), _file_pixel_coord(true), _file_id(file_id) {
-    // Map from Ds9 to casacore keywords
-    InitDs9CoordMap();
-
+Ds9ImportExport::Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+    const std::string& file, bool file_is_filename)
+    : RegionImportExport(image_coord_sys, image_shape, file_id), _pixel_coord(true) {
+    // Import regions in DS9 format
     // Create vector of file lines, delimited with newline or semicolon
-    std::ifstream ds9_file;
-    ds9_file.open(filename);
     std::vector<std::string> file_lines;
-    while (!ds9_file.eof()) {
-        std::string single_line;
-        getline(ds9_file, single_line); // get by newline
-        std::vector<std::string> lines;
-        SplitString(single_line, ';', lines); // split compound line by semicolon
-        for (auto& line : lines) {
-            file_lines.push_back(line);
+    if (file_is_filename) {
+        std::ifstream ds9_file;
+        ds9_file.open(file);
+        while (!ds9_file.eof()) {
+            std::string single_line;
+            getline(ds9_file, single_line); // get by newline
+            std::vector<std::string> lines;
+            SplitString(single_line, ';', lines); // split compound line by semicolon
+            for (auto& line : lines) {
+                file_lines.push_back(line);
+            }
+        }
+        ds9_file.close();
+    } else {
+        std::string contents(file);
+        std::vector<std::string> input_lines;
+        SplitString(contents, '\n', input_lines); // lines split by newline
+        for (auto single_line : input_lines) {
+            std::vector<std::string> lines;
+            SplitString(single_line, ';', lines); // lines split by semicolon
+            for (auto& line : lines) {
+                file_lines.push_back(line);
+            }
         }
     }
-    ds9_file.close();
 
     // Process into regions
     ProcessFileLines(file_lines);
 }
 
 Ds9ImportExport::Ds9ImportExport(
-    const casacore::CoordinateSystem& image_coord_sys, std::string& contents, casacore::IPosition& image_shape, int file_id)
-    : _coord_sys(image_coord_sys), _image_shape(image_shape), _direction_ref_frame(""), _file_pixel_coord(true), _file_id(file_id) {
-    // Map from Ds9 to casacore keywords
-    InitDs9CoordMap();
-
-    // Create vector of file lines, delimited with newline or semicolon
-    std::vector<std::string> file_lines, input_lines;
-    SplitString(contents, '\n', input_lines); // lines split by newline
-    for (auto single_line : input_lines) {
-        std::vector<std::string> lines;
-        SplitString(single_line, ';', lines); // lines split by semicolon
-        for (auto& line : lines) {
-            file_lines.push_back(line);
-        }
-    }
-
-    // Process into regions
-    ProcessFileLines(file_lines);
-}
-
-/* TODO: for export
-Ds9ImportExport::Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, bool pixel_coord)
-    : _coord_sys(image_coord_sys), _pixel_coord(pixel_coord) {
-    // Used for exporting regions
-    InitDs9CoordMap();
-
-    // set coordinate system
+    const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord)
+    : RegionImportExport(image_coord_sys, image_shape) {
+    // Export regions to DS9 format
+    // Set coordinate system for file header
     if (pixel_coord) {
-        _direction_ref_frame = "physical";
+        _file_ref_frame = "physical";
     } else {
-        InitializeDirectionReferenceFrame(); // crtf
+        SetImageReferenceFrame();
+        // Convert from casacore to ds9 for export file
+        InitDs9CoordMap();
         for (auto& coord : _coord_map) {
-            if (coord.second == _direction_ref_frame) {
-                _direction_ref_frame = coord.first; // convert to ds9
+            if (coord.second == _image_ref_frame) {
+                _file_ref_frame = coord.first;
                 break;
             }
         }
-        if (_direction_ref_frame == "B1950") {
-            _direction_ref_frame = "fk4";
-        } else if (_direction_ref_frame == "J2000") {
-            _direction_ref_frame = "fk5";
+        // Multiple DS9 options for these frames, force fk*
+        if (_image_ref_frame == "B1950") {
+            _file_ref_frame = "fk4";
+        } else if (_image_ref_frame == "J2000") {
+            _file_ref_frame = "fk5";
         }
     }
-}
-*/
-
-// Public accessors
-
-std::vector<RegionState> Ds9ImportExport::GetImportedRegions(std::string& error) {
-    error = _import_errors;
-    return _regions;
 }
 
 // Process file import
@@ -96,6 +79,9 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
     if (lines.empty()) {
         return;
     }
+
+    // Map to check for DS9 keywords and convert to CASA
+    InitDs9CoordMap();
 
     bool ds9_coord_sys_ok(true); // flag for invalid coord sys lines
     for (auto& line : lines) {
@@ -118,7 +104,11 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
 
         // process coordinate system; global or for a region definition
         if (IsDs9CoordSysKeyword(line)) {
-            ds9_coord_sys_ok = SetDirectionRefFrame(line);
+            // Get ready for conversion
+            if (_image_ref_frame.empty()) {
+                SetImageReferenceFrame();
+            }
+            ds9_coord_sys_ok = SetFileReferenceFrame(line);
             if (!ds9_coord_sys_ok) {
                 std::string csys_error = "coord sys " + line + " not supported.\n";
                 _import_errors.append(csys_error);
@@ -127,13 +117,6 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         }
 
         if (ds9_coord_sys_ok) { // else skip lines defined in that coord sys
-            // direction frame is required to set regions
-            if (_direction_ref_frame.empty()) {
-                // Set to ctor coord sys frame
-                InitializeDirectionReferenceFrame();
-            }
-
-            // process region
             SetRegion(line);
         }
     }
@@ -164,39 +147,39 @@ bool Ds9ImportExport::IsDs9CoordSysKeyword(std::string& input_line) {
     return _coord_map.count(input_lower);
 }
 
-bool Ds9ImportExport::SetDirectionRefFrame(std::string& ds9_coord) {
-    // Convert Ds9 coord string to casacore reference frame
+bool Ds9ImportExport::SetFileReferenceFrame(std::string& ds9_coord) {
+    // Convert DS9 coord string in region file to CASA reference frame
     // Returns whether conversion was successful or undefined/not supported
-    bool converted(false);
-    std::transform(ds9_coord.begin(), ds9_coord.end(), ds9_coord.begin(), ::tolower); // convert in-place to lowercase
+    _file_ref_frame = "UNSUPPORTED";
 
+    // Convert in-place to lowercase for map
+    std::transform(ds9_coord.begin(), ds9_coord.end(), ds9_coord.begin(), ::tolower);
+
+    // Convert to CASA and set pixel_coord
     if (_coord_map.count(ds9_coord)) {
-        if (_coord_map[ds9_coord] == "UNSUPPORTED") {
-            return converted;
+        _file_ref_frame = _coord_map[ds9_coord];
+        if ((ds9_coord != "physical") && (ds9_coord != "image")) { // indicates pixel
+            _pixel_coord = false;
         }
-
-        if ((ds9_coord != "physical") && (ds9_coord != "image")) {
-            // these keywords indicate pixel coordinates; pixel is assumed until ds9 coord found
-            _file_pixel_coord = false;
-        }
-
-        _direction_ref_frame = _coord_map[ds9_coord];
-        converted = true;
     }
 
-    return converted;
+    if (_file_ref_frame == "UNSUPPORTED") {
+        _pixel_coord = false;
+        return false;
+    }
+    return true;
 }
 
-void Ds9ImportExport::InitializeDirectionReferenceFrame() {
-    // Set _direction_reference_frame attribute to image coord sys direction frame
+void Ds9ImportExport::SetImageReferenceFrame() {
+    // Set image coord sys direction frame
     if (_coord_sys.hasDirectionCoordinate()) {
         casacore::MDirection::Types reference_frame;
         reference_frame = _coord_sys.directionCoordinate().directionType();
-        _direction_ref_frame = casacore::MDirection::showType(reference_frame);
+        _image_ref_frame = casacore::MDirection::showType(reference_frame);
     } else if (_coord_sys.hasLinearCoordinate()) {
-        _direction_ref_frame = "linear";
+        _image_ref_frame = "linear";
     } else {
-        _direction_ref_frame = "physical";
+        _image_ref_frame = "physical";
     }
 }
 
@@ -204,7 +187,6 @@ void Ds9ImportExport::InitializeDirectionReferenceFrame() {
 
 void Ds9ImportExport::SetRegion(std::string& region_description) {
     // Convert ds9 region description into RegionState
-
     // Split into region definition, properties
     std::string region_definition(region_description), region_properties;
     if (region_description.find("#") != std::string::npos) {
@@ -269,20 +251,21 @@ void Ds9ImportExport::ImportPointRegion(std::string& region, std::string& name, 
     std::vector<casacore::Quantity> param_quantities;
     for (size_t i = first_param; i < params.size(); ++i) {
         std::string param(params[i]);
+        // Convert DS9 unit to Quantity unit for readQuantity
         if (CheckAndConvertParameter(param, "point")) {
-            casacore::String param_string(param);
+            casacore::String converted_param(param);
 
             if (i == first_param + 1) {
                 // DS9 degrees use time format ":" instead of CASA "."
-                param_string = ConvertTimeFormatToDeg(param_string);
+                converted_param = ConvertTimeFormatToDeg(converted_param);
             }
 
             // Read string into casacore::Quantity, add to vector
             casacore::Quantity param_quantity;
-            if (readQuantity(param_quantity, param_string)) {
+            if (readQuantity(param_quantity, converted_param)) {
                 if (param_quantity.getUnit().empty()) {
-                    if (_file_pixel_coord) {
-                        param_quantity.setUnit("pix");
+                    if (_pixel_coord) {
+                        param_quantity.setUnit("pixel");
                     } else {
                         param_quantity.setUnit("deg");
                     }
@@ -300,7 +283,7 @@ void Ds9ImportExport::ImportPointRegion(std::string& region, std::string& name, 
 
     // Control points in pixel coordinates
     std::vector<CARTA::Point> control_points;
-    if (_file_pixel_coord) {
+    if (_pixel_coord) {
         CARTA::Point point;
         point.set_x(param_quantities[0].getValue());
         point.set_y(param_quantities[1].getValue());
@@ -353,18 +336,19 @@ void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name
         size_t nparams(params.size());
         for (size_t i = 1; i < nparams; ++i) {
             std::string param(params[i]);
+            // Convert DS9 unit to Quantity unit for readQuantity
             if (CheckAndConvertParameter(param, "ellipse")) {
-                casacore::String param_string(param);
+                casacore::String converted_param(param);
                 if (i == 2) {
-                    param_string = ConvertTimeFormatToDeg(param);
+                    converted_param = ConvertTimeFormatToDeg(param);
                 }
                 casacore::Quantity param_quantity;
-                if (readQuantity(param_quantity, param_string)) {
+                if (readQuantity(param_quantity, converted_param)) {
                     if (param_quantity.getUnit().empty()) {
-                        if ((i == nparams - 1) || !_file_pixel_coord) {
+                        if ((i == nparams - 1) || !_pixel_coord) {
                             param_quantity.setUnit(units[i]);
                         } else {
-                            param_quantity.setUnit("pix");
+                            param_quantity.setUnit("pixel");
                         }
                     }
                     param_quantities.push_back(param_quantity);
@@ -380,7 +364,7 @@ void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name
 
         // Control points in pixel coordinates
         std::vector<CARTA::Point> control_points;
-        if (_file_pixel_coord) {
+        if (_pixel_coord) {
             CARTA::Point point;
             point.set_x(param_quantities[0].getValue());
             point.set_y(param_quantities[1].getValue());
@@ -442,18 +426,19 @@ void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& na
         size_t nparams(params.size());
         for (size_t i = 1; i < nparams; ++i) {
             std::string param(params[i]);
+            // Convert DS9 unit to Quantity unit for readQuantity
             if (CheckAndConvertParameter(param, "box")) {
-                casacore::String param_string(param);
+                casacore::String converted_param(param);
                 if (i == 2) { // degree format, not time
-                    param_string = ConvertTimeFormatToDeg(param);
+                    converted_param = ConvertTimeFormatToDeg(param);
                 }
                 casacore::Quantity param_quantity;
-                if (readQuantity(param_quantity, param_string)) {
+                if (readQuantity(param_quantity, converted_param)) {
                     if (param_quantity.getUnit().empty()) {
-                        if ((i == nparams - 1) || !_file_pixel_coord) {
+                        if ((i == nparams - 1) || !_pixel_coord) {
                             param_quantity.setUnit(ds9_units[i]);
                         } else {
-                            param_quantity.setUnit("pix");
+                            param_quantity.setUnit("pixel");
                         }
                     }
                     param_quantities.push_back(param_quantity);
@@ -469,7 +454,7 @@ void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& na
 
         // Control points in pixel coordinates
         std::vector<CARTA::Point> control_points;
-        if (_file_pixel_coord) {
+        if (_pixel_coord) {
             CARTA::Point point;
             point.set_x(param_quantities[0].getValue());
             point.set_y(param_quantities[1].getValue());
@@ -531,16 +516,17 @@ void Ds9ImportExport::ImportPolygonRegion(std::string& region, std::string& name
         std::vector<casacore::Quantity> param_quantities;
         for (size_t i = 1; i < params.size(); ++i) {
             std::string param(params[i]);
+            // Convert DS9 unit to Quantity unit for readQuantity
             if (CheckAndConvertParameter(param, "polygon")) {
-                casacore::String param_string(param);
+                casacore::String converted_param(param);
                 if ((i % 2) == 0) {
-                    param_string = ConvertTimeFormatToDeg(param_string);
+                    converted_param = ConvertTimeFormatToDeg(converted_param);
                 }
                 casacore::Quantity param_quantity;
-                if (readQuantity(param_quantity, param_string)) {
+                if (readQuantity(param_quantity, converted_param)) {
                     if (param_quantity.getUnit().empty()) {
-                        if (_file_pixel_coord) {
-                            param_quantity.setUnit("pix");
+                        if (_pixel_coord) {
+                            param_quantity.setUnit("pixel");
                         } else {
                             param_quantity.setUnit("deg");
                         }
@@ -559,7 +545,7 @@ void Ds9ImportExport::ImportPolygonRegion(std::string& region, std::string& name
         // Control points in pixel coordinates
         std::vector<CARTA::Point> control_points;
         for (size_t i = 0; i < param_quantities.size(); i += 2) {
-            if (_file_pixel_coord) {
+            if (_pixel_coord) {
                 CARTA::Point point;
                 point.set_x(param_quantities[i].getValue());
                 point.set_y(param_quantities[i + 1].getValue());
@@ -637,7 +623,7 @@ casacore::String Ds9ImportExport::GetRegionName(std::string& region_properties) 
 }
 
 bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std::string& region_type) {
-    // Replace ds9 unit with casacore unit in value-unit parameter string, for casacore::Quantity.
+    // Replace DS9 unit with casacore::Quantity unit in parameter string for readQuantity
     // Returns whether valid ds9 parameter
     bool valid(false);
     std::string error_prefix(region_type + " invalid parameter ");
@@ -667,10 +653,10 @@ bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std
                 casacore_unit = "rad";
                 valid = true;
             } else if (unit == 'p') {
-                casacore_unit = "pix";
+                casacore_unit = "pixel";
                 valid = true;
             } else if (unit == 'i') {
-                casacore_unit = "pix";
+                casacore_unit = "pixel";
                 valid = true;
             } else if ((unit == '"') || (unit == '\'')) {
                 // casacore unit for min, sec is the same
@@ -717,8 +703,8 @@ bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& poin
     }
 
     // must have matched coordinates
-    bool x_is_pix = point[0].getUnit() == "pix";
-    bool y_is_pix = point[1].getUnit() == "pix";
+    bool x_is_pix = point[0].getUnit() == "pixel";
+    bool y_is_pix = point[1].getUnit() == "pixel";
     if (x_is_pix != y_is_pix) {
         return false;
     }
@@ -732,9 +718,16 @@ bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& poin
     }
 
     if (_coord_sys.hasDirectionCoordinate()) {
+        if (_image_ref_frame.empty()) {
+            SetImageReferenceFrame();
+        }
+        if (_file_ref_frame.empty()) {
+            _file_ref_frame = _image_ref_frame;
+        }
+
         // Make MDirection from wcs parameter
         casacore::MDirection::Types from_dir_type;
-        if (!casacore::MDirection::getType(from_dir_type, _direction_ref_frame)) {
+        if (!casacore::MDirection::getType(from_dir_type, _file_ref_frame)) {
             return false;
         }
         casacore::MDirection direction(point[0], point[1], from_dir_type);
@@ -835,7 +828,7 @@ void Ds9ImportExport::PrintBoxRegion(const RegionProperties& properties, std::os
     std::string ds9_region("box");
     std::vector<casacore::Quantity> points = properties.control_points;
     os << ds9_region << "(";
-    if (_file_pixel_coord) {
+    if (_pixel_coord) {
         os << std::fixed << std::setprecision(2) << points[0].getValue();
         for (size_t i = 1; i < points.size(); ++i) {
             os << "," << points[i].getValue();
@@ -865,7 +858,7 @@ void Ds9ImportExport::PrintEllipseRegion(const RegionProperties& properties, std
     bool is_circle(points[2].getValue() == points[3].getValue()); // bmaj == bmin
     if (is_circle) {
         os << "circle(";
-        if (_file_pixel_coord) {
+        if (_pixel_coord) {
             os << std::fixed << std::setprecision(2) << points[0].getValue() << "," << points[1].getValue() << "," << points[2].getValue()
                << ")";
         } else {
@@ -881,7 +874,7 @@ void Ds9ImportExport::PrintEllipseRegion(const RegionProperties& properties, std
         if (angle > 360.0) {
             angle -= 360.0;
         }
-        if (_file_pixel_coord) {
+        if (_pixel_coord) {
             os << std::fixed << std::setprecision(2) << points[0].getValue();
             for (size_t i = 1; i < points.size(); ++i) {
                 os << "," << points[i].getValue();
@@ -903,7 +896,7 @@ void Ds9ImportExport::PrintPointRegion(const RegionProperties& properties, std::
     // point(x,y)
     std::vector<casacore::Quantity> points = properties.control_points;
     os << "point(";
-    if (_file_pixel_coord) {
+    if (_pixel_coord) {
         os << std::fixed << std::setprecision(2) << points[0].getValue() << "," << points[1].getValue() << ")";
     } else {
         os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
@@ -915,7 +908,7 @@ void Ds9ImportExport::PrintPolygonRegion(const RegionProperties& properties, std
     // polygon(x1,y1,x2,y2,x3,y3,...)
     std::vector<casacore::Quantity> points = properties.control_points;
     os << "polygon(";
-    if (_file_pixel_coord) {
+    if (_pixel_coord) {
         os << std::fixed << std::setprecision(2) << points[0].getValue();
         for (size_t i = 1; i < points.size(); ++i) {
             os << "," << points[i].getValue();

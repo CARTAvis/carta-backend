@@ -10,7 +10,8 @@
 #include "../ImageStats/StatsCalculator.h"
 #include "../InterfaceConstants.h"
 #include "../Util.h"
-#include "RegionImportExport.h"
+#include "CrtfImportExport.h"
+#include "Ds9ImportExport.h"
 
 using namespace carta;
 
@@ -94,50 +95,65 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Set regions from region file
     const casacore::CoordinateSystem csys = frame->CoordinateSystem();
     const casacore::IPosition shape = frame->ImageShape();
-    RegionImportExport importer = RegionImportExport(region_file, region_file_type, csys, shape, file_is_filename);
-
-    // Get region states from parser or error message
-    std::string error;
-    std::vector<RegionState> region_states = importer.GetImportedRegions(file_id, error);
-    if (region_states.empty()) {
-        import_ack.set_success(false);
-        import_ack.set_message(error);
-        import_ack.add_regions();
-        return;
+    std::unique_ptr<RegionImportExport> importer;
+    switch (region_file_type) {
+        case CARTA::FileType::CRTF:
+            importer = std::unique_ptr<RegionImportExport>(new CrtfImportExport(csys, shape, file_id, region_file, file_is_filename));
+            break;
+        case CARTA::FileType::REG:
+            importer = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(csys, shape, file_id, region_file, file_is_filename));
+            break;
+        default:
+            break;
     }
 
-    // Set reference file pointer
-    _frames[file_id] = frame;
-
-    // Set regions and complete message
-    import_ack.set_success(true);
-    import_ack.set_message(error);
-    int region_id = GetNextRegionId();
-    for (auto& region_state : region_states) {
-        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
-        if (region && region->IsValid()) {
-            _regions[region_id] = std::move(region);
-
-            // Set RegionProperties and its RegionInfo
-            auto region_properties = import_ack.add_regions();
-            region_properties->set_region_id(region_id);
-            auto region_info = region_properties->mutable_region_info();
-            region_info->set_region_name(region_state.name);
-            region_info->set_region_type(region_state.type);
-            *region_info->mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
-            region_info->set_rotation(region_state.rotation);
-
-            // increment region id for next region
-            region_id++;
+    std::string error;
+    if (importer) {
+        // Get region states from parser or error message
+        std::vector<RegionState> region_states = importer->GetImportedRegions(error);
+        if (region_states.empty()) {
+            import_ack.set_success(false);
+            import_ack.set_message(error);
+            import_ack.add_regions();
+            return;
         }
+
+        // Set reference file pointer
+        _frames[file_id] = frame;
+
+        // Set Regions and complete message
+        import_ack.set_success(true);
+        import_ack.set_message(error);
+        int region_id = GetNextRegionId();
+        for (auto& region_state : region_states) {
+            auto region = std::shared_ptr<Region>(new Region(region_state, csys));
+            if (region && region->IsValid()) {
+                _regions[region_id] = std::move(region);
+
+                // Set Ack RegionProperties and its RegionInfo
+                auto region_properties = import_ack.add_regions();
+                region_properties->set_region_id(region_id);
+                auto region_info = region_properties->mutable_region_info();
+                region_info->set_region_name(region_state.name);
+                region_info->set_region_type(region_state.type);
+                *region_info->mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
+                region_info->set_rotation(region_state.rotation);
+
+                // increment region id for next region
+                region_id++;
+            }
+        }
+    } else {
+        import_ack.set_success(false);
+        import_ack.set_message("Region importer failed.");
+        import_ack.add_regions();
     }
 }
 
 void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
     CARTA::CoordinateType coord_type, std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack) {
     // Export regions to given filename, or return export file contents in ack
-
-    // Check if regions to export
+    // Check if any regions to export
     if (region_ids.empty()) {
         export_ack.set_success(false);
         export_ack.set_message("Export failed: no regions requested.");
@@ -145,7 +161,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         return;
     }
 
-    // Check export file before creating file contents
+    // Check ability to create export file if filename given
     if (!filename.empty()) {
         casacore::File export_file(filename);
         if (!export_file.canCreate()) {
@@ -156,14 +172,86 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         }
     }
 
-    // Response fields
+    bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+    const casacore::CoordinateSystem output_csys = frame->CoordinateSystem();
+    const casacore::IPosition output_shape = frame->ImageShape();
+    std::string error;
+
+    std::unique_ptr<RegionImportExport> exporter;
+    switch (region_file_type) {
+        case CARTA::FileType::CRTF:
+            exporter = std::unique_ptr<RegionImportExport>(new CrtfImportExport(output_csys, output_shape));
+            break;
+        case CARTA::FileType::REG:
+            exporter = std::unique_ptr<RegionImportExport>(new Ds9ImportExport(output_csys, output_shape, pixel_coord));
+            break;
+        default:
+            break;
+    }
+
+    // Add regions to export
+    for (auto region_id : region_ids) {
+        if (_regions.count(region_id)) {
+            if (pixel_coord) {
+                RegionState region_state = _regions[region_id]->GetRegionState();
+                // Use RegionState control points for pixel coords no conversion
+                if (region_state.reference_file_id == file_id) {
+                    exporter->AddExportRegion(region_state);
+                    continue;
+                }
+            }
+
+            // Use regions for wcs coords and conversion
+            bool region_added(false);
+            if (pixel_coord) {
+                // Apply region to image, use lattice region Record for pixel
+                casacore::LCRegion* applied_region = _regions.at(region_id)->GetImageRegion(file_id, output_csys, output_shape);
+                if (applied_region) {
+                    region_added = exporter->AddExportRegion(applied_region->toRecord("pixel"));
+                }
+            } else {
+                // Apply region to image, use image region Record for world
+                ChannelRange chan_range(0); // not used for 2D region definition
+                int stokes(0);              // not used for 2D region definition
+                casacore::ImageRegion applied_region;
+                if (ApplyRegionToFile(region_id, file_id, chan_range, stokes, applied_region)) {
+                    region_added = exporter->AddExportRegion(applied_region.toRecord("world"));
+                }
+            }
+
+            if (!region_added) {
+                std::string region_error = fmt::format("Export region {} in image {} failed.\n", region_id, file_id);
+                error.append(region_error);
+            }
+        } else {
+            std::string region_error = fmt::format("Region {} not found for export.\n", region_id);
+            error.append(region_error);
+        }
+    }
+
     bool success(false);
-    std::string message;
+    if (filename.empty()) {
+        // Return contents
+        std::ostringstream oss;
+        if (exporter->ExportRegions(oss, error)) {
+            success = true;
+            std::string file_contents(oss.str());
+            std::vector<std::string> line_contents;
+            SplitString(file_contents, '\n', line_contents);
+            *export_ack.mutable_contents() = {line_contents.begin(), line_contents.end()};
+        }
+    } else {
+        // Write to file
+        std::ofstream export_file(filename);
+        if (exporter->ExportRegions(export_file, error)) {
+            export_file.close();
+            success = true;
+        }
+    }
 
-    // TODO: RegionImportExport
-
+    // Export failed
     export_ack.set_success(success);
-    export_ack.set_message(message);
+    export_ack.set_message(error);
 }
 
 // ********************************************************************

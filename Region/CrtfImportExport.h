@@ -6,26 +6,24 @@
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <imageanalysis/Annotations/AnnotationBase.h>
+#include <imageanalysis/Annotations/RegionTextList.h>
 #include <imageanalysis/IO/AsciiAnnotationFileLine.h>
 
 #include "Region.h"
+#include "RegionImportExport.h"
 
 namespace carta {
 
-class CrtfImportExport {
+class CrtfImportExport : public RegionImportExport {
 public:
     CrtfImportExport() {}
 
-    // constructors for import
-    CrtfImportExport(
-        std::string& filename, const casacore::CoordinateSystem& image_coord_sys, casacore::IPosition& image_shape, int file_id);
-    CrtfImportExport(
-        const casacore::CoordinateSystem& image_coord_sys, std::string& contents, casacore::IPosition& image_shape, int file_id);
+    // Import
+    CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+        const std::string& file, bool file_is_filename);
 
-    // constructor for export
-    // CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, bool pixel_coord);
-
-    std::vector<RegionState> GetImportedRegions(std::string& error);
+    // Export
+    CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape);
 
 private:
     // Import regions
@@ -39,10 +37,11 @@ private:
         std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, std::vector<CARTA::Point>& control_points);
     casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
     double AngleToPixelLength(casacore::Quantity angle, unsigned int pixel_axis);
-    void AddImportError(std::string& error);
+
+    // Export regions: add each region to region list
+    casa::RegionTextList _region_list;
 
     /*
-    // export regions
     void AddRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float rotation);
     inline unsigned int NumRegions() {
         return _regions.size();
@@ -56,17 +55,6 @@ private:
     void PrintPointRegion(const RegionProperties& properties, std::ostream& os);
     void PrintPolygonRegion(const RegionProperties& properties, std::ostream& os);
     */
-
-    // Image info to import region to
-    casacore::CoordinateSystem _coord_sys;
-    casacore::IPosition _image_shape;
-
-    // Output of import, or input to export
-    std::vector<RegionState> _regions;
-
-    // For import
-    int _file_id; // to add to RegionState
-    std::string _import_errors;
 };
 
 } // namespace carta

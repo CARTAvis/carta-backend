@@ -90,10 +90,6 @@ public:
         return _valid;
     };
 
-    inline bool IsPointRegion() {
-        return (_region_state.type == CARTA::POINT);
-    };
-
     // set new region state and coord sys
     bool UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
         const casacore::CoordinateSystem& csys);

@@ -11,77 +11,48 @@
 #include <imageanalysis/Annotations/AnnRegion.h>
 #include <imageanalysis/Annotations/AnnRotBox.h>
 #include <imageanalysis/Annotations/AnnSymbol.h>
-#include <imageanalysis/Annotations/RegionTextList.h>
 
 #include "../Util.h"
 
 using namespace carta;
 
-CrtfImportExport::CrtfImportExport(
-    std::string& filename, const casacore::CoordinateSystem& image_coord_sys, casacore::IPosition& image_shape, int file_id)
-    : _coord_sys(image_coord_sys), _image_shape(image_shape), _file_id(file_id) {
+CrtfImportExport::CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+    const std::string& file, bool file_is_filename)
+    : RegionImportExport(image_coord_sys, image_shape, file_id) {
     // Use casa RegionTextList to import file (by filename) and create annotation file lines
-    bool require_region(false); // import regions outside image
-    casa::RegionTextList region_list(
-        filename, image_coord_sys, image_shape, "", "", "", casa::RegionTextParser::CURRENT_VERSION, true, require_region);
-
-    // Iterate through annotations to create regions
-    for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
-        casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
+    if (image_coord_sys.hasDirectionCoordinate()) {
+        bool require_region(false); // import regions outside image
+        casa::RegionTextList region_list;
         try {
-            ImportAnnotationFileLine(file_line);
+            if (file_is_filename) {
+                region_list = casa::RegionTextList(
+                    file, image_coord_sys, image_shape, "", "", "", casa::RegionTextParser::CURRENT_VERSION, true, require_region);
+            } else {
+                region_list = casa::RegionTextList(image_coord_sys, file, image_shape, "", "", "", true, require_region);
+            }
         } catch (const casacore::AipsError& err) {
-            _import_errors.append(err.getMesg() + "\n");
+            _import_errors = err.getMesg().before("at File");
+            return;
         }
-    }
-}
 
-CrtfImportExport::CrtfImportExport(
-    const casacore::CoordinateSystem& image_coord_sys, std::string& contents, casacore::IPosition& image_shape, int file_id)
-    : _coord_sys(image_coord_sys), _image_shape(image_shape), _file_id(file_id) {
-    // Use casa RegionTextList to import file (by contents string) and create annotation file lines
-    bool require_region(false); // import regions outside image
-    casa::RegionTextList region_list(image_coord_sys, contents, image_shape, "", "", "", true, require_region);
-
-    // Iterate through annotations to create regions
-    for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
-        casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
-        try {
-            ImportAnnotationFileLine(file_line);
-        } catch (const casacore::AipsError& err) {
-            _import_errors.append(err.getMesg() + "\n");
-        }
-    }
-}
-
-/* TODO: for export
-CrtfImportExport::CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, bool pixel_coord)
-    : _coord_sys(image_coord_sys), _pixel_coord(pixel_coord) {
-    // set coordinate system
-    if (pixel_coord) {
-        _direction_ref_frame = "physical";
-    } else {
-        InitializeDirectionReferenceFrame(); // crtf
-        for (auto& coord : _coord_map) {
-            if (coord.second == _direction_ref_frame) {
-                _direction_ref_frame = coord.first; // convert to ds9
-                break;
+        // Iterate through annotations to create regions
+        for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
+            casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
+            try {
+                ImportAnnotationFileLine(file_line);
+            } catch (const casacore::AipsError& err) {
+                _import_errors.append(err.getMesg() + "\n");
             }
         }
-        if (_direction_ref_frame == "B1950") {
-            _direction_ref_frame = "fk4";
-        } else if (_direction_ref_frame == "J2000") {
-            _direction_ref_frame = "fk5";
-        }
+    } else {
+        _import_errors = "Import error: image coordinate system has no direction coordinate";
     }
 }
-*/
 
-// Public accessors
-
-std::vector<RegionState> CrtfImportExport::GetImportedRegions(std::string& error) {
-    error = _import_errors;
-    return _regions;
+CrtfImportExport::CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape)
+    : RegionImportExport(image_coord_sys, image_shape) {
+    // Export regions; will add each region to RegionTextList
+    _region_list = casa::RegionTextList(image_coord_sys, image_shape);
 }
 
 // Process file import
@@ -422,9 +393,9 @@ double CrtfImportExport::AngleToPixelLength(casacore::Quantity angle, unsigned i
 }
 
 /*
-// For export
+// Process file export
 
-void CrtfImportExport::AddRegion(
+void CrtfImportExport::AddExportRegion(
     const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float rotation) {
     RegionState state(name, type, control_points, rotation);
     _regions.push_back(state);

@@ -7,6 +7,7 @@
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 
 #include "Region.h"
+#include "RegionImportExport.h"
 
 namespace carta {
 
@@ -23,20 +24,16 @@ struct Ds9Properties {
     bool fixed_region = false;
 };
 
-class Ds9ImportExport {
+class Ds9ImportExport : public RegionImportExport {
 public:
     Ds9ImportExport() {}
 
-    // constructors for import
-    Ds9ImportExport(
-        std::string& filename, const casacore::CoordinateSystem& image_coord_sys, casacore::IPosition& image_shape, int file_id);
-    Ds9ImportExport(
-        const casacore::CoordinateSystem& image_coord_sys, std::string& contents, casacore::IPosition& image_shape, int file_id);
+    // Import
+    Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+        const std::string& file, bool file_is_filename);
 
-    // constructor for export
-    // Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, bool pixel_coord);
-
-    std::vector<RegionState> GetImportedRegions(std::string& error);
+    // Export
+    Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord);
 
 private:
     void ProcessFileLines(std::vector<std::string>& lines);
@@ -44,8 +41,8 @@ private:
     // Coordinate system handlers
     void InitDs9CoordMap();
     bool IsDs9CoordSysKeyword(std::string& input_line);
-    bool SetDirectionRefFrame(std::string& ds9_coord);
-    void InitializeDirectionReferenceFrame(); // using input image_coord_sys
+    bool SetFileReferenceFrame(std::string& ds9_coord);
+    void SetImageReferenceFrame();
 
     // Import regions
     void SetRegion(std::string& region_description);
@@ -82,23 +79,13 @@ private:
     void PrintPolygonRegion(const RegionProperties& properties, std::ostream& os);
     */
 
-    // Image info to import region to
-    casacore::CoordinateSystem _coord_sys;
-    casacore::IPosition _image_shape;
-    std::string _direction_ref_frame;
-
-    // Import file coordinates are pixel or world
-    bool _file_pixel_coord;
-
-    // Ds9/CASA conversion
+    // DS9/CASA conversion map
     std::unordered_map<std::string, std::string> _coord_map;
+    std::string _image_ref_frame; // CASA
+    std::string _file_ref_frame;  // Import: DS9 to CASA, Export: CASA to DS9
 
-    // Output of import, or input to export
-    std::vector<RegionState> _regions;
-
-    // For import
-    int _file_id; // to add to RegionState
-    std::string _import_errors;
+    // Whether region file is in pixel or wcs coords
+    bool _pixel_coord;
 };
 
 } // namespace carta
