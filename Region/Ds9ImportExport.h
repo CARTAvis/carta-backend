@@ -35,6 +35,12 @@ public:
     // Export
     Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord);
 
+    // Export regions
+    bool AddExportRegion(const RegionState& region) override;
+    bool AddExportRegion(const casacore::RecordInterface& region) override;
+    bool ExportRegions(std::string& filename, std::string& error) override;
+    bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
+
 private:
     void ProcessFileLines(std::vector<std::string>& lines);
 

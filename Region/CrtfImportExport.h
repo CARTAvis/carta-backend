@@ -25,6 +25,12 @@ public:
     // Export
     CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape);
 
+    // Export regions
+    bool AddExportRegion(const RegionState& region) override;
+    bool AddExportRegion(const casacore::RecordInterface& region) override;
+    bool ExportRegions(std::string& filename, std::string& error) override;
+    bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
+
 private:
     // Import regions
     void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line);
@@ -38,7 +44,9 @@ private:
     casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
     double AngleToPixelLength(casacore::Quantity angle, unsigned int pixel_axis);
 
-    // Export regions: add each region to region list
+    // Export regions
+
+    // Create Annotation region and add to region list
     casa::RegionTextList _region_list;
 
     /*

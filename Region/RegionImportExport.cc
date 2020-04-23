@@ -26,19 +26,3 @@ std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& err
 
     return _regions;
 }
-
-bool RegionImportExport::AddExportRegion(const RegionState& region) {
-    // TODO: override
-    return false;
-}
-
-bool RegionImportExport::AddExportRegion(const casacore::RecordInterface& region) {
-    // TODO: override
-    std::cout << "PDEBUG: export region Record=" << region << std::endl;
-    return false;
-}
-
-bool RegionImportExport::ExportRegions(std::ostream& os, std::string& error) {
-    // TODO: override
-    return false;
-}

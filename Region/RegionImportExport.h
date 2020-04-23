@@ -26,10 +26,11 @@ public:
 
     // Add region to export: RegionState for pixel coords in reference image,
     // Record for world coordinates or for either coordinate type applied to another image
-    bool AddExportRegion(const RegionState& region);
-    bool AddExportRegion(const casacore::RecordInterface& region);
+    virtual bool AddExportRegion(const RegionState& region) = 0;
+    virtual bool AddExportRegion(const casacore::RecordInterface& region) = 0;
     // Perform export; ostream could be for output file (ofstream) or string (ostringstream)
-    bool ExportRegions(std::ostream& os, std::string& error);
+    virtual bool ExportRegions(std::string& filename, std::string& error) = 0;
+    virtual bool ExportRegions(std::vector<std::string>& contents, std::string& error) = 0;
 
 protected:
     // Image info to which region is applied

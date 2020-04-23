@@ -232,19 +232,14 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     bool success(false);
     if (filename.empty()) {
         // Return contents
-        std::ostringstream oss;
-        if (exporter->ExportRegions(oss, error)) {
+        std::vector<std::string> line_contents;
+        if (exporter->ExportRegions(line_contents, error)) {
             success = true;
-            std::string file_contents(oss.str());
-            std::vector<std::string> line_contents;
-            SplitString(file_contents, '\n', line_contents);
             *export_ack.mutable_contents() = {line_contents.begin(), line_contents.end()};
         }
     } else {
         // Write to file
-        std::ofstream export_file(filename);
-        if (exporter->ExportRegions(export_file, error)) {
-            export_file.close();
+        if (exporter->ExportRegions(filename, error)) {
             success = true;
         }
     }

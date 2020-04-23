@@ -72,6 +72,29 @@ Ds9ImportExport::Ds9ImportExport(
     }
 }
 
+// Public: for exporting regions
+
+bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
+    // Add pixel region using RegionState
+    return false;
+}
+
+bool Ds9ImportExport::AddExportRegion(const casacore::RecordInterface& region) {
+    // Add region using Record (pixel or world)
+    return false;
+}
+
+bool Ds9ImportExport::ExportRegions(std::string& filename, std::string& error) {
+    // Print regions to DS9 file
+    error = "Not implemented";
+    return false;
+}
+
+bool Ds9ImportExport::ExportRegions(std::vector<std::string>& contents, std::string& error) {
+    // Print regions to DS9 file lines in vector
+    error = "Not implemented";
+}
+
 // Process file import
 
 void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
