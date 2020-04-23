@@ -164,6 +164,11 @@ public:
     bool Interrupt(int region_id, int profile_stokes, const RegionState& start_region_state, const SpectralConfig& start_config_stats,
         bool is_HDF5 = false);
 
+    // Get image interface ptr
+    casacore::ImageInterface<float>* GetImage() {
+        return _loader->GetImage();
+    }
+
 private:
     // Internal regions: image, cursor
     void SetImageRegion(int region_id); // set region for entire plane image or cube
