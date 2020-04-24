@@ -168,6 +168,14 @@ public:
     casacore::ImageInterface<float>* GetImage() {
         return _loader->GetImage();
     }
+    // Get spectral axis
+    int GetSpectralAxis() {
+        return _spectral_axis;
+    };
+    // Get stokes axis
+    int GetStokesAxis() {
+        return _stokes_axis;
+    }
 
 private:
     // Internal regions: image, cursor

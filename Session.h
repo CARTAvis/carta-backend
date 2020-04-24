@@ -32,6 +32,9 @@
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
+#include <carta-protobuf/moment_request.pb.h>
+#include <carta-protobuf/moment_response.pb.h>
+#include <carta-protobuf/stop_moment_calc.pb.h>
 
 #include <tbb/task.h>
 
@@ -41,6 +44,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "Moment/MomentController.h"
 #include "Util.h"
 
 class Session {
@@ -79,6 +83,9 @@ public:
     void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id);
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
+
+    void OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id);
+    void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
@@ -229,6 +236,9 @@ private:
 
     // Catalog controller
     std::unique_ptr<catalog::Controller> _catalog_controller;
+
+    // Moment controller
+    std::unique_ptr<carta::MomentController> _moment_controller;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;

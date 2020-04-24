@@ -60,6 +60,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _animation_object = nullptr;
     _connected = true;
     _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller(_root_folder));
+    _moment_controller = std::unique_ptr<carta::MomentController>(new carta::MomentController());
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
@@ -903,6 +904,18 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
         });
     }
 }
+
+void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id) {
+    int file_id(moment_request.file_id());
+    if (_frames.count(file_id)) {
+        casacore::ImageInterface<float>* image = _frames.at(file_id)->GetImage();
+        int spectral_axis = _frames.at(file_id)->GetSpectralAxis();
+        int stokes_axis = _frames.at(file_id)->GetStokesAxis();
+        _moment_controller->SetMomentGenerator(file_id, image, spectral_axis, stokes_axis, moment_request);
+    }
+}
+
+void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {}
 
 // ******** SEND DATA STREAMS *********
 

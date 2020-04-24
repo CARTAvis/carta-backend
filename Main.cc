@@ -105,8 +105,7 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
     if (session) {
         auto uuid = session->_id;
         session->DisconnectCalled();
-        PrintLog(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address,
-            Session::NumberOfSessions());
+        PrintLog(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address, Session::NumberOfSessions());
         if (!session->DecreaseRefCount()) {
             delete session;
             ws->setUserData(nullptr);
@@ -394,6 +393,23 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         session->OnCloseCatalogFile(message);
                     } else {
                         fmt::print("Bad CLOSE_CATALOG_FILE message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::MOMENT_REQUEST: {
+                    CARTA::MomentRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnMomentRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad MOMENT_REQUEST message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::STOP_MOMENT_CALC: {
+                    CARTA::StopMomentCalc message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                    } else {
+                        fmt::print("Bad STOP_MOMENT_CALC message!\n");
                     }
                     break;
                 }

@@ -112,6 +112,8 @@ set(SOURCE_FILES
         Catalog/VOTableParser.cc
         Catalog/VOTableCarrier.cc
         Catalog/VOTableController.cc
+        Moment/MomentGenerator.cc
+        Moment/MomentController.cc
         OnMessageTask.cc
         FileSettings.cc
         Util.cc
