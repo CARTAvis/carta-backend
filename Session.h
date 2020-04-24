@@ -23,18 +23,18 @@
 #include <carta-protobuf/contour.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
+#include <carta-protobuf/moment_request.pb.h>
+#include <carta-protobuf/moment_response.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/resume_session.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
+#include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
-#include <carta-protobuf/moment_request.pb.h>
-#include <carta-protobuf/moment_response.pb.h>
-#include <carta-protobuf/stop_moment_calc.pb.h>
 
 #include <tbb/task.h>
 

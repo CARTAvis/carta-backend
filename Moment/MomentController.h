@@ -15,8 +15,8 @@ class MomentController {
 public:
     MomentController();
     ~MomentController();
-    void SetMomentGenerator(
-        int file_id, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis, const CARTA::MomentRequest& moment_request);
+    void SetMomentGenerator(int file_id, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
+        const CARTA::MomentRequest& moment_request);
 
 private:
     std::unordered_map<int, std::unique_ptr<MomentGenerator>> _moment_generator; // <file_id, MomentGenerator>
