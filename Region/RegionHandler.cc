@@ -192,31 +192,24 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Add regions to export
     for (auto region_id : region_ids) {
         if (_regions.count(region_id)) {
-            if (pixel_coord) {
-                RegionState region_state = _regions[region_id]->GetRegionState();
-                // Use RegionState control points for pixel coords no conversion
-                if (region_state.reference_file_id == file_id) {
-                    exporter->AddExportRegion(region_state);
-                    continue;
-                }
+            RegionState region_state = _regions[region_id]->GetRegionState();
+
+            // Use RegionState control points for pixel coords with no conversion
+            if (pixel_coord && (region_state.reference_file_id == file_id)) {
+                exporter->AddExportRegion(region_state);
+                continue;
             }
 
-            // Use regions for wcs coords and conversion
             bool region_added(false);
-            if (pixel_coord) {
-                // Apply region to image, use lattice region Record for pixel
-                casacore::LCRegion* applied_region = _regions.at(region_id)->GetImageRegion(file_id, output_csys, output_shape);
-                if (applied_region) {
-                    region_added = exporter->AddExportRegion(applied_region->toRecord("pixel"));
+            // Get converted lattice region parameters as a Record
+            try {
+                casacore::LCRegion* lattice_region = _regions.at(region_id)->GetImageRegion(file_id, output_csys, output_shape);
+                if (lattice_region) {
+                    casacore::TableRecord region_record = lattice_region->toRecord("region");
+                    region_added = exporter->AddExportRegion(region_state, region_record, pixel_coord);
                 }
-            } else {
-                // Apply region to image, use image region Record for world
-                ChannelRange chan_range(0); // not used for 2D region definition
-                int stokes(0);              // not used for 2D region definition
-                casacore::ImageRegion applied_region;
-                if (ApplyRegionToFile(region_id, file_id, chan_range, stokes, applied_region)) {
-                    region_added = exporter->AddExportRegion(applied_region.toRecord("world"));
-                }
+            } catch (const casacore::AipsError& err) {
+                std::cerr << "World coordinate region failed: " << err.getMesg() << std::endl;
             }
 
             if (!region_added) {

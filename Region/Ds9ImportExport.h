@@ -37,9 +37,12 @@ public:
 
     // Export regions
     bool AddExportRegion(const RegionState& region) override;
-    bool AddExportRegion(const casacore::RecordInterface& region) override;
     bool ExportRegions(std::string& filename, std::string& error) override;
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
+
+protected:
+    bool AddExportRegion(
+        const std::string& name, CARTA::RegionType type, std::vector<casacore::Quantity>& control_points, casacore::Quantity rotation) override;
 
 private:
     void ProcessFileLines(std::vector<std::string>& lines);

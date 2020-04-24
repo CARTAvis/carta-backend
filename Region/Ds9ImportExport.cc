@@ -79,7 +79,8 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
     return false;
 }
 
-bool Ds9ImportExport::AddExportRegion(const casacore::RecordInterface& region) {
+bool Ds9ImportExport::AddExportRegion(
+    const std::string& name, CARTA::RegionType type, std::vector<casacore::Quantity>& control_points, casacore::Quantity rotation) {
     // Add region using Record (pixel or world)
     return false;
 }
