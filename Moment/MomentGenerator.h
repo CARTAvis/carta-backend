@@ -38,6 +38,7 @@ private:
     Record MakeRegionRecord(casacore::ImageInterface<float>* image, const CARTA::MomentRequest& moment_request);
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     int GetMomentMode(CARTA::Moment moment);
+    String GetStokes(CARTA::MomentStokes moment_stokes);
     bool GetOutputFileName(casacore::String& out_name, int moment, const casacore::String& channel) const;
 
     casa::ImageMoments<float>* _image_moments;
@@ -46,9 +47,9 @@ private:
     casacore::String _channels; // For the output file name
     casacore::Vector<float> _include_pix;
     casacore::Vector<float> _exclude_pix;
-    casacore::String _base_name;  // For the output file name
-    std::string _output_filename; // For the output file name
-    std::vector<CollapseResult> _collapse_results;
+    casacore::String _base_name;                   // For the output file name
+    std::string _output_filename;                  // For the output file name
+    std::vector<CollapseResult> _collapse_results; // Moments calculation results
     casacore::String _error_msg;
     bool _collapse_error;
 };

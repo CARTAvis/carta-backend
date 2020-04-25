@@ -140,6 +140,9 @@ Record MomentGenerator::MakeRegionRecord(casacore::ImageInterface<float>* image,
     _channels = std::to_string(chan_min) + "-" + std::to_string(chan_max);       // For the output file name
     uInt num_selected_channels = chan_max - chan_min + 1;
 
+    // Set the stokes (not apply this variable yet!)
+    String tmp_stokes = GetStokes(moment_request.stokes()); // "I" , "IV" , "IQU", or "IQUV"
+
     // Make a region record
     std::shared_ptr<const ImageInterface<float>> image_shared_ptr(image);
     CoordinateSystem coordinate_system = image_shared_ptr->coordinates();
@@ -210,8 +213,38 @@ int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
             mode = 11;
             break;
         }
+        default: {
+            std::cout << "Unknown moment mode!" << std::endl;
+            break;
+        }
     }
     return mode;
+}
+
+String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
+    String stokes("");
+    switch (moment_stokes) {
+        case CARTA::MomentStokes::I: {
+            stokes = "I";
+            break;
+        }
+        case CARTA::MomentStokes::IV: {
+            stokes = "IV";
+            break;
+        }
+        case CARTA::MomentStokes::IQU: {
+            stokes = "IQU";
+            break;
+        }
+        case CARTA::MomentStokes::IQUV: {
+            stokes = "IQUV";
+            break;
+        }
+        default: {
+            std::cout << "Unknown stokes!" << std::endl;
+            break;
+        }
+    }
 }
 
 bool MomentGenerator::GetOutputFileName(casacore::String& out_name, int moment, const casacore::String& channel) const {
