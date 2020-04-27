@@ -863,6 +863,13 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
             }
         }
     }
+
+    // Open Catalog files
+    for (int i = 0; i < message.catalog_files_size(); ++i) {
+        const CARTA::OpenCatalogFile& open_catalog_file_msg = message.catalog_files(i);
+        OnOpenCatalogFile(open_catalog_file_msg, request_id); // And response with OPEN_CATALOG_FILE_ACK
+    }
+
     // Measure duration for resume
     if (_verbose_logging) {
         auto t_end_resume = std::chrono::high_resolution_clock::now();
