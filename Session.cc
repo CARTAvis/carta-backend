@@ -908,10 +908,40 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
 void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id) {
     int file_id(moment_request.file_id());
     if (_frames.count(file_id)) {
+        // Get the image ptr and spectral/stoke axis from the Frame
         casacore::ImageInterface<float>* image = _frames.at(file_id)->GetImage();
         int spectral_axis = _frames.at(file_id)->GetSpectralAxis();
         int stokes_axis = _frames.at(file_id)->GetStokesAxis();
+
+        // Set moments generator and calculate the moments
         _moment_controller->SetMomentGenerator(file_id, image, spectral_axis, stokes_axis, moment_request);
+        std::vector<carta::CollapseResult> results = _moment_controller->GetResults(file_id);
+
+        // Get resulting moment images and create Frames to save them
+        for (int i = 0; i < results.size(); ++i) {
+            // Assign the moment image ptr to the file loader
+            std::shared_ptr<ImageInterface<Float>> moment_image = results[i].image;
+            int moment_type = results[i].moment_type + 1; // In order to be in the range 0~12
+            _loader.reset(carta::FileLoader::GetGeneralLoader(""));
+            _loader->AssignImage(moment_image);
+
+            // Create a Frame and set image cache
+            auto frame = std::unique_ptr<Frame>(new Frame(_id, _loader.get(), "", _verbose_logging));
+            _loader.release();
+
+            if (frame->IsValid()) {
+                int moment_file_id = file_id * 100 + moment_type;
+                if (_frames.count(moment_file_id) > 0) {
+                    DeleteFrame(moment_file_id);
+                }
+                std::unique_lock<std::mutex> lock(_frame_mutex);
+                _frames[moment_file_id] = move(frame);
+                lock.unlock();
+
+                // Calculate the pixel min/max and histograms and send results to the frontend
+                UpdateRegionData(moment_file_id);
+            }
+        }
     }
 }
 

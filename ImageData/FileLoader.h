@@ -129,6 +129,7 @@ public:
     virtual ~FileLoader() = default;
 
     static FileLoader* GetLoader(const std::string& filename);
+    static FileLoader* GetGeneralLoader(const std::string& filename);
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
@@ -165,6 +166,9 @@ public:
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
     // Implemented in Hdf5Loader, used to interrupt loading spectral profile
     virtual void SetFramePtr(Frame* frame);
+
+    // Assign an image to the file loader instead of opening a new file
+    virtual void AssignImage(std::shared_ptr<casacore::ImageInterface<float>> image);
 
 protected:
     // Dimension values used by stats functions

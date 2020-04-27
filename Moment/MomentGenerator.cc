@@ -4,7 +4,7 @@ using namespace carta;
 
 MomentGenerator::MomentGenerator(
     casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis, const CARTA::MomentRequest& moment_request)
-    : _collapse_error(false), _base_name("") {
+    : _collapse_error(false) {
     // Set moment axis
     if (moment_request.axis() == CARTA::MomentAxis::SPECTRAL) {
         _axis = spectral_axis;
@@ -85,9 +85,7 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
 
 void MomentGenerator::ExecuteMomentGenerator() {
     try {
-        // casa::utilj::ThreadTimes t1;
         String out_file;
-        bool output_file_temporary = GetOutputFileName(out_file, 0, _channels);
         if (!_image_moments->setMoments(_moments)) {
             _error_msg = _image_moments->errorMessage();
             _collapse_error = true;
@@ -101,7 +99,7 @@ void MomentGenerator::ExecuteMomentGenerator() {
                     auto result_images = _image_moments->createMoments(false, out_file, false);
                     for (int i = 0; i < result_images.size(); ++i) {
                         std::shared_ptr<ImageInterface<Float>> result_image = dynamic_pointer_cast<ImageInterface<Float>>(result_images[i]);
-                        CollapseResult collapse_result(out_file, output_file_temporary, result_image);
+                        CollapseResult collapse_result(_moments[i], result_image, out_file);
                         _collapse_results.push_back(collapse_result);
                     }
                 } catch (const AipsError& x) {
@@ -110,10 +108,6 @@ void MomentGenerator::ExecuteMomentGenerator() {
                 }
             }
         }
-        // casa::utilj::ThreadTimes t2;
-        // casa::utilj::DeltaThreadTimes dt = t2 - t1;
-        // qDebug() << "Elapsed time moment="<<moments[0]<< "
-        // elapsed="<<dt.elapsed()<<" cpu="<<dt.cpu();
     } catch (AipsError& error) {
         _error_msg = error.getLastMessage();
         _collapse_error = true;
@@ -137,7 +131,6 @@ Record MomentGenerator::MakeRegionRecord(casacore::ImageInterface<float>* image,
     }
 
     String channels = std::to_string(chan_min) + "~" + std::to_string(chan_max); // Channel range for the moments calculation
-    _channels = std::to_string(chan_min) + "-" + std::to_string(chan_max);       // For the output file name
     uInt num_selected_channels = chan_max - chan_min + 1;
 
     // Set the stokes (not apply this variable yet!)
@@ -247,34 +240,12 @@ String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
     }
 }
 
-bool MomentGenerator::GetOutputFileName(casacore::String& out_name, int moment, const casacore::String& channel) const {
-    bool success = true;
-    if (_output_filename.empty()) { // Use a default base name
-        out_name = _base_name;
-    } else { // Use the user specified name
-        out_name = _output_filename;
-        success = false;
-    }
-
-    // Prepend the channel and moment used to make it descriptive.
-    // outName = outName + "_" + String(momentNames[moment].toStdString());
-    if (channel != "") {
-        out_name = out_name + "_" + channel;
-    }
-
-    return success;
-}
-
 bool MomentGenerator::IsSuccess() const {
     bool success = false;
     if (!_collapse_results.empty() && !_collapse_error) {
         success = true;
     }
     return success;
-}
-
-void MomentGenerator::SetOutputFileName(std::string output_filename) {
-    _output_filename = output_filename;
 }
 
 std::vector<CollapseResult> MomentGenerator::GetResults() const {

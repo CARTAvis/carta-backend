@@ -12,14 +12,14 @@
 namespace carta {
 
 struct CollapseResult {
-    casacore::String output_filename;
-    bool temporary;
+    int moment_type;
     std::shared_ptr<casacore::ImageInterface<float>> image;
+    casacore::String output_filename;
 
-    CollapseResult(const String& output_filename_, bool temporary_, std::shared_ptr<ImageInterface<Float>> image_) {
-        output_filename = output_filename_;
-        temporary = temporary_;
+    CollapseResult(int moment_type_, std::shared_ptr<ImageInterface<Float>> image_, const String& output_filename_) {
+        moment_type = moment_type_;
         image = image_;
+        output_filename = output_filename_;
     }
 };
 
@@ -30,7 +30,6 @@ public:
 
     void ExecuteMomentGenerator();
     bool IsSuccess() const;
-    void SetOutputFileName(std::string output_filename);
     casacore::String GetErrorMessage() const;
     std::vector<CollapseResult> GetResults() const;
 
@@ -39,16 +38,12 @@ private:
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     int GetMomentMode(CARTA::Moment moment);
     String GetStokes(CARTA::MomentStokes moment_stokes);
-    bool GetOutputFileName(casacore::String& out_name, int moment, const casacore::String& channel) const;
 
     casa::ImageMoments<float>* _image_moments;
     casacore::Vector<int> _moments;
-    int _axis;                  // Not available yet, by default using the spectral axis
-    casacore::String _channels; // For the output file name
+    int _axis; // Not available yet, by default using the spectral axis
     casacore::Vector<float> _include_pix;
     casacore::Vector<float> _exclude_pix;
-    casacore::String _base_name;                   // For the output file name
-    std::string _output_filename;                  // For the output file name
     std::vector<CollapseResult> _collapse_results; // Moments calculation results
     casacore::String _error_msg;
     bool _collapse_error;
