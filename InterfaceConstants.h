@@ -6,6 +6,10 @@
 // version
 #define VERSION_ID "1.3"
 
+// thread counts
+#define TBB_THREAD_COUNT 2
+#define OMP_THREAD_COUNT 4
+
 // file ids
 #define ALL_FILES -1
 
@@ -39,5 +43,11 @@
 #define TARGET_PARTIAL_CURSOR_TIME 500
 #define TARGET_PARTIAL_REGION_TIME 1000
 #define PROFILE_COMPLETE 1.0
+
+// catalog files
+#define ALL_CATALOG_DATA -1
+#define TARGET_PARTIAL_CATALOG_FILTER_TIME 500
+#define CATALOG_FILTER_COMPLETE 1.0
+#define CATALOG_ROW_CHUNK 10000
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

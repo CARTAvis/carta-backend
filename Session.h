@@ -36,6 +36,7 @@
 #include <tbb/task.h>
 
 #include "AnimationObject.h"
+#include "Catalog/VOTableController.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
@@ -73,6 +74,11 @@ public:
     void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
 
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
+    void OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
+    void OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
+    void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id);
+    void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
+    void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
@@ -165,6 +171,11 @@ public:
     inline uint32_t GetId() {
         return _id;
     }
+
+    // Region data streams
+    void RegionDataStreams(int file_id, int region_id);
+    bool SendSpectralProfileData(int file_id, int region_id, bool channel_changed = false, bool stokes_changed = false);
+
     // TODO: should these be public? NO!!!!!!!!
     uint32_t _id;
     FileSettings _file_settings;
@@ -189,14 +200,13 @@ private:
     // Only set channel_changed and stokes_changed if they are the only trigger for new data
     // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
     bool SendSpatialProfileData(int file_id, int region_id, bool stokes_changed = false);
-    bool SendSpectralProfileData(int file_id, int region_id, bool channel_changed = false, bool stokes_changed = false);
     bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
     bool SendRegionStatsData(int file_id, int region_id); // update stats in all cases
     bool SendContourData(int file_id);
     void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
 
     // Send protobuf messages
-    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
+    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = false);
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
@@ -217,6 +227,9 @@ private:
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
     std::mutex _frame_mutex;                                 // lock frames to create/destroy
 
+    // Catalog controller
+    std::unique_ptr<catalog::Controller> _catalog_controller;
+
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
 
@@ -228,8 +241,8 @@ private:
     float _histogram_progress;
 
     // Outgoing messages
-    uS::Async* _outgoing_async;                         // Notification mechanism when messages are ready
-    tbb::concurrent_queue<std::vector<char>> _out_msgs; // message queue
+    uS::Async* _outgoing_async;                                          // Notification mechanism when messages are ready
+    tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs; // message queue <msg, compress>
 
     // TBB context that enables all tasks associated with a session to be cancelled.
     tbb::task_group_context _base_context;

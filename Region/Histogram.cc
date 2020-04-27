@@ -19,8 +19,9 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
         auto v = _data[i];
         if (std::isnan(v) || std::isinf(v))
             continue;
-        int bin = std::max(std::min((int)((v - _min_val) / _bin_width), (int)_hist.size() - 1), 0);
-        ++tmp[bin];
+        size_t bin_number = std::max<size_t>(std::min<size_t>((size_t)((v - _min_val) / _bin_width), (size_t)_hist.size() - 1), 0);
+
+        ++tmp[bin_number];
     }
     _hist = tmp;
 }
@@ -35,19 +36,19 @@ void Histogram::join(Histogram& h) { // NOLINT
     tbb::parallel_for(range, loop);
 }
 
-void Histogram::setup_bins(const int start, const int end) {
-    int i, stride, buckets;
+void Histogram::setup_bins() {
+    int64_t omp_index, stride, buckets;
     int** bins_bin;
 
-    auto calc_lambda = [&](int start, int lstride) {
+    auto calc_lambda = [&](size_t start, size_t lstride) {
         int* lbins = new int[_hist.size()];
-        int end = std::min((size_t)(start + lstride), _data.size());
+        size_t end = std::min((size_t)(start + lstride), _data.size());
         memset(lbins, 0, _hist.size() * sizeof(int));
-        for (auto i = start; i < end; i++) {
+        for (size_t i = start; i < end; i++) {
             auto v = _data[i];
             if (std::isfinite(v)) {
-                int binN = std::max(std::min((int)((v - _min_val) / _bin_width), (int)_hist.size() - 1), 0);
-                ++lbins[binN];
+                size_t bin_number = std::max<size_t>(std::min<size_t>((size_t)((v - _min_val) / _bin_width), (size_t)_hist.size() - 1), 0);
+                ++lbins[bin_number];
             }
         }
         return lbins;
@@ -61,26 +62,26 @@ void Histogram::setup_bins(const int start, const int end) {
         bins_bin = new int*[buckets + 1];
     }
 #pragma omp parallel for
-    for (i = 0; i < buckets; i++) {
-        bins_bin[i] = calc_lambda(i * stride, stride);
+    for (omp_index = 0; omp_index < buckets; omp_index++) {
+        bins_bin[omp_index] = calc_lambda(omp_index * stride, stride);
     }
     stride = 1;
     do {
 #pragma omp single
         {
-            for (i = 0; i <= (buckets - stride * 2); i += stride * 2) {
+            for (omp_index = 0; omp_index <= (buckets - stride * 2); omp_index += stride * 2) {
 #pragma omp task
-                std::transform(
-                    (bins_bin[i + stride]), &(bins_bin[i + stride][_hist.size()]), (bins_bin[i]), (bins_bin[i]), std::plus<int>());
+                std::transform((bins_bin[omp_index + stride]), &(bins_bin[omp_index + stride][_hist.size()]), (bins_bin[omp_index]),
+                    (bins_bin[omp_index]), std::plus<int>());
             }
             stride *= 2;
         }
 #pragma omp taskwait
     } while (stride <= buckets / 2);
-    for (i = 0; i < _hist.size(); i++) {
-        _hist[i] = bins_bin[0][i];
+    for (omp_index = 0; omp_index < _hist.size(); omp_index++) {
+        _hist[omp_index] = bins_bin[0][omp_index];
     }
-    for (i = 0; i < buckets; i++) {
-        delete[] bins_bin[i];
+    for (omp_index = 0; omp_index < buckets; omp_index++) {
+        delete[] bins_bin[omp_index];
     }
 }

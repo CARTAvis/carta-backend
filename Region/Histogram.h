@@ -22,7 +22,7 @@ public:
 
     void operator()(const tbb::blocked_range<size_t>& r);
     void join(Histogram& h); // NOLINT
-    void setup_bins(const int start, const int end);
+    void setup_bins();
 
     float GetBinWidth() const {
         return _bin_width;
