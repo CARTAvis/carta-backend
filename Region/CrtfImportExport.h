@@ -18,24 +18,32 @@ class CrtfImportExport : public RegionImportExport {
 public:
     CrtfImportExport() {}
 
-    // Import
+    // Import constructor
+    // Use casa::RegionTextList to parse file and create casa::Annotation AnnRegions
+    // which are converted to RegionState (pixel coords) to set Region
     CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id,
         const std::string& file, bool file_is_filename);
 
-    // Export
+    // Export constructor
+    // Set up casa::RegionTextList; when regions are added, a casa::Annotation
+    // AnnRegion is created and added to the list, which is then "print"-ed to
+    // a file or vector of strings
     CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape);
 
     // Export regions
-    bool AddExportRegion(const RegionState& region) override;
+    // Create AnnRegion and add to RegionTextList
+    bool AddExportRegion(const RegionState& region_state) override;
+    // Print regions to file or string vector
     bool ExportRegions(std::string& filename, std::string& error) override;
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
-    bool AddExportRegion(
-        const std::string& name, CARTA::RegionType type, std::vector<casacore::Quantity>& control_points, casacore::Quantity rotation) override;
+    // Create AnnRegion and add to RegionTextList
+    bool AddExportRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points,
+        const casacore::Quantity& rotation) override;
 
 private:
-    // Import regions
+    // Import Annotation regions to RegionState vector
     void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line);
     void ImportAnnSymbol(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
@@ -47,25 +55,8 @@ private:
     casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
     double AngleToPixelLength(casacore::Quantity angle, unsigned int pixel_axis);
 
-    // Export regions
-
-    // Create Annotation region and add to region list
+    // For export: add regions to list then print them
     casa::RegionTextList _region_list;
-
-    /*
-    void AddRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float rotation);
-    inline unsigned int NumRegions() {
-        return _regions.size();
-    }
-    void PrintHeader(std::ostream& os);
-    void PrintRegion(unsigned int i, std::ostream& os);
-    void PrintRegionsToFile(std::ofstream& ofs);
-    // region export
-    void PrintBoxRegion(const RegionProperties& properties, std::ostream& os);
-    void PrintEllipseRegion(const RegionProperties& properties, std::ostream& os);
-    void PrintPointRegion(const RegionProperties& properties, std::ostream& os);
-    void PrintPolygonRegion(const RegionProperties& properties, std::ostream& os);
-    */
 };
 
 } // namespace carta

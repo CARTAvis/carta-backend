@@ -61,7 +61,7 @@ CrtfImportExport::CrtfImportExport(const casacore::CoordinateSystem& image_coord
 
 // Public: for exporting regions
 
-bool CrtfImportExport::AddExportRegion(const RegionState& region) {
+bool CrtfImportExport::AddExportRegion(const RegionState& region_state) {
     // Add pixel region using RegionState
     casa::AnnRegion* ann_region(nullptr);
     casa::AnnSymbol* ann_symbol(nullptr); // not an AnnRegion subclass
@@ -70,41 +70,41 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region) {
     casa::AnnotationBase::unitInit(); // enable "pix" unit
 
     try {
-        switch (region.type) {
+        switch (region_state.type) {
             case CARTA::RegionType::POINT: {
-                casacore::Quantity x(region.control_points[0].x(), "pix");
-                casacore::Quantity y(region.control_points[0].y(), "pix");
+                casacore::Quantity x(region_state.control_points[0].x(), "pix");
+                casacore::Quantity y(region_state.control_points[0].y(), "pix");
                 ann_symbol = new casa::AnnSymbol(x, y, _coord_sys, casa::AnnSymbol::POINT, stokes_types);
                 break;
             }
             case CARTA::RegionType::RECTANGLE: {
-                casacore::Quantity cx(region.control_points[0].x(), "pix");
-                casacore::Quantity cy(region.control_points[0].y(), "pix");
-                casacore::Quantity xwidth(region.control_points[1].x(), "pix");
-                casacore::Quantity ywidth(region.control_points[1].y(), "pix");
-                if (region.rotation == 0) {
+                casacore::Quantity cx(region_state.control_points[0].x(), "pix");
+                casacore::Quantity cy(region_state.control_points[0].y(), "pix");
+                casacore::Quantity xwidth(region_state.control_points[1].x(), "pix");
+                casacore::Quantity ywidth(region_state.control_points[1].y(), "pix");
+                if (region_state.rotation == 0) {
                     ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, _coord_sys, _image_shape, stokes_types, require_region);
                 } else {
-                    casacore::Quantity angle(region.rotation, "deg");
+                    casacore::Quantity angle(region_state.rotation, "deg");
                     ann_region = new casa::AnnRotBox(cx, cy, xwidth, ywidth, angle, _coord_sys, _image_shape, stokes_types, require_region);
                 }
                 break;
             }
             case CARTA::RegionType::ELLIPSE: {
-                casacore::Quantity cx(region.control_points[0].x(), "pix");
-                casacore::Quantity cy(region.control_points[0].y(), "pix");
-                casacore::Quantity bmaj(region.control_points[1].x(), "pix");
-                casacore::Quantity bmin(region.control_points[1].y(), "pix");
-                casacore::Quantity angle(region.rotation, "deg");
+                casacore::Quantity cx(region_state.control_points[0].x(), "pix");
+                casacore::Quantity cy(region_state.control_points[0].y(), "pix");
+                casacore::Quantity bmaj(region_state.control_points[1].x(), "pix");
+                casacore::Quantity bmin(region_state.control_points[1].y(), "pix");
+                casacore::Quantity angle(region_state.rotation, "deg");
                 ann_region = new casa::AnnEllipse(cx, cy, bmaj, bmin, angle, _coord_sys, _image_shape, stokes_types, require_region);
                 break;
             }
             case CARTA::RegionType::POLYGON: {
-                size_t npoints(region.control_points.size());
+                size_t npoints(region_state.control_points.size());
                 casacore::Vector<casacore::Quantity> x_coords(npoints), y_coords(npoints);
                 for (size_t i = 0; i < npoints; ++i) {
-                    x_coords(i) = casacore::Quantity(region.control_points[i].x(), "pix");
-                    y_coords(i) = casacore::Quantity(region.control_points[i].y(), "pix");
+                    x_coords(i) = casacore::Quantity(region_state.control_points[i].x(), "pix");
+                    y_coords(i) = casacore::Quantity(region_state.control_points[i].y(), "pix");
                 }
                 ann_region = new casa::AnnPolygon(x_coords, y_coords, _coord_sys, _image_shape, stokes_types, require_region);
                 break;
@@ -115,31 +115,30 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region) {
 
         casacore::CountedPtr<const casa::AnnotationBase> annotation_region;
         if (ann_symbol) {
-            if (!region.name.empty()) {
-                ann_symbol->setLabel(region.name);
+            if (!region_state.name.empty()) {
+                ann_symbol->setLabel(region_state.name);
             }
             annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_symbol);
         }
         if (ann_region) {
             ann_region->setAnnotationOnly(false);
-            if (!region.name.empty()) {
-                ann_region->setLabel(region.name);
+            if (!region_state.name.empty()) {
+                ann_region->setLabel(region_state.name);
             }
             annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_region);
         }
 
         casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
         _region_list.addLine(file_line);
+        return true;
     } catch (const casacore::AipsError& err) {
         std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
         return false;
     }
-
-    return true;
 }
 
-bool CrtfImportExport::AddExportRegion(
-    const std::string& name, CARTA::RegionType type, std::vector<casacore::Quantity>& control_points, casacore::Quantity rotation) {
+bool CrtfImportExport::AddExportRegion(const std::string& name, CARTA::RegionType type,
+    const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
     // Add world-coord region using input Quantities
     if (control_points.empty()) {
         return false;
@@ -176,7 +175,12 @@ bool CrtfImportExport::AddExportRegion(
                 casacore::Quantity cy(control_points[1]);
                 casacore::Quantity bmaj(control_points[2]);
                 casacore::Quantity bmin(control_points[3]);
-                ann_region = new casa::AnnEllipse(cx, cy, bmaj, bmin, rotation, _coord_sys, _image_shape, stokes_types, require_region);
+                casacore::Quantity rotangle(rotation.get("deg"));
+                rotangle -= 90.0;
+                if (rotangle.getValue() < 0.0) {
+                    rotangle += 360.0;
+                }
+                ann_region = new casa::AnnEllipse(cx, cy, bmaj, bmin, rotangle, _coord_sys, _image_shape, stokes_types, require_region);
                 break;
             }
             case CARTA::RegionType::POLYGON: {
@@ -349,7 +353,7 @@ void CrtfImportExport::ImportAnnSymbol(casacore::CountedPtr<const casa::Annotati
 
         // Create RegionState
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _regions.push_back(region_state);
+        _import_regions.push_back(region_state);
     } else {
         _import_errors.append("symbol region failed.\n");
     }
@@ -375,7 +379,7 @@ void CrtfImportExport::ImportAnnBox(casacore::CountedPtr<const casa::AnnotationB
 
         // Create RegionState
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _regions.push_back(region_state);
+        _import_regions.push_back(region_state);
     } else {
         _import_errors.append("box region failed.\n");
     }
@@ -428,7 +432,7 @@ void CrtfImportExport::ImportAnnRotBox(casacore::CountedPtr<const casa::Annotati
 
         // Create RegionState
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _regions.push_back(region_state);
+        _import_regions.push_back(region_state);
     } else {
         _import_errors.append("rotbox region failed.\n");
     }
@@ -459,7 +463,7 @@ void CrtfImportExport::ImportAnnPolygon(casacore::CountedPtr<const casa::Annotat
 
         // Create RegionState
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _regions.push_back(region_state);
+        _import_regions.push_back(region_state);
     } else {
         _import_errors.append("poly region failed.\n");
     }
@@ -556,7 +560,7 @@ void CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::Annotat
 
         // Create RegionState
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _regions.push_back(region_state);
+        _import_regions.push_back(region_state);
     } else {
         _import_errors.append(region_name + " region failed.\n");
     }

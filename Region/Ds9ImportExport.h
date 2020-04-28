@@ -28,23 +28,29 @@ class Ds9ImportExport : public RegionImportExport {
 public:
     Ds9ImportExport() {}
 
-    // Import
+    // Import constructor
+    // Parse input file and convert region parameters to RegionState for given image
     Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id,
         const std::string& file, bool file_is_filename);
 
-    // Export
+    // Export constructor
+    // Each export region will be converted to a string in DS9 format and added to string vector
     Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord);
 
     // Export regions
+    // Convert to DS9 string and add to vector
     bool AddExportRegion(const RegionState& region) override;
+    // Print regions to file or vector
     bool ExportRegions(std::string& filename, std::string& error) override;
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
-    bool AddExportRegion(
-        const std::string& name, CARTA::RegionType type, std::vector<casacore::Quantity>& control_points, casacore::Quantity rotation) override;
+    // Convert to DS9 string and add to vector
+    bool AddExportRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points,
+        const casacore::Quantity& rotation) override;
 
 private:
+    // Parse each file line and set coord sys or region
     void ProcessFileLines(std::vector<std::string>& lines);
 
     // Coordinate system handlers
@@ -72,29 +78,20 @@ private:
     bool ConvertPointToPixels(std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords);
     double AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis);
 
-    /*
-    // export regions
-    void AddRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float rotation);
-    inline unsigned int NumRegions() {
-        return _regions.size();
-    }
-    void PrintHeader(std::ostream& os);
-    void PrintRegion(unsigned int i, std::ostream& os);
-    void PrintRegionsToFile(std::ofstream& ofs);
-    // region export
-    void PrintBoxRegion(const RegionProperties& properties, std::ostream& os);
-    void PrintEllipseRegion(const RegionProperties& properties, std::ostream& os);
-    void PrintPointRegion(const RegionProperties& properties, std::ostream& os);
-    void PrintPolygonRegion(const RegionProperties& properties, std::ostream& os);
-    */
+    // Export: add header string to _export_regions
+    void AddHeader();
+    std::string AddExportRegionPixel(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
+    std::string AddExportRegionWorld(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
 
     // DS9/CASA conversion map
     std::unordered_map<std::string, std::string> _coord_map;
     std::string _image_ref_frame; // CASA
     std::string _file_ref_frame;  // Import: DS9 to CASA, Export: CASA to DS9
 
-    // Whether region file is in pixel or wcs coords
+    // Whether import region file is in pixel or wcs coords
     bool _pixel_coord;
+
+    std::vector<std::string> _export_regions;
 };
 
 } // namespace carta

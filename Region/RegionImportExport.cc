@@ -23,18 +23,19 @@ std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& err
     // Parse the file in the constructor to create RegionStates with given reference file_id; return any errors in error
     error = _import_errors;
 
-    if ((_regions.size() == 0) && error.empty()) {
+    if ((_import_regions.size() == 0) && error.empty()) {
         error = "Import error: zero regions set.";
     }
 
-    return _regions;
+    return _import_regions;
 }
 
 bool RegionImportExport::AddExportRegion(
     const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord) {
-    // Convert Record to Quantities then set region
+    // Convert Record to Quantities for region type then set region
+    // Record is in pixel coords; convert to world coords if needed
     std::vector<casacore::Quantity> control_points;
-    casacore::Quantity qrotation(0.0, "deg"); // default for regions with no rotation
+    casacore::Quantity qrotation(90.0, "deg"); // default for regions with no rotation
     if (pixel_coord) {
         casa::AnnotationBase::unitInit(); // enable "pix" unit
     }
@@ -66,7 +67,7 @@ bool RegionImportExport::AddExportRegion(
 
 bool RegionImportExport::ConvertRecordToPoint(
     const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points) {
-    // Convert pixel value in Record to point Quantity control points 
+    // Convert casacore Record to point Quantity control points
     // Point is an LCBox with blc, trc arrays in pixel coordinates (blc = trc)
     casacore::Vector<casacore::Float> blc = region_record.asArrayFloat("blc");
 
@@ -102,25 +103,25 @@ bool RegionImportExport::ConvertRecordToPoint(
     }
 }
 
-bool RegionImportExport::ConvertRecordToRectangle(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord,
-    std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation) {
+bool RegionImportExport::ConvertRecordToRectangle(const RegionState& region_state, const casacore::RecordInterface& region_record,
+    bool pixel_coord, std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation) {
+    // Convert casacore Record to box Quantity control points
     // Rectangles are exported to Record as LCPolygon with 4 points: blc, brc, trc, tlc
     if (region_state.rotation != 0.0) {
         return ConvertRecordToRotBox(region_state, region_record, pixel_coord, control_points, qrotation);
     }
 
-    casacore::Record region_subrecord = region_record.asRecord("region");
-    casacore::Vector<casacore::Float> x = region_subrecord.asArrayFloat("x");
-    casacore::Vector<casacore::Float> y = region_subrecord.asArrayFloat("y");
+    casacore::Vector<casacore::Float> x = region_record.asArrayFloat("x");
+    casacore::Vector<casacore::Float> y = region_record.asArrayFloat("y");
 
     // Make zero-based
-    if (region_subrecord.asBool("oneRel")) {
+    if (region_record.asBool("oneRel")) {
         x -= (float)1.0;
         y -= (float)1.0;
     }
 
     if (pixel_coord) {
-            casacore::Double blc_x = x[0];
+        casacore::Double blc_x = x[0];
         casacore::Double trc_x = x[2];
         casacore::Double blc_y = y[0];
         casacore::Double trc_y = y[2];
@@ -187,28 +188,31 @@ bool RegionImportExport::ConvertRecordToRectangle(const RegionState& region_stat
     }
 }
 
-bool RegionImportExport::ConvertRecordToRotBox(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord,
-        std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation) {
-    std::cout << "PDEBUG: rotbox record=" << region_record << std::endl;
+bool RegionImportExport::ConvertRecordToRotBox(const RegionState& region_state, const casacore::RecordInterface& region_record,
+    bool pixel_coord, std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation) {
+    // Convert casacore Record to rotated box Quantity control points
+    casacore::Vector<casacore::Float> x = region_record.asArrayFloat("x");
+    casacore::Vector<casacore::Float> y = region_record.asArrayFloat("y");
     return false;
 }
 
-bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord,
-    std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation) {
-    casacore::Record region_subrecord = region_record.asRecord("region");
-    casacore::Vector<casacore::Float> center = region_subrecord.asArrayFloat("center");
-    casacore::Vector<casacore::Float> radii = region_subrecord.asArrayFloat("radii");
-    casacore::Float theta = region_subrecord.asFloat("theta"); // radians
+bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record,
+    bool pixel_coord, std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation) {
+    // Convert casacore Record to ellipse Quantity control points
+    casacore::Vector<casacore::Float> center = region_record.asArrayFloat("center");
+    casacore::Vector<casacore::Float> radii = region_record.asArrayFloat("radii");
+    casacore::Float theta = region_record.asFloat("theta"); // radians
     qrotation = casacore::Quantity(theta, "rad");
-    qrotation.get("deg");
+    qrotation.convert("deg"); // CASA rotang, from x-axis
+
+    CARTA::Point ellipse_axes = region_state.control_points[1];
+    bool reversed((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
 
     // Make zero-based
-    if (region_subrecord.asBool("oneRel")) {
+    if (region_record.asBool("oneRel")) {
         center -= (float)1.0;
     }
 
-    CARTA::Point ellipse_axes = region_state.control_points[1];
-    bool reversed(ellipse_axes.x() < ellipse_axes.y());
     if (pixel_coord) {
         // Convert pixel value to Quantity in control points
         control_points.push_back(casacore::Quantity(center(0), "pix"));
@@ -217,6 +221,10 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
         if (reversed) {
             control_points.push_back(casacore::Quantity(radii(1), "pix"));
             control_points.push_back(casacore::Quantity(radii(0), "pix"));
+            qrotation += 90.0;
+            if (qrotation.getValue() > 360.0) {
+                qrotation -= 360.0;
+            }
         } else {
             control_points.push_back(casacore::Quantity(radii(0), "pix"));
             control_points.push_back(casacore::Quantity(radii(1), "pix"));
@@ -239,9 +247,14 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
         // Convert (lattice region) axes pixel to world and add to control points
         casacore::Quantity bmaj = _coord_sys.toWorldLength(radii(0), 0);
         casacore::Quantity bmin = _coord_sys.toWorldLength(radii(1), 1);
+        // Restore original axes order; oddly, rotation angle was not changed
         if (reversed) {
             control_points.push_back(bmin);
             control_points.push_back(bmaj);
+            qrotation += 90.0;
+            if (qrotation.getValue() > 360.0) {
+                qrotation -= 360.0;
+            }
         } else {
             control_points.push_back(bmaj);
             control_points.push_back(bmin);
@@ -255,16 +268,15 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
 
 bool RegionImportExport::ConvertRecordToPolygon(
     const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points) {
-    // Convert pixel values in Record to polygon Quantity control points
+    // Convert casacore Record to polygon Quantity control points
     // Polygon is an LCPolygon with x, y arrays in pixel coordinates
-    casacore::Record region_subrecord = region_record.asRecord("region");
-    casacore::Vector<casacore::Float> x = region_subrecord.asArrayFloat("x");
-    casacore::Vector<casacore::Float> y = region_subrecord.asArrayFloat("y");
+    casacore::Vector<casacore::Float> x = region_record.asArrayFloat("x");
+    casacore::Vector<casacore::Float> y = region_record.asArrayFloat("y");
     size_t npoints(x.size() - 1); // remove last point, same as the first to enclose region
     size_t naxes(_image_shape.size());
 
     // Make zero-based
-    if (region_subrecord.asBool("oneRel")) {
+    if (region_record.asBool("oneRel")) {
         x -= (float)1.0;
         y -= (float)1.0;
     }

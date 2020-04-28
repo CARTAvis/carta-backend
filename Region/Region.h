@@ -10,6 +10,7 @@
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/images/Regions/WCRegion.h>
 #include <casacore/lattices/LRegions/LCRegion.h>
+#include <casacore/tables/Tables/TableRecord.h>
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
@@ -113,6 +114,8 @@ public:
     void DecreaseZProfileCount();
 
     // 2D region in reference image applied to input image parameters
+    casacore::TableRecord GetImageRegionRecord(
+        int file_id, const casacore::CoordinateSystem coord_sys, const casacore::IPosition image_shape);
     casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem coord_sys, const casacore::IPosition image_shape);
 
 private:
@@ -129,6 +132,12 @@ private:
     bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
     bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
 
+    // Apply region to any image (indicated by output coord sys), return control points in Record
+    // in format of LCRegion::toRecord()
+    casacore::TableRecord GetPointRecord(const casacore::CoordinateSystem& output_csys);
+    casacore::TableRecord GetPolygonRecord(const casacore::CoordinateSystem& output_csys);
+    casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
+
     // region definition (name, type, control points in pixel coordinates, rotation)
     RegionState _region_state;
 
@@ -138,7 +147,7 @@ private:
     // casacore WCRegion
     std::mutex _region_mutex;                            // creation of casacore regions is not threadsafe
     std::vector<casacore::Quantity> _wcs_control_points; // needed for region export
-    std::shared_ptr<casacore::WCRegion> _wcregion;       // 2D region applied to reference image
+    std::shared_ptr<casacore::WCRegion> _ref_region;     // 2D region applied to reference image
     float _ellipse_rotation;                             // (deg), may be adjusted from pixel rotation value
 
     // WCRegion applied to other images, used for different data streams; key is file_id
@@ -148,7 +157,7 @@ private:
     bool _valid;                // RegionState set properly
     bool _region_state_changed; // any parameters changed
     bool _region_changed;       // type, control points, or rotation changed
-    bool _wcregion_set;         // indicates attempt was made; may be null wcregion outside image
+    bool _ref_region_set;       // indicates attempt was made; may be null wcregion outside image
 
     // Communication
     std::atomic<int> _z_profile_count;

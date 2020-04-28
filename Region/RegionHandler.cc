@@ -192,24 +192,22 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Add regions to export
     for (auto region_id : region_ids) {
         if (_regions.count(region_id)) {
+            bool region_added(false);
             RegionState region_state = _regions[region_id]->GetRegionState();
 
-            // Use RegionState control points for pixel coords with no conversion
-            if (pixel_coord && (region_state.reference_file_id == file_id)) {
-                exporter->AddExportRegion(region_state);
-                continue;
-            }
-
-            bool region_added(false);
-            // Get converted lattice region parameters as a Record
-            try {
-                casacore::LCRegion* lattice_region = _regions.at(region_id)->GetImageRegion(file_id, output_csys, output_shape);
-                if (lattice_region) {
-                    casacore::TableRecord region_record = lattice_region->toRecord("region");
-                    region_added = exporter->AddExportRegion(region_state, region_record, pixel_coord);
+            // Use RegionState control points with reference file id and pixel export
+            if ((region_state.reference_file_id == file_id) && pixel_coord) {
+                region_added = exporter->AddExportRegion(region_state);
+            } else {
+                try {
+                    // Get converted lattice region parameters (pixel) as a Record
+                    casacore::TableRecord region_record = _regions.at(region_id)->GetImageRegionRecord(file_id, output_csys, output_shape);
+                    if (!region_record.empty()) {
+                        region_added = exporter->AddExportRegion(region_state, region_record, pixel_coord);
+                    }
+                } catch (const casacore::AipsError& err) {
+                    std::cerr << "World coordinate region failed: " << err.getMesg() << std::endl;
                 }
-            } catch (const casacore::AipsError& err) {
-                std::cerr << "World coordinate region failed: " << err.getMesg() << std::endl;
             }
 
             if (!region_added) {

@@ -2,7 +2,9 @@
 
 #include "Ds9ImportExport.h"
 
-// #include <casacore/casa/Quanta/QMath.h>
+#include <iomanip>
+
+#include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/measures/Measures/MCDirection.h>
 
@@ -48,7 +50,7 @@ Ds9ImportExport::Ds9ImportExport(const casacore::CoordinateSystem& image_coord_s
 
 Ds9ImportExport::Ds9ImportExport(
     const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord)
-    : RegionImportExport(image_coord_sys, image_shape) {
+    : RegionImportExport(image_coord_sys, image_shape), _pixel_coord(pixel_coord) {
     // Export regions to DS9 format
     // Set coordinate system for file header
     if (pixel_coord) {
@@ -70,34 +72,142 @@ Ds9ImportExport::Ds9ImportExport(
             _file_ref_frame = "fk5";
         }
     }
+
+    AddHeader();
 }
 
 // Public: for exporting regions
 
 bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
-    // Add pixel region using RegionState
+    // Add pixel-coord region using RegionState
+    std::vector<CARTA::Point> points = region_state.control_points;
+    float angle = region_state.rotation;
+    if (region_state.type == CARTA::RegionType::ELLIPSE) {
+        angle += 90.0; // DS9 angle measured from x-axis
+        if (angle > 360.0) {
+            angle -= 360.0;
+        }
+    }
+
+    std::string region;
+
+    switch (region_state.type) {
+        case CARTA::RegionType::POINT: {
+            // point(x, y)
+            region = fmt::format("point({:.2f}, {:.2f})", points[0].x(), points[0].y());
+            break;
+        }
+        case CARTA::RegionType::RECTANGLE: {
+            // box(x,y,width,height,angle)
+            if (angle > 0.0) {
+                region = fmt::format(
+                    "box({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", points[0].x(), points[0].y(), points[1].x(), points[1].y(), angle);
+            } else {
+                region = fmt::format("box({:.2f}, {:.2f}, {:.2f}, {:.2f})", points[0].x(), points[0].y(), points[1].x(), points[1].y());
+            }
+            break;
+        }
+        case CARTA::RegionType::ELLIPSE: {
+            // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
+            if (points[1].x() == points[1].y()) { // bmaj == bmin
+                region = fmt::format("circle({:.2f}, {:.2f}, {:.2f})", points[0].x(), points[0].y(), points[1].x());
+            } else {
+                if (angle > 0.0) {
+                    region = fmt::format(
+                        "ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", points[0].x(), points[0].y(), points[1].x(), points[1].y(), angle);
+                } else {
+                    region =
+                        fmt::format("ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f})", points[0].x(), points[0].y(), points[1].x(), points[1].y());
+                }
+            }
+            break;
+        }
+        case CARTA::RegionType::POLYGON: {
+            // polygon(x1,y1,x2,y2,x3,y3,...)
+            std::ostringstream os; // format varies based on npoints
+            os << "polygon(";
+            os << std::fixed << std::setprecision(2) << points[0].x() << ", " << points[0].y();
+            for (size_t i = 1; i < points.size(); ++i) {
+                os << "," << points[i].x() << "," << points[i].y();
+            }
+            os << ")";
+            region = os.str();
+            break;
+        }
+        default:
+            break;
+    }
+
+    // Add region name
+    if (!region_state.name.empty()) {
+        region.append(" # text={" + region_state.name + "}");
+    }
+
+    // End line and add to string vector
+    if (!region.empty()) {
+        region.append("\n");
+        _export_regions.push_back(region);
+        return true;
+    }
+
     return false;
 }
 
-bool Ds9ImportExport::AddExportRegion(
-    const std::string& name, CARTA::RegionType type, std::vector<casacore::Quantity>& control_points, casacore::Quantity rotation) {
-    // Add region using Record (pixel or world)
+bool Ds9ImportExport::AddExportRegion(const std::string& name, CARTA::RegionType type,
+    const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
+    // Add region using values from LCRegion Record (pixel or converted to world)
+
+    float angle = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
+
+    std::string region;
+    if (_pixel_coord) {
+        region = AddExportRegionPixel(type, control_points, angle);
+    } else {
+        region = AddExportRegionWorld(type, control_points, angle);
+    }
+
+    // Add region name
+    if (!name.empty()) {
+        region.append(" # text={" + name + "}");
+    }
+
+    // Add to string vector
+    if (!region.empty()) {
+        region.append("\n");
+        _export_regions.push_back(region);
+        return true;
+    }
+
     return false;
 }
 
 bool Ds9ImportExport::ExportRegions(std::string& filename, std::string& error) {
     // Print regions to DS9 file
-    error = "Not implemented";
-    return false;
+    if (_export_regions.empty()) {
+        error = "Export region failed: no regions to export.";
+        return false;
+    }
+
+    std::ofstream export_file(filename);
+    for (auto& region : _export_regions) {
+        export_file << region;
+    }
+    export_file.close();
+    return true;
 }
 
 bool Ds9ImportExport::ExportRegions(std::vector<std::string>& contents, std::string& error) {
     // Print regions to DS9 file lines in vector
-    error = "Not implemented";
+    if (_export_regions.empty()) {
+        error = "Export region failed: no regions to export.";
+        return false;
+    }
+
+    contents = _export_regions;
+    return true;
 }
 
 // Process file import
-
 void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
     // Process or ignore each file line
     if (lines.empty()) {
@@ -330,7 +440,7 @@ void Ds9ImportExport::ImportPointRegion(std::string& region, std::string& name, 
     CARTA::RegionType type(CARTA::RegionType::POINT);
     float rotation(0.0);
     RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-    _regions.push_back(region_state);
+    _import_regions.push_back(region_state);
 }
 
 void Ds9ImportExport::ImportCircleRegion(std::string& region, std::string& name, bool exclude_region) {
@@ -352,7 +462,7 @@ void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name
     // ellipse x y radius radius angle
     bool is_circle(false);
     std::vector<std::string> params;
-    if (ParseRegion(region, params, 6)) {
+    if (ParseRegion(region, params, 6) || ParseRegion(region, params, 5)) {
         is_circle = (params[3] == params[4]);
         // convert strings to Quantities
         std::vector<casacore::Quantity> param_quantities;
@@ -422,12 +532,19 @@ void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name
 
         // Create RegionState
         CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
-        float rotation = param_quantities[4].getValue();
+        float rotation(0.0);
+        if (param_quantities.size() > 4) {
+            rotation = param_quantities[4].getValue();
+        }
         if (!is_circle) {
             rotation -= 90.0;
+            if (rotation < 0.0) {
+                rotation += 360.0;
+            }
         }
+
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _regions.push_back(region_state);
+        _import_regions.push_back(region_state);
     } else if (ParseRegion(region, params, 0)) {
         // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
         std::string invalid_params = "unsupported ellipse definition " + region + "\n";
@@ -442,7 +559,7 @@ void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& na
     // Import DS9 box into CARTA RegionState
     // box x y width height angle
     std::vector<std::string> params;
-    if (ParseRegion(region, params, 6)) {
+    if (ParseRegion(region, params, 6) || ParseRegion(region, params, 5)) {
         // convert strings to Quantities
         std::vector<casacore::Quantity> param_quantities;
         // DS9 wcs default units
@@ -498,7 +615,7 @@ void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& na
                 point.set_y(pixel_coords(1));
                 control_points.push_back(point);
             } else {
-                std::string invalid_param("Failed to apply ellipse to image: " + region + "\n");
+                std::string invalid_param("Failed to apply box to image: " + region + "\n");
                 _import_errors.append(invalid_param);
                 return;
             }
@@ -512,9 +629,12 @@ void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& na
 
         // Create RegionState
         CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
-        float rotation = param_quantities[4].getValue();
+        float rotation(0.0);
+        if (params.size() > 4) {
+            rotation = param_quantities[4].getValue();
+        }
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _regions.push_back(region_state);
+        _import_regions.push_back(region_state);
     } else if (ParseRegion(region, params, 0)) {
         // unsupported box annulus: box x y w1 h1 w2 h2 [angle]
         std::string invalid_params = "unsupported box definition " + region + "\n";
@@ -596,7 +716,7 @@ void Ds9ImportExport::ImportPolygonRegion(std::string& region, std::string& name
         CARTA::RegionType type(CARTA::RegionType::POLYGON);
         float rotation(0.0);
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _regions.push_back(region_state);
+        _import_regions.push_back(region_state);
     } else {
         std::string syntax_error = "polygon syntax error: " + region + "\n";
         _import_errors.append(syntax_error);
@@ -767,14 +887,8 @@ bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& poin
             }
         }
 
-        // Get world coordinate values from MDirection
-        casacore::Vector<casacore::Double> angle = direction.getAngle().getValue();
-        casacore::Vector<casacore::Double> world_coords(2);
-        world_coords(0) = angle(0);
-        world_coords(1) = angle(1);
-
         // Convert world to pixel coordinates
-        return _coord_sys.directionCoordinate().toPixel(pixel_coords, world_coords);
+        return _coord_sys.directionCoordinate().toPixel(pixel_coords, direction);
     }
 
     return false;
@@ -791,159 +905,143 @@ double Ds9ImportExport::AngleToLength(casacore::Quantity angle, const unsigned i
     return fabs(angle.getValue() / increments[world_axis]);
 }
 
-/*
 // For export
 
-void Ds9ImportExport::AddRegion(
-    const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float rotation) {
-    RegionState state(name, type, control_points, rotation);
-    _regions.push_back(state);
-}
-
-void Ds9ImportExport::PrintHeader(std::ostream& os) {
+void Ds9ImportExport::AddHeader() {
     // print file format, globals, and coord sys
+    std::ostringstream os;
     os << "# Region file format: DS9 CARTA " << VERSION_ID << std::endl;
     Ds9Properties globals;
     os << "global color=" << globals.color << " delete=" << globals.delete_region << " edit=" << globals.edit_region
        << " fixed=" << globals.fixed_region << " font=\"" << globals.font << "\" highlite=" << globals.highlite_region
-       << " include=" << globals.include_region << " move=" << globals.move_region << " select=" << globals.select_region << std::endl;
-    os << _direction_ref_frame << std::endl;
+       << " include=" << globals.include_region << " move=" << globals.move_region << " select=" << globals.select_region << "\n";
+    std::string header = os.str();
+    _export_regions.push_back(header);
+
+    os.str("");
+    os << _file_ref_frame << "\n";
+    std::string csys = os.str();
+    _export_regions.push_back(csys);
 }
 
-void Ds9ImportExport::PrintRegion(unsigned int i, std::ostream& os) {
-    // Print Annotation line; ignore comment and global (for now)
-    if (i < NumRegions()) {
-        auto& region = _regions[i];
-        switch (region.type) {
-            case CARTA::RegionType::POINT:
-                PrintPointRegion(region, os);
-                break;
-            case CARTA::RegionType::RECTANGLE:
-                PrintBoxRegion(region, os);
-                break;
-            case CARTA::RegionType::ELLIPSE:
-                PrintEllipseRegion(region, os);
-                break;
-            case CARTA::RegionType::POLYGON:
-                PrintPolygonRegion(region, os);
-                break;
-            case CARTA::RegionType::LINE:
-            case CARTA::RegionType::POLYLINE:
-            case CARTA::RegionType::ANNULUS:
-            default:
-                break; // not supported yet
-        }
-        if (!region.name.empty()) {
-            os << " # text={" << region.name << "}";
-        }
-        os << std::endl;
-    }
-}
+std::string Ds9ImportExport::AddExportRegionPixel(
+    CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle) {
+    // Add region using Record (pixel or world)
+    std::string region;
 
-void Ds9ImportExport::PrintRegionsToFile(std::ofstream& ofs) {
-    PrintHeader(ofs);
-    for (unsigned int i = 0; i < NumRegions(); ++i) {
-        PrintRegion(i, ofs);
-    }
-}
-
-void Ds9ImportExport::PrintBoxRegion(const RegionProperties& properties, std::ostream& os) {
-    // box(x,y,width,height,angle)
-    std::string ds9_region("box");
-    std::vector<casacore::Quantity> points = properties.control_points;
-    os << ds9_region << "(";
-    if (_pixel_coord) {
-        os << std::fixed << std::setprecision(2) << points[0].getValue();
-        for (size_t i = 1; i < points.size(); ++i) {
-            os << "," << points[i].getValue();
+    switch (type) {
+        case CARTA::RegionType::POINT: {
+            // point(x, y)
+            region = fmt::format("point({:.2f}, {:.2f})", control_points[0].getValue(), control_points[1].getValue());
+            break;
         }
-        os << "," << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
-    } else {
-        casacore::Quantity cx(points[0]), cy(points[1]);
-        casacore::Quantity width(points[2]), height(points[3]);
-        // adjust width by cosine(declination) for correct export
-        if (width.isConform("rad")) {
-            width *= cos(cy);
-        }
-        os << std::fixed << std::setprecision(6) << cx.get("deg").getValue() << ",";
-        os << std::fixed << std::setprecision(6) << cy.get("deg").getValue() << ",";
-
-        os << std::fixed << std::setprecision(2) << width.get("arcsec").getValue() << "\""
-           << ",";
-        os << std::fixed << std::setprecision(2) << height.get("arcsec").getValue() << "\""
-           << ",";
-        os << std::defaultfloat << std::setprecision(8) << properties.rotation << ")";
-    }
-}
-
-void Ds9ImportExport::PrintEllipseRegion(const RegionProperties& properties, std::ostream& os) {
-    // ellipse(x,y,radius,radius,angle) -or- circle(x,y,radius)
-    std::vector<casacore::Quantity> points = properties.control_points;
-    bool is_circle(points[2].getValue() == points[3].getValue()); // bmaj == bmin
-    if (is_circle) {
-        os << "circle(";
-        if (_pixel_coord) {
-            os << std::fixed << std::setprecision(2) << points[0].getValue() << "," << points[1].getValue() << "," << points[2].getValue()
-               << ")";
-        } else {
-            os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
-            os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
-            os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\"";
-            os << ")";
-        }
-    } else {
-        os << "ellipse(";
-        // angle measured from x-axis
-        float angle = properties.rotation + 90.0;
-        if (angle > 360.0) {
-            angle -= 360.0;
-        }
-        if (_pixel_coord) {
-            os << std::fixed << std::setprecision(2) << points[0].getValue();
-            for (size_t i = 1; i < points.size(); ++i) {
-                os << "," << points[i].getValue();
+        case CARTA::RegionType::RECTANGLE: {
+            // box(x,y,width,height,angle)
+            if (angle == 0.0) {
+                region = fmt::format("box({:.2f}, {:.2f}, {:.2f}, {:.2f})", control_points[0].getValue(), control_points[1].getValue(),
+                    control_points[2].getValue(), control_points[3].getValue());
+            } else {
+                region = fmt::format("box({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", control_points[0].getValue(), control_points[1].getValue(),
+                    control_points[2].getValue(), control_points[3].getValue(), angle);
             }
-            os << "," << std::defaultfloat << std::setprecision(8) << angle << ")";
-        } else {
-            os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
-            os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ",";
-            os << std::fixed << std::setprecision(2) << points[2].get("arcsec").getValue() << "\""
-               << ",";
-            os << std::fixed << std::setprecision(2) << points[3].get("arcsec").getValue() << "\""
-               << ",";
-            os << std::defaultfloat << std::setprecision(8) << angle << ")";
+            break;
         }
+        case CARTA::RegionType::ELLIPSE: {
+            // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
+            if (control_points[2].getValue() == control_points[3].getValue()) { // bmaj == bmin
+                region = fmt::format("circle({:.6f}, {:.6f}, {:.2f}\")", control_points[0].getValue(), control_points[1].getValue(),
+                    control_points[2].getValue());
+            } else {
+                if (angle == 0.0) {
+                    region = fmt::format("ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f})", control_points[0].getValue(),
+                        control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue());
+                } else {
+                    region = fmt::format("ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", control_points[0].getValue(),
+                        control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), angle);
+                }
+            }
+            break;
+        }
+        case CARTA::RegionType::POLYGON: {
+            // polygon(x1,y1,x2,y2,x3,y3,...)
+            std::ostringstream os; // format varies based on npoints
+            os << "polygon(";
+            os << std::fixed << std::setprecision(2) << control_points[0].getValue() << ", " << control_points[1].getValue();
+            for (size_t i = 2; i < control_points.size(); i += 2) {
+                os << ", " << control_points[i].getValue() << ", " << control_points[i + 1].getValue();
+            }
+            os << ")";
+            region = os.str();
+            break;
+        }
+        default:
+            break;
     }
+
+    return region;
 }
 
-void Ds9ImportExport::PrintPointRegion(const RegionProperties& properties, std::ostream& os) {
-    // point(x,y)
-    std::vector<casacore::Quantity> points = properties.control_points;
-    os << "point(";
-    if (_pixel_coord) {
-        os << std::fixed << std::setprecision(2) << points[0].getValue() << "," << points[1].getValue() << ")";
-    } else {
-        os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue() << ",";
-        os << std::fixed << std::setprecision(6) << points[1].get("deg").getValue() << ")";
-    }
-}
+std::string Ds9ImportExport::AddExportRegionWorld(
+    CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle) {
+    // Add region using Record (world coords)
+    std::string region;
 
-void Ds9ImportExport::PrintPolygonRegion(const RegionProperties& properties, std::ostream& os) {
-    // polygon(x1,y1,x2,y2,x3,y3,...)
-    std::vector<casacore::Quantity> points = properties.control_points;
-    os << "polygon(";
-    if (_pixel_coord) {
-        os << std::fixed << std::setprecision(2) << points[0].getValue();
-        for (size_t i = 1; i < points.size(); ++i) {
-            os << "," << points[i].getValue();
+    switch (type) {
+        case CARTA::RegionType::POINT: {
+            // point(x, y)
+            region = fmt::format("point({:.6f}, {:.6f})", control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue());
+            break;
         }
-        os << ")";
-    } else {
-        os << std::fixed << std::setprecision(6) << points[0].get("deg").getValue();
-        for (size_t i = 1; i < points.size(); ++i) {
-            os << "," << std::fixed << std::setprecision(6) << points[i].get("deg").getValue();
+        case CARTA::RegionType::RECTANGLE: {
+            // box(x,y,width,height,angle)
+            casacore::Quantity cx(control_points[0]), cy(control_points[1]);
+            casacore::Quantity width(control_points[2]), height(control_points[3]);
+            // adjust width by cosine(declination) for correct export
+            if (width.isConform("rad")) {
+                width *= cos(cy);
+            }
+            if (angle == 0.0) {
+                region = fmt::format("box({:.6f}, {:.6f}, {:.2f}\", {:.2f}\")", cx.get("deg").getValue(), cy.get("deg").getValue(),
+                    width.get("arcsec").getValue(), height.get("arcsec").getValue());
+            } else {
+                region = fmt::format("box({:.6f}, {:.6f}, {:.2f}\", {:.2f}\", {})", cx.get("deg").getValue(), cy.get("deg").getValue(),
+                    width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
+            }
+            break;
         }
-        os << ")";
+        case CARTA::RegionType::ELLIPSE: {
+            // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
+            if (control_points[2].getValue() == control_points[3].getValue()) { // bmaj == bmin
+                region = fmt::format("circle({:.6f}, {:.6f}, {:.2f}\")", control_points[0].get("deg").getValue(),
+                    control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue());
+            } else {
+                if (angle == 0.0) {
+                    region = fmt::format("ellipse({:.6f}, {:.6f}, {:.2f}\", {:.2f}\")", control_points[0].get("deg").getValue(),
+                        control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue(),
+                        control_points[3].get("arcsec").getValue());
+                } else {
+                    region = fmt::format("ellipse({:.6f}, {:.6f}, {:.2f}\", {:.2f}\", {})", control_points[0].get("deg").getValue(),
+                        control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue(),
+                        control_points[3].get("arcsec").getValue(), angle);
+                }
+            }
+            break;
+        }
+        case CARTA::RegionType::POLYGON: {
+            // polygon(x1,y1,x2,y2,x3,y3,...)
+            std::ostringstream os; // format varies based on npoints
+            os << "polygon(";
+            os << std::fixed << std::setprecision(6) << control_points[0].get("deg").getValue();
+            for (size_t i = 1; i < control_points.size(); ++i) {
+                os << "," << std::fixed << std::setprecision(6) << control_points[i].get("deg").getValue();
+            }
+            os << ")";
+            region = os.str();
+            break;
+        }
+        default:
+            break;
     }
+
+    return region;
 }
-*/
