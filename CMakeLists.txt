@@ -40,6 +40,7 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
+ADD_SUBDIRECTORY(cartavis)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
 INCLUDE_DIRECTORIES(/usr/include/casacore)
@@ -66,7 +67,9 @@ endif(DisableContourCompression)
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
+        cartavis
         ${PROTOBUF_LIBRARY}
+        grpc++
         fmt
         uWS
         ssl
@@ -118,7 +121,8 @@ set(SOURCE_FILES
         Tile.cc
         Ds9Parser.cc
         Contouring.cc
-        Smoothing.cc)
+        Smoothing.cc
+        GrpcServer/CartaGrpcService.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
