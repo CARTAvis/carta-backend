@@ -84,9 +84,9 @@ set(LINK_LIBS
         casa_mirlib
         casa_scimath
         casa_imageanalysis
-		${OpenMP_CXX_LIBRARIES}
+        ${OpenMP_CXX_LIBRARIES}
         ${HDF5_LIBRARIES}
-		${LIBXML2_LIBRARIES}
+        ${LIBXML2_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
 set(SOURCE_FILES
@@ -113,8 +113,8 @@ set(SOURCE_FILES
         Region/Ds9ImportExport.cc
         Region/Region.cc
         Catalog/VOTableParser.cc
-		Catalog/VOTableCarrier.cc
-		Catalog/VOTableController.cc
+        Catalog/VOTableCarrier.cc
+        Catalog/VOTableController.cc
         OnMessageTask.cc
         FileSettings.cc
         ImageStats/StatsCalculator.cc
