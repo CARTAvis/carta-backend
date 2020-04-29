@@ -4,7 +4,7 @@ using namespace carta;
 
 MomentGenerator::MomentGenerator(
     casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis, const CARTA::MomentRequest& moment_request)
-    : _collapse_error(false) {
+    : _image_moments(nullptr), _collapse_error(false) {
     // Set moment axis
     if (moment_request.axis() == CARTA::MomentAxis::SPECTRAL) {
         _axis = spectral_axis;
@@ -27,26 +27,25 @@ MomentGenerator::MomentGenerator(
     // Make a region record
     Record region = MakeRegionRecord(image, moment_request);
 
-    if (region.nfields() == 0) {
-        String empty("");
-        std::shared_ptr<const ImageInterface<float>> image_shared_ptr(image);
-        if (image_shared_ptr) {
-            // Make a sub-image
-            std::shared_ptr<const SubImage<Float>> sub_image_shared_ptr =
-                casa::SubImageFactory<Float>::createSubImageRO(*image, region, empty, NULL);
-            ImageInterface<Float>* sub_image = new SubImage<Float>(*sub_image_shared_ptr); // Does it need to be deleted later?
-            LogOrigin log("MomentController", "SetMomentGenerator", WHERE);
-            LogIO os(log);
-            // Make an ImageMoments object
-            _image_moments = new casa::ImageMoments<Float>(*sub_image, os);
-            // Calculate the moments
-            ExecuteMomentGenerator();
-        }
-    }
+    // Make a sub image interface
+    String empty("");
+    std::shared_ptr<const SubImage<Float>> sub_image_shared_ptr =
+        casa::SubImageFactory<Float>::createSubImageRO(*image, region, empty, NULL);
+    ImageInterface<Float>* sub_image = new SubImage<Float>(*sub_image_shared_ptr); // Does it need to be deleted later?
+    LogOrigin log("MomentController", "SetMomentGenerator", WHERE);
+    LogIO os(log);
+
+    // Make an ImageMoments object
+    _image_moments = new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*sub_image), os);
+
+    // Calculate the moment images
+    ExecuteMomentGenerator();
 }
 
 MomentGenerator::~MomentGenerator() {
-    delete _image_moments;
+    if (_image_moments) {
+        delete _image_moments;
+    }
 }
 
 void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) {
@@ -137,9 +136,9 @@ Record MomentGenerator::MakeRegionRecord(casacore::ImageInterface<float>* image,
     String tmp_stokes = GetStokes(moment_request.stokes()); // "I" , "IV" , "IQU", or "IQUV"
 
     // Make a region record
-    std::shared_ptr<const ImageInterface<float>> image_shared_ptr(image);
-    CoordinateSystem coordinate_system = image_shared_ptr->coordinates();
-    IPosition pos = image_shared_ptr->shape();
+    CoordinateSystem coordinate_system = image->coordinates();
+    IPosition pos = image->shape();
+    image->shape();
     String region_name;
     String stokes = ""; // Not available yet, in principle can choose "I" , "IV" , "IQU", or "IQUV"
     casa::CasacRegionManager crm(coordinate_system);
@@ -155,59 +154,59 @@ int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
     int mode(-1);
     switch (moment) {
         case CARTA::Moment::MEAN_OF_THE_SPECTRUM: {
-            mode = -1;
+            mode = casa::ImageMoments<casacore::Float>::AVERAGE;
             break;
         }
         case CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM: {
-            mode = 0;
+            mode = casa::ImageMoments<casacore::Float>::INTEGRATED;
             break;
         }
         case CARTA::Moment::INTENSITY_WEIGHTED_COORD: {
-            mode = 1;
+            mode = casa::ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE;
             break;
         }
         case CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD: {
-            mode = 2;
+            mode = casa::ImageMoments<casacore::Float>::WEIGHTED_DISPERSION_COORDINATE;
             break;
         }
         case CARTA::Moment::MEDIAN_OF_THE_SPECTRUM: {
-            mode = 3;
+            mode = casa::ImageMoments<casacore::Float>::MEDIAN;
             break;
         }
         case CARTA::Moment::MEDIAN_COORDINATE: {
-            mode = 4;
+            mode = casa::ImageMoments<casacore::Float>::MEDIAN_COORDINATE;
             break;
         }
         case CARTA::Moment::STD_DEV_ABOUT_THE_MEAN_OF_THE_SPECTRUM: {
-            mode = 5;
+            mode = casa::ImageMoments<casacore::Float>::STANDARD_DEVIATION;
             break;
         }
         case CARTA::Moment::RMS_OF_THE_SPECTRUM: {
-            mode = 6;
+            mode = casa::ImageMoments<casacore::Float>::RMS;
             break;
         }
         case CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM: {
-            mode = 7;
+            mode = casa::ImageMoments<casacore::Float>::ABS_MEAN_DEVIATION;
             break;
         }
         case CARTA::Moment::MAX_OF_THE_SPECTRUM: {
-            mode = 8;
+            mode = casa::ImageMoments<casacore::Float>::MAXIMUM;
             break;
         }
         case CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM: {
-            mode = 9;
+            mode = casa::ImageMoments<casacore::Float>::MAXIMUM_COORDINATE;
             break;
         }
         case CARTA::Moment::MIN_OF_THE_SPECTRUM: {
-            mode = 10;
+            mode = casa::ImageMoments<casacore::Float>::MINIMUM;
             break;
         }
         case CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM: {
-            mode = 11;
+            mode = casa::ImageMoments<casacore::Float>::MINIMUM_COORDINATE;
             break;
         }
         default: {
-            std::cout << "Unknown moment mode!" << std::endl;
+            std::cerr << "Unknown moment mode: " << moment << std::endl;
             break;
         }
     }
@@ -238,6 +237,7 @@ String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
             break;
         }
     }
+    return stokes;
 }
 
 bool MomentGenerator::IsSuccess() const {

@@ -12,11 +12,11 @@
 namespace carta {
 
 struct CollapseResult {
-    int moment_type;
+    casacore::Int moment_type;
     std::shared_ptr<casacore::ImageInterface<float>> image;
     casacore::String output_filename;
 
-    CollapseResult(int moment_type_, std::shared_ptr<ImageInterface<Float>> image_, const String& output_filename_) {
+    CollapseResult(casacore::Int moment_type_, std::shared_ptr<ImageInterface<Float>> image_, const String& output_filename_) {
         moment_type = moment_type_;
         image = image_;
         output_filename = output_filename_;
@@ -40,7 +40,7 @@ private:
     String GetStokes(CARTA::MomentStokes moment_stokes);
 
     casa::ImageMoments<float>* _image_moments;
-    casacore::Vector<int> _moments;
+    casacore::Vector<casacore::Int> _moments;
     int _axis; // Not available yet, by default using the spectral axis
     casacore::Vector<float> _include_pix;
     casacore::Vector<float> _exclude_pix;

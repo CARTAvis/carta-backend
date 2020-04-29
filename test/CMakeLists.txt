@@ -11,7 +11,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Building tester options
 option(testTileEncoding "Build testTileEncoding." OFF)
-option(testVOTableController "Build testVOTableController." ON)
+option(testVOTableController "Build testVOTableController." OFF)
+option(testImageMoments "Build testImageMoments." ON)
 
 if (testTileEncoding)
     enable_testing()
@@ -38,4 +39,29 @@ if (testVOTableController)
     target_link_libraries(testVOTableController ${CATALOG_LINK_LIBS})
     add_executable(testVOTableParser TestVOTableParser.cc ${CATALOG_SOURCE_FILES})
     target_link_libraries(testVOTableParser ${CATALOG_LINK_LIBS})
+endif ()
+
+if (testImageMoments)
+    set(IMAGE_MOMENTS_LINK_LIBS ${IMAGE_MOMENTS_LINK_LIBS}
+            ${OpenMP_CXX_LIBRARIES}
+            ${CMAKE_THREAD_LIBS_INIT}
+            ${PROTOBUF_LIBRARY}
+            carta-protobuf
+            casa_casa
+            casa_coordinates
+            casa_tables
+            casa_images
+            casa_lattices
+            casa_fits
+            casa_measures
+            casa_mirlib
+            casa_scimath
+            casa_imageanalysis)
+    set(IMAGE_MOMENTS_SOURCE_FILES ${IMAGE_MOMENTS_SOURCE_FILES}
+            ${CMAKE_SOURCE_DIR}/Moment/MomentGenerator.cc
+            ${CMAKE_SOURCE_DIR}/Moment/MomentController.cc)
+    add_executable(testImageMoments TestImageMoments.cc ${IMAGE_MOMENTS_SOURCE_FILES})
+    target_link_libraries(testImageMoments ${IMAGE_MOMENTS_LINK_LIBS})
+    add_executable(testMomentGenerator TestMomentGenerator.cc ${IMAGE_MOMENTS_SOURCE_FILES})
+    target_link_libraries(testMomentGenerator ${IMAGE_MOMENTS_LINK_LIBS})
 endif ()
