@@ -199,7 +199,8 @@ casacore::TableRecord Region::GetImageRegionRecord(
     return record;
 }
 
-casacore::LCRegion* Region::GetImageRegion(int file_id, const casacore::CoordinateSystem& coord_sys, const casacore::IPosition& image_shape) {
+casacore::LCRegion* Region::GetImageRegion(
+    int file_id, const casacore::CoordinateSystem& coord_sys, const casacore::IPosition& image_shape) {
     // Convert 2D reference region to image region with input coord_sys and shape
     // Sets _applied_regions item and returns LCRegion
     casacore::LCRegion* null_region(nullptr);
@@ -838,7 +839,7 @@ casacore::TableRecord Region::GetEllipseRecord(const casacore::CoordinateSystem&
         record.define("radii", radii);
 
         // LCEllipsoid measured from major (x) axis
-		// TODO: adjust angle for output csys
+        // TODO: adjust angle for output csys
         casacore::Quantity theta = casacore::Quantity(_region_state.rotation + 90.0, "deg");
         theta.convert("rad");
         record.define("theta", theta.getValue());
