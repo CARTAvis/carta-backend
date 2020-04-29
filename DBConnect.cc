@@ -258,7 +258,7 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     for (auto& pair : request.preference_map()) {
         bson_reinit(&existing);
         BSON_APPEND_UTF8(&existing, "username", user);
-        BSON_APPEND_ARRAY(&existing, pair.first.c_str(), &field_exists);
+        BSON_APPEND_DOCUMENT(&existing, pair.first.c_str(), &field_exists);
 
         if (pair.second.empty()) {
             // Remove this pair from the DB;
