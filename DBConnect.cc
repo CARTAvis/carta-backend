@@ -108,7 +108,7 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     if (json_string.empty()) {
         // Remove entry from DB.
         if (!mongoc_collection_delete_one(collection, &existing, NULL, NULL, &error)) {
-            fmt::print("Delete failed: {}", error.message);
+            fmt::print("Layout deletion failed: {}\n", error.message);
             result = false;
         }
     } else {
@@ -116,7 +116,7 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
         BSON_APPEND_UTF8(updated, "json_string", json_string.c_str());
         
         if (!mongoc_collection_replace_one(collection, &existing, updated, &opts_upsert, NULL, &error)) {
-            fmt::print("{}", error.message);
+            fmt::print("Layout update failed: {}\n", error.message);
             result = false;
         }
         
@@ -263,7 +263,7 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
         if (pair.second.empty()) {
             // Remove this pair from the DB;
             if (!mongoc_collection_delete_one(collection, &existing, NULL, NULL, &error)) {
-                fmt::print("Delete failed: {}", error.message);
+                fmt::print("Preference deletion failed: {}\n", error.message);
                 result = false;
             }
         } else {
@@ -273,7 +273,7 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
             BSON_APPEND_UTF8(&updated, pair.first.c_str(), pair.second.c_str());
             
             if (!mongoc_collection_replace_one(collection, &existing, &updated, &opts_upsert, NULL, &error)) {
-                fmt::print("{}", error.message);
+                fmt::print("Preference update failed: {}\n", error.message);
                 result = false;
             }
             
