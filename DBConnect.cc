@@ -97,7 +97,7 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     initMongoDB(&database, &client, &collection, "layouts");
 
     cuserid(user);
-    
+
     bson_t opts_upsert = BSON_INITIALIZER;
     BSON_APPEND_BOOL(&opts_upsert, "upsert", true);
 
@@ -114,15 +114,15 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     } else {
         bson_t* updated = bson_copy(&existing);
         BSON_APPEND_UTF8(updated, "json_string", json_string.c_str());
-        
+
         if (!mongoc_collection_replace_one(collection, &existing, updated, &opts_upsert, NULL, &error)) {
             fmt::print("Layout update failed: {}\n", error.message);
             result = false;
         }
-        
+
         bson_destroy(updated);
     }
-    
+
     bson_destroy(&existing);
 
     mongoc_collection_destroy(collection);
@@ -246,13 +246,13 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
     initMongoDB(&database, &client, &collection, "preferences");
 
     cuserid(user);
-    
+
     bson_t opts_upsert = BSON_INITIALIZER;
     BSON_APPEND_BOOL(&opts_upsert, "upsert", true);
-    
+
     bson_t field_exists = BSON_INITIALIZER;
     BSON_APPEND_BOOL(&field_exists, "$exists", true);
-    
+
     bson_t existing = BSON_INITIALIZER;
 
     for (auto& pair : request.preference_map()) {
@@ -271,20 +271,20 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
             bson_t updated = BSON_INITIALIZER;
             BSON_APPEND_UTF8(&updated, "username", user);
             BSON_APPEND_UTF8(&updated, pair.first.c_str(), pair.second.c_str());
-            
+
             if (!mongoc_collection_replace_one(collection, &existing, &updated, &opts_upsert, NULL, &error)) {
                 fmt::print("Preference update failed: {}\n", error.message);
                 result = false;
             }
-            
+
             bson_destroy(&updated);
         }
     }
-    
+
     bson_destroy(&opts_upsert);
     bson_destroy(&field_exists);
     bson_destroy(&existing);
-    
+
     mongoc_collection_destroy(collection);
     mongoc_client_destroy(client);
     mongoc_database_destroy(database);
