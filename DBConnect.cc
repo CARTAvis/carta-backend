@@ -115,7 +115,7 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
         bson_t* updated = bson_copy(&existing);
         BSON_APPEND_UTF8(updated, "json_string", json_string.c_str());
         
-        if (!mongoc_collection_update_one(collection, &existing, updated, &opts_upsert, NULL, &error)) {
+        if (!mongoc_collection_replace_one(collection, &existing, updated, &opts_upsert, NULL, &error)) {
             fmt::print("{}", error.message);
             result = false;
         }
@@ -272,7 +272,7 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
             BSON_APPEND_UTF8(&updated, "username", user);
             BSON_APPEND_UTF8(&updated, pair.first.c_str(), pair.second.c_str());
             
-            if (!mongoc_collection_update_one(collection, &existing, &updated, &opts_upsert, NULL, &error)) {
+            if (!mongoc_collection_replace_one(collection, &existing, &updated, &opts_upsert, NULL, &error)) {
                 fmt::print("{}", error.message);
                 result = false;
             }
