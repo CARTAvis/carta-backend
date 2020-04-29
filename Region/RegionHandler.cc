@@ -206,7 +206,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                         region_added = exporter->AddExportRegion(region_state, region_record, pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
-                    std::cerr << "World coordinate region failed: " << err.getMesg() << std::endl;
+                    std::cerr << "Export region record failed: " << err.getMesg() << std::endl;
                 }
             }
 

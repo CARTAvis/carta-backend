@@ -50,10 +50,8 @@ private:
     // Return control_points and qrotation Quantity for region type
     bool ConvertRecordToPoint(
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);
-    bool ConvertRecordToRectangle(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord,
-        std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
-    bool ConvertRecordToRotBox(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord,
-        std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
+    bool ConvertRecordToRectangle(
+        const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);
     bool ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord,
         std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
     bool ConvertRecordToPolygon(

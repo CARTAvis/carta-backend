@@ -115,8 +115,8 @@ public:
 
     // 2D region in reference image applied to input image parameters
     casacore::TableRecord GetImageRegionRecord(
-        int file_id, const casacore::CoordinateSystem coord_sys, const casacore::IPosition image_shape);
-    casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem coord_sys, const casacore::IPosition image_shape);
+        int file_id, const casacore::CoordinateSystem& coord_sys, const casacore::IPosition& image_shape);
+    casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem& coord_sys, const casacore::IPosition& image_shape);
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -132,10 +132,12 @@ private:
     bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
     bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
 
-    // Apply region to any image (indicated by output coord sys), return control points in Record
-    // in format of LCRegion::toRecord()
-    casacore::TableRecord GetPointRecord(const casacore::CoordinateSystem& output_csys);
+    // Apply region to any image (indicated by output coord sys).
+    // Return control points in Record in format of LCRegion::toRecord().
+    casacore::TableRecord GetControlPointsRecord(const casacore::IPosition& image_shape); // output is reference image
+    casacore::TableRecord GetPointRecord(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
     casacore::TableRecord GetPolygonRecord(const casacore::CoordinateSystem& output_csys);
+    casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
 
     // region definition (name, type, control points in pixel coordinates, rotation)
