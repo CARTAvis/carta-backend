@@ -31,7 +31,6 @@ public:
     void SetFramePtr(Frame* frame) override;
 
 private:
-    std::string _filename;
     std::string _hdu;
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;

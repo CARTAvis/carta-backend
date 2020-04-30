@@ -166,7 +166,13 @@ public:
     // Implemented in Hdf5Loader, used to interrupt loading spectral profile
     virtual void SetFramePtr(Frame* frame);
 
+    // Get the full name of image file
+    virtual std::string GetFileName();
+
 protected:
+    // Full name of the image file
+    std::string _filename;
+
     // Dimension values used by stats functions
     size_t _num_channels, _num_stokes, _num_dims, _channel_size;
 

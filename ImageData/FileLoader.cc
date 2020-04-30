@@ -607,6 +607,10 @@ void FileLoader::SetFramePtr(Frame* frame) {
     // Must be implemented in subclasses
 }
 
+std::string FileLoader::GetFileName() {
+    return _filename;
+}
+
 double FileLoader::CalculateBeamArea() {
     ImageRef image = GetImage();
     auto& info = image->imageInfo();

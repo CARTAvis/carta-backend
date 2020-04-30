@@ -17,12 +17,13 @@ public:
     ImageRef GetImage() override;
 
 private:
-    std::string _filename;
     casacore::uInt _hdu;
     std::unique_ptr<casacore::FITSImage> _image;
 };
 
-FitsLoader::FitsLoader(const std::string& filename) : _filename(filename) {}
+FitsLoader::FitsLoader(const std::string& filename) {
+    _filename = filename;
+}
 
 void FitsLoader::OpenFile(const std::string& hdu) {
     casacore::uInt hdu_num(FileInfo::GetFitsHdu(hdu));

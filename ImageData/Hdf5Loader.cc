@@ -2,7 +2,9 @@
 
 namespace carta {
 
-Hdf5Loader::Hdf5Loader(const std::string& filename) : _filename(filename), _hdu("0") {}
+Hdf5Loader::Hdf5Loader(const std::string& filename) : _hdu("0") {
+    _filename = filename;
+}
 
 void Hdf5Loader::OpenFile(const std::string& hdu) {
     // Open hdf5 image with specified hdu
@@ -125,7 +127,9 @@ const Hdf5Loader::IPos Hdf5Loader::GetStatsDataShape(FileInfo::Data ds) {
         case casacore::TpDouble: {
             return GetStatsDataShapeTyped<casacore::Double>(ds);
         }
-        default: { throw casacore::HDF5Error("Dataset " + DataSetToString(ds) + " has an unsupported datatype."); }
+        default: {
+            throw casacore::HDF5Error("Dataset " + DataSetToString(ds) + " has an unsupported datatype.");
+        }
     }
 }
 
@@ -148,7 +152,9 @@ casacore::ArrayBase* Hdf5Loader::GetStatsData(FileInfo::Data ds) {
         case casacore::TpDouble: {
             return GetStatsDataTyped<casacore::Double, casacore::Float>(ds);
         }
-        default: { throw casacore::HDF5Error("Dataset " + DataSetToString(ds) + " has an unsupported datatype."); }
+        default: {
+            throw casacore::HDF5Error("Dataset " + DataSetToString(ds) + " has an unsupported datatype.");
+        }
     }
 }
 

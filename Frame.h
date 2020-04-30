@@ -164,6 +164,10 @@ public:
     bool Interrupt(int region_id, int profile_stokes, const RegionState& start_region_state, const SpectralConfig& start_config_stats,
         bool is_HDF5 = false);
 
+    // Get the full name of image file
+    std::string GetFileName() {
+        return _filename;
+    }
     // Get image interface ptr
     casacore::ImageInterface<float>* GetImage() {
         return _loader->GetImage();
@@ -244,6 +248,9 @@ private:
 
     // image loader for image type
     std::unique_ptr<carta::FileLoader> _loader;
+
+    // Full name of the image file
+    std::string _filename;
 
     // shape, channel, and stokes
     casacore::IPosition _image_shape;  // (width, height, depth, stokes)

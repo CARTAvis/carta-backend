@@ -17,11 +17,12 @@ public:
     ImageRef GetImage() override;
 
 private:
-    std::string _filename;
     std::unique_ptr<casacore::PagedImage<float>> _image;
 };
 
-CasaLoader::CasaLoader(const std::string& filename) : _filename(filename) {}
+CasaLoader::CasaLoader(const std::string& filename) {
+    _filename = filename;
+}
 
 void CasaLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
