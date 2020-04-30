@@ -292,14 +292,11 @@ void Region::SetReferenceRegion() {
                     casacore::Quantum<casacore::Vector<casacore::Double>> qx, qy;
 
                     casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
-                    int coord, world_x_axis, world_y_axis;
-                    _coord_sys.findWorldAxis(coord, world_x_axis, 0); // for pixel axis 0
-                    _coord_sys.findWorldAxis(coord, world_y_axis, 1); // for pixel axis 1
 
-                    qx = vx;                               // set values
-                    qx.setUnit(world_units(world_x_axis)); // set unit
-                    qy = vy;                               // set values
-                    qy.setUnit(world_units(world_y_axis)); // set unit
+                    qx = vx;                    // set values
+                    qx.setUnit(world_units(0)); // set unit
+                    qy = vy;                    // set values
+                    qy.setUnit(world_units(1)); // set unit
 
                     std::lock_guard<std::mutex> guard(_region_mutex);
                     region = new casacore::WCPolygon(qx, qy, pixel_axes, _coord_sys);
@@ -347,13 +344,10 @@ bool Region::CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::
 
     // Set Quantities from world values and units
     casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
-    int coord, world_x_axis, world_y_axis;
-    _coord_sys.findWorldAxis(coord, world_x_axis, 0); // for pixel axis 0
-    _coord_sys.findWorldAxis(coord, world_y_axis, 1); // for pixel axis 1
 
     world_point.resize(2);
-    world_point[0] = casacore::Quantity(world_values(0), world_units(world_x_axis));
-    world_point[1] = casacore::Quantity(world_values(1), world_units(world_y_axis));
+    world_point[0] = casacore::Quantity(world_values(0), world_units(0));
+    world_point[1] = casacore::Quantity(world_values(1), world_units(1));
     return true;
 }
 
@@ -422,17 +416,13 @@ bool Region::RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std
 
     // Save x and y values, units as quantities
     casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
-    int coord, world_x_axis, world_y_axis;
-    _coord_sys.findWorldAxis(coord, world_x_axis, 0); // for pixel axis 0
-    _coord_sys.findWorldAxis(coord, world_y_axis, 1); // for pixel axis 1
-
     casacore::Vector<double> x_wcs = world_coords.row(0);
     casacore::Vector<double> y_wcs = world_coords.row(1);
     // reference points: corners (x0, y0, x1, y1, x2, y2, x3, y3) in world coordinates
     wcs_points.resize(num_points * 2);
     for (int i = 0; i < num_points; ++i) {
-        wcs_points[i * 2] = casacore::Quantity(x_wcs(i), world_units(world_x_axis));
-        wcs_points[(i * 2) + 1] = casacore::Quantity(y_wcs(i), world_units(world_y_axis));
+        wcs_points[i * 2] = casacore::Quantity(x_wcs(i), world_units(0));
+        wcs_points[(i * 2) + 1] = casacore::Quantity(y_wcs(i), world_units(1));
     }
     return true;
 }
@@ -572,13 +562,10 @@ casacore::TableRecord Region::GetPointRecord(const casacore::CoordinateSystem& o
         } else if (_coord_sys.hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
             // Convert reference world coord point to output coord sys units
             casacore::Vector<casacore::String> world_units = output_csys.worldAxisUnits();
-            int coord, world_x_axis, world_y_axis;
-            output_csys.findWorldAxis(coord, world_x_axis, 0); // for pixel axis 0
-            output_csys.findWorldAxis(coord, world_y_axis, 1); // for pixel axis 1
 
             casacore::Vector<casacore::Double> world_point(2);
-            world_point(0) = _wcs_control_points[0].get(world_units(world_x_axis)).getValue();
-            world_point(1) = _wcs_control_points[1].get(world_units(world_y_axis)).getValue();
+            world_point(0) = _wcs_control_points[0].get(world_units(0)).getValue();
+            world_point(1) = _wcs_control_points[1].get(world_units(1)).getValue();
 
             // Convert world point to output pixel point
             casacore::Vector<casacore::Double> pixel_point;
@@ -632,15 +619,12 @@ casacore::TableRecord Region::GetPolygonRecord(const casacore::CoordinateSystem&
             }
         } else if (_coord_sys.hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
             casacore::Vector<casacore::String> world_units = output_csys.worldAxisUnits();
-            int coord, world_x_axis, world_y_axis;
-            output_csys.findWorldAxis(coord, world_x_axis, 0);
-            output_csys.findWorldAxis(coord, world_y_axis, 1);
 
             for (size_t i = 0; i < _wcs_control_points.size(); i += 2) {
                 // Convert reference world coord point to output coord sys units
                 casacore::Vector<casacore::Double> world_point(2);
-                world_point(0) = _wcs_control_points[i].get(world_units(world_x_axis)).getValue();
-                world_point(1) = _wcs_control_points[i + 1].get(world_units(world_y_axis)).getValue();
+                world_point(0) = _wcs_control_points[i].get(world_units(0)).getValue();
+                world_point(1) = _wcs_control_points[i + 1].get(world_units(1)).getValue();
 
                 // Convert world point to output pixel point
                 casacore::Vector<casacore::Double> pixel_point;
@@ -717,9 +701,6 @@ casacore::TableRecord Region::GetRotboxRecord(const casacore::CoordinateSystem& 
 
         // Units for Quantities
         casacore::Vector<casacore::String> world_units = output_csys.worldAxisUnits();
-        int coord, world_x_axis, world_y_axis;
-        output_csys.findWorldAxis(coord, world_x_axis, 0);
-        output_csys.findWorldAxis(coord, world_y_axis, 1);
 
         casacore::Vector<casacore::Float> corner_x(num_points), corner_y(num_points);
         if (_coord_sys.hasDirectionCoordinate() && output_csys.hasDirectionCoordinate()) {
@@ -729,8 +710,8 @@ casacore::TableRecord Region::GetRotboxRecord(const casacore::CoordinateSystem& 
 
             for (size_t i = 0; i < x_wcs.size(); i++) {
                 // Convert each reference world coord point to output coord sys
-                casacore::Quantity ref_point_x(x_wcs(i), world_units(world_x_axis));
-                casacore::Quantity ref_point_y(y_wcs(i), world_units(world_y_axis));
+                casacore::Quantity ref_point_x(x_wcs(i), world_units(0));
+                casacore::Quantity ref_point_y(y_wcs(i), world_units(1));
                 casacore::MDirection world_direction(ref_point_x, ref_point_y, reference_dir_type);
                 if (reference_dir_type != output_dir_type) {
                     world_direction = casacore::MDirection::Convert(world_direction, output_dir_type)();
@@ -747,11 +728,11 @@ casacore::TableRecord Region::GetRotboxRecord(const casacore::CoordinateSystem& 
         } else if (_coord_sys.hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
             for (size_t i = 0; i < x_wcs.size(); i += 2) {
                 // Convert reference world coord point to output coord sys units
-                casacore::Quantity ref_point_x(x_wcs(i), world_units(world_x_axis));
-                casacore::Quantity ref_point_y(y_wcs(i), world_units(world_y_axis));
+                casacore::Quantity ref_point_x(x_wcs(i), world_units(0));
+                casacore::Quantity ref_point_y(y_wcs(i), world_units(1));
                 casacore::Vector<casacore::Double> world_point(2);
-                world_point(0) = ref_point_x.get(world_units(world_x_axis)).getValue();
-                world_point(1) = ref_point_y.get(world_units(world_y_axis)).getValue();
+                world_point(0) = ref_point_x.get(world_units(0)).getValue();
+                world_point(1) = ref_point_y.get(world_units(1)).getValue();
 
                 // Convert world point to output pixel point
                 casacore::Vector<casacore::Double> pixel_point;
@@ -783,9 +764,6 @@ casacore::TableRecord Region::GetEllipseRecord(const casacore::CoordinateSystem&
         // Get output increments and units for radii conversion
         casacore::Vector<casacore::Double> increments(output_csys.increment());
         casacore::Vector<casacore::String> world_units = output_csys.worldAxisUnits();
-        int coord, world_x_axis, world_y_axis;
-        output_csys.findWorldAxis(coord, world_x_axis, 0); // for pixel axis 0
-        output_csys.findWorldAxis(coord, world_y_axis, 1); // for pixel axis 1
 
         // Values to set in Record
         casacore::Vector<casacore::Float> center(2), radii(2);
@@ -811,8 +789,8 @@ casacore::TableRecord Region::GetEllipseRecord(const casacore::CoordinateSystem&
         } else if (_coord_sys.hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
             // Convert center point from reference to output coord sys unit
             casacore::Vector<casacore::Double> world_point(2);
-            world_point(0) = _wcs_control_points[0].get(world_units(world_x_axis)).getValue();
-            world_point(1) = _wcs_control_points[1].get(world_units(world_y_axis)).getValue();
+            world_point(0) = _wcs_control_points[0].get(world_units(0)).getValue();
+            world_point(1) = _wcs_control_points[1].get(world_units(1)).getValue();
 
             // Convert world point to output pixel point
             casacore::Vector<casacore::Double> pixel_point;
@@ -827,11 +805,11 @@ casacore::TableRecord Region::GetEllipseRecord(const casacore::CoordinateSystem&
 
         // Convert radii to output world units, then to pixels
         casacore::Quantity bmaj = _wcs_control_points[2];
-        bmaj.convert(world_units(world_x_axis));
+        bmaj.convert(world_units(0));
         casacore::Quantity bmin = _wcs_control_points[3];
-        bmin.convert(world_units(world_y_axis));
-        radii(0) = fabs(bmaj.getValue() / increments(world_x_axis));
-        radii(1) = fabs(bmin.getValue() / increments(world_y_axis));
+        bmin.convert(world_units(1));
+        radii(0) = fabs(bmaj.getValue() / increments(0));
+        radii(1) = fabs(bmin.getValue() / increments(1));
 
         // Add fields for this region type
         record.define("name", "LCEllipsoid");

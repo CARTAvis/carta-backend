@@ -619,14 +619,10 @@ double CrtfImportExport::AngleToPixelLength(casacore::Quantity angle, unsigned i
     // world->pixel conversion of ellipse radius.
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
 
-    // Find world axis corresponding to input pixel axis
-    int coord, world_axis;
-    _coord_sys.findWorldAxis(coord, world_axis, pixel_axis);
-
     // Convert to world axis units
     casacore::Vector<casacore::String> units = _coord_sys.worldAxisUnits();
-    angle.convert(units[world_axis]);
+    angle.convert(units[pixel_axis]);
 
     casacore::Vector<casacore::Double> increments(_coord_sys.increment());
-    return fabs(angle.getValue() / increments[world_axis]);
+    return fabs(angle.getValue() / increments[pixel_axis]);
 }

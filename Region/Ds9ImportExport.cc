@@ -897,12 +897,10 @@ bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& poin
 double Ds9ImportExport::AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis) {
     // Convert input quantity to pixel length for given pixel axis for ellipse radius
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
-    int coord, world_axis;
-    _coord_sys.findWorldAxis(coord, world_axis, pixel_axis);
     casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
     casacore::Vector<casacore::Double> increments(_coord_sys.directionCoordinate().increment());
-    angle.convert(units[world_axis]);
-    return fabs(angle.getValue() / increments[world_axis]);
+    angle.convert(units[pixel_axis]);
+    return fabs(angle.getValue() / increments[pixel_axis]);
 }
 
 // For export
