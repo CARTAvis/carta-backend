@@ -181,36 +181,28 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                 bool value(fkw->asBool());
                                 std::string string_value(value ? "T" : "F");
 
-                                std::string header_string;
-                                if (comment.empty()) {
-                                    header_string = fmt::format("{}", string_value);
-                                } else {
-                                    header_string = fmt::format("{} / {}", string_value, comment);
-                                }
+                                std::string header_string = fmt::format("{}", string_value);
 
                                 auto header_entry = extended_info->add_header_entries();
                                 header_entry->set_name(name);
                                 *header_entry->mutable_value() = header_string.substr(0, 67);
                                 header_entry->set_entry_type(CARTA::EntryType::INT);
                                 header_entry->set_numeric_value(value);
+                                header_entry->set_comment(comment);
                                 break;
                             }
                             case casacore::FITS::LONG: {
                                 int value(fkw->asInt());
                                 std::string string_value = fmt::format("{:d}", value);
 
-                                std::string header_string;
-                                if (comment.empty()) {
-                                    header_string = fmt::format("{}", string_value);
-                                } else {
-                                    header_string = fmt::format("{} / {}", string_value, comment);
-                                }
+                                std::string header_string = fmt::format("{}", string_value);
 
                                 auto header_entry = extended_info->add_header_entries();
                                 header_entry->set_name(name);
                                 *header_entry->mutable_value() = header_string.substr(0, 67);
                                 header_entry->set_entry_type(CARTA::EntryType::INT);
                                 header_entry->set_numeric_value(value);
+                                header_entry->set_comment(comment);
                                 break;
                             }
                             case casacore::FITS::BYTE:
@@ -219,19 +211,12 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                             case casacore::FITS::DOUBLE:
                             case casacore::FITS::REAL: {
                                 double value(fkw->asDouble());
-                                std::string string_value;
+                                std::string header_string;
                                 if ((name.find("PIX") != std::string::npos) || (name.find("EQUINOX") != std::string::npos) ||
                                     (name.find("EPOCH") != std::string::npos)) {
-                                    string_value = fmt::format("{}", value);
+                                    header_string = fmt::format("{}", value);
                                 } else {
-                                    string_value = fmt::format("{:.12E}", value);
-                                }
-
-                                std::string header_string;
-                                if (comment.empty()) {
-                                    header_string = fmt::format("{}", string_value);
-                                } else {
-                                    header_string = fmt::format("{} / {}", string_value, comment);
+                                    header_string = fmt::format("{:.12E}", value);
                                 }
 
                                 auto header_entry = extended_info->add_header_entries();
@@ -239,34 +224,30 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                 *header_entry->mutable_value() = header_string.substr(0, 67);
                                 header_entry->set_entry_type(CARTA::EntryType::FLOAT);
                                 header_entry->set_numeric_value(value);
+                                header_entry->set_comment(comment);
                                 break;
                             }
                             case casacore::FITS::STRING:
                             case casacore::FITS::FSTRING: {
                                 // Do not include ORIGIN (casacore) or DATE (current) added by ImageHeaderToFITS
                                 if (use_fits_header || (!use_fits_header && ((name != "DATE") && (name != "ORIGIN")))) {
-                                    casacore::String string_value = fkw->asString();
-                                    string_value.trim();
+                                    casacore::String header_string = fkw->asString();
+                                    header_string.trim();
 
                                     if (name == "RADESYS") {
-                                        radesys = string_value; // save for computed_entries
+                                        radesys = header_string; // save for computed_entries
                                     }
 
-                                    if (name.contains("CTYPE") && string_value.contains("FREQ")) {
-                                        string_value = "FREQ";
-                                    }
-
-                                    std::string header_string;
-                                    if (comment.empty()) {
-                                        header_string = fmt::format("{}", string_value);
-                                    } else {
-                                        header_string = fmt::format("{} / {}", string_value, comment);
+                                    if (name.contains("CTYPE") && header_string.contains("FREQ")) {
+                                        // Fix header with "FREQUENCY"
+                                        header_string = "FREQ";
                                     }
 
                                     auto header_entry = extended_info->add_header_entries();
                                     header_entry->set_name(name);
                                     *header_entry->mutable_value() = header_string.substr(0, 67);
                                     header_entry->set_entry_type(CARTA::EntryType::STRING);
+                                    header_entry->set_comment(comment);
                                 }
                                 break;
                             }
