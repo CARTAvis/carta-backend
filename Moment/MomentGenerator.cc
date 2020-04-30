@@ -244,10 +244,9 @@ String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
 String MomentGenerator::GetOutputFileName() {
     String result(_filename);
     if (!_channels.empty()) {
-        result += +".ch_" + _channels;
-        std::cout << "output file name: " << result << "\n";
+        result += ".ch_" + _channels;
     } else {
-        result += +".ch_all";
+        result += ".ch_all";
     }
     return result;
 }
