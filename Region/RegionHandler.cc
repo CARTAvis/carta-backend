@@ -307,6 +307,11 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
 
         // Make SpectralConfig vector of requirements
         ConfigId config_id(file_id, region_id);
+        if (spectral_profiles.empty()) {
+            _spectral_req[config_id].configs.clear();
+            return true;
+        }
+
         for (auto& profile : spectral_profiles) {
             std::string profile_coordinate(profile.coordinate());
             int axis, stokes;
@@ -332,7 +337,6 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
                 _spectral_req[config_id].configs.push_back(spec_config);
             }
         }
-
         return true;
     }
 
