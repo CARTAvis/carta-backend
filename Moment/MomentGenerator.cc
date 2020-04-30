@@ -2,9 +2,9 @@
 
 using namespace carta;
 
-MomentGenerator::MomentGenerator(
-    casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis, const CARTA::MomentRequest& moment_request)
-    : _image_moments(nullptr), _collapse_error(false) {
+MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
+    const CARTA::MomentRequest& moment_request)
+    : _filename(filename), _image_moments(nullptr), _collapse_error(false) {
     // Set moment axis
     if (moment_request.axis() == CARTA::MomentAxis::SPECTRAL) {
         _axis = spectral_axis;
@@ -84,7 +84,7 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
 
 void MomentGenerator::ExecuteMomentGenerator() {
     try {
-        String out_file;
+        String out_file = GetOutputFileName();
         if (!_image_moments->setMoments(_moments)) {
             _error_msg = _image_moments->errorMessage();
             _collapse_error = true;
@@ -130,6 +130,7 @@ Record MomentGenerator::MakeRegionRecord(casacore::ImageInterface<float>* image,
     }
 
     String channels = std::to_string(chan_min) + "~" + std::to_string(chan_max); // Channel range for the moments calculation
+    _channels = std::to_string(chan_min) + "_" + std::to_string(chan_max);       // This is used to set the output file name
     uInt num_selected_channels = chan_max - chan_min + 1;
 
     // Set the stokes (not apply this variable yet!)
@@ -238,6 +239,17 @@ String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
         }
     }
     return stokes;
+}
+
+String MomentGenerator::GetOutputFileName() {
+    String result(_filename);
+    if (!_channels.empty()) {
+        result += +".ch_" + _channels;
+        std::cout << "output file name: " << result << "\n";
+    } else {
+        result += +".ch_all";
+    }
+    return result;
 }
 
 bool MomentGenerator::IsSuccess() const {

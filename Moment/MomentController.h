@@ -15,7 +15,7 @@ class MomentController {
 public:
     MomentController();
     ~MomentController();
-    void SetMomentGenerator(int file_id, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
+    void SetMomentGenerator(int file_id, const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
         const CARTA::MomentRequest& moment_request);
     std::vector<CollapseResult> GetResults(int file_id);
 

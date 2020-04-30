@@ -25,7 +25,8 @@ struct CollapseResult {
 
 class MomentGenerator {
 public:
-    MomentGenerator(casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis, const CARTA::MomentRequest& moment_request);
+    MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
+        const CARTA::MomentRequest& moment_request);
     ~MomentGenerator();
 
     void ExecuteMomentGenerator();
@@ -38,10 +39,13 @@ private:
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     int GetMomentMode(CARTA::Moment moment);
     String GetStokes(CARTA::MomentStokes moment_stokes);
+    String GetOutputFileName();
 
     casa::ImageMoments<float>* _image_moments;
     casacore::Vector<casacore::Int> _moments;
     int _axis; // Not available yet, by default using the spectral axis
+    String _filename;
+    String _channels;
     casacore::Vector<float> _include_pix;
     casacore::Vector<float> _exclude_pix;
     std::vector<CollapseResult> _collapse_results; // Moments calculation results

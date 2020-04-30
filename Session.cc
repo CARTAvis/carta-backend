@@ -914,7 +914,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         int stokes_axis = _frames.at(file_id)->GetStokesAxis();
 
         // Set moments generator and calculate the moments
-        _moment_controller->SetMomentGenerator(file_id, image, spectral_axis, stokes_axis, moment_request);
+        _moment_controller->SetMomentGenerator(file_id, "", image, spectral_axis, stokes_axis, moment_request);
         std::vector<carta::CollapseResult> results = _moment_controller->GetResults(file_id);
     }
 }
