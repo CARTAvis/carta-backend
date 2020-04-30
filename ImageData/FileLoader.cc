@@ -5,7 +5,6 @@
 #include "../Util.h"
 #include "CasaLoader.h"
 #include "FitsLoader.h"
-#include "GeneralLoader.h"
 #include "Hdf5Loader.h"
 #include "MiriadLoader.h"
 
@@ -37,10 +36,6 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
             break;
     }
     return nullptr;
-}
-
-FileLoader* FileLoader::GetGeneralLoader(const std::string& filename) {
-    return new GeneralLoader(filename);
 }
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
@@ -609,10 +604,6 @@ bool FileLoader::GetRegionSpectralData(int region_id, int config_stokes, int pro
 }
 
 void FileLoader::SetFramePtr(Frame* frame) {
-    // Must be implemented in subclasses
-}
-
-void FileLoader::AssignImage(std::shared_ptr<casacore::ImageInterface<float>> image) {
     // Must be implemented in subclasses
 }
 
