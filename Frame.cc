@@ -1060,12 +1060,14 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 casacore::IPosition count(_image_shape.size(), 1); // will adjust count for spectral axis
 
                 // Send incremental spectral profile when reach delta channel or delta time
-                size_t delta_channels = INIT_DELTA_CHANNEL;             // the increment of channels for each step
-                size_t dt_target = TARGET_DELTA_TIME;                   // the target time elapse for each step, in milliseconds
-                size_t dt_partial_profile = TARGET_PARTIAL_CURSOR_TIME; // time increment to send an update
-                size_t profile_size = NumChannels();                    // profile vector size
+                size_t delta_channels = INIT_DELTA_CHANNEL;            // the increment of channels for each slice (to be adjusted)
+                size_t dt_slice_target = TARGET_DELTA_TIME;            // target time elapse for each slice, in milliseconds
+                size_t dt_partial_update = TARGET_PARTIAL_CURSOR_TIME; // time increment to send an update
+                size_t profile_size = NumChannels();                   // profile vector size
                 spectral_data.resize(profile_size, std::numeric_limits<float>::quiet_NaN());
                 float progress(0.0);
+
+                auto t_start_profile = std::chrono::high_resolution_clock::now();
 
                 while (progress < PROFILE_COMPLETE) {
                     if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel profiles
@@ -1074,7 +1076,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     }
 
                     // start timer for slice
-                    auto t_start = std::chrono::high_resolution_clock::now();
+                    auto t_start_slice = std::chrono::high_resolution_clock::now();
 
                     // Slice image to get next delta_channels (not to exceed number of channels in image)
                     size_t nchan =
@@ -1095,12 +1097,14 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                     progress = (float)start(_spectral_axis) / profile_size;
 
                     // get the time elapse for this slice
-                    auto t_end = std::chrono::high_resolution_clock::now();
-                    auto dt = std::chrono::duration<double, std::milli>(t_end - t_start).count();
+                    auto t_end_slice = std::chrono::high_resolution_clock::now();
+                    auto dt_slice = std::chrono::duration<double, std::milli>(t_end_slice - t_start_slice).count();
+                    auto dt_profile = std::chrono::duration<double, std::milli>(t_end_slice - t_start_profile).count();
 
-                    // adjust the increment of channels per slice according to the time elapse
+                    // adjust the number of channels per slice according to the time elapse,
+                    // to achieve target elapsed time per slice TARGET_DELTA_TIME (used to check for cancel)
                     if (delta_channels == INIT_DELTA_CHANNEL) {
-                        delta_channels *= dt_target / dt;
+                        delta_channels *= dt_slice_target / dt_slice;
                         if (delta_channels < 1) {
                             delta_channels = 1;
                         }
@@ -1113,7 +1117,10 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                         // send final profile message
                         cb(profile_message);
-                    } else if (dt > dt_partial_profile) {
+                    } else if (dt_profile > dt_partial_update) {
+                        // reset profile timer and send partial profile message
+                        t_start_profile = t_end_slice;
+
                         CARTA::SpectralProfileData partial_data;
                         partial_data.set_stokes(CurrentStokes());
                         partial_data.set_progress(progress);
@@ -1121,7 +1128,6 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         partial_profile->set_stats_type(config.all_stats[0]);
                         partial_profile->set_coordinate(config.coordinate);
                         partial_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
-                        // send partial profile message
                         cb(partial_data);
                     }
                 }
@@ -1133,7 +1139,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
             std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
+        fmt::print("Fill cursor spectral profile in {} ms\n", dt_spectral_profile);
     }
 
     DecreaseZProfileCount();
