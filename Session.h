@@ -180,6 +180,10 @@ public:
     uint32_t _id;
     FileSettings _file_settings;
     std::unordered_map<int, tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
+    
+    void SendScriptingRequest(uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async);
+    void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
+    bool GetScriptingResponse(uint32_t scripting_request_id, CARTAVIS::ActionReply* reply);
 
 private:
     // File info

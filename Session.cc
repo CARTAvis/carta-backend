@@ -1602,3 +1602,36 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_task_active.erase(file_id);
     }
 }
+
+void Session::SendScriptingRequest(uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async) {
+    CARTA::ScriptRequest message;
+    message.set_scripting_request_id(scripting_request_id);
+    message.set_target(target);
+    message.set_action(action);
+    message.set_parameters(parameters);
+    message.set_async(async);
+    SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
+}
+
+void Session::OnScriptingResponse(const CARTA::ScriptResponse& message, uint32_t request_id) {
+    // Save response to scripting request
+    int scripting_request_id(message.scripting_request_id());
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    _scripting_response[scripting_request_id] = message;
+}
+
+bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTAVIS::ActionReply* reply) {
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    auto scripting_response = _scripting_response.find(scripting_request_id);
+    if (scripting_response == _scripting_response.end()) {
+        return false;
+    } else {
+        reply->set_success(scripting_response->success());
+        reply->set_message(scripting_response->message());
+        reply->set_response(scripting_response->response());
+        
+        _scripting_response.erase(scripting_request_id);
+        
+        return true;
+    }
+}

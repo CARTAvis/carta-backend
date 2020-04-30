@@ -344,6 +344,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
                     break;
                 }
+                case CARTA::EventType::SCRIPTING_RESPONSE: {
+                    CARTA::ScriptingResponse message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnScriptingResponse(message, head.request_id);
+                    } else {
+                        fmt::print("Bad SCRIPTING_RESPONSE message!\n");
+                    }
+                    break;
+                }
                 case CARTA::EventType::SET_REGION: {
                     CARTA::SetRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {

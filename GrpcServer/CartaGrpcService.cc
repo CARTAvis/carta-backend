@@ -6,9 +6,12 @@
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
+#include <carta-protobuf/scripting.pb.h>
 
 #include "../InterfaceConstants.h"
 #include "../Util.h"
+
+uint32_t CartaGrpcService::_scripting_request_id = 0;
 
 CartaGrpcService::CartaGrpcService(bool verbose) : _verbose(verbose) {}
 
@@ -36,20 +39,37 @@ grpc::Status CartaGrpcService::CallAction(grpc::ServerContext* context, const CA
     
     grpc::Status status(grpc::Status::OK);
     
-    if (_sessions.find(session_id) == _sessions.end()) {
-        status = grpc::Status(grpc::StatusCode::OUT_OF_RANGE, fmt::format("Invalid session ID {}", session_id));
+    auto session_connected = _sessions.find(session_id);
+    
+    if (session_connected == _sessions.end()) {
+        status = grpc::Status(grpc::StatusCode::OUT_OF_RANGE, fmt::format("Invalid session ID {}.", session_id));
+    } else if (session_connected.second == false) {
+        status = grpc::Status(grpc::StatusCode::UNAVAILABLE, fmt::format("Session {} is disconnected.", session_id));
     } else {
         // TODO TODO TODO: call the frontend here via the session
         // TODO: Add to session:
         // function to call request event
-        // handler for response event
-        // map to store request UUIDs and responses
-        // here: wait for response or time out
-        // How to clean up timed out responses from map?
-        // Add set of timed out uuids; prune response map when it's bigger than some max size
-        reply->set_success(true);
-        reply->set_message("foobar");
-        reply->set_response("{\"foo\": \"bar\"}");
+        
+        _scripting_request_id++;
+        _scripting_request_id = max(_scripting_request_id, 1u);
+        
+        auto session = session_connected.first;
+        // TODO: rename path to target in the protobuf file
+        session->ScriptingRequest(_scripting_request_id, request->path(), request->action(), request->parameters(), request->async());
+        
+        auto t_start = std::chrono::system_clock::now();
+        while (!session->GetScriptingResponse(_scripting_request_id, reply)) {
+            auto t_end = std::chrono::system_clock::now();
+            std::chrono::duration<double> elapsed_sec = t_end - t_start;
+            if (elapsed_sec.count() > SCRIPTING_TIMEOUT) {
+                // TODO: more specific error
+                return grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, fmt::format("Scripting request to session {} timed out.", session_id));
+            }
+        }
+        
+        if (!reply->success()) {
+            status = grpc::Status(grpc::StatusCode::UNKNOWN, fmt::format("Scripting request to session {} failed.", session_id));
+        }
     }
     
     return status;

@@ -22,6 +22,7 @@ public:
 private:
     // Map session_id to <Session*, connected>
     std::unordered_map<int, std::pair<Session*, bool>> _sessions;
+    static uint32_t _scripting_request_id;
 };
 
 #endif // CARTA_BACKEND_GRPCSERVER_CARTAGRPCSERVICE_H_
