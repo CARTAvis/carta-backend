@@ -502,6 +502,8 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         fmt::print("Smoothing mode not implemented yet!\n");
         return false;
     }
+
+    return false;
 }
 
 // ****************************************************

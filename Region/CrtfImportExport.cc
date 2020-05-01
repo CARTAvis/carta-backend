@@ -35,8 +35,8 @@ CrtfImportExport::CrtfImportExport(const casacore::CoordinateSystem& image_coord
                 region_list = casa::RegionTextList(image_coord_sys, file, image_shape, "", "", "", true, require_region);
             }
         } catch (const casacore::AipsError& err) {
-            casacore::String text_list_error = err.getMesg();
-            _import_errors = text_list_error.before("at File");
+            casacore::String text_list_error = err.getMesg().before("at File");
+            _import_errors = text_list_error;
             return;
         }
 
