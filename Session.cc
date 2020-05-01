@@ -60,7 +60,6 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _animation_object = nullptr;
     _connected = true;
     _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller(_root_folder));
-    _moment_controller = std::unique_ptr<carta::MomentController>(new carta::MomentController());
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
@@ -914,9 +913,9 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         int spectral_axis = _frames.at(file_id)->GetSpectralAxis();
         int stokes_axis = _frames.at(file_id)->GetStokesAxis();
 
-        // Set moments generator and calculate the moments
-        _moment_controller->SetMomentGenerator(file_id, filename, image, spectral_axis, stokes_axis, moment_request);
-        std::vector<carta::CollapseResult> results = _moment_controller->GetResults(file_id);
+        // Create moment images
+        carta::MomentGenerator moment_generator(filename, image, spectral_axis, stokes_axis, moment_request);
+        std::vector<carta::CollapseResult> moment_results = moment_generator.GetResults();
     }
 }
 

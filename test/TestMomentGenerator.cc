@@ -1,7 +1,6 @@
 #include <iostream>
 #include <limits>
 
-#include "../Moment/MomentController.h"
 #include "../Moment/MomentGenerator.h"
 
 int main(int argc, char* argv[]) {
@@ -60,10 +59,8 @@ int main(int argc, char* argv[]) {
     pixel_range->set_max(100.0);
 
     // Create a moment generator object
-    auto moment_generator = std::unique_ptr<carta::MomentGenerator>(
-        new carta::MomentGenerator(filename, image.get(), spectral_axis, stokes_axis, moment_request));
-
-    std::vector<carta::CollapseResult> moment_results = moment_generator->GetResults();
+    carta::MomentGenerator moment_generator(filename, image.get(), spectral_axis, stokes_axis, moment_request);
+    std::vector<carta::CollapseResult> moment_results = moment_generator.GetResults();
     std::cout << "moment_results.size(): " << moment_results.size() << std::endl;
 
     for (int i = 0; i < moment_results.size(); ++i) {

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <limits>
 
-#include "../Moment/MomentController.h"
 #include "../Moment/MomentGenerator.h"
 
 int main(int argc, char* argv[]) {

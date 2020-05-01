@@ -44,7 +44,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
-#include "Moment/MomentController.h"
+#include "Moment/MomentGenerator.h"
 #include "Util.h"
 
 class Session {
@@ -236,9 +236,6 @@ private:
 
     // Catalog controller
     std::unique_ptr<catalog::Controller> _catalog_controller;
-
-    // Moment controller
-    std::unique_ptr<carta::MomentController> _moment_controller;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
