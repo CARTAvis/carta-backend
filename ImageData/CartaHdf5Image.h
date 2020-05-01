@@ -59,7 +59,7 @@ private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5
     inline static const casacore::CountedPtr<casacore::HDF5File>& GetHdf5File(void* image) {
         CartaHdf5Image* im = static_cast<CartaHdf5Image*>(image);
-        return im->Lattice().file();
+        return im->_lattice.file();
     }
 
     bool SetUpImage();
