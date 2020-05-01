@@ -40,6 +40,9 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
 
     // Calculate the moment images
     ExecuteMomentGenerator();
+
+    // Delete the sub image object
+    delete sub_image;
 }
 
 MomentGenerator::~MomentGenerator() {
