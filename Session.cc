@@ -914,8 +914,11 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         int stokes_axis = _frames.at(file_id)->GetStokesAxis();
 
         // Create moment images
-        carta::MomentGenerator moment_generator(filename, image, spectral_axis, stokes_axis, moment_request);
-        std::vector<carta::CollapseResult> moment_results = moment_generator.GetResults();
+        CARTA::MomentResponse moment_response;
+        carta::MomentGenerator moment_generator(filename, image, spectral_axis, stokes_axis, moment_request, moment_response);
+
+        // Send moment response message
+        SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
     }
 }
 

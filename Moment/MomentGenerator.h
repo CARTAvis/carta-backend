@@ -11,25 +11,14 @@
 
 namespace carta {
 
-struct CollapseResult {
-    std::string output_filename;
-    std::shared_ptr<casacore::ImageInterface<float>> image;
-
-    CollapseResult(const std::string& output_filename_, std::shared_ptr<ImageInterface<Float>> image_) {
-        output_filename = output_filename_;
-        image = image_;
-    }
-};
-
 class MomentGenerator {
 public:
     MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
-        const CARTA::MomentRequest& moment_request);
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
     ~MomentGenerator();
 
     bool IsSuccess() const;
     casacore::String GetErrorMessage() const;
-    std::vector<CollapseResult> GetResults() const;
 
     // Print protobuf messages
     static void Print(CARTA::MomentRequest message);
@@ -44,7 +33,7 @@ public:
 
 private:
     Record MakeRegionRecord(casacore::ImageInterface<float>* image, const CARTA::MomentRequest& moment_request);
-    void ExecuteMomentGenerator();
+    void ExecuteMomentGenerator(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     int GetMomentMode(CARTA::Moment moment);
     String GetMomentSuffix(casacore::Int moment);
@@ -58,7 +47,6 @@ private:
     String _channels;
     casacore::Vector<float> _include_pix;
     casacore::Vector<float> _exclude_pix;
-    std::vector<CollapseResult> _collapse_results; // Moments calculation results
     casacore::String _error_msg;
     bool _collapse_error;
 };

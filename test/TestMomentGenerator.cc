@@ -58,20 +58,13 @@ int main(int argc, char* argv[]) {
     pixel_range->set_min(0.0);
     pixel_range->set_max(100.0);
 
-    // Create a moment generator object
-    carta::MomentGenerator moment_generator(filename, image.get(), spectral_axis, stokes_axis, moment_request);
-    std::vector<carta::CollapseResult> moment_results = moment_generator.GetResults();
-    std::cout << "moment_results.size(): " << moment_results.size() << std::endl;
+    // Calculate moments
+    CARTA::MomentResponse moment_response;
+    carta::MomentGenerator moment_generator(filename, image.get(), spectral_axis, stokes_axis, moment_request, moment_response);
 
-    for (int i = 0; i < moment_results.size(); ++i) {
-        std::cout << "output_filename: " << moment_results[i].output_filename << std::endl;
-        std::shared_ptr<ImageInterface<Float>> result_image = dynamic_pointer_cast<ImageInterface<Float>>(moment_results[i].image);
-        std::cout << "result_image->shape().size(): " << result_image->shape().size() << std::endl;
-        std::cout << "result_image->shape().nelements(): " << result_image->shape().nelements() << std::endl;
-        for (int j = 0; j < result_image->shape().size(); ++j) {
-            std::cout << "result_image->shape()[" << j << "]= " << result_image->shape()[j] << std::endl;
-        }
-    }
+    // Print protobuf messages
+    carta::MomentGenerator::Print(moment_request);
+    carta::MomentGenerator::Print(moment_response);
 
     return 0;
 }

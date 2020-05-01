@@ -3,7 +3,7 @@
 using namespace carta;
 
 MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
-    const CARTA::MomentRequest& moment_request)
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response)
     : _filename(filename), _image_moments(nullptr), _collapse_error(false) {
     // Set moment axis
     if (moment_request.axis() == CARTA::MomentAxis::SPECTRAL) {
@@ -39,7 +39,9 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
     _image_moments = new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*sub_image), os, true);
 
     // Calculate the moment images
-    ExecuteMomentGenerator();
+    ExecuteMomentGenerator(moment_request, moment_response);
+
+    moment_response.set_success(IsSuccess());
 
     // Delete the sub image object
     delete sub_image;
@@ -83,7 +85,7 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
     }
 }
 
-void MomentGenerator::ExecuteMomentGenerator() {
+void MomentGenerator::ExecuteMomentGenerator(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     try {
         String out_file = GetOutputFileName();
         if (!_image_moments->setMoments(_moments)) {
@@ -102,8 +104,9 @@ void MomentGenerator::ExecuteMomentGenerator() {
                         std::string base_name = out_file.substr(out_file.find_last_of("/") + 1);
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
                         std::string output_filename = base_name + "." + moment_suffix;
-                        CollapseResult collapse_result(output_filename, result_image);
-                        _collapse_results.push_back(collapse_result);
+                        auto output_files = moment_response.add_output_files();
+                        output_files->set_file_name(output_filename);
+                        output_files->set_moment_type(moment_request.moments(i));
                     }
                 } catch (const AipsError& x) {
                     _error_msg = x.getMesg();
@@ -320,14 +323,10 @@ String MomentGenerator::GetOutputFileName() {
 
 bool MomentGenerator::IsSuccess() const {
     bool success = false;
-    if (!_collapse_results.empty() && !_collapse_error) {
+    if (!_collapse_error) {
         success = true;
     }
     return success;
-}
-
-std::vector<CollapseResult> MomentGenerator::GetResults() const {
-    return _collapse_results;
 }
 
 casacore::String MomentGenerator::GetErrorMessage() const {
@@ -353,7 +352,11 @@ void MomentGenerator::Print(CARTA::MomentRequest message) {
 
 void MomentGenerator::Print(CARTA::MomentResponse message) {
     std::cout << "CARTA::MomentResponse:" << std::endl;
-    std::cout << "success = " << message.success() << std::endl;
+    if (message.success()) {
+        std::cout << "success = true" << std::endl;
+    } else {
+        std::cout << "success = false" << std::endl;
+    }
     for (int i = 0; i < message.output_files_size(); ++i) {
         Print(message.output_files(i));
     }
