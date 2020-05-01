@@ -35,8 +35,8 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
     LogOrigin log("MomentController", "SetMomentGenerator", WHERE);
     LogIO os(log);
 
-    // Make an ImageMoments object
-    _image_moments = new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*sub_image), os);
+    // Make an ImageMoments object (and overwrite the output file if it already exists)
+    _image_moments = new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*sub_image), os, true);
 
     // Calculate the moment images
     ExecuteMomentGenerator();
@@ -46,9 +46,7 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
 }
 
 MomentGenerator::~MomentGenerator() {
-    if (_image_moments) {
-        delete _image_moments;
-    }
+    delete _image_moments;
 }
 
 void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) {
@@ -101,7 +99,10 @@ void MomentGenerator::ExecuteMomentGenerator() {
                     auto result_images = _image_moments->createMoments(false, out_file, false);
                     for (int i = 0; i < result_images.size(); ++i) {
                         std::shared_ptr<ImageInterface<Float>> result_image = dynamic_pointer_cast<ImageInterface<Float>>(result_images[i]);
-                        CollapseResult collapse_result(_moments[i], result_image, out_file);
+                        std::string base_name = out_file.substr(out_file.find_last_of("/") + 1);
+                        std::string moment_suffix = GetMomentSuffix(_moments[i]);
+                        std::string output_filename = base_name + "." + moment_suffix;
+                        CollapseResult collapse_result(output_filename, result_image);
                         _collapse_results.push_back(collapse_result);
                     }
                 } catch (const AipsError& x) {
@@ -215,6 +216,69 @@ int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
         }
     }
     return mode;
+}
+
+String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
+    String suffix;
+    switch (moment) {
+        case casa::ImageMoments<casacore::Float>::AVERAGE: {
+            suffix = "average";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::INTEGRATED: {
+            suffix = "integrated";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE: {
+            suffix = "weighted_coord";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::WEIGHTED_DISPERSION_COORDINATE: {
+            suffix = "weighted_dispersion_coord";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::MEDIAN: {
+            suffix = "median";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::MEDIAN_COORDINATE: {
+            suffix = "median_coord";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::STANDARD_DEVIATION: {
+            suffix = "standard_deviation";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::RMS: {
+            suffix = "rms";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::ABS_MEAN_DEVIATION: {
+            suffix = "abs_mean_dev";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::MAXIMUM: {
+            suffix = "maximum";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::MAXIMUM_COORDINATE: {
+            suffix = "maximum_coord";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::MINIMUM: {
+            suffix = "minimum";
+            break;
+        }
+        case casa::ImageMoments<casacore::Float>::MINIMUM_COORDINATE: {
+            suffix = "minimum_coord";
+            break;
+        }
+        default: {
+            std::cerr << "Unknown moment mode: " << moment << std::endl;
+            break;
+        }
+    }
+    return suffix;
 }
 
 String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {

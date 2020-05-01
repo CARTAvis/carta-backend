@@ -38,7 +38,18 @@ int main(int argc, char* argv[]) {
     moment_request.set_file_id(-1);
     moment_request.set_region_id(-1);
     moment_request.add_moments(CARTA::Moment::MEAN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_COORD);
+    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD);
+    moment_request.add_moments(CARTA::Moment::MEDIAN_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::MEDIAN_COORDINATE);
+    moment_request.add_moments(CARTA::Moment::STD_DEV_ABOUT_THE_MEAN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::RMS_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::MAX_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
     moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
     auto spectral_range = moment_request.mutable_spectral_range();
     spectral_range->set_min(1);
@@ -56,7 +67,7 @@ int main(int argc, char* argv[]) {
     std::cout << "moment_results.size(): " << moment_results.size() << std::endl;
 
     for (int i = 0; i < moment_results.size(); ++i) {
-        std::cout << "moment_type: " << moment_results[i].moment_type << std::endl;
+        std::cout << "output_filename: " << moment_results[i].output_filename << std::endl;
         std::shared_ptr<ImageInterface<Float>> result_image = dynamic_pointer_cast<ImageInterface<Float>>(moment_results[i].image);
         std::cout << "result_image->shape().size(): " << result_image->shape().size() << std::endl;
         std::cout << "result_image->shape().nelements(): " << result_image->shape().nelements() << std::endl;

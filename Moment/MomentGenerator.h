@@ -12,14 +12,12 @@
 namespace carta {
 
 struct CollapseResult {
-    casacore::Int moment_type;
+    std::string output_filename;
     std::shared_ptr<casacore::ImageInterface<float>> image;
-    casacore::String output_filename;
 
-    CollapseResult(casacore::Int moment_type_, std::shared_ptr<ImageInterface<Float>> image_, const String& output_filename_) {
-        moment_type = moment_type_;
-        image = image_;
+    CollapseResult(const std::string& output_filename_, std::shared_ptr<ImageInterface<Float>> image_) {
         output_filename = output_filename_;
+        image = image_;
     }
 };
 
@@ -38,6 +36,7 @@ private:
     Record MakeRegionRecord(casacore::ImageInterface<float>* image, const CARTA::MomentRequest& moment_request);
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     int GetMomentMode(CARTA::Moment moment);
+    String GetMomentSuffix(casacore::Int moment);
     String GetStokes(CARTA::MomentStokes moment_stokes);
     String GetOutputFileName();
 
