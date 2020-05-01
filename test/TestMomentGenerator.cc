@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD);
     moment_request.add_moments(CARTA::Moment::MEDIAN_OF_THE_SPECTRUM);
     // moment_request.add_moments(CARTA::Moment::MEDIAN_COORDINATE);
-    moment_request.add_moments(CARTA::Moment::STD_DEV_ABOUT_THE_MEAN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::RMS_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::MAX_OF_THE_SPECTRUM);

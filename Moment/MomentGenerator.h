@@ -27,13 +27,24 @@ public:
         const CARTA::MomentRequest& moment_request);
     ~MomentGenerator();
 
-    void ExecuteMomentGenerator();
     bool IsSuccess() const;
     casacore::String GetErrorMessage() const;
     std::vector<CollapseResult> GetResults() const;
 
+    // Print protobuf messages
+    static void Print(CARTA::MomentRequest message);
+    static void Print(CARTA::MomentResponse message);
+    static void Print(CARTA::IntBounds message);
+    static void Print(CARTA::FloatBounds message);
+    static void Print(CARTA::MomentImage message);
+    static void Print(CARTA::Moment message);
+    static void Print(CARTA::MomentAxis message);
+    static void Print(CARTA::MomentStokes message);
+    static void Print(CARTA::MomentMask message);
+
 private:
     Record MakeRegionRecord(casacore::ImageInterface<float>* image, const CARTA::MomentRequest& moment_request);
+    void ExecuteMomentGenerator();
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     int GetMomentMode(CARTA::Moment moment);
     String GetMomentSuffix(casacore::Int moment);
