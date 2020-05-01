@@ -30,47 +30,43 @@ void CartaGrpcService::RemoveSession(Session* session) {
     }
 }
 
-grpc::Status CartaGrpcService::CallAction(grpc::ServerContext* context, const CARTAVIS::ActionRequest* request, CARTAVIS::ActionReply* reply) {
-    auto session_id = request->session_id;
-    auto path = request->path;
-    auto action = request->action;
-    auto parameters = request->parameters;
-    auto async = request->async;
-    
+grpc::Status CartaGrpcService::CallAction(
+    grpc::ServerContext* context, const CARTAVIS::ActionRequest* request, CARTAVIS::ActionReply* reply) {
+    auto session_id = request->session_id();
+    // TODO: rename path to target in the protobuf file
+    auto path = request->path();
+    auto action = request->action();
+    auto parameters = request->parameters();
+    auto async = request->async();
+
     grpc::Status status(grpc::Status::OK);
-    
-    auto session_connected = _sessions.find(session_id);
-    
-    if (session_connected == _sessions.end()) {
+
+    if (_sessions.find(session_id) == _sessions.end()) {
         status = grpc::Status(grpc::StatusCode::OUT_OF_RANGE, fmt::format("Invalid session ID {}.", session_id));
-    } else if (session_connected.second == false) {
+    } else if (!_sessions[session_id].second) {
         status = grpc::Status(grpc::StatusCode::UNAVAILABLE, fmt::format("Session {} is disconnected.", session_id));
     } else {
-        // TODO TODO TODO: call the frontend here via the session
-        // TODO: Add to session:
-        // function to call request event
-        
         _scripting_request_id++;
-        _scripting_request_id = max(_scripting_request_id, 1u);
-        
-        auto session = session_connected.first;
-        // TODO: rename path to target in the protobuf file
-        session->ScriptingRequest(_scripting_request_id, request->path(), request->action(), request->parameters(), request->async());
-        
+        _scripting_request_id = std::max(_scripting_request_id, 1u);
+
+        auto session = _sessions[session_id].first;
+        session->SendScriptingRequest(_scripting_request_id, path, action, parameters, async);
+
         auto t_start = std::chrono::system_clock::now();
         while (!session->GetScriptingResponse(_scripting_request_id, reply)) {
             auto t_end = std::chrono::system_clock::now();
             std::chrono::duration<double> elapsed_sec = t_end - t_start;
             if (elapsed_sec.count() > SCRIPTING_TIMEOUT) {
                 // TODO: more specific error
-                return grpc::Status(grpc::StatusCode::DEADLINE_EXCEEDED, fmt::format("Scripting request to session {} timed out.", session_id));
+                return grpc::Status(
+                    grpc::StatusCode::DEADLINE_EXCEEDED, fmt::format("Scripting request to session {} timed out.", session_id));
             }
         }
-        
+
         if (!reply->success()) {
             status = grpc::Status(grpc::StatusCode::UNKNOWN, fmt::format("Scripting request to session {} failed.", session_id));
         }
     }
-    
+
     return status;
 }

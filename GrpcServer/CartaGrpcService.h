@@ -16,12 +16,14 @@ public:
     CartaGrpcService(bool verbose);
     void AddSession(Session* session);
     void RemoveSession(Session* session);
-    
+
     grpc::Status CallAction(grpc::ServerContext* context, const CARTAVIS::ActionRequest* request, CARTAVIS::ActionReply* reply);
 
 private:
     // Map session_id to <Session*, connected>
     std::unordered_map<int, std::pair<Session*, bool>> _sessions;
+    bool _verbose;
+
     static uint32_t _scripting_request_id;
 };
 

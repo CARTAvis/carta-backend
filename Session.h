@@ -27,11 +27,14 @@
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/resume_session.pb.h>
+#include <carta-protobuf/scripting.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
+
+#include <cartavis/carta_service.grpc.pb.h>
 
 #include <tbb/task.h>
 
@@ -180,7 +183,7 @@ public:
     uint32_t _id;
     FileSettings _file_settings;
     std::unordered_map<int, tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
-    
+
     void SendScriptingRequest(uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async);
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTAVIS::ActionReply* reply);
@@ -262,6 +265,10 @@ private:
     static int _num_sessions;
     static int _exit_after_num_seconds;
     static bool _exit_when_all_sessions_closed;
+
+    // Scripting responses from the client
+    std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
+    std::mutex _scripting_mutex;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_

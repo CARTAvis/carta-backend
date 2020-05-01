@@ -570,7 +570,7 @@ int main(int argc, const char* argv[]) {
 
         // One FileListHandler works for all sessions.
         file_list_handler = new FileListHandler(permissions_map, use_permissions, root_folder, base_folder);
-        
+
         // Start grpc service for scripting client
         if (grpc_port >= 0) {
             StartGrpcService(grpc_port);
