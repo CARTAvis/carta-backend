@@ -133,6 +133,15 @@ struct SpectralConfig {
         // When region changes, all stats must be sent
         new_stats = all_stats;
     }
+
+    bool HasStat(CARTA::StatsType type) {
+        for (auto stat : all_stats) {
+            if (stat == type) {
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 struct RegionSpectralConfig {

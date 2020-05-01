@@ -57,19 +57,14 @@ private:
     bool RegionSet(int region_id);
     bool FrameSet(int file_id);
 
-    // Cancel jobs for specific region or all regions before closing region/handler
-    void CancelJobs(int region_id);
-    void CancelAllJobs();
-    bool ShouldCancelJob(int region_id);
-
     // Clear requirements for closed region(s) or file(s)
     void RemoveRegionRequirementsCache(int region_id);
     void RemoveFileRequirementsCache(int file_id);
     // Clear cache for changed region
     void ClearRegionCache(int region_id);
 
-    // Check if spectral config has been cancelled
-    bool HasSpectralRequirements(int region_id, int file_id, int stokes);
+    // Check if spectral config has been changed/cancelled
+    bool HasSpectralRequirements(int region_id, int file_id, int stokes, std::vector<CARTA::StatsType>& requested_stats);
     // Set all requirements "new" when region changes
     void UpdateNewSpectralRequirements(int region_id);
 

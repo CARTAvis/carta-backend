@@ -343,17 +343,26 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     return false;
 }
 
-bool RegionHandler::HasSpectralRequirements(int region_id, int file_id, int stokes) {
-    // Search _spectral_req for given file, region, and stokes; used to check for cancellation
+bool RegionHandler::HasSpectralRequirements(int region_id, int file_id, int stokes, std::vector<CARTA::StatsType>& requested_stats) {
+    // Search _spectral_req for given file, region, and stokes; check if any requested stats still valid
+    // Used to check for cancellation
     ConfigId config_id(file_id, region_id);
     std::vector<SpectralConfig> spectral_configs = _spectral_req[config_id].configs;
+    bool has_stat(false);
     for (auto& config : spectral_configs) {
         if (config.stokes == stokes) {
-            return true;
+            // Found config, now find stats
+            for (auto stat : requested_stats) {
+                if (config.HasStat(stat)) {
+                    has_stat = true;
+                    break;
+                }
+            }
+            return has_stat;
         }
     }
 
-    return false;
+    return has_stat;
 }
 
 void RegionHandler::UpdateNewSpectralRequirements(int region_id) {
@@ -870,7 +879,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, int config
         return false;
     }
     // Check cancel
-    if (!HasSpectralRequirements(region_id, file_id, config_stokes)) {
+    if (!HasSpectralRequirements(region_id, file_id, config_stokes, required_stats)) {
         return false;
     }
 
@@ -942,7 +951,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, int config
                     _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
                 }
-                if (!HasSpectralRequirements(region_id, file_id, config_stokes)) {
+                if (!HasSpectralRequirements(region_id, file_id, config_stokes, required_stats)) {
                     _frames.at(file_id)->DecreaseZProfileCount();
                     _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
@@ -1026,7 +1035,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, int config
             _regions.at(region_id)->DecreaseZProfileCount();
             return false;
         }
-        if (!HasSpectralRequirements(region_id, file_id, config_stokes)) {
+        if (!HasSpectralRequirements(region_id, file_id, config_stokes, required_stats)) {
             _frames.at(file_id)->DecreaseZProfileCount();
             _regions.at(region_id)->DecreaseZProfileCount();
             return false;
@@ -1086,6 +1095,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, int config
             partial_results_callback(results, progress);
             if (progress >= PROFILE_COMPLETE) {
                 // cache results for all stats types
+                // TODO: cache and load partial profiles
                 _spectral_cache[cache_id] = SpectralCache(cache_results);
             }
         }
