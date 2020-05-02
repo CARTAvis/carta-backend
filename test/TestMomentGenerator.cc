@@ -63,7 +63,9 @@ int main(int argc, char* argv[]) {
     carta::MomentGenerator moment_generator(filename, image.get(), spectral_axis, stokes_axis, moment_request, moment_response);
 
     // Print protobuf messages
+    std::cout << "==========================================" << std::endl;
     carta::MomentGenerator::Print(moment_request);
+    std::cout << "==========================================" << std::endl;
     carta::MomentGenerator::Print(moment_response);
 
     return 0;

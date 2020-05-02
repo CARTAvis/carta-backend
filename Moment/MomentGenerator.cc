@@ -14,12 +14,8 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
         std::cerr << "Do nto support the moment axis: " << moment_request.axis() << std::endl;
     }
 
-    // Set moment types vector
-    int moments_size(moment_request.moments_size());
-    _moments.resize(moments_size);
-    for (int i = 0; i < moments_size; ++i) {
-        _moments[i] = GetMomentMode(moment_request.moments(i));
-    }
+    // Set moment types
+    SetMomentTypes(moment_request);
 
     // Set pixel range
     SetPixelRange(moment_request);
@@ -31,8 +27,8 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
     String empty("");
     std::shared_ptr<const SubImage<Float>> sub_image_shared_ptr =
         casa::SubImageFactory<Float>::createSubImageRO(*image, region, empty, NULL);
-    ImageInterface<Float>* sub_image = new SubImage<Float>(*sub_image_shared_ptr); // Does it need to be deleted later?
-    LogOrigin log("MomentController", "SetMomentGenerator", WHERE);
+    ImageInterface<Float>* sub_image = new SubImage<Float>(*sub_image_shared_ptr);
+    LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
     LogIO os(log);
 
     // Make an ImageMoments object (and overwrite the output file if it already exists)
@@ -50,6 +46,14 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
 
 MomentGenerator::~MomentGenerator() {
     delete _image_moments;
+}
+
+void MomentGenerator::SetMomentTypes(const CARTA::MomentRequest& moment_request) {
+    int moments_size(moment_request.moments_size());
+    _moments.resize(moments_size);
+    for (int i = 0; i < moments_size; ++i) {
+        _moments[i] = GetMomentMode(moment_request.moments(i));
+    }
 }
 
 void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) {

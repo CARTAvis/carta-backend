@@ -34,6 +34,7 @@ public:
 private:
     Record MakeRegionRecord(casacore::ImageInterface<float>* image, const CARTA::MomentRequest& moment_request);
     void ExecuteMomentGenerator(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+    void SetMomentTypes(const CARTA::MomentRequest& moment_request);
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     int GetMomentMode(CARTA::Moment moment);
     String GetMomentSuffix(casacore::Int moment);
@@ -42,7 +43,7 @@ private:
 
     casa::ImageMoments<float>* _image_moments;
     casacore::Vector<casacore::Int> _moments;
-    int _axis; // Not available yet, by default using the spectral axis
+    int _axis;
     String _filename;
     String _channels;
     casacore::Vector<float> _include_pix;
