@@ -41,6 +41,7 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
     // Calculate the moment images
     ExecuteMomentGenerator(moment_request, moment_response);
 
+    // Set is the moment calculation successful or not
     moment_response.set_success(IsSuccess());
 
     // Delete the sub image object
@@ -87,7 +88,6 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
 
 void MomentGenerator::ExecuteMomentGenerator(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     try {
-        String out_file = GetOutputFileName();
         if (!_image_moments->setMoments(_moments)) {
             _error_msg = _image_moments->errorMessage();
             _collapse_error = true;
@@ -96,14 +96,18 @@ void MomentGenerator::ExecuteMomentGenerator(const CARTA::MomentRequest& moment_
                 _error_msg = _image_moments->errorMessage();
                 _collapse_error = true;
             } else {
+                String out_file = GetOutputFileName();
+                std::size_t found = out_file.find_last_of("/");
+                std::string file_base_name = out_file.substr(found + 1);
+                std::string path_name = out_file.substr(0, found);
+                moment_response.set_directory(path_name);
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
                     auto result_images = _image_moments->createMoments(false, out_file, false);
                     for (int i = 0; i < result_images.size(); ++i) {
                         std::shared_ptr<ImageInterface<Float>> result_image = dynamic_pointer_cast<ImageInterface<Float>>(result_images[i]);
-                        std::string base_name = out_file.substr(out_file.find_last_of("/") + 1);
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
-                        std::string output_filename = base_name + "." + moment_suffix;
+                        std::string output_filename = file_base_name + "." + moment_suffix;
                         auto output_files = moment_response.add_output_files();
                         output_files->set_file_name(output_filename);
                         output_files->set_moment_type(moment_request.moments(i));
@@ -357,6 +361,7 @@ void MomentGenerator::Print(CARTA::MomentResponse message) {
     } else {
         std::cout << "success = false" << std::endl;
     }
+    std::cout << "directory = " << message.directory() << std::endl;
     for (int i = 0; i < message.output_files_size(); ++i) {
         Print(message.output_files(i));
     }
