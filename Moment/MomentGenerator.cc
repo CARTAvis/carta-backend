@@ -40,6 +40,9 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
     // Set is the moment calculation successful or not
     moment_response.set_success(IsSuccess());
 
+    // Get error message if any
+    moment_response.set_message(GetErrorMessage());
+
     // Delete the sub image object
     delete sub_image;
 }

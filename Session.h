@@ -24,7 +24,6 @@
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/moment_request.pb.h>
-#include <carta-protobuf/moment_response.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>

@@ -2,7 +2,6 @@
 #define CARTA_BACKEND_MOMENT_MOMENTGENERATOR_H_
 
 #include <carta-protobuf/moment_request.pb.h>
-#include <carta-protobuf/moment_response.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>
 #include <imageanalysis/Regions/CasacRegionManager.h>
