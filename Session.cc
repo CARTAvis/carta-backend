@@ -1367,7 +1367,7 @@ void Session::SendLogEvent(const std::string& message, std::vector<std::string> 
     *error_data.mutable_tags() = {tags.begin(), tags.end()};
     SendEvent(CARTA::EventType::ERROR_DATA, 0, error_data);
     if ((severity > CARTA::ErrorSeverity::DEBUG) || _verbose_logging) {
-        PrintLog(_id, message);
+        CartaLog(_id, message);
     }
 }
 
