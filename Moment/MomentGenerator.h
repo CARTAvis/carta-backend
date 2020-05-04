@@ -4,13 +4,14 @@
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <imageanalysis/ImageAnalysis/ImageMoments.h>
+#include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
 #include <imageanalysis/Regions/CasacRegionManager.h>
 
 #include "../InterfaceConstants.h"
 
 namespace carta {
 
-class MomentGenerator {
+class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
     MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
@@ -18,6 +19,11 @@ public:
 
     bool IsSuccess() const;
     casacore::String GetErrorMessage() const;
+
+    // Methods from the casa::ImageMomentsProgressMonitor interface
+    void setStepCount(int count);
+    void setStepsCompleted(int count);
+    void done();
 
     // Print protobuf messages
     static void Print(CARTA::MomentRequest message);
@@ -49,6 +55,11 @@ private:
     casacore::Vector<float> _exclude_pix;
     casacore::String _error_msg;
     bool _collapse_error;
+
+    // Progress parameters
+    int _total_steps;
+    float _progress;
+    float _pre_progress;
 };
 
 } // namespace carta

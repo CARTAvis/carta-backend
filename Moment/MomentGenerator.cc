@@ -34,6 +34,9 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
     // Make an ImageMoments object (and overwrite the output file if it already exists)
     _image_moments = new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*sub_image), os, true);
 
+    // Set moment calculation progress monitor
+    _image_moments->setProgressMonitor(this);
+
     // Calculate the moment images
     ExecuteMomentGenerator(moment_request, moment_response);
 
@@ -343,6 +346,27 @@ bool MomentGenerator::IsSuccess() const {
 casacore::String MomentGenerator::GetErrorMessage() const {
     return _error_msg;
 }
+
+void MomentGenerator::setStepCount(int count) {
+    // Initialize the progress parameters
+    _total_steps = count;
+    _progress = 0.0;
+    _pre_progress = 0.0;
+}
+
+void MomentGenerator::setStepsCompleted(int count) {
+    _progress = (float)count / _total_steps;
+    // Update the progress report every percent
+    if ((_progress - _pre_progress) >= REPORT_PROGRESS_EVERY_FACTOR) {
+        if (_progress > MOMENT_COMPLETE) {
+            _progress = MOMENT_COMPLETE;
+        }
+        std::cout << "_progress = " << _progress << std::endl;
+        _pre_progress = _progress;
+    }
+}
+
+void MomentGenerator::done() {}
 
 // Print protobuf messages
 void MomentGenerator::Print(CARTA::MomentRequest message) {

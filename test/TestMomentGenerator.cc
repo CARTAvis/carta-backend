@@ -12,9 +12,13 @@ int main(int argc, char* argv[]) {
     // Set the image file name
     std::string filename = argv[1];
 
-    // Open an CASA image file
-    std::shared_ptr<casacore::PagedImage<float>> image;
-    image.reset(new casacore::PagedImage<float>(filename));
+    // Open a CASA image file
+    // std::unique_ptr<casacore::PagedImage<float>> image;
+    // image.reset(new casacore::PagedImage<float>(filename));
+
+    // Open a FITS image file
+    std::unique_ptr<casacore::FITSImage> image;
+    image.reset(new casacore::FITSImage(filename));
 
     // Print the original image file info
     std::cout << "file name: " << filename << std::endl;
@@ -51,8 +55,9 @@ int main(int argc, char* argv[]) {
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
     moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
     auto spectral_range = moment_request.mutable_spectral_range();
-    spectral_range->set_min(1);
-    spectral_range->set_max(10);
+    spectral_range->set_min(0);
+    // spectral_range->set_max(10);
+    spectral_range->set_max(249);
     moment_request.set_mask(CARTA::MomentMask::None);
     auto pixel_range = moment_request.mutable_pixel_range();
     pixel_range->set_min(0.0);

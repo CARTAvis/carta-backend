@@ -29,7 +29,7 @@ inline void CartaLog(uint32_t id, const char* template_string, Args... args) {
 }
 
 template <typename... Args>
-inline void PrintLog(uint32_t id, const std::string& template_string, Args... args) {
+inline void CartaLog(uint32_t id, const std::string& template_string, Args... args) {
     CartaLog(id, fmt::format(template_string, args...));
 }
 
