@@ -913,9 +913,19 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         int spectral_axis = _frames.at(file_id)->GetSpectralAxis();
         int stokes_axis = _frames.at(file_id)->GetStokesAxis();
 
-        // Create moment images
+        // Moment response
         CARTA::MomentResponse moment_response;
-        carta::MomentGenerator moment_generator(filename, image, spectral_axis, stokes_axis, moment_request, moment_response);
+
+        // Set moment progress callback function
+        auto progress_callback = [&](float progress) {
+            CARTA::MomentProgress moment_progress;
+            moment_progress.set_progress(progress);
+            SendEvent(CARTA::EventType::MOMENT_PROGRESS, request_id, moment_progress);
+        };
+
+        // Create moment images
+        carta::MomentGenerator moment_generator(
+            filename, image, spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
 
         // Send moment response message
         SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);

@@ -3,8 +3,8 @@
 using namespace carta;
 
 MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response)
-    : _filename(filename), _image_moments(nullptr), _collapse_error(false) {
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, MomentProgressCallback progress_callback)
+    : _filename(filename), _image_moments(nullptr), _collapse_error(false), _progress_callback(progress_callback) {
     // Set moment axis
     if (moment_request.axis() == CARTA::MomentAxis::SPECTRAL) {
         _axis = spectral_axis;
@@ -361,7 +361,8 @@ void MomentGenerator::setStepsCompleted(int count) {
         if (_progress > MOMENT_COMPLETE) {
             _progress = MOMENT_COMPLETE;
         }
-        std::cout << "_progress = " << _progress << std::endl;
+        // Report the progress
+        _progress_callback(_progress);
         _pre_progress = _progress;
     }
 }
@@ -558,4 +559,9 @@ void MomentGenerator::Print(CARTA::MomentMask message) {
             break;
         }
     }
+}
+
+void MomentGenerator::Print(CARTA::MomentProgress message) {
+    std::cout << "CARTA::MomentProgress:" << std::endl;
+    std::cout << "progress = " << message.progress() << std::endl;
 }

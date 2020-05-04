@@ -9,12 +9,14 @@
 
 #include "../InterfaceConstants.h"
 
+typedef const std::function<void(float)> MomentProgressCallback;
+
 namespace carta {
 
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
     MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, MomentProgressCallback progress_callback);
     ~MomentGenerator();
 
     bool IsSuccess() const;
@@ -35,6 +37,7 @@ public:
     static void Print(CARTA::MomentAxis message);
     static void Print(CARTA::MomentStokes message);
     static void Print(CARTA::MomentMask message);
+    static void Print(CARTA::MomentProgress message);
 
 private:
     Record MakeRegionRecord(casacore::ImageInterface<float>* image, const CARTA::MomentRequest& moment_request);
@@ -60,6 +63,7 @@ private:
     int _total_steps;
     float _progress;
     float _pre_progress;
+    MomentProgressCallback _progress_callback;
 };
 
 } // namespace carta

@@ -63,9 +63,19 @@ int main(int argc, char* argv[]) {
     pixel_range->set_min(0.0);
     pixel_range->set_max(100.0);
 
-    // Calculate moments
+    // Moment response
     CARTA::MomentResponse moment_response;
-    carta::MomentGenerator moment_generator(filename, image.get(), spectral_axis, stokes_axis, moment_request, moment_response);
+
+    // Set moment progress callback function
+    auto progress_callback = [&](float progress) {
+        CARTA::MomentProgress moment_progress;
+        moment_progress.set_progress(progress);
+        carta::MomentGenerator::Print(moment_progress);
+    };
+
+    // Calculate moments
+    carta::MomentGenerator moment_generator(
+        filename, image.get(), spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;
