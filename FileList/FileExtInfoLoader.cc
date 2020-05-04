@@ -429,7 +429,7 @@ void FileExtInfoLoader::AddComputedEntries(
         entry->set_name("Pixel increment");
         casacore::Quantity inc0(increment(0), axis_units(0));
         casacore::Quantity inc1(increment(1), axis_units(1));
-        std::string pixel_inc = fmt::format("{:.6f}\", {:.6f}\"", inc0.getValue("arcsec"), inc1.getValue("arcsec"));
+        std::string pixel_inc = fmt::format("{:g}\", {:g}\"", inc0.getValue("arcsec"), inc1.getValue("arcsec"));
         entry->set_value(pixel_inc);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
