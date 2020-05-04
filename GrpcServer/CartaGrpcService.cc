@@ -43,8 +43,6 @@ grpc::Status CartaGrpcService::CallAction(
 
     if (_sessions.find(session_id) == _sessions.end()) {
         status = grpc::Status(grpc::StatusCode::OUT_OF_RANGE, fmt::format("Invalid session ID {}.", session_id));
-    } else if (!_sessions[session_id].second) {
-        status = grpc::Status(grpc::StatusCode::UNAVAILABLE, fmt::format("Session {} is disconnected.", session_id));
     } else {
         _scripting_request_id++;
         _scripting_request_id = std::max(_scripting_request_id, 1u);
