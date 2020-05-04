@@ -35,6 +35,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
+FIND_PACKAGE(gRPC CONFIG REQUIRED)
 FIND_PACKAGE(LibXml2 REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
@@ -69,7 +70,7 @@ set(LINK_LIBS
         carta-protobuf
         cartavis
         ${PROTOBUF_LIBRARY}
-        grpc++
+        gRPC::grpc++
         fmt
         uWS
         ssl
