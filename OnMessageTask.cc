@@ -38,6 +38,15 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
+        case CARTA::EventType::MOMENT_REQUEST: {
+            CARTA::MomentRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnMomentRequest(message, _header.request_id);
+            } else {
+                fmt::print("Bad MOMENT_REQUEST message!\n");
+            }
+            break;
+        }
         default: {
             fmt::print("Bad event type in MultiMessageType:execute : ({})\n", _header.type);
             break;

@@ -396,15 +396,6 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
-                case CARTA::EventType::MOMENT_REQUEST: {
-                    CARTA::MomentRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnMomentRequest(message, head.request_id);
-                    } else {
-                        fmt::print("Bad MOMENT_REQUEST message!\n");
-                    }
-                    break;
-                }
                 case CARTA::EventType::STOP_MOMENT_CALC: {
                     CARTA::StopMomentCalc message;
                     if (message.ParseFromArray(event_buf, event_length)) {
