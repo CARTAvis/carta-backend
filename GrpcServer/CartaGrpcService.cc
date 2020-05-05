@@ -60,10 +60,6 @@ grpc::Status CartaGrpcService::CallAction(
                     grpc::StatusCode::DEADLINE_EXCEEDED, fmt::format("Scripting request to session {} timed out.", session_id));
             }
         }
-
-        if (!reply->success()) {
-            status = grpc::Status(grpc::StatusCode::UNKNOWN, fmt::format("Scripting request to session {} failed.", session_id));
-        }
     }
 
     return status;
