@@ -16,14 +16,14 @@ class FileExtInfoLoader {
 public:
     FileExtInfoLoader(carta::FileLoader* loader);
 
-    bool FillFileExtInfo(CARTA::FileInfoExtended* extended_info, const std::string& filename, const std::string& hdu, std::string& message);
+    bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message);
 
 private:
     // FileInfoExtended
-    bool FillFileInfoFromImage(CARTA::FileInfoExtended* ext_info, const std::string& hdu, std::string& message);
-    void AddMiscInfoHeaders(CARTA::FileInfoExtended* extended_info, const casacore::TableRecord& misc_info);
-    void AddShapeEntries(CARTA::FileInfoExtended* extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis);
-    void AddComputedEntries(CARTA::FileInfoExtended* extended_info, casacore::ImageInterface<float>* image, casacore::String& radesys);
+    bool FillFileInfoFromImage(CARTA::FileInfoExtended& extended_info, const std::string& hdu, std::string& message);
+    void AddMiscInfoHeaders(CARTA::FileInfoExtended& extended_info, const casacore::TableRecord& misc_info);
+    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis);
+    void AddComputedEntries(CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image, casacore::String& radesys);
     std::string MakeAngleString(const std::string& type, double val, const std::string& unit); // convert MVAngle to string
 
     carta::FileLoader* _loader;
