@@ -4,12 +4,20 @@ FROM ubuntu:latest
 RUN \
   apt-get update && \
   apt-get -y upgrade && \
-  apt-get install -y bison build-essential byobu cmake curl default-jre emacs \
+  apt-get install -y bison build-essential byobu curl default-jre emacs \
     fftw3-dev flex gdb gcc gfortran git git-lfs htop libblas-dev \
     libcfitsio-dev libfmt-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
     libprotobuf-dev libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libzstd-dev \
     libgsl-dev man protobuf-compiler python-pip python3-pip software-properties-common \
     unzip vim wcslib-dev wget
+    
+# Install latest cmake (>= 3.13 required to build gRPC correctly)
+
+RUN \
+  wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add - && \
+  apt-add-repository 'deb https://apt.kitware.com/ubuntu/ `lsb_release -cs` main' && \
+  apt-get update && \
+  apt-get install cmake
 
 # Install googletest
 RUN \
@@ -58,6 +66,15 @@ RUN \
   mkdir -p zfp/build && cd zfp/build && \
   cmake .. && make all install && \
   cd /root && rm -rf zfp
+
+# gRPC
+RUN \
+  cd /root && \
+  git clone --recurse-submodules https://github.com/grpc/grpc && \ 
+  mkdir -p grpc/cmake/build && cd grpc/cmake/build && \
+  cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=/usr/local ../.. && \
+  make -j && make install && \
+  cd /root && rm -rf grpc
 
 # Build carta-backend
 RUN \
