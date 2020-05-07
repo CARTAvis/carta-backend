@@ -975,11 +975,12 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
     // frontend does not set cursor outside of image, but just in case:
     _cursor_spectral_configs.clear();
     bool req_set(false);
+    int nstokes = NumStokes();
     for (auto& config : spectral_configs) {
         std::string coordinate(config.coordinate());
         int axis, stokes;
         ConvertCoordinateToAxes(coordinate, axis, stokes);
-        if (stokes >= NumStokes()) {
+        if (stokes >= nstokes) {
             std::cerr << "Spectral requirement " << coordinate << " failed: invalid stokes axis for image." << std::endl;
             continue;
         }
