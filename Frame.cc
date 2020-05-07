@@ -972,8 +972,11 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
         return false;
     }
 
-    // frontend does not set cursor outside of image, but just in case:
-    _cursor_spectral_configs.clear();
+    _cursor_spectral_configs.clear(); // will push back new configs
+    if (spectral_configs.empty()) {
+        return true;
+    }
+
     bool req_set(false);
     int nstokes = NumStokes();
     for (auto& config : spectral_configs) {
