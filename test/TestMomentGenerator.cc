@@ -70,6 +70,7 @@ int main(int argc, char* argv[]) {
     auto progress_callback = [&](float progress) {
         CARTA::MomentProgress moment_progress;
         moment_progress.set_progress(progress);
+        std::cout << "==========================================" << std::endl;
         carta::MomentGenerator::Print(moment_progress);
     };
 

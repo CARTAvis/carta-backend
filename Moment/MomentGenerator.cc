@@ -11,7 +11,7 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
     } else if (moment_request.axis() == CARTA::MomentAxis::STOKES) {
         _axis = stokes_axis;
     } else {
-        std::cerr << "Do nto support the moment axis: " << moment_request.axis() << std::endl;
+        std::cerr << "Do not support the moment axis: " << moment_request.axis() << std::endl;
     }
 
     // Set moment types
@@ -118,7 +118,7 @@ void MomentGenerator::ExecuteMomentGenerator(const CARTA::MomentRequest& moment_
                         std::shared_ptr<ImageInterface<Float>> result_image = dynamic_pointer_cast<ImageInterface<Float>>(result_images[i]);
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
                         std::string output_filename = file_base_name + "." + moment_suffix;
-                        auto output_files = moment_response.add_output_files();
+                        auto* output_files = moment_response.add_output_files();
                         output_files->set_file_name(output_filename);
                         output_files->set_moment_type(moment_request.moments(i));
                     }
