@@ -117,7 +117,12 @@ void MomentGenerator::ExecuteMomentGenerator(const CARTA::MomentRequest& moment_
                     for (int i = 0; i < result_images.size(); ++i) {
                         std::shared_ptr<ImageInterface<Float>> result_image = dynamic_pointer_cast<ImageInterface<Float>>(result_images[i]);
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
-                        std::string output_filename = file_base_name + "." + moment_suffix;
+                        std::string output_filename;
+                        if (result_images.size() == 1) {
+                            output_filename = file_base_name;
+                        } else {
+                            output_filename = file_base_name + "." + moment_suffix;
+                        }
                         auto* output_files = moment_response.add_output_files();
                         output_files->set_file_name(output_filename);
                         output_files->set_moment_type(moment_request.moments(i));
