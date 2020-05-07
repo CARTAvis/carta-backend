@@ -125,7 +125,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                             if (cc_file.isRegular(true) && cc_file.isReadable()) {
                                 CARTA::FileType file_type(GetRegionType(full_path));
                                 if (file_type != CARTA::FileType::UNKNOWN) {
-                                    auto file_info = *file_list.add_files();
+                                    auto& file_info = *file_list.add_files();
                                     FillRegionFileInfo(file_info, full_path, file_type);
                                     is_region = true;
                                 }
@@ -160,7 +160,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                         }
 
                         if (add_image) { // add image to file list
-                            auto file_info = *file_list.add_files();
+                            auto& file_info = *file_list.add_files();
                             file_info.set_name(name);
                             FillFileInfo(file_info, full_path);
                         }
@@ -381,7 +381,7 @@ void FileListHandler::OnRegionFileInfoRequest(
         response.add_contents(contents);
     } else {
         casacore::String full_name(cc_file.path().resolvedName());
-        auto file_info = *response.mutable_file_info();
+        auto& file_info = *response.mutable_file_info();
         FillRegionFileInfo(file_info, full_name);
         std::vector<std::string> file_contents;
         if (file_info.type() == CARTA::FileType::UNKNOWN) {

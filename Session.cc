@@ -239,8 +239,8 @@ void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t 
 
 void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id) {
     CARTA::FileInfoResponse response;
-    auto file_info = *response.mutable_file_info();
-    auto file_info_extended = *response.mutable_file_info_extended();
+    auto& file_info = *response.mutable_file_info();
+    auto& file_info_extended = *response.mutable_file_info_extended();
     string message;
 
     casacore::String hdu_name(request.hdu());
