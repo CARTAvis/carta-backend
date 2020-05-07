@@ -63,8 +63,11 @@ private:
     // Clear cache for changed region
     void ClearRegionCache(int region_id);
 
+    // Spectral requirements helpers
+    // Check if stokes is valid (e.g. frontend can send "Vz" for 3-stokes image)
+    bool SpectralCoordinateValid(std::string& coordinate, int nstokes);
     // Check if spectral config has been changed/cancelled
-    bool HasSpectralRequirements(int region_id, int file_id, int stokes, std::vector<CARTA::StatsType>& requested_stats);
+    bool HasSpectralRequirements(int region_id, int file_id, std::string& coordinate, std::vector<CARTA::StatsType>& required_stats);
     // Set all requirements "new" when region changes
     void UpdateNewSpectralRequirements(int region_id);
 
@@ -73,7 +76,7 @@ private:
     bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
     bool GetRegionHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
-    bool GetRegionSpectralData(int region_id, int file_id, int config_stokes, int stokes_index,
+    bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
         std::vector<CARTA::StatsType>& required_stats,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(

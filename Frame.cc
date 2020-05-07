@@ -974,19 +974,28 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
 
     // frontend does not set cursor outside of image, but just in case:
     _cursor_spectral_configs.clear();
+    bool req_set(false);
     for (auto& config : spectral_configs) {
         std::string coordinate(config.coordinate());
         int axis, stokes;
         ConvertCoordinateToAxes(coordinate, axis, stokes);
+        if (stokes >= NumStokes()) {
+            std::cerr << "Spectral requirement " << coordinate << " failed: invalid stokes axis for image." << std::endl;
+            continue;
+        }
+
+        // Set required stats for coordinate
         size_t nstats = config.stats_types_size();
         std::vector<CARTA::StatsType> stats;
         for (size_t i = 0; i < config.stats_types_size(); ++i) {
             stats.push_back(config.stats_types(i));
         }
-        SpectralConfig new_config(coordinate, stokes, stats);
+        SpectralConfig new_config(coordinate, stats);
         _cursor_spectral_configs.push_back(new_config);
+        req_set = true;
     }
-    return true;
+
+    return req_set;
 }
 
 bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool stokes_changed) {
@@ -1018,9 +1027,9 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             return false;
         }
 
-        int config_stokes = config.stokes;
-        if ((config_stokes != CURRENT_STOKES) && stokes_changed) {
-            continue; // do not resend fixed stokes profile when stokes changes
+        std::string coordinate(config.coordinate);
+        if ((coordinate != "z") && stokes_changed) {
+            continue; // do not send fixed stokes profile when stokes changes
         }
 
         // Create final profile message for callback
@@ -1038,7 +1047,11 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
             spectral_profile->set_raw_values_fp64(&nan_value, sizeof(double));
             cb(profile_message);
         } else {
-            int stokes = (config_stokes == CURRENT_STOKES ? CurrentStokes() : config_stokes);
+            int axis, stokes;
+            ConvertCoordinateToAxes(coordinate, axis, stokes);
+            if (coordinate == "z") {
+                stokes = CurrentStokes();
+            }
 
             std::vector<float> spectral_data;
             int xy_count(1);

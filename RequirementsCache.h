@@ -103,29 +103,13 @@ struct HistogramCache {
 
 struct SpectralConfig {
     std::string coordinate;
-    int stokes;
     std::vector<CARTA::StatsType> all_stats;
     std::vector<CARTA::StatsType> new_stats;
 
-    SpectralConfig(std::string& coordinate_, int stokes_index_, std::vector<CARTA::StatsType>& stats_types_)
-        : coordinate(coordinate_), stokes(stokes_index_), all_stats(stats_types_), new_stats(stats_types_) {}
+    SpectralConfig(std::string& coordinate, std::vector<CARTA::StatsType>& stats)
+        : coordinate(coordinate), all_stats(stats), new_stats(stats) {}
 
-    void SetNewRequirements(const std::vector<CARTA::StatsType>& required_stats) {
-        // Set all_stats to required_stats.  New profiles go in new_stats.
-        std::vector<CARTA::StatsType> new_stats_types;
-        for (auto requirement : required_stats) {
-            bool found(false);
-            for (auto stat : all_stats) {
-                if (requirement == stat) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                new_stats_types.push_back(requirement);
-            }
-        }
-        all_stats = required_stats;
+    void SetNewRequirements(const std::vector<CARTA::StatsType>& new_stats_types) {
         new_stats = new_stats_types;
     }
 
@@ -134,7 +118,13 @@ struct SpectralConfig {
         new_stats = all_stats;
     }
 
+    void ClearNewStats() {
+        // When all stats sent, clear list
+        new_stats.clear();
+    }
+
     bool HasStat(CARTA::StatsType type) {
+        // Cancel when stat no longer in requirements
         for (auto stat : all_stats) {
             if (stat == type) {
                 return true;
