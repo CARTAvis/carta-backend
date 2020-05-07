@@ -282,14 +282,14 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     CARTA::OpenFileAck ack;
     ack.set_file_id(file_id);
     string err_message;
-    
+
     CARTA::FileInfo file_info;
     CARTA::FileInfoExtended file_info_extended;
 
     bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message);
 
     bool success(false);
-    
+
     if (info_loaded) {
         // Set hdu if empty
         if (hdu.empty()) { // use first
