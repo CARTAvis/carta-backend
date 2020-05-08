@@ -220,7 +220,7 @@ private:
     // Loader for reading image from disk
     std::unique_ptr<carta::FileLoader> _loader;
 
-    // Frame; key is file_id; shared with RegionHandler for data streamss
+    // Frame; key is file_id; shared with RegionHandler for data streams
     std::unordered_map<int, std::shared_ptr<Frame>> _frames;
     std::mutex _frame_mutex;
 
