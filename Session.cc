@@ -1,5 +1,6 @@
 #include "Session.h"
 
+#include <omp.h>
 #include <signal.h>
 #include <algorithm>
 #include <chrono>
@@ -50,6 +51,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _region_handler(nullptr),
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
+      _animation_id(0),
       _file_settings(this) {
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
@@ -137,12 +139,12 @@ void Session::ConnectCalled() {
 // ********************************************************************************
 // File browser
 
-bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const string& folder,
+bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const string& folder,
     const string& filename, string hdu, string& message) {
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool ext_file_info_ok(true);
     try {
-        file_info->set_name(filename);
+        file_info.set_name(filename);
         casacore::String full_name(GetResolvedFilename(_root_folder, folder, filename));
         if (!full_name.empty()) {
             try {
@@ -151,7 +153,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA
                     return false;
                 }
                 if (hdu.empty()) { // use first when required
-                    hdu = file_info->hdu_list(0);
+                    hdu = file_info.hdu_list(0);
                 }
                 _loader.reset(carta::FileLoader::GetLoader(full_name));
                 FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
@@ -233,8 +235,8 @@ void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t 
 
 void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id) {
     CARTA::FileInfoResponse response;
-    auto file_info = response.mutable_file_info();
-    auto file_info_extended = response.mutable_file_info_extended();
+    auto& file_info = *response.mutable_file_info();
+    auto& file_info_extended = *response.mutable_file_info_extended();
     string message;
 
     casacore::String hdu_name(request.hdu());
@@ -281,14 +283,17 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     auto file_info = ack.mutable_file_info();
     auto file_info_extended = ack.mutable_file_info_extended();
 
-    // correct file loaded?
+    CARTA::FileInfo file_info;
+    CARTA::FileInfoExtended file_info_extended;
+
     bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message);
 
     bool success(false);
+
     if (info_loaded) {
         // Set hdu if empty
         if (hdu.empty()) { // use first
-            hdu = file_info->hdu_list(0);
+            hdu = file_info.hdu_list(0);
         } else {
             size_t description_start = hdu.find(" "); // strip ExtName
             if (description_start != std::string::npos) {
@@ -308,9 +313,17 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             _frames[file_id] = move(frame);
             lock.unlock();
 
-            // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
+            // copy file info, extended file info
+            CARTA::FileInfo response_file_info = CARTA::FileInfo();
+            response_file_info.set_name(file_info.name());
+            response_file_info.set_type(file_info.type());
+            response_file_info.set_size(file_info.size());
+            response_file_info.add_hdu_list(hdu); // loaded hdu only
+            *ack.mutable_file_info() = response_file_info;
+            *ack.mutable_file_info_extended() = file_info_extended;
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
-            if (file_info->type() == CARTA::FileType::HDF5) {
+            // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
+            if (file_info.type() == CARTA::FileType::HDF5) {
                 feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
                 feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
@@ -876,6 +889,12 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
             }
         }
     }
+    // Measure duration for resume
+    if (_verbose_logging) {
+        auto t_end_resume = std::chrono::high_resolution_clock::now();
+        auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
+        fmt::print("Resume in {} ms\n", dt_resume * 1e-3);
+    }
 
     if (_verbose_logging) {
         auto t_end_resume = std::chrono::high_resolution_clock::now();
@@ -1414,6 +1433,7 @@ void Session::BuildAnimationObject(CARTA::StartAnimation& msg, uint32_t request_
     looping = msg.looping();
     reverse_at_end = msg.reverse();
     always_wait = true;
+    _animation_id++;
 
     CARTA::StartAnimationAck ack_message;
 
@@ -1456,6 +1476,7 @@ void Session::ExecuteAnimationFrameInner() {
 
             _animation_object->_current_frame = curr_frame;
 
+            auto t_start_change_frame = std::chrono::high_resolution_clock::now();
             if (frame->SetImageChannels(channel, stokes, err_message)) {
                 // Send image histogram and profiles
                 bool send_histogram(true);
@@ -1475,13 +1496,15 @@ void Session::ExecuteAnimationFrameInner() {
                 }
             }
 
+            // Measure duration for frame changing as animating
             if (_verbose_logging) {
                 auto t_end_change_frame = std::chrono::high_resolution_clock::now();
                 auto dt_change_frame =
-                    std::chrono::duration_cast<std::chrono::milliseconds>(t_end_change_frame - t_start_change_frame).count();
-                fmt::print("Animator: Change frame in {} ms\n", dt_change_frame);
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
+                if (channel_changed || stokes_changed) {
+                    fmt::print("Animator: Change frame in {} ms\n", dt_change_frame * 1e-3);
+                }
             }
-
         } catch (std::out_of_range& range_error) {
             string error = fmt::format("File id {} closed", file_id);
             SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);

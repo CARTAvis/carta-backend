@@ -229,6 +229,9 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     double beam_area = CalculateBeamArea();
     bool has_flux = !std::isnan(beam_area);
 
+    double beam_area = CalculateBeamArea();
+    bool has_flux = !std::isnan(beam_area);
+
     if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
         _region_stats.emplace(
             std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask_shape, num_z, has_flux));

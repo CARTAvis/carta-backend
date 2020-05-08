@@ -391,11 +391,20 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 return false;
             }
 
+            auto t_start_compress_tile_data = std::chrono::high_resolution_clock::now();
             std::vector<char> compression_buffer;
             size_t compressed_size;
             int precision = lround(compression_quality);
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
+            // Measure duration for compress tile data
+            if (_verbose) {
+                auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
+                auto dt_compress_tile_data =
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
+                fmt::print("Compress {}x{} tile data in {} ms at {} MPix/s\n", tile_width, tile_height, dt_compress_tile_data * 1e-3,
+                    (float)(tile_width * tile_height) / dt_compress_tile_data);
+            }
 
             if (_verbose) {
                 auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
@@ -496,7 +505,6 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             size_t dest_height = ceil(double(image_bounds.y_max()) / _contour_settings.smoothing_factor);
             TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
                 _contour_settings.chunk_size, partial_contour_callback, _verbose);
-
             return true;
         }
         fmt::print("Smoothing mode not implemented yet!\n");

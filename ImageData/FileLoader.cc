@@ -602,3 +602,15 @@ double FileLoader::CalculateBeamArea() {
 
     return info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
 }
+
+double FileLoader::CalculateBeamArea() {
+    ImageRef image = GetImage();
+    auto& info = image->imageInfo();
+    auto& coord = image->coordinates();
+
+    if (!info.hasSingleBeam() || !coord.hasDirectionCoordinate()) {
+        return NAN;
+    }
+
+    return info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
+}

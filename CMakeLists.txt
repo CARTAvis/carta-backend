@@ -22,9 +22,9 @@ option(EnableAvx "Enable AVX codepaths instead of SSE4" OFF)
 
 if (EnableAvx)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
-else()
+else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
-endif()
+endif ()
 
 # use -DAuthServer:BOOL=ON to link mongodb and jsonccpp
 option(AuthServer "AuthServer" OFF)
@@ -134,4 +134,4 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 option(test "Build tests." OFF)
 if (test)
     add_subdirectory(test)
-endif (test)
+endif ()

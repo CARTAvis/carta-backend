@@ -77,6 +77,11 @@ public:
     void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
 
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
+    void OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
+    void OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
+    void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id);
+    void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
+    void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
 
     void OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
     void OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
@@ -126,22 +131,22 @@ public:
     void AddCursorSetting(CARTA::SetCursor message, uint32_t request_id) {
         _file_settings.AddCursorSetting(message, request_id);
     }
-    void ImageChannelLock(int file_id) {
-        _image_channel_mutexes[file_id].lock();
+    void ImageChannelLock(int fileId) {
+        _image_channel_mutexes[fileId].lock();
     }
-    void ImageChannelUnlock(int file_id) {
-        _image_channel_mutexes[file_id].unlock();
+    void ImageChannelUnlock(int fileId) {
+        _image_channel_mutexes[fileId].unlock();
     }
-    bool ImageChannelTaskTestAndSet(int file_id) {
-        if (_image_channel_task_active[file_id]) {
+    bool ImageChannelTaskTestAndSet(int fileId) {
+        if (_image_channel_task_active[fileId]) {
             return true;
         } else {
-            _image_channel_task_active[file_id] = true;
+            _image_channel_task_active[fileId] = true;
             return false;
         }
     }
-    void ImageChannelTaskSetIdle(int file_id) {
-        _image_channel_task_active[file_id] = false;
+    void ImageChannelTaskSetIdle(int fileId) {
+        _image_channel_task_active[fileId] = false;
     }
     int IncreaseRefCount() {
         return ++_ref_count;
@@ -186,7 +191,7 @@ public:
 
 private:
     // File info
-    bool FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const std::string& folder,
+    bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
         const std::string& filename, std::string hdu, std::string& message);
 
     // Delete Frame(s)
@@ -230,6 +235,9 @@ private:
 
     // Handler for region creation, import/export, requirements, and data
     std::unique_ptr<carta::RegionHandler> _region_handler;
+
+    // Catalog controller
+    std::unique_ptr<catalog::Controller> _catalog_controller;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
