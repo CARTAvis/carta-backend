@@ -40,6 +40,7 @@ int main(int argc, char* argv[]) {
     CARTA::MomentRequest moment_request;
     moment_request.set_file_id(-1);
     moment_request.set_region_id(-1);
+
     moment_request.add_moments(CARTA::Moment::MEAN_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_COORD);
@@ -53,6 +54,7 @@ int main(int argc, char* argv[]) {
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
+
     moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
     auto spectral_range = moment_request.mutable_spectral_range();
     spectral_range->set_min(0);
@@ -76,7 +78,7 @@ int main(int argc, char* argv[]) {
 
     // Calculate moments
     carta::MomentGenerator moment_generator(
-        filename, image.get(), spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
+        filename, image.get(), "", spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;

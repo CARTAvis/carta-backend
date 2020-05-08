@@ -15,8 +15,9 @@ namespace carta {
 
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
-    MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, MomentProgressCallback progress_callback);
+    MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, std::string root_folder, int spectral_axis,
+        int stokes_axis, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+        MomentProgressCallback progress_callback);
     ~MomentGenerator();
 
     bool IsSuccess() const;
@@ -48,6 +49,7 @@ private:
     String GetMomentSuffix(casacore::Int moment);
     String GetStokes(CARTA::MomentStokes moment_stokes);
     String GetOutputFileName();
+    void RemoveRootFolder(std::string& directory);
 
     casa::ImageMoments<float>* _image_moments;
     casacore::Vector<casacore::Int> _moments;
@@ -58,6 +60,7 @@ private:
     casacore::Vector<float> _exclude_pix;
     casacore::String _error_msg;
     bool _collapse_error;
+    std::string _root_folder;
 
     // Progress parameters
     int _total_steps;

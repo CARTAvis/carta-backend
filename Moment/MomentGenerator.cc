@@ -2,9 +2,14 @@
 
 using namespace carta;
 
-MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, MomentProgressCallback progress_callback)
-    : _filename(filename), _image_moments(nullptr), _collapse_error(false), _progress_callback(progress_callback) {
+MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, std::string root_folder, int spectral_axis,
+    int stokes_axis, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    MomentProgressCallback progress_callback)
+    : _filename(filename),
+      _root_folder(root_folder),
+      _image_moments(nullptr),
+      _collapse_error(false),
+      _progress_callback(progress_callback) {
     // Set moment axis
     if (moment_request.axis() == CARTA::MomentAxis::SPECTRAL) {
         _axis = spectral_axis;
@@ -110,12 +115,12 @@ void MomentGenerator::ExecuteMomentGenerator(const CARTA::MomentRequest& moment_
                 std::size_t found = out_file.find_last_of("/");
                 std::string file_base_name = out_file.substr(found + 1);
                 std::string path_name = out_file.substr(0, found);
+                RemoveRootFolder(path_name);
                 moment_response.set_directory(path_name);
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
                     auto result_images = _image_moments->createMoments(false, out_file, false);
                     for (int i = 0; i < result_images.size(); ++i) {
-                        std::shared_ptr<ImageInterface<Float>> result_image = dynamic_pointer_cast<ImageInterface<Float>>(result_images[i]);
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
                         std::string output_filename;
                         if (result_images.size() == 1) {
@@ -338,6 +343,12 @@ String MomentGenerator::GetOutputFileName() {
         result += ".ch_all";
     }
     return result;
+}
+
+void MomentGenerator::RemoveRootFolder(std::string& directory) {
+    if (!_root_folder.empty() && directory.find(_root_folder) == 0) {
+        directory.replace(0, _root_folder.size(), "");
+    }
 }
 
 bool MomentGenerator::IsSuccess() const {

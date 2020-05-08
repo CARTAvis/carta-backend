@@ -925,7 +925,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
 
         // Create moment images
         carta::MomentGenerator moment_generator(
-            filename, image, spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
+            filename, image, _root_folder, spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
 
         // Send moment response message
         SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
