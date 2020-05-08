@@ -972,13 +972,13 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
         return false;
     }
 
-    _cursor_spectral_configs.clear(); // will push back new configs
     if (spectral_configs.empty()) {
+        _cursor_spectral_configs.clear();
         return true;
     }
 
-    bool req_set(false);
     int nstokes = NumStokes();
+    std::vector<SpectralConfig> new_configs;
     for (auto& config : spectral_configs) {
         std::string coordinate(config.coordinate());
         int axis, stokes;
@@ -995,11 +995,17 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
             stats.push_back(config.stats_types(i));
         }
         SpectralConfig new_config(coordinate, stats);
-        _cursor_spectral_configs.push_back(new_config);
-        req_set = true;
+        new_configs.push_back(new_config);
     }
 
-    return req_set;
+    if (new_configs.empty()) {
+        return false;
+    }
+
+    // Set cursor spectral config
+    std::lock_guard<std::mutex> guard(_spectral_mutex);
+    _cursor_spectral_configs = new_configs;
+    return true;
 }
 
 bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, bool stokes_changed) {
@@ -1024,9 +1030,19 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
     auto t_start_spectral_profile = std::chrono::high_resolution_clock::now();
 
-    for (auto& config : _cursor_spectral_configs) { // config is SpectralConfig struct
+    std::vector<SpectralConfig> current_configs;
+    std::unique_lock<std::mutex> ulock(_spectral_mutex);
+    current_configs.insert(current_configs.begin(), _cursor_spectral_configs.begin(), _cursor_spectral_configs.end());
+    ulock.unlock();
+
+    for (auto& config : current_configs) {
         if (!(_cursor == start_cursor) || !IsConnected()) {
             // cursor changed or file closed, cancel profiles
+            DecreaseZProfileCount();
+            return false;
+        }
+        if (!HasSpectralConfig(config)) {
+            // requirements changed
             DecreaseZProfileCount();
             return false;
         }
@@ -1089,11 +1105,6 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                 auto t_start_profile = std::chrono::high_resolution_clock::now();
 
                 while (progress < PROFILE_COMPLETE) {
-                    if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel profiles
-                        DecreaseZProfileCount();
-                        return false;
-                    }
-
                     // start timer for slice
                     auto t_start_slice = std::chrono::high_resolution_clock::now();
 
@@ -1132,6 +1143,17 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
                         }
                     }
 
+                    // Check for cancel before sending
+                    if (!(_cursor == start_cursor) || !IsConnected()) { // cursor changed or file closed, cancel all profiles
+                        DecreaseZProfileCount();
+                        return false;
+                    }
+                    if (!HasSpectralConfig(config)) {
+                        // requirements changed, cancel this profile
+                        DecreaseZProfileCount();
+                        break;
+                    }
+
                     if (progress >= PROFILE_COMPLETE) {
                         spectral_profile->set_raw_values_fp32(spectral_data.data(), spectral_data.size() * sizeof(float));
                         // send final profile message
@@ -1163,6 +1185,21 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
 
     DecreaseZProfileCount();
     return true;
+}
+
+bool Frame::HasSpectralConfig(const SpectralConfig& config) {
+    // Check if requirement is still set.
+    // Currently can only set stokes for cursor, do not check stats type
+    std::vector<SpectralConfig> current_configs;
+    std::unique_lock<std::mutex> ulock(_spectral_mutex);
+    current_configs.insert(current_configs.begin(), _cursor_spectral_configs.begin(), _cursor_spectral_configs.end());
+    ulock.unlock();
+    for (auto& current_config : current_configs) {
+        if (current_config.coordinate == config.coordinate) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // ****************************************************

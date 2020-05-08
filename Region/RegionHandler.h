@@ -101,6 +101,7 @@ private:
     std::unordered_map<ConfigId, RegionHistogramConfig, ConfigIdHash> _histogram_req;
     std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> _spectral_req;
     std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> _stats_req;
+    std::mutex _spectral_mutex;
 
     // Cache; CacheId key contains file, region, stokes, (optional) channel
     std::unordered_map<CacheId, HistogramCache, CacheIdHash> _histogram_cache;

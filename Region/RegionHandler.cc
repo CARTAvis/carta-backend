@@ -314,7 +314,9 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     ConfigId config_id(file_id, region_id);
     if (spectral_profiles.empty()) {
         if (_spectral_req.count(config_id)) {
+            std::unique_lock<std::mutex> ulock(_spectral_mutex);
             _spectral_req[config_id].configs.clear();
+            ulock.unlock();
         }
         return true;
     }
@@ -347,7 +349,9 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     if (_spectral_req.count(config_id) && !_spectral_req[config_id].configs.empty()) {
         // Diff existing requirements to set new_stats in new_configs
         std::vector<SpectralConfig> current_configs;
+        std::unique_lock<std::mutex> ulock(_spectral_mutex);
         current_configs.insert(current_configs.begin(), _spectral_req[config_id].configs.begin(), _spectral_req[config_id].configs.end());
+        ulock.unlock();
 
         // Find matching requirement to set new_stats in new configs
         for (auto& new_config : new_configs) {
@@ -377,7 +381,9 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     // Update region config in spectral req map
     RegionSpectralConfig region_config;
     region_config.configs = new_configs;
+    std::unique_lock<std::mutex> ulock(_spectral_mutex);
     _spectral_req[config_id] = region_config;
+    ulock.unlock();
 
     return true;
 }
@@ -399,7 +405,9 @@ bool RegionHandler::HasSpectralRequirements(
     // Used to check for cancellation.
     ConfigId config_id(file_id, region_id);
     std::vector<SpectralConfig> spectral_configs;
+    std::unique_lock<std::mutex> ulock(_spectral_mutex);
     spectral_configs.insert(spectral_configs.begin(), _spectral_req[config_id].configs.begin(), _spectral_req[config_id].configs.end());
+    ulock.unlock();
 
     bool has_stat(false);
     for (auto& config : spectral_configs) {
@@ -420,6 +428,7 @@ bool RegionHandler::HasSpectralRequirements(
 
 void RegionHandler::UpdateNewSpectralRequirements(int region_id) {
     // Set all requirements "new" when region changes
+    std::lock_guard<std::mutex> guard(_spectral_mutex);
     for (auto& req : _spectral_req) {
         if (req.first.region_id == region_id) {
             for (auto& spec_config : req.second.configs) {
@@ -453,8 +462,11 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for a specific region or for all regions when closed
     if (region_id == ALL_REGIONS) {
         _histogram_req.clear();
-        _spectral_req.clear();
         _stats_req.clear();
+        std::unique_lock<std::mutex> ulock(_spectral_mutex);
+        _spectral_req.clear();
+        ulock.unlock();
+
         _histogram_cache.clear();
         _spectral_cache.clear();
         _stats_cache.clear();
@@ -468,6 +480,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
             }
         }
 
+        std::unique_lock<std::mutex> ulock(_spectral_mutex);
         for (auto it = _spectral_req.begin(); it != _spectral_req.end();) {
             if ((*it).first.region_id == region_id) {
                 it = _spectral_req.erase(it);
@@ -475,6 +488,7 @@ void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
                 ++it;
             }
         }
+        ulock.unlock();
 
         for (auto it = _stats_req.begin(); it != _stats_req.end();) {
             if ((*it).first.region_id == region_id) {
@@ -515,8 +529,11 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
     // Clear requirements and cache for a specific file or for all files when closed
     if (file_id == ALL_FILES) {
         _histogram_req.clear();
-        _spectral_req.clear();
         _stats_req.clear();
+        std::unique_lock<std::mutex> ulock(_spectral_mutex);
+        _spectral_req.clear();
+        ulock.unlock();
+
         _histogram_cache.clear();
         _spectral_cache.clear();
         _stats_cache.clear();
@@ -530,6 +547,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
             }
         }
 
+        std::unique_lock<std::mutex> ulock(_spectral_mutex);
         for (auto it = _spectral_req.begin(); it != _spectral_req.end();) {
             if ((*it).first.file_id == file_id) {
                 it = _spectral_req.erase(it);
@@ -537,6 +555,7 @@ void RegionHandler::RemoveFileRequirementsCache(int file_id) {
                 ++it;
             }
         }
+        ulock.unlock();
 
         for (auto it = _stats_req.begin(); it != _stats_req.end();) {
             if ((*it).first.file_id == file_id) {
@@ -826,8 +845,10 @@ bool RegionHandler::FillSpectralProfileData(
         return false;
     }
 
+    std::unique_lock<std::mutex> ulock(_spectral_mutex);
     std::unordered_map<ConfigId, RegionSpectralConfig, ConfigIdHash> region_configs;
     region_configs.insert(_spectral_req.begin(), _spectral_req.end());
+    ulock.unlock();
 
     bool profile_ok(false);
     if (region_id > 0) {
