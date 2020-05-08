@@ -149,7 +149,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
         if (!full_name.empty()) {
             try {
                 FileInfoLoader info_loader = FileInfoLoader(full_name);
-                if (!info_loader.AddFileInfo(file_info)) {
+                if (!info_loader.FillFileInfo(file_info)) {
                     return false;
                 }
                 if (hdu.empty()) { // use first when required
@@ -157,7 +157,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
                 }
                 _loader.reset(carta::FileLoader::GetLoader(full_name));
                 FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
-                ext_file_info_ok = ext_info_loader.AddFileExtInfo(extended_info, filename, hdu, message);
+                ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, hdu, message);
             } catch (casacore::AipsError& ex) {
                 message = ex.getMesg();
                 ext_file_info_ok = false;
@@ -280,8 +280,6 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     CARTA::OpenFileAck ack;
     ack.set_file_id(file_id);
     string err_message;
-    auto file_info = ack.mutable_file_info();
-    auto file_info_extended = ack.mutable_file_info_extended();
 
     CARTA::FileInfo file_info;
     CARTA::FileInfoExtended file_info_extended;
@@ -1468,8 +1466,6 @@ void Session::ExecuteAnimationFrameInner() {
             if ((_animation_object->_tbb_context).is_group_execution_cancelled()) {
                 return;
             }
-
-            auto t_start_change_frame = std::chrono::high_resolution_clock::now();
 
             bool channel_changed(channel != frame->CurrentChannel());
             bool stokes_changed(stokes != frame->CurrentStokes());

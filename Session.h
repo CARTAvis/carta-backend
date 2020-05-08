@@ -83,12 +83,6 @@ public:
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
 
-    void OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
-    void OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
-    void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id);
-    void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
-    void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
-
     void SendPendingMessages();
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
@@ -235,9 +229,6 @@ private:
 
     // Handler for region creation, import/export, requirements, and data
     std::unique_ptr<carta::RegionHandler> _region_handler;
-
-    // Catalog controller
-    std::unique_ptr<catalog::Controller> _catalog_controller;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;

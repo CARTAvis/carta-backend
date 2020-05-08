@@ -266,7 +266,7 @@ std::string FileListHandler::GetCasacoreTypeString(casacore::ImageOpener::ImageT
 bool FileListHandler::FillFileInfo(CARTA::FileInfo& file_info, const string& filename) {
     // fill FileInfo submessage
     FileInfoLoader info_loader = FileInfoLoader(filename);
-    return info_loader.AddFileInfo(file_info);
+    return info_loader.FillFileInfo(file_info);
 }
 
 void FileListHandler::OnRegionListRequest(

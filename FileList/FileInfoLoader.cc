@@ -39,10 +39,10 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     // add hdu for FITS, HDF5
     if (_type == CARTA::FileType::FITS) {
         casacore::String abs_file_name(cc_file.path().absoluteName());
-        return AddFitsHduList(file_info, abs_file_name);
+        return GetFitsHduList(file_info, abs_file_name);
     } else if (_type == CARTA::FileType::HDF5) {
         casacore::String abs_file_name(cc_file.path().absoluteName());
-        return AddHdf5HduList(file_info, abs_file_name);
+        return GetHdf5HduList(file_info, abs_file_name);
     } else {
         file_info.add_hdu_list("");
         return true;
@@ -51,7 +51,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
 
 bool FileInfoLoader::GetFitsHduList(CARTA::FileInfo& file_info, const std::string& filename) {
     FitsHduList fits_hdu_list = FitsHduList(filename);
-    return fits_hdu_list.AddHduList(file_info);
+    return fits_hdu_list.GetHduList(file_info);
 }
 
 bool FileInfoLoader::GetHdf5HduList(CARTA::FileInfo& file_info, const std::string& filename) {
