@@ -43,7 +43,7 @@ void FileListHandler::OnFileListRequest(
     GetRelativePath(folder);
 
     // get file list response and result message if any
-    FillFileList(response, folder, result_msg);
+    GetFileList(response, folder, result_msg);
 
     _filelist_folder = "nofolder"; // ready for next file list request
 }
@@ -62,7 +62,7 @@ void FileListHandler::GetRelativePath(std::string& folder) {
     }
 }
 
-void FileListHandler::FillFileList(CARTA::FileListResponse& file_list, string folder, ResultMsg& result_msg, bool region_list) {
+void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string folder, ResultMsg& result_msg, bool region_list) {
     // fill FileListResponse
     std::string requested_folder = ((folder.compare(".") == 0) ? _root_folder : folder);
     casacore::Path requested_path(_root_folder);
@@ -297,7 +297,7 @@ void FileListHandler::OnRegionListRequest(
 
     // get file list response and result message if any
     CARTA::FileListResponse file_response;
-    FillFileList(file_response, folder, result_msg, true);
+    GetFileList(file_response, folder, result_msg, true);
     // copy to region list message
     region_response.set_success(file_response.success());
     region_response.set_message(file_response.message());
