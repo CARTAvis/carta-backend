@@ -824,6 +824,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
         if (file_ok) {
             // Set image channels
             CARTA::SetImageChannels set_image_channels_msg;
+            set_image_channels_msg.set_file_id(image.file_id());
             set_image_channels_msg.set_channel(image.channel());
             set_image_channels_msg.set_stokes(image.stokes());
             OnSetImageChannels(set_image_channels_msg);
@@ -832,10 +833,10 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
             for (int j = 0; j < image.regions_size(); ++j) {
                 const CARTA::RegionProperties& region = image.regions(j);
                 CARTA::SetRegion set_region_msg;
-                set_region_msg.set_region_name(region.region_info().region_name());
+                set_region_msg.set_file_id(image.file_id());
                 set_region_msg.set_region_id(region.region_id());
+                set_region_msg.set_region_name(region.region_info().region_name());
                 set_region_msg.set_rotation(region.region_info().rotation());
-                set_region_msg.set_file_id(i);
                 set_region_msg.set_region_type(region.region_info().region_type());
                 *set_region_msg.mutable_control_points() = {
                     region.region_info().control_points().begin(), region.region_info().control_points().end()};
