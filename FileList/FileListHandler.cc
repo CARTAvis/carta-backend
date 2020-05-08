@@ -43,7 +43,7 @@ void FileListHandler::OnFileListRequest(
     GetRelativePath(folder);
 
     // get file list response and result message if any
-    GetFileList(response, folder, result_msg);
+    FillFileList(response, folder, result_msg);
 
     _filelist_folder = "nofolder"; // ready for next file list request
 }
@@ -62,7 +62,7 @@ void FileListHandler::GetRelativePath(std::string& folder) {
     }
 }
 
-void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string folder, ResultMsg& result_msg, bool region_list) {
+void FileListHandler::FillFileList(CARTA::FileListResponse& file_list, string folder, ResultMsg& result_msg, bool region_list) {
     // fill FileListResponse
     std::string requested_folder = ((folder.compare(".") == 0) ? _root_folder : folder);
     casacore::Path requested_path(_root_folder);
@@ -126,7 +126,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                                 CARTA::FileType file_type(GetRegionType(full_path));
                                 if (file_type != CARTA::FileType::UNKNOWN) {
                                     auto file_info = file_list.add_files();
-                                    FillRegionFileInfo(file_info, full_path, file_type);
+                                    AddRegionFileInfo(file_info, full_path, file_type);
                                     is_region = true;
                                 }
                             }
@@ -162,7 +162,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                         if (add_image) { // add image to file list
                             auto file_info = file_list.add_files();
                             file_info->set_name(name);
-                            FillFileInfo(file_info, full_path);
+                            AddFileInfo(file_info, full_path);
                         }
                     }
                 } catch (casacore::AipsError& err) { // RegularFileIO error
@@ -263,10 +263,10 @@ std::string FileListHandler::GetCasacoreTypeString(casacore::ImageOpener::ImageT
     return type_str;
 }
 
-bool FileListHandler::FillFileInfo(CARTA::FileInfo* file_info, const string& filename) {
+bool FileListHandler::AddFileInfo(CARTA::FileInfo* file_info, const string& filename) {
     // fill FileInfo submessage
     FileInfoLoader info_loader = FileInfoLoader(filename);
-    return info_loader.FillFileInfo(file_info);
+    return info_loader.AddFileInfo(file_info);
 }
 
 void FileListHandler::OnRegionListRequest(
@@ -297,7 +297,7 @@ void FileListHandler::OnRegionListRequest(
 
     // get file list response and result message if any
     CARTA::FileListResponse file_response;
-    GetFileList(file_response, folder, result_msg, true);
+    FillFileList(file_response, folder, result_msg, true);
     // copy to region list message
     region_response.set_success(file_response.success());
     region_response.set_message(file_response.message());
@@ -330,7 +330,7 @@ CARTA::FileType FileListHandler::GetRegionType(const std::string& filename) {
     return file_type;
 }
 
-bool FileListHandler::FillRegionFileInfo(CARTA::FileInfo* file_info, const string& filename, CARTA::FileType type) {
+bool FileListHandler::AddRegionFileInfo(CARTA::FileInfo* file_info, const string& filename, CARTA::FileType type) {
     // For region list and info response: name, type, size
     casacore::File cc_file(filename);
     if (!cc_file.exists()) {
@@ -382,7 +382,7 @@ void FileListHandler::OnRegionFileInfoRequest(
     } else {
         casacore::String full_name(cc_file.path().resolvedName());
         auto file_info = response.mutable_file_info();
-        FillRegionFileInfo(file_info, full_name);
+        AddRegionFileInfo(file_info, full_name);
         std::vector<std::string> file_contents;
         if (file_info->type() == CARTA::FileType::UNKNOWN) {
             message = "File " + filename + " is not a region file.";

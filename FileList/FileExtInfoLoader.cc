@@ -21,7 +21,7 @@ using namespace carta;
 
 FileExtInfoLoader::FileExtInfoLoader(carta::FileLoader* loader) : _loader(loader) {}
 
-bool FileExtInfoLoader::FillFileExtInfo(
+bool FileExtInfoLoader::AddFileExtInfo(
     CARTA::FileInfoExtended* extended_info, const std::string& filename, const std::string& hdu, std::string& message) {
     // set name from filename
     auto entry = extended_info->add_computed_entries();
@@ -32,12 +32,12 @@ bool FileExtInfoLoader::FillFileExtInfo(
     // fill header_entries, computed_entries
     bool file_ok(false);
     if (_loader->CanOpenFile(message)) {
-        file_ok = FillFileInfoFromImage(extended_info, hdu, message);
+        file_ok = AddFileInfoFromImage(extended_info, hdu, message);
     }
     return file_ok;
 }
 
-bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_info, const std::string& hdu, std::string& message) {
+bool FileExtInfoLoader::AddFileInfoFromImage(CARTA::FileInfoExtended* extended_info, const std::string& hdu, std::string& message) {
     // add header_entries in FITS format (issue #13) using ImageInterface from FileLoader
     bool file_ok(false);
     if (_loader) {

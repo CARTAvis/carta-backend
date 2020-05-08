@@ -186,7 +186,6 @@ public:
 
 private:
     // File info
-    void ResetFileInfo(bool create = false); // delete existing file info ptrs, optionally create new ones
     bool FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const std::string& folder,
         const std::string& filename, std::string hdu, std::string& message);
 
@@ -219,9 +218,7 @@ private:
     // File browser
     FileListHandler* _file_list_handler;
 
-    // Latest file info for browser, used for open file
-    std::unique_ptr<CARTA::FileInfo> _file_info;
-    std::unique_ptr<CARTA::FileInfoExtended> _file_info_extended;
+    // Loader for reading image from disk
     std::unique_ptr<carta::FileLoader> _loader;
 
     // Frame; key is file_id; shared with RegionHandler for data streamss

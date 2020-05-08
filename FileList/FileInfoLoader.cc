@@ -14,7 +14,7 @@ FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename
     _type = GetCartaFileType(filename);
 }
 
-bool FileInfoLoader::FillFileInfo(CARTA::FileInfo* file_info) {
+bool FileInfoLoader::AddFileInfo(CARTA::FileInfo* file_info) {
     // Fill FileInfo submessage with type, size, hdus
     casacore::File cc_file(_filename);
     if (!cc_file.exists()) {
@@ -39,22 +39,22 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo* file_info) {
     // add hdu for FITS, HDF5
     if (_type == CARTA::FileType::FITS) {
         casacore::String abs_file_name(cc_file.path().absoluteName());
-        return GetFitsHduList(file_info, abs_file_name);
+        return AddFitsHduList(file_info, abs_file_name);
     } else if (_type == CARTA::FileType::HDF5) {
         casacore::String abs_file_name(cc_file.path().absoluteName());
-        return GetHdf5HduList(file_info, abs_file_name);
+        return AddHdf5HduList(file_info, abs_file_name);
     } else {
         file_info->add_hdu_list("");
         return true;
     }
 }
 
-bool FileInfoLoader::GetFitsHduList(CARTA::FileInfo* file_info, const std::string& filename) {
+bool FileInfoLoader::AddFitsHduList(CARTA::FileInfo* file_info, const std::string& filename) {
     FitsHduList fits_hdu_list = FitsHduList(filename);
-    return fits_hdu_list.GetHduList(file_info);
+    return fits_hdu_list.AddHduList(file_info);
 }
 
-bool FileInfoLoader::GetHdf5HduList(CARTA::FileInfo* file_info, const std::string& filename) {
+bool FileInfoLoader::AddHdf5HduList(CARTA::FileInfo* file_info, const std::string& filename) {
     // fill FileInfo hdu list for Hdf5
     casacore::HDF5File hdf_file(filename);
     std::vector<casacore::String> hdus(casacore::HDF5Group::linkNames(hdf_file));
