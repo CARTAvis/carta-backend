@@ -15,7 +15,7 @@ RUN \
 
 RUN \
   wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add - && \
-  apt-add-repository 'deb https://apt.kitware.com/ubuntu/ `lsb_release -cs` main' && \
+  apt-add-repository "deb https://apt.kitware.com/ubuntu/ `lsb_release -cs` main" && \
   apt-get update && \
   apt-get install cmake
 
