@@ -4,11 +4,11 @@ FROM ubuntu:latest
 RUN \
   apt-get update && \
   apt-get -y upgrade && \
-  apt-get install -y bison build-essential byobu curl default-jre emacs \
+  apt-get install -y autoconf bison build-essential byobu curl default-jre emacs \
     fftw3-dev flex gdb gcc gfortran git git-lfs htop libblas-dev \
     libcfitsio-dev libfmt-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
-    libprotobuf-dev libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libzstd-dev \
-    libgsl-dev man protobuf-compiler python-pip python3-pip software-properties-common \
+    libprotobuf-dev libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libzstd-dev \
+    libgsl-dev man pkg-config protobuf-compiler python-pip python3-pip software-properties-common \
     unzip vim wcslib-dev wget
     
 # Install latest cmake (>= 3.13 required to build gRPC correctly)
