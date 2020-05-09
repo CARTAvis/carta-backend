@@ -88,6 +88,8 @@ RUN \
 # Forward port so that the webapp can properly access it
 # from outside of the container
 EXPOSE 3002
+# Do the same with the gRPC service port
+EXPOSE 50051
 
 ENV HOME /root
 # Required for running the backend
