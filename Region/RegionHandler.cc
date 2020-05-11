@@ -840,7 +840,11 @@ bool RegionHandler::GetRegionHistogramData(
 
 bool RegionHandler::FillSpectralProfileData(
     std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed) {
-    // Fill spectral profiles for given region and file
+    // Fill spectral profiles for given region and file ids.  This could be:
+	// 1. a specific region and a specific file
+	// 2. a specific region and ALL_FILES
+	// 3. a specific file and ALL_REGIONS
+
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
     }
@@ -851,121 +855,67 @@ bool RegionHandler::FillSpectralProfileData(
     ulock.unlock();
 
     bool profile_ok(false);
-    if (region_id > 0) {
-        // Fill spectral profile for specific region with file_id requirement (specific file_id or all files = -1)
-        for (auto& region_config : region_configs) {
-            if ((region_config.first.region_id == region_id) && ((region_config.first.file_id == file_id) || (file_id == ALL_FILES))) {
-                if (region_config.second.configs.empty()) {
-                    // no requirements for this region/file combo
-                    continue;
-                }
-
-                int config_file_id(region_config.first.file_id);
-                if (!RegionFileIdsValid(region_id, config_file_id)) { // check specific ids
-                    continue;
-                }
-
-                for (auto& spectral_config : region_config.second.configs) {
-                    // Determine which profiles to send
-                    std::string coordinate(spectral_config.coordinate);
-                    std::vector<CARTA::StatsType> required_stats;
-                    if (stokes_changed) {
-                        if (coordinate != "z") {
-                            // Do not update when stokes changes for fixed stokes
-                            continue;
-                        }
-                        // Update all profiles for current stokes
-                        required_stats = spectral_config.all_stats;
-                    } else {
-                        // Update only new profiles
-                        required_stats = spectral_config.new_stats;
-                    }
-
-                    if (required_stats.empty()) {
-                        // no requirements for this config or no new stats to send
-                        profile_ok = true;
-                        continue;
-                    }
-
-                    // Get index into stokes axis for data message
-                    int axis_index, stokes_index;
-                    ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
-                    if (stokes_index < 0) {
-                        stokes_index = _frames.at(config_file_id)->CurrentStokes();
-                    }
-
-                    // Return spectral profile for this requirement
-                    profile_ok = GetRegionSpectralData(region_id, config_file_id, coordinate, stokes_index, required_stats,
-                        [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
-                            CARTA::SpectralProfileData profile_message;
-                            profile_message.set_file_id(config_file_id);
-                            profile_message.set_region_id(region_id);
-                            profile_message.set_stokes(stokes_index);
-                            profile_message.set_progress(progress);
-                            FillSpectralProfileDataMessage(profile_message, coordinate, required_stats, results);
-                            cb(profile_message); // send (partial profile) data
-                        });
-                }
-            }
+    // Fill spectral profile for region with file requirement
+    for (auto& region_config : region_configs) {
+        if (region_config.second.configs.empty()) {
+            // no spectral requirements for this region/file combo
+            continue;
         }
-    } else {
-        // (region_id < 0) Fill spectral profile for all regions with specific file_id requirement
-        for (auto& region_config : region_configs) {
-            if (region_config.first.file_id == file_id) {
-                if (region_config.second.configs.empty()) {
-                    // no requirements for this region/file combo
-                    continue;
-                }
-                int config_region_id(region_config.first.region_id);
-                if (!RegionFileIdsValid(config_region_id, file_id)) { // check specific ids
-                    continue;
-                }
 
-                for (auto& spectral_config : region_config.second.configs) {
-                    // Do not update for specific stokes when stokes changes
-                    std::string coordinate(spectral_config.coordinate);
-                    std::vector<CARTA::StatsType> required_stats;
+        int config_region_id(region_config.first.region_id);
+        int config_file_id(region_config.first.file_id);
 
-                    if (stokes_changed) {
-                        if (coordinate != "z") {
-                            // Do not update fixed stokes
-                            continue;
-                        }
-                        // Update all stats for new stokes
-                        required_stats = spectral_config.all_stats;
-                    } else {
-                        // Update new stats only
-                        required_stats = spectral_config.new_stats;
-                    }
+        if (((config_region_id == region_id) && ((config_file_id == file_id) || (file_id == ALL_FILES))) ||
+            ((config_file_id == file_id) && (region_id == ALL_REGIONS))) {
+            // Found matching requirement
 
-                    if (required_stats.empty()) {
-                        // no requirements for this config or no new stats to send
-                        profile_ok = true;
+            if (!RegionFileIdsValid(config_region_id, config_file_id)) { // check specific ids
+                continue;
+            }
+
+            for (auto& spectral_config : region_config.second.configs) {
+                // Determine which profiles to send
+                std::string coordinate(spectral_config.coordinate);
+                std::vector<CARTA::StatsType> required_stats;
+                if (stokes_changed) {
+                    if (coordinate != "z") { // Do not update when stokes changes for fixed stokes
                         continue;
                     }
-
-                    // Get index into stokes axis for data message
-                    int axis_index, stokes_index;
-                    ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
-                    if (stokes_index < 0) {
-                        stokes_index = _frames.at(file_id)->CurrentStokes();
-                    }
-
-                    // Return profile(s) for this requirement; each stats type is its own spectral data message
-                    profile_ok = GetRegionSpectralData(config_region_id, file_id, coordinate, stokes_index, required_stats,
-                        [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
-                            CARTA::SpectralProfileData profile_message;
-                            profile_message.set_file_id(file_id);
-                            profile_message.set_region_id(config_region_id);
-                            profile_message.set_stokes(stokes_index);
-                            profile_message.set_progress(progress);
-                            FillSpectralProfileDataMessage(profile_message, coordinate, required_stats, results);
-                            cb(profile_message); // send (partial profile) data
-                        });
+                    // Update all profiles for current stokes
+                    required_stats = spectral_config.all_stats;
+                } else {
+                    // Update only new profiles
+                    required_stats = spectral_config.new_stats;
                 }
+
+                if (required_stats.empty()) {
+                    // no requirements for this config or no new stats to send
+                    profile_ok = true;
+                    continue;
+                }
+
+                // Get index into stokes axis for data message
+                int axis_index, stokes_index;
+                ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
+                if (stokes_index < 0) {
+                    stokes_index = _frames.at(config_file_id)->CurrentStokes();
+                }
+
+                // Return spectral profile for this requirement
+                profile_ok = GetRegionSpectralData(config_region_id, config_file_id, coordinate, stokes_index, required_stats,
+                    [&](std::map<CARTA::StatsType, std::vector<double>> results, float progress) {
+                        CARTA::SpectralProfileData profile_message;
+                        profile_message.set_file_id(config_file_id);
+                        profile_message.set_region_id(config_region_id);
+                        profile_message.set_stokes(stokes_index);
+                        profile_message.set_progress(progress);
+                        FillSpectralProfileDataMessage(profile_message, coordinate, required_stats, results);
+                        cb(profile_message); // send (partial profile) data
+                    });
             }
         }
     }
+
     return profile_ok;
 }
 
