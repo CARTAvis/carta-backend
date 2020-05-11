@@ -200,8 +200,8 @@ bool Hdf5Loader::UseRegionSpectralData(const IPos& region_shape, std::mutex& ima
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask,
-    const IPos& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask, const IPos& origin,
+    std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Return calculated stats if valid and complete,
     // or return accumulated stats for the next incomplete "x" slice of swizzled data (chan vs y).
     // Calling function should check for complete progress when x-range of region is complete
@@ -324,24 +324,19 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
                 }
                 // skip all Z values for masked pixels
                 if (!mask(mask_pos)) {
+                    nan_count[z] += 1;
                     continue;
                 }
 
                 double v = slice_data[y * num_z + z];
+                num_pixels[z] += 1;
+                sum[z] += v;
+                sum_sq[z] += v * v;
 
-                if (std::isfinite(v)) {
-                    num_pixels[z] += 1;
-
-                    sum[z] += v;
-                    sum_sq[z] += v * v;
-
-                    if (v < min[z]) {
-                        min[z] = v;
-                    } else if (v > max[z]) {
-                        max[z] = v;
-                    }
-                } else {
-                    nan_count[z] += 1;
+                if (v < min[z]) {
+                    min[z] = v;
+                } else if (v > max[z]) {
+                    max[z] = v;
                 }
             }
         }

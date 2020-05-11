@@ -841,9 +841,9 @@ bool RegionHandler::GetRegionHistogramData(
 bool RegionHandler::FillSpectralProfileData(
     std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed) {
     // Fill spectral profiles for given region and file ids.  This could be:
-	// 1. a specific region and a specific file
-	// 2. a specific region and ALL_FILES
-	// 3. a specific file and ALL_REGIONS
+    // 1. a specific region and a specific file
+    // 2. a specific region and ALL_FILES
+    // 3. a specific file and ALL_REGIONS
 
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
