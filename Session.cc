@@ -152,10 +152,9 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
                 if (!info_loader.FillFileInfo(file_info)) {
                     return false;
                 }
-                if (hdu.empty()) { // use first when required
-                    hdu = file_info.hdu_list(0);
-                }
+
                 _loader.reset(carta::FileLoader::GetLoader(full_name));
+
                 FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
                 ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, hdu, message);
             } catch (casacore::AipsError& ex) {
@@ -239,9 +238,9 @@ void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t 
     auto& file_info_extended = *response.mutable_file_info_extended();
     string message;
 
-    casacore::String hdu_name(request.hdu());
-    casacore::String hdu_num(hdu_name.before(" ")); // strip FITS extension name
-    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu_num, message);
+    casacore::String hdu(request.hdu());
+    hdu = hdu.before(" "); // strip FITS extension name
+    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu, message);
 
     // complete response message
     response.set_success(success);
@@ -273,8 +272,9 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     // Create Frame and send response message
     const auto& directory(message.directory());
     const auto& filename(message.file());
-    auto hdu(message.hdu());
     auto file_id(message.file_id());
+    casacore::String hdu(message.hdu());
+    hdu = hdu.before(" "); // strip FITS extension name
 
     // response message:
     CARTA::OpenFileAck ack;
@@ -292,12 +292,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
         // Set hdu if empty
         if (hdu.empty()) { // use first
             hdu = file_info.hdu_list(0);
-        } else {
-            size_t description_start = hdu.find(" "); // strip ExtName
-            if (description_start != std::string::npos) {
-                hdu = hdu.substr(0, description_start);
-            }
         }
+
         // create Frame for image
         auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _verbose_logging));
         _loader.release();
