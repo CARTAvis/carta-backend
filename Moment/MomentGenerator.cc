@@ -349,6 +349,9 @@ void MomentGenerator::RemoveRootFolder(std::string& directory) {
     if (!_root_folder.empty() && directory.find(_root_folder) == 0) {
         directory.replace(0, _root_folder.size(), "");
     }
+    if (directory.empty()) {
+        directory = ".";
+    }
 }
 
 bool MomentGenerator::IsSuccess() const {
