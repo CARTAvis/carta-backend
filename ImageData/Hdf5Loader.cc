@@ -179,7 +179,7 @@ bool Hdf5Loader::GetCursorSpectralData(
     return data_ok;
 }
 
-bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
+bool Hdf5Loader::UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex) {
     std::unique_lock<std::mutex> ulock(image_mutex);
     bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
     ulock.unlock();
@@ -201,7 +201,7 @@ bool Hdf5Loader::UseRegionSpectralData(const casacore::IPosition& region_shape, 
 }
 
 bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask,
-    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    const IPos& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Return calculated stats if valid and complete,
     // or return accumulated stats for the next incomplete "x" slice of swizzled data (chan vs y).
     // Calling function should check for complete progress when x-range of region is complete
@@ -215,7 +215,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
     // Check if region stats calculated
     auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
-    casacore::IPosition mask_shape(mask.shape());
+    IPos mask_shape(mask.shape());
     if (_region_stats.count(region_stats_id) && _region_stats[region_stats_id].IsValid(origin, mask_shape) &&
         _region_stats[region_stats_id].IsCompleted()) {
         results = _region_stats[region_stats_id].stats;
@@ -315,7 +315,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
         for (size_t y = 0; y < num_y; y++) {
             for (size_t z = 0; z < num_z; z++) {
-                casacore::IPosition mask_pos(mask_shape.size());
+                IPos mask_pos(mask_shape.size());
                 mask_pos(0) = x;
                 mask_pos(1) = y;
                 mask_pos(_spectral_axis) = z;
