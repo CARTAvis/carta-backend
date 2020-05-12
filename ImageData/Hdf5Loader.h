@@ -25,7 +25,7 @@ public:
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
     bool UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex) override;
-    bool GetRegionSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask, const IPos& origin,
+    bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const IPos& origin,
         std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) override;
 
 private:
