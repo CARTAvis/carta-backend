@@ -6,13 +6,12 @@
 
 using namespace carta;
 
-RegionImportExport::RegionImportExport(
-    const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id)
+RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id)
     : _coord_sys(image_coord_sys), _image_shape(image_shape), _file_id(file_id) {
     // Constructor for import. Use GetImportedRegions to retrieve regions.
 }
 
-RegionImportExport::RegionImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape)
+RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape)
     : _coord_sys(image_coord_sys), _image_shape(image_shape) {
     // Constructor for export. Use AddExportRegion to add regions, then ExportRegions to finalize
 }
@@ -92,10 +91,10 @@ bool RegionImportExport::ConvertRecordToPoint(
 
     try {
         // Convert pixel to world
-        casacore::Vector<casacore::Double> world_coords = _coord_sys.toWorld(pixel_coords);
+        casacore::Vector<casacore::Double> world_coords = _coord_sys->toWorld(pixel_coords);
 
         // Add Quantities to control_points
-        casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
+        casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
         control_points.push_back(casacore::Quantity(world_coords(0), world_units(0)));
         control_points.push_back(casacore::Quantity(world_coords(1), world_units(1)));
         return true;
@@ -156,7 +155,7 @@ bool RegionImportExport::ConvertRecordToRectangle(
     pixel_coords.row(1) = y_pixel;
     casacore::Vector<casacore::Bool> failures;
     try {
-        if (_coord_sys.toWorldMany(world_coords, pixel_coords, failures)) {
+        if (_coord_sys->toWorldMany(world_coords, pixel_coords, failures)) {
             // Make x and y world coord Vectors
             casacore::Vector<casacore::Double> x_world = world_coords.row(0);
             casacore::Vector<casacore::Double> y_world = world_coords.row(1);
@@ -173,7 +172,7 @@ bool RegionImportExport::ConvertRecordToRectangle(
             casacore::Double height = fabs(trc_y - blc_y);
 
             // Convert to Quantities and add to control_points
-            casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
+            casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
             control_points.push_back(casacore::Quantity(cx, world_units(0)));
             control_points.push_back(casacore::Quantity(cy, world_units(1)));
             control_points.push_back(casacore::Quantity(width, world_units(0)));
@@ -232,14 +231,14 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
 
     try {
         // Convert center pixel to world and add to control points
-        casacore::Vector<casacore::Double> world_coords = _coord_sys.toWorld(pixel_coords);
-        casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
+        casacore::Vector<casacore::Double> world_coords = _coord_sys->toWorld(pixel_coords);
+        casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
         control_points.push_back(casacore::Quantity(world_coords(0), world_units(0)));
         control_points.push_back(casacore::Quantity(world_coords(1), world_units(1)));
 
         // Convert (lattice region) axes pixel to world and add to control points
-        casacore::Quantity bmaj = _coord_sys.toWorldLength(radii(0), 0);
-        casacore::Quantity bmin = _coord_sys.toWorldLength(radii(1), 1);
+        casacore::Quantity bmaj = _coord_sys->toWorldLength(radii(0), 0);
+        casacore::Quantity bmin = _coord_sys->toWorldLength(radii(1), 1);
         // Restore original axes order; oddly, rotation angle was not changed
         if (reversed) {
             control_points.push_back(bmin);
@@ -301,13 +300,13 @@ bool RegionImportExport::ConvertRecordToPolygon(
     casacore::Vector<casacore::Bool> failures;
 
     try {
-        if (_coord_sys.toWorldMany(world_coords, pixel_coords, failures)) {
+        if (_coord_sys->toWorldMany(world_coords, pixel_coords, failures)) {
             // Make x and y world coord Vectors
             casacore::Vector<casacore::Double> x_world = world_coords.row(0);
             casacore::Vector<casacore::Double> y_world = world_coords.row(1);
 
             // Convert x and y Vectors to Quantities and add to control_points
-            casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
+            casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
             for (auto i = 0; i < npoints; ++i) {
                 control_points.push_back(casacore::Quantity(x_world(i), world_units(0)));
                 control_points.push_back(casacore::Quantity(y_world(i), world_units(1)));

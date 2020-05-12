@@ -26,6 +26,7 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "InterfaceConstants.h"
+#include "Region/Region.h"
 #include "RequirementsCache.h"
 
 struct ContourSettings {
@@ -70,8 +71,10 @@ public:
     bool IsValid();
     std::string GetErrorMessage();
 
-    // Frame info
-    casacore::CoordinateSystem CoordinateSystem();
+    // Returns pointer to CoordinateSystem clone; caller must delete
+    casacore::CoordinateSystem* CoordinateSystem();
+
+    // Image/Frame info
     casacore::IPosition ImageShape();
     size_t NumChannels(); // if no channel axis, nchan=1
     size_t NumStokes();   // if no stokes axis, nstokes=1
@@ -135,6 +138,7 @@ public:
     bool IsConnected();
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
+    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns mask array
     bool GetRegionMask(const casacore::LattRegionHolder& region, casacore::Array<casacore::Bool>& mask);
@@ -147,9 +151,9 @@ public:
     bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     // Whether to use loader for spectral profiles
-    bool UseLoaderSpectralData(const casacore::LattRegionHolder& region);
-    bool GetLoaderSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask, const casacore::IPosition origin,
-        std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+    bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
+    bool GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+        const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
 private:
     // Validate channel, stokes index values

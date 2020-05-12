@@ -502,7 +502,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     bool success(false);
 
     if (_frames.count(file_id)) { // reference Frame for Region exists
-        casacore::CoordinateSystem csys = _frames.at(file_id)->CoordinateSystem();
+        casacore::CoordinateSystem* csys = _frames.at(file_id)->CoordinateSystem();
 
         if (!_region_handler) { // created on demand only
             _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_verbose_logging));

@@ -35,7 +35,7 @@ int RegionHandler::GetNextRegionId() {
 }
 
 bool RegionHandler::SetRegion(int& region_id, int file_id, const std::string& name, CARTA::RegionType type,
-    const std::vector<CARTA::Point>& points, float rotation, const casacore::CoordinateSystem& csys) {
+    const std::vector<CARTA::Point>& points, float rotation, casacore::CoordinateSystem* csys) {
     // Set region params for region id; if id < 0, create new id
     bool valid_region(false);
     if (_regions.count(region_id)) {
@@ -94,7 +94,8 @@ bool RegionHandler::RegionSet(int region_id) {
 void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
     const std::string& region_file, bool file_is_filename, CARTA::ImportRegionAck& import_ack) {
     // Set regions from region file
-    const casacore::CoordinateSystem csys = frame->CoordinateSystem();
+    // Importer must delete csys
+    casacore::CoordinateSystem* csys = frame->CoordinateSystem();
     const casacore::IPosition shape = frame->ImageShape();
     std::unique_ptr<RegionImportExport> importer;
     switch (region_file_type) {
@@ -108,46 +109,48 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             break;
     }
 
-    std::string error;
-    if (importer) {
-        // Get region states from parser or error message
-        std::vector<RegionState> region_states = importer->GetImportedRegions(error);
-        if (region_states.empty()) {
-            import_ack.set_success(false);
-            import_ack.set_message(error);
-            import_ack.add_regions();
-            return;
-        }
-
-        // Set reference file pointer
-        _frames[file_id] = frame;
-
-        // Set Regions and complete message
-        import_ack.set_success(true);
-        import_ack.set_message(error);
-        int region_id = GetNextRegionId();
-        for (auto& region_state : region_states) {
-            auto region = std::shared_ptr<Region>(new Region(region_state, csys));
-            if (region && region->IsValid()) {
-                _regions[region_id] = std::move(region);
-
-                // Set Ack RegionProperties and its RegionInfo
-                auto region_properties = import_ack.add_regions();
-                region_properties->set_region_id(region_id);
-                auto region_info = region_properties->mutable_region_info();
-                region_info->set_region_name(region_state.name);
-                region_info->set_region_type(region_state.type);
-                *region_info->mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
-                region_info->set_rotation(region_state.rotation);
-
-                // increment region id for next region
-                region_id++;
-            }
-        }
-    } else {
+    if (!importer) {
         import_ack.set_success(false);
         import_ack.set_message("Region importer failed.");
         import_ack.add_regions();
+        return;
+    }
+
+    // Get region states from parser or error message
+    std::string error;
+    std::vector<RegionState> region_states = importer->GetImportedRegions(error);
+    if (region_states.empty()) {
+        import_ack.set_success(false);
+        import_ack.set_message(error);
+        import_ack.add_regions();
+        return;
+    }
+
+    // Set reference file pointer
+    _frames[file_id] = frame;
+
+    // Set Regions from RegionStates and complete message
+    import_ack.set_success(true);
+    import_ack.set_message(error);
+    int region_id = GetNextRegionId();
+    for (auto& region_state : region_states) {
+        auto region_csys = frame->CoordinateSystem();
+        auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
+        if (region && region->IsValid()) {
+            _regions[region_id] = std::move(region);
+
+            // Set Ack RegionProperties and its RegionInfo
+            auto region_properties = import_ack.add_regions();
+            region_properties->set_region_id(region_id);
+            auto region_info = region_properties->mutable_region_info();
+            region_info->set_region_name(region_state.name);
+            region_info->set_region_type(region_state.type);
+            *region_info->mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
+            region_info->set_rotation(region_state.rotation);
+
+            // increment region id for next region
+            region_id++;
+        }
     }
 }
 
@@ -174,7 +177,8 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 
     bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
-    const casacore::CoordinateSystem output_csys = frame->CoordinateSystem();
+    // Exporter must delete csys pointer
+    casacore::CoordinateSystem* output_csys = frame->CoordinateSystem();
     const casacore::IPosition output_shape = frame->ImageShape();
     std::string error;
 
@@ -202,7 +206,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             } else {
                 try {
                     // Get converted lattice region parameters (pixel) as a Record
-                    casacore::TableRecord region_record = _regions.at(region_id)->GetImageRegionRecord(file_id, output_csys, output_shape);
+                    casacore::TableRecord region_record = _regions.at(region_id)->GetImageRegionRecord(file_id, *output_csys, output_shape);
                     if (!region_record.empty()) {
                         region_added = exporter->AddExportRegion(region_state, region_record, pixel_coord);
                     }
@@ -628,24 +632,28 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     return true;
 }
 
+casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id) {
+    // Returns 2D region with no extension; nullptr if outside image
+    // Go through Frame for image mutex
+    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id));
+}
+
 bool RegionHandler::ApplyRegionToFile(
     int region_id, int file_id, const ChannelRange& chan_range, int stokes, casacore::ImageRegion& region) {
-    // Returns image region for given region (region_id) applied to given image (file_id)
+    // Returns 3D or 4D image region for region applied to image and extended by channel range and stokes
     if (!RegionSet(region_id) || !FrameSet(file_id)) {
         return false;
     }
 
     try {
-        casacore::CoordinateSystem coord_sys(_frames.at(file_id)->CoordinateSystem());
-        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
-        casacore::LCRegion* applied_region = _regions.at(region_id)->GetImageRegion(file_id, coord_sys, image_shape);
+        casacore::LCRegion* applied_region = ApplyRegionToFile(region_id, file_id);
         if (applied_region == nullptr) {
             return false;
         }
 
         // Create LCRegion with chan range and stokes using a slicer
         casacore::Slicer chan_stokes_slicer = _frames.at(file_id)->GetImageSlicer(chan_range, stokes);
-        casacore::LCBox chan_stokes_box(chan_stokes_slicer, image_shape);
+        casacore::LCBox chan_stokes_box(chan_stokes_slicer, _frames.at(file_id)->ImageShape());
 
         // Intersection combines applied_region limits in xy axes and chan_stokes_box limits in channel and stokes axes
         casacore::LCIntersection final_region(*applied_region, chan_stokes_box);
@@ -966,13 +974,9 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         return true;
     }
 
-    // Get initial region state to cancel profile if it changes
-    RegionState initial_state = _regions.at(region_id)->GetRegionState();
-
-    // Get region with all channels and stokes_index
-    ChannelRange chan_range(ALL_CHANNELS);
-    casacore::ImageRegion region;
-    if (!ApplyRegionToFile(region_id, file_id, chan_range, stokes_index, region)) {
+    // Get region to check if inside image
+    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
+    if (!lcregion) {
         progress = PROFILE_COMPLETE;
         partial_results_callback(results, progress); // region outside image, send NaNs
         _frames.at(file_id)->DecreaseZProfileCount();
@@ -980,17 +984,18 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         return true;
     }
 
-    // Use loader swizzled data for efficiency
-    if (_frames.at(file_id)->UseLoaderSpectralData(region)) {
-        // Get origin
-        casacore::CoordinateSystem csys = _frames.at(file_id)->CoordinateSystem();
-        casacore::IPosition shape = _frames.at(file_id)->ImageShape();
-        casacore::LatticeRegion lattice_region = region.toLatticeRegion(csys, shape);
-        casacore::IPosition origin(lattice_region.slicer().start());
+    // Get initial region state to cancel profile if it changes
+    RegionState initial_state = _regions.at(region_id)->GetRegionState();
 
-        // Get mask
-        casacore::Array<casacore::Bool> mask;
-        if (_frames.at(file_id)->GetRegionMask(region, mask)) {
+    // Use loader swizzled data for efficiency
+    if (_frames.at(file_id)->UseLoaderSpectralData(lcregion->shape())) {
+        // Get 2D origin and 2D mask for Hdf5Loader
+        casacore::IPosition origin = lcregion->expand(casacore::IPosition(2, 0, 0));
+        casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1)); // keep first two axes only
+
+        // Get mask; LCRegion for file id is cached
+        casacore::ArrayLattice<casacore::Bool> mask = _regions[region_id]->GetImageRegionMask(file_id);
+        if (!mask.shape().empty()) {
             // Get partial profiles until complete (do once if cached)
             while (progress < PROFILE_COMPLETE) {
                 // Cancel if region or frame is closing
@@ -1019,7 +1024,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
 
                 // Get partial profile
                 std::map<CARTA::StatsType, std::vector<double>> partial_profiles;
-                if (_frames.at(file_id)->GetLoaderSpectralData(region_id, stokes_index, mask, origin, partial_profiles, progress)) {
+                if (_frames.at(file_id)->GetLoaderSpectralData(region_id, stokes_index, mask, xy_origin, partial_profiles, progress)) {
                     // Copy partial profile to results
                     for (const auto& profile : partial_profiles) {
                         auto stats_type = profile.first;

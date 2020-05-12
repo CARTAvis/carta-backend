@@ -18,9 +18,9 @@ public:
     ~RegionImportExport() {}
 
     // Import constructor: file_id to add to RegionState
-    RegionImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id);
+    RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id);
     // Export constructor
-    RegionImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape);
+    RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape);
 
     // Retrieve imported regions as RegionState vector
     std::vector<RegionState> GetImportedRegions(std::string& error);
@@ -39,7 +39,7 @@ protected:
         const casacore::Quantity& rotation) = 0;
 
     // Image info to which region is applied
-    casacore::CoordinateSystem _coord_sys;
+    casacore::CoordinateSystem* _coord_sys;
     casacore::IPosition _image_shape;
 
     // For import

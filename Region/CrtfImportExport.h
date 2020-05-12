@@ -21,14 +21,16 @@ public:
     // Import constructor
     // Use casa::RegionTextList to parse file and create casa::Annotation AnnRegions
     // which are converted to RegionState (pixel coords) to set Region
-    CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+    CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
         const std::string& file, bool file_is_filename);
 
     // Export constructor
     // Set up casa::RegionTextList; when regions are added, a casa::Annotation
     // AnnRegion is created and added to the list, which is then "print"-ed to
     // a file or vector of strings
-    CrtfImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape);
+    CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape);
+
+    ~CrtfImportExport();
 
     // Export regions
     // Create AnnRegion and add to RegionTextList

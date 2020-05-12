@@ -30,12 +30,14 @@ public:
 
     // Import constructor
     // Parse input file and convert region parameters to RegionState for given image
-    Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+    Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
         const std::string& file, bool file_is_filename);
 
     // Export constructor
     // Each export region will be converted to a string in DS9 format and added to string vector
-    Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord);
+    Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord);
+
+    ~Ds9ImportExport();
 
     // Export regions
     // Convert to DS9 string and add to vector

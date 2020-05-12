@@ -23,7 +23,7 @@ public:
 
     // Regions
     bool SetRegion(int& region_id, int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points,
-        float rotation, const casacore::CoordinateSystem& csys);
+        float rotation, casacore::CoordinateSystem* csys);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
 
@@ -73,6 +73,7 @@ private:
 
     // Fill data stream messages
     bool RegionFileIdsValid(int region_id, int file_id);
+    casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
     bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
     bool GetRegionHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);

@@ -10,27 +10,45 @@
 #include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/WCEllipsoid.h>
 #include <casacore/images/Regions/WCPolygon.h>
+#include <casacore/lattices/LRegions/LCBox.h>
+#include <casacore/lattices/LRegions/LCEllipsoid.h>
+#include <casacore/lattices/LRegions/LCExtension.h>
+#include <casacore/lattices/LRegions/LCPolygon.h>
 #include <casacore/measures/Measures/MCDirection.h>
 
 using namespace carta;
 
 Region::Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-    const casacore::CoordinateSystem& csys)
-    : _valid(false), _region_state_changed(false), _region_changed(false), _ref_region_set(false), _z_profile_count(0) {
+    casacore::CoordinateSystem* csys)
+    : _coord_sys(nullptr),
+      _valid(false),
+      _region_state_changed(false),
+      _region_changed(false),
+      _ref_region_set(false),
+      _z_profile_count(0) {
     // validate and set region parameters
     _valid = UpdateState(file_id, name, type, points, rotation, csys);
 }
 
-Region::Region(const RegionState& state, const casacore::CoordinateSystem& csys)
-    : _valid(false), _region_state_changed(false), _region_changed(false), _ref_region_set(false), _z_profile_count(0) {
+Region::Region(const RegionState& state, casacore::CoordinateSystem* csys)
+    : _coord_sys(nullptr),
+      _valid(false),
+      _region_state_changed(false),
+      _region_changed(false),
+      _ref_region_set(false),
+      _z_profile_count(0) {
     _valid = UpdateState(state, csys);
+}
+
+Region::~Region() {
+    delete _coord_sys;
 }
 
 // *************************************************************************
 // Region settings
 
 bool Region::UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points,
-    float rotation, const casacore::CoordinateSystem& csys) {
+    float rotation, casacore::CoordinateSystem* csys) {
     // Set region state and update
     RegionState new_state;
     new_state.reference_file_id = file_id;
@@ -41,7 +59,7 @@ bool Region::UpdateState(int file_id, const std::string& name, CARTA::RegionType
     return UpdateState(new_state, csys);
 }
 
-bool Region::UpdateState(const RegionState& state, const casacore::CoordinateSystem& csys) {
+bool Region::UpdateState(const RegionState& state, casacore::CoordinateSystem* csys) {
     // Update region from region state
     bool valid = CheckPoints(state.control_points, state.type);
 
@@ -60,6 +78,7 @@ bool Region::UpdateState(const RegionState& state, const casacore::CoordinateSys
 
         // set new region state and coord sys
         _region_state = state;
+        delete _coord_sys;
         _coord_sys = csys;
     } else { // keep existing state
         _region_state_changed = false;
@@ -137,7 +156,7 @@ void Region::DecreaseZProfileCount() {
 // Apply region to reference image (LCRegion)
 
 casacore::TableRecord Region::GetImageRegionRecord(
-    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
+    int file_id, casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
     // Return Record describing Region applied to output coord sys and image_shape
     // Record contains pixel coords.
     casacore::TableRecord record;
@@ -199,8 +218,7 @@ casacore::TableRecord Region::GetImageRegionRecord(
     return record;
 }
 
-casacore::LCRegion* Region::GetImageRegion(
-    int file_id, const casacore::CoordinateSystem& coord_sys, const casacore::IPosition& image_shape) {
+casacore::LCRegion* Region::GetImageRegion(int file_id, casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape) {
     // Convert 2D reference region to image region with input coord_sys and shape
     // Sets _applied_regions item and returns LCRegion
     casacore::LCRegion* null_region(nullptr);
@@ -225,7 +243,7 @@ casacore::LCRegion* Region::GetImageRegion(
         std::shared_ptr<const casacore::WCRegion> current_region = std::atomic_load(&_ref_region);
         try {
             std::lock_guard<std::mutex> guard(_region_mutex);
-            auto lc_region = std::shared_ptr<casacore::LCRegion>(current_region->toLCRegion(coord_sys, image_shape));
+            auto lc_region = std::shared_ptr<casacore::LCRegion>(current_region->toLCRegion(image_csys, image_shape));
             _applied_regions[file_id] = std::move(lc_region);
             return _applied_regions.at(file_id)->cloneRegion(); // copy: this ptr will be owned by ImageRegion
         } catch (const casacore::AipsError& err) {
@@ -235,6 +253,40 @@ casacore::LCRegion* Region::GetImageRegion(
     }
 
     return null_region;
+}
+
+casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(int file_id) {
+    // Return pixel mask for this region; requires that image region for this file id has been set.
+    // Otherwise mask is empty array.
+    casacore::ArrayLattice<casacore::Bool> mask;
+    if (_applied_regions.count(file_id) && _applied_regions.at(file_id)) {
+        std::unique_lock<std::mutex> ulock(_region_mutex);
+        auto lcregion = _applied_regions.at(file_id)->cloneRegion();
+        auto extended_region = static_cast<casacore::LCExtension*>(lcregion);
+
+        switch (_region_state.type) {
+            case CARTA::POINT: {
+                auto region = static_cast<const casacore::LCBox&>(extended_region->region());
+                mask = region.getMask();
+                break;
+            }
+            case CARTA::RECTANGLE:
+            case CARTA::POLYGON: {
+                auto region = static_cast<const casacore::LCPolygon&>(extended_region->region());
+                mask = region.getMask();
+                break;
+            }
+            case CARTA::ELLIPSE: {
+                auto region = static_cast<const casacore::LCEllipsoid&>(extended_region->region());
+                mask = region.getMask();
+                break;
+            }
+            default:
+                break;
+        }
+        ulock.unlock();
+    }
+    return mask;
 }
 
 // *************************************************************************
@@ -259,7 +311,7 @@ void Region::SetReferenceRegion() {
                 if (CartaPointToWorld(pixel_points[0], _wcs_control_points)) {
                     // WCBox blc and trc are same point
                     std::lock_guard<std::mutex> guard(_region_mutex);
-                    region = new casacore::WCBox(_wcs_control_points, _wcs_control_points, pixel_axes, _coord_sys, abs_rel);
+                    region = new casacore::WCBox(_wcs_control_points, _wcs_control_points, pixel_axes, *_coord_sys, abs_rel);
                 }
                 break;
             }
@@ -291,7 +343,7 @@ void Region::SetReferenceRegion() {
                     casacore::Vector<casacore::Double> vx(x), vy(y);
                     casacore::Quantum<casacore::Vector<casacore::Double>> qx, qy;
 
-                    casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
+                    casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
 
                     qx = vx;                    // set values
                     qx.setUnit(world_units(0)); // set unit
@@ -299,7 +351,7 @@ void Region::SetReferenceRegion() {
                     qy.setUnit(world_units(1)); // set unit
 
                     std::lock_guard<std::mutex> guard(_region_mutex);
-                    region = new casacore::WCPolygon(qx, qy, pixel_axes, _coord_sys);
+                    region = new casacore::WCPolygon(qx, qy, pixel_axes, *_coord_sys);
                 }
                 break;
             }
@@ -311,7 +363,7 @@ void Region::SetReferenceRegion() {
 
                     std::lock_guard<std::mutex> guard(_region_mutex);
                     region = new casacore::WCEllipsoid(_wcs_control_points[0], _wcs_control_points[1], _wcs_control_points[2],
-                        _wcs_control_points[3], theta, 0, 1, _coord_sys);
+                        _wcs_control_points[3], theta, 0, 1, *_coord_sys);
                 }
                 break;
             }
@@ -331,19 +383,19 @@ bool Region::CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::
     // Returns whether conversion was successful
 
     // Vectors must be same number of axes as in coord system for conversion:
-    int naxes(_coord_sys.nPixelAxes());
+    int naxes(_coord_sys->nPixelAxes());
     casacore::Vector<casacore::Double> pixel_values(naxes), world_values(naxes);
     pixel_values = 0.0; // set "extra" axes to 0, not needed
     pixel_values(0) = point.x();
     pixel_values(1) = point.y();
 
     // convert pixel vector to world vector
-    if (!_coord_sys.toWorld(world_values, pixel_values)) {
+    if (!_coord_sys->toWorld(world_values, pixel_values)) {
         return false;
     }
 
     // Set Quantities from world values and units
-    casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
+    casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
 
     world_point.resize(2);
     world_point[0] = casacore::Quantity(world_values(0), world_units(0));
@@ -403,19 +455,19 @@ bool Region::RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std
     }
 
     // Convert corners to wcs in one call for efficiency
-    int num_axes(_coord_sys.nPixelAxes());
+    int num_axes(_coord_sys->nPixelAxes());
     casacore::Matrix<casacore::Double> pixel_coords(num_axes, num_points);
     casacore::Matrix<casacore::Double> world_coords(num_axes, num_points);
     pixel_coords = 0.0;
     pixel_coords.row(0) = x;
     pixel_coords.row(1) = y;
     casacore::Vector<casacore::Bool> failures;
-    if (!_coord_sys.toWorldMany(world_coords, pixel_coords, failures)) {
+    if (!_coord_sys->toWorldMany(world_coords, pixel_coords, failures)) {
         return false;
     }
 
     // Save x and y values, units as quantities
-    casacore::Vector<casacore::String> world_units = _coord_sys.worldAxisUnits();
+    casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
     casacore::Vector<double> x_wcs = world_coords.row(0);
     casacore::Vector<double> y_wcs = world_coords.row(1);
     // reference points: corners (x0, y0, x1, y1, x2, y2, x3, y3) in world coordinates
@@ -452,8 +504,8 @@ bool Region::EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::
         std::swap(bmaj, bmin);
     }
     // Convert pixel length to world length (nPixels, pixelAxis), set wcs_points
-    wcs_points.push_back(_coord_sys.toWorldLength(bmaj, 0));
-    wcs_points.push_back(_coord_sys.toWorldLength(bmin, 1));
+    wcs_points.push_back(_coord_sys->toWorldLength(bmaj, 0));
+    wcs_points.push_back(_coord_sys->toWorldLength(bmin, 1));
     return true;
 }
 
@@ -546,9 +598,9 @@ casacore::TableRecord Region::GetPointRecord(const casacore::CoordinateSystem& o
     casacore::TableRecord record;
     try {
         casacore::Vector<casacore::Double> pixel_point;
-        if (_coord_sys.hasDirectionCoordinate() && output_csys.hasDirectionCoordinate()) {
+        if (_coord_sys->hasDirectionCoordinate() && output_csys.hasDirectionCoordinate()) {
             // Input and output direction reference frames
-            casacore::MDirection::Types reference_dir_type = _coord_sys.directionCoordinate().directionType();
+            casacore::MDirection::Types reference_dir_type = _coord_sys->directionCoordinate().directionType();
             casacore::MDirection::Types output_dir_type = output_csys.directionCoordinate().directionType();
 
             // Convert reference world coord point to output coord sys
@@ -559,7 +611,7 @@ casacore::TableRecord Region::GetPointRecord(const casacore::CoordinateSystem& o
 
             // Convert output world point to output pixel point
             output_csys.directionCoordinate().toPixel(pixel_point, world_direction);
-        } else if (_coord_sys.hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
+        } else if (_coord_sys->hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
             // Convert reference world coord point to output coord sys units
             casacore::Vector<casacore::String> world_units = output_csys.worldAxisUnits();
 
@@ -596,9 +648,9 @@ casacore::TableRecord Region::GetPolygonRecord(const casacore::CoordinateSystem&
     try {
         size_t npoints(_wcs_control_points.size() / 2);
         casacore::Vector<casacore::Float> x(npoints), y(npoints);
-        if (_coord_sys.hasDirectionCoordinate() && output_csys.hasDirectionCoordinate()) {
+        if (_coord_sys->hasDirectionCoordinate() && output_csys.hasDirectionCoordinate()) {
             // Input and output direction reference frames
-            casacore::MDirection::Types reference_dir_type = _coord_sys.directionCoordinate().directionType();
+            casacore::MDirection::Types reference_dir_type = _coord_sys->directionCoordinate().directionType();
             casacore::MDirection::Types output_dir_type = output_csys.directionCoordinate().directionType();
 
             for (size_t i = 0; i < _wcs_control_points.size(); i += 2) {
@@ -617,7 +669,7 @@ casacore::TableRecord Region::GetPolygonRecord(const casacore::CoordinateSystem&
                 x(index) = pixel_point(0);
                 y(index) = pixel_point(1);
             }
-        } else if (_coord_sys.hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
+        } else if (_coord_sys->hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
             casacore::Vector<casacore::String> world_units = output_csys.worldAxisUnits();
 
             for (size_t i = 0; i < _wcs_control_points.size(); i += 2) {
@@ -686,14 +738,14 @@ casacore::TableRecord Region::GetRotboxRecord(const casacore::CoordinateSystem& 
         y(3) = y_max;
 
         // Convert corners to reference world coords
-        int num_axes(_coord_sys.nPixelAxes());
+        int num_axes(_coord_sys->nPixelAxes());
         casacore::Matrix<casacore::Double> pixel_coords(num_axes, num_points);
         casacore::Matrix<casacore::Double> world_coords(num_axes, num_points);
         pixel_coords = 0.0;
         pixel_coords.row(0) = x;
         pixel_coords.row(1) = y;
         casacore::Vector<casacore::Bool> failures;
-        if (!_coord_sys.toWorldMany(world_coords, pixel_coords, failures)) {
+        if (!_coord_sys->toWorldMany(world_coords, pixel_coords, failures)) {
             return record;
         }
         casacore::Vector<casacore::Double> x_wcs = world_coords.row(0);
@@ -703,9 +755,9 @@ casacore::TableRecord Region::GetRotboxRecord(const casacore::CoordinateSystem& 
         casacore::Vector<casacore::String> world_units = output_csys.worldAxisUnits();
 
         casacore::Vector<casacore::Float> corner_x(num_points), corner_y(num_points);
-        if (_coord_sys.hasDirectionCoordinate() && output_csys.hasDirectionCoordinate()) {
+        if (_coord_sys->hasDirectionCoordinate() && output_csys.hasDirectionCoordinate()) {
             // Input and output direction reference frames
-            casacore::MDirection::Types reference_dir_type = _coord_sys.directionCoordinate().directionType();
+            casacore::MDirection::Types reference_dir_type = _coord_sys->directionCoordinate().directionType();
             casacore::MDirection::Types output_dir_type = output_csys.directionCoordinate().directionType();
 
             for (size_t i = 0; i < x_wcs.size(); i++) {
@@ -725,7 +777,7 @@ casacore::TableRecord Region::GetRotboxRecord(const casacore::CoordinateSystem& 
                 corner_x(i) = pixel_point(0);
                 corner_y(i) = pixel_point(1);
             }
-        } else if (_coord_sys.hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
+        } else if (_coord_sys->hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
             for (size_t i = 0; i < x_wcs.size(); i += 2) {
                 // Convert reference world coord point to output coord sys units
                 casacore::Quantity ref_point_x(x_wcs(i), world_units(0));
@@ -768,9 +820,9 @@ casacore::TableRecord Region::GetEllipseRecord(const casacore::CoordinateSystem&
         // Values to set in Record
         casacore::Vector<casacore::Float> center(2), radii(2);
 
-        if (_coord_sys.hasDirectionCoordinate() && output_csys.hasDirectionCoordinate()) {
+        if (_coord_sys->hasDirectionCoordinate() && output_csys.hasDirectionCoordinate()) {
             // Input and output direction reference frames
-            casacore::MDirection::Types reference_dir_type = _coord_sys.directionCoordinate().directionType();
+            casacore::MDirection::Types reference_dir_type = _coord_sys->directionCoordinate().directionType();
             casacore::MDirection::Types output_dir_type = output_csys.directionCoordinate().directionType();
 
             // Convert center point from reference to output coord sys
@@ -786,7 +838,7 @@ casacore::TableRecord Region::GetEllipseRecord(const casacore::CoordinateSystem&
             // Set center
             center(0) = pixel_point(0);
             center(1) = pixel_point(1);
-        } else if (_coord_sys.hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
+        } else if (_coord_sys->hasLinearCoordinate() && output_csys.hasLinearCoordinate()) {
             // Convert center point from reference to output coord sys unit
             casacore::Vector<casacore::Double> world_point(2);
             world_point(0) = _wcs_control_points[0].get(world_units(0)).getValue();

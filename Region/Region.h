@@ -10,6 +10,7 @@
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/images/Regions/WCRegion.h>
 #include <casacore/lattices/LRegions/LCRegion.h>
+#include <casacore/lattices/Lattices/ArrayLattice.h>
 #include <casacore/tables/Tables/TableRecord.h>
 
 #include <carta-protobuf/defs.pb.h>
@@ -84,8 +85,9 @@ namespace carta {
 class Region {
 public:
     Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-        const casacore::CoordinateSystem& csys);
-    Region(const RegionState& state, const casacore::CoordinateSystem& csys);
+        casacore::CoordinateSystem* csys);
+    Region(const RegionState& state, casacore::CoordinateSystem* csys);
+    ~Region();
 
     inline bool IsValid() { // control points validated
         return _valid;
@@ -93,8 +95,8 @@ public:
 
     // set new region state and coord sys
     bool UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-        const casacore::CoordinateSystem& csys);
-    bool UpdateState(const RegionState& state, const casacore::CoordinateSystem& csys);
+        casacore::CoordinateSystem* csys);
+    bool UpdateState(const RegionState& state, casacore::CoordinateSystem* csys);
 
     // state accessors
     inline RegionState GetRegionState() {
@@ -115,8 +117,10 @@ public:
 
     // 2D region in reference image applied to input image parameters
     casacore::TableRecord GetImageRegionRecord(
-        int file_id, const casacore::CoordinateSystem& coord_sys, const casacore::IPosition& image_shape);
-    casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem& coord_sys, const casacore::IPosition& image_shape);
+        int file_id, casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+    casacore::LCRegion* GetImageRegion(int file_id, casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
+    // Mask requires that image region for file_id has been set with GetImageRegion()
+    casacore::ArrayLattice<casacore::Bool> GetImageRegionMask(int file_id);
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -144,7 +148,7 @@ private:
     RegionState _region_state;
 
     // coord sys of reference image
-    casacore::CoordinateSystem _coord_sys;
+    casacore::CoordinateSystem* _coord_sys;
 
     // casacore WCRegion
     std::mutex _region_mutex;                            // creation of casacore regions is not threadsafe

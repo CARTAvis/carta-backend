@@ -99,10 +99,14 @@ std::string Frame::GetErrorMessage() {
     return _open_image_error;
 }
 
-casacore::CoordinateSystem Frame::CoordinateSystem() {
-    casacore::CoordinateSystem csys;
+casacore::CoordinateSystem* Frame::CoordinateSystem() {
+    // Returns pointer to CoordinateSystem clone; caller must delete
+    casacore::CoordinateSystem* csys(nullptr);
     if (IsValid()) {
-        _loader->GetCoordinateSystem(csys);
+        std::lock_guard<std::mutex> guard(_image_mutex);
+        casacore::CoordinateSystem image_csys;
+        _loader->GetCoordinateSystem(image_csys);
+        csys = static_cast<casacore::CoordinateSystem*>(image_csys.clone());
     }
     return csys;
 }
@@ -1213,14 +1217,27 @@ bool Frame::HasSpectralConfig(const SpectralConfig& config) {
 // ****************************************************
 // Region/Slicer Support (Frame manages image mutex)
 
+casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Region> region) {
+    // Return LCRegion formed by applying region params to image.
+    // Returns nullptr if region outside image
+    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
+    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, ImageShape());
+    delete coord_sys;
+    return image_region;
+}
+
 casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& region) {
     // Returns image shape with a region applied
-    casacore::LatticeRegion lattice_region = region.toLatticeRegion(CoordinateSystem(), ImageShape());
+    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
+    casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys, ImageShape());
+    delete coord_sys;
     return lattice_region.shape();
 }
 
 bool Frame::GetRegionMask(const casacore::LattRegionHolder& region, casacore::Array<casacore::Bool>& mask) {
-    // Get image data with a region applied
+    // Return mask slice for applied region
+
+    // Get SubImage image with the region applied
     auto t_start_get_subimage_mask = std::chrono::high_resolution_clock::now();
     casacore::SubImage<float> sub_image;
     std::unique_lock<std::mutex> ulock(_image_mutex);
@@ -1339,13 +1356,13 @@ bool Frame::GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::St
     return subimage_ok;
 }
 
-bool Frame::UseLoaderSpectralData(const casacore::LattRegionHolder& region) {
+bool Frame::UseLoaderSpectralData(const casacore::IPosition& region_shape) {
     // Check if loader has swizzled data and more efficient than image data
-    return _loader->UseRegionSpectralData(GetRegionShape(region), _image_mutex);
+    return _loader->UseRegionSpectralData(region_shape, _image_mutex);
 }
 
-bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Array<casacore::Bool>& mask, const casacore::IPosition origin,
-    std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Get spectral data from loader (add image mutex for swizzled data)
     return _loader->GetRegionSpectralData(region_id, stokes, mask, origin, _image_mutex, results, progress);
 }

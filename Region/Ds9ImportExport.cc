@@ -12,7 +12,7 @@
 
 using namespace carta;
 
-Ds9ImportExport::Ds9ImportExport(const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
     const std::string& file, bool file_is_filename)
     : RegionImportExport(image_coord_sys, image_shape, file_id), _pixel_coord(true) {
     // Import regions in DS9 format
@@ -48,8 +48,7 @@ Ds9ImportExport::Ds9ImportExport(const casacore::CoordinateSystem& image_coord_s
     ProcessFileLines(file_lines);
 }
 
-Ds9ImportExport::Ds9ImportExport(
-    const casacore::CoordinateSystem& image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord)
+Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord)
     : RegionImportExport(image_coord_sys, image_shape), _pixel_coord(pixel_coord) {
     // Export regions to DS9 format
     // Set coordinate system for file header
@@ -74,6 +73,10 @@ Ds9ImportExport::Ds9ImportExport(
     }
 
     AddHeader();
+}
+
+Ds9ImportExport::~Ds9ImportExport() {
+    delete _coord_sys;
 }
 
 // Public: for exporting regions
@@ -306,11 +309,11 @@ bool Ds9ImportExport::SetFileReferenceFrame(std::string& ds9_coord) {
 
 void Ds9ImportExport::SetImageReferenceFrame() {
     // Set image coord sys direction frame
-    if (_coord_sys.hasDirectionCoordinate()) {
+    if (_coord_sys->hasDirectionCoordinate()) {
         casacore::MDirection::Types reference_frame;
-        reference_frame = _coord_sys.directionCoordinate().directionType();
+        reference_frame = _coord_sys->directionCoordinate().directionType();
         _image_ref_frame = casacore::MDirection::showType(reference_frame);
-    } else if (_coord_sys.hasLinearCoordinate()) {
+    } else if (_coord_sys->hasLinearCoordinate()) {
         _image_ref_frame = "linear";
     } else {
         _image_ref_frame = "physical";
@@ -861,7 +864,7 @@ bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& poin
         return true;
     }
 
-    if (_coord_sys.hasDirectionCoordinate()) {
+    if (_coord_sys->hasDirectionCoordinate()) {
         if (_image_ref_frame.empty()) {
             SetImageReferenceFrame();
         }
@@ -877,7 +880,7 @@ bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& poin
         casacore::MDirection direction(point[0], point[1], from_dir_type);
 
         // Convert to image coordinate system
-        casacore::MDirection::Types to_dir_type = _coord_sys.directionCoordinate().directionType(false);
+        casacore::MDirection::Types to_dir_type = _coord_sys->directionCoordinate().directionType(false);
         if (from_dir_type != to_dir_type) {
             try {
                 direction = casacore::MDirection::Convert(direction, to_dir_type)();
@@ -888,7 +891,7 @@ bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& poin
         }
 
         // Convert world to pixel coordinates
-        return _coord_sys.directionCoordinate().toPixel(pixel_coords, direction);
+        return _coord_sys->directionCoordinate().toPixel(pixel_coords, direction);
     }
 
     return false;
@@ -897,8 +900,8 @@ bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& poin
 double Ds9ImportExport::AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis) {
     // Convert input quantity to pixel length for given pixel axis for ellipse radius
     // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
-    casacore::Vector<casacore::String> units = _coord_sys.directionCoordinate().worldAxisUnits();
-    casacore::Vector<casacore::Double> increments(_coord_sys.directionCoordinate().increment());
+    casacore::Vector<casacore::String> units = _coord_sys->directionCoordinate().worldAxisUnits();
+    casacore::Vector<casacore::Double> increments(_coord_sys->directionCoordinate().increment());
     angle.convert(units[pixel_axis]);
     return fabs(angle.getValue() / increments[pixel_axis]);
 }
