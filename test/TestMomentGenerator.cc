@@ -198,34 +198,48 @@ void Test2() {
 
 void Test3() {
     // A FITS to CASA image conversion
-    ImageInterface<Float>* fits_to_image_ptr = 0;
-    if (std::__fs::filesystem::exists("images/test-moments/HD163296_CO_2_1.image")) {
-        system("rm -rf images/test-moments/HD163296_CO_2_1.image");
+    String casa_filename = "images/test-moments/HD163296_CO_2_1.image"; // Set the output full name of CASA image
+
+    // Remove the old output file if exists
+    casacore::File cc_file(casa_filename);
+    if (cc_file.exists()) {
+        system(("rm -rf " + casa_filename).c_str());
     }
-    String fits_filename = "images/test-moments/HD163296_CO_2_1.image.fits";    // An existing FITS image
-    String output_image_filename = "images/test-moments/HD163296_CO_2_1.image"; // Set the output full name of CASA image
+
+    // Do conversion
+    String fits_filename = "images/test-moments/HD163296_CO_2_1.image.fits"; // An existing FITS image
     String error;
-    Bool ok = ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, output_image_filename, fits_filename);
+    ImageInterface<Float>* fits_to_image_ptr = 0;
+    Bool ok = ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, casa_filename, fits_filename);
+
     if (!ok) {
         std::cerr << "Fail to convert FITS to CASA image!\n";
         std::cerr << error << std::endl;
     }
+
     delete fits_to_image_ptr;
 }
 
 void Test4() {
     // A CASA image to FITS conversion
-    if (std::__fs::filesystem::exists("images/test-moments/M17_SWex.fits")) {
-        system("rm -f images/test-moments/M17_SWex.fits");
+    String fits_filename = "images/test-moments/M17_SWex.fits"; // Set the output full name of FITS image
+
+    // Remove the old output file if exists
+    casacore::File cc_file(fits_filename);
+    if (cc_file.exists()) {
+        system(("rm -f " + fits_filename).c_str());
     }
-    String image_filename = "images/test-moments/M17_SWex.image"; // An existing CASA image
-    PagedImage<Float>* image = new casacore::PagedImage<Float>(image_filename);
-    String output_fits_filename = "images/test-moments/M17_SWex.fits"; // Set the output full name of FITS image
+
+    // Do conversion
+    String casa_filename = "images/test-moments/M17_SWex.image"; // An existing CASA image
+    PagedImage<Float>* image = new casacore::PagedImage<Float>(casa_filename);
     String error;
-    Bool ok = ImageFITSConverter::ImageToFITS(error, *image, output_fits_filename);
+    Bool ok = ImageFITSConverter::ImageToFITS(error, *image, fits_filename);
+
     if (!ok) {
         std::cerr << "Fail to convert CASA image to FITS!\n";
         std::cerr << error << std::endl;
     }
+
     delete image;
 }
