@@ -1,5 +1,4 @@
-### Last update: 20201105
-FROM ubuntu:latest
+FROM ubuntu:bionic
 
 # Update and pull down build tools
 RUN \
@@ -31,15 +30,6 @@ RUN \
   apt-add-repository -y -s ppa:kernsuite/kern-5 && \
   apt-get update && \
   apt-get -y install casacore-data
-
-# casacore dependency libsofa not currently necessary
-#RUN \
-#  pip install numpy && \
-#  pip3 install numpy && \
-#  wget http://www.iausofa.org/2018_0130_F/sofa_f-20180130.tar.gz && \
-#  tar xzf sofa_f-20180130.tar.gz && rm sofa_f-20180130.tar.gz && \
-#  cd sofa/20180130/f77/src && make && cp libsofa.a /usr/lib/libsofa.a && \
-#  cd /root && rm -rf sofa
 
 # carta-casacore from cartavis PPA
 RUN \
@@ -76,7 +66,7 @@ RUN \
   git checkout confluence/generic-scripting && \
   git submodule init && git submodule update && \
   mkdir build && cd build && \
-  cmake .. -DCMAKE_CXX_FLAGS="-I/usr/include/casacode -I/usr/include/casacore" -DCMAKE_CXX_STANDARD_LIBRARIES="-L/usr/local/lib -lcasa_imageanalysis" && \
+  cmake .. -DCMAKE_CXX_FLAGS="-I/usr/include/casacode" && \ 
   make
 
 # Forward port so that the webapp can properly access it
