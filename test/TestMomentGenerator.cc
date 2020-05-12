@@ -1,3 +1,5 @@
+#include <casacore/images/Images/ImageFITSConverter.h>
+
 #include <iostream>
 
 #include "../Moment/MomentFilesManager.h"
@@ -5,12 +7,16 @@
 
 void Test1();
 void Test2();
+void Test3();
+void Test4();
 
 int main(int argc, char* argv[]) {
     int test_case;
     cout << "Choose a test case:" << endl;
     cout << "    1) Test1()" << endl;
     cout << "    2) Test2()" << endl;
+    cout << "    3) Test3()" << endl;
+    cout << "    4) Test4()" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -19,6 +25,12 @@ int main(int argc, char* argv[]) {
             break;
         case 2:
             Test2();
+            break;
+        case 3:
+            Test3();
+            break;
+        case 4:
+            Test4();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -182,4 +194,38 @@ void Test2() {
     // Moment files manager
     carta::MomentFilesManager moment_files_manager("./");
     moment_files_manager.CacheMomentFiles(moment_response);
+}
+
+void Test3() {
+    // A FITS to CASA image conversion
+    ImageInterface<Float>* fits_to_image_ptr = 0;
+    if (std::__fs::filesystem::exists("images/test-moments/HD163296_CO_2_1.image")) {
+        system("rm -rf images/test-moments/HD163296_CO_2_1.image");
+    }
+    String fits_filename = "images/test-moments/HD163296_CO_2_1.image.fits";    // An existing FITS image
+    String output_image_filename = "images/test-moments/HD163296_CO_2_1.image"; // Set the output full name of CASA image
+    String error;
+    Bool ok = ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, output_image_filename, fits_filename);
+    if (!ok) {
+        std::cerr << "Fail to convert FITS to CASA image!\n";
+        std::cerr << error << std::endl;
+    }
+    delete fits_to_image_ptr;
+}
+
+void Test4() {
+    // A CASA image to FITS conversion
+    if (std::__fs::filesystem::exists("images/test-moments/M17_SWex.fits")) {
+        system("rm -f images/test-moments/M17_SWex.fits");
+    }
+    String image_filename = "images/test-moments/M17_SWex.image"; // An existing CASA image
+    PagedImage<Float>* image = new casacore::PagedImage<Float>(image_filename);
+    String output_fits_filename = "images/test-moments/M17_SWex.fits"; // Set the output full name of FITS image
+    String error;
+    Bool ok = ImageFITSConverter::ImageToFITS(error, *image, output_fits_filename);
+    if (!ok) {
+        std::cerr << "Fail to convert CASA image to FITS!\n";
+        std::cerr << error << std::endl;
+    }
+    delete image;
 }
