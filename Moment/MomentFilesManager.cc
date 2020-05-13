@@ -32,48 +32,55 @@ void MomentFilesManager::SaveMomentFile(
     std::string output_file_name(save_file_msg.output_file_name());
     CARTA::FileType output_file_type(save_file_msg.output_file_type());
 
+    // Get the full file name of the new saving image
     std::size_t found = filename.find_last_of("/");
     std::string directory = filename.substr(0, found);
     output_file_name = directory + "/" + output_file_name;
 
     // Remove the old output file if exists
     casacore::File cc_file(output_file_name);
-    if (cc_file.exists()) {
+    if (cc_file.exists() && (filename != output_file_name)) {
         system(("rm -f " + output_file_name).c_str());
     }
 
     // Set response message
     save_file_ack.set_file_id(file_id);
 
-    if (CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) { // Make sure the moment file is a CASA image
-        if (output_file_type == CARTA::FileType::FITS) {                // Convert the CASA image to FITS
-            casacore::String error;
-            casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(error, *image, output_file_name);
-            if (!ok) {
-                save_file_ack.set_success(false);
-                save_file_ack.set_message(error);
-            } else {
-                save_file_ack.set_success(true);
-            }
-        } else if (output_file_type == CARTA::FileType::CASA) { // Change the name of CASA image file
-            std::string command = "cp -a " + filename + " " + output_file_name;
-            system(command.c_str());
-            save_file_ack.set_success(true);
-        } else {
-            std::string error = "Unknown converting image type!";
+    if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::FITS)) {
+        // CASA image to FITS conversion
+        casacore::String error;
+        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(error, *image, output_file_name);
+        if (!ok) {
             save_file_ack.set_success(false);
             save_file_ack.set_message(error);
+        } else {
+            save_file_ack.set_success(true);
+        }
+    } else if ((CasacoreImageType(filename) == casacore::ImageOpener::FITS) && (output_file_type == CARTA::FileType::CASA)) {
+        // FITS to CASA image conversion
+        casacore::String error;
+        casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
+        casacore::Bool ok = casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, output_file_name, filename);
+        if (!ok) {
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(error);
+        } else {
+            save_file_ack.set_success(true);
         }
     } else {
-        std::string error = "Not a CASA image as the moment image type!";
-        save_file_ack.set_success(false);
-        save_file_ack.set_message(error);
+        std::string command = "cp -a " + filename + " " + output_file_name;
+        std::string message = "No file format conversion!";
+        if (filename != output_file_name) {
+            system(command.c_str());
+        }
+        save_file_ack.set_success(true);
+        save_file_ack.set_message(message);
     }
 }
 
 // Print protobuf messages
 void MomentFilesManager::Print(CARTA::SaveFile message) {
-    std::cout << "CARTA::SaveMomentFile:" << std::endl;
+    std::cout << "CARTA::SaveFile:" << std::endl;
     std::cout << "file_id = " << message.file_id() << std::endl;
     std::cout << "output_file_name = " << message.output_file_name() << std::endl;
     if (message.output_file_type() == CARTA::FileType::CASA) {
@@ -86,7 +93,7 @@ void MomentFilesManager::Print(CARTA::SaveFile message) {
 }
 
 void MomentFilesManager::Print(CARTA::SaveFileAck message) {
-    std::cout << "CARTA::SaveMomentFileAck:" << std::endl;
+    std::cout << "CARTA::SaveFileAck:" << std::endl;
     std::cout << "file_id = " << message.file_id() << std::endl;
     if (message.success()) {
         std::cout << "success = true" << std::endl;
