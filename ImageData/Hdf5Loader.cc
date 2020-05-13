@@ -344,7 +344,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     calculate_stats();
 
     results = _region_stats[region_stats_id].stats;
-    if (max_x == (num_x - 1)) {
+    if (max_x == num_x) {
         progress = PROFILE_COMPLETE;
     } else {
         progress = (float)max_x / num_x;
