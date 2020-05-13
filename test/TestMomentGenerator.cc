@@ -254,24 +254,24 @@ void Test5() {
     Test1();
 
     // Set saving file message
-    CARTA::SaveMomentFile save_moment_file_msg;
-    save_moment_file_msg.set_file_id(-1);
-    save_moment_file_msg.set_output_file_name("test.fits");
-    save_moment_file_msg.set_output_file_type(CARTA::FileType::FITS);
+    CARTA::SaveFile save_file_msg;
+    save_file_msg.set_file_id(-1);
+    save_file_msg.set_output_file_name("test.fits");
+    save_file_msg.set_output_file_type(CARTA::FileType::FITS);
 
     // Set the moment image file (as CASA format)
     string original_moment_file_name = fits_file_full_name + ".moment.average";
     PagedImage<Float>* image = new casacore::PagedImage<Float>(original_moment_file_name);
 
     // Response message
-    CARTA::SaveMomentFileAck save_moment_file_ack;
+    CARTA::SaveFileAck save_file_ack;
     carta::MomentFilesManager moment_files_manager("./");
-    moment_files_manager.SaveMomentFile(original_moment_file_name, image, save_moment_file_msg, save_moment_file_ack);
+    moment_files_manager.SaveMomentFile(original_moment_file_name, image, save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_moment_file_msg);
+    carta::MomentFilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_moment_file_ack);
+    carta::MomentFilesManager::Print(save_file_ack);
 
     delete image;
 }
@@ -281,24 +281,24 @@ void Test6() {
     Test2();
 
     // Set saving file message
-    CARTA::SaveMomentFile save_moment_file_msg;
-    save_moment_file_msg.set_file_id(-1);
-    save_moment_file_msg.set_output_file_name("test.image");
-    save_moment_file_msg.set_output_file_type(CARTA::FileType::CASA);
+    CARTA::SaveFile save_file_msg;
+    save_file_msg.set_file_id(-1);
+    save_file_msg.set_output_file_name("test.image");
+    save_file_msg.set_output_file_type(CARTA::FileType::CASA);
 
     // Set the moment image file (as CASA format)
     string original_moment_file_name = image_file_full_name + ".moment.average";
     PagedImage<Float>* image = new casacore::PagedImage<Float>(original_moment_file_name);
 
     // Response message
-    CARTA::SaveMomentFileAck save_moment_file_ack;
+    CARTA::SaveFileAck save_file_ack;
     carta::MomentFilesManager moment_files_manager("./");
-    moment_files_manager.SaveMomentFile(original_moment_file_name, image, save_moment_file_msg, save_moment_file_ack);
+    moment_files_manager.SaveMomentFile(original_moment_file_name, image, save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_moment_file_msg);
+    carta::MomentFilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_moment_file_ack);
+    carta::MomentFilesManager::Print(save_file_ack);
 
     delete image;
 }
