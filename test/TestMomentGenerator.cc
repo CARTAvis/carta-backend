@@ -5,6 +5,9 @@
 #include "../Moment/MomentFilesManager.h"
 #include "../Moment/MomentGenerator.h"
 
+const std::string fits_file_full_name = "images/test-moments/HD163296_CO_2_1.image.fits";
+const std::string image_file_full_name = "images/test-moments/M17_SWex.image";
+
 void Test1();
 void Test2();
 void Test3();
@@ -41,15 +44,12 @@ int main(int argc, char* argv[]) {
 }
 
 void Test1() {
-    // Set the image file name
-    std::string filename = "images/test-moments/HD163296_CO_2_1.image.fits";
-
     // Open a FITS image file
     std::unique_ptr<casacore::FITSImage> image;
-    image.reset(new casacore::FITSImage(filename));
+    image.reset(new casacore::FITSImage(fits_file_full_name));
 
     // Print the original image file info
-    std::cout << "file name: " << filename << std::endl;
+    std::cout << "file name: " << fits_file_full_name << std::endl;
     std::cout << "in_image.shape().size(): " << image->shape().size() << std::endl;
     std::cout << "in_image.shape().nelements(): " << image->shape().nelements() << std::endl;
     for (int i = 0; i < image->shape().size(); ++i) {
@@ -105,7 +105,7 @@ void Test1() {
 
     // Calculate moments
     carta::MomentGenerator moment_generator(
-        filename, image.get(), "", spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
+        fits_file_full_name, image.get(), "", spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;
@@ -119,15 +119,12 @@ void Test1() {
 }
 
 void Test2() {
-    // Set the image file name
-    std::string filename = "images/test-moments/M17_SWex.image";
-
     // Open a CASA image file
     std::unique_ptr<casacore::PagedImage<float>> image;
-    image.reset(new casacore::PagedImage<float>(filename));
+    image.reset(new casacore::PagedImage<float>(image_file_full_name));
 
     // Print the original image file info
-    std::cout << "file name: " << filename << std::endl;
+    std::cout << "file name: " << image_file_full_name << std::endl;
     std::cout << "in_image.shape().size(): " << image->shape().size() << std::endl;
     std::cout << "in_image.shape().nelements(): " << image->shape().nelements() << std::endl;
     for (int i = 0; i < image->shape().size(); ++i) {
@@ -183,7 +180,7 @@ void Test2() {
 
     // Calculate moments
     carta::MomentGenerator moment_generator(
-        filename, image.get(), "", spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
+        image_file_full_name, image.get(), "", spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;
@@ -198,19 +195,18 @@ void Test2() {
 
 void Test3() {
     // A FITS to CASA image conversion
-    String casa_filename = "images/test-moments/HD163296_CO_2_1.image"; // Set the output full name of CASA image
+    String output_image_file_full_name = "images/test-moments/HD163296_CO_2_1.image"; // Set the output full name of CASA image
 
     // Remove the old output file if exists
-    casacore::File cc_file(casa_filename);
+    casacore::File cc_file(output_image_file_full_name);
     if (cc_file.exists()) {
-        system(("rm -rf " + casa_filename).c_str());
+        system(("rm -rf " + output_image_file_full_name).c_str());
     }
 
     // Do conversion
-    String fits_filename = "images/test-moments/HD163296_CO_2_1.image.fits"; // An existing FITS image
     String error;
     ImageInterface<Float>* fits_to_image_ptr = 0;
-    Bool ok = ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, casa_filename, fits_filename);
+    Bool ok = ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, output_image_file_full_name, fits_file_full_name);
 
     if (!ok) {
         std::cerr << "Fail to convert FITS to CASA image!\n";
@@ -222,19 +218,18 @@ void Test3() {
 
 void Test4() {
     // A CASA image to FITS conversion
-    String fits_filename = "images/test-moments/M17_SWex.fits"; // Set the output full name of FITS image
+    String output_fits_file_full_name = "images/test-moments/M17_SWex.fits"; // Set the output full name of FITS image
 
     // Remove the old output file if exists
-    casacore::File cc_file(fits_filename);
+    casacore::File cc_file(output_fits_file_full_name);
     if (cc_file.exists()) {
-        system(("rm -f " + fits_filename).c_str());
+        system(("rm -f " + output_fits_file_full_name).c_str());
     }
 
     // Do conversion
-    String casa_filename = "images/test-moments/M17_SWex.image"; // An existing CASA image
-    PagedImage<Float>* image = new casacore::PagedImage<Float>(casa_filename);
+    PagedImage<Float>* image = new casacore::PagedImage<Float>(image_file_full_name);
     String error;
-    Bool ok = ImageFITSConverter::ImageToFITS(error, *image, fits_filename);
+    Bool ok = ImageFITSConverter::ImageToFITS(error, *image, output_fits_file_full_name);
 
     if (!ok) {
         std::cerr << "Fail to convert CASA image to FITS!\n";
