@@ -12,6 +12,8 @@ void Test1();
 void Test2();
 void Test3();
 void Test4();
+void Test5();
+void Test6();
 
 int main(int argc, char* argv[]) {
     int test_case;
@@ -20,6 +22,8 @@ int main(int argc, char* argv[]) {
     cout << "    2) Test2()" << endl;
     cout << "    3) Test3()" << endl;
     cout << "    4) Test4()" << endl;
+    cout << "    5) Test5()" << endl;
+    cout << "    6) Test6()" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -34,6 +38,12 @@ int main(int argc, char* argv[]) {
             break;
         case 4:
             Test4();
+            break;
+        case 5:
+            Test5();
+            break;
+        case 6:
+            Test6();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -114,8 +124,8 @@ void Test1() {
     carta::MomentGenerator::Print(moment_response);
 
     // Moment files manager
-    carta::MomentFilesManager moment_files_manager("./");
-    moment_files_manager.CacheMomentFiles(moment_response);
+    // carta::MomentFilesManager moment_files_manager("./");
+    // moment_files_manager.CacheMomentFiles(moment_response);
 }
 
 void Test2() {
@@ -189,8 +199,8 @@ void Test2() {
     carta::MomentGenerator::Print(moment_response);
 
     // Moment files manager
-    carta::MomentFilesManager moment_files_manager("./");
-    moment_files_manager.CacheMomentFiles(moment_response);
+    // carta::MomentFilesManager moment_files_manager("./");
+    // moment_files_manager.CacheMomentFiles(moment_response);
 }
 
 void Test3() {
@@ -235,6 +245,60 @@ void Test4() {
         std::cerr << "Fail to convert CASA image to FITS!\n";
         std::cerr << error << std::endl;
     }
+
+    delete image;
+}
+
+void Test5() {
+    // Create moments from the FITS file
+    Test1();
+
+    // Set saving file message
+    CARTA::SaveMomentFile save_moment_file_msg;
+    save_moment_file_msg.set_file_id(-1);
+    save_moment_file_msg.set_output_file_name("test.fits");
+    save_moment_file_msg.set_output_file_type(CARTA::FileType::FITS);
+
+    // Set the moment image file (as CASA format)
+    string original_moment_file_name = fits_file_full_name + ".moment.average";
+    PagedImage<Float>* image = new casacore::PagedImage<Float>(original_moment_file_name);
+
+    // Response message
+    CARTA::SaveMomentFileAck save_moment_file_ack;
+    carta::MomentFilesManager moment_files_manager("./");
+    moment_files_manager.SaveMomentFile(original_moment_file_name, image, save_moment_file_msg, save_moment_file_ack);
+
+    std::cout << "==========================================" << std::endl;
+    carta::MomentFilesManager::Print(save_moment_file_msg);
+    std::cout << "==========================================" << std::endl;
+    carta::MomentFilesManager::Print(save_moment_file_ack);
+
+    delete image;
+}
+
+void Test6() {
+    // Create moments from the CASA file
+    Test2();
+
+    // Set saving file message
+    CARTA::SaveMomentFile save_moment_file_msg;
+    save_moment_file_msg.set_file_id(-1);
+    save_moment_file_msg.set_output_file_name("test.image");
+    save_moment_file_msg.set_output_file_type(CARTA::FileType::CASA);
+
+    // Set the moment image file (as CASA format)
+    string original_moment_file_name = image_file_full_name + ".moment.average";
+    PagedImage<Float>* image = new casacore::PagedImage<Float>(original_moment_file_name);
+
+    // Response message
+    CARTA::SaveMomentFileAck save_moment_file_ack;
+    carta::MomentFilesManager moment_files_manager("./");
+    moment_files_manager.SaveMomentFile(original_moment_file_name, image, save_moment_file_msg, save_moment_file_ack);
+
+    std::cout << "==========================================" << std::endl;
+    carta::MomentFilesManager::Print(save_moment_file_msg);
+    std::cout << "==========================================" << std::endl;
+    carta::MomentFilesManager::Print(save_moment_file_ack);
 
     delete image;
 }
