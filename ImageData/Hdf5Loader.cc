@@ -257,9 +257,10 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
     // get the start of X
     size_t x_start = _region_stats[region_stats_id].latest_x;
-    if (x_start == 0) {
-        // Set initial values of stats which will be incremented (we may have expired region data)
-        for (size_t z = 0; z < num_z; z++) {
+
+    // Set initial values of stats, or those set to NAN in previous iterations
+    for (size_t z = 0; z < num_z; z++) {
+        if ((x_start == 0) || (num_pixels[z] == 0)) {
             min[z] = FLT_MAX;
             max[z] = FLT_MIN;
             num_pixels[z] = 0;

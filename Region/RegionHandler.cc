@@ -990,7 +990,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     // Use loader swizzled data for efficiency
     if (_frames.at(file_id)->UseLoaderSpectralData(lcregion->shape())) {
         // Get 2D origin and 2D mask for Hdf5Loader
-        casacore::IPosition origin = lcregion->expand(casacore::IPosition(2, 0, 0));
+        casacore::IPosition origin = lcregion->boundingBox().start();
         casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1)); // keep first two axes only
 
         // Get mask; LCRegion for file id is cached
