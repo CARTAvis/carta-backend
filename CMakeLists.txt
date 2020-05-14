@@ -113,7 +113,7 @@ set(SOURCE_FILES
         Catalog/VOTableCarrier.cc
         Catalog/VOTableController.cc
         Moment/MomentGenerator.cc
-        Moment/MomentFilesManager.cc
+        Moment/FilesManager.cc
         OnMessageTask.cc
         FileSettings.cc
         Util.cc

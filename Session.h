@@ -43,7 +43,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
-#include "Moment/MomentFilesManager.h"
+#include "Moment/FilesManager.h"
 #include "Moment/MomentGenerator.h"
 #include "Util.h"
 
@@ -240,8 +240,8 @@ private:
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
 
-    // Moment image files manager
-    std::unique_ptr<carta::MomentFilesManager> _moment_files_manager;
+    // Image files manager
+    std::unique_ptr<carta::FilesManager> _files_manager;
 
     // Manage image channel
     std::unordered_map<int, std::mutex> _image_channel_mutexes;

@@ -60,7 +60,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _animation_object = nullptr;
     _connected = true;
     _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller(_root_folder));
-    _moment_files_manager = std::unique_ptr<carta::MomentFilesManager>(new carta::MomentFilesManager(_root_folder));
+    _files_manager = std::unique_ptr<carta::FilesManager>(new carta::FilesManager(_root_folder));
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
@@ -929,7 +929,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             filename, image, _root_folder, spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
 
         // Cache the names of produced moment images
-        _moment_files_manager->CacheMomentFiles(moment_response);
+        _files_manager->CacheMomentFiles(moment_response);
 
         // Send moment response message
         SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);

@@ -14,13 +14,13 @@
 
 namespace carta {
 
-class MomentFilesManager {
+class FilesManager {
 public:
-    MomentFilesManager(std::string root_folder);
-    ~MomentFilesManager();
+    FilesManager(std::string root_folder);
+    ~FilesManager();
 
     void CacheMomentFiles(CARTA::MomentResponse message);
-    void SaveMomentFile(std::string filename, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
+    void SaveFile(std::string filename, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
         CARTA::SaveFileAck& save_file_ack);
 
     // Print protobuf messages

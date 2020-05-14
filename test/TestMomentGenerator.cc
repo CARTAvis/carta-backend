@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../Moment/MomentFilesManager.h"
+#include "../Moment/FilesManager.h"
 #include "../Moment/MomentGenerator.h"
 
 const std::string fits_file_full_name = "images/test-moments/HD163296_CO_2_1.image.fits";
@@ -134,7 +134,7 @@ void Test1() {
     carta::MomentGenerator::Print(moment_response);
 
     // Moment files manager
-    // carta::MomentFilesManager moment_files_manager("./");
+    // carta::FilesManager moment_files_manager("./");
     // moment_files_manager.CacheMomentFiles(moment_response);
 }
 
@@ -209,7 +209,7 @@ void Test2() {
     carta::MomentGenerator::Print(moment_response);
 
     // Moment files manager
-    // carta::MomentFilesManager moment_files_manager("./");
+    // carta::FilesManager moment_files_manager("./");
     // moment_files_manager.CacheMomentFiles(moment_response);
 }
 
@@ -275,13 +275,13 @@ void Test5() {
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
-    carta::MomentFilesManager moment_files_manager("./");
-    moment_files_manager.SaveMomentFile(original_moment_file_name, image, save_file_msg, save_file_ack);
+    carta::FilesManager moment_files_manager("./");
+    moment_files_manager.SaveFile(original_moment_file_name, image, save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_file_msg);
+    carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_file_ack);
+    carta::FilesManager::Print(save_file_ack);
 
     delete image;
 }
@@ -302,13 +302,13 @@ void Test6() {
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
-    carta::MomentFilesManager moment_files_manager("./");
-    moment_files_manager.SaveMomentFile(original_moment_file_name, image, save_file_msg, save_file_ack);
+    carta::FilesManager moment_files_manager("./");
+    moment_files_manager.SaveFile(original_moment_file_name, image, save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_file_msg);
+    carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_file_ack);
+    carta::FilesManager::Print(save_file_ack);
 
     delete image;
 }
@@ -327,13 +327,13 @@ void Test7() {
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
-    carta::MomentFilesManager moment_files_manager("./");
-    moment_files_manager.SaveMomentFile(fits_file_full_name, image, save_file_msg, save_file_ack);
+    carta::FilesManager moment_files_manager("./");
+    moment_files_manager.SaveFile(fits_file_full_name, image, save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_file_msg);
+    carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_file_ack);
+    carta::FilesManager::Print(save_file_ack);
 
     delete image;
 }
@@ -352,13 +352,13 @@ void Test8() {
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
-    carta::MomentFilesManager moment_files_manager("./");
-    moment_files_manager.SaveMomentFile(image_file_full_name, image, save_file_msg, save_file_ack);
+    carta::FilesManager moment_files_manager("./");
+    moment_files_manager.SaveFile(image_file_full_name, image, save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_file_msg);
+    carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::MomentFilesManager::Print(save_file_ack);
+    carta::FilesManager::Print(save_file_ack);
 
     delete image;
 }

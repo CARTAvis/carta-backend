@@ -1,10 +1,10 @@
-#include "MomentFilesManager.h"
+#include "FilesManager.h"
 
 using namespace carta;
 
-MomentFilesManager::MomentFilesManager(std::string root_folder) : _root_folder(root_folder) {}
+FilesManager::FilesManager(std::string root_folder) : _root_folder(root_folder) {}
 
-MomentFilesManager::~MomentFilesManager() {
+FilesManager::~FilesManager() {
     // Remove the moment files while deleted
     for (auto& moment_file_directory : _moment_file_directories) {
         const std::string& directory = moment_file_directory.first;
@@ -18,7 +18,7 @@ MomentFilesManager::~MomentFilesManager() {
     }
 }
 
-void MomentFilesManager::CacheMomentFiles(CARTA::MomentResponse message) {
+void FilesManager::CacheMomentFiles(CARTA::MomentResponse message) {
     std::string directory(message.directory());
     for (int i = 0; i < message.output_files_size(); ++i) {
         std::string filename(message.output_files(i).file_name());
@@ -26,7 +26,7 @@ void MomentFilesManager::CacheMomentFiles(CARTA::MomentResponse message) {
     }
 }
 
-void MomentFilesManager::SaveMomentFile(
+void FilesManager::SaveFile(
     std::string filename, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack) {
     int file_id(save_file_msg.file_id());
     std::string output_file_name(save_file_msg.output_file_name());
@@ -82,7 +82,7 @@ void MomentFilesManager::SaveMomentFile(
 }
 
 // Print protobuf messages
-void MomentFilesManager::Print(CARTA::SaveFile message) {
+void FilesManager::Print(CARTA::SaveFile message) {
     std::cout << "CARTA::SaveFile:" << std::endl;
     std::cout << "file_id = " << message.file_id() << std::endl;
     std::cout << "output_file_name = " << message.output_file_name() << std::endl;
@@ -95,7 +95,7 @@ void MomentFilesManager::Print(CARTA::SaveFile message) {
     }
 }
 
-void MomentFilesManager::Print(CARTA::SaveFileAck message) {
+void FilesManager::Print(CARTA::SaveFileAck message) {
     std::cout << "CARTA::SaveFileAck:" << std::endl;
     std::cout << "file_id = " << message.file_id() << std::endl;
     if (message.success()) {
