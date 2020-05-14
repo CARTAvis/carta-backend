@@ -40,7 +40,7 @@ void MomentFilesManager::SaveMomentFile(
     // Remove the old output file if exists
     casacore::File cc_file(output_file_name);
     if (cc_file.exists() && (filename != output_file_name)) {
-        system(("rm -f " + output_file_name).c_str());
+        system(("rm -rf " + output_file_name).c_str());
     }
 
     // Set response message
@@ -61,6 +61,9 @@ void MomentFilesManager::SaveMomentFile(
         casacore::String error;
         casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
         casacore::Bool ok = casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, output_file_name, filename);
+
+        delete fits_to_image_ptr; // without this deletion the output image directory lacks "table.f0" and "table.info" files
+
         if (!ok) {
             save_file_ack.set_success(false);
             save_file_ack.set_message(error);

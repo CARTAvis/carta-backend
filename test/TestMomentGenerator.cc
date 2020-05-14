@@ -14,6 +14,8 @@ void Test3();
 void Test4();
 void Test5();
 void Test6();
+void Test7();
+void Test8();
 
 int main(int argc, char* argv[]) {
     int test_case;
@@ -24,6 +26,8 @@ int main(int argc, char* argv[]) {
     cout << "    4) Test4()" << endl;
     cout << "    5) Test5()" << endl;
     cout << "    6) Test6()" << endl;
+    cout << "    7) Test7()" << endl;
+    cout << "    8) Test8()" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -44,6 +48,12 @@ int main(int argc, char* argv[]) {
             break;
         case 6:
             Test6();
+            break;
+        case 7:
+            Test7();
+            break;
+        case 8:
+            Test8();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -301,4 +311,50 @@ void Test6() {
     carta::MomentFilesManager::Print(save_file_ack);
 
     delete image;
+}
+
+void Test7() {
+    // FITS file to CASA image conversion:
+
+    // Set saving file message
+    CARTA::SaveFile save_file_msg;
+    save_file_msg.set_file_id(-1);
+    save_file_msg.set_output_file_name("HD163296_CO_2_1.image");
+    save_file_msg.set_output_file_type(CARTA::FileType::CASA);
+
+    // This pointer will not be used
+    ImageInterface<Float>* image = 0;
+
+    // Response message
+    CARTA::SaveFileAck save_file_ack;
+    carta::MomentFilesManager moment_files_manager("./");
+    moment_files_manager.SaveMomentFile(fits_file_full_name, image, save_file_msg, save_file_ack);
+
+    std::cout << "==========================================" << std::endl;
+    carta::MomentFilesManager::Print(save_file_msg);
+    std::cout << "==========================================" << std::endl;
+    carta::MomentFilesManager::Print(save_file_ack);
+}
+
+void Test8() {
+    // CASA image to FITS conversion:
+
+    // Set saving file message
+    CARTA::SaveFile save_file_msg;
+    save_file_msg.set_file_id(-1);
+    save_file_msg.set_output_file_name("M17_SWex.fits");
+    save_file_msg.set_output_file_type(CARTA::FileType::FITS);
+
+    // Set the CASA image file pointer with the original file name
+    PagedImage<Float>* image = new casacore::PagedImage<Float>(image_file_full_name);
+
+    // Response message
+    CARTA::SaveFileAck save_file_ack;
+    carta::MomentFilesManager moment_files_manager("./");
+    moment_files_manager.SaveMomentFile(image_file_full_name, image, save_file_msg, save_file_ack);
+
+    std::cout << "==========================================" << std::endl;
+    carta::MomentFilesManager::Print(save_file_msg);
+    std::cout << "==========================================" << std::endl;
+    carta::MomentFilesManager::Print(save_file_ack);
 }
