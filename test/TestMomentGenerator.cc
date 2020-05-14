@@ -8,57 +8,57 @@
 const std::string FITS_FILE_FULL_NAME = "images/test-moments/HD163296_CO_2_1.image.fits";
 const std::string CASA_FILE_FULL_NAME = "images/test-moments/M17_SWex.image";
 
-void Test1(bool delete_moment_files = true);
-void Test2(bool delete_moment_files = true);
-void Test3();
-void Test4();
-void Test5();
-void Test6();
-void Test7();
-void Test8();
-void Test9();
+void GenerateMomentsWithFITS(bool delete_moment_files = true);
+void GenerateMomentsWithCASA(bool delete_moment_files = true);
+void ConvertFITStoCASA();
+void ConvertCASAtoFITS();
+void SaveMomentWithFITS();
+void SaveMomentWithCASA();
+void FileManagerConvertFITStoCASA();
+void FileManagerConvertCASAtoFITS();
+void FileManagerSaveWithSameName();
 
 int main(int argc, char* argv[]) {
     int test_case;
     cout << "Choose a test case:" << endl;
-    cout << "    1) Test1()" << endl;
-    cout << "    2) Test2()" << endl;
-    cout << "    3) Test3()" << endl;
-    cout << "    4) Test4()" << endl;
-    cout << "    5) Test5()" << endl;
-    cout << "    6) Test6()" << endl;
-    cout << "    7) Test7()" << endl;
-    cout << "    8) Test8()" << endl;
-    cout << "    9) Test9()" << endl;
+    cout << "    1) Generate Moments With FITS" << endl;
+    cout << "    2) Generate Moments With CASA" << endl;
+    cout << "    3) Convert FITS to CASA" << endl;
+    cout << "    4) Convert CASA to FITS" << endl;
+    cout << "    5) Save Moment With FITS" << endl;
+    cout << "    6) Save Moment With CASA" << endl;
+    cout << "    7) FileManager Convert FITS to CASA" << endl;
+    cout << "    8) FileManager Convert CASA to FITS" << endl;
+    cout << "    9) FileManager Save With Same Name" << endl;
     cin >> test_case;
 
     switch (test_case) {
         case 1:
-            Test1();
+            GenerateMomentsWithFITS();
             break;
         case 2:
-            Test2();
+            GenerateMomentsWithCASA();
             break;
         case 3:
-            Test3();
+            ConvertFITStoCASA();
             break;
         case 4:
-            Test4();
+            ConvertCASAtoFITS();
             break;
         case 5:
-            Test5();
+            SaveMomentWithFITS();
             break;
         case 6:
-            Test6();
+            SaveMomentWithCASA();
             break;
         case 7:
-            Test7();
+            FileManagerConvertFITStoCASA();
             break;
         case 8:
-            Test8();
+            FileManagerConvertCASAtoFITS();
             break;
         case 9:
-            Test9();
+            FileManagerSaveWithSameName();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void Test1(bool delete_moment_files) {
+void GenerateMomentsWithFITS(bool delete_moment_files) {
     // Open a FITS image file
     std::unique_ptr<casacore::FITSImage> image;
     image.reset(new casacore::FITSImage(FITS_FILE_FULL_NAME));
@@ -145,7 +145,7 @@ void Test1(bool delete_moment_files) {
     }
 }
 
-void Test2(bool delete_moment_files) {
+void GenerateMomentsWithCASA(bool delete_moment_files) {
     // Open a CASA image file
     std::unique_ptr<casacore::PagedImage<float>> image;
     image.reset(new casacore::PagedImage<float>(CASA_FILE_FULL_NAME));
@@ -222,7 +222,7 @@ void Test2(bool delete_moment_files) {
     }
 }
 
-void Test3() {
+void ConvertFITStoCASA() {
     // A FITS to CASA image conversion
     String output_image_file_full_name = "images/test-moments/HD163296_CO_2_1.image"; // Set the output full name of CASA image
 
@@ -245,7 +245,7 @@ void Test3() {
     delete fits_to_image_ptr;
 }
 
-void Test4() {
+void ConvertCASAtoFITS() {
     // A CASA image to FITS conversion
     String output_fits_file_full_name = "images/test-moments/M17_SWex.fits"; // Set the output full name of FITS image
 
@@ -268,14 +268,15 @@ void Test4() {
     delete image;
 }
 
-void Test5() {
+void SaveMomentWithFITS() {
     // Create moments from the FITS file
-    Test1(false);
+    GenerateMomentsWithFITS(false);
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
     save_file_msg.set_file_id(-1);
     save_file_msg.set_output_file_name("test.fits");
+    save_file_msg.set_output_file_directory("/images/test-moments");
     save_file_msg.set_output_file_type(CARTA::FileType::FITS);
 
     // Set the moment image file (as CASA format)
@@ -295,14 +296,15 @@ void Test5() {
     delete image;
 }
 
-void Test6() {
+void SaveMomentWithCASA() {
     // Create moments from the CASA file
-    Test2(false);
+    GenerateMomentsWithCASA(false);
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
     save_file_msg.set_file_id(-1);
     save_file_msg.set_output_file_name("test.image");
+    save_file_msg.set_output_file_directory("/images/test-moments");
     save_file_msg.set_output_file_type(CARTA::FileType::CASA);
 
     // Set the moment image file (as CASA format)
@@ -322,13 +324,14 @@ void Test6() {
     delete image;
 }
 
-void Test7() {
+void FileManagerConvertFITStoCASA() {
     // FITS file to CASA image conversion:
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
     save_file_msg.set_file_id(-1);
     save_file_msg.set_output_file_name("HD163296_CO_2_1.image");
+    save_file_msg.set_output_file_directory("/images/test-moments");
     save_file_msg.set_output_file_type(CARTA::FileType::CASA);
 
     // This pointer will not be used
@@ -347,13 +350,14 @@ void Test7() {
     delete image;
 }
 
-void Test8() {
+void FileManagerConvertCASAtoFITS() {
     // CASA image to FITS conversion:
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
     save_file_msg.set_file_id(-1);
     save_file_msg.set_output_file_name("M17_SWex.fits");
+    save_file_msg.set_output_file_directory("/images/test-moments");
     save_file_msg.set_output_file_type(CARTA::FileType::FITS);
 
     // Set the CASA image file pointer with the original file name
@@ -372,9 +376,9 @@ void Test8() {
     delete image;
 }
 
-void Test9() {
+void FileManagerSaveWithSameName() {
     // Create moments from the FITS file
-    Test1(false);
+    GenerateMomentsWithFITS(false);
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
@@ -382,6 +386,7 @@ void Test9() {
     size_t found = FITS_FILE_FULL_NAME.find_last_of("/");
     std::string output_filename = FITS_FILE_FULL_NAME.substr(found + 1) + ".moment.average";
     save_file_msg.set_output_file_name(output_filename);
+    save_file_msg.set_output_file_directory("/images/test-moments");
     save_file_msg.set_output_file_type(CARTA::FileType::FITS);
 
     // Set the moment image file (as CASA format)

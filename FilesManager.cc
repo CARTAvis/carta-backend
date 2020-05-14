@@ -52,12 +52,11 @@ void FilesManager::SaveFile(
     std::string filename, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack) {
     int file_id(save_file_msg.file_id());
     std::string output_filename(save_file_msg.output_file_name());
+    std::string directory(save_file_msg.output_file_directory());
     CARTA::FileType output_file_type(save_file_msg.output_file_type());
 
-    // Get the full file name of the new saving image
-    std::size_t found = filename.find_last_of("/");
-    std::string directory = filename.substr(0, found);
-    output_filename = directory + "/" + output_filename;
+    // Set the full file name of the new saving image
+    output_filename = _root_folder + directory + "/" + output_filename;
 
     // Set response message
     save_file_ack.set_file_id(file_id);
@@ -66,7 +65,7 @@ void FilesManager::SaveFile(
 
     casacore::File cc_file(output_filename);
     if (cc_file.exists()) {
-        if (filename != output_filename) {
+        if (!IsSameFile(filename, output_filename)) {
             // Remove the old output file if exists
             system(("rm -rf " + output_filename).c_str());
         } else {
@@ -107,11 +106,27 @@ void FilesManager::SaveFile(
     }
 }
 
+bool FilesManager::IsSameFile(std::string filename1, std::string filename2) {
+    bool result(false);
+    std::size_t found;
+    if (filename1.size() >= filename2.size()) {
+        found = filename1.find(filename2);
+    } else {
+        found = filename2.find(filename1);
+    }
+    if (found != std::string::npos) {
+        result = true;
+    }
+    return result;
+}
+
 // Print protobuf messages
+
 void FilesManager::Print(CARTA::SaveFile message) {
     std::cout << "CARTA::SaveFile:" << std::endl;
     std::cout << "file_id = " << message.file_id() << std::endl;
     std::cout << "output_file_name = " << message.output_file_name() << std::endl;
+    std::cout << "output_file_directory = " << message.output_file_directory() << std::endl;
     if (message.output_file_type() == CARTA::FileType::CASA) {
         std::cout << "output_file_type = CASA" << std::endl;
     } else if (message.output_file_type() == CARTA::FileType::FITS) {

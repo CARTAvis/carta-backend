@@ -31,6 +31,7 @@ public:
     static void Print(CARTA::SaveFileAck message);
 
 private:
+    bool IsSameFile(std::string filename1, std::string filename2);
     std::string _root_folder;
     std::unordered_map<std::string, std::set<std::string>> _moment_file_directories; // <directory, filenames>
 };
