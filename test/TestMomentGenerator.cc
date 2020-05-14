@@ -334,6 +334,8 @@ void Test7() {
     carta::MomentFilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
     carta::MomentFilesManager::Print(save_file_ack);
+
+    delete image;
 }
 
 void Test8() {
@@ -357,4 +359,6 @@ void Test8() {
     carta::MomentFilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
     carta::MomentFilesManager::Print(save_file_ack);
+
+    delete image;
 }
