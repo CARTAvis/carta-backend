@@ -16,6 +16,7 @@ void Test5();
 void Test6();
 void Test7();
 void Test8();
+void Test9();
 
 int main(int argc, char* argv[]) {
     int test_case;
@@ -28,6 +29,7 @@ int main(int argc, char* argv[]) {
     cout << "    6) Test6()" << endl;
     cout << "    7) Test7()" << endl;
     cout << "    8) Test8()" << endl;
+    cout << "    9) Test9()" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -54,6 +56,9 @@ int main(int argc, char* argv[]) {
             break;
         case 8:
             Test8();
+            break;
+        case 9:
+            Test9();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -358,6 +363,35 @@ void Test8() {
     CARTA::SaveFileAck save_file_ack;
     carta::FilesManager moment_files_manager("./");
     moment_files_manager.SaveFile(CASA_FILE_FULL_NAME, image, save_file_msg, save_file_ack);
+
+    std::cout << "==========================================" << std::endl;
+    carta::FilesManager::Print(save_file_msg);
+    std::cout << "==========================================" << std::endl;
+    carta::FilesManager::Print(save_file_ack);
+
+    delete image;
+}
+
+void Test9() {
+    // Create moments from the FITS file
+    Test1(false);
+
+    // Set saving file message
+    CARTA::SaveFile save_file_msg;
+    save_file_msg.set_file_id(-1);
+    size_t found = FITS_FILE_FULL_NAME.find_last_of("/");
+    std::string output_filename = FITS_FILE_FULL_NAME.substr(found + 1) + ".moment.average";
+    save_file_msg.set_output_file_name(output_filename);
+    save_file_msg.set_output_file_type(CARTA::FileType::FITS);
+
+    // Set the moment image file (as CASA format)
+    string original_moment_file_name = FITS_FILE_FULL_NAME + ".moment.average";
+    PagedImage<Float>* image = new casacore::PagedImage<Float>(original_moment_file_name);
+
+    // Response message
+    CARTA::SaveFileAck save_file_ack;
+    carta::FilesManager moment_files_manager("./");
+    moment_files_manager.SaveFile(original_moment_file_name, image, save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);

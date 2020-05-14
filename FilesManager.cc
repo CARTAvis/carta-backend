@@ -59,41 +59,39 @@ void FilesManager::SaveFile(
     std::string directory = filename.substr(0, found);
     output_filename = directory + "/" + output_filename;
 
-    // Remove the old output file if exists
-    casacore::File cc_file(output_filename);
-    if (cc_file.exists() && (filename != output_filename)) {
-        system(("rm -rf " + output_filename).c_str());
-    }
-
     // Set response message
     save_file_ack.set_file_id(file_id);
     bool success = false;
+    casacore::String message;
+
+    casacore::File cc_file(output_filename);
+    if (cc_file.exists()) {
+        if (filename != output_filename) {
+            // Remove the old output file if exists
+            system(("rm -rf " + output_filename).c_str());
+        } else {
+            message = "Con not overwrite the original file!";
+            save_file_ack.set_success(success);
+            save_file_ack.set_message(message);
+            return;
+        }
+    }
 
     if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::FITS)) {
         // CASA image to FITS conversion
-        casacore::String error;
-        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(error, *image, output_filename);
-        if (!ok) {
-            save_file_ack.set_message(error);
-        } else {
+        if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename)) {
             success = true;
         }
     } else if ((CasacoreImageType(filename) == casacore::ImageOpener::FITS) && (output_file_type == CARTA::FileType::CASA)) {
         // FITS to CASA image conversion
-        casacore::String error;
         casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
-        casacore::Bool ok = casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, output_filename, filename);
-
-        delete fits_to_image_ptr; // without this deletion the output image directory lacks "table.f0" and "table.info" files
-
-        if (!ok) {
-            save_file_ack.set_message(error);
-        } else {
+        if (casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, message, output_filename, filename)) {
             success = true;
         }
+        // without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
+        delete fits_to_image_ptr;
     } else {
-        std::string message = "No file format conversion!";
-        save_file_ack.set_message(message);
+        message = "No file format conversion!";
         if (filename != output_filename) {
             std::string command = "cp -a " + filename + " " + output_filename;
             system(command.c_str());
@@ -102,6 +100,8 @@ void FilesManager::SaveFile(
     }
 
     save_file_ack.set_success(success);
+    save_file_ack.set_message(message);
+
     if (success) {
         CheckMomentFileName(output_filename);
     }
