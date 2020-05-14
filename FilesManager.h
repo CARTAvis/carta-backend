@@ -22,6 +22,7 @@ public:
 
     void CacheMomentTempFiles(CARTA::MomentResponse message);
     void RemoveMomentTempFiles();
+    void CheckMomentFileName(std::string output_filename);
     void SaveFile(std::string filename, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
         CARTA::SaveFileAck& save_file_ack);
 

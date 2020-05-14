@@ -23,9 +23,27 @@ void FilesManager::RemoveMomentTempFiles() {
         const std::set<std::string>& filenames = moment_file_directory.second;
         for (const auto& filename : filenames) {
             std::string full_filename = _root_folder + directory + "/" + filename;
-            std::string remove_file = "rm -rf " + full_filename;
-            const char* command = remove_file.c_str();
-            system(command);
+            casacore::File cc_file(full_filename);
+            if (cc_file.exists()) {
+                std::string remove_file = "rm -rf " + full_filename;
+                const char* command = remove_file.c_str();
+                system(command);
+            }
+        }
+    }
+}
+
+void FilesManager::CheckMomentFileName(std::string output_filename) {
+    // Remove the moment file name if it is in the cache of temp moment file names,
+    // in order to prevent deleting such file while close the session
+    for (auto& moment_file_directory : _moment_file_directories) {
+        const std::string& directory = moment_file_directory.first;
+        std::set<std::string>& filenames = moment_file_directory.second;
+        for (const auto& filename : filenames) {
+            std::string full_filename = _root_folder + directory + "/" + filename;
+            if (full_filename == output_filename) {
+                filenames.erase(full_filename);
+            }
         }
     }
 }
@@ -33,55 +51,59 @@ void FilesManager::RemoveMomentTempFiles() {
 void FilesManager::SaveFile(
     std::string filename, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack) {
     int file_id(save_file_msg.file_id());
-    std::string output_file_name(save_file_msg.output_file_name());
+    std::string output_filename(save_file_msg.output_file_name());
     CARTA::FileType output_file_type(save_file_msg.output_file_type());
 
     // Get the full file name of the new saving image
     std::size_t found = filename.find_last_of("/");
     std::string directory = filename.substr(0, found);
-    output_file_name = directory + "/" + output_file_name;
+    output_filename = directory + "/" + output_filename;
 
     // Remove the old output file if exists
-    casacore::File cc_file(output_file_name);
-    if (cc_file.exists() && (filename != output_file_name)) {
-        system(("rm -rf " + output_file_name).c_str());
+    casacore::File cc_file(output_filename);
+    if (cc_file.exists() && (filename != output_filename)) {
+        system(("rm -rf " + output_filename).c_str());
     }
 
     // Set response message
     save_file_ack.set_file_id(file_id);
+    bool success = false;
 
     if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::FITS)) {
         // CASA image to FITS conversion
         casacore::String error;
-        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(error, *image, output_file_name);
+        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(error, *image, output_filename);
         if (!ok) {
-            save_file_ack.set_success(false);
             save_file_ack.set_message(error);
         } else {
-            save_file_ack.set_success(true);
+            success = true;
         }
     } else if ((CasacoreImageType(filename) == casacore::ImageOpener::FITS) && (output_file_type == CARTA::FileType::CASA)) {
         // FITS to CASA image conversion
         casacore::String error;
         casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
-        casacore::Bool ok = casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, output_file_name, filename);
+        casacore::Bool ok = casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, error, output_filename, filename);
 
         delete fits_to_image_ptr; // without this deletion the output image directory lacks "table.f0" and "table.info" files
 
         if (!ok) {
-            save_file_ack.set_success(false);
             save_file_ack.set_message(error);
         } else {
-            save_file_ack.set_success(true);
+            success = true;
         }
     } else {
-        std::string command = "cp -a " + filename + " " + output_file_name;
         std::string message = "No file format conversion!";
-        if (filename != output_file_name) {
-            system(command.c_str());
-        }
-        save_file_ack.set_success(true);
         save_file_ack.set_message(message);
+        if (filename != output_filename) {
+            std::string command = "cp -a " + filename + " " + output_filename;
+            system(command.c_str());
+            success = true;
+        }
+    }
+
+    save_file_ack.set_success(success);
+    if (success) {
+        CheckMomentFileName(output_filename);
     }
 }
 
