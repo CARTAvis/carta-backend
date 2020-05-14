@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "../Moment/FilesManager.h"
+#include "../FilesManager.h"
 #include "../Moment/MomentGenerator.h"
 
 const std::string fits_file_full_name = "images/test-moments/HD163296_CO_2_1.image.fits";

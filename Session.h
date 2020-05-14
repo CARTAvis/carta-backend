@@ -42,8 +42,8 @@
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
+#include "FilesManager.h"
 #include "Frame.h"
-#include "Moment/FilesManager.h"
 #include "Moment/MomentGenerator.h"
 #include "Util.h"
 
