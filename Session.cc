@@ -929,7 +929,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             filename, image, _root_folder, spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
 
         // Cache the names of produced moment images
-        _files_manager->CacheMomentFiles(moment_response);
+        _files_manager->CacheMomentTempFiles(moment_response);
 
         // Send moment response message
         SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);

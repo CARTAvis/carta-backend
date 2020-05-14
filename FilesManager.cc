@@ -5,24 +5,28 @@ using namespace carta;
 FilesManager::FilesManager(std::string root_folder) : _root_folder(root_folder) {}
 
 FilesManager::~FilesManager() {
-    // Remove the moment files while deleted
+    // Remove moment temp files while deleted
+    RemoveMomentTempFiles();
+}
+
+void FilesManager::CacheMomentTempFiles(CARTA::MomentResponse message) {
+    std::string directory(message.directory());
+    for (int i = 0; i < message.output_files_size(); ++i) {
+        std::string filename(message.output_files(i).file_name());
+        _moment_file_directories[directory].insert(filename);
+    }
+}
+
+void FilesManager::RemoveMomentTempFiles() {
     for (auto& moment_file_directory : _moment_file_directories) {
         const std::string& directory = moment_file_directory.first;
-        const std::vector<std::string>& filenames = moment_file_directory.second;
+        const std::set<std::string>& filenames = moment_file_directory.second;
         for (const auto& filename : filenames) {
             std::string full_filename = _root_folder + directory + "/" + filename;
             std::string remove_file = "rm -rf " + full_filename;
             const char* command = remove_file.c_str();
             system(command);
         }
-    }
-}
-
-void FilesManager::CacheMomentFiles(CARTA::MomentResponse message) {
-    std::string directory(message.directory());
-    for (int i = 0; i < message.output_files_size(); ++i) {
-        std::string filename(message.output_files(i).file_name());
-        _moment_file_directories[directory].push_back(filename);
     }
 }
 

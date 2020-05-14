@@ -6,11 +6,12 @@
 #include <casacore/images/Images/ImageFITSConverter.h>
 
 #include <iostream>
+#include <iterator>
+#include <set>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
-#include "../Util.h"
+#include "Util.h"
 
 namespace carta {
 
@@ -19,7 +20,8 @@ public:
     FilesManager(std::string root_folder);
     ~FilesManager();
 
-    void CacheMomentFiles(CARTA::MomentResponse message);
+    void CacheMomentTempFiles(CARTA::MomentResponse message);
+    void RemoveMomentTempFiles();
     void SaveFile(std::string filename, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
         CARTA::SaveFileAck& save_file_ack);
 
@@ -29,7 +31,7 @@ public:
 
 private:
     std::string _root_folder;
-    std::unordered_map<std::string, std::vector<std::string>> _moment_file_directories; // <directory, filenames>
+    std::unordered_map<std::string, std::set<std::string>> _moment_file_directories; // <directory, filenames>
 };
 
 } // namespace carta
