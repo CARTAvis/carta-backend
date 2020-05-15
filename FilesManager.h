@@ -1,5 +1,5 @@
-#ifndef CARTA_BACKEND_MOMENT_MOMENTFILESMANAGER_H_
-#define CARTA_BACKEND_MOMENT_MOMENTFILESMANAGER_H_
+#ifndef CARTA_BACKEND__FILESMANAGER_H_
+#define CARTA_BACKEND__FILESMANAGER_H_
 
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/save_file.pb.h>
@@ -32,10 +32,11 @@ public:
 
 private:
     bool IsSameFile(std::string filename1, std::string filename2);
+    void RemoveRootFolder(std::string& directory);
     std::string _root_folder;
     std::unordered_map<std::string, std::set<std::string>> _moment_file_directories; // <directory, filenames>
 };
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_MOMENT_MOMENTFILESMANAGER_H_
+#endif // CARTA_BACKEND__FILESMANAGER_H_

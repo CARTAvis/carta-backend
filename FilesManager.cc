@@ -55,13 +55,20 @@ void FilesManager::SaveFile(
     std::string directory(save_file_msg.output_file_directory());
     CARTA::FileType output_file_type(save_file_msg.output_file_type());
 
-    // Set the full file name of the new saving image
-    output_filename = _root_folder + directory + "/" + output_filename;
-
     // Set response message
     save_file_ack.set_file_id(file_id);
     bool success = false;
     casacore::String message;
+
+    // Set the full file name of the new saving image
+    if (directory.find("../") == std::string::npos) {
+        output_filename = _root_folder + directory + "/" + output_filename;
+    } else {
+        message = "Invalid directory request!";
+        save_file_ack.set_success(success);
+        save_file_ack.set_message(message);
+        return;
+    }
 
     if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::FITS)) {
         // CASA image to FITS conversion
@@ -77,15 +84,18 @@ void FilesManager::SaveFile(
         // without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
         delete fits_to_image_ptr;
     } else {
-        message = "No file format conversion!";
         if (!IsSameFile(filename, output_filename)) {
+            message = "No file format conversion!";
             std::string command = "cp -a " + filename + " " + output_filename;
             system(command.c_str());
             success = true;
+        } else {
+            message = "File already exists, will not overwrite.";
         }
     }
 
     save_file_ack.set_success(success);
+    RemoveRootFolder(message);
     save_file_ack.set_message(message);
 
     // Do not remove the file if the saving file name is same with the temporary moment file name
@@ -104,6 +114,12 @@ bool FilesManager::IsSameFile(std::string filename1, std::string filename2) {
         result = true;
     }
     return result;
+}
+
+void FilesManager::RemoveRootFolder(std::string& directory) {
+    if (!_root_folder.empty() && directory.find(_root_folder) == 0) {
+        directory.replace(0, _root_folder.size(), "");
+    }
 }
 
 // Print protobuf messages
