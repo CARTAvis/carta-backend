@@ -21,15 +21,15 @@ void FileManagerSaveWithSameName();
 int main(int argc, char* argv[]) {
     int test_case;
     cout << "Choose a test case:" << endl;
-    cout << "    1) Generate Moments With FITS" << endl;
-    cout << "    2) Generate Moments With CASA" << endl;
+    cout << "    1) Generate moments with FITS" << endl;
+    cout << "    2) Generate moments with CASA" << endl;
     cout << "    3) Convert FITS to CASA" << endl;
     cout << "    4) Convert CASA to FITS" << endl;
-    cout << "    5) Save Moment With FITS" << endl;
-    cout << "    6) Save Moment With CASA" << endl;
-    cout << "    7) FileManager Convert FITS to CASA" << endl;
-    cout << "    8) FileManager Convert CASA to FITS" << endl;
-    cout << "    9) FileManager Save With Same Name" << endl;
+    cout << "    5) Save moment file as FITS" << endl;
+    cout << "    6) Save moment file as CASA" << endl;
+    cout << "    7) FileManager converts FITS to CASA" << endl;
+    cout << "    8) FileManager converts CASA to FITS" << endl;
+    cout << "    9) FileManager saves as FITS with the same moment temporary name" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -109,11 +109,11 @@ void GenerateMomentsWithFITS(bool delete_moment_files) {
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
 
     moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
-    auto spectral_range = moment_request.mutable_spectral_range();
+    auto* spectral_range = moment_request.mutable_spectral_range();
     spectral_range->set_min(0);
     spectral_range->set_max(249);
     moment_request.set_mask(CARTA::MomentMask::None);
-    auto pixel_range = moment_request.mutable_pixel_range();
+    auto* pixel_range = moment_request.mutable_pixel_range();
     pixel_range->set_min(0.0);
     pixel_range->set_max(100.0);
 
@@ -186,11 +186,11 @@ void GenerateMomentsWithCASA(bool delete_moment_files) {
     moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
 
     moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
-    auto spectral_range = moment_request.mutable_spectral_range();
+    auto* spectral_range = moment_request.mutable_spectral_range();
     spectral_range->set_min(0);
     spectral_range->set_max(10);
     moment_request.set_mask(CARTA::MomentMask::None);
-    auto pixel_range = moment_request.mutable_pixel_range();
+    auto* pixel_range = moment_request.mutable_pixel_range();
     pixel_range->set_min(0.0);
     pixel_range->set_max(100.0);
 
@@ -378,7 +378,68 @@ void FileManagerConvertCASAtoFITS() {
 
 void FileManagerSaveWithSameName() {
     // Create moments from the FITS file
-    GenerateMomentsWithFITS(false);
+    // Open a FITS image file
+    std::unique_ptr<casacore::FITSImage> image;
+    image.reset(new casacore::FITSImage(FITS_FILE_FULL_NAME));
+
+    // Get spectral and stokes indices
+    casacore::CoordinateSystem coord_sys = image->coordinates();
+    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
+    int spectral_axis = coord_sys.spectralAxisNumber();
+    int stokes_axis = coord_sys.polarizationAxisNumber();
+
+    // Set moment request message
+    CARTA::MomentRequest moment_request;
+    moment_request.set_file_id(-1);
+    moment_request.set_region_id(-1);
+
+    moment_request.add_moments(CARTA::Moment::MEAN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_COORD);
+    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD);
+    moment_request.add_moments(CARTA::Moment::MEDIAN_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::MEDIAN_COORDINATE);
+    moment_request.add_moments(CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::RMS_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::MAX_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
+
+    moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
+    auto* spectral_range = moment_request.mutable_spectral_range();
+    spectral_range->set_min(0);
+    spectral_range->set_max(249);
+    moment_request.set_mask(CARTA::MomentMask::None);
+    auto* pixel_range = moment_request.mutable_pixel_range();
+    pixel_range->set_min(0.0);
+    pixel_range->set_max(100.0);
+
+    // Moment response
+    CARTA::MomentResponse moment_response;
+
+    // Set moment progress callback function
+    auto progress_callback = [&](float progress) {
+        CARTA::MomentProgress moment_progress;
+        moment_progress.set_progress(progress);
+        std::cout << "==========================================" << std::endl;
+        carta::MomentGenerator::Print(moment_progress);
+    };
+
+    // Calculate moments
+    carta::MomentGenerator moment_generator(
+        FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
+
+    // Print protobuf messages
+    std::cout << "==========================================" << std::endl;
+    carta::MomentGenerator::Print(moment_request);
+    std::cout << "==========================================" << std::endl;
+    carta::MomentGenerator::Print(moment_response);
+
+    // Call files manager
+    carta::FilesManager moment_files_manager("./");
+    moment_files_manager.CacheMomentTempFiles(moment_response);
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
@@ -391,17 +452,16 @@ void FileManagerSaveWithSameName() {
 
     // Set the moment image file (as CASA format)
     string original_moment_file_name = FITS_FILE_FULL_NAME + ".moment.average";
-    PagedImage<Float>* image = new casacore::PagedImage<Float>(original_moment_file_name);
+    PagedImage<Float>* moment_image = new casacore::PagedImage<Float>(original_moment_file_name);
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
-    carta::FilesManager moment_files_manager("./");
-    moment_files_manager.SaveFile(original_moment_file_name, image, save_file_msg, save_file_ack);
+    moment_files_manager.SaveFile(original_moment_file_name, moment_image, save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_ack);
 
-    delete image;
+    delete moment_image;
 }

@@ -41,8 +41,8 @@ void FilesManager::CheckMomentFileName(std::string output_filename) {
         std::set<std::string>& filenames = moment_file_directory.second;
         for (const auto& filename : filenames) {
             std::string full_filename = _root_folder + directory + "/" + filename;
-            if (full_filename == output_filename) {
-                filenames.erase(full_filename);
+            if (IsSameFile(filename, output_filename)) {
+                filenames.erase(filename);
             }
         }
     }
@@ -63,19 +63,6 @@ void FilesManager::SaveFile(
     bool success = false;
     casacore::String message;
 
-    casacore::File cc_file(output_filename);
-    if (cc_file.exists()) {
-        if (!IsSameFile(filename, output_filename)) {
-            // Remove the old output file if exists
-            system(("rm -rf " + output_filename).c_str());
-        } else {
-            message = "Con not overwrite the original file!";
-            save_file_ack.set_success(success);
-            save_file_ack.set_message(message);
-            return;
-        }
-    }
-
     if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::FITS)) {
         // CASA image to FITS conversion
         if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename)) {
@@ -91,7 +78,7 @@ void FilesManager::SaveFile(
         delete fits_to_image_ptr;
     } else {
         message = "No file format conversion!";
-        if (filename != output_filename) {
+        if (!IsSameFile(filename, output_filename)) {
             std::string command = "cp -a " + filename + " " + output_filename;
             system(command.c_str());
             success = true;
@@ -101,9 +88,8 @@ void FilesManager::SaveFile(
     save_file_ack.set_success(success);
     save_file_ack.set_message(message);
 
-    if (success) {
-        CheckMomentFileName(output_filename);
-    }
+    // Do not remove the file if the saving file name is same with the temporary moment file name
+    CheckMomentFileName(output_filename);
 }
 
 bool FilesManager::IsSameFile(std::string filename1, std::string filename2) {
