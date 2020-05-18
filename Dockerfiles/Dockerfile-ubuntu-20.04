@@ -1,0 +1,85 @@
+FROM ubuntu:20.04
+
+# Install the basic packages
+RUN \
+  apt-get update && \
+  apt-get -y upgrade && \
+  DEBIAN_FRONTEND=noninteractive \
+  apt-get install -y apt-utils autoconf bison build-essential cmake curl fftw3-dev flex \
+    gcc g++ gdb gfortran git git-lfs libblas-dev libcfitsio-dev libfmt-dev libgsl-dev libgtest-dev \
+    libhdf5-dev libjsoncpp-dev liblapack-dev libncurses-dev libprotobuf-dev libreadline-dev \
+    libssl-dev libstarlink-ast-dev libtool libtbb-dev libxml2-dev libxslt1-dev libzstd-dev \
+    protobuf-compiler software-properties-common unzip vim wget wcslib-dev 
+
+# Get the casacore data
+RUN \
+  git-lfs install && \
+  mkdir -p /usr/local/share/casacore && cd /usr/local/share/casacore && \
+  git clone --no-checkout https://open-bitbucket.nrao.edu/scm/casa/casa-data.git data && \
+  cd data && git show HEAD:distro | bash
+
+# Install carta-casacore
+RUN \
+  cd /root && \
+  git clone -q --recursive https://open-bitbucket.nrao.edu/scm/casa/carta-casacore.git && \
+  mkdir -p carta-casacore/build && cd carta-casacore/build && \
+  cmake .. -DUSE_FFTW3=ON \
+           -DUSE_HDF5=ON \
+           -DUSE_THREADS=ON \
+           -DUSE_OPENMP=ON \
+           -DCMAKE_BUILD_TYPE=Release \
+           -DDATA_DIR=/usr/local/share/casacore/data \
+           -DBUILD_TESTING=OFF \
+           -DBoost_NO_BOOST_CMAKE=1 \
+           -DBUILD_PYTHON=OFF \
+           -DUseCcache=1 \
+           -DHAS_CXX11=1 && \
+  make -j2 && make install && \
+  cd /root && rm -rf carta-casacore
+
+# Install zfp
+RUN \
+  cd /root && \
+  git clone https://github.com/LLNL/zfp.git && \
+  mkdir -p zfp/build && cd zfp/build && \
+  cmake  -DCMAKE_BUILD_TYPE=RELEASE .. && make all install && \
+  cd /root && rm -rf zfp
+
+# Install uWS
+RUN \
+  cd /root && \
+  git clone https://github.com/uNetworking/uWebSockets.git && \
+  cd uWebSockets && git checkout v0.14 && cd .. && \
+  make default install -C uWebSockets && \
+  rm -rf uWebSockets
+
+# gRPC seems to have trouble with Protobuf_PROTOC_LIBRARY so install protobuf from source
+RUN \
+  cd /root && \
+  git clone https://github.com/protocolbuffers/protobuf.git && cd protobuf && \
+  ./autogen.sh && ./configure && make && make install && \
+  cd /root && rm -rf protobuf
+
+# Install gRPC for the scripting interface 
+RUN \
+  cd /root && \
+  git clone --recurse-submodules https://github.com/grpc/grpc && \
+  mkdir -p grpc/cmake/build && cd grpc/cmake/build && \
+  export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH && \
+  cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_SSL_PROVIDER=package ../.. && \
+  make -j 2 && make install && \
+  cd /root && rm -rf grpc 
+
+# Forward port so that the webapp can properly access it from outside of the container
+EXPOSE 3002
+
+ENV HOME /root
+# Required for running the backend 
+ENV LD_LIBRARY_PATH "/usr/lib64:/usr/local/lib:$LD_LIBRARY_PATH"
+ENV CASAPATH "/usr/local/share/casacore linux local `hostname`"
+
+WORKDIR /root
+
+# Overwrite this with 'CMD []' in a dependent Dockerfile
+CMD ["bash"]
+
