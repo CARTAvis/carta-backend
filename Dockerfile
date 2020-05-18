@@ -63,7 +63,7 @@ RUN \
   apt-get -y install libxml2-dev && \
   git clone https://github.com/CARTAvis/carta-backend.git && \
   cd carta-backend && \
-  git checkout confluence/generic-scripting && \
+  git checkout angus/build_test && \
   git submodule init && git submodule update && \
   mkdir build && cd build && \
   cmake .. -DCMAKE_CXX_FLAGS="-I/usr/include/casacode" && \ 
