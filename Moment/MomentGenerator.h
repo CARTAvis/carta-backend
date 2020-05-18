@@ -17,7 +17,7 @@ class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
     MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, std::string root_folder, int spectral_axis,
         int stokes_axis, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-        MomentProgressCallback progress_callback);
+        MomentProgressCallback progress_callback, bool write_results_to_disk = true);
     ~MomentGenerator();
 
     bool IsSuccess() const;
@@ -42,7 +42,8 @@ public:
 
 private:
     Record MakeRegionRecord(casacore::ImageInterface<float>* image, const CARTA::MomentRequest& moment_request);
-    void ExecuteMomentGenerator(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+    void ExecuteMomentGenerator(
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk);
     void SetMomentTypes(const CARTA::MomentRequest& moment_request);
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     int GetMomentMode(CARTA::Moment moment);

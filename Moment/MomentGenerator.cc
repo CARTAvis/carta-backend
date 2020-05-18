@@ -4,7 +4,7 @@ using namespace carta;
 
 MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, std::string root_folder, int spectral_axis,
     int stokes_axis, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-    MomentProgressCallback progress_callback)
+    MomentProgressCallback progress_callback, bool write_results_to_disk)
     : _filename(filename),
       _root_folder(root_folder),
       _image_moments(nullptr),
@@ -43,7 +43,7 @@ MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterfac
     _image_moments->setProgressMonitor(this);
 
     // Calculate the moment images
-    ExecuteMomentGenerator(moment_request, moment_response);
+    ExecuteMomentGenerator(moment_request, moment_response, write_results_to_disk);
 
     // Set is the moment calculation successful or not
     moment_response.set_success(IsSuccess());
@@ -101,7 +101,8 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
     }
 }
 
-void MomentGenerator::ExecuteMomentGenerator(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
+void MomentGenerator::ExecuteMomentGenerator(
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk) {
     try {
         if (!_image_moments->setMoments(_moments)) {
             _error_msg = _image_moments->errorMessage();
@@ -119,18 +120,25 @@ void MomentGenerator::ExecuteMomentGenerator(const CARTA::MomentRequest& moment_
                 moment_response.set_directory(path_name);
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
-                    auto result_images = _image_moments->createMoments(false, out_file, false);
-                    for (int i = 0; i < result_images.size(); ++i) {
-                        std::string moment_suffix = GetMomentSuffix(_moments[i]);
-                        std::string output_filename;
-                        if (result_images.size() == 1) {
-                            output_filename = file_base_name;
-                        } else {
-                            output_filename = file_base_name + "." + moment_suffix;
+                    if (write_results_to_disk) {
+                        auto result_images = _image_moments->createMoments(false, out_file, false);
+                        for (int i = 0; i < result_images.size(); ++i) {
+                            std::string moment_suffix = GetMomentSuffix(_moments[i]);
+                            std::string output_filename;
+                            if (result_images.size() == 1) {
+                                output_filename = file_base_name;
+                            } else {
+                                output_filename = file_base_name + "." + moment_suffix;
+                            }
+                            auto* output_files = moment_response.add_output_files();
+                            output_files->set_file_name(output_filename);
+                            output_files->set_moment_type(moment_request.moments(i));
                         }
-                        auto* output_files = moment_response.add_output_files();
-                        output_files->set_file_name(output_filename);
-                        output_files->set_moment_type(moment_request.moments(i));
+                    } else {
+                        auto result_images = _image_moments->createMoments(true, out_file, false);
+                        for (int i = 0; i < result_images.size(); ++i) {
+                            // Todo:
+                        }
                     }
                 } catch (const AipsError& x) {
                     _error_msg = x.getMesg();
