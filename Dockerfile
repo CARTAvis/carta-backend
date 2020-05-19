@@ -9,21 +9,8 @@ RUN \
     libcfitsio-dev libfmt-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
     libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libxml2-dev \
     libzstd-dev libgsl-dev man pkg-config python-pip python3-pip \
-    software-properties-common unzip vim wcslib-dev wget
+    software-properties-common unzip vim wcslib-dev wget cmake
     
-# Install latest cmake (>= 3.13 required to build gRPC correctly)
-RUN \
-  wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | apt-key add - && \
-  apt-add-repository "deb https://apt.kitware.com/ubuntu/ `lsb_release -cs` main" && \
-  apt-get update && \
-  apt-get -y install cmake
-
-# Install googletest
-RUN \
-  cd /usr/src/gtest && \
-  cmake . && make && \
-  cp *.a /usr/lib
-
 # Get carta dependencies
 # casacore data from Kernsuite PPA
 RUN \
@@ -53,7 +40,7 @@ RUN \
 RUN \
   add-apt-repository ppa:webispy/grpc && \
   apt-get update && \
-  apt-get install -y libprotobuf-dev protobuf-compiler libgrpc++-dev libgrpc-dev protobuf-compiler-grpc
+  apt-get install -y libprotobuf-dev protobuf-compiler libgrpc++-dev libgrpc-dev protobuf-compiler-grpc googletest
 
 # Build carta-backend (currently checkouts the confluence/generic-scripting branch)
 RUN \
