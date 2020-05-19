@@ -44,6 +44,9 @@
 #define TARGET_PARTIAL_REGION_TIME 1000
 #define PROFILE_COMPLETE 1.0
 
+// scripting timeouts
+#define SCRIPTING_TIMEOUT 10 // seconds
+
 // catalog files
 #define ALL_CATALOG_DATA -1
 #define TARGET_PARTIAL_CATALOG_FILTER_TIME 500
