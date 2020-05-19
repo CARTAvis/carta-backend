@@ -66,13 +66,13 @@ if(gRPC_FOUND)
             ${LINK_LIBS}
             gRPC::grpc++
     )
-    message("gRPC found using FIND_PACKAGE")
+    message(STATUS "gRPC found using FIND_PACKAGE")
 else()
-    message("gRPC not found using FIND_PACKAGE, using pkg-config instead")
+    message(STATUS "gRPC not found using FIND_PACKAGE, using pkg-config instead")
     FIND_PACKAGE(PkgConfig REQUIRED)
     PKG_SEARCH_MODULE(GRPC REQUIRED grpc)
     if (GRPC_FOUND)
-        message("gRPC found using pkg-config")
+        message(STATUS "gRPC found using pkg-config")
         set(LINK_LIBS
                 ${LINK_LIBS}
                 grpc
