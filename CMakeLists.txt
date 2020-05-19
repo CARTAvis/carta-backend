@@ -37,7 +37,7 @@ FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
 
 find_package(PkgConfig REQUIRED)
-pkg_search_module(GRPC REQUIRED grpc)
+pkg_search_module(GRPC REQUIRED grpc grpc++)
 
 #FIND_PACKAGE(gRPC CONFIG REQUIRED)
 FIND_PACKAGE(LibXml2 REQUIRED)
@@ -76,6 +76,7 @@ set(LINK_LIBS
         ${PROTOBUF_LIBRARY}
         grpc
         grpc++
+        grpc++_unsecure
         gpr
         fmt
         uWS
