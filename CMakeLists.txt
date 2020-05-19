@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 project(carta_backend)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -35,7 +35,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
-FIND_PACKAGE(gRPC CONFIG REQUIRED)
 FIND_PACKAGE(LibXml2 REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
@@ -60,6 +59,29 @@ if (AuthServer)
             DBConnect.cc)
 endif (AuthServer)
 
+FIND_PACKAGE(gRPC QUIET)
+if(gRPC_FOUND)
+    set(LINK_LIBS
+            ${LINK_LIBS}
+            gRPC::grpc++
+    )
+    message(STATUS "gRPC found using FIND_PACKAGE")
+else()
+    message(STATUS "gRPC not found using FIND_PACKAGE, using pkg-config instead")
+    FIND_PACKAGE(PkgConfig REQUIRED)
+    PKG_SEARCH_MODULE(GRPC REQUIRED grpc)
+    if (GRPC_FOUND)
+        message(STATUS "gRPC found using pkg-config")
+        set(LINK_LIBS
+                ${LINK_LIBS}
+                grpc
+                grpc++
+                )
+    else()
+        message(FATAL_ERROR "Could not import gRPC library")
+    endif()
+endif()
+
 if (DisableContourCompression)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DISABLE_CONTOUR_COMPRESSION_")
 endif(DisableContourCompression)
@@ -70,7 +92,6 @@ set(LINK_LIBS
         carta-protobuf
         cartavis
         ${PROTOBUF_LIBRARY}
-        gRPC::grpc++
         fmt
         uWS
         ssl
