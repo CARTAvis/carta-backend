@@ -59,7 +59,6 @@ if (AuthServer)
             DBConnect.cc)
 endif (AuthServer)
 
-
 FIND_PACKAGE(gRPC QUIET)
 if(gRPC_FOUND)
     set(LINK_LIBS
@@ -81,7 +80,6 @@ else()
     else()
         message(FATAL_ERROR "Could not import gRPC library")
     endif()
-
 endif()
 
 if (DisableContourCompression)
