@@ -42,12 +42,12 @@ RUN \
   apt-get update && \
   apt-get install -y libprotobuf-dev protobuf-compiler libgrpc++-dev libgrpc-dev protobuf-compiler-grpc googletest
 
-# Build carta-backend (currently checkouts the confluence/generic-scripting branch)
+# Build carta-backend (currently checkouts the dev)
 RUN \
   apt-get -y install libxml2-dev && \
   git clone https://github.com/CARTAvis/carta-backend.git && \
   cd carta-backend && \
-  git checkout angus/build_test && \
+  git checkout dev && \
   git submodule init && git submodule update && \
   mkdir build && cd build && \
   cmake .. -DCMAKE_CXX_FLAGS="-I/usr/include/casacode" && \ 
