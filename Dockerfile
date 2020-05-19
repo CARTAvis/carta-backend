@@ -7,8 +7,8 @@ RUN \
   apt-get install -y apt-utils autoconf bison build-essential byobu curl default-jre emacs \
     fftw3-dev flex gdb gcc gfortran git git-lfs htop libblas-dev \
     libcfitsio-dev libfmt-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
-    libprotobuf-dev libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libxml2-dev \
-    libzstd-dev libgsl-dev man pkg-config protobuf-compiler python-pip python3-pip \
+    libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libxml2-dev \
+    libzstd-dev libgsl-dev man pkg-config python-pip python3-pip \
     software-properties-common unzip vim wcslib-dev wget
     
 # Install latest cmake (>= 3.13 required to build gRPC correctly)
@@ -49,14 +49,11 @@ RUN \
   apt-get update && \
   apt-get install zfp
 
-# gRPC
+# grpc from webispy ppa
 RUN \
-  cd /root && \
-  git clone --recurse-submodules https://github.com/grpc/grpc && \ 
-  mkdir -p grpc/cmake/build && cd grpc/cmake/build && \
-  cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=/usr/local -DgRPC_SSL_PROVIDER=package ../.. && \
-  make && make install && \
-  cd /root && rm -rf grpc
+  add-apt-repository ppa:webispy/grpc && \
+  apt-get update && \
+  apt-get install -y libprotobuf-dev protobuf-compiler libgrpc++-dev libgrpc-dev protobuf-compiler-grpc
 
 # Build carta-backend (currently checkouts the confluence/generic-scripting branch)
 RUN \
