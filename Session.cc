@@ -938,6 +938,18 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
 
 void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {}
 
+void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
+    int file_id(save_file.file_id());
+    if (_frames.count(file_id)) {
+        std::string filename = _frames.at(file_id)->GetFileName();
+        casacore::ImageInterface<float>* image = _frames.at(file_id)->GetImage();
+        CARTA::SaveFileAck save_file_ack;
+        _files_manager->SaveFile(filename, image, save_file, save_file_ack);
+        // Send response message
+        SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
+    }
+}
+
 // ******** SEND DATA STREAMS *********
 
 CARTA::RegionHistogramData* Session::GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel) {
