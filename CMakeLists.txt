@@ -74,7 +74,9 @@ set(LINK_LIBS
         carta-protobuf
         cartavis
         ${PROTOBUF_LIBRARY}
+        grpc
         grpc++
+        gpr
         fmt
         uWS
         ssl
