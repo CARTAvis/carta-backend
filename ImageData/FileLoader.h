@@ -129,6 +129,7 @@ public:
     virtual ~FileLoader() = default;
 
     static FileLoader* GetLoader(const std::string& filename);
+    static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>>& image);
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);

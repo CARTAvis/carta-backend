@@ -6,6 +6,7 @@
 #include "CasaLoader.h"
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
+#include "ImagePtrLoader.h"
 #include "MiriadLoader.h"
 
 using namespace carta;
@@ -36,6 +37,10 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
             break;
     }
     return nullptr;
+}
+
+FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>>& image) {
+    return new ImagePtrLoader(image);
 }
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
