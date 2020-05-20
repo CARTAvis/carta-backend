@@ -43,8 +43,16 @@ ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(cartavis)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
-INCLUDE_DIRECTORIES(/usr/include/casacore)
-INCLUDE_DIRECTORIES(/usr/local/include/casacode)
+INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
+INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+INCLUDE_DIRECTORIES(/usr/local/include)
+INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
+INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
+LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
 
 if (AuthServer)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
