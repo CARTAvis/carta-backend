@@ -62,7 +62,7 @@ void FilesManager::SaveFile(
 
     // Set the full file name of the new saving image
     if (directory.find("../") == std::string::npos) {
-        output_filename = _root_folder + directory + "/" + output_filename;
+        output_filename = _root_folder + "/" + directory + "/" + output_filename;
     } else {
         message = "Invalid directory request!";
         save_file_ack.set_success(success);
