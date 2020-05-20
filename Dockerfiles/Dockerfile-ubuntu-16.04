@@ -4,13 +4,26 @@ FROM ubuntu:16.04
 RUN \
   apt-get update && \
   apt-get -y upgrade && \
-  apt-get install -y autoconf bison build-essential byobu cmake curl default-jre fftw3-dev flex \
+  apt-get install -y apt-utils autoconf bison build-essential byobu curl fftw3-dev flex \
     gdb gfortran git htop libblas-dev libcfitsio-dev libgsl-dev libgtest-dev libhdf5-dev \
     libjsoncpp-dev liblapack-dev libncurses-dev libreadline-dev libssl-dev libstarlink-ast-dev \
-    libtool libtbb-dev libxml2-dev libxslt1-dev libx11-dev libzstd-dev man patchelf \
-    protobuf-compiler python-pip python3-pip software-properties-common unzip vim wget wcslib-dev 
+    libtool libtbb-dev libxml2-dev libxslt1-dev libx11-dev libzstd-dev pkg-config \
+    software-properties-common unzip wcslib-dev wget
 
-# The gRPC installation will require cmake >3.13
+# grpc from webispy ppa
+RUN \
+  add-apt-repository ppa:webispy/grpc && \
+  apt-get update && \
+  apt-get install -y libprotobuf-dev protobuf-compiler libgrpc++-dev libgrpc-dev protobuf-compiler-grpc googletest
+
+# The carta-backend will use GCC 8 functions, so install gcc-8
+RUN \
+  add-apt-repository ppa:ubuntu-toolchain-r/test && \
+  apt-get update && \
+  apt-get -y install gcc-8 g++-8 && \
+  update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8
+
+# 16.04 comes with cmake 3.5.1 but CARTA needs cmake >3.10
 RUN \
   cd /root && \
   git clone https://github.com/Kitware/CMake.git && \
@@ -18,23 +31,10 @@ RUN \
   make -j 2 && make install && \
   cd /root && rm -rf CMake
 
-# The carta-backend will use GCC 8 functions, so install gcc-8
-RUN \
-  add-apt-repository ppa:ubuntu-toolchain-r/test && \
-  apt-get update && \
-  apt-get -y install gcc-8 g++-8 && \
-  update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8 &&\
-  gcc --version
-
 # Ubuntu 16.04 does not have libfmt-dev so build it from source
 RUN \
- git clone https://github.com/fmtlib/fmt.git && cd fmt && cmake CMakeLists.txt && make && make install
-
-# Ubuntu 16.04 only comes with protobuf2, but carta-backend requires protobuf3 
-RUN \
-  git clone https://github.com/protocolbuffers/protobuf.git && cd protobuf && \
-  ./autogen.sh && ./configure && make && make install && \
-  cd .. && rm -rf protobuf
+  git clone https://github.com/fmtlib/fmt.git && cd fmt && cmake CMakeLists.txt && \
+  make && make install && cd .. && rm -rf fmt
 
 # For the casacore 'data' directory, git-lfs difficult to install on 16.04,
 # but can conveniently get the appropriate casacore-data from the KERN PPA
@@ -59,7 +59,7 @@ RUN \
            -DUseCcache=1 \
            -DHAS_CXX11=1 \ 
            -DDATA_DIR=/usr/local/share/casacore/data && \
-  make -j2 && make install && \
+  make && make install && \
   cd /root && rm -rf carta-casacore
 
 # Install zfp
@@ -78,18 +78,10 @@ RUN \
   make default install -C uWebSockets && \
   rm -rf uWebSockets
 
-# Install gRPC for the scripting interface 
-RUN \
-  cd /root && \
-  git clone --recurse-submodules https://github.com/grpc/grpc && \
-  mkdir -p grpc/cmake/build && cd grpc/cmake/build && \
-  export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH && \
-  cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_SSL_PROVIDER=package ../.. && \
-  make -j 2 && make install && \
-  cd /root && rm -rf grpc 
-
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
+# For gRPC scripting interface
+EXPOSE 50051
 
 ENV HOME /root
 # Required for running the backend 
