@@ -3,7 +3,6 @@
 #include "RegionHandler.h"
 
 #include <chrono>
-#include <thread>
 
 #include <casacore/lattices/LRegions/LCBox.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
@@ -996,6 +995,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         // Get mask; LCRegion for file id is cached
         casacore::ArrayLattice<casacore::Bool> mask = _regions[region_id]->GetImageRegionMask(file_id);
         if (!mask.shape().empty()) {
+            // start the timer
+            auto t_start = std::chrono::high_resolution_clock::now();
+            auto t_latest = t_start;
+
             // Get partial profiles until complete (do once if cached)
             while (progress < PROFILE_COMPLETE) {
                 // Cancel if region or frame is closing
@@ -1025,14 +1028,25 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 // Get partial profile
                 std::map<CARTA::StatsType, std::vector<double>> partial_profiles;
                 if (_frames.at(file_id)->GetLoaderSpectralData(region_id, stokes_index, mask, xy_origin, partial_profiles, progress)) {
-                    // Copy partial profile to results
-                    for (const auto& profile : partial_profiles) {
-                        auto stats_type = profile.first;
-                        if (results.count(stats_type)) {
-                            results[stats_type] = profile.second;
+                    // get the time elapse for this step
+                    auto t_end = std::chrono::high_resolution_clock::now();
+                    auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
+
+                    if ((dt > TARGET_PARTIAL_REGION_TIME) || (progress >= PROFILE_COMPLETE)) {
+                        // Copy partial profile to results
+                        for (const auto& profile : partial_profiles) {
+                            auto stats_type = profile.first;
+                            if (results.count(stats_type)) {
+                                results[stats_type] = profile.second;
+                            }
                         }
+
+                        // restart timer
+                        t_latest = t_end;
+
+                        // send partial result
+                        partial_results_callback(results, progress);
                     }
-                    partial_results_callback(results, progress);
                 } else {
                     _frames.at(file_id)->DecreaseZProfileCount();
                     _regions.at(region_id)->DecreaseZProfileCount();
