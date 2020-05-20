@@ -28,12 +28,15 @@
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
 #include <carta-protobuf/resume_session.pb.h>
+#include <carta-protobuf/scripting.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
+
+#include <cartavis/carta_service.grpc.pb.h>
 
 #include <tbb/task.h>
 
@@ -190,10 +193,13 @@ public:
     FileSettings _file_settings;
     std::unordered_map<int, tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
+    void SendScriptingRequest(uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async);
+    void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
+    bool GetScriptingResponse(uint32_t scripting_request_id, CARTAVIS::ActionReply* reply);
+
 private:
     // File info
-    void ResetFileInfo(bool create = false); // delete existing file info ptrs, optionally create new ones
-    bool FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const std::string& folder,
+    bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
         const std::string& filename, std::string hdu, std::string& message);
 
     // Delete Frame(s)
@@ -227,9 +233,7 @@ private:
     // File browser
     FileListHandler* _file_list_handler;
 
-    // File info for browser, open file
-    std::unique_ptr<CARTA::FileInfo> _file_info;
-    std::unique_ptr<CARTA::FileInfoExtended> _file_info_extended;
+    // File loader
     std::unique_ptr<carta::FileLoader> _loader;
 
     // Frame
@@ -270,6 +274,10 @@ private:
     static int _num_sessions;
     static int _exit_after_num_seconds;
     static bool _exit_when_all_sessions_closed;
+
+    // Scripting responses from the client
+    std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
+    std::mutex _scripting_mutex;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_

@@ -48,8 +48,6 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _socket(ws),
       _root_folder(root),
       _verbose_logging(verbose),
-      _file_info(nullptr),
-      _file_info_extended(nullptr),
       _loader(nullptr),
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
@@ -146,12 +144,12 @@ void Session::ConnectCalled() {
 // ********************************************************************************
 // File browser
 
-bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA::FileInfo* file_info, const string& folder,
+bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const string& folder,
     const string& filename, string hdu, string& message) {
     // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
     bool ext_file_info_ok(true);
     try {
-        file_info->set_name(filename);
+        file_info.set_name(filename);
         casacore::String full_name(GetResolvedFilename(_root_folder, folder, filename));
         if (!full_name.empty()) {
             try {
@@ -159,10 +157,9 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA
                 if (!info_loader.FillFileInfo(file_info)) {
                     return false;
                 }
-                if (hdu.empty()) { // use first when required
-                    hdu = file_info->hdu_list(0);
-                }
+
                 _loader.reset(carta::FileLoader::GetLoader(full_name));
+
                 FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
                 ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, hdu, message);
             } catch (casacore::AipsError& ex) {
@@ -178,17 +175,6 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended* extended_info, CARTA
         ext_file_info_ok = false;
     }
     return ext_file_info_ok;
-}
-
-void Session::ResetFileInfo(bool create) {
-    // optionally create new file info pointers
-    if (create) {
-        _file_info.reset(new CARTA::FileInfo());
-        _file_info_extended.reset(new CARTA::FileInfoExtended());
-    } else {
-        _file_info.reset(nullptr);
-        _file_info_extended.reset(nullptr);
-    }
 }
 
 // *********************************************************************************
@@ -253,19 +239,13 @@ void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t 
 
 void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id) {
     CARTA::FileInfoResponse response;
-    auto file_info = response.mutable_file_info();
-    auto file_info_extended = response.mutable_file_info_extended();
+    auto& file_info = *response.mutable_file_info();
+    auto& file_info_extended = *response.mutable_file_info_extended();
     string message;
 
-    casacore::String hdu_name(request.hdu());
-    casacore::String hdu_num(hdu_name.before(" ")); // strip FITS extension name
-    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu_num, message);
-
-    if (success) { // save a copy to reuse if file opened
-        ResetFileInfo(true);
-        *_file_info.get() = response.file_info();
-        *_file_info_extended.get() = response.file_info_extended();
-    }
+    casacore::String hdu(request.hdu());
+    hdu = hdu.before(" "); // strip FITS extension name
+    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu, message);
 
     response.set_success(success);
     response.set_message(message);
@@ -296,34 +276,28 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     // Create Frame and send response message
     const auto& directory(message.directory());
     const auto& filename(message.file());
-    auto hdu(message.hdu());
     auto file_id(message.file_id());
+    casacore::String hdu(message.hdu());
+    hdu = hdu.before(" "); // strip FITS extension name
+
     // response message:
     CARTA::OpenFileAck ack;
     ack.set_file_id(file_id);
     string err_message;
 
-    // correct file loaded?
-    bool info_loaded((_file_info.get() != nullptr) && (_file_info_extended.get() != nullptr) && (_file_info->name() == filename));
-    if (!info_loaded) {
-        // load from image file
-        ResetFileInfo(true);
-        info_loaded = FillExtendedFileInfo(_file_info_extended.get(), _file_info.get(), directory, filename, hdu, err_message);
-    }
+    CARTA::FileInfo file_info;
+    CARTA::FileInfoExtended file_info_extended;
+
+    bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message);
 
     bool success(false);
-    if (!info_loaded) {
-        ResetFileInfo(); // clean up
-    } else {
+
+    if (info_loaded) {
         // Set hdu if empty
         if (hdu.empty()) { // use first
-            hdu = _file_info->hdu_list(0);
-        } else {
-            size_t description_start = hdu.find(" "); // strip ExtName
-            if (description_start != std::string::npos) {
-                hdu = hdu.substr(0, description_start);
-            }
+            hdu = file_info.hdu_list(0);
         }
+
         // create Frame for image
         auto frame = std::unique_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _verbose_logging));
         _loader.release();
@@ -338,15 +312,15 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
             lock.unlock();
             // copy file info, extended file info
             CARTA::FileInfo response_file_info = CARTA::FileInfo();
-            response_file_info.set_name(_file_info->name());
-            response_file_info.set_type(_file_info->type());
-            response_file_info.set_size(_file_info->size());
+            response_file_info.set_name(file_info.name());
+            response_file_info.set_type(file_info.type());
+            response_file_info.set_size(file_info.size());
             response_file_info.add_hdu_list(hdu); // loaded hdu only
             *ack.mutable_file_info() = response_file_info;
-            *ack.mutable_file_info_extended() = *_file_info_extended.get();
+            *ack.mutable_file_info_extended() = file_info_extended;
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
             // TODO: Determine these dynamically. For now, this is hard-coded for all HDF5 features.
-            if (_file_info->type() == CARTA::FileType::HDF5) {
+            if (file_info.type() == CARTA::FileType::HDF5) {
                 feature_flags |= CARTA::FileFeatureFlags::ROTATED_DATASET;
                 feature_flags |= CARTA::FileFeatureFlags::CUBE_HISTOGRAMS;
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
@@ -825,6 +799,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
         if (file_ok) {
             // Set image channels
             CARTA::SetImageChannels set_image_channels_msg;
+            set_image_channels_msg.set_file_id(image.file_id());
             set_image_channels_msg.set_channel(image.channel());
             set_image_channels_msg.set_stokes(image.stokes());
             OnSetImageChannels(set_image_channels_msg);
@@ -833,10 +808,10 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
             for (int j = 0; j < image.regions_size(); ++j) {
                 const CARTA::RegionProperties& region = image.regions(j);
                 CARTA::SetRegion set_region_msg;
-                set_region_msg.set_region_name(region.region_info().region_name());
+                set_region_msg.set_file_id(image.file_id());
                 set_region_msg.set_region_id(region.region_id());
+                set_region_msg.set_region_name(region.region_info().region_name());
                 set_region_msg.set_rotation(region.region_info().rotation());
-                set_region_msg.set_file_id(i);
                 set_region_msg.set_region_type(region.region_info().region_type());
                 *set_region_msg.mutable_control_points() = {
                     region.region_info().control_points().begin(), region.region_info().control_points().end()};
@@ -1648,5 +1623,41 @@ void Session::DeleteFrame(int file_id) {
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
         _image_channel_task_active.erase(file_id);
+    }
+}
+
+void Session::SendScriptingRequest(
+    uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async) {
+    CARTA::ScriptingRequest message;
+    message.set_scripting_request_id(scripting_request_id);
+    message.set_target(target);
+    message.set_action(action);
+    message.set_parameters(parameters);
+    message.set_async(async);
+    SendEvent(CARTA::EventType::SCRIPTING_REQUEST, 0, message);
+}
+
+void Session::OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id) {
+    // Save response to scripting request
+    int scripting_request_id(message.scripting_request_id());
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    _scripting_response[scripting_request_id] = message;
+}
+
+// TODO: return pointer to original response type and copy in grpc service
+bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTAVIS::ActionReply* reply) {
+    std::unique_lock<std::mutex> lock(_scripting_mutex);
+    auto scripting_response = _scripting_response.find(scripting_request_id);
+    if (scripting_response == _scripting_response.end()) {
+        return false;
+    } else {
+        auto msg = scripting_response->second;
+        reply->set_success(msg.success());
+        reply->set_message(msg.message());
+        reply->set_response(msg.response());
+
+        _scripting_response.erase(scripting_request_id);
+
+        return true;
     }
 }

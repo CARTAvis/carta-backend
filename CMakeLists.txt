@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 project(carta_backend)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -40,10 +40,19 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
+ADD_SUBDIRECTORY(cartavis)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
-INCLUDE_DIRECTORIES(/usr/include/casacore)
-INCLUDE_DIRECTORIES(/usr/local/include/casacode)
+INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
+INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+INCLUDE_DIRECTORIES(/usr/local/include)
+INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
+INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
+LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
 
 if (AuthServer)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
@@ -58,6 +67,29 @@ if (AuthServer)
             DBConnect.cc)
 endif (AuthServer)
 
+FIND_PACKAGE(gRPC QUIET)
+if(gRPC_FOUND)
+    set(LINK_LIBS
+            ${LINK_LIBS}
+            gRPC::grpc++
+    )
+    message(STATUS "gRPC found using FIND_PACKAGE")
+else()
+    message(STATUS "gRPC not found using FIND_PACKAGE, using pkg-config instead")
+    FIND_PACKAGE(PkgConfig REQUIRED)
+    PKG_SEARCH_MODULE(GRPC REQUIRED grpc)
+    if (GRPC_FOUND)
+        message(STATUS "gRPC found using pkg-config")
+        set(LINK_LIBS
+                ${LINK_LIBS}
+                grpc
+                grpc++
+                )
+    else()
+        message(FATAL_ERROR "Could not import gRPC library")
+    endif()
+endif()
+
 if (DisableContourCompression)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DISABLE_CONTOUR_COMPRESSION_")
 endif(DisableContourCompression)
@@ -66,6 +98,7 @@ endif(DisableContourCompression)
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
+        cartavis
         ${PROTOBUF_LIBRARY}
         fmt
         uWS
@@ -120,7 +153,8 @@ set(SOURCE_FILES
         Tile.cc
         Ds9Parser.cc
         Contouring.cc
-        Smoothing.cc)
+        Smoothing.cc
+        GrpcServer/CartaGrpcService.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
