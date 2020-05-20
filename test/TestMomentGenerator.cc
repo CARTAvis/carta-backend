@@ -129,8 +129,9 @@ void GenerateMomentsWithFITS(bool delete_moment_files) {
     };
 
     // Calculate moments
-    carta::MomentGenerator moment_generator(FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
-    moment_generator.CalculateMoments(moment_request, moment_response);
+    carta::MomentGenerator* moment_generator =
+        new carta::MomentGenerator(FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
+    moment_generator->CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;
@@ -138,10 +139,13 @@ void GenerateMomentsWithFITS(bool delete_moment_files) {
     std::cout << "==========================================" << std::endl;
     carta::MomentGenerator::Print(moment_response);
 
+    delete moment_generator;
+
     if (delete_moment_files) {
         // Call files manager
-        carta::FilesManager moment_files_manager("./");
-        moment_files_manager.CacheMomentTempFiles(moment_response);
+        carta::FilesManager* moment_files_manager = new carta::FilesManager("./");
+        moment_files_manager->CacheMomentTempFiles(moment_response);
+        delete moment_files_manager;
     }
 }
 
@@ -206,8 +210,9 @@ void GenerateMomentsWithCASA(bool delete_moment_files) {
     };
 
     // Calculate moments
-    carta::MomentGenerator moment_generator(CASA_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
-    moment_generator.CalculateMoments(moment_request, moment_response);
+    carta::MomentGenerator* moment_generator =
+        new carta::MomentGenerator(CASA_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
+    moment_generator->CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;
@@ -215,10 +220,13 @@ void GenerateMomentsWithCASA(bool delete_moment_files) {
     std::cout << "==========================================" << std::endl;
     carta::MomentGenerator::Print(moment_response);
 
+    delete moment_generator;
+
     if (delete_moment_files) {
         // Call files manager
-        carta::FilesManager moment_files_manager("./");
-        moment_files_manager.CacheMomentTempFiles(moment_response);
+        carta::FilesManager* moment_files_manager = new carta::FilesManager("./");
+        moment_files_manager->CacheMomentTempFiles(moment_response);
+        delete moment_files_manager;
     }
 }
 
@@ -428,8 +436,9 @@ void FileManagerSaveWithSameName() {
     };
 
     // Calculate moments
-    carta::MomentGenerator moment_generator(FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
-    moment_generator.CalculateMoments(moment_request, moment_response);
+    carta::MomentGenerator* moment_generator =
+        new carta::MomentGenerator(FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
+    moment_generator->CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;
@@ -438,8 +447,8 @@ void FileManagerSaveWithSameName() {
     carta::MomentGenerator::Print(moment_response);
 
     // Call files manager
-    carta::FilesManager moment_files_manager("./");
-    moment_files_manager.CacheMomentTempFiles(moment_response);
+    carta::FilesManager* moment_files_manager = new carta::FilesManager("./");
+    moment_files_manager->CacheMomentTempFiles(moment_response);
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
@@ -456,12 +465,15 @@ void FileManagerSaveWithSameName() {
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
-    moment_files_manager.SaveFile(original_moment_file_name, moment_image, save_file_msg, save_file_ack);
+    moment_files_manager->SaveFile(original_moment_file_name, moment_image, save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_ack);
 
+    // The order of deleting objects does matter
     delete moment_image;
+    delete moment_generator;
+    delete moment_files_manager;
 }
