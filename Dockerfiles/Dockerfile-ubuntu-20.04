@@ -5,11 +5,11 @@ RUN \
   apt-get update && \
   apt-get -y upgrade && \
   DEBIAN_FRONTEND=noninteractive \
-  apt-get install -y apt-utils autoconf bison build-essential cmake curl fftw3-dev flex \
-    gcc g++ gdb gfortran git git-lfs libblas-dev libcfitsio-dev libfmt-dev libgsl-dev libgtest-dev \
-    libhdf5-dev libjsoncpp-dev liblapack-dev libncurses-dev libprotobuf-dev libreadline-dev \
-    libssl-dev libstarlink-ast-dev libtool libtbb-dev libxml2-dev libxslt1-dev libzstd-dev \
-    protobuf-compiler software-properties-common unzip vim wget wcslib-dev 
+  apt-get install -y apt-utils autoconf bison build-essential cmake curl fftw3-dev flex gcc g++ \
+    gdb gfortran git git-lfs googletest libblas-dev libcfitsio-dev libfmt-dev libgrpc-dev libgrpc++-dev \
+    libgsl-dev libgtest-dev libhdf5-dev libjsoncpp-dev liblapack-dev libncurses-dev libprotobuf-dev \
+    libreadline-dev libssl-dev libstarlink-ast-dev libtool libtbb-dev libxml2-dev libxslt1-dev libzstd-dev \
+    pkg-config protobuf-compiler-grpc software-properties-common unzip wcslib-dev wget
 
 # Get the casacore data
 RUN \
@@ -18,7 +18,7 @@ RUN \
   git clone --no-checkout https://open-bitbucket.nrao.edu/scm/casa/casa-data.git data && \
   cd data && git show HEAD:distro | bash
 
-# Install carta-casacore
+# Install carta-casacore (with fixed CASAROOT)
 RUN \
   cd /root && \
   git clone -q --recursive https://open-bitbucket.nrao.edu/scm/casa/carta-casacore.git && \
@@ -52,23 +52,6 @@ RUN \
   cd uWebSockets && git checkout v0.14 && cd .. && \
   make default install -C uWebSockets && \
   rm -rf uWebSockets
-
-# gRPC seems to have trouble with Protobuf_PROTOC_LIBRARY so install protobuf from source
-RUN \
-  cd /root && \
-  git clone https://github.com/protocolbuffers/protobuf.git && cd protobuf && \
-  ./autogen.sh && ./configure && make && make install && \
-  cd /root && rm -rf protobuf
-
-# Install gRPC for the scripting interface 
-RUN \
-  cd /root && \
-  git clone --recurse-submodules https://github.com/grpc/grpc && \
-  mkdir -p grpc/cmake/build && cd grpc/cmake/build && \
-  export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH && \
-  cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_SSL_PROVIDER=package ../.. && \
-  make -j 2 && make install && \
-  cd /root && rm -rf grpc 
 
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
