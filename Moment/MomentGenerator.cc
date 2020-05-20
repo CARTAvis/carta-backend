@@ -63,16 +63,15 @@ void MomentGenerator::CalculateMoments(
                             auto* output_files = moment_response.add_output_files();
                             output_files->set_file_name(output_filename);
                             output_files->set_moment_type(moment_request.moments(i));
-
-                            // Save collapse results (remove the output file on disk before deleting its ptr will cause problem!)
-                            std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
-                                dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                            _collapse_results.push_back(CollapseResult(output_filename, _moments[i], moment_image));
                         }
                     } else {
                         auto result_images = _image_moments->createMoments(true, out_file, false);
                         for (int i = 0; i < result_images.size(); ++i) {
                             // Todo:
+                            // Save collapse results
+                            std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
+                                dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
+                            _collapse_results.push_back(CollapseResult("", _moments[i], moment_image));
                         }
                     }
                 } catch (const AipsError& x) {
