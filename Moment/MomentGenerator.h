@@ -13,13 +13,26 @@ typedef const std::function<void(float)> MomentProgressCallback;
 
 namespace carta {
 
+struct CollapseResult {
+    std::string filename;
+    casacore::Int moment_type;
+    std::shared_ptr<casacore::ImageInterface<casacore::Float>> image;
+    CollapseResult(
+        const std::string& filename_, casacore::Int moment_type_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
+        filename = filename_;
+        moment_type = moment_type_;
+        image = image_;
+    }
+};
+
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
-    MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, std::string root_folder, int spectral_axis,
+    MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, std::string root_folder, int spectral_axis,
         int stokes_axis, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
         MomentProgressCallback progress_callback, bool write_results_to_disk = true);
     ~MomentGenerator();
 
+    void CalculateMoments(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk);
     bool IsSuccess() const;
     casacore::String GetErrorMessage() const;
 
@@ -41,33 +54,44 @@ public:
     static void Print(CARTA::MomentProgress message);
 
 private:
-    Record MakeRegionRecord(casacore::ImageInterface<float>* image, const CARTA::MomentRequest& moment_request);
-    void ExecuteMomentGenerator(
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk);
+    void SetMomentAxis(const CARTA::MomentRequest& moment_request);
     void SetMomentTypes(const CARTA::MomentRequest& moment_request);
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
+    casacore::Record MakeRegionRecord(const CARTA::MomentRequest& moment_request);
+    void ResetImageMoments(const CARTA::MomentRequest& moment_request);
+    void DeleteImageMoments();
     int GetMomentMode(CARTA::Moment moment);
-    String GetMomentSuffix(casacore::Int moment);
-    String GetStokes(CARTA::MomentStokes moment_stokes);
-    String GetOutputFileName();
+    casacore::String GetMomentSuffix(casacore::Int moment);
+    casacore::String GetStokes(CARTA::MomentStokes moment_stokes);
+    casacore::String GetOutputFileName();
     void RemoveRootFolder(std::string& directory);
 
+    // Image parameters
+    casacore::String _filename;
+    std::string _root_folder;
+    casacore::ImageInterface<float>* _image;
+    int _spectral_axis;
+    int _stokes_axis;
+
+    // Moment settings
+    casacore::ImageInterface<casacore::Float>* _sub_image;
     casa::ImageMoments<float>* _image_moments;
     casacore::Vector<casacore::Int> _moments;
     int _axis;
-    String _filename;
-    String _channels;
+    casacore::String _channels;
     casacore::Vector<float> _include_pix;
     casacore::Vector<float> _exclude_pix;
     casacore::String _error_msg;
     bool _collapse_error;
-    std::string _root_folder;
 
     // Progress parameters
     int _total_steps;
     float _progress;
     float _pre_progress;
     MomentProgressCallback _progress_callback;
+
+    // Calculation results (Moment images)
+    std::vector<CollapseResult> _collapse_results;
 };
 
 } // namespace carta

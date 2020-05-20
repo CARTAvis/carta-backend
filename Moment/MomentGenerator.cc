@@ -2,61 +2,34 @@
 
 using namespace carta;
 
-MomentGenerator::MomentGenerator(const String& filename, casacore::ImageInterface<float>* image, std::string root_folder, int spectral_axis,
-    int stokes_axis, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, std::string root_folder,
+    int spectral_axis, int stokes_axis, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     MomentProgressCallback progress_callback, bool write_results_to_disk)
     : _filename(filename),
       _root_folder(root_folder),
+      _image(image),
+      _spectral_axis(spectral_axis),
+      _stokes_axis(stokes_axis),
+      _sub_image(nullptr),
       _image_moments(nullptr),
       _collapse_error(false),
       _progress_callback(progress_callback) {
-    // Set moment axis
-    if (moment_request.axis() == CARTA::MomentAxis::SPECTRAL) {
-        _axis = spectral_axis;
-    } else if (moment_request.axis() == CARTA::MomentAxis::STOKES) {
-        _axis = stokes_axis;
-    } else {
-        std::cerr << "Do not support the moment axis: " << moment_request.axis() << std::endl;
-    }
-
-    // Set moment types
-    SetMomentTypes(moment_request);
-
-    // Set pixel range
-    SetPixelRange(moment_request);
-
-    // Make a region record
-    Record region = MakeRegionRecord(image, moment_request);
-
-    // Make a sub image interface
-    String empty("");
-    std::shared_ptr<const SubImage<Float>> sub_image_shared_ptr =
-        casa::SubImageFactory<Float>::createSubImageRO(*image, region, empty, NULL);
-    ImageInterface<Float>* sub_image = new SubImage<Float>(*sub_image_shared_ptr);
-    LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
-    LogIO os(log);
-
-    // Make an ImageMoments object (and overwrite the output file if it already exists)
-    _image_moments = new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*sub_image), os, true);
-
-    // Set moment calculation progress monitor
-    _image_moments->setProgressMonitor(this);
-
     // Calculate the moment images
-    ExecuteMomentGenerator(moment_request, moment_response, write_results_to_disk);
-
-    // Set is the moment calculation successful or not
-    moment_response.set_success(IsSuccess());
-
-    // Get error message if any
-    moment_response.set_message(GetErrorMessage());
-
-    // Delete the sub image object
-    delete sub_image;
+    CalculateMoments(moment_request, moment_response, write_results_to_disk);
 }
 
 MomentGenerator::~MomentGenerator() {
-    delete _image_moments;
+    DeleteImageMoments();
+}
+
+void MomentGenerator::SetMomentAxis(const CARTA::MomentRequest& moment_request) {
+    if (moment_request.axis() == CARTA::MomentAxis::SPECTRAL) {
+        _axis = _spectral_axis;
+    } else if (moment_request.axis() == CARTA::MomentAxis::STOKES) {
+        _axis = _stokes_axis;
+    } else {
+        std::cerr << "Do not support the moment axis: " << moment_request.axis() << std::endl;
+    }
 }
 
 void MomentGenerator::SetMomentTypes(const CARTA::MomentRequest& moment_request) {
@@ -101,8 +74,81 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
     }
 }
 
-void MomentGenerator::ExecuteMomentGenerator(
+casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& moment_request) {
+    // QString fileName = taskMonitor->getImagePath();
+    // String infile(fileName.toStdString());
+    casacore::String infile = ""; // Original purpose is to access the region record from the image file
+
+    // Initialize the channels
+    int chan_min(moment_request.spectral_range().min());
+    int chan_max(moment_request.spectral_range().max());
+
+    // Check if the channel range is logical
+    if (chan_max < chan_min) {
+        int tmp = chan_max;
+        chan_max = chan_min;
+        chan_min = tmp;
+    }
+
+    casacore::String channels = std::to_string(chan_min) + "~" + std::to_string(chan_max); // Channel range for the moments calculation
+    _channels = std::to_string(chan_min) + "_" + std::to_string(chan_max);                 // This is used to set the output file name
+    casacore::uInt num_selected_channels = chan_max - chan_min + 1;
+
+    // Set the stokes (not apply this variable yet!)
+    casacore::String tmp_stokes = GetStokes(moment_request.stokes()); // "I" , "IV" , "IQU", or "IQUV"
+
+    // Make a region record
+    CoordinateSystem coordinate_system = _image->coordinates();
+    IPosition pos = _image->shape();
+    _image->shape();
+    casacore::String region_name;
+    casacore::String stokes = ""; // Not available yet, in principle can choose "I" , "IV" , "IQU", or "IQUV"
+    casa::CasacRegionManager crm(coordinate_system);
+    casacore::String diagnostics;
+    casacore::String pixel_box = ""; // Not available yet
+    casacore::Record region = crm.fromBCS(diagnostics, num_selected_channels, stokes, NULL, region_name, channels,
+        casa::CasacRegionManager::USE_FIRST_STOKES, pixel_box, pos, infile);
+
+    return region;
+}
+
+void MomentGenerator::ResetImageMoments(const CARTA::MomentRequest& moment_request) {
+    // Delete objects if exist
+    DeleteImageMoments();
+
+    // Make a region record
+    casacore::Record region = MakeRegionRecord(moment_request);
+
+    // Make a sub image interface
+    casacore::String empty("");
+    std::shared_ptr<const SubImage<casacore::Float>> sub_image =
+        casa::SubImageFactory<casacore::Float>::createSubImageRO(*_image, region, empty, NULL);
+    _sub_image = new SubImage<casacore::Float>(*sub_image);
+    casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
+    casacore::LogIO os(log);
+
+    // Make an ImageMoments object (and overwrite the output file if it already exists)
+    _image_moments = new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true);
+
+    // Set moment calculation progress monitor
+    _image_moments->setProgressMonitor(this);
+}
+
+void MomentGenerator::CalculateMoments(
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk) {
+    // Set moment axis
+    SetMomentAxis(moment_request);
+
+    // Set moment types
+    SetMomentTypes(moment_request);
+
+    // Set pixel range
+    SetPixelRange(moment_request);
+
+    // Recreate an ImageMoments
+    ResetImageMoments(moment_request);
+
+    // Calculate moments
     try {
         if (!_image_moments->setMoments(_moments)) {
             _error_msg = _image_moments->errorMessage();
@@ -112,7 +158,7 @@ void MomentGenerator::ExecuteMomentGenerator(
                 _error_msg = _image_moments->errorMessage();
                 _collapse_error = true;
             } else {
-                String out_file = GetOutputFileName();
+                casacore::String out_file = GetOutputFileName();
                 std::size_t found = out_file.find_last_of("/");
                 std::string file_base_name = out_file.substr(found + 1);
                 std::string path_name = out_file.substr(0, found);
@@ -133,6 +179,11 @@ void MomentGenerator::ExecuteMomentGenerator(
                             auto* output_files = moment_response.add_output_files();
                             output_files->set_file_name(output_filename);
                             output_files->set_moment_type(moment_request.moments(i));
+
+                            // Save collapse results
+                            std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
+                                dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
+                            _collapse_results.push_back(CollapseResult(output_filename, _moments[i], moment_image));
                         }
                     } else {
                         auto result_images = _image_moments->createMoments(true, out_file, false);
@@ -150,44 +201,17 @@ void MomentGenerator::ExecuteMomentGenerator(
         _error_msg = error.getLastMessage();
         _collapse_error = true;
     }
+
+    // Set is the moment calculation successful or not
+    moment_response.set_success(IsSuccess());
+
+    // Get error message if any
+    moment_response.set_message(GetErrorMessage());
 }
 
-Record MomentGenerator::MakeRegionRecord(casacore::ImageInterface<float>* image, const CARTA::MomentRequest& moment_request) {
-    // QString fileName = taskMonitor->getImagePath();
-    // String infile(fileName.toStdString());
-    String infile = ""; // Original purpose is to access the region record from the image file
-
-    // Initialize the channels
-    int chan_min(moment_request.spectral_range().min());
-    int chan_max(moment_request.spectral_range().max());
-
-    // Check if the channel range is logical
-    if (chan_max < chan_min) {
-        int tmp = chan_max;
-        chan_max = chan_min;
-        chan_min = tmp;
-    }
-
-    String channels = std::to_string(chan_min) + "~" + std::to_string(chan_max); // Channel range for the moments calculation
-    _channels = std::to_string(chan_min) + "_" + std::to_string(chan_max);       // This is used to set the output file name
-    uInt num_selected_channels = chan_max - chan_min + 1;
-
-    // Set the stokes (not apply this variable yet!)
-    String tmp_stokes = GetStokes(moment_request.stokes()); // "I" , "IV" , "IQU", or "IQUV"
-
-    // Make a region record
-    CoordinateSystem coordinate_system = image->coordinates();
-    IPosition pos = image->shape();
-    image->shape();
-    String region_name;
-    String stokes = ""; // Not available yet, in principle can choose "I" , "IV" , "IQU", or "IQUV"
-    casa::CasacRegionManager crm(coordinate_system);
-    String diagnostics;
-    String pixel_box = ""; // Not available yet
-    Record region = crm.fromBCS(diagnostics, num_selected_channels, stokes, NULL, region_name, channels,
-        casa::CasacRegionManager::USE_FIRST_STOKES, pixel_box, pos, infile);
-
-    return region;
+void MomentGenerator::DeleteImageMoments() {
+    delete _image_moments;
+    delete _sub_image;
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
@@ -253,8 +277,8 @@ int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
     return mode;
 }
 
-String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
-    String suffix;
+casacore::String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
+    casacore::String suffix;
     switch (moment) {
         case casa::ImageMoments<casacore::Float>::AVERAGE: {
             suffix = "average";
@@ -316,8 +340,8 @@ String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
     return suffix;
 }
 
-String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
-    String stokes("");
+casacore::String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
+    casacore::String stokes("");
     switch (moment_stokes) {
         case CARTA::MomentStokes::I: {
             stokes = "I";
@@ -343,8 +367,8 @@ String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
     return stokes;
 }
 
-String MomentGenerator::GetOutputFileName() {
-    String result(_filename);
+casacore::String MomentGenerator::GetOutputFileName() {
+    casacore::String result(_filename);
     result += ".moment";
     return result;
 }
@@ -393,6 +417,7 @@ void MomentGenerator::setStepsCompleted(int count) {
 void MomentGenerator::done() {}
 
 // Print protobuf messages
+
 void MomentGenerator::Print(CARTA::MomentRequest message) {
     std::cout << "CARTA::MomentRequest:" << std::endl;
     std::cout << "file_id = " << message.file_id() << std::endl;
