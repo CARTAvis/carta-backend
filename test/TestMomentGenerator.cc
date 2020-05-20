@@ -129,8 +129,8 @@ void GenerateMomentsWithFITS(bool delete_moment_files) {
     };
 
     // Calculate moments
-    carta::MomentGenerator moment_generator(
-        FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
+    carta::MomentGenerator moment_generator(FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
+    moment_generator.CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;
@@ -206,8 +206,8 @@ void GenerateMomentsWithCASA(bool delete_moment_files) {
     };
 
     // Calculate moments
-    carta::MomentGenerator moment_generator(
-        CASA_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
+    carta::MomentGenerator moment_generator(CASA_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
+    moment_generator.CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;
@@ -428,8 +428,8 @@ void FileManagerSaveWithSameName() {
     };
 
     // Calculate moments
-    carta::MomentGenerator moment_generator(
-        FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, moment_request, moment_response, progress_callback);
+    carta::MomentGenerator moment_generator(FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
+    moment_generator.CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;

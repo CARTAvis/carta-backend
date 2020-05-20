@@ -28,11 +28,11 @@ struct CollapseResult {
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
     MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, std::string root_folder, int spectral_axis,
-        int stokes_axis, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
-        MomentProgressCallback progress_callback, bool write_results_to_disk = true);
+        int stokes_axis, MomentProgressCallback progress_callback);
     ~MomentGenerator();
 
-    void CalculateMoments(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk);
+    void CalculateMoments(
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk = true);
     bool IsSuccess() const;
     casacore::String GetErrorMessage() const;
 
