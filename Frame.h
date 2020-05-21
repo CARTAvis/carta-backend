@@ -80,6 +80,7 @@ public:
     size_t NumStokes();   // if no stokes axis, nstokes=1
     int CurrentChannel();
     int CurrentStokes();
+    int StokesAxis();
 
     // Slicer to set channel and stokes ranges with full xy plane
     casacore::Slicer GetImageSlicer(const ChannelRange& chan_range, int stokes);

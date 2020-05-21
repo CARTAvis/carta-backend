@@ -21,14 +21,14 @@ public:
     // Import constructor
     // Use casa::RegionTextList to parse file and create casa::Annotation AnnRegions
     // which are converted to RegionState (pixel coords) to set Region
-    CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
+    CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis, int file_id,
         const std::string& file, bool file_is_filename);
 
     // Export constructor
     // Set up casa::RegionTextList; when regions are added, a casa::Annotation
     // AnnRegion is created and added to the list, which is then "print"-ed to
     // a file or vector of strings
-    CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape);
+    CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis);
 
     ~CrtfImportExport();
 
@@ -59,6 +59,9 @@ private:
 
     // For export: add regions to list then print them
     casa::RegionTextList _region_list;
+
+    // AnnRegions need stokes types; fallback if coord sys has no StokesCoordinate
+    int _stokes_axis;
 };
 
 } // namespace carta

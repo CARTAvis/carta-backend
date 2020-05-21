@@ -135,6 +135,10 @@ int Frame::CurrentStokes() {
     return _stokes_index;
 }
 
+int Frame::StokesAxis() {
+    return _stokes_axis;
+}
+
 casacore::Slicer Frame::GetImageSlicer(const ChannelRange& chan_range, int stokes) {
     // Slicer to apply channel range and stokes to image shape
 

@@ -20,9 +20,9 @@
 
 using namespace carta;
 
-CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
-    const std::string& file, bool file_is_filename)
-    : RegionImportExport(image_coord_sys, image_shape, file_id) {
+CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis,
+    int file_id, const std::string& file, bool file_is_filename)
+    : RegionImportExport(image_coord_sys, image_shape, file_id), _stokes_axis(stokes_axis) {
     // Use casa RegionTextList to import file (by filename) and create annotation file lines
     if (image_coord_sys->hasDirectionCoordinate()) {
         bool require_region(false); // import regions outside image
@@ -54,8 +54,8 @@ CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, 
     }
 }
 
-CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape)
-    : RegionImportExport(image_coord_sys, image_shape) {
+CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis)
+    : RegionImportExport(image_coord_sys, image_shape), _stokes_axis(stokes_axis) {
     // Export regions; will add each region to RegionTextList
     _region_list = casa::RegionTextList(*image_coord_sys, image_shape);
 }
@@ -603,10 +603,9 @@ casacore::Vector<casacore::Stokes::StokesTypes> CrtfImportExport::GetStokesTypes
         istokes = _coord_sys->stokesCoordinate().stokes();
     }
 
-    if (istokes.empty()) {
-        // make from stokes axis size
-        int stokes_axis(_coord_sys->polarizationCoordinateNumber());
-        unsigned int nstokes(_image_shape(stokes_axis));
+    if (istokes.empty() && (_stokes_axis >= 0)) {
+        // make istokes vector from stokes axis size
+        unsigned int nstokes(_image_shape(_stokes_axis));
         istokes.resize(nstokes);
         for (unsigned int i = 0; i < nstokes; ++i) {
             istokes(i) = i + 1;
