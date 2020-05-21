@@ -63,7 +63,7 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
         auto file_info = open_file_response.mutable_file_info();
         file_info->set_name(open_file_request.name());
         // TODO: fill in the rest of the file info
-        file_info->set_description("TODO");
+        file_info->set_description(table.Description());
         file_info->set_type(CARTA::CatalogFileType::VOTable);
 
         // Fill the number of raws

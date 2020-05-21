@@ -26,6 +26,7 @@ public:
     const Column* GetColumnById(const std::string& id) const;
     size_t NumColumns() const;
     size_t NumRows() const;
+    const std::string& Description() const;
     TableView View() const;
 
     const Column* operator[](size_t i) const;
@@ -41,6 +42,7 @@ protected:
     bool _valid;
     int64_t _num_rows;
     std::string _filename;
+    std::string _description;
     std::vector<std::unique_ptr<Column>> _columns;
     std::unordered_map<std::string, Column*> _column_name_map;
     std::unordered_map<std::string, Column*> _column_id_map;

@@ -32,7 +32,7 @@ Table::Table(const string& filename, bool header_only) : _filename(filename), _n
 uint32_t Table::GetMagicNumber(const string& filename) {
     ifstream input_file(filename);
     uint32_t magic_number = 0;
-    input_file.read((char*)&magic_number, sizeof(magic_number));
+    input_file.read((char*) &magic_number, sizeof(magic_number));
     input_file.close();
     return magic_number;
 }
@@ -92,14 +92,19 @@ void Table::ConstructFromXML(bool header_only) {
         return;
     }
 
-    auto table = resource.child("TABLE");
-    if (!table) {
+    auto table_node = resource.child("TABLE");
+    if (!table_node) {
         fmt::print("Missing XML element TABLE\n");
         _valid = false;
         return;
     }
 
-    if (!PopulateFields(table)) {
+    auto description = table_node.child("DESCRIPTION");
+    if (description) {
+        _description = description.text().as_string();
+    }
+
+    if (!PopulateFields(table_node)) {
         _valid = false;
         return;
     }
@@ -110,7 +115,7 @@ void Table::ConstructFromXML(bool header_only) {
         return;
     }
 
-    if (!PopulateRows(table)) {
+    if (!PopulateRows(table_node)) {
         _valid = false;
         return;
     }
@@ -291,6 +296,10 @@ size_t Table::NumColumns() const {
 
 size_t Table::NumRows() const {
     return _num_rows;
+}
+
+const std::string& Table::Description() const {
+    return _description;
 }
 
 TableView Table::View() const {
