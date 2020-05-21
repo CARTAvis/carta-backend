@@ -40,6 +40,7 @@
 
 #include "AnimationObject.h"
 #include "Catalog/VOTableController.h"
+#include "Table/TableController.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
@@ -232,7 +233,9 @@ private:
     std::mutex _frame_mutex;                                 // lock frames to create/destroy
 
     // Catalog controller
-    std::unique_ptr<catalog::Controller> _catalog_controller;
+    const std::unique_ptr<catalog::Controller> _catalog_controller;
+
+    const std::unique_ptr<carta::TableController> _table_controller;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;

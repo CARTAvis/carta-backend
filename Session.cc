@@ -47,6 +47,8 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     : _id(id),
       _socket(ws),
       _root_folder(root),
+      _catalog_controller(std::make_unique<catalog::Controller>(_root_folder)),
+      _table_controller(std::make_unique<carta::TableController>(_root_folder)),
       _verbose_logging(verbose),
       _loader(nullptr),
       _outgoing_async(outgoing_async),
@@ -57,7 +59,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
-    _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller(_root_folder));
+    ;
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
@@ -858,16 +860,18 @@ void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request,
 
 void Session::OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id) {
     CARTA::OpenCatalogFileAck open_file_response;
-    if (_catalog_controller) {
-        _catalog_controller->OnOpenFileRequest(open_file_request, open_file_response);
-        SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
-    }
+
+    _table_controller->OnOpenFileRequest(open_file_request, open_file_response);
+    SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
+//
+//    if (_catalog_controller) {
+//        _catalog_controller->OnOpenFileRequest(open_file_request, open_file_response);
+//        SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
+//    }
 }
 
 void Session::OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request) {
-    if (_catalog_controller) {
-        _catalog_controller->OnCloseFileRequest(close_file_request);
-    }
+    _table_controller->OnCloseFileRequest(close_file_request);
 }
 
 void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id) {
