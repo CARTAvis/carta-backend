@@ -15,6 +15,7 @@
 #include <tbb/atomic.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
+#include <tbb/task.h>
 #include <uWS/uWS.h>
 
 #include <casacore/casa/aips.h>
@@ -36,15 +37,13 @@
 
 #include <cartavis/carta_service.grpc.pb.h>
 
-#include <tbb/task.h>
-
 #include "AnimationObject.h"
 #include "Catalog/VOTableController.h"
-#include "Table/TableController.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "Table/TableController.h"
 #include "Util.h"
 
 class Session {
@@ -213,7 +212,7 @@ private:
     void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
 
     // Send protobuf messages
-    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = false);
+    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = false);
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 

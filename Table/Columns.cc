@@ -1,6 +1,9 @@
-#include <memory>
 #include "Columns.h"
+
 #include <fitsio.h>
+
+#include <memory>
+
 #include "DataColumn.tcc"
 
 namespace carta {
@@ -56,21 +59,32 @@ void TrimSpaces(string& str) {
 // Create a column based on the FITS column data type
 std::unique_ptr<Column> ColumnFromFitsType(int type, const string& col_name) {
     switch (type) {
-        case TBYTE: return make_unique<DataColumn<uint8_t>>(col_name);
-        case TSBYTE: return make_unique<DataColumn<int8_t>>(col_name);
-        case TUSHORT: return make_unique<DataColumn<uint16_t>>(col_name);
-        case TSHORT: return make_unique<DataColumn<int16_t>>(col_name);
+        case TBYTE:
+            return make_unique<DataColumn<uint8_t>>(col_name);
+        case TSBYTE:
+            return make_unique<DataColumn<int8_t>>(col_name);
+        case TUSHORT:
+            return make_unique<DataColumn<uint16_t>>(col_name);
+        case TSHORT:
+            return make_unique<DataColumn<int16_t>>(col_name);
         // TODO: What are the appropriate widths for TINT and TUINT?
-        case TULONG: return make_unique<DataColumn<uint32_t>>(col_name);
-        case TLONG: return make_unique<DataColumn<int32_t>>(col_name);
-        case TFLOAT: return make_unique<DataColumn<float>>(col_name);
-        case TULONGLONG: return make_unique<DataColumn<uint64_t>>(col_name);
-        case TLONGLONG: return make_unique<DataColumn<int64_t>>(col_name);
-        case TDOUBLE: return make_unique<DataColumn<double>>(col_name);
+        case TULONG:
+            return make_unique<DataColumn<uint32_t>>(col_name);
+        case TLONG:
+            return make_unique<DataColumn<int32_t>>(col_name);
+        case TFLOAT:
+            return make_unique<DataColumn<float>>(col_name);
+        case TULONGLONG:
+            return make_unique<DataColumn<uint64_t>>(col_name);
+        case TLONGLONG:
+            return make_unique<DataColumn<int64_t>>(col_name);
+        case TDOUBLE:
+            return make_unique<DataColumn<double>>(col_name);
         // TODO: Consider supporting complex numbers through std::complex
         case TCOMPLEX:
         case TDBLCOMPLEX:
-        default: return make_unique<Column>(col_name);
+        default:
+            return make_unique<Column>(col_name);
     }
 }
 
@@ -102,7 +116,8 @@ std::unique_ptr<Column> Column::FromFitsPtr(fitsfile* fits_ptr, int column_index
             column = ColumnFromFitsType(col_type, col_name);
             make_unique<Column>(col_name);
         }
-        // Special case: for string fields, the total width is simply the repeat, and the width field indicates how many characters per sub-string
+        // Special case: for string fields, the total width is simply the repeat, and the width field indicates how many characters per
+        // sub-string
         total_column_width = col_repeat;
     } else if (col_repeat > 1) {
         // Can't support array-based column types
@@ -131,14 +146,15 @@ std::unique_ptr<Column> Column::FromFitsPtr(fitsfile* fits_ptr, int column_index
 }
 
 string Column::Info() {
-    auto type_string = data_type == UNKNOWN_TYPE ? "unsupported" : data_type == STRING ? "string" : fmt::format("{} bytes per entry", data_type_size);
+    auto type_string =
+        data_type == UNKNOWN_TYPE ? "unsupported" : data_type == STRING ? "string" : fmt::format("{} bytes per entry", data_type_size);
     auto unit_string = unit.empty() ? "" : fmt::format("Unit: {}; ", unit);
     auto description_string = description.empty() ? "" : fmt::format("Description: {}; ", description);
     return fmt::format("Name: {}; Data: {}; {}{}\n", name, type_string, unit_string, description_string);
 }
 
 // Specialisation for string type, in order to trim whitespace at the end of the entry
-template<>
+template <>
 void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) {
     // Shifts by the column's offset
     ptr += data_offset;
@@ -167,4 +183,4 @@ void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t
     }
 }
 
-}
+} // namespace carta

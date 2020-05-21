@@ -1,23 +1,21 @@
 #include "TableView.h"
-#include "Table.h"
 
-#include <numeric>
 #include <algorithm>
+#include <numeric>
+
+#include "Table.h"
 
 namespace carta {
 
 using namespace std;
 
-TableView::TableView(const Table& table) :
-    _table(table) {
+TableView::TableView(const Table& table) : _table(table) {
     _is_subset = false;
     _ordered = true;
 }
 
-TableView::TableView(const Table& table, const IndexList& index_list, bool ordered) :
-    _table(table),
-    _subset_indices(index_list),
-    _ordered(ordered) {
+TableView::TableView(const Table& table, const IndexList& index_list, bool ordered)
+    : _table(table), _subset_indices(index_list), _ordered(ordered) {
     _is_subset = true;
 }
 
@@ -58,7 +56,7 @@ bool TableView::StringFilter(const Column* column, string search_string, bool ca
         // If case-insensitive, must transform strings to lower-case while iterating
         transform(search_string.begin(), search_string.end(), search_string.begin(), ::tolower);
         if (_is_subset) {
-            for (auto i: _subset_indices) {
+            for (auto i : _subset_indices) {
                 // Skip invalid entries
                 if (i < 0 || i >= num_entries) {
                     continue;
@@ -80,7 +78,7 @@ bool TableView::StringFilter(const Column* column, string search_string, bool ca
         }
     } else {
         if (_is_subset) {
-            for (auto i: _subset_indices) {
+            for (auto i : _subset_indices) {
                 // Skip invalid entries
                 if (i < 0 || i >= num_entries) {
                     continue;
@@ -175,7 +173,8 @@ bool TableView::Combine(const TableView& second) {
     }
 
     IndexList combined_indices;
-    set_union(_subset_indices.begin(), _subset_indices.end(), second._subset_indices.begin(), second._subset_indices.end(), back_inserter(combined_indices));
+    set_union(_subset_indices.begin(), _subset_indices.end(), second._subset_indices.begin(), second._subset_indices.end(),
+        back_inserter(combined_indices));
     if (combined_indices.size() == _table.NumRows()) {
         _subset_indices.clear();
         _is_subset = false;
@@ -223,4 +222,4 @@ size_t TableView::NumRows() const {
     }
     return _table.NumRows();
 }
-}
+} // namespace carta

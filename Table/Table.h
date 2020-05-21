@@ -2,8 +2,9 @@
 #define VOTABLE_TEST__TABLE_H_
 
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
+
 #include "Columns.h"
 #include "TableView.h"
 
@@ -44,7 +45,7 @@ protected:
     std::unordered_map<std::string, Column*> _column_name_map;
     std::unordered_map<std::string, Column*> _column_id_map;
     static std::string GetHeader(const std::string& filename);
-    static uint32_t GetMagicNumber(const std::string& filename) ;
+    static uint32_t GetMagicNumber(const std::string& filename);
 };
-}
-#endif //VOTABLE_TEST__TABLE_H_
+} // namespace carta
+#endif // VOTABLE_TEST__TABLE_H_

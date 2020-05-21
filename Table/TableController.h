@@ -3,7 +3,9 @@
 
 #include <string>
 #include <unordered_map>
+
 #include <carta-protobuf/open_catalog_file.pb.h>
+
 #include "Table.h"
 
 #define TABLE_PREVIEW_ROWS 50
@@ -20,5 +22,5 @@ protected:
     std::string _root_folder;
     std::unordered_map<int, Table> tables;
 };
-}
-#endif //CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
+} // namespace carta
+#endif // CARTA_BACKEND_TABLE_TABLECONTROLLER_H_

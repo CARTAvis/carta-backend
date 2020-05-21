@@ -26,7 +26,7 @@ public:
 
     // Retrieving data
     size_t NumRows() const;
-    template<class T>
+    template <class T>
     std::vector<T> Values(const Column* column, int64_t start = -1, int64_t end = -1) const;
 
     bool FillValues(const Column* column, int64_t start = -1, int64_t end = -1) const;
@@ -36,10 +36,9 @@ protected:
     bool _ordered;
     IndexList _subset_indices;
     const Table& _table;
-
 };
-}
+} // namespace carta
 
 #include "TableView.tcc"
 
-#endif //VOTABLE_TEST__TABLEVIEW_H_
+#endif // VOTABLE_TEST__TABLEVIEW_H_

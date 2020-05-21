@@ -1,17 +1,18 @@
+#include "Table.h"
+
+#include <fitsio.h>
+#include <fmt/format.h>
+
+#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <fmt/format.h>
-#include <filesystem>
-#include <fitsio.h>
 
-#include "Table.h"
 #include "DataColumn.tcc"
 
 namespace carta {
 using namespace std;
 
-Table::Table(const string& filename, bool header_only)
-    : _filename(filename), _num_rows(0) {
+Table::Table(const string& filename, bool header_only) : _filename(filename), _num_rows(0) {
     filesystem::path file_path(filename);
 
     if (!filesystem::exists(file_path)) {
@@ -25,14 +26,13 @@ Table::Table(const string& filename, bool header_only)
     } else if (magic_number == XML_MAGIC_NUMBER) {
         ConstructFromXML(header_only);
     } else {
-
     }
 }
 
 uint32_t Table::GetMagicNumber(const string& filename) {
     ifstream input_file(filename);
     uint32_t magic_number = 0;
-    input_file.read((char*) &magic_number, sizeof(magic_number));
+    input_file.read((char*)&magic_number, sizeof(magic_number));
     input_file.close();
     return magic_number;
 }
@@ -123,7 +123,7 @@ bool Table::PopulateFields(const pugi::xml_node& table) {
         return false;
     }
 
-    for (auto& field: table.children("FIELD")) {
+    for (auto& field : table.children("FIELD")) {
         auto& column = _columns.emplace_back(Column::FromField(field));
         if (!column->name.empty()) {
             _column_name_map[column->name] = column.get();
@@ -152,7 +152,7 @@ bool Table::PopulateRows(const pugi::xml_node& table) {
     }
 
     _num_rows = rows.size();
-    for (auto& column: _columns) {
+    for (auto& column : _columns) {
         column->Resize(_num_rows);
     }
 
@@ -161,7 +161,7 @@ bool Table::PopulateRows(const pugi::xml_node& table) {
         auto& row = rows[i];
         auto column_iterator = _columns.begin();
         auto column_nodes = row.children();
-        for (auto& td: column_nodes) {
+        for (auto& td : column_nodes) {
             if (column_iterator == _columns.end()) {
                 break;
             }
@@ -246,7 +246,7 @@ bool Table::IsValid() const {
 
 void Table::PrintInfo(bool skip_unknowns) const {
     fmt::print("Rows: {}; Columns: {};\n", _num_rows, _columns.size());
-    for (auto& column: _columns) {
+    for (auto& column : _columns) {
         if (!skip_unknowns || column->data_type != UNKNOWN_TYPE) {
             cout << column->Info();
         }
@@ -297,4 +297,4 @@ TableView Table::View() const {
     return TableView(*this);
 }
 
-}
+} // namespace carta

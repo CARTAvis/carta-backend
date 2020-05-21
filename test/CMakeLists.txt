@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(carta_backend_test)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -11,7 +11,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Building tester options
 option(testTileEncoding "Build testTileEncoding." OFF)
-option(testVOTableController "Build testVOTableController." ON)
+option(testTable "Build testTable." ON)
+option(testVOTableController "Build testVOTableController." OFF)
 
 if (testTileEncoding)
     enable_testing()
@@ -23,6 +24,31 @@ if (testTileEncoding)
 
     add_test(NAME TestTileEncoding COMMAND testTileEncoding)
 endif ()
+
+if (testTable)
+    enable_testing()
+    find_package(GTest)
+    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} src)
+
+    add_executable(test_votable
+            TestVOTable.cc
+            ../Table/Columns.cc
+            ../Table/Table.cc
+            ../Table/TableView.cc
+            ../Table/TableController.cc)
+    target_link_libraries(test_votable ${LINK_LIBS} gtest gtest_main)
+
+    add_executable(test_fits
+            TestFITS.cc
+            ../Table/Columns.cc
+            ../Table/Table.cc
+            ../Table/TableView.cc
+            ../Table/TableController.cc)
+    target_link_libraries(test_fits ${LINK_LIBS} gtest gtest_main)
+
+    add_test(NAME TestVOTable COMMAND test_votable)
+    add_test(NAME TestFITS COMMAND test_fits)
+endif()
 
 if (testVOTableController)
     set(CATALOG_LINK_LIBS

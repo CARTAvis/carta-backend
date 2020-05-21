@@ -1,14 +1,13 @@
 #include "TableController.h"
+
 #include <fmt/format.h>
+
 #include <filesystem>
 
 using namespace carta;
 using namespace std;
 
-TableController::TableController(string root) :
-    _root_folder(root) {
-
-}
+TableController::TableController(string root) : _root_folder(root) {}
 
 CARTA::EntryType FromDataType(carta::DataType T) {
     switch (T) {
@@ -17,14 +16,21 @@ CARTA::EntryType FromDataType(carta::DataType T) {
         case carta::INT32:
         case carta::UINT8:
         case carta::UINT16:
-        case carta::UINT32:return CARTA::INT;
+        case carta::UINT32:
+            return CARTA::INT;
         case carta::INT64:
-        case carta::UINT64:return CARTA::LONGLONG;
-        case carta::FLOAT:return CARTA::FLOAT;
-        case carta::DOUBLE:return CARTA::DOUBLE;
-        case carta::BOOL:return CARTA::BOOL;
-        case carta::STRING:return CARTA::STRING;
-        default: return CARTA::UNKNOWN_TYPE;
+        case carta::UINT64:
+            return CARTA::LONGLONG;
+        case carta::FLOAT:
+            return CARTA::FLOAT;
+        case carta::DOUBLE:
+            return CARTA::DOUBLE;
+        case carta::BOOL:
+            return CARTA::BOOL;
+        case carta::STRING:
+            return CARTA::STRING;
+        default:
+            return CARTA::UNKNOWN_TYPE;
     }
 }
 
@@ -84,7 +90,7 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
                 auto data_type = FromDataType(col->data_type);
                 header->set_data_type(data_type);
 
-                // TODO: this can all get cleaned up
+                // TODO: this can all get cleaned up after ICD changes are implemented
                 if (data_type == CARTA::BOOL) {
                     header->set_data_type_index(bool_counter);
                     auto bool_column = column_data->add_bool_column();
@@ -98,26 +104,26 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
                     // TODO: handle short types etc
                     *(int_column->mutable_int_column()) = {vals.begin(), vals.end()};
                     int_counter++;
-                }else if (data_type == CARTA::LONGLONG) {
+                } else if (data_type == CARTA::LONGLONG) {
                     header->set_data_type_index(longlong_counter);
                     auto ll_column = column_data->add_ll_column();
                     auto vals = view.Values<int64_t>(col, 0, num_preview_rows);
                     // TODO: handle unsigned types
                     *(ll_column->mutable_ll_column()) = {vals.begin(), vals.end()};
                     longlong_counter++;
-                }else if (data_type == CARTA::FLOAT) {
+                } else if (data_type == CARTA::FLOAT) {
                     header->set_data_type_index(float_counter);
                     auto float_column = column_data->add_float_column();
                     auto vals = view.Values<float>(col, 0, num_preview_rows);
                     *(float_column->mutable_float_column()) = {vals.begin(), vals.end()};
                     float_counter++;
-                }else if (data_type == CARTA::DOUBLE) {
+                } else if (data_type == CARTA::DOUBLE) {
                     header->set_data_type_index(double_counter);
                     auto double_column = column_data->add_double_column();
                     auto vals = view.Values<double>(col, 0, num_preview_rows);
                     *(double_column->mutable_double_column()) = {vals.begin(), vals.end()};
                     double_counter++;
-                }else if (data_type == CARTA::STRING) {
+                } else if (data_type == CARTA::STRING) {
                     header->set_data_type_index(string_counter);
                     auto string_column = column_data->add_string_column();
                     auto vals = view.Values<string>(col, 0, num_preview_rows);
