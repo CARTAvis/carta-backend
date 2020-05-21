@@ -59,6 +59,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _connected = true;
     _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller(_root_folder));
     _files_manager = std::make_unique<carta::FilesManager>(_root_folder);
+    _moment_controller = std::make_unique<carta::MomentController>(_root_folder);
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
@@ -883,11 +884,7 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
 void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id) {
     int file_id(moment_request.file_id());
     if (_frames.count(file_id)) {
-        // Get the image ptr and spectral/stoke axis from the Frame
-        std::string filename = _frames.at(file_id)->GetFileName();
-        casacore::ImageInterface<float>* image = _frames.at(file_id)->GetImage();
-        int spectral_axis = _frames.at(file_id)->GetSpectralAxis();
-        int stokes_axis = _frames.at(file_id)->GetStokesAxis();
+        auto& frame = _frames.at(file_id);
 
         // Moment response
         CARTA::MomentResponse moment_response;
@@ -899,11 +896,8 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             SendEvent(CARTA::EventType::MOMENT_PROGRESS, request_id, moment_progress);
         };
 
-        // Create moments generator
-        carta::MomentGenerator moment_generator(filename, image, _root_folder, spectral_axis, stokes_axis, progress_callback);
-
-        // Calculate moments
-        moment_generator.CalculateMoments(moment_request, moment_response);
+        // Calculate the moments
+        _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
 
         // Cache the names of produced moment images
         _files_manager->CacheMomentTempFiles(moment_response);

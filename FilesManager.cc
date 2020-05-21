@@ -71,12 +71,12 @@ void FilesManager::SaveFile(
     }
 
     if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::FITS)) {
-        // CASA image to FITS conversion
+        // CASA to FITS conversion
         if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename)) {
             success = true;
         }
     } else if ((CasacoreImageType(filename) == casacore::ImageOpener::FITS) && (output_file_type == CARTA::FileType::CASA)) {
-        // FITS to CASA image conversion
+        // FITS to CASA conversion
         casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
         if (casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, message, output_filename, filename)) {
             success = true;

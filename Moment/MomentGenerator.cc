@@ -69,9 +69,9 @@ void MomentGenerator::CalculateMoments(
                         for (int i = 0; i < result_images.size(); ++i) {
                             // Todo:
                             // Save collapse results
-                            std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
-                                dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                            _collapse_results.push_back(CollapseResult("", _moments[i], moment_image));
+                            // std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
+                            //    dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
+                            //_collapse_results.push_back(CollapseResult("", _moments[i], moment_image));
                         }
                     }
                 } catch (const AipsError& x) {

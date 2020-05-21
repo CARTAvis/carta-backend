@@ -47,7 +47,7 @@
 #include "FileSettings.h"
 #include "FilesManager.h"
 #include "Frame.h"
-#include "Moment/MomentGenerator.h"
+#include "Moment/MomentController.h"
 #include "Util.h"
 
 class Session {
@@ -248,6 +248,9 @@ private:
 
     // Image files manager
     std::unique_ptr<carta::FilesManager> _files_manager;
+
+    // Moments controller
+    std::unique_ptr<carta::MomentController> _moment_controller;
 
     // Manage image channel
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
