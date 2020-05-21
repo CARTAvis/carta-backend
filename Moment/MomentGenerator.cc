@@ -145,8 +145,6 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
 }
 
 casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& moment_request) {
-    // QString fileName = taskMonitor->getImagePath();
-    // String infile(fileName.toStdString());
     casacore::String infile = ""; // Original purpose is to access the region record from the image file
 
     // Initialize the channels

@@ -72,9 +72,12 @@ void FilesManager::SaveFile(
 
     if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::FITS)) {
         // CASA to FITS conversion
-        if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename)) {
+        casacore::ImageInterface<float>* clone_image = image->cloneII();
+        if (casacore::ImageFITSConverter::ImageToFITS(message, *clone_image, output_filename)) {
             success = true;
         }
+        delete clone_image;
+
     } else if ((CasacoreImageType(filename) == casacore::ImageOpener::FITS) && (output_file_type == CARTA::FileType::CASA)) {
         // FITS to CASA conversion
         casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
@@ -83,6 +86,7 @@ void FilesManager::SaveFile(
         }
         // without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
         delete fits_to_image_ptr;
+
     } else {
         if (!IsSameFile(filename, output_filename)) {
             message = "No file format conversion!";
