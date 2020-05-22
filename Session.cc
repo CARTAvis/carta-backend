@@ -109,6 +109,8 @@ Session::~Session() {
             alarm(1);
         }
     }
+    // Delete a temporary folder with moment images
+    _moment_controller->DeleteTemporaryFolder();
 }
 
 void Session::SetInitExitTimeout(int secs) {
@@ -882,7 +884,6 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
 }
 
 void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id) {
-    std::unique_lock<std::mutex> lock(_frame_mutex);
     int file_id(moment_request.file_id());
     if (_frames.count(file_id)) {
         auto& frame = _frames.at(file_id);

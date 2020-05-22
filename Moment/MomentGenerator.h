@@ -27,8 +27,8 @@ struct CollapseResult {
 
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
-    MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, std::string root_folder, int spectral_axis,
-        int stokes_axis, MomentProgressCallback progress_callback);
+    MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, std::string root_folder,
+        casacore::String temp_folder, int spectral_axis, int stokes_axis, MomentProgressCallback progress_callback);
     ~MomentGenerator();
 
     void CalculateMoments(
@@ -89,6 +89,9 @@ private:
     float _progress;
     float _pre_progress;
     MomentProgressCallback _progress_callback;
+
+    // Temporary folder to save temporary moment images
+    casacore::String _temp_folder;
 
     // Calculation results (Moment images)
     std::vector<CollapseResult> _collapse_results;

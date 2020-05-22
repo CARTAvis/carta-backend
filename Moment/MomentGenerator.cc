@@ -3,9 +3,10 @@
 using namespace carta;
 
 MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, std::string root_folder,
-    int spectral_axis, int stokes_axis, MomentProgressCallback progress_callback)
+    casacore::String temp_folder, int spectral_axis, int stokes_axis, MomentProgressCallback progress_callback)
     : _filename(filename),
       _root_folder(root_folder),
+      _temp_folder(temp_folder),
       _image(image),
       _spectral_axis(spectral_axis),
       _stokes_axis(stokes_axis),
@@ -361,8 +362,14 @@ casacore::String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
 }
 
 casacore::String MomentGenerator::GetOutputFileName() {
+    // Store moment images in a temporary folder
     casacore::String result(_filename);
     result += ".moment";
+    size_t found = result.find_last_of("/");
+    if (found) {
+        result.replace(0, found, "");
+    }
+    result = _temp_folder + "/" + result;
     return result;
 }
 

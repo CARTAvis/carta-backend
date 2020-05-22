@@ -7,6 +7,7 @@
 
 const std::string FITS_FILE_FULL_NAME = "images/test-moments/HD163296_CO_2_1.image.fits";
 const std::string CASA_FILE_FULL_NAME = "images/test-moments/M17_SWex.image";
+const std::string TEMP_FOLDER = "images/test-moments/temp";
 
 void GenerateMomentsWithFITS();
 void GenerateMomentsWithCASA();
@@ -130,7 +131,7 @@ void GenerateMomentsWithFITS() {
 
     // Calculate moments
     carta::MomentGenerator* moment_generator =
-        new carta::MomentGenerator(FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
+        new carta::MomentGenerator(FITS_FILE_FULL_NAME, image.get(), "", TEMP_FOLDER, spectral_axis, stokes_axis, progress_callback);
     moment_generator->CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
@@ -204,7 +205,7 @@ void GenerateMomentsWithCASA() {
 
     // Calculate moments
     carta::MomentGenerator* moment_generator =
-        new carta::MomentGenerator(CASA_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
+        new carta::MomentGenerator(CASA_FILE_FULL_NAME, image.get(), "", TEMP_FOLDER, spectral_axis, stokes_axis, progress_callback);
     moment_generator->CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
@@ -423,7 +424,7 @@ void FileManagerSaveWithSameName() {
 
     // Calculate moments
     carta::MomentGenerator* moment_generator =
-        new carta::MomentGenerator(FITS_FILE_FULL_NAME, image.get(), "", spectral_axis, stokes_axis, progress_callback);
+        new carta::MomentGenerator(FITS_FILE_FULL_NAME, image.get(), "", TEMP_FOLDER, spectral_axis, stokes_axis, progress_callback);
     moment_generator->CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
