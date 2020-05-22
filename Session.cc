@@ -882,13 +882,10 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
 }
 
 void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id) {
+    std::unique_lock<std::mutex> lock(_frame_mutex);
     int file_id(moment_request.file_id());
     if (_frames.count(file_id)) {
         auto& frame = _frames.at(file_id);
-
-        // Moment response
-        CARTA::MomentResponse moment_response;
-
         // Set moment progress callback function
         auto progress_callback = [&](float progress) {
             CARTA::MomentProgress moment_progress;
@@ -897,10 +894,8 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         };
 
         // Calculate the moments
+        CARTA::MomentResponse moment_response;
         _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
-
-        // Cache the names of produced moment images
-        _files_manager->CacheMomentTempFiles(moment_response);
 
         // Send moment response message
         SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);

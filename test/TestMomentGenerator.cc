@@ -8,8 +8,8 @@
 const std::string FITS_FILE_FULL_NAME = "images/test-moments/HD163296_CO_2_1.image.fits";
 const std::string CASA_FILE_FULL_NAME = "images/test-moments/M17_SWex.image";
 
-void GenerateMomentsWithFITS(bool delete_moment_files = true);
-void GenerateMomentsWithCASA(bool delete_moment_files = true);
+void GenerateMomentsWithFITS();
+void GenerateMomentsWithCASA();
 void ConvertFITStoCASA();
 void ConvertCASAtoFITS();
 void SaveMomentWithFITS();
@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void GenerateMomentsWithFITS(bool delete_moment_files) {
+void GenerateMomentsWithFITS() {
     // Open a FITS image file
     std::unique_ptr<casacore::FITSImage> image;
     image.reset(new casacore::FITSImage(FITS_FILE_FULL_NAME));
@@ -140,16 +140,9 @@ void GenerateMomentsWithFITS(bool delete_moment_files) {
     carta::MomentGenerator::Print(moment_response);
 
     delete moment_generator;
-
-    if (delete_moment_files) {
-        // Call files manager
-        carta::FilesManager* moment_files_manager = new carta::FilesManager("./");
-        moment_files_manager->CacheMomentTempFiles(moment_response);
-        delete moment_files_manager;
-    }
 }
 
-void GenerateMomentsWithCASA(bool delete_moment_files) {
+void GenerateMomentsWithCASA() {
     // Open a CASA image file
     std::unique_ptr<casacore::PagedImage<float>> image;
     image.reset(new casacore::PagedImage<float>(CASA_FILE_FULL_NAME));
@@ -221,13 +214,6 @@ void GenerateMomentsWithCASA(bool delete_moment_files) {
     carta::MomentGenerator::Print(moment_response);
 
     delete moment_generator;
-
-    if (delete_moment_files) {
-        // Call files manager
-        carta::FilesManager* moment_files_manager = new carta::FilesManager("./");
-        moment_files_manager->CacheMomentTempFiles(moment_response);
-        delete moment_files_manager;
-    }
 }
 
 void ConvertFITStoCASA() {
@@ -278,7 +264,7 @@ void ConvertCASAtoFITS() {
 
 void SaveMomentWithFITS() {
     // Create moments from the FITS file
-    GenerateMomentsWithFITS(false);
+    GenerateMomentsWithFITS();
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
@@ -306,7 +292,7 @@ void SaveMomentWithFITS() {
 
 void SaveMomentWithCASA() {
     // Create moments from the CASA file
-    GenerateMomentsWithCASA(false);
+    GenerateMomentsWithCASA();
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
@@ -448,7 +434,6 @@ void FileManagerSaveWithSameName() {
 
     // Call files manager
     carta::FilesManager* moment_files_manager = new carta::FilesManager("./");
-    moment_files_manager->CacheMomentTempFiles(moment_response);
 
     // Set saving file message
     CARTA::SaveFile save_file_msg;
