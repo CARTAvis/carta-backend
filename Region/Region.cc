@@ -175,6 +175,7 @@ casacore::TableRecord Region::GetImageRegionRecord(
         }
 
         if (lattice_region) {
+            // Region is inside image and not rotated
             record = lattice_region->toRecord("region");
             if (record.isDefined("region")) {
                 record = record.asRecord("region");
@@ -182,7 +183,8 @@ casacore::TableRecord Region::GetImageRegionRecord(
             return record; // record is complete
         }
 
-        // Either region is rotbox, or region is outside image. Convert world control points to output coord sys.  record is incomplete.
+        // Region is outside image or rotated
+        // Convert world control points to output coord sys.  record is incomplete.
         switch (_region_state.type) {
             case CARTA::RegionType::POINT:
                 record = GetPointRecord(output_csys, output_shape);

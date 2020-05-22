@@ -102,12 +102,8 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
         }
         case CARTA::RegionType::RECTANGLE: {
             // box(x,y,width,height,angle)
-            if (angle > 0.0) {
-                region = fmt::format(
-                    "box({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", points[0].x(), points[0].y(), points[1].x(), points[1].y(), angle);
-            } else {
-                region = fmt::format("box({:.2f}, {:.2f}, {:.2f}, {:.2f})", points[0].x(), points[0].y(), points[1].x(), points[1].y());
-            }
+            region =
+                fmt::format("box({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", points[0].x(), points[0].y(), points[1].x(), points[1].y(), angle);
             break;
         }
         case CARTA::RegionType::ELLIPSE: {
@@ -939,13 +935,8 @@ std::string Ds9ImportExport::AddExportRegionPixel(
         }
         case CARTA::RegionType::RECTANGLE: {
             // box(x,y,width,height,angle)
-            if (angle == 0.0) {
-                region = fmt::format("box({:.4f}, {:.4f}, {:.4f}, {:.4f})", control_points[0].getValue(), control_points[1].getValue(),
-                    control_points[2].getValue(), control_points[3].getValue());
-            } else {
-                region = fmt::format("box({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", control_points[0].getValue(), control_points[1].getValue(),
-                    control_points[2].getValue(), control_points[3].getValue(), angle);
-            }
+            region = fmt::format("box({:.4f}, {:.4f}, {:.4f}, {:.4f}, {})", control_points[0].getValue(), control_points[1].getValue(),
+                control_points[2].getValue(), control_points[3].getValue(), angle);
             break;
         }
         case CARTA::RegionType::ELLIPSE: {
@@ -998,13 +989,8 @@ std::string Ds9ImportExport::AddExportRegionWorld(
             // box(x,y,width,height,angle)
             casacore::Quantity cx(control_points[0]), cy(control_points[1]);
             casacore::Quantity width(control_points[2]), height(control_points[3]);
-            if (angle == 0.0) {
-                region = fmt::format("box({:.6f}, {:.6f}, {:.4f}\", {:.4f}\")", cx.get("deg").getValue(), cy.get("deg").getValue(),
-                    width.get("arcsec").getValue(), height.get("arcsec").getValue());
-            } else {
-                region = fmt::format("box({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", cx.get("deg").getValue(), cy.get("deg").getValue(),
-                    width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
-            }
+            region = fmt::format("box({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", cx.get("deg").getValue(), cy.get("deg").getValue(),
+                width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
             break;
         }
         case CARTA::RegionType::ELLIPSE: {

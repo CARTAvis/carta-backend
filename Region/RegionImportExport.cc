@@ -118,17 +118,18 @@ bool RegionImportExport::ConvertRecordToRectangle(
         y -= (float)1.0;
     }
 
-    if (pixel_coord) {
-        casacore::Double blc_x = x[0];
-        casacore::Double trc_x = x[2];
-        casacore::Double blc_y = y[0];
-        casacore::Double trc_y = y[2];
-        // Control points: center point, width/height
-        double cx = (blc_x + trc_x) / 2.0;
-        double cy = (blc_y + trc_y) / 2.0;
-        double width = fabs(trc_x - blc_x);
-        double height = fabs(trc_y - blc_y);
+    double cx, cy, width, height;
+    casacore::Double blc_x = x[0];
+    casacore::Double trc_x = x[2];
+    casacore::Double blc_y = y[0];
+    casacore::Double trc_y = y[2];
+    // Control points: center point, width/height
+    cx = (blc_x + trc_x) / 2.0;
+    cy = (blc_y + trc_y) / 2.0;
+    width = fabs(trc_x - blc_x);
+    height = fabs(trc_y - blc_y);
 
+    if (pixel_coord) {
         // Convert pixel value to Quantity in control points
         control_points.push_back(casacore::Quantity(cx, "pix"));
         control_points.push_back(casacore::Quantity(cy, "pix"));
@@ -137,50 +138,25 @@ bool RegionImportExport::ConvertRecordToRectangle(
         return true;
     }
 
-    // For world coords, convert to Double
-    size_t npoints(4); // corners
-    size_t naxes(_image_shape.size());
-    casacore::Vector<casacore::Double> x_pixel(npoints);
-    casacore::Vector<casacore::Double> y_pixel(npoints);
-    for (auto i = 0; i < npoints; ++i) {
-        x_pixel(i) = x(i);
-        y_pixel(i) = y(i);
-    }
-
-    // Convert corner pixel coords to world coords
-    casacore::Matrix<casacore::Double> world_coords(naxes, npoints);
-    casacore::Matrix<casacore::Double> pixel_coords(naxes, npoints);
-    pixel_coords = 0.0;
-    pixel_coords.row(0) = x_pixel;
-    pixel_coords.row(1) = y_pixel;
-    casacore::Vector<casacore::Bool> failures;
     try {
-        if (_coord_sys->toWorldMany(world_coords, pixel_coords, failures)) {
-            // Make x and y world coord Vectors
-            casacore::Vector<casacore::Double> x_world = world_coords.row(0);
-            casacore::Vector<casacore::Double> y_world = world_coords.row(1);
+        // Convert center position to world coords
+        casacore::Vector<casacore::Double> world_center;
+        casacore::IPosition pixel_center(_coord_sys->nPixelAxes(), 0);
+        pixel_center(0) = cx;
+        pixel_center(1) = cy;
+        _coord_sys->toWorld(world_center, pixel_center);
 
-            // Point 0 is blc, point 2 is trc
-            casacore::Double blc_x = x_world[0];
-            casacore::Double trc_x = x_world[2];
-            casacore::Double blc_y = y_world[0];
-            casacore::Double trc_y = y_world[2];
-            // Control points: center point, width/height
-            casacore::Double cx = (blc_x + trc_x) / 2.0;
-            casacore::Double cy = (blc_y + trc_y) / 2.0;
-            casacore::Double width = fabs(trc_x - blc_x);
-            casacore::Double height = fabs(trc_y - blc_y);
+        // Convert width/height to world coords
+        casacore::Quantity world_width = _coord_sys->toWorldLength(width, 0);
+        casacore::Quantity world_height = _coord_sys->toWorldLength(height, 1);
 
-            // Convert to Quantities and add to control_points
-            casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
-            control_points.push_back(casacore::Quantity(cx, world_units(0)));
-            control_points.push_back(casacore::Quantity(cy, world_units(1)));
-            control_points.push_back(casacore::Quantity(width, world_units(0)));
-            control_points.push_back(casacore::Quantity(height, world_units(1)));
-            return true;
-        } else {
-            return false;
-        }
+        // Convert to Quantities and add to control_points
+        casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
+        control_points.push_back(casacore::Quantity(world_center(0), world_units(0)));
+        control_points.push_back(casacore::Quantity(world_center(1), world_units(1)));
+        control_points.push_back(world_width);
+        control_points.push_back(world_height);
+        return true;
     } catch (const casacore::AipsError& err) {
         std::cerr << "Export error: rectangle Record conversion failed:" << err.getMesg() << std::endl;
         return false;
