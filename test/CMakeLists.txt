@@ -13,7 +13,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(testTileEncoding "Build testTileEncoding." OFF)
 option(testTable "Build testTable." ON)
 option(testTimer "Build testTimer." ON)
-option(testVOTableController "Build testVOTableController." OFF)
 
 if (testTileEncoding)
     enable_testing()
@@ -46,6 +45,7 @@ if (testTable)
 
     add_executable(test_votable
             TestVOTable.cc
+            ../Timer/Timer.cc
             ../Table/Columns.cc
             ../Table/Table.cc
             ../Table/TableView.cc
@@ -54,6 +54,7 @@ if (testTable)
 
     add_executable(test_fits
             TestFITS.cc
+            ../Timer/Timer.cc
             ../Table/Columns.cc
             ../Table/Table.cc
             ../Table/TableView.cc
@@ -63,19 +64,3 @@ if (testTable)
     add_test(NAME TestVOTable COMMAND test_votable)
     add_test(NAME TestFITS COMMAND test_fits)
 endif()
-
-if (testVOTableController)
-    set(CATALOG_LINK_LIBS
-            ${CATALOG_LINK_LIBS}
-            ${LIBXML2_LIBRARIES}
-            ${PROTOBUF_LIBRARY}
-            carta-protobuf)
-    set(CATALOG_SOURCE_FILES ${CATALOG_SOURCE_FILES}
-            ${CMAKE_SOURCE_DIR}/Catalog/VOTableParser.cc
-            ${CMAKE_SOURCE_DIR}/Catalog/VOTableCarrier.cc
-            ${CMAKE_SOURCE_DIR}/Catalog/VOTableController.cc)
-    add_executable(testVOTableController TestVOTableController.cc ${CATALOG_SOURCE_FILES})
-    target_link_libraries(testVOTableController ${CATALOG_LINK_LIBS})
-    add_executable(testVOTableParser TestVOTableParser.cc ${CATALOG_SOURCE_FILES})
-    target_link_libraries(testVOTableParser ${CATALOG_LINK_LIBS})
-endif ()

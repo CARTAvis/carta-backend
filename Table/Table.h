@@ -21,7 +21,6 @@ class Table {
 public:
     Table(const std::string& filename, bool header_only = false);
     bool IsValid() const;
-    void PrintInfo(bool skip_unknowns = true) const;
     const Column* GetColumnByName(const std::string& name) const;
     const Column* GetColumnById(const std::string& id) const;
     size_t NumColumns() const;
@@ -33,7 +32,7 @@ public:
     const Column* operator[](const std::string& name_or_id) const;
 
 protected:
-    void ConstructFromXML(bool header_only = false);
+    bool ConstructFromXML(bool header_only = false);
     bool PopulateFields(const pugi::xml_node& table);
     bool PopulateRows(const pugi::xml_node& table);
 

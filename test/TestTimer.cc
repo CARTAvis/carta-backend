@@ -80,6 +80,11 @@ TEST(Timer, MeasurementStringWorks) {
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_millis));
     t.End("MeasurementStringWorks");
     EXPECT_EQ(t.GetMeasurementString("MeasurementStringWorks").rfind("MeasurementStringWorks: 25."), 0);
+
+    // Clear after fetching
+    t.GetMeasurementString("MeasurementStringWorks", true);
+    auto dt = t.GetMeasurement("MeasurementStringWorks").count();
+    EXPECT_LT(dt, 0);
 }
 
 

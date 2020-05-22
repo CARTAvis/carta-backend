@@ -27,17 +27,20 @@ void Timer::End(const std::string& timer_name) {
     }
 }
 
-timer_duration Timer::GetMeasurement(const std::string& timer_name) const {
+timer_duration Timer::GetMeasurement(const std::string& timer_name, bool clear_after_fetch) {
     auto itr_measurements = _measurements.find(timer_name);
     if (itr_measurements != _measurements.end()) {
         auto total_count = itr_measurements->second.second;
         auto total_time = itr_measurements->second.first;
+        if (clear_after_fetch) {
+            Clear(timer_name);
+        }
         return total_time / total_count;
     }
     return timer_duration(-1);
 }
 
-std::string Timer::GetMeasurementString(const std::string& timer_name) const {
+std::string Timer::GetMeasurementString(const std::string& timer_name, bool clear_after_fetch) {
     if (timer_name.empty()) {
         return "";
     }
@@ -45,17 +48,21 @@ std::string Timer::GetMeasurementString(const std::string& timer_name) const {
     if (itr == _measurements.end()) {
         return fmt::format("{}: No Measurements found", timer_name);
     }
-    return fmt::format("{}: {:.2f} ms ({} count{})", timer_name, itr->second.first.count(), itr->second.second, itr->second.second != 1 ? "s" : "");
+    auto str = fmt::format("{}: {:.2f} ms ({} count{})", timer_name, itr->second.first.count(), itr->second.second, itr->second.second != 1 ? "s" : "");
+    if (clear_after_fetch) {
+        Clear(timer_name);
+    }
+    return str;
 }
 
-void Timer::Print(const std::string& timer_name) const {
+void Timer::Print(const std::string& timer_name, bool clear_after_fetch) {
     std::string output;
     if (timer_name.empty()) {
         for (auto& m: _measurements) {
-            output += GetMeasurementString(m.first) + "\n";
+            output += GetMeasurementString(m.first, clear_after_fetch) + "\n";
         }
     } else {
-        output = GetMeasurementString(timer_name) + "\n";
+        output = GetMeasurementString(timer_name, clear_after_fetch) + "\n";
     }
     std::cout << output;
 }

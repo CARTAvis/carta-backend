@@ -12,7 +12,7 @@
 namespace carta {
 using namespace std;
 
-Table::Table(const string& filename, bool header_only) : _filename(filename), _num_rows(0) {
+Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0) {
     filesystem::path file_path(filename);
 
     if (!filesystem::exists(file_path)) {
@@ -24,7 +24,7 @@ Table::Table(const string& filename, bool header_only) : _filename(filename), _n
     if (magic_number == FITS_MAGIC_NUMBER) {
         _valid = ConstructFromFITS(header_only);
     } else if (magic_number == XML_MAGIC_NUMBER) {
-        ConstructFromXML(header_only);
+        _valid = ConstructFromXML(header_only);
     } else {
     }
 }
@@ -56,7 +56,7 @@ string Table::GetHeader(const string& filename) {
     return header_string;
 }
 
-void Table::ConstructFromXML(bool header_only) {
+bool Table::ConstructFromXML(bool header_only) {
     pugi::xml_document doc;
 
     // read the first 64K only and construct a header from this
@@ -65,15 +65,13 @@ void Table::ConstructFromXML(bool header_only) {
         auto result = doc.load_string(header_string.c_str(), pugi::parse_default | pugi::parse_fragment);
         if (!result && result.status != pugi::status_end_element_mismatch) {
             fmt::print("{}\n", result.description());
-            _valid = false;
-            return;
+            return false;
         }
     } else {
         auto result = doc.load_file(_filename.c_str(), pugi::parse_default | pugi::parse_embed_pcdata);
         if (!result) {
             fmt::print("{}\n", result.description());
-            _valid = false;
-            return;
+            return false;
         }
     }
 
@@ -81,22 +79,19 @@ void Table::ConstructFromXML(bool header_only) {
 
     if (!votable) {
         fmt::print("Missing XML element VOTABLE\n");
-        _valid = false;
-        return;
+        return false;
     }
 
     auto resource = votable.child("RESOURCE");
     if (!resource) {
         fmt::print("Missing XML element RESOURCE\n");
-        _valid = false;
-        return;
+        return false;
     }
 
     auto table_node = resource.child("TABLE");
     if (!table_node) {
         fmt::print("Missing XML element TABLE\n");
-        _valid = false;
-        return;
+        return false;
     }
 
     auto description = table_node.child("DESCRIPTION");
@@ -105,22 +100,15 @@ void Table::ConstructFromXML(bool header_only) {
     }
 
     if (!PopulateFields(table_node)) {
-        _valid = false;
-        return;
+        return false;
     }
 
     // Once fields are populated, stop parsing
     if (header_only) {
-        _valid = true;
-        return;
+        return true;
     }
 
-    if (!PopulateRows(table_node)) {
-        _valid = false;
-        return;
-    }
-
-    _valid = true;
+    return PopulateRows(table_node);
 }
 
 bool Table::PopulateFields(const pugi::xml_node& table) {

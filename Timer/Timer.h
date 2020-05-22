@@ -13,9 +13,9 @@ public:
     void Start(const std::string& timer_name);
     void End(const std::string& timer_name);
     void Clear(const std::string& timer_name = "");
-    timer_duration GetMeasurement(const std::string& timer_name) const;
-    std::string GetMeasurementString(const std::string& timer_name) const;
-    void Print(const std::string& timer_name = "") const;
+    timer_duration GetMeasurement(const std::string& timer_name, bool clear_after_fetch = false);
+    std::string GetMeasurementString(const std::string& timer_name, bool clear_after_fetch = false);
+    void Print(const std::string& timer_name = "", bool clear_after_fetch = false);
 protected:
     std::unordered_map<std::string, timer_entry> _entries;
     std::unordered_map<std::string, std::pair<timer_duration, int>> _measurements;

@@ -49,6 +49,7 @@ public:
     virtual void FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {};
     // Factory for constructing a column from a <FIELD> node
     static std::unique_ptr<Column> FromField(const pugi::xml_node& field);
+    // Factory for constructing a column from a FITS fle pointer and a given column index. Increments the data_offset value
     static std::unique_ptr<Column> FromFitsPtr(fitsfile* fits_ptr, int column_index, size_t& data_offset);
 
     CARTA::ColumnType data_type;
@@ -56,9 +57,7 @@ public:
     std::string id;
     std::string unit;
     std::string ucd;
-    std::string ref;
     std::string description;
-    std::string data_type_string;
     size_t data_type_size;
     size_t data_offset;
 };
