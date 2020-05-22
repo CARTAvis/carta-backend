@@ -4,26 +4,7 @@ using namespace carta;
 
 FilesManager::FilesManager(std::string root_folder) : _root_folder(root_folder) {}
 
-FilesManager::~FilesManager() {
-    // Remove moment temp files while deleted
-    RemoveMomentTempFiles();
-}
-
-void FilesManager::RemoveMomentTempFiles() {
-    for (auto& moment_file_directory : _moment_file_directories) {
-        const std::string& directory = moment_file_directory.first;
-        const std::set<std::string>& filenames = moment_file_directory.second;
-        for (const auto& filename : filenames) {
-            std::string full_filename = _root_folder + directory + "/" + filename;
-            casacore::File cc_file(full_filename);
-            if (cc_file.exists()) {
-                std::string remove_file = "rm -rf " + full_filename;
-                const char* command = remove_file.c_str();
-                system(command);
-            }
-        }
-    }
-}
+FilesManager::~FilesManager() {}
 
 void FilesManager::SaveFile(
     std::string filename, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack) {

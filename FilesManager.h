@@ -20,7 +20,6 @@ public:
     FilesManager(std::string root_folder);
     ~FilesManager();
 
-    void RemoveMomentTempFiles();
     void SaveFile(std::string filename, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
         CARTA::SaveFileAck& save_file_ack);
 
@@ -32,7 +31,6 @@ private:
     void RemoveRootFolder(std::string& directory);
     void AddSuffix(std::string& output_filename, CARTA::FileType file_type);
     std::string _root_folder;
-    std::unordered_map<std::string, std::set<std::string>> _moment_file_directories; // <directory, filenames>
 };
 
 } // namespace carta
