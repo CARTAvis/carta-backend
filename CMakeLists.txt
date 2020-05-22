@@ -162,7 +162,7 @@ set(SOURCE_FILES
         Ds9Parser.cc
         Contouring.cc
         Smoothing.cc
-        GrpcServer/CartaGrpcService.cc)
+        GrpcServer/CartaGrpcService.cc Timer/Timer.cc Timer/Timer.h)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

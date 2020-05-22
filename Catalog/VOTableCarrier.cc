@@ -79,63 +79,6 @@ void VOTableCarrier::FillFieldAttributes(int count, std::string name, std::strin
     }
 }
 
-void VOTableCarrier::FillFieldDescriptions(int count, std::string value) {
-    _fields[count].description = value;
-}
-
-void VOTableCarrier::FillTdValues(int column_index, std::string value) {
-    if (_fields[column_index].datatype == CARTA::EntryType::BOOL) {
-        // Convert the string to lowercase
-        std::transform(value.begin(), value.end(), value.begin(), ::tolower);
-        _bool_vectors[column_index].push_back(value == "true");
-    } else if (_fields[column_index].datatype == CARTA::EntryType::STRING) {
-        _string_vectors[column_index].push_back(value);
-    } else if (_fields[column_index].datatype == CARTA::EntryType::INT) {
-        // PS: C++ has no function to convert the "string" to "short", so we just convert it to "int"
-        try {
-            _int_vectors[column_index].push_back(std::stoi(value));
-        } catch (...) {
-            _int_vectors[column_index].push_back(std::numeric_limits<int>::quiet_NaN());
-        }
-    } else if (_fields[column_index].datatype == CARTA::EntryType::LONGLONG) {
-        try {
-            _ll_vectors[column_index].push_back(std::stoll(value));
-        } catch (...) {
-            _ll_vectors[column_index].push_back(std::numeric_limits<long long>::quiet_NaN());
-        }
-    } else if (_fields[column_index].datatype == CARTA::EntryType::FLOAT) {
-        try {
-            _float_vectors[column_index].push_back(std::stof(value));
-        } catch (...) {
-            _float_vectors[column_index].push_back(std::numeric_limits<float>::quiet_NaN());
-        }
-    } else if (_fields[column_index].datatype == CARTA::EntryType::DOUBLE) {
-        try {
-            _double_vectors[column_index].push_back(std::stod(value));
-        } catch (...) {
-            _double_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
-        }
-    } else {
-        // Do not cache the table column if its data type is not in our list
-    }
-}
-
-void VOTableCarrier::FillEmptyTd(int column_index) {
-    if (_fields[column_index].datatype == CARTA::EntryType::STRING) {
-        _string_vectors[column_index].push_back("");
-    } else if (_fields[column_index].datatype == CARTA::EntryType::BOOL) {
-        _bool_vectors[column_index].push_back(false);
-    } else if (_fields[column_index].datatype == CARTA::EntryType::INT) {
-        _int_vectors[column_index].push_back(std::numeric_limits<int>::quiet_NaN());
-    } else if (_fields[column_index].datatype == CARTA::EntryType::LONGLONG) {
-        _ll_vectors[column_index].push_back(std::numeric_limits<long long>::quiet_NaN());
-    } else if (_fields[column_index].datatype == CARTA::EntryType::FLOAT) {
-        _float_vectors[column_index].push_back(std::numeric_limits<float>::quiet_NaN());
-    } else if (_fields[column_index].datatype == CARTA::EntryType::DOUBLE) {
-        _double_vectors[column_index].push_back(std::numeric_limits<double>::quiet_NaN());
-    }
-}
-
 void VOTableCarrier::UpdateNumOfTableRows() {
     if (_fields.empty()) {
         std::cerr << "There is no table column!" << std::endl;
@@ -185,12 +128,11 @@ void VOTableCarrier::UpdateNumOfTableRows() {
 void VOTableCarrier::GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response) {
     for (std::pair<int, Field> field : _fields) {
         Field& tmp_field = field.second;
-        if (tmp_field.datatype != CARTA::EntryType::UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
+        if (tmp_field.datatype != CARTA::UnsupportedType) { // Only fill the header that its data type is in our list
             auto header = file_info_response.add_headers();
             header->set_name(tmp_field.name);
             header->set_data_type(tmp_field.datatype);
             header->set_column_index(field.first); // The FIELD index in the VOTable
-            header->set_data_type_index(-1);       // -1 means there is no corresponding data vector in the CatalogColumnsData
             header->set_description(tmp_field.description);
             header->set_units(tmp_field.unit);
         }
@@ -207,97 +149,6 @@ void VOTableCarrier::GetCooosys(CARTA::CatalogFileInfo* file_info) {
         coosys_info->set_equinox(coosys.second.equinox);
         coosys_info->set_epoch(coosys.second.epoch);
         coosys_info->set_system(coosys.second.system);
-    }
-}
-
-void VOTableCarrier::GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size) {
-    for (std::pair<int, Field> field : _fields) {
-        Field& tmp_field = field.second;
-        if (tmp_field.datatype != CARTA::EntryType::UNKNOWN_TYPE) { // Only fill the header that its data type is in our list
-            auto header = open_file_response.add_headers();
-            header->set_name(tmp_field.name);
-            header->set_data_type(tmp_field.datatype);
-            header->set_column_index(field.first); // The FIELD index in the VOTable
-            header->set_description(tmp_field.description);
-            header->set_units(tmp_field.unit);
-
-            // Fill the column data with respect to its header
-            int column_index = field.first;
-            auto columns_data = open_file_response.mutable_columns_data();
-            if (_bool_vectors.count(column_index)) {
-                std::vector<bool>& ref_column_data = _bool_vectors[column_index];
-                // Add a bool column
-                auto bool_columns_data = columns_data->add_bool_column();
-                // Fill bool column elements
-                for (int i = 0; i < preview_data_size; ++i) {
-                    bool_columns_data->add_bool_column(ref_column_data[i]);
-                }
-                // Assign the mapping of column_index -> data_type_index
-                _column_index_to_data_type_index[column_index] = columns_data->bool_column_size() - 1;
-                // Fill the bool column index
-                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
-            } else if (_string_vectors.count(column_index)) {
-                std::vector<std::string>& ref_column_data = _string_vectors[column_index];
-                // Add a string column
-                auto string_columns_data = columns_data->add_string_column();
-                // Fill string column elements
-                for (int i = 0; i < preview_data_size; ++i) {
-                    string_columns_data->add_string_column(ref_column_data[i]);
-                }
-                // Assign the mapping of column_index -> data_type_index
-                _column_index_to_data_type_index[column_index] = columns_data->string_column_size() - 1;
-                // Fill the string column index
-                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
-            } else if (_int_vectors.count(column_index)) {
-                std::vector<int>& ref_column_data = _int_vectors[column_index];
-                // Add a int column
-                auto int_columns_data = columns_data->add_int_column();
-                // Fill int column elements
-                for (int i = 0; i < preview_data_size; ++i) {
-                    int_columns_data->add_int_column(ref_column_data[i]);
-                }
-                // Assign the mapping of column_index -> data_type_index
-                _column_index_to_data_type_index[column_index] = columns_data->int_column_size() - 1;
-                // Fill the int column index
-                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
-            } else if (_ll_vectors.count(column_index)) {
-                std::vector<long long>& ref_column_data = _ll_vectors[column_index];
-                // Add a long long column
-                auto ll_columns_data = columns_data->add_ll_column();
-                // Fill long long column elements
-                for (int i = 0; i < preview_data_size; ++i) {
-                    ll_columns_data->add_ll_column(ref_column_data[i]);
-                }
-                // Assign the mapping of column_index -> data_type_index
-                _column_index_to_data_type_index[column_index] = columns_data->ll_column_size() - 1;
-                // Fill the long long column index
-                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
-            } else if (_float_vectors.count(column_index)) {
-                std::vector<float>& ref_column_data = _float_vectors[column_index];
-                // Add a float column
-                auto float_columns_data = columns_data->add_float_column();
-                // Fill float column elements
-                for (int i = 0; i < preview_data_size; ++i) {
-                    float_columns_data->add_float_column(ref_column_data[i]);
-                }
-                // Assign the mapping of column_index -> data_type_index
-                _column_index_to_data_type_index[column_index] = columns_data->float_column_size() - 1;
-                // Fill the float column index
-                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
-            } else if (_double_vectors.count(column_index)) {
-                std::vector<double>& ref_column_data = _double_vectors[column_index];
-                // Add a double column
-                auto double_columns_data = columns_data->add_double_column();
-                // Fill double column elements
-                for (int i = 0; i < preview_data_size; ++i) {
-                    double_columns_data->add_double_column(ref_column_data[i]);
-                }
-                // Assign the mapping of column_index -> data_type_index
-                _column_index_to_data_type_index[column_index] = columns_data->double_column_size() - 1;
-                // Fill the double column index
-                header->set_data_type_index(_column_index_to_data_type_index[column_index]);
-            }
-        }
     }
 }
 
@@ -417,7 +268,7 @@ void VOTableCarrier::GetFilterData(
         Field& tmp_field = field.second;
 
         // Only fill the columns data that its data type is in our list
-        if (tmp_field.datatype != CARTA::EntryType::UNKNOWN_TYPE) {
+        if (tmp_field.datatype != CARTA::UnsupportedType) {
             int column_index = field.first;
             if (_bool_vectors.count(column_index)) {
                 tmp_columns_data->add_bool_column();
@@ -621,83 +472,27 @@ size_t VOTableCarrier::GetTableRowNumber() {
     return _num_of_rows;
 }
 
-CARTA::EntryType VOTableCarrier::GetDataType(const std::string& data_type) {
+CARTA::ColumnType VOTableCarrier::GetDataType(const std::string& data_type) {
     if (data_type == "boolean") {
-        return CARTA::EntryType::BOOL;
+        return CARTA::Bool;
     } else if (data_type == "char") {
-        return CARTA::EntryType::STRING;
+        return CARTA::String;
     } else if (data_type == "short" || data_type == "int") {
-        return CARTA::EntryType::INT;
+        return CARTA::Int32;
     } else if (data_type == "long") {
-        return CARTA::EntryType::LONGLONG;
+        return CARTA::Int64;
     } else if (data_type == "float") {
-        return CARTA::EntryType::FLOAT;
+        return CARTA::Float;
     } else if (data_type == "double") {
-        return CARTA::EntryType::DOUBLE;
+        return CARTA::Double;
     } else {
-        return CARTA::EntryType::UNKNOWN_TYPE;
+        return CARTA::UnsupportedType;
     }
 }
 
 bool VOTableCarrier::IsValid() {
     // Empty column header is identified as a NOT valid VOTable file
     return (!_fields.empty());
-}
-
-void VOTableCarrier::PrintTableElement(int row, int column) {
-    if (_bool_vectors.find(column) != _bool_vectors.end()) {
-        std::cout << _bool_vectors[column][row] << " | ";
-    } else if (_string_vectors.find(column) != _string_vectors.end()) {
-        std::cout << _string_vectors[column][row] << " | ";
-    } else if (_int_vectors.find(column) != _int_vectors.end()) {
-        std::cout << _int_vectors[column][row] << " | ";
-    } else if (_ll_vectors.find(column) != _ll_vectors.end()) {
-        std::cout << _ll_vectors[column][row] << " | ";
-    } else if (_float_vectors.find(column) != _float_vectors.end()) {
-        std::cout << _float_vectors[column][row] << " | ";
-    } else if (_double_vectors.find(column) != _double_vectors.end()) {
-        std::cout << _double_vectors[column][row] << " | ";
-    } else {
-        std::cout << " | ";
-    }
-}
-
-void VOTableCarrier::PrintData() {
-    UpdateNumOfTableRows();
-    std::cout << "------------------------------------------------------------------\n";
-    std::cout << "File Name              : " << _filename << std::endl;
-    std::cout << "File Directory         : " << _directory << std::endl;
-    std::cout << "VOTable Version        : " << _votable_version << std::endl;
-    std::cout << "Table column size      : " << _fields.size() << std::endl;
-    std::cout << "Table row size         : " << _num_of_rows << std::endl;
-    std::cout << "------------------------------------------------------------------\n";
-    std::cout << "# of bool columns      : " << _bool_vectors.size() << std::endl;
-    std::cout << "# of string columns    : " << _string_vectors.size() << std::endl;
-    std::cout << "# of int columns       : " << _int_vectors.size() << std::endl;
-    std::cout << "# of long long columns : " << _ll_vectors.size() << std::endl;
-    std::cout << "# of float columns     : " << _float_vectors.size() << std::endl;
-    std::cout << "# of double columns    : " << _double_vectors.size() << std::endl;
-    std::cout << "------------------------------------------------------------------\n";
-    // Print coordinate systems
-    for (std::pair<int, Coosys> coosys : _coosys) {
-        std::cout << "Coosys(" << coosys.first << "): " << std::endl;
-        coosys.second.Print();
-        std::cout << "------------------------------------------------------------------\n";
-    }
-    // Print table fields (column definitions)
-    for (std::pair<int, Field> field : _fields) {
-        std::cout << "Field(" << field.first << "): " << std::endl;
-        field.second.Print();
-        std::cout << "------------------------------------------------------------------\n";
-    }
-    // Print table rows
-    for (int i = 0; i < _num_of_rows; ++i) {
-        std::cout << "row " << i << ": | ";
-        for (int j = 1; j <= _fields.size(); ++j) {
-            PrintTableElement(i, j);
-        }
-        std::cout << "\n------------------------------------------------------------------\n";
-    }
 }
 
 bool VOTableCarrier::BoolFilter(CARTA::FilterConfig filter, bool value) {

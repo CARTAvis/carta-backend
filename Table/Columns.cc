@@ -11,7 +11,7 @@ using namespace std;
 
 Column::Column(const string& name_chr) {
     name = name_chr;
-    data_type = UNKNOWN_TYPE;
+    data_type = CARTA::UnsupportedType;
     data_type_size = 0;
     data_offset = 0;
 }
@@ -145,14 +145,6 @@ std::unique_ptr<Column> Column::FromFitsPtr(fitsfile* fits_ptr, int column_index
     return column;
 }
 
-string Column::Info() {
-    auto type_string =
-        data_type == UNKNOWN_TYPE ? "unsupported" : data_type == STRING ? "string" : fmt::format("{} bytes per entry", data_type_size);
-    auto unit_string = unit.empty() ? "" : fmt::format("Unit: {}; ", unit);
-    auto description_string = description.empty() ? "" : fmt::format("Description: {}; ", description);
-    return fmt::format("Name: {}; Data: {}; {}{}\n", name, type_string, unit_string, description_string);
-}
-
 // Specialisation for string type, in order to trim whitespace at the end of the entry
 template <>
 void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) {
@@ -181,6 +173,27 @@ void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t
         }
         ptr += stride;
     }
+}
+
+// Bool is a special case, because std::vector<bool> is a bit field, and std::vector<bool>::data() returns void
+template<>
+void DataColumn<bool>::FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
+    column_data.set_data_type(CARTA::Bool);
+    auto values = GetColumnData(fill_subset, indices, start, end);
+    std::vector<uint8_t> temp_data (values.size());
+
+    for (auto j = values.size() -1; j >= 0; j--) {
+        temp_data[j] = values[j];
+    }
+    column_data.set_binary_data(temp_data.data(), temp_data.size());
+}
+
+// String is a special case, because we store the data as a repeated string field instead of binary data
+template<>
+void DataColumn<std::string>::FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
+    column_data.set_data_type(CARTA::String);
+    auto values = GetColumnData(fill_subset, indices, start, end);
+    *column_data.mutable_string_data() = {values.begin(), values.end()};
 }
 
 } // namespace carta

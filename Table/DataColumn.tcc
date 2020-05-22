@@ -6,40 +6,48 @@
 #include <algorithm>
 
 namespace carta {
+
+template<class T>
+T clamp(T val, const T& min_val, const T& max_val) {
+    if (val < min_val) { val = min_val; }
+    if (val > max_val) { val = max_val; }
+    return val;
+}
+
 template<class T>
 DataColumn<T>::DataColumn(const std::string& name_chr): Column(name_chr) {
     // Assign type based on template type
     if constexpr(std::is_same_v<T, std::string>) {
-        data_type = STRING;
+        data_type = CARTA::String;
     } else if constexpr(std::is_same_v<T, uint8_t>) {
-        data_type = UINT8;
+        data_type = CARTA::Uint8;
     } else if constexpr(std::is_same_v<T, int8_t>) {
-        data_type = INT8;
+        data_type = CARTA::Int8;
     } else if constexpr(std::is_same_v<T, uint16_t>) {
-        data_type = UINT16;
+        data_type = CARTA::Uint16;
     } else if constexpr(std::is_same_v<T, int16_t>) {
-        data_type = INT16;
+        data_type = CARTA::Int16;
     } else if constexpr(std::is_same_v<T, uint32_t>) {
-        data_type = UINT32;
+        data_type = CARTA::Uint32;
     } else if constexpr(std::is_same_v<T, int32_t>) {
-        data_type = INT32;
+        data_type = CARTA::Int32;
     } else if constexpr(std::is_same_v<T, uint64_t>) {
-        data_type = UINT64;
+        data_type = CARTA::Uint64;
     } else if constexpr(std::is_same_v<T, int64_t>) {
-        data_type = INT64;
+        data_type = CARTA::Int64;
     } else if constexpr(std::is_same_v<T, float>) {
-        data_type = FLOAT;
+        data_type = CARTA::Float;
     } else if constexpr(std::is_same_v<T, double>) {
-        data_type = DOUBLE;
+        data_type = CARTA::Double;
     } else if constexpr(std::is_same_v<T, bool>) {
-        data_type = BOOL;
+        data_type = CARTA::Bool;
     } else {
-        data_type = UNKNOWN_TYPE;
+        data_type = CARTA::UnsupportedType;
     }
 
-    if (data_type == UNKNOWN_TYPE) {
+    if (data_type == CARTA::UnsupportedType) {
         data_type_size = 0;
-    } else if (data_type == STRING) {
+    } else if (data_type == CARTA::String) {
         data_type_size = 1;
     } else {
         data_type_size = sizeof(T);
@@ -188,6 +196,46 @@ void DataColumn<T>::FilterIndices(IndexList& existing_indices, bool is_subset, C
         existing_indices.swap(matching_indices);
     }
 }
+
+template<class T>
+std::vector<T> DataColumn<T>::GetColumnData(bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
+    if (fill_subset) {
+        int64_t N = indices.size();
+        int64_t begin_index = clamp(start, (int64_t) 0, N);
+        if (end < 0) {
+            end = indices.size();
+        }
+        int64_t end_index = clamp(end, begin_index, N);
+
+        auto begin_it = indices.begin() + begin_index;
+        auto end_it = indices.begin() + end_index;
+        std::vector<T> values;
+        values.reserve(std::distance(begin_it, end_it));
+        for (auto it = begin_it; it != end_it; it++) {
+            values.push_back(entries[*it]);
+        }
+        return values;
+    } else {
+        int64_t N = entries.size();
+        int64_t begin_index = clamp(start, (int64_t) 0, N);
+        if (end < 0) {
+            end = N;
+        }
+        int64_t end_index = clamp(end, begin_index, N);
+
+        auto begin_it = entries.begin() + begin_index;
+        auto end_it = entries.begin() + end_index;
+        return std::vector<T>(begin_it, end_it);
+    }
+}
+
+template<class T>
+void DataColumn<T>::FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
+    column_data.set_data_type(data_type);
+    auto values = GetColumnData(fill_subset, indices, start, end);
+    column_data.set_binary_data(values.data(), values.size());
+}
+
 }
 
 #endif //VOTABLE_TEST__DATACOLUMN_TCC_

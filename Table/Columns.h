@@ -11,13 +11,14 @@
 #include <fmt/format.h>
 #include <pugixml.hpp>
 
+#include <carta-protobuf/enums.pb.h>
+#include <carta-protobuf/defs.pb.h>
+
 namespace carta {
 
 typedef std::vector<int64_t> IndexList;
 template <class T>
 class DataColumn;
-
-enum DataType { UNKNOWN_TYPE, STRING, UINT8, INT8, UINT16, INT16, UINT32, INT32, UINT64, INT64, FLOAT, DOUBLE, BOOL };
 
 enum ComparisonOperator {
     EQUAL = 0,
@@ -44,13 +45,13 @@ public:
     virtual void SortIndices(IndexList& indices, bool ascending) const {};
     virtual void FilterIndices(IndexList& existing_indices, bool is_subset, ComparisonOperator comparison_operator, double value,
         double secondary_value = 0.0) const {}
-    virtual std::string Info();
 
+    virtual void FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {};
     // Factory for constructing a column from a <FIELD> node
     static std::unique_ptr<Column> FromField(const pugi::xml_node& field);
     static std::unique_ptr<Column> FromFitsPtr(fitsfile* fits_ptr, int column_index, size_t& data_offset);
 
-    DataType data_type;
+    CARTA::ColumnType data_type;
     std::string name;
     std::string id;
     std::string unit;
@@ -76,9 +77,11 @@ public:
     void SortIndices(IndexList& indices, bool ascending) const override;
     void FilterIndices(IndexList& existing_indices, bool is_subset, ComparisonOperator comparison_operator, double value,
         double secondary_value = 0.0) const override;
+    std::vector<T> GetColumnData(bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const;
+    void FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const override;
 
     static const DataColumn<T>* TryCast(const Column* column) {
-        if (!column || column->data_type == UNKNOWN_TYPE) {
+        if (!column || column->data_type == CARTA::UnsupportedType) {
             return nullptr;
         }
         return dynamic_cast<const DataColumn<T>*>(column);

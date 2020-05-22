@@ -119,7 +119,7 @@ void VOTableParser::Parse() {
         case XML_READER_TYPE_END_ELEMENT:
             if (_element_name == ElementName::TD && !_td_filled && _carrier) {
                 // Fill the TR element values as "" if there is an empty column, i.e. <TD></TD>.
-                _carrier->FillEmptyTd(_td_counts);
+                //_carrier->FillEmptyTd(_td_counts);
                 _td_filled = true; // Decrease the TD counter in order to mark such TR element has been filled
             }
             break;
@@ -127,7 +127,7 @@ void VOTableParser::Parse() {
             FillElementAttributes(_element_name, name, value);
             break;
         case XML_READER_TYPE_TEXT:
-            FillElementValues(_element_name, value);
+            //FillElementValues(_element_name, value);
             break;
 
             // Regardless the following node types
@@ -208,28 +208,5 @@ void VOTableParser::FillElementAttributes(ElementName element_name, std::string 
             _carrier->FillFieldAttributes(_field_counts, name, value);
             break;
         default:; // Do not fill any attributes
-    }
-}
-
-void VOTableParser::FillElementValues(ElementName element_name, std::string value) {
-    if (!_carrier) {
-        std::cerr << "The VOTableCarrier pointer is null!" << std::endl;
-        return;
-    }
-    switch (element_name) {
-        case ElementName::DESCRIPTION:
-            if (_pre_element_name == ElementName::FIELD) {
-                _carrier->FillFieldDescriptions(_field_counts, value);
-            } else {
-                _carrier->FillFileDescription(value);
-            }
-            break;
-        case ElementName::TD:
-            if (!_td_filled) {
-                _carrier->FillTdValues(_td_counts, value);
-                _td_filled = true;
-            }
-            break;
-        default:; // Do not fill any values
     }
 }

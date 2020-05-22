@@ -25,7 +25,7 @@ bool TableView::NumericFilter(const Column* column, ComparisonOperator compariso
     }
 
     // Only filter for arithmetic types
-    if (column->data_type == UNKNOWN_TYPE || column->data_type == STRING) {
+    if (column->data_type == CARTA::UnsupportedType || column->data_type == CARTA::String) {
         return false;
     }
 
@@ -186,12 +186,22 @@ bool TableView::Combine(const TableView& second) {
     return true;
 }
 
+
+bool TableView::FillValues(const Column* column, CARTA::ColumnData& column_data, int64_t start, int64_t end) const {
+    if (!column) {
+        return false;
+    }
+
+    column->FillColumnData(column_data, _is_subset, _subset_indices, start, end);
+    return true;
+}
+
 bool TableView::SortByColumn(const Column* column, bool ascending) {
     if (!column) {
         return false;
     }
 
-    if (column->data_type == UNKNOWN_TYPE) {
+    if (column->data_type == CARTA::UnsupportedType) {
         return false;
     }
 

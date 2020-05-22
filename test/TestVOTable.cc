@@ -89,12 +89,12 @@ TEST(ParsedTable, CorrectFieldUnits) {
 
 TEST(ParsedTable, CorrectFieldTypes) {
     Table table(test_path("ivoa_example.xml"));
-    EXPECT_EQ(table[0]->data_type, FLOAT);
-    EXPECT_EQ(table[1]->data_type, FLOAT);
-    EXPECT_EQ(table[2]->data_type, STRING);
-    EXPECT_EQ(table[3]->data_type, INT32);
-    EXPECT_EQ(table[4]->data_type, INT16);
-    EXPECT_EQ(table[5]->data_type, FLOAT);
+    EXPECT_EQ(table[0]->data_type, CARTA::Float);
+    EXPECT_EQ(table[1]->data_type, CARTA::Float);
+    EXPECT_EQ(table[2]->data_type, CARTA::String);
+    EXPECT_EQ(table[3]->data_type, CARTA::Int32);
+    EXPECT_EQ(table[4]->data_type, CARTA::Int16);
+    EXPECT_EQ(table[5]->data_type, CARTA::Float);
 }
 
 TEST(ParsedTable, CorrectFieldSizes) {
@@ -375,12 +375,12 @@ TEST(Arrays, ParseArrayFile) {
 
 TEST(Arrays, IgnoreArrayTypes) {
     Table table(test_path("array_types.xml"));
-    EXPECT_EQ(table["FixedArray"]->data_type, UNKNOWN_TYPE);
-    EXPECT_EQ(table["BoundedArray"]->data_type, UNKNOWN_TYPE);
-    EXPECT_EQ(table["UnboundedArray"]->data_type, UNKNOWN_TYPE);
-    EXPECT_EQ(table["FixedArray2D"]->data_type, UNKNOWN_TYPE);
-    EXPECT_EQ(table["BoundedArray2D"]->data_type, UNKNOWN_TYPE);
-    EXPECT_EQ(table["UnboundedArray2D"]->data_type, UNKNOWN_TYPE);
+    EXPECT_EQ(table["FixedArray"]->data_type, CARTA::UnsupportedType);
+    EXPECT_EQ(table["BoundedArray"]->data_type, CARTA::UnsupportedType);
+    EXPECT_EQ(table["UnboundedArray"]->data_type, CARTA::UnsupportedType);
+    EXPECT_EQ(table["FixedArray2D"]->data_type, CARTA::UnsupportedType);
+    EXPECT_EQ(table["BoundedArray2D"]->data_type, CARTA::UnsupportedType);
+    EXPECT_EQ(table["UnboundedArray2D"]->data_type, CARTA::UnsupportedType);
 }
 
 TEST(Arrays, CorrectScalarData) {

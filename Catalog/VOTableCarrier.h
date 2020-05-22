@@ -33,7 +33,7 @@ class VOTableCarrier {
     struct Field {
         std::string name;
         std::string id;
-        CARTA::EntryType datatype;
+        CARTA::ColumnType datatype;
         std::string arraysize;
         std::string width;
         std::string precision;
@@ -70,18 +70,14 @@ public:
     void FillFileDescription(std::string description);
     void FillCoosysAttributes(int count, std::string name, std::string value);
     void FillFieldAttributes(int count, std::string name, std::string value);
-    void FillFieldDescriptions(int count, std::string value);
-    void FillTdValues(int column_index, std::string value);
-    void FillEmptyTd(int column_index);
     void UpdateNumOfTableRows();
     std::string GetFileDescription();
     void GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response);
     void GetCooosys(CARTA::CatalogFileInfo* file_info_response);
-    void GetHeadersAndData(CARTA::OpenCatalogFileAck& open_file_response, int preview_data_size);
     void GetFilterData(
         CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
     size_t GetTableRowNumber();
-    static CARTA::EntryType GetDataType(const std::string& data_type);
+    static CARTA::ColumnType GetDataType(const std::string& data_type);
     bool IsValid();
 
     void IncreaseStreamCount() {
@@ -91,9 +87,6 @@ public:
         --_stream_count;
     }
     void DisconnectCalled();
-
-    void PrintTableElement(int row, int column);
-    void PrintData();
 
 private:
     bool BoolFilter(CARTA::FilterConfig filter, bool value);

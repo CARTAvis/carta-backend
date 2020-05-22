@@ -12,6 +12,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Building tester options
 option(testTileEncoding "Build testTileEncoding." OFF)
 option(testTable "Build testTable." ON)
+option(testTimer "Build testTimer." ON)
 option(testVOTableController "Build testVOTableController." OFF)
 
 if (testTileEncoding)
@@ -23,6 +24,19 @@ if (testTileEncoding)
     target_link_libraries(testTileEncoding gtest gtest_main Threads::Threads fmt)
 
     add_test(NAME TestTileEncoding COMMAND testTileEncoding)
+endif ()
+
+if (testTimer)
+    enable_testing()
+    find_package(GTest)
+    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+
+    add_executable(testTimer
+            TestTimer.cc
+            ../Timer/Timer.cc)
+    target_link_libraries(testTimer gtest gtest_main Threads::Threads fmt)
+
+    add_test(NAME TestTimer COMMAND testTimer)
 endif ()
 
 if (testTable)

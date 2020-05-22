@@ -249,15 +249,6 @@ bool Table::IsValid() const {
     return _valid;
 }
 
-void Table::PrintInfo(bool skip_unknowns) const {
-    fmt::print("Rows: {}; Columns: {};\n", _num_rows, _columns.size());
-    for (auto& column : _columns) {
-        if (!skip_unknowns || column->data_type != UNKNOWN_TYPE) {
-            cout << column->Info();
-        }
-    }
-}
-
 const Column* Table::GetColumnByName(const std::string& name) const {
     auto it = _column_name_map.find(name);
     if (it != _column_name_map.end()) {
