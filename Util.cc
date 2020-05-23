@@ -136,7 +136,7 @@ casacore::String GetResolvedFilename(const std::string& root_dir, const std::str
         }
     } else {
         // Try if it is under user's temp folder
-        std::filesystem::path temp_folder = std::filesystem::temp_directory_path();
+        fs::path temp_folder = fs::temp_directory_path();
         temp_folder.append("CARTA");
         if (directory.find(temp_folder) == 0) {
             casacore::Path temp_directory(directory);

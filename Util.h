@@ -8,12 +8,6 @@
 #include <string>
 #include <unordered_map>
 
-#ifdef linux
-#include <experimental/filesystem>
-#else
-#include <filesystem>
-#endif
-
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
@@ -26,6 +20,14 @@
 #include <carta-protobuf/spectral_profile.pb.h>
 
 #include "InterfaceConstants.h"
+
+#ifdef linux
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::__fs::filesystem;
+#endif
 
 void LOG(uint32_t id, const std::string& log_message);
 

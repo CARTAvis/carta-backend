@@ -36,16 +36,16 @@ void MomentController::CalculateMoments(int file_id, const std::unique_ptr<Frame
 }
 
 void MomentController::MakeTemporaryFolder() {
-    std::filesystem::path temp_folder = std::filesystem::temp_directory_path();
+    fs::path temp_folder = fs::temp_directory_path();
     temp_folder.append("CARTA");
-    std::filesystem::create_directories(temp_folder);
+    fs::create_directories(temp_folder);
     _temp_folder = temp_folder;
 }
 
 void MomentController::DeleteTemporaryFolder() {
     if (!_temp_folder.empty()) {
         std::string str_temp_folder = _temp_folder;
-        std::filesystem::path temp_folder = str_temp_folder;
-        std::filesystem::remove_all(temp_folder);
+        fs::path temp_folder = str_temp_folder;
+        fs::remove_all(temp_folder);
     }
 }

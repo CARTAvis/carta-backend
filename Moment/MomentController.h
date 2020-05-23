@@ -1,14 +1,16 @@
 #ifndef CARTA_BACKEND_MOMENT_MOMENTCONTROLLER_H_
 #define CARTA_BACKEND_MOMENT_MOMENTCONTROLLER_H_
 
-#ifdef linux
-#include <experimental/filesystem>
-#else
-#include <filesystem>
-#endif
-
 #include "../Frame.h"
 #include "MomentGenerator.h"
+
+#ifdef linux
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::__fs::filesystem;
+#endif
 
 namespace carta {
 
