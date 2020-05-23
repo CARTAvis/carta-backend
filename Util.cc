@@ -134,6 +134,22 @@ casacore::String GetResolvedFilename(const std::string& root_dir, const std::str
         } catch (casacore::AipsError& err) {
             // return empty string
         }
+    } else {
+        // Try if it is under user's temp folder
+        std::filesystem::path temp_folder = std::filesystem::temp_directory_path();
+        temp_folder.append("CARTA");
+        if (directory.find(temp_folder) == 0) {
+            casacore::Path temp_directory(directory);
+            temp_directory.append(file);
+            casacore::File temp_filename(temp_directory);
+            if (temp_filename.exists()) {
+                try {
+                    resolved_filename = temp_filename.path().resolvedName();
+                } catch (casacore::AipsError& err) {
+                    // return empty string
+                }
+            }
+        }
     }
     return resolved_filename;
 }

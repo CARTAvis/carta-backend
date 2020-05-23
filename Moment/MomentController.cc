@@ -39,7 +39,7 @@ void MomentController::MakeTemporaryFolder() {
     std::filesystem::path temp_folder = std::filesystem::temp_directory_path();
     temp_folder.append("CARTA");
     std::filesystem::create_directories(temp_folder);
-    _temp_folder = temp_folder.u8string();
+    _temp_folder = temp_folder;
 }
 
 void MomentController::DeleteTemporaryFolder() {
