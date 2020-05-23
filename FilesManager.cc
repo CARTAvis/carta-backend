@@ -41,10 +41,15 @@ void FilesManager::SaveFile(
         if (casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, message, output_filename, filename)) {
             success = true;
         }
-        // without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
+        // Without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
         delete fits_to_image_ptr;
     } else {
-        message = "No file format conversion!";
+        if (!fs::equivalent(filename, output_filename)) {
+            fs::copy(filename, output_filename, fs::copy_options::recursive);
+            message = "No file format conversion! Copy the file with different name.";
+        } else {
+            message = "Same file will not be overridden!";
+        }
     }
 
     save_file_ack.set_success(success);
@@ -59,36 +64,16 @@ void FilesManager::RemoveRootFolder(std::string& directory) {
 }
 
 void FilesManager::AddSuffix(std::string& output_filename, CARTA::FileType file_type) {
-    std::size_t found = output_filename.find_last_not_of(".");
-    if (found) {
-        std::string suffix_name = output_filename.substr(found + 1);
-        switch (file_type) {
-            case CARTA::FileType::CASA: {
-                if (suffix_name != ".image") {
-                    output_filename += ".image";
-                }
-                break;
-            }
-            case CARTA::FileType::FITS: {
-                if (suffix_name != ".fits") {
-                    output_filename += ".fits";
-                }
-                break;
-            }
-            default: {}
+    switch (file_type) {
+        case CARTA::FileType::CASA: {
+            output_filename += ".image";
+            break;
         }
-    } else {
-        switch (file_type) {
-            case CARTA::FileType::CASA: {
-                output_filename += ".image";
-                break;
-            }
-            case CARTA::FileType::FITS: {
-                output_filename += ".fits";
-                break;
-            }
-            default: {}
+        case CARTA::FileType::FITS: {
+            output_filename += ".fits";
+            break;
         }
+        default: {}
     }
 }
 
