@@ -59,8 +59,8 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
                 header->set_data_type(data_type);
 
                 if (col->data_type != CARTA::UnsupportedType) {
-                    (*preview_data->mutable_columns())[i] = CARTA::ColumnData();
-                    view.FillValues(col, (*preview_data->mutable_columns())[i], 0, num_preview_rows);
+                    (*preview_data)[i] = CARTA::ColumnData();
+                    view.FillValues(col, (*preview_data)[i], 0, num_preview_rows);
                 }
 
                 header->set_name(col->name);
