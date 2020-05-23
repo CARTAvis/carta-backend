@@ -233,7 +233,7 @@ template<class T>
 void DataColumn<T>::FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
     column_data.set_data_type(data_type);
     auto values = GetColumnData(fill_subset, indices, start, end);
-    column_data.set_binary_data(values.data(), values.size());
+    column_data.set_binary_data(values.data(), values.size() * sizeof(T));
 }
 
 }
