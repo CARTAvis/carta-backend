@@ -75,8 +75,7 @@ void FilesManager::AddSuffix(std::string& output_filename, CARTA::FileType file_
                 }
                 break;
             }
-            default: {
-            }
+            default: {}
         }
     } else {
         switch (file_type) {
@@ -88,8 +87,7 @@ void FilesManager::AddSuffix(std::string& output_filename, CARTA::FileType file_
                 output_filename += ".fits";
                 break;
             }
-            default: {
-            }
+            default: {}
         }
     }
 }
