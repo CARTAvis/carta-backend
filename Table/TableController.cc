@@ -82,3 +82,38 @@ void TableController::OnCloseFileRequest(const CARTA::CloseCatalogFile& close_fi
         tables.erase(file_id);
     }
 }
+void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_request, std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback) {
+
+    int file_id = filter_request.file_id();
+
+    if (tables.count(file_id)) {
+        Table& table = tables.at(file_id);
+
+        int start_index = filter_request.subset_start_index();
+        int num_rows = filter_request.subset_data_size();
+        // TODO: off by one?
+        int end_index = start_index + num_rows;
+
+        CARTA::CatalogFilterResponse filter_response;
+        filter_response.set_file_id(file_id);
+        filter_response.set_progress(1.0f);
+        filter_response.set_subset_data_size(num_rows);
+        filter_response.set_subset_end_index(end_index);
+
+        auto view = table.View();
+
+        // TODO: apply filtering etc, cache view results
+        auto num_columns = filter_request.column_indices_size();
+        auto column_data = filter_response.mutable_columns();
+        for (auto i = 0; i < num_columns; i++) {
+            auto index = filter_request.column_indices()[i];
+            auto col = table[index];
+            if (col && col->data_type != CARTA::UnsupportedType) {
+                (*column_data)[i] = CARTA::ColumnData();
+                view.FillValues(col, (*column_data)[i], start_index, end_index);
+
+            }
+        }
+        partial_results_callback(filter_response);
+    }
+}

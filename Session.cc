@@ -871,12 +871,10 @@ void Session::OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request) {
 }
 
 void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id) {
-    if (_catalog_controller) {
-        _catalog_controller->OnFilterRequest(filter_request, [&](const CARTA::CatalogFilterResponse& filter_response) {
-            // Send partial or final results
-            SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
-        });
-    }
+    _table_controller->OnFilterRequest(filter_request, [&](const CARTA::CatalogFilterResponse& filter_response) {
+        // Send partial or final results
+        SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
+    });
 }
 
 // ******** SEND DATA STREAMS *********

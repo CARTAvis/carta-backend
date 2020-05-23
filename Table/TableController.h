@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include <carta-protobuf/open_catalog_file.pb.h>
+#include <carta-protobuf/catalog_filter.pb.h>
 
 #include "Table.h"
 
@@ -17,7 +18,7 @@ public:
     TableController(std::string root);
     void OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response);
     void OnCloseFileRequest(const CARTA::CloseCatalogFile& close_file_request);
-
+    void OnFilterRequest(const CARTA::CatalogFilterRequest& filter_request, std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback);
 protected:
     std::string _root_folder;
     std::unordered_map<int, Table> tables;
