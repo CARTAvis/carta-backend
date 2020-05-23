@@ -3,11 +3,16 @@
 
 #include <cassert>
 #include <chrono>
-#include <filesystem>
 #include <fstream>
 #include <regex>
 #include <string>
 #include <unordered_map>
+
+#ifdef linux
+#include <experimental/filesystem>
+#else
+#include <filesystem>
+#endif
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
