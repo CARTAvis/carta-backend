@@ -149,7 +149,7 @@ void DataColumn<T>::SortIndices(IndexList& indices, bool ascending) const {
 }
 
 template<class T>
-void DataColumn<T>::FilterIndices(IndexList& existing_indices, bool is_subset, ComparisonOperator comparison_operator, double value, double secondary_value) const {
+void DataColumn<T>::FilterIndices(IndexList& existing_indices, bool is_subset, CARTA::ComparisonOperator comparison_operator, double value, double secondary_value) const {
     // only apply to template types that are arithmetic
     if constexpr (std::is_arithmetic_v<T>) {
         T typed_value = value;
@@ -165,14 +165,14 @@ void DataColumn<T>::FilterIndices(IndexList& existing_indices, bool is_subset, C
                     continue;
                 }
                 T val = entries[i];
-                bool filter_pass = (comparison_operator == EQUAL && val == typed_value)
-                    || (comparison_operator == NOT_EQUAL && val != typed_value)
-                    || (comparison_operator == LESSER && val < typed_value)
-                    || (comparison_operator == GREATER && val > typed_value)
-                    || (comparison_operator == LESSER_OR_EQUAL && val <= typed_value)
-                    || (comparison_operator == GREATER_OR_EQUAL && val >= typed_value)
-                    || (comparison_operator == RANGE_INCLUSIVE && val >= typed_value && val <= typed_secondary_value)
-                    || (comparison_operator == RANGE_EXCLUSIVE && val > typed_value && val < typed_secondary_value);
+                bool filter_pass = (comparison_operator == CARTA::Equal && val == typed_value)
+                    || (comparison_operator == CARTA::NotEqual && val != typed_value)
+                    || (comparison_operator == CARTA::Lesser && val < typed_value)
+                    || (comparison_operator == CARTA::Greater && val > typed_value)
+                    || (comparison_operator == CARTA::LessorOrEqual && val <= typed_value)
+                    || (comparison_operator == CARTA::GreaterOrEqual && val >= typed_value)
+                    || (comparison_operator == CARTA::RangeClosed && val >= typed_value && val <= typed_secondary_value)
+                    || (comparison_operator == CARTA::RangeOpen && val > typed_value && val < typed_secondary_value);
                 if (filter_pass) {
                     matching_indices.push_back(i);
                 }
@@ -180,14 +180,14 @@ void DataColumn<T>::FilterIndices(IndexList& existing_indices, bool is_subset, C
         } else {
             for (auto i = 0; i < num_entries; i++) {
                 T val = entries[i];
-                bool filter_pass = (comparison_operator == EQUAL && val == typed_value)
-                    || (comparison_operator == NOT_EQUAL && val != typed_value)
-                    || (comparison_operator == LESSER && val < typed_value)
-                    || (comparison_operator == GREATER && val > typed_value)
-                    || (comparison_operator == LESSER_OR_EQUAL && val <= typed_value)
-                    || (comparison_operator == GREATER_OR_EQUAL && val >= typed_value)
-                    || (comparison_operator == RANGE_INCLUSIVE && val >= typed_value && val <= typed_secondary_value)
-                    || (comparison_operator == RANGE_EXCLUSIVE && val > typed_value && val < typed_secondary_value);
+                bool filter_pass = (comparison_operator == CARTA::Equal && val == typed_value)
+                    || (comparison_operator == CARTA::NotEqual && val != typed_value)
+                    || (comparison_operator == CARTA::Lesser && val < typed_value)
+                    || (comparison_operator == CARTA::Greater && val > typed_value)
+                    || (comparison_operator == CARTA::LessorOrEqual && val <= typed_value)
+                    || (comparison_operator == CARTA::GreaterOrEqual && val >= typed_value)
+                    || (comparison_operator == CARTA::RangeClosed && val >= typed_value && val <= typed_secondary_value)
+                    || (comparison_operator == CARTA::RangeOpen && val > typed_value && val < typed_secondary_value);
                 if (filter_pass) {
                     matching_indices.push_back(i);
                 }

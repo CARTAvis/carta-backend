@@ -121,20 +121,6 @@ void Controller::OnFileInfoRequest(CARTA::CatalogFileInfoRequest file_info_reque
     carrier.GetCooosys(file_info);
 }
 
-void Controller::OnFilterRequest(
-    CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback) {
-    int file_id(filter_request.file_id());
-    if (!_carriers.count(file_id)) {
-        std::cerr << "VOTable file does not exist (file ID: " << file_id << ") !" << std::endl;
-        return;
-    }
-
-    _carriers[file_id]->IncreaseStreamCount();
-    _carriers[file_id]->GetFilterData(
-        filter_request, [&](CARTA::CatalogFilterResponse filter_response) { partial_results_callback(filter_response); });
-    _carriers[file_id]->DecreaseStreamCount();
-}
-
 bool Controller::IsVOTableFile(std::string file_name) {
     bool result(false);
     std::size_t found = file_name.find_last_of(".");

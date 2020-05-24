@@ -21,12 +21,6 @@ class VOTableCarrier {
         std::string equinox;
         std::string epoch;
         std::string system;
-        void Print() {
-            std::cout << "    id          = " << id << std::endl;
-            std::cout << "    equinox     = " << equinox << std::endl;
-            std::cout << "    epoch       = " << epoch << std::endl;
-            std::cout << "    system      = " << system << std::endl;
-        }
     };
 
     // For the element <FIELD> and its attributes
@@ -44,21 +38,6 @@ class VOTableCarrier {
         std::string ref;
         std::string type;
         std::string description;
-        void Print() {
-            std::cout << "    name        = " << name << std::endl;
-            std::cout << "    id          = " << id << std::endl;
-            std::cout << "    datatype    = " << datatype << std::endl;
-            std::cout << "    arraysize   = " << arraysize << std::endl;
-            std::cout << "    width       = " << width << std::endl;
-            std::cout << "    precision   = " << precision << std::endl;
-            std::cout << "    xtype       = " << xtype << std::endl;
-            std::cout << "    unit        = " << unit << std::endl;
-            std::cout << "    ucd         = " << ucd << std::endl;
-            std::cout << "    utype       = " << utype << std::endl;
-            std::cout << "    ref         = " << ref << std::endl;
-            std::cout << "    type        = " << type << std::endl;
-            std::cout << "    description = " << description << std::endl;
-        }
     };
 
 public:
@@ -74,30 +53,12 @@ public:
     std::string GetFileDescription();
     void GetHeaders(CARTA::CatalogFileInfoResponse& file_info_response);
     void GetCooosys(CARTA::CatalogFileInfo* file_info_response);
-    void GetFilterData(
-        CARTA::CatalogFilterRequest filter_request, std::function<void(CARTA::CatalogFilterResponse)> partial_results_callback);
     size_t GetTableRowNumber();
     static CARTA::ColumnType GetDataType(const std::string& data_type);
     bool IsValid();
-
-    void IncreaseStreamCount() {
-        ++_stream_count;
-    }
-    void DecreaseStreamCount() {
-        --_stream_count;
-    }
     void DisconnectCalled();
 
 private:
-    bool BoolFilter(CARTA::FilterConfig filter, bool value);
-    bool StringFilter(const CARTA::FilterConfig& filter, const std::string& value);
-    template <typename T>
-    bool NumericFilter(const CARTA::FilterConfig& filter, const T& value);
-    void SortColumn(std::string column_name, CARTA::SortingType sorting_type);
-    template <typename T>
-    void SortRowIndexes(const std::vector<T>& v, CARTA::SortingType sorting_type);
-    void ResetRowIndexes();
-    void FilterData(const CARTA::CatalogFilterRequest& filter_request);
     bool IsSameFilterRequest(const CARTA::CatalogFilterRequest& filter_request);
     void SetConnectionFlag(bool connected);
 

@@ -20,17 +20,6 @@ typedef std::vector<int64_t> IndexList;
 template <class T>
 class DataColumn;
 
-enum ComparisonOperator {
-    EQUAL = 0,
-    NOT_EQUAL = 1,
-    LESSER = 2,
-    GREATER = 3,
-    LESSER_OR_EQUAL = 4,
-    GREATER_OR_EQUAL = 5,
-    RANGE_INCLUSIVE = 6,
-    RANGE_EXCLUSIVE = 7
-};
-
 class Column {
 public:
     Column(const std::string& name_chr);
@@ -43,7 +32,7 @@ public:
         return 0;
     }
     virtual void SortIndices(IndexList& indices, bool ascending) const {};
-    virtual void FilterIndices(IndexList& existing_indices, bool is_subset, ComparisonOperator comparison_operator, double value,
+    virtual void FilterIndices(IndexList& existing_indices, bool is_subset, CARTA::ComparisonOperator comparison_operator, double value,
         double secondary_value = 0.0) const {}
 
     virtual void FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {};
@@ -74,7 +63,7 @@ public:
     void Resize(size_t capacity) override;
     size_t NumEntries() const override;
     void SortIndices(IndexList& indices, bool ascending) const override;
-    void FilterIndices(IndexList& existing_indices, bool is_subset, ComparisonOperator comparison_operator, double value,
+    void FilterIndices(IndexList& existing_indices, bool is_subset, CARTA::ComparisonOperator comparison_operator, double value,
         double secondary_value = 0.0) const override;
     std::vector<T> GetColumnData(bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const;
     void FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const override;

@@ -19,7 +19,7 @@ TableView::TableView(const Table& table, const IndexList& index_list, bool order
     _is_subset = true;
 }
 
-bool TableView::NumericFilter(const Column* column, ComparisonOperator comparison_operator, double value, double secondary_value) {
+bool TableView::NumericFilter(const Column* column, CARTA::ComparisonOperator comparison_operator, double value, double secondary_value) {
     if (!column) {
         return false;
     }

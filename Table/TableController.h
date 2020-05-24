@@ -20,6 +20,8 @@ public:
     void OnCloseFileRequest(const CARTA::CloseCatalogFile& close_file_request);
     void OnFilterRequest(const CARTA::CatalogFilterRequest& filter_request, std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback);
 protected:
+    void ApplyFilter(const CARTA::FilterConfig& filter_config, TableView& view);
+
     std::string _root_folder;
     std::unordered_map<int, Table> tables;
 };

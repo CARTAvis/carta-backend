@@ -15,7 +15,7 @@ public:
     TableView(const Table& table, const IndexList& index_list, bool ordered = true);
 
     // Filtering
-    bool NumericFilter(const Column* column, ComparisonOperator comparison_operator, double value, double secondary_value = 0.0);
+    bool NumericFilter(const Column* column, CARTA::ComparisonOperator comparison_operator, double value, double secondary_value = 0.0);
     bool StringFilter(const Column* column, std::string search_string, bool case_insensitive = false);
 
     bool Invert();
@@ -28,9 +28,9 @@ public:
 
     // Retrieving data
     size_t NumRows() const;
-    template <class T>
+    const Table& GetTable() const { return _table; }
+    template<class T>
     std::vector<T> Values(const Column* column, int64_t start = -1, int64_t end = -1) const;
-
     bool FillValues(const Column* column, CARTA::ColumnData& column_data, int64_t start = -1, int64_t end = -1) const;
 
 protected:

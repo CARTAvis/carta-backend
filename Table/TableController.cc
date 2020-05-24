@@ -92,6 +92,10 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
         Table& table = tables.at(file_id);
         auto view = table.View();
 
+        for(auto& config: filter_request.filter_configs()) {
+            ApplyFilter(config, view);
+        }
+
         int start_index = filter_request.subset_start_index();
         int num_rows = filter_request.subset_data_size();
 
@@ -111,6 +115,15 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
         int num_remaining_rows = response_size;
         int sent_rows = 0;
         int chunk_start_index = start_index;
+
+//        // Handle empty filters
+        if (num_remaining_rows == 0) {
+            filter_response.set_subset_data_size(0);
+            filter_response.set_progress(1.0f);
+            filter_response.set_subset_end_index(start_index);
+            partial_results_callback(filter_response);
+            return;
+        }
 
         while(num_remaining_rows > 0) {
             int chunk_size = min(num_remaining_rows, max_chunk_size);
@@ -138,8 +151,21 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
 
             partial_results_callback(filter_response);
         }
+    }
+}
 
+void TableController::ApplyFilter(const CARTA::FilterConfig& filter_config, TableView& view) {
+    string column_name = filter_config.column_name();
+    auto column = view.GetTable()[column_name];
+    if (!column) {
+        fmt::print("Could not filter on non-existing column \"{}\"", column_name);
+        return;
+    }
 
-
+    // Perform subset string filter
+    if (column->data_type == CARTA::String) {
+        view.StringFilter(column, filter_config.sub_string());
+    } else {
+        view.NumericFilter(column, filter_config.comparison_operator(), filter_config.value(), filter_config.secondary_value());
     }
 }
