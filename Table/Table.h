@@ -21,10 +21,12 @@ class Table {
 public:
     Table(const std::string& filename, bool header_only = false);
     bool IsValid() const;
+    std::string ParseError() const;
     const Column* GetColumnByName(const std::string& name) const;
     const Column* GetColumnById(const std::string& id) const;
     size_t NumColumns() const;
     size_t NumRows() const;
+    CARTA::CatalogFileType Type() const;
     const std::string& Description() const;
     TableView View() const;
 
@@ -39,14 +41,15 @@ protected:
     bool ConstructFromFITS(bool header_only = false);
 
     bool _valid;
+    CARTA::CatalogFileType _file_type;
     int64_t _num_rows;
+    std::string _parse_error_message;
     std::string _filename;
     std::string _description;
     std::vector<std::unique_ptr<Column>> _columns;
     std::unordered_map<std::string, Column*> _column_name_map;
     std::unordered_map<std::string, Column*> _column_id_map;
     static std::string GetHeader(const std::string& filename);
-    static uint32_t GetMagicNumber(const std::string& filename);
 };
 } // namespace carta
 #endif // VOTABLE_TEST__TABLE_H_

@@ -4,9 +4,9 @@
 #include <fmt/format.h>
 
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 
+#include "../Util.h"
 #include "DataColumn.tcc"
 
 namespace carta {
@@ -16,25 +16,19 @@ Table::Table(const string& filename, bool header_only) : _valid(false), _filenam
     filesystem::path file_path(filename);
 
     if (!filesystem::exists(file_path)) {
-        fmt::print("File does not exist!\n");
+        _parse_error_message = "File does not exist!";
         return;
     }
 
     auto magic_number = GetMagicNumber(filename);
     if (magic_number == FITS_MAGIC_NUMBER) {
         _valid = ConstructFromFITS(header_only);
+        _file_type = CARTA::FITSTable;
     } else if (magic_number == XML_MAGIC_NUMBER) {
         _valid = ConstructFromXML(header_only);
+        _file_type = CARTA::VOTable;
     } else {
     }
-}
-
-uint32_t Table::GetMagicNumber(const string& filename) {
-    ifstream input_file(filename);
-    uint32_t magic_number = 0;
-    input_file.read((char*)&magic_number, sizeof(magic_number));
-    input_file.close();
-    return magic_number;
 }
 
 string Table::GetHeader(const string& filename) {
@@ -78,19 +72,19 @@ bool Table::ConstructFromXML(bool header_only) {
     auto votable = doc.child("VOTABLE");
 
     if (!votable) {
-        fmt::print("Missing XML element VOTABLE\n");
+        _parse_error_message = "Missing XML element VOTABLE!";
         return false;
     }
 
     auto resource = votable.child("RESOURCE");
     if (!resource) {
-        fmt::print("Missing XML element RESOURCE\n");
+        _parse_error_message = "Missing XML element RESOURCE!";
         return false;
     }
 
     auto table_node = resource.child("TABLE");
     if (!table_node) {
-        fmt::print("Missing XML element TABLE\n");
+        _parse_error_message = "Missing XML element TABLE!";
         return false;
     }
 
@@ -100,6 +94,7 @@ bool Table::ConstructFromXML(bool header_only) {
     }
 
     if (!PopulateFields(table_node)) {
+        _parse_error_message = "Cannot parse table headers!";
         return false;
     }
 
@@ -108,7 +103,12 @@ bool Table::ConstructFromXML(bool header_only) {
         return true;
     }
 
-    return PopulateRows(table_node);
+    if (!PopulateRows(table_node)) {
+        _parse_error_message = "Cannot parse table data!";
+        return false;
+    }
+
+    return true;
 }
 
 bool Table::PopulateFields(const pugi::xml_node& table) {
@@ -177,14 +177,14 @@ bool Table::ConstructFromFITS(bool header_only) {
     int status = 0;
     // Attempt to open the first table HDU. status = 0 means no error
     if (fits_open_table(&file_ptr, _filename.c_str(), READONLY, &status)) {
-        fmt::print("Could not open FITS file {}\n", _filename);
+        _parse_error_message = "File does not contain a FITS table!";
         return false;
     }
 
     char ext_name[80];
     // read table extension name
     if (fits_read_key(file_ptr, TSTRING, "EXTNAME", ext_name, nullptr, &status)) {
-        fmt::print("Can't find a binary table HDU in {}\n", _filename);
+        _parse_error_message = "File does not contain a FITS table!";
         fits_close_file(file_ptr, &status);
         return false;
     }
@@ -199,6 +199,7 @@ bool Table::ConstructFromFITS(bool header_only) {
     _num_rows = header_only ? 0 : rows;
 
     if (num_cols <= 0) {
+        _parse_error_message = "Table is empty!";
         fits_close_file(file_ptr, &status);
         return false;
     }
@@ -283,6 +284,13 @@ const std::string& Table::Description() const {
 
 TableView Table::View() const {
     return TableView(*this);
+}
+
+CARTA::CatalogFileType Table::Type() const {
+    return _file_type;
+}
+std::string Table::ParseError() const {
+    return _parse_error_message;
 }
 
 } // namespace carta

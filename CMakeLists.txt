@@ -39,7 +39,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
-FIND_PACKAGE(LibXml2 REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
@@ -127,7 +126,6 @@ set(LINK_LIBS
         casa_imageanalysis
         ${OpenMP_CXX_LIBRARIES}
         ${HDF5_LIBRARIES}
-        ${LIBXML2_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
 set(SOURCE_FILES
@@ -149,9 +147,6 @@ set(SOURCE_FILES
         Region/RegionStats.cc
         Region/RegionProfiler.cc
         Region/Histogram.cc
-        Catalog/VOTableParser.cc
-        Catalog/VOTableCarrier.cc
-        Catalog/VOTableController.cc
         Table/Columns.cc
         Table/Table.cc
         Table/TableView.cc
@@ -163,7 +158,8 @@ set(SOURCE_FILES
         Ds9Parser.cc
         Contouring.cc
         Smoothing.cc
-        GrpcServer/CartaGrpcService.cc Timer/Timer.cc Timer/Timer.h)
+        Timer/Timer.cc
+        GrpcServer/CartaGrpcService.cc )
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

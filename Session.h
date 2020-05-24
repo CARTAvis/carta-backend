@@ -38,7 +38,6 @@
 #include <cartavis/carta_service.grpc.pb.h>
 
 #include "AnimationObject.h"
-#include "Catalog/VOTableController.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
@@ -230,9 +229,6 @@ private:
     // Frame
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
     std::mutex _frame_mutex;                                 // lock frames to create/destroy
-
-    // Catalog controller
-    const std::unique_ptr<catalog::Controller> _catalog_controller;
 
     const std::unique_ptr<carta::TableController> _table_controller;
 

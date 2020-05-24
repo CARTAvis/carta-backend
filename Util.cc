@@ -108,6 +108,17 @@ bool CheckRootBaseFolders(string& root, string& base) {
     return true;
 }
 
+uint32_t GetMagicNumber(const string& filename) {
+    uint32_t magic_number = 0;
+
+    ifstream input_file(filename);
+    if (input_file) {
+        input_file.read((char*)&magic_number, sizeof(magic_number));
+        input_file.close();
+    }
+    return magic_number;
+}
+
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
     // util to split input string into parts by delimiter
     parts.clear();
