@@ -43,11 +43,17 @@ void FilesManager::SaveFile(
         }
         // Without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
         delete fits_to_image_ptr;
-    } else {
-        /// Todo: this part will be replaced by a more efficient and safe method
+    } else if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::CASA)) {
         if (!IsSameFileName(filename, output_filename)) {
-            std::string cmd = "cp -a " + filename + " " + output_filename;
-            system(cmd.c_str());
+            std::unique_ptr<casacore::PagedImage<float>> out_image;
+            out_image.reset(new casacore::PagedImage<float>(filename));
+            out_image->rename(output_filename);
+        } else {
+            message = "Same file will not be overridden!";
+        }
+    } else {
+        if (!IsSameFileName(filename, output_filename)) {
+            fs::rename(filename, output_filename);
             message = "No file format conversion! Copy the file with different name or path.";
         } else {
             message = "Same file will not be overridden!";
@@ -81,12 +87,17 @@ void FilesManager::AddSuffix(std::string& output_filename, CARTA::FileType file_
 
 bool FilesManager::IsSameFileName(const std::string& filename1, const std::string& filename2) {
     bool result(true);
-    if (filename1.size() > filename2.size()) {
-        if (filename1.find(filename2) == std::string::npos) {
+    // Get the absolute file name and path (remove the symbolic link if any)
+    casacore::File temp_filename1(filename1);
+    casacore::String resolved_filename1 = temp_filename1.path().resolvedName();
+    casacore::File temp_filename2(filename2);
+    casacore::String resolved_filename2 = temp_filename2.path().resolvedName();
+    if (resolved_filename1.size() > resolved_filename2.size()) {
+        if (resolved_filename1.find(resolved_filename2) == std::string::npos) {
             result = false;
         }
     } else {
-        if (filename2.find(filename1) == std::string::npos) {
+        if (resolved_filename2.find(resolved_filename1) == std::string::npos) {
             result = false;
         }
     }
