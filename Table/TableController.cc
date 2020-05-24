@@ -101,7 +101,7 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
 
         CARTA::CatalogFilterResponse filter_response;
         filter_response.set_file_id(file_id);
-        // TODO: apply filtering etc, cache view results
+        // TODO: apply sorting and cache view results
         int num_results = view.NumRows();
 
         filter_response.set_filter_data_size(num_results);
