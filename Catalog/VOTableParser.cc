@@ -127,7 +127,7 @@ void VOTableParser::Parse() {
             FillElementAttributes(_element_name, name, value);
             break;
         case XML_READER_TYPE_TEXT:
-            //FillElementValues(_element_name, value);
+            // FillElementValues(_element_name, value);
             break;
 
             // Regardless the following node types

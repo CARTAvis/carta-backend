@@ -186,7 +186,6 @@ bool TableView::Combine(const TableView& second) {
     return true;
 }
 
-
 bool TableView::FillValues(const Column* column, CARTA::ColumnData& column_data, int64_t start, int64_t end) const {
     if (!column) {
         return false;

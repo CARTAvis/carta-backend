@@ -84,15 +84,15 @@ void TableController::OnCloseFileRequest(const CARTA::CloseCatalogFile& close_fi
     }
 }
 
-void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_request, std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback) {
-
+void TableController::OnFilterRequest(
+    const CARTA::CatalogFilterRequest& filter_request, std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback) {
     int file_id = filter_request.file_id();
 
     if (tables.count(file_id)) {
         Table& table = tables.at(file_id);
         auto view = table.View();
 
-        for(auto& config: filter_request.filter_configs()) {
+        for (auto& config : filter_request.filter_configs()) {
             ApplyFilter(config, view);
         }
 
@@ -116,7 +116,7 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
         int sent_rows = 0;
         int chunk_start_index = start_index;
 
-//        // Handle empty filters
+        //        // Handle empty filters
         if (num_remaining_rows == 0) {
             filter_response.set_subset_data_size(0);
             filter_response.set_progress(1.0f);
@@ -125,7 +125,7 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
             return;
         }
 
-        while(num_remaining_rows > 0) {
+        while (num_remaining_rows > 0) {
             int chunk_size = min(num_remaining_rows, max_chunk_size);
             int chunk_end_index = chunk_start_index + chunk_size;
             filter_response.set_subset_data_size(chunk_size);
@@ -146,7 +146,7 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
             if (num_remaining_rows <= 0) {
                 filter_response.set_progress(1.0f);
             } else {
-                filter_response.set_progress(sent_rows/float(response_size));
+                filter_response.set_progress(sent_rows / float(response_size));
             }
 
             partial_results_callback(filter_response);

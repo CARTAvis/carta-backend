@@ -1,5 +1,5 @@
-#include <iostream>
 #include "Timer.h"
+#include <iostream>
 
 void Timer::Start(const std::string& timer_name) {
     if (!timer_name.empty()) {
@@ -48,7 +48,8 @@ std::string Timer::GetMeasurementString(const std::string& timer_name, bool clea
     if (itr == _measurements.end()) {
         return fmt::format("{}: No Measurements found", timer_name);
     }
-    auto str = fmt::format("{}: {:.2f} ms ({} count{})", timer_name, itr->second.first.count(), itr->second.second, itr->second.second != 1 ? "s" : "");
+    auto str = fmt::format(
+        "{}: {:.2f} ms ({} count{})", timer_name, itr->second.first.count(), itr->second.second, itr->second.second != 1 ? "s" : "");
     if (clear_after_fetch) {
         Clear(timer_name);
     }
@@ -58,7 +59,7 @@ std::string Timer::GetMeasurementString(const std::string& timer_name, bool clea
 void Timer::Print(const std::string& timer_name, bool clear_after_fetch) {
     std::string output;
     if (timer_name.empty()) {
-        for (auto& m: _measurements) {
+        for (auto& m : _measurements) {
             output += GetMeasurementString(m.first, clear_after_fetch) + "\n";
         }
     } else {

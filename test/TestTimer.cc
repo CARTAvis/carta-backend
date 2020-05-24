@@ -1,5 +1,5 @@
-#include <thread>
 #include <chrono>
+#include <thread>
 
 #include <fmt/format.h>
 #include <gtest/gtest.h>
@@ -86,7 +86,6 @@ TEST(Timer, MeasurementStringWorks) {
     auto dt = t.GetMeasurement("MeasurementStringWorks").count();
     EXPECT_LT(dt, 0);
 }
-
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);

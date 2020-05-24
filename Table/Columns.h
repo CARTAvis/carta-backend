@@ -11,8 +11,8 @@
 #include <fmt/format.h>
 #include <pugixml.hpp>
 
-#include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/defs.pb.h>
+#include <carta-protobuf/enums.pb.h>
 
 namespace carta {
 
@@ -35,7 +35,8 @@ public:
     virtual void FilterIndices(IndexList& existing_indices, bool is_subset, CARTA::ComparisonOperator comparison_operator, double value,
         double secondary_value = 0.0) const {}
 
-    virtual void FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {};
+    virtual void FillColumnData(
+        CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {};
     // Factory for constructing a column from a <FIELD> node
     static std::unique_ptr<Column> FromField(const pugi::xml_node& field);
     // Factory for constructing a column from a FITS fle pointer and a given column index. Increments the data_offset value
@@ -66,7 +67,8 @@ public:
     void FilterIndices(IndexList& existing_indices, bool is_subset, CARTA::ComparisonOperator comparison_operator, double value,
         double secondary_value = 0.0) const override;
     std::vector<T> GetColumnData(bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const;
-    void FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const override;
+    void FillColumnData(
+        CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const override;
 
     static const DataColumn<T>* TryCast(const Column* column) {
         if (!column || column->data_type == CARTA::UnsupportedType) {

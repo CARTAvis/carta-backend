@@ -28,8 +28,10 @@ public:
 
     // Retrieving data
     size_t NumRows() const;
-    const Table& GetTable() const { return _table; }
-    template<class T>
+    const Table& GetTable() const {
+        return _table;
+    }
+    template <class T>
     std::vector<T> Values(const Column* column, int64_t start = -1, int64_t end = -1) const;
     bool FillValues(const Column* column, CARTA::ColumnData& column_data, int64_t start = -1, int64_t end = -1) const;
 

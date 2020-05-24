@@ -152,7 +152,6 @@ void VOTableCarrier::GetCooosys(CARTA::CatalogFileInfo* file_info) {
     }
 }
 
-
 size_t VOTableCarrier::GetTableRowNumber() {
     UpdateNumOfTableRows();
     return _num_of_rows;
@@ -193,89 +192,89 @@ void VOTableCarrier::DisconnectCalled() {
 }
 
 bool VOTableCarrier::IsSameFilterRequest(const CARTA::CatalogFilterRequest& filter_request) {
-//    // Check file_id
-//    if (_filter_request.file_id() != filter_request.file_id()) {
-//        return false;
-//    }
-//    // Check hided_headers
-//    if (_filter_request.hided_headers_size() != filter_request.hided_headers_size()) {
-//        return false;
-//    } else {
-//        for (int i = 0; i < filter_request.hided_headers_size(); ++i) {
-//            if (_filter_request.hided_headers(i) != filter_request.hided_headers(i)) {
-//                return false;
-//            }
-//        }
-//    }
-//    // Check filter_configs
-//    if (_filter_request.filter_configs_size() > 0 || filter_request.filter_configs_size() > 0) {
-//        if (_filter_request.filter_configs_size() != filter_request.filter_configs_size()) {
-//            return false;
-//        } else {
-//            for (int i = 0; i < filter_request.filter_configs_size(); ++i) {
-//                auto m_filter_configs = _filter_request.filter_configs(i);
-//                auto filter_configs = filter_request.filter_configs(i);
-//                if ((!m_filter_configs.column_name().empty() || !filter_configs.column_name().empty()) &&
-//                    (m_filter_configs.column_name() != filter_configs.column_name())) {
-//                    return false;
-//                }
-//                if (m_filter_configs.comparison_operator() != filter_configs.comparison_operator()) {
-//                    return false;
-//                }
-//                if (m_filter_configs.min() != filter_configs.min()) {
-//                    return false;
-//                }
-//                if (m_filter_configs.max() != filter_configs.max()) {
-//                    return false;
-//                }
-//                if ((!m_filter_configs.sub_string().empty() || !filter_configs.sub_string().empty()) &&
-//                    (m_filter_configs.sub_string() != filter_configs.sub_string())) {
-//                    return false;
-//                }
-//            }
-//        }
-//    }
-//    // Check image_bounds
-//    auto _image_bounds = _filter_request.image_bounds();
-//    auto image_bounds = filter_request.image_bounds();
-//    if ((!_image_bounds.x_column_name().empty() || !image_bounds.x_column_name().empty()) &&
-//        (_image_bounds.x_column_name() != image_bounds.x_column_name())) {
-//        return false;
-//    }
-//    if ((!_image_bounds.y_column_name().empty() || !image_bounds.y_column_name().empty()) &&
-//        (_image_bounds.y_column_name() != image_bounds.y_column_name())) {
-//        return false;
-//    }
-//    if (_image_bounds.image_bounds().x_min() != image_bounds.image_bounds().x_min()) {
-//        return false;
-//    }
-//    if (_image_bounds.image_bounds().x_max() != image_bounds.image_bounds().x_max()) {
-//        return false;
-//    }
-//    if (_image_bounds.image_bounds().y_min() != image_bounds.image_bounds().y_min()) {
-//        return false;
-//    }
-//    if (_image_bounds.image_bounds().y_max() != image_bounds.image_bounds().y_max()) {
-//        return false;
-//    }
-//    // Check image_file_id
-//    if (_filter_request.image_file_id() != filter_request.image_file_id()) {
-//        return false;
-//    }
-//    // Check region_id
-//    if (_filter_request.region_id() != filter_request.region_id()) {
-//        return false;
-//    }
-//    // Check sort_column and sorting_type
-//    if (!_filter_request.sort_column().empty() || !filter_request.sort_column().empty()) {
-//        if (_filter_request.sort_column() != filter_request.sort_column()) {
-//            return false;
-//        } else {
-//            if (_filter_request.sorting_type() != filter_request.sorting_type()) {
-//                return false;
-//            }
-//        }
-//    }
+    //    // Check file_id
+    //    if (_filter_request.file_id() != filter_request.file_id()) {
+    //        return false;
+    //    }
+    //    // Check hided_headers
+    //    if (_filter_request.hided_headers_size() != filter_request.hided_headers_size()) {
+    //        return false;
+    //    } else {
+    //        for (int i = 0; i < filter_request.hided_headers_size(); ++i) {
+    //            if (_filter_request.hided_headers(i) != filter_request.hided_headers(i)) {
+    //                return false;
+    //            }
+    //        }
+    //    }
+    //    // Check filter_configs
+    //    if (_filter_request.filter_configs_size() > 0 || filter_request.filter_configs_size() > 0) {
+    //        if (_filter_request.filter_configs_size() != filter_request.filter_configs_size()) {
+    //            return false;
+    //        } else {
+    //            for (int i = 0; i < filter_request.filter_configs_size(); ++i) {
+    //                auto m_filter_configs = _filter_request.filter_configs(i);
+    //                auto filter_configs = filter_request.filter_configs(i);
+    //                if ((!m_filter_configs.column_name().empty() || !filter_configs.column_name().empty()) &&
+    //                    (m_filter_configs.column_name() != filter_configs.column_name())) {
+    //                    return false;
+    //                }
+    //                if (m_filter_configs.comparison_operator() != filter_configs.comparison_operator()) {
+    //                    return false;
+    //                }
+    //                if (m_filter_configs.min() != filter_configs.min()) {
+    //                    return false;
+    //                }
+    //                if (m_filter_configs.max() != filter_configs.max()) {
+    //                    return false;
+    //                }
+    //                if ((!m_filter_configs.sub_string().empty() || !filter_configs.sub_string().empty()) &&
+    //                    (m_filter_configs.sub_string() != filter_configs.sub_string())) {
+    //                    return false;
+    //                }
+    //            }
+    //        }
+    //    }
+    //    // Check image_bounds
+    //    auto _image_bounds = _filter_request.image_bounds();
+    //    auto image_bounds = filter_request.image_bounds();
+    //    if ((!_image_bounds.x_column_name().empty() || !image_bounds.x_column_name().empty()) &&
+    //        (_image_bounds.x_column_name() != image_bounds.x_column_name())) {
+    //        return false;
+    //    }
+    //    if ((!_image_bounds.y_column_name().empty() || !image_bounds.y_column_name().empty()) &&
+    //        (_image_bounds.y_column_name() != image_bounds.y_column_name())) {
+    //        return false;
+    //    }
+    //    if (_image_bounds.image_bounds().x_min() != image_bounds.image_bounds().x_min()) {
+    //        return false;
+    //    }
+    //    if (_image_bounds.image_bounds().x_max() != image_bounds.image_bounds().x_max()) {
+    //        return false;
+    //    }
+    //    if (_image_bounds.image_bounds().y_min() != image_bounds.image_bounds().y_min()) {
+    //        return false;
+    //    }
+    //    if (_image_bounds.image_bounds().y_max() != image_bounds.image_bounds().y_max()) {
+    //        return false;
+    //    }
+    //    // Check image_file_id
+    //    if (_filter_request.image_file_id() != filter_request.image_file_id()) {
+    //        return false;
+    //    }
+    //    // Check region_id
+    //    if (_filter_request.region_id() != filter_request.region_id()) {
+    //        return false;
+    //    }
+    //    // Check sort_column and sorting_type
+    //    if (!_filter_request.sort_column().empty() || !filter_request.sort_column().empty()) {
+    //        if (_filter_request.sort_column() != filter_request.sort_column()) {
+    //            return false;
+    //        } else {
+    //            if (_filter_request.sorting_type() != filter_request.sorting_type()) {
+    //                return false;
+    //            }
+    //        }
+    //    }
 
     return true;
 }

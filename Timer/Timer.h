@@ -16,9 +16,10 @@ public:
     timer_duration GetMeasurement(const std::string& timer_name, bool clear_after_fetch = false);
     std::string GetMeasurementString(const std::string& timer_name, bool clear_after_fetch = false);
     void Print(const std::string& timer_name = "", bool clear_after_fetch = false);
+
 protected:
     std::unordered_map<std::string, timer_entry> _entries;
     std::unordered_map<std::string, std::pair<timer_duration, int>> _measurements;
 };
 
-#endif //CARTA_BACKEND_TIMER_TIMER_H_
+#endif // CARTA_BACKEND_TIMER_TIMER_H_

@@ -1,12 +1,12 @@
 #ifndef CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
 #define CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
 
+#include <functional>
 #include <string>
 #include <unordered_map>
-#include <functional>
 
-#include <carta-protobuf/open_catalog_file.pb.h>
 #include <carta-protobuf/catalog_filter.pb.h>
+#include <carta-protobuf/open_catalog_file.pb.h>
 
 #include "Table.h"
 
@@ -19,7 +19,9 @@ public:
     TableController(std::string root);
     void OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response);
     void OnCloseFileRequest(const CARTA::CloseCatalogFile& close_file_request);
-    void OnFilterRequest(const CARTA::CatalogFilterRequest& filter_request, std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback);
+    void OnFilterRequest(const CARTA::CatalogFilterRequest& filter_request,
+        std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback);
+
 protected:
     void ApplyFilter(const CARTA::FilterConfig& filter_config, TableView& view);
 

@@ -32,7 +32,7 @@ Table::Table(const string& filename, bool header_only) : _valid(false), _filenam
 uint32_t Table::GetMagicNumber(const string& filename) {
     ifstream input_file(filename);
     uint32_t magic_number = 0;
-    input_file.read((char*) &magic_number, sizeof(magic_number));
+    input_file.read((char*)&magic_number, sizeof(magic_number));
     input_file.close();
     return magic_number;
 }

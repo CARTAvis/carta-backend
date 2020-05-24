@@ -178,21 +178,23 @@ void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t
 }
 
 // Bool is a special case, because std::vector<bool> is a bit field, and std::vector<bool>::data() returns void
-template<>
-void DataColumn<bool>::FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
+template <>
+void DataColumn<bool>::FillColumnData(
+    CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
     column_data.set_data_type(CARTA::Bool);
     auto values = GetColumnData(fill_subset, indices, start, end);
-    std::vector<uint8_t> temp_data (values.size());
+    std::vector<uint8_t> temp_data(values.size());
 
-    for (auto j = values.size() -1; j >= 0; j--) {
+    for (auto j = values.size() - 1; j >= 0; j--) {
         temp_data[j] = values[j];
     }
     column_data.set_binary_data(temp_data.data(), temp_data.size());
 }
 
 // String is a special case, because we store the data as a repeated string field instead of binary data
-template<>
-void DataColumn<std::string>::FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
+template <>
+void DataColumn<std::string>::FillColumnData(
+    CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
     column_data.set_data_type(CARTA::String);
     auto values = GetColumnData(fill_subset, indices, start, end);
     *column_data.mutable_string_data() = {values.begin(), values.end()};
