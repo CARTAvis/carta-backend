@@ -5,7 +5,7 @@ RUN \
   apt-get update && \
   apt-get -y upgrade && \
   apt-get install -y apt-utils autoconf bison build-essential byobu curl default-jre emacs \
-    fftw3-dev flex gdb gcc gfortran git git-lfs htop libblas-dev \
+    fftw3-dev flex gdb g++-8 gcc-8 gfortran git git-lfs htop libblas-dev libpugixml-dev \
     libcfitsio-dev libfmt-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
     libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libxml2-dev \
     libzstd-dev libgsl-dev man pkg-config python-pip python3-pip \
@@ -47,10 +47,10 @@ RUN \
   apt-get -y install libxml2-dev && \
   git clone https://github.com/CARTAvis/carta-backend.git && \
   cd carta-backend && \
-  git checkout dev && \
+  git checkout angus/catalog_alt_implementation && \
   git submodule init && git submodule update && \
   mkdir build && cd build && \
-  cmake .. -DCMAKE_CXX_FLAGS="-I/usr/include/casacode" && \ 
+  CXX=g++-8 CC=gcc-8 cmake .. -DCMAKE_CXX_FLAGS="-I/usr/include/casacode" && \
   make
 
 # Forward port so that the webapp can properly access it
