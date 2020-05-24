@@ -4,14 +4,6 @@
 #include "../Frame.h"
 #include "MomentGenerator.h"
 
-#ifdef linux
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::__fs::filesystem;
-#endif
-
 namespace carta {
 
 class MomentController {

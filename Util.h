@@ -21,10 +21,10 @@
 
 #include "InterfaceConstants.h"
 
-#ifdef linux
+#ifdef __linux__
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
-#else
+#elif __APPLE__
 #include <filesystem>
 namespace fs = std::__fs::filesystem;
 #endif

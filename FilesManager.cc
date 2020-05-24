@@ -44,9 +44,11 @@ void FilesManager::SaveFile(
         // Without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
         delete fits_to_image_ptr;
     } else {
-        if (!fs::equivalent(filename, output_filename)) {
-            fs::copy(filename, output_filename, fs::copy_options::recursive);
-            message = "No file format conversion! Copy the file with different name.";
+        /// Todo: this part will be replaced by a more efficient and safe method
+        if (!IsSameFileName(filename, output_filename)) {
+            std::string cmd = "cp -a " + filename + " " + output_filename;
+            system(cmd.c_str());
+            message = "No file format conversion! Copy the file with different name or path.";
         } else {
             message = "Same file will not be overridden!";
         }
@@ -75,6 +77,20 @@ void FilesManager::AddSuffix(std::string& output_filename, CARTA::FileType file_
         }
         default: {}
     }
+}
+
+bool FilesManager::IsSameFileName(const std::string& filename1, const std::string& filename2) {
+    bool result(true);
+    if (filename1.size() > filename2.size()) {
+        if (filename1.find(filename2) == std::string::npos) {
+            result = false;
+        }
+    } else {
+        if (filename2.find(filename1) == std::string::npos) {
+            result = false;
+        }
+    }
+    return result;
 }
 
 // Print protobuf messages
