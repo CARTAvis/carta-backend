@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <functional>
 
 #include <carta-protobuf/open_catalog_file.pb.h>
 #include <carta-protobuf/catalog_filter.pb.h>

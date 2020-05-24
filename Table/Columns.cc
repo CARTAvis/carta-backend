@@ -74,8 +74,10 @@ std::unique_ptr<Column> ColumnFromFitsType(int type, const string& col_name) {
             return make_unique<DataColumn<int32_t>>(col_name);
         case TFLOAT:
             return make_unique<DataColumn<float>>(col_name);
+#ifdef TULONGLONG
         case TULONGLONG:
             return make_unique<DataColumn<uint64_t>>(col_name);
+#endif
         case TLONGLONG:
             return make_unique<DataColumn<int64_t>>(col_name);
         case TDOUBLE:

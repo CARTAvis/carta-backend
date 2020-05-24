@@ -112,6 +112,7 @@ set(LINK_LIBS
         zfp
         zstd
         tbb
+        stdc++fs
         cfitsio
         pugixml
         casa_casa
