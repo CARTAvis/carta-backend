@@ -53,8 +53,12 @@ void FilesManager::SaveFile(
         }
     } else {
         if (!IsSameFileName(filename, output_filename)) {
+#ifdef __linux__
+            message = "No saving file action!";
+#elif __APPLE__
             fs::rename(filename, output_filename);
-            message = "No file format conversion! Copy the file with different name or path.";
+            message = "No file format conversion! Rename the file with different name or path.";
+#endif
         } else {
             message = "Same file will not be overridden!";
         }
