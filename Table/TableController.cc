@@ -91,7 +91,6 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
 
         int start_index = filter_request.subset_start_index();
         int num_rows = filter_request.subset_data_size();
-        // TODO: off by one?
         int end_index = start_index + num_rows;
 
         CARTA::CatalogFilterResponse filter_response;
@@ -103,14 +102,16 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
         auto view = table.View();
 
         // TODO: apply filtering etc, cache view results
+        filter_response.set_filter_data_size(view.NumRows());
+
         auto num_columns = filter_request.column_indices_size();
         auto column_data = filter_response.mutable_columns();
         for (auto i = 0; i < num_columns; i++) {
             auto index = filter_request.column_indices()[i];
             auto col = table[index];
             if (col && col->data_type != CARTA::UnsupportedType) {
-                (*column_data)[i] = CARTA::ColumnData();
-                view.FillValues(col, (*column_data)[i], start_index, end_index);
+                (*column_data)[index] = CARTA::ColumnData();
+                view.FillValues(col, (*column_data)[index], start_index, end_index);
 
             }
         }
