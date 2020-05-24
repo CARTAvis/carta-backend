@@ -76,12 +76,14 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
         return;
     }
 }
+
 void TableController::OnCloseFileRequest(const CARTA::CloseCatalogFile& close_file_request) {
     auto file_id = close_file_request.file_id();
     if (tables.count(file_id)) {
         tables.erase(file_id);
     }
 }
+
 void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_request, std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback) {
 
     int file_id = filter_request.file_id();
@@ -92,17 +94,21 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
 
         int start_index = filter_request.subset_start_index();
         int num_rows = filter_request.subset_data_size();
-        int end_index = start_index + num_rows;
 
         CARTA::CatalogFilterResponse filter_response;
         filter_response.set_file_id(file_id);
         // TODO: apply filtering etc, cache view results
-        filter_response.set_filter_data_size(view.NumRows());
+        int num_results = view.NumRows();
+
+        filter_response.set_filter_data_size(num_results);
+        int response_size = min(num_rows, num_results - start_index);
+        filter_response.set_request_end_index(start_index + response_size);
+
         auto num_columns = filter_request.column_indices_size();
         auto column_data = filter_response.mutable_columns();
 
         int max_chunk_size = 100000;
-        int num_remaining_rows = num_rows;
+        int num_remaining_rows = response_size;
         int sent_rows = 0;
         int chunk_start_index = start_index;
 
@@ -118,7 +124,6 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
                 if (col && col->data_type != CARTA::UnsupportedType) {
                     (*column_data)[index] = CARTA::ColumnData();
                     view.FillValues(col, (*column_data)[index], chunk_start_index, chunk_end_index);
-
                 }
             }
 
@@ -128,7 +133,7 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
             if (num_remaining_rows <= 0) {
                 filter_response.set_progress(1.0f);
             } else {
-                filter_response.set_progress(sent_rows/float(num_rows));
+                filter_response.set_progress(sent_rows/float(response_size));
             }
 
             partial_results_callback(filter_response);
