@@ -88,6 +88,7 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
 
     if (tables.count(file_id)) {
         Table& table = tables.at(file_id);
+        auto view = table.View();
 
         int start_index = filter_request.subset_start_index();
         int num_rows = filter_request.subset_data_size();
@@ -95,26 +96,45 @@ void TableController::OnFilterRequest(const CARTA::CatalogFilterRequest& filter_
 
         CARTA::CatalogFilterResponse filter_response;
         filter_response.set_file_id(file_id);
-        filter_response.set_progress(1.0f);
-        filter_response.set_subset_data_size(num_rows);
-        filter_response.set_subset_end_index(end_index);
-
-        auto view = table.View();
-
         // TODO: apply filtering etc, cache view results
         filter_response.set_filter_data_size(view.NumRows());
-
         auto num_columns = filter_request.column_indices_size();
         auto column_data = filter_response.mutable_columns();
-        for (auto i = 0; i < num_columns; i++) {
-            auto index = filter_request.column_indices()[i];
-            auto col = table[index];
-            if (col && col->data_type != CARTA::UnsupportedType) {
-                (*column_data)[index] = CARTA::ColumnData();
-                view.FillValues(col, (*column_data)[index], start_index, end_index);
 
+        int max_chunk_size = 100000;
+        int num_remaining_rows = num_rows;
+        int sent_rows = 0;
+        int chunk_start_index = start_index;
+
+        while(num_remaining_rows > 0) {
+            int chunk_size = min(num_remaining_rows, max_chunk_size);
+            int chunk_end_index = chunk_start_index + chunk_size;
+            filter_response.set_subset_data_size(chunk_size);
+            filter_response.set_subset_end_index(chunk_end_index);
+
+            for (auto i = 0; i < num_columns; i++) {
+                auto index = filter_request.column_indices()[i];
+                auto col = table[index];
+                if (col && col->data_type != CARTA::UnsupportedType) {
+                    (*column_data)[index] = CARTA::ColumnData();
+                    view.FillValues(col, (*column_data)[index], chunk_start_index, chunk_end_index);
+
+                }
             }
+
+            sent_rows += chunk_size;
+            chunk_start_index += chunk_size;
+            num_remaining_rows -= chunk_size;
+            if (num_remaining_rows <= 0) {
+                filter_response.set_progress(1.0f);
+            } else {
+                filter_response.set_progress(sent_rows/float(num_rows));
+            }
+
+            partial_results_callback(filter_response);
         }
-        partial_results_callback(filter_response);
+
+
+
     }
 }
