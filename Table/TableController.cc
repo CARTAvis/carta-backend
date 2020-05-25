@@ -34,11 +34,12 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
     }
 
     // Close existing table with the same ID if it exists
-    if (tables.count(file_id)) {
-        tables.erase(file_id);
+    if (_tables.count(file_id)) {
+        _tables.erase(file_id);
+        _view_cache.erase(file_id);
     }
-    tables.emplace(file_id, file_path);
-    Table& table = tables.at(file_id);
+    _tables.emplace(file_id, file_path);
+    Table& table = _tables.at(file_id);
 
     if (!table.IsValid()) {
         open_file_response.set_success(false);
@@ -76,13 +77,16 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
         }
     }
 
+    // Cache view
+    _view_cache.emplace(file_id, TableViewCache{view, std::vector<CARTA::FilterConfig>(), ""});
     open_file_response.set_success(true);
 }
 
 void TableController::OnCloseFileRequest(const CARTA::CloseCatalogFile& close_file_request) {
     auto file_id = close_file_request.file_id();
-    if (tables.count(file_id)) {
-        tables.erase(file_id);
+    if (_tables.count(file_id)) {
+        _tables.erase(file_id);
+        _view_cache.erase(file_id);
     }
 }
 
@@ -90,19 +94,26 @@ void TableController::OnFilterRequest(
     const CARTA::CatalogFilterRequest& filter_request, std::function<void(const CARTA::CatalogFilterResponse&)> partial_results_callback) {
     int file_id = filter_request.file_id();
 
-    if (tables.count(file_id)) {
-        Table& table = tables.at(file_id);
-        auto view = table.View();
-
-        // TODO: cache view results and compare before re-filtering and sorting
-        for (auto& config : filter_request.filter_configs()) {
-            ApplyFilter(config, view);
-        }
-
+    if (_tables.count(file_id)) {
+        Table& table = _tables.at(file_id);
+        auto& cache = _view_cache.at(file_id);
+        auto& view = cache.view;
+        std::vector<CARTA::FilterConfig> new_filter_configs = {
+            filter_request.filter_configs().begin(), filter_request.filter_configs().end()};
         string sort_column_name = filter_request.sort_column();
-        if (!sort_column_name.empty()) {
-            auto sort_column = table[sort_column_name];
-            view.SortByColumn(sort_column, filter_request.sorting_type() == CARTA::Ascending);
+
+        if (TableController::FilterParamsChanged(new_filter_configs, sort_column_name, cache)) {
+            cache.filter_configs = new_filter_configs;
+            cache.sort_column = sort_column_name;
+            view.Reset();
+
+            for (auto& config : filter_request.filter_configs()) {
+                ApplyFilter(config, view);
+            }
+            if (!sort_column_name.empty()) {
+                auto sort_column = table[sort_column_name];
+                view.SortByColumn(sort_column, filter_request.sorting_type() == CARTA::Ascending);
+            }
         }
 
         int start_index = filter_request.subset_start_index();
@@ -299,4 +310,27 @@ void TableController::PopulateHeaders(google::protobuf::RepeatedPtrField<CARTA::
             header->set_column_index(i);
         }
     }
+}
+
+bool TableController::FilterParamsChanged(
+    const std::vector<CARTA::FilterConfig>& filter_configs, std::string sort_column, const TableViewCache& cached_config) {
+    if (cached_config.sort_column != sort_column) {
+        return true;
+    }
+
+    if (cached_config.filter_configs.size() != filter_configs.size()) {
+        return true;
+    }
+
+    for (auto i = 0; i < filter_configs.size(); i++) {
+        auto& lhs = cached_config.filter_configs[i];
+        auto& rhs = filter_configs[i];
+        if (lhs.column_name() != rhs.column_name() || lhs.sub_string() != rhs.sub_string() ||
+            lhs.comparison_operator() != rhs.comparison_operator() || lhs.value() != rhs.value() ||
+            lhs.secondary_value() != rhs.secondary_value()) {
+            return true;
+        }
+    }
+
+    return false;
 }
