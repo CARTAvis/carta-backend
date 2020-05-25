@@ -30,13 +30,11 @@ void FilesManager::SaveFile(
 
     if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::FITS)) {
         // CASA to FITS conversion
-        AddSuffix(output_filename, CARTA::FileType::FITS);
         if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename)) {
             success = true;
         }
     } else if ((CasacoreImageType(filename) == casacore::ImageOpener::FITS) && (output_file_type == CARTA::FileType::CASA)) {
         // FITS to CASA conversion
-        AddSuffix(output_filename, CARTA::FileType::CASA);
         casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
         if (casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, message, output_filename, filename)) {
             success = true;
@@ -44,6 +42,7 @@ void FilesManager::SaveFile(
         // Without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
         delete fits_to_image_ptr;
     } else if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::CASA)) {
+        // Change CASA name
         if (!IsSameFileName(filename, output_filename)) {
             std::unique_ptr<casacore::PagedImage<float>> out_image;
             out_image.reset(new casacore::PagedImage<float>(filename));
@@ -52,16 +51,7 @@ void FilesManager::SaveFile(
             message = "Same file will not be overridden!";
         }
     } else {
-        if (!IsSameFileName(filename, output_filename)) {
-#ifdef __linux__
-            message = "No saving file action!";
-#elif __APPLE__
-            fs::rename(filename, output_filename);
-            message = "No file format conversion! Rename the file with different name or path.";
-#endif
-        } else {
-            message = "Same file will not be overridden!";
-        }
+        message = "No saving file action!";
     }
 
     save_file_ack.set_success(success);
@@ -75,37 +65,34 @@ void FilesManager::RemoveRootFolder(std::string& directory) {
     }
 }
 
-void FilesManager::AddSuffix(std::string& output_filename, CARTA::FileType file_type) {
-    switch (file_type) {
-        case CARTA::FileType::CASA: {
-            output_filename += ".image";
-            break;
-        }
-        case CARTA::FileType::FITS: {
-            output_filename += ".fits";
-            break;
-        }
-        default: {}
-    }
-}
-
-bool FilesManager::IsSameFileName(const std::string& filename1, const std::string& filename2) {
+bool FilesManager::IsSameFileName(std::string& in_file, std::string& out_file) {
     bool result(true);
     // Get the absolute file name and path (remove the symbolic link if any)
-    casacore::File temp_filename1(filename1);
-    casacore::String resolved_filename1 = temp_filename1.path().resolvedName();
-    casacore::File temp_filename2(filename2);
-    casacore::String resolved_filename2 = temp_filename2.path().resolvedName();
-    if (resolved_filename1.size() > resolved_filename2.size()) {
-        if (resolved_filename1.find(resolved_filename2) == std::string::npos) {
-            result = false;
-        }
-    } else {
-        if (resolved_filename2.find(resolved_filename1) == std::string::npos) {
-            result = false;
-        }
+    std::string abs_in_file_path;
+    std::string in_file_name;
+    GetAbsFileName(in_file, abs_in_file_path, in_file_name);
+
+    std::string abs_out_file_path;
+    std::string out_file_name;
+    GetAbsFileName(out_file, abs_out_file_path, out_file_name);
+
+    if ((abs_in_file_path != abs_out_file_path) || (in_file_name != out_file_name)) {
+        result = false;
     }
+
+    in_file = abs_in_file_path + "/" + in_file_name;
+    out_file = abs_out_file_path + "/" + out_file_name;
+
     return result;
+}
+
+void FilesManager::GetAbsFileName(const std::string& filename, std::string& path, std::string& name) {
+    size_t found = filename.find_last_of("/");
+    name = filename.substr(found + 1);
+    std::string temp_path = filename.substr(0, found);
+    casacore::File cc_path(temp_path);
+    casacore::String resolved_path = cc_path.path().resolvedName();
+    path = resolved_path;
 }
 
 // Print protobuf messages

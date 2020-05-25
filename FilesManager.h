@@ -29,8 +29,8 @@ public:
 
 private:
     void RemoveRootFolder(std::string& directory);
-    void AddSuffix(std::string& output_filename, CARTA::FileType file_type);
-    bool IsSameFileName(const std::string& filename1, const std::string& filename2);
+    bool IsSameFileName(std::string& in_file, std::string& out_file);
+    void GetAbsFileName(const std::string& filename, std::string& path, std::string& name);
 
     std::string _root_folder;
 };
