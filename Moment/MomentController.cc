@@ -14,7 +14,7 @@ MomentController::~MomentController() {
 }
 
 void MomentController::CalculateMoments(int file_id, const std::unique_ptr<Frame>& frame, MomentProgressCallback progress_callback,
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk) {
     // Set moment generator with respect to the file id
     if (!_moment_generators.count(file_id)) {
         // Get the image ptr and spectral/stoke axis from the Frame
@@ -31,7 +31,7 @@ void MomentController::CalculateMoments(int file_id, const std::unique_ptr<Frame
 
     // Calculate the moments
     if (_moment_generators.count(file_id)) {
-        _moment_generators.at(file_id)->CalculateMoments(moment_request, moment_response);
+        _moment_generators.at(file_id)->CalculateMoments(moment_request, moment_response, write_results_to_disk);
     }
 }
 

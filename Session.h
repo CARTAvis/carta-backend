@@ -61,6 +61,7 @@ public:
     void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
+    bool OnOpenFile(int file_id, std::shared_ptr<casacore::ImageInterface<float>>& image, uint32_t request_id);
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
@@ -201,6 +202,8 @@ private:
     // File info
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
         const std::string& filename, std::string hdu, std::string& message);
+    bool FillExtendedFileInfo(
+        CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>>& image, std::string& message);
 
     // Delete Frame(s)
     void DeleteFrame(int file_id);

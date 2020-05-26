@@ -180,6 +180,21 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
     return ext_file_info_ok;
 }
 
+bool Session::FillExtendedFileInfo(
+    CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>>& image, std::string& message) {
+    bool ext_file_info_ok(true);
+    try {
+        _loader.reset(carta::FileLoader::GetLoader(image));
+
+        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
+        ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, "", "", message);
+    } catch (casacore::AipsError& err) {
+        message = err.getMesg();
+        ext_file_info_ok = false;
+    }
+    return ext_file_info_ok;
+}
+
 // *********************************************************************************
 // CARTA ICD implementation
 
@@ -341,6 +356,53 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
         ack.set_message(err_message);
         SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
     }
+
+    if (success) {
+        UpdateRegionData(file_id);
+    }
+    return success;
+}
+
+bool Session::OnOpenFile(int file_id, std::shared_ptr<casacore::ImageInterface<float>>& image, uint32_t request_id) {
+    // response message:
+    CARTA::OpenFileAck ack;
+    ack.set_file_id(file_id);
+    string err_message;
+
+    CARTA::FileInfoExtended file_info_extended;
+    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, err_message);
+
+    bool success(false);
+
+    if (info_loaded) {
+        // create Frame for image
+        auto frame = std::make_unique<Frame>(_id, _loader.get(), "", _verbose_logging);
+        _loader.release();
+
+        if (frame->IsValid()) {
+            if (_frames.count(file_id) > 0) {
+                DeleteFrame(file_id);
+            }
+            std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
+            _frames[file_id] = move(frame);
+            lock.unlock();
+            // copy file info, extended file info
+            CARTA::FileInfo response_file_info = CARTA::FileInfo();
+            response_file_info.set_type(CARTA::FileType::CASA);
+            *ack.mutable_file_info() = response_file_info;
+            *ack.mutable_file_info_extended() = file_info_extended;
+            uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
+            ack.set_file_feature_flags(feature_flags);
+
+            success = true;
+        } else {
+            err_message = frame->GetErrorMessage();
+        }
+    }
+
+    ack.set_success(success);
+    ack.set_message(err_message);
+    SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
 
     if (success) {
         UpdateRegionData(file_id);
@@ -895,11 +957,23 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         };
 
         // Calculate the moments
+        bool write_results_to_disk(true); /// Todo: this variable will be removed
         CARTA::MomentResponse moment_response;
-        _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
+        _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response, write_results_to_disk);
 
         // Send moment response message
         SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
+
+        if (!write_results_to_disk) {
+            // Open moment images from the cache
+            std::vector<carta::CollapseResult> collapse_results = _moment_controller->GetCollapseResults(file_id);
+            for (int i = 0; i < collapse_results.size(); ++i) {
+                int moment_type = collapse_results[i].moment_type;
+                int moment_file_id = (file_id + 1) * 1000 + moment_type;
+                auto& image = collapse_results[i].image;
+                OnOpenFile(moment_file_id, image, request_id);
+            }
+        }
     }
 }
 
