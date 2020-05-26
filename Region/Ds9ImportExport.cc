@@ -989,7 +989,8 @@ std::string Ds9ImportExport::AddExportRegionWorld(
             if (_file_ref_frame.empty()) { // linear coordinates
                 region = fmt::format("point({:.6f}, {:.6f})", control_points[0].getValue(), control_points[1].getValue());
             } else {
-                region = fmt::format("point({:.6f}, {:.6f})", control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue());
+                region =
+                    fmt::format("point({:.6f}, {:.6f})", control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue());
             }
             break;
         }
@@ -1008,7 +1009,8 @@ std::string Ds9ImportExport::AddExportRegionWorld(
         }
         case CARTA::RegionType::ELLIPSE: {
             // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
-            if (control_points[2].getValue() == control_points[3].getValue()) { // bmaj == bmin, circle
+            if (control_points[2].getValue() == control_points[3].getValue()) {
+                // circle when bmaj == bmin
                 if (_file_ref_frame.empty()) { // linear coordinates
                     region = fmt::format("circle({:.6f}, {:.6f}, {:.4f}\")", control_points[0].getValue(), control_points[1].getValue(),
                         control_points[2].getValue());
