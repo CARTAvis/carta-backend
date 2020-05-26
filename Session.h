@@ -47,8 +47,8 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async, FileListHandler* file_list_handler,
-        bool verbose = false);
+    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, std::string base, uS::Async* outgoing_async,
+        FileListHandler* file_list_handler, bool verbose = false);
     ~Session();
 
     // CARTA ICD
@@ -218,6 +218,7 @@ private:
     uWS::WebSocket<uWS::SERVER>* _socket;
     std::string _api_key;
     std::string _root_folder;
+    std::string _base_folder;
     bool _verbose_logging;
 
     // File browser

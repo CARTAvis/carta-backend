@@ -9,7 +9,7 @@
 using namespace carta;
 using namespace std;
 
-TableController::TableController(string root) : _root_folder(root) {}
+TableController::TableController(const string& root, const string& base) : _root_folder(root), _base_folder(base) {}
 
 void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
     int file_id = open_file_request.file_id();
@@ -20,13 +20,7 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
 
     open_file_response.set_file_id(file_id);
 
-    filesystem::path file_path(_root_folder);
-
-    if (!open_file_request.directory().empty()) {
-        file_path /= open_file_request.directory();
-    }
-    file_path /= open_file_request.name();
-
+    filesystem::path file_path = GetPath(open_file_request.directory(), open_file_request.name());
     if (!filesystem::exists(file_path) || !filesystem::is_regular_file(file_path)) {
         open_file_response.set_message(fmt::format("Cannot find path {}", file_path.string()));
         open_file_response.set_success(false);
@@ -175,25 +169,8 @@ void TableController::OnFilterRequest(
 
 void TableController::OnFileListRequest(
     const CARTA::CatalogListRequest& file_list_request, CARTA::CatalogListResponse& file_list_response) {
-    string directory = file_list_request.directory();
-
-    // Strip meaningless directory paths
-    if (directory == "." || directory == "./") {
-        directory = "";
-    }
-
-    // Remove leading /
-    auto start_index = directory.find_first_not_of('/');
-    if (start_index != 0 && start_index != string::npos) {
-        directory = directory.substr(start_index);
-    }
-
     filesystem::path root_path(_root_folder);
-    filesystem::path file_path(_root_folder);
-
-    if (!directory.empty()) {
-        file_path /= directory;
-    }
+    filesystem::path file_path = GetPath(file_list_request.directory());
 
     if (!filesystem::exists(file_path) || !filesystem::is_directory(file_path)) {
         file_list_response.set_success(false);
@@ -234,12 +211,7 @@ void TableController::OnFileListRequest(
 
 void TableController::OnFileInfoRequest(
     const CARTA::CatalogFileInfoRequest& file_info_request, CARTA::CatalogFileInfoResponse& file_info_response) {
-    filesystem::path file_path(_root_folder);
-
-    if (!file_info_request.directory().empty()) {
-        file_path /= file_info_request.directory();
-    }
-    file_path /= file_info_request.name();
+    filesystem::path file_path = GetPath(file_info_request.directory(), file_info_request.name());
 
     if (!filesystem::exists(file_path) || !filesystem::is_regular_file(file_path)) {
         file_info_response.set_success(false);
@@ -333,4 +305,32 @@ bool TableController::FilterParamsChanged(
     }
 
     return false;
+}
+std::filesystem::path TableController::GetPath(std::string directory, std::string name) {
+    filesystem::path file_path(_root_folder);
+    if (directory == "$BASE") {
+        // Replace $BASE macro with the base folder
+        file_path /= _base_folder;
+    } else {
+        // Strip meaningless directory paths
+        if (directory == "." || directory == "./") {
+            directory = "";
+        }
+
+        // Remove leading /
+        auto start_index = directory.find_first_not_of('/');
+        if (start_index != 0 && start_index != string::npos) {
+            directory = directory.substr(start_index);
+        }
+
+        if (!directory.empty()) {
+            file_path /= directory;
+        }
+    }
+
+    if (!name.empty()) {
+        file_path /= name;
+    }
+
+    return file_path;
 }

@@ -88,7 +88,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         current_session->SendPendingMessages();
     });
 
-    Session* session = new Session(ws, session_number, root_folder, outgoing, file_list_handler, verbose);
+    Session* session = new Session(ws, session_number, root_folder, base_folder, outgoing, file_list_handler, verbose);
 
     ws->setUserData(session);
     if (carta_grpc_service) {

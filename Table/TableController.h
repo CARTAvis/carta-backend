@@ -1,6 +1,7 @@
 #ifndef CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
 #define CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
 
+#include <filesystem>
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -24,7 +25,7 @@ struct TableViewCache {
 
 class TableController {
 public:
-    TableController(std::string root);
+    TableController(const std::string& root, const std::string& base);
     void OnFileListRequest(const CARTA::CatalogListRequest& file_list_request, CARTA::CatalogListResponse& file_list_response);
     void OnFileInfoRequest(const CARTA::CatalogFileInfoRequest& file_info_request, CARTA::CatalogFileInfoResponse& file_info_response);
     void OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response);
@@ -37,8 +38,9 @@ protected:
     void ApplyFilter(const CARTA::FilterConfig& filter_config, TableView& view);
     static bool FilterParamsChanged(
         const std::vector<CARTA::FilterConfig>& filter_configs, std::string sort_column, const TableViewCache& cached_config);
-
+    std::filesystem::path GetPath(std::string directory, std::string name = "");
     std::string _root_folder;
+    std::string _base_folder;
     std::unordered_map<int, Table> _tables;
     std::unordered_map<int, TableViewCache> _view_cache;
 };
