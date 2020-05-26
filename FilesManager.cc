@@ -47,6 +47,7 @@ void FilesManager::SaveFile(
             std::unique_ptr<casacore::PagedImage<float>> out_image;
             out_image.reset(new casacore::PagedImage<float>(filename));
             out_image->rename(output_filename);
+            success = true;
         } else {
             message = "Same file will not be overridden!";
         }

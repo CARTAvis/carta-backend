@@ -14,12 +14,9 @@ typedef const std::function<void(float)> MomentProgressCallback;
 namespace carta {
 
 struct CollapseResult {
-    std::string filename;
     casacore::Int moment_type;
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> image;
-    CollapseResult(
-        const std::string& filename_, casacore::Int moment_type_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
-        filename = filename_;
+    CollapseResult(casacore::Int moment_type_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
         moment_type = moment_type_;
         image = image_;
     }
@@ -35,6 +32,7 @@ public:
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk = true);
     bool IsSuccess() const;
     casacore::String GetErrorMessage() const;
+    std::vector<CollapseResult> GetCollapseResults();
 
     // Methods from the casa::ImageMomentsProgressMonitor interface
     void setStepCount(int count);

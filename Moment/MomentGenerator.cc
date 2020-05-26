@@ -52,6 +52,7 @@ void MomentGenerator::CalculateMoments(
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
                     if (write_results_to_disk) {
+                        // Save collapse results in the disk
                         auto result_images = _image_moments->createMoments(false, out_file, false);
                         for (int i = 0; i < result_images.size(); ++i) {
                             std::string moment_suffix = GetMomentSuffix(_moments[i]);
@@ -66,13 +67,15 @@ void MomentGenerator::CalculateMoments(
                             output_files->set_moment_type(moment_request.moments(i));
                         }
                     } else {
+                        // Save collapse results in the memory
                         auto result_images = _image_moments->createMoments(true, out_file, false);
                         for (int i = 0; i < result_images.size(); ++i) {
-                            // Todo:
-                            // Save collapse results
-                            // std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
-                            //    dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                            //_collapse_results.push_back(CollapseResult("", _moments[i], moment_image));
+                            std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
+                                dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
+                            _collapse_results.push_back(CollapseResult(_moments[i], moment_image));
+                            auto* output_files = moment_response.add_output_files();
+                            output_files->set_file_name("");
+                            output_files->set_moment_type(moment_request.moments(i));
                         }
                     }
                 } catch (const AipsError& x) {
@@ -392,6 +395,10 @@ bool MomentGenerator::IsSuccess() const {
 
 casacore::String MomentGenerator::GetErrorMessage() const {
     return _error_msg;
+}
+
+std::vector<CollapseResult> MomentGenerator::GetCollapseResults() {
+    return _collapse_results;
 }
 
 void MomentGenerator::setStepCount(int count) {
