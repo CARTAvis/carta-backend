@@ -177,11 +177,19 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 
     bool pixel_coord(coord_type == CARTA::CoordinateType::PIXEL);
+
     // Exporter must delete csys pointer
     casacore::CoordinateSystem* output_csys = frame->CoordinateSystem();
-    const casacore::IPosition output_shape = frame->ImageShape();
-    std::string error;
 
+    if (!pixel_coord && !output_csys->hasDirectionCoordinate()) {
+        // Export failed
+        delete output_csys;
+        export_ack.set_success(false);
+        export_ack.set_message("Invalid coordinate system, cannot export regions in world coordinates");
+        return;
+    }
+
+    const casacore::IPosition output_shape = frame->ImageShape();
     std::unique_ptr<RegionImportExport> exporter;
     switch (region_file_type) {
         case CARTA::FileType::CRTF:
@@ -195,6 +203,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     }
 
     // Add regions to export
+    std::string error; // append region errors here
     for (auto region_id : region_ids) {
         if (_regions.count(region_id)) {
             bool region_added(false);

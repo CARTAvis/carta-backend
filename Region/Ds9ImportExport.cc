@@ -917,7 +917,11 @@ void Ds9ImportExport::AddHeader() {
     _export_regions.push_back(header);
 
     os.str("");
-    os << _file_ref_frame << "\n";
+    if (_file_ref_frame.empty()) {
+        os << "image\n";
+    } else {
+        os << _file_ref_frame << "\n";
+    }
     std::string csys = os.str();
     _export_regions.push_back(csys);
 }
@@ -982,27 +986,40 @@ std::string Ds9ImportExport::AddExportRegionWorld(
     switch (type) {
         case CARTA::RegionType::POINT: {
             // point(x, y)
-            region = fmt::format("point({:.6f}, {:.6f})", control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue());
+            if (_file_ref_frame.empty()) { // linear coordinates
+                region = fmt::format("point({:.6f}, {:.6f})", control_points[0].getValue(), control_points[1].getValue());
+            } else {
+                region = fmt::format("point({:.6f}, {:.6f})", control_points[0].get("deg").getValue(), control_points[1].get("deg").getValue());
+            }
             break;
         }
         case CARTA::RegionType::RECTANGLE: {
             // box(x,y,width,height,angle)
             casacore::Quantity cx(control_points[0]), cy(control_points[1]);
             casacore::Quantity width(control_points[2]), height(control_points[3]);
-            region = fmt::format("box({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", cx.get("deg").getValue(), cy.get("deg").getValue(),
-                width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
+            if (_file_ref_frame.empty()) { // linear coordinates
+                region = fmt::format("box({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", cx.getValue(), cy.getValue(), width.getValue(),
+                    height.getValue(), angle);
+            } else {
+                region = fmt::format("box({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", cx.get("deg").getValue(), cy.get("deg").getValue(),
+                    width.get("arcsec").getValue(), height.get("arcsec").getValue(), angle);
+            }
             break;
         }
         case CARTA::RegionType::ELLIPSE: {
             // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
-            if (control_points[2].getValue() == control_points[3].getValue()) { // bmaj == bmin
-                region = fmt::format("circle({:.6f}, {:.6f}, {:.4f}\")", control_points[0].get("deg").getValue(),
-                    control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue());
+            if (control_points[2].getValue() == control_points[3].getValue()) { // bmaj == bmin, circle
+                if (_file_ref_frame.empty()) { // linear coordinates
+                    region = fmt::format("circle({:.6f}, {:.6f}, {:.4f}\")", control_points[0].getValue(), control_points[1].getValue(),
+                        control_points[2].getValue());
+                } else {
+                    region = fmt::format("circle({:.6f}, {:.6f}, {:.4f}\")", control_points[0].get("deg").getValue(),
+                        control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue());
+                }
             } else {
-                if (angle == 0.0) {
-                    region = fmt::format("ellipse({:.6f}, {:.6f}, {:.4f}\", {:.4f}\")", control_points[0].get("deg").getValue(),
-                        control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue(),
-                        control_points[3].get("arcsec").getValue());
+                if (_file_ref_frame.empty()) { // linear coordinates
+                    region = fmt::format("ellipse({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", control_points[0].getValue(),
+                        control_points[1].getValue(), control_points[2].getValue(), control_points[3].getValue(), angle);
                 } else {
                     region = fmt::format("ellipse({:.6f}, {:.6f}, {:.4f}\", {:.4f}\", {})", control_points[0].get("deg").getValue(),
                         control_points[1].get("deg").getValue(), control_points[2].get("arcsec").getValue(),
@@ -1015,9 +1032,16 @@ std::string Ds9ImportExport::AddExportRegionWorld(
             // polygon(x1,y1,x2,y2,x3,y3,...)
             std::ostringstream os; // format varies based on npoints
             os << "polygon(";
-            os << std::fixed << std::setprecision(6) << control_points[0].get("deg").getValue();
-            for (size_t i = 1; i < control_points.size(); ++i) {
-                os << "," << std::fixed << std::setprecision(6) << control_points[i].get("deg").getValue();
+            if (_file_ref_frame.empty()) { // linear coordinates
+                os << std::fixed << std::setprecision(6) << control_points[0].getValue();
+                for (size_t i = 1; i < control_points.size(); ++i) {
+                    os << "," << std::fixed << std::setprecision(6) << control_points[i].getValue();
+                }
+            } else {
+                os << std::fixed << std::setprecision(6) << control_points[0].get("deg").getValue();
+                for (size_t i = 1; i < control_points.size(); ++i) {
+                    os << "," << std::fixed << std::setprecision(6) << control_points[i].get("deg").getValue();
+                }
             }
             os << ")";
             region = os.str();
