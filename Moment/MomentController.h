@@ -14,6 +14,7 @@ public:
     void CalculateMoments(int file_id, const std::unique_ptr<Frame>& frame, MomentProgressCallback progress_callback,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
     void DeleteTemporaryFolder();
+    std::vector<CollapseResult> GetCollapseResults(int file_id);
 
 private:
     void MakeTemporaryFolder();

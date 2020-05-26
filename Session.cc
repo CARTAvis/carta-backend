@@ -52,14 +52,14 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
       _animation_id(0),
-      _file_settings(this) {
+      _file_settings(this),
+      _files_manager(std::make_unique<carta::FilesManager>(_root_folder)),
+      _moment_controller(std::make_unique<carta::MomentController>(_root_folder)) {
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
     _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller(_root_folder));
-    _files_manager = std::make_unique<carta::FilesManager>(_root_folder);
-    _moment_controller = std::make_unique<carta::MomentController>(_root_folder);
 
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));

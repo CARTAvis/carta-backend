@@ -35,6 +35,14 @@ void MomentController::CalculateMoments(int file_id, const std::unique_ptr<Frame
     }
 }
 
+std::vector<CollapseResult> MomentController::GetCollapseResults(int file_id) {
+    std::vector<CollapseResult> results;
+    if (_moment_generators.count(file_id)) {
+        results = _moment_generators.at(file_id)->GetCollapseResults();
+    }
+    return results;
+}
+
 void MomentController::MakeTemporaryFolder() {
     fs::path temp_folder = fs::temp_directory_path();
     temp_folder.append("CARTA");
