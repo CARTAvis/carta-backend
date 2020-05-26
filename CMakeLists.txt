@@ -6,12 +6,12 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 # Enable OpenMP if package is found
 find_package(OpenMP)
-if(OPENMP_FOUND)
+if (OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-else()
+else ()
     message(WARNING "OpenMP not found!")
-endif()
+endif ()
 
 # Enable parallel GCC algorithms (needed until there is relable support for C++17 from compilers)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_PARALLEL")
@@ -50,12 +50,11 @@ INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
 INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-INCLUDE_DIRECTORIES(/usr/local/include)
-INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
-INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
-LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
+    INCLUDE_DIRECTORIES(/usr/local/include)
+    INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
+    INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
+    LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
 
 if (AuthServer)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
@@ -71,13 +70,13 @@ if (AuthServer)
 endif (AuthServer)
 
 FIND_PACKAGE(gRPC QUIET)
-if(gRPC_FOUND)
+if (gRPC_FOUND)
     set(LINK_LIBS
             ${LINK_LIBS}
             gRPC::grpc++
-    )
+            )
     message(STATUS "gRPC found using FIND_PACKAGE")
-else()
+else ()
     message(STATUS "gRPC not found using FIND_PACKAGE, using pkg-config instead")
     FIND_PACKAGE(PkgConfig REQUIRED)
     PKG_SEARCH_MODULE(GRPC REQUIRED grpc)
@@ -88,15 +87,20 @@ else()
                 grpc
                 grpc++
                 )
-    else()
+    else ()
         message(FATAL_ERROR "Could not import gRPC library")
-    endif()
-endif()
+    endif ()
+endif ()
 
 if (DisableContourCompression)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DISABLE_CONTOUR_COMPRESSION_")
-endif(DisableContourCompression)
+endif (DisableContourCompression)
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(LINK_LIBS
+            ${LINK_LIBS}
+            stdc++fs)
+endif()
 
 set(LINK_LIBS
         ${LINK_LIBS}
@@ -111,7 +115,6 @@ set(LINK_LIBS
         zfp
         zstd
         tbb
-        stdc++fs
         cfitsio
         pugixml
         casa_casa
@@ -159,7 +162,7 @@ set(SOURCE_FILES
         Contouring.cc
         Smoothing.cc
         Timer/Timer.cc
-        GrpcServer/CartaGrpcService.cc )
+        GrpcServer/CartaGrpcService.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
