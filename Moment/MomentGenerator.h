@@ -28,13 +28,15 @@ public:
         casacore::String temp_folder, int spectral_axis, int stokes_axis, MomentProgressCallback progress_callback);
     ~MomentGenerator();
 
-    void CalculateMoments(
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk = true);
+    // Calculate moments
+    void CalculateMoments(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+    std::vector<CollapseResult> CalculateMoments2(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+
+    // Resulting message
     bool IsSuccess() const;
     casacore::String GetErrorMessage() const;
-    std::vector<CollapseResult> GetCollapseResults();
 
-    // Methods from the casa::ImageMomentsProgressMonitor interface
+    // Methods from the "casa::ImageMomentsProgressMonitor" interface
     void setStepCount(int count);
     void setStepsCompleted(int count);
     void done();
@@ -90,9 +92,6 @@ private:
 
     // Temporary folder to save temporary moment images
     casacore::String _temp_folder;
-
-    // Calculation results (Moment images)
-    std::vector<CollapseResult> _collapse_results;
 };
 
 } // namespace carta

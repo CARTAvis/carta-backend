@@ -39,7 +39,7 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
     return nullptr;
 }
 
-FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>>& image) {
+FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
     return new ImagePtrLoader(image);
 }
 

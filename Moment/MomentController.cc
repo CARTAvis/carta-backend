@@ -14,7 +14,7 @@ MomentController::~MomentController() {
 }
 
 void MomentController::CalculateMoments(int file_id, const std::unique_ptr<Frame>& frame, MomentProgressCallback progress_callback,
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response, bool write_results_to_disk) {
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     // Set moment generator with respect to the file id
     if (!_moment_generators.count(file_id)) {
         // Get the image ptr and spectral/stoke axis from the Frame
@@ -31,15 +31,32 @@ void MomentController::CalculateMoments(int file_id, const std::unique_ptr<Frame
 
     // Calculate the moments
     if (_moment_generators.count(file_id)) {
-        _moment_generators.at(file_id)->CalculateMoments(moment_request, moment_response, write_results_to_disk);
+        _moment_generators.at(file_id)->CalculateMoments(moment_request, moment_response);
     }
 }
 
-std::vector<CollapseResult> MomentController::GetCollapseResults(int file_id) {
+std::vector<CollapseResult> MomentController::CalculateMoments2(int file_id, const std::unique_ptr<Frame>& frame,
+    MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     std::vector<CollapseResult> results;
-    if (_moment_generators.count(file_id)) {
-        results = _moment_generators.at(file_id)->GetCollapseResults();
+    // Set moment generator with respect to the file id
+    if (!_moment_generators.count(file_id)) {
+        // Get the image ptr and spectral/stoke axis from the Frame
+        std::string filename = frame->GetFileName();
+        casacore::ImageInterface<float>* image = frame->GetImage();
+        int spectral_axis = frame->GetSpectralAxis();
+        int stokes_axis = frame->GetStokesAxis();
+
+        // Create a moment generator
+        auto moment_generator =
+            std::make_unique<MomentGenerator>(filename, image, _root_folder, _temp_folder, spectral_axis, stokes_axis, progress_callback);
+        _moment_generators[file_id] = std::move(moment_generator);
     }
+
+    // Calculate the moments
+    if (_moment_generators.count(file_id)) {
+        results = _moment_generators.at(file_id)->CalculateMoments2(moment_request, moment_response);
+    }
+
     return results;
 }
 

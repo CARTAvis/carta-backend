@@ -7,7 +7,7 @@ namespace carta {
 
 class ImagePtrLoader : public FileLoader {
 public:
-    ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>>& image);
+    ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
 
     void OpenFile(const std::string& hdu) override;
 
@@ -18,8 +18,8 @@ private:
     std::shared_ptr<casacore::ImageInterface<float>> _image;
 };
 
-ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>>& image) {
-    _image = std::move(image);
+ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
+    _image = image;
     if (_image) {
         _num_dims = _image->shape().size();
     } else {

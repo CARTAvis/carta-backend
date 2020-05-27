@@ -181,7 +181,7 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
 }
 
 bool Session::FillExtendedFileInfo(
-    CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>>& image, std::string& message) {
+    CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image, std::string& message) {
     bool ext_file_info_ok(true);
     try {
         _loader.reset(carta::FileLoader::GetLoader(image));
@@ -363,7 +363,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     return success;
 }
 
-bool Session::OnOpenFile(int file_id, std::shared_ptr<casacore::ImageInterface<float>>& image, uint32_t request_id) {
+bool Session::OnOpenFile(int file_id, std::shared_ptr<casacore::ImageInterface<float>> image, uint32_t request_id) {
     // response message:
     CARTA::OpenFileAck ack;
     ack.set_file_id(file_id);
@@ -957,16 +957,22 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         };
 
         // Calculate the moments
-        bool write_results_to_disk(true); /// Todo: this variable will be removed
         CARTA::MomentResponse moment_response;
-        _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response, write_results_to_disk);
 
-        // Send moment response message
-        SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
+        bool do_temp(false); /// Todo: this variable will be removed
+        if (!do_temp) {
+            _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
 
-        if (!write_results_to_disk) {
-            // Open moment images from the cache
-            std::vector<carta::CollapseResult> collapse_results = _moment_controller->GetCollapseResults(file_id);
+            // Send moment response message
+            SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
+        } else {
+            std::vector<carta::CollapseResult> collapse_results =
+                _moment_controller->CalculateMoments2(file_id, frame, progress_callback, moment_request, moment_response);
+
+            // Send moment response message
+            SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
+
+            // Open moment images from the cache, open files acknowledges will send to frontend
             for (int i = 0; i < collapse_results.size(); ++i) {
                 int moment_type = collapse_results[i].moment_type;
                 int moment_file_id = (file_id + 1) * 1000 + moment_type;
