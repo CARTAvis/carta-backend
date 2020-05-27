@@ -29,14 +29,19 @@ void FilesManager::SaveFile(
 
     switch (conversion_type) {
         case ConversionType::CASA_TO_FITS: {
-            if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename)) {
+            // Allow to overwrite the same output file name
+            if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename, 64, casacore::True, casacore::True, -32, 1.0,
+                    -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False, casacore::False,
+                    casacore::String(), casacore::True)) {
                 success = true;
             }
             break;
         }
         case ConversionType::FITS_TO_CASA: {
+            // Allow to overwrite the same output file name
             casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
-            if (casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, message, output_filename, filename)) {
+            if (casacore::ImageFITSConverter::FITSToImage(
+                    fits_to_image_ptr, message, output_filename, filename, 0, 0, 64, casacore::True, casacore::False)) {
                 success = true;
             }
             // Without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
@@ -51,7 +56,7 @@ void FilesManager::SaveFile(
                 out_image->rename(output_filename);
                 success = true;
             } else {
-                message = "Same file will not be overridden!";
+                message = "Same file will not be overwritten!";
             }
             break;
         }
