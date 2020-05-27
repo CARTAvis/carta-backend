@@ -18,46 +18,72 @@ void FilesManager::SaveFile(
     bool success = false;
     casacore::String message;
 
-    // Set the full file name of the new saving image
-    if (directory.find("../") == std::string::npos) {
-        output_filename = _root_folder + "/" + directory + "/" + output_filename;
-    } else {
-        message = "Invalid directory request!";
-        save_file_ack.set_success(success);
-        save_file_ack.set_message(message);
-        return;
-    }
+    // Get the full name of the output image
+    std::string temp_path = _root_folder + "/" + directory;
+    casacore::File cc_path(temp_path);
+    casacore::String resolved_path = cc_path.path().resolvedName();
+    std::string abs_path = resolved_path;
+    output_filename = abs_path + "/" + output_filename;
 
-    if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::FITS)) {
-        // CASA to FITS conversion
-        if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename)) {
-            success = true;
+    ConversionType conversion_type = GetConversionType(filename, output_file_type);
+
+    switch (conversion_type) {
+        case ConversionType::CASA_TO_FITS: {
+            if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename)) {
+                success = true;
+            }
+            break;
         }
-    } else if ((CasacoreImageType(filename) == casacore::ImageOpener::FITS) && (output_file_type == CARTA::FileType::CASA)) {
-        // FITS to CASA conversion
-        casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
-        if (casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, message, output_filename, filename)) {
-            success = true;
+        case ConversionType::FITS_TO_CASA: {
+            casacore::ImageInterface<casacore::Float>* fits_to_image_ptr = 0;
+            if (casacore::ImageFITSConverter::FITSToImage(fits_to_image_ptr, message, output_filename, filename)) {
+                success = true;
+            }
+            // Without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
+            delete fits_to_image_ptr;
+            break;
         }
-        // Without this deletion the output CASA image directory lacks "table.f0" and "table.info" files
-        delete fits_to_image_ptr;
-    } else if ((CasacoreImageType(filename) == casacore::ImageOpener::AIPSPP) && (output_file_type == CARTA::FileType::CASA)) {
-        // Change CASA name
-        if (!IsSameFileName(filename, output_filename)) {
-            std::unique_ptr<casacore::PagedImage<float>> out_image;
-            out_image.reset(new casacore::PagedImage<float>(filename));
-            out_image->rename(output_filename);
-            success = true;
-        } else {
-            message = "Same file will not be overridden!";
+        case ConversionType::CASA_TO_CASA: {
+            // Change the CASA image name
+            if (!IsSameFileName(filename, output_filename)) {
+                std::unique_ptr<casacore::PagedImage<float>> out_image;
+                out_image.reset(new casacore::PagedImage<float>(filename));
+                out_image->rename(output_filename);
+                success = true;
+            } else {
+                message = "Same file will not be overridden!";
+            }
+            break;
         }
-    } else {
-        message = "No saving file action!";
+        default: {
+            message = "No saving file action!";
+            break;
+        }
     }
 
     save_file_ack.set_success(success);
     RemoveRootFolder(message);
     save_file_ack.set_message(message);
+}
+
+ConversionType FilesManager::GetConversionType(const std::string& in_file, const CARTA::FileType& out_file_type) {
+    ConversionType result(ConversionType::UNKNOWN);
+    if (!in_file.empty()) {
+        if ((CasacoreImageType(in_file) == casacore::ImageOpener::AIPSPP) && (out_file_type == CARTA::FileType::FITS)) {
+            result = ConversionType::CASA_TO_FITS;
+        } else if ((CasacoreImageType(in_file) == casacore::ImageOpener::FITS) && (out_file_type == CARTA::FileType::CASA)) {
+            result = ConversionType::FITS_TO_CASA;
+        } else if ((CasacoreImageType(in_file) == casacore::ImageOpener::AIPSPP) && (out_file_type == CARTA::FileType::CASA)) {
+            result = ConversionType::CASA_TO_CASA;
+        }
+    } else {
+        if (out_file_type == CARTA::FileType::CASA) {
+            result = ConversionType::TEMP_TO_CASA;
+        } else if (out_file_type == CARTA::FileType::FITS) {
+            result = ConversionType::TEMP_TO_FITS;
+        }
+    }
+    return result;
 }
 
 void FilesManager::RemoveRootFolder(std::string& directory) {
