@@ -1,6 +1,7 @@
 #include <casacore/images/Images/ImageFITSConverter.h>
 
 #include <iostream>
+#include <memory>
 
 #include "../FilesManager.h"
 #include "../Moment/MomentGenerator.h"
@@ -8,16 +9,18 @@
 const std::string FITS_FILE_FULL_NAME = "images/test-moments/HD163296_CO_2_1.image.fits";
 const std::string CASA_FILE_FULL_NAME = "images/test-moments/M17_SWex.image";
 const std::string TEMP_FOLDER = "images/test-moments/temp";
+const std::string OUT_CASA_FILE_FULL_NAME = "images/test-moments/temp/HD163296_CO_2_1.image.fits.moment.image";
+const std::string OUT_FITS_FILE_FULL_NAME = "images/test-moments/temp/HD163296_CO_2_1.image.fits.moment.fits";
 
 void GenerateMomentsWithFITS();
 void GenerateMomentsWithCASA();
 void ConvertFITStoCASA();
 void ConvertCASAtoFITS();
-void SaveMomentWithFITS();
-void SaveMomentWithCASA();
 void FileManagerConvertFITStoCASA();
 void FileManagerConvertCASAtoFITS();
-void FileManagerSaveWithSameName();
+void TestTempImage();
+void TestCASAtoCASA();
+void TestFITStoFITS();
 
 int main(int argc, char* argv[]) {
     int test_case;
@@ -26,11 +29,11 @@ int main(int argc, char* argv[]) {
     cout << "    2) Generate moments with CASA" << endl;
     cout << "    3) Convert FITS to CASA" << endl;
     cout << "    4) Convert CASA to FITS" << endl;
-    cout << "    5) Save moment file as FITS" << endl;
-    cout << "    6) Save moment file as CASA" << endl;
     cout << "    7) FileManager converts FITS to CASA" << endl;
     cout << "    8) FileManager converts CASA to FITS" << endl;
-    cout << "    9) FileManager saves as FITS with the same moment temporary name" << endl;
+    cout << "   10) Test TempImage" << endl;
+    cout << "   12) Test CASA to CASA" << endl;
+    cout << "   13) Test FITS to FITS" << endl;
     cin >> test_case;
 
     switch (test_case) {
@@ -46,20 +49,20 @@ int main(int argc, char* argv[]) {
         case 4:
             ConvertCASAtoFITS();
             break;
-        case 5:
-            SaveMomentWithFITS();
-            break;
-        case 6:
-            SaveMomentWithCASA();
-            break;
         case 7:
             FileManagerConvertFITStoCASA();
             break;
         case 8:
             FileManagerConvertCASAtoFITS();
             break;
-        case 9:
-            FileManagerSaveWithSameName();
+        case 10:
+            TestTempImage();
+            break;
+        case 12:
+            TestCASAtoCASA();
+            break;
+        case 13:
+            TestFITStoFITS();
             break;
         default:
             cout << "No such test case!" << endl;
@@ -71,8 +74,7 @@ int main(int argc, char* argv[]) {
 
 void GenerateMomentsWithFITS() {
     // Open a FITS image file
-    std::unique_ptr<casacore::FITSImage> image;
-    image.reset(new casacore::FITSImage(FITS_FILE_FULL_NAME));
+    auto image = std::make_unique<casacore::FITSImage>(FITS_FILE_FULL_NAME);
 
     // Print the original image file info
     std::cout << "file name: " << FITS_FILE_FULL_NAME << std::endl;
@@ -130,8 +132,8 @@ void GenerateMomentsWithFITS() {
     };
 
     // Calculate moments
-    carta::MomentGenerator* moment_generator =
-        new carta::MomentGenerator(FITS_FILE_FULL_NAME, image.get(), "", TEMP_FOLDER, spectral_axis, stokes_axis, progress_callback);
+    auto moment_generator = std::make_unique<carta::MomentGenerator>(
+        FITS_FILE_FULL_NAME, image.get(), "", TEMP_FOLDER, spectral_axis, stokes_axis, progress_callback);
     moment_generator->CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
@@ -139,14 +141,11 @@ void GenerateMomentsWithFITS() {
     carta::MomentGenerator::Print(moment_request);
     std::cout << "==========================================" << std::endl;
     carta::MomentGenerator::Print(moment_response);
-
-    delete moment_generator;
 }
 
 void GenerateMomentsWithCASA() {
     // Open a CASA image file
-    std::unique_ptr<casacore::PagedImage<float>> image;
-    image.reset(new casacore::PagedImage<float>(CASA_FILE_FULL_NAME));
+    auto image = std::make_unique<casacore::PagedImage<float>>(CASA_FILE_FULL_NAME);
 
     // Print the original image file info
     std::cout << "file name: " << CASA_FILE_FULL_NAME << std::endl;
@@ -204,8 +203,8 @@ void GenerateMomentsWithCASA() {
     };
 
     // Calculate moments
-    carta::MomentGenerator* moment_generator =
-        new carta::MomentGenerator(CASA_FILE_FULL_NAME, image.get(), "", TEMP_FOLDER, spectral_axis, stokes_axis, progress_callback);
+    auto moment_generator = std::make_unique<carta::MomentGenerator>(
+        CASA_FILE_FULL_NAME, image.get(), "", TEMP_FOLDER, spectral_axis, stokes_axis, progress_callback);
     moment_generator->CalculateMoments(moment_request, moment_response);
 
     // Print protobuf messages
@@ -213,8 +212,6 @@ void GenerateMomentsWithCASA() {
     carta::MomentGenerator::Print(moment_request);
     std::cout << "==========================================" << std::endl;
     carta::MomentGenerator::Print(moment_response);
-
-    delete moment_generator;
 }
 
 void ConvertFITStoCASA() {
@@ -263,65 +260,7 @@ void ConvertCASAtoFITS() {
     delete image;
 }
 
-void SaveMomentWithFITS() {
-    // Create moments from the FITS file
-    GenerateMomentsWithFITS();
-
-    // Set saving file message
-    CARTA::SaveFile save_file_msg;
-    save_file_msg.set_file_id(-1);
-    save_file_msg.set_output_file_name("test.fits");
-    save_file_msg.set_output_file_directory("/images/test-moments");
-    save_file_msg.set_output_file_type(CARTA::FileType::FITS);
-
-    // Set the moment image file (as CASA format)
-    string original_moment_file_name = FITS_FILE_FULL_NAME + ".moment.average";
-    PagedImage<Float>* image = new casacore::PagedImage<Float>(original_moment_file_name);
-
-    // Response message
-    CARTA::SaveFileAck save_file_ack;
-    carta::FilesManager moment_files_manager("./");
-    moment_files_manager.SaveFile(original_moment_file_name, image, save_file_msg, save_file_ack);
-
-    std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_msg);
-    std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_ack);
-
-    delete image;
-}
-
-void SaveMomentWithCASA() {
-    // Create moments from the CASA file
-    GenerateMomentsWithCASA();
-
-    // Set saving file message
-    CARTA::SaveFile save_file_msg;
-    save_file_msg.set_file_id(-1);
-    save_file_msg.set_output_file_name("test.image");
-    save_file_msg.set_output_file_directory("/images/test-moments");
-    save_file_msg.set_output_file_type(CARTA::FileType::CASA);
-
-    // Set the moment image file (as CASA format)
-    string original_moment_file_name = CASA_FILE_FULL_NAME + ".moment.average";
-    PagedImage<Float>* image = new casacore::PagedImage<Float>(original_moment_file_name);
-
-    // Response message
-    CARTA::SaveFileAck save_file_ack;
-    carta::FilesManager moment_files_manager("./");
-    moment_files_manager.SaveFile(original_moment_file_name, image, save_file_msg, save_file_ack);
-
-    std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_msg);
-    std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_ack);
-
-    delete image;
-}
-
 void FileManagerConvertFITStoCASA() {
-    // FITS file to CASA image conversion:
-
     // Set saving file message
     CARTA::SaveFile save_file_msg;
     save_file_msg.set_file_id(-1);
@@ -329,25 +268,20 @@ void FileManagerConvertFITStoCASA() {
     save_file_msg.set_output_file_directory("/images/test-moments");
     save_file_msg.set_output_file_type(CARTA::FileType::CASA);
 
-    // This pointer will not be used
-    ImageInterface<Float>* image = 0;
+    std::unique_ptr<casacore::FITSImage> image = std::make_unique<casacore::FITSImage>(FITS_FILE_FULL_NAME);
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
     carta::FilesManager moment_files_manager("./");
-    moment_files_manager.SaveFile(FITS_FILE_FULL_NAME, image, save_file_msg, save_file_ack);
+    moment_files_manager.SaveFile(image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_ack);
-
-    delete image;
 }
 
 void FileManagerConvertCASAtoFITS() {
-    // CASA image to FITS conversion:
-
     // Set saving file message
     CARTA::SaveFile save_file_msg;
     save_file_msg.set_file_id(-1);
@@ -356,26 +290,22 @@ void FileManagerConvertCASAtoFITS() {
     save_file_msg.set_output_file_type(CARTA::FileType::FITS);
 
     // Set the CASA image file pointer with the original file name
-    PagedImage<Float>* image = new casacore::PagedImage<Float>(CASA_FILE_FULL_NAME);
+    auto image = std::make_unique<casacore::PagedImage<casacore::Float>>(CASA_FILE_FULL_NAME);
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
     carta::FilesManager moment_files_manager("./");
-    moment_files_manager.SaveFile(CASA_FILE_FULL_NAME, image, save_file_msg, save_file_ack);
+    moment_files_manager.SaveFile(image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_ack);
-
-    delete image;
 }
 
-void FileManagerSaveWithSameName() {
-    // Create moments from the FITS file
+void TestTempImage() {
     // Open a FITS image file
-    std::unique_ptr<casacore::FITSImage> image;
-    image.reset(new casacore::FITSImage(FITS_FILE_FULL_NAME));
+    auto image = std::make_unique<casacore::FITSImage>(FITS_FILE_FULL_NAME);
 
     // Get spectral and stokes indices
     casacore::CoordinateSystem coord_sys = image->coordinates();
@@ -385,23 +315,10 @@ void FileManagerSaveWithSameName() {
 
     // Set moment request message
     CARTA::MomentRequest moment_request;
-    moment_request.set_file_id(-1);
+    int file_id = 0;
+    moment_request.set_file_id(file_id);
     moment_request.set_region_id(-1);
-
-    moment_request.add_moments(CARTA::Moment::MEAN_OF_THE_SPECTRUM);
     moment_request.add_moments(CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_COORD);
-    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD);
-    moment_request.add_moments(CARTA::Moment::MEDIAN_OF_THE_SPECTRUM);
-    // moment_request.add_moments(CARTA::Moment::MEDIAN_COORDINATE);
-    moment_request.add_moments(CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::RMS_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::MAX_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
-
     moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
     auto* spectral_range = moment_request.mutable_spectral_range();
     spectral_range->set_min(0);
@@ -423,9 +340,12 @@ void FileManagerSaveWithSameName() {
     };
 
     // Calculate moments
-    carta::MomentGenerator* moment_generator =
-        new carta::MomentGenerator(FITS_FILE_FULL_NAME, image.get(), "", TEMP_FOLDER, spectral_axis, stokes_axis, progress_callback);
-    moment_generator->CalculateMoments(moment_request, moment_response);
+    auto moment_generator = std::make_unique<carta::MomentGenerator>(
+        FITS_FILE_FULL_NAME, image.get(), "", TEMP_FOLDER, spectral_axis, stokes_axis, progress_callback);
+
+    std::vector<carta::CollapseResult> results = moment_generator->CalculateMoments2(file_id, moment_request, moment_response);
+
+    moment_generator.reset();
 
     // Print protobuf messages
     std::cout << "==========================================" << std::endl;
@@ -433,33 +353,68 @@ void FileManagerSaveWithSameName() {
     std::cout << "==========================================" << std::endl;
     carta::MomentGenerator::Print(moment_response);
 
-    // Call files manager
-    carta::FilesManager* moment_files_manager = new carta::FilesManager("./");
+    for (int i = 0; i < results.size(); ++i) {
+        carta::CollapseResult& result = results[i];
+        std::shared_ptr<casacore::ImageInterface<casacore::Float>> result_image = result.image;
 
-    // Set saving file message
+        casacore::Array<casacore::Float> temp_array;
+        casacore::IPosition start(result_image->shape().size(), 0);
+        casacore::IPosition count(result_image->shape());
+        casacore::Slicer slice(start, count);
+        result_image->doGetSlice(temp_array, slice);
+        std::vector<Float> temp_vector = temp_array.tovector();
+
+        // Copy an result image
+        auto new_image = std::make_unique<casacore::PagedImage<casacore::Float>>(
+            result_image->shape(), result_image->coordinates(), OUT_CASA_FILE_FULL_NAME);
+        new_image->setMiscInfo(result_image->miscInfo());
+        new_image->setImageInfo(result_image->imageInfo());
+        new_image->appendLog(result_image->logger());
+        new_image->setUnits(result_image->units());
+        new_image->putSlice(temp_array, start);
+    }
+}
+
+void TestCASAtoCASA() {
+    // Open a CASA image file
+    auto image = std::make_unique<casacore::PagedImage<float>>(CASA_FILE_FULL_NAME);
+
     CARTA::SaveFile save_file_msg;
     save_file_msg.set_file_id(-1);
-    size_t found = FITS_FILE_FULL_NAME.find_last_of("/");
-    std::string output_filename = FITS_FILE_FULL_NAME.substr(found + 1) + ".moment.average";
-    save_file_msg.set_output_file_name(output_filename);
-    save_file_msg.set_output_file_directory("/images/test-moments");
-    save_file_msg.set_output_file_type(CARTA::FileType::FITS);
-
-    // Set the moment image file (as CASA format)
-    string original_moment_file_name = FITS_FILE_FULL_NAME + ".moment.average";
-    PagedImage<Float>* moment_image = new casacore::PagedImage<Float>(original_moment_file_name);
+    save_file_msg.set_output_file_name("M17_SWex.image.copy");
+    save_file_msg.set_output_file_directory("images/test-moments");
+    save_file_msg.set_output_file_type(CARTA::FileType::CASA);
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
-    moment_files_manager->SaveFile(original_moment_file_name, moment_image, save_file_msg, save_file_ack);
+
+    carta::FilesManager moment_files_manager("./");
+    moment_files_manager.SaveFile(image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_ack);
+}
 
-    // The order of deleting objects does matter
-    delete moment_image;
-    delete moment_generator;
-    delete moment_files_manager;
+void TestFITStoFITS() {
+    // Open a FITS image file
+    auto image = std::make_unique<casacore::FITSImage>(FITS_FILE_FULL_NAME);
+
+    CARTA::SaveFile save_file_msg;
+    save_file_msg.set_file_id(-1);
+    save_file_msg.set_output_file_name("HD163296_CO_2_1.image.fits.copy");
+    save_file_msg.set_output_file_directory("images/test-moments");
+    save_file_msg.set_output_file_type(CARTA::FileType::FITS);
+
+    // Response message
+    CARTA::SaveFileAck save_file_ack;
+
+    carta::FilesManager moment_files_manager("./");
+    moment_files_manager.SaveFile(image.get(), save_file_msg, save_file_ack);
+
+    std::cout << "==========================================" << std::endl;
+    carta::FilesManager::Print(save_file_msg);
+    std::cout << "==========================================" << std::endl;
+    carta::FilesManager::Print(save_file_ack);
 }
