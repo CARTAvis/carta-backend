@@ -44,10 +44,9 @@ RUN \
 
 # Build carta-backend (currently checkouts the dev)
 RUN \
-  apt-get -y install libxml2-dev && \
   git clone https://github.com/CARTAvis/carta-backend.git && \
   cd carta-backend && \
-  git checkout angus/catalog_alt_implementation && \
+  git checkout angus/dev && \
   git submodule init && git submodule update && \
   mkdir build && cd build && \
   CXX=g++-8 CC=gcc-8 cmake .. -DCMAKE_CXX_FLAGS="-I/usr/include/casacode" && \
