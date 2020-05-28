@@ -20,7 +20,8 @@ public:
     FilesManager(std::string root_folder);
     ~FilesManager();
 
-    void SaveFile(casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
+    void SaveFile(const std::string& in_file, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
+        CARTA::SaveFileAck& save_file_ack);
 
     // Print protobuf messages
     static void Print(CARTA::SaveFile message);

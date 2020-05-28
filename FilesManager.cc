@@ -6,8 +6,8 @@ FilesManager::FilesManager(std::string root_folder) : _root_folder(root_folder) 
 
 FilesManager::~FilesManager() {}
 
-void FilesManager::SaveFile(
-    casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack) {
+void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
+    CARTA::SaveFileAck& save_file_ack) {
     int file_id(save_file_msg.file_id());
     std::string output_filename(save_file_msg.output_file_name());
     std::string directory(save_file_msg.output_file_directory());
@@ -24,6 +24,13 @@ void FilesManager::SaveFile(
     casacore::String resolved_path = cc_path.path().resolvedName();
     std::string abs_path = resolved_path;
     output_filename = abs_path + "/" + output_filename;
+
+    if (output_filename == in_file) {
+        message = "The source file in the disk will not be overwritten!";
+        save_file_ack.set_success(success);
+        save_file_ack.set_message(message);
+        return;
+    }
 
     if (output_file_type == CARTA::FileType::CASA) {
         // Get a copy of the original pixel data

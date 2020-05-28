@@ -273,7 +273,7 @@ void FileManagerConvertFITStoCASA() {
     // Response message
     CARTA::SaveFileAck save_file_ack;
     carta::FilesManager moment_files_manager("./");
-    moment_files_manager.SaveFile(image.get(), save_file_msg, save_file_ack);
+    moment_files_manager.SaveFile(FITS_FILE_FULL_NAME, image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);
@@ -295,7 +295,7 @@ void FileManagerConvertCASAtoFITS() {
     // Response message
     CARTA::SaveFileAck save_file_ack;
     carta::FilesManager moment_files_manager("./");
-    moment_files_manager.SaveFile(image.get(), save_file_msg, save_file_ack);
+    moment_files_manager.SaveFile(CASA_FILE_FULL_NAME, image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);
@@ -389,7 +389,7 @@ void TestCASAtoCASA() {
     CARTA::SaveFileAck save_file_ack;
 
     carta::FilesManager moment_files_manager("./");
-    moment_files_manager.SaveFile(image.get(), save_file_msg, save_file_ack);
+    moment_files_manager.SaveFile(CASA_FILE_FULL_NAME, image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);
@@ -411,7 +411,7 @@ void TestFITStoFITS() {
     CARTA::SaveFileAck save_file_ack;
 
     carta::FilesManager moment_files_manager("./");
-    moment_files_manager.SaveFile(image.get(), save_file_msg, save_file_ack);
+    moment_files_manager.SaveFile(FITS_FILE_FULL_NAME, image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_msg);
