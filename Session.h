@@ -15,6 +15,7 @@
 #include <tbb/atomic.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
+#include <tbb/task.h>
 #include <uWS/uWS.h>
 
 #include <casacore/casa/aips.h>
@@ -36,20 +37,18 @@
 
 #include <cartavis/carta_service.grpc.pb.h>
 
-#include <tbb/task.h>
-
 #include "AnimationObject.h"
-#include "Catalog/VOTableController.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "Table/TableController.h"
 #include "Util.h"
 
 class Session {
 public:
-    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async, FileListHandler* file_list_handler,
-        bool verbose = false);
+    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, std::string base, uS::Async* outgoing_async,
+        FileListHandler* file_list_handler, bool verbose = false);
     ~Session();
 
     // CARTA ICD
@@ -212,13 +211,14 @@ private:
     void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
 
     // Send protobuf messages
-    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = false);
+    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = false);
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     uWS::WebSocket<uWS::SERVER>* _socket;
     std::string _api_key;
     std::string _root_folder;
+    std::string _base_folder;
     bool _verbose_logging;
 
     // File browser
@@ -231,8 +231,7 @@ private:
     std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
     std::mutex _frame_mutex;                                 // lock frames to create/destroy
 
-    // Catalog controller
-    std::unique_ptr<catalog::Controller> _catalog_controller;
+    const std::unique_ptr<carta::TableController> _table_controller;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;

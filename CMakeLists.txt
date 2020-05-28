@@ -6,12 +6,16 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 # Enable OpenMP if package is found
 find_package(OpenMP)
-if(OPENMP_FOUND)
+if (OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-else()
+else ()
     message(WARNING "OpenMP not found!")
-endif()
+endif ()
+
+# Enable parallel GCC algorithms (needed until there is relable support for C++17 from compilers)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_PARALLEL")
+
 
 # Use the -march=native flags when building on the same architecture as deploying to get a slight performance
 # increase when running CPU intensive tasks such as compression and down-sampling of data. If targeting AVX-capable
@@ -35,7 +39,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
-FIND_PACKAGE(LibXml2 REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
@@ -47,12 +50,11 @@ INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
 INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-INCLUDE_DIRECTORIES(/usr/local/include)
-INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
-INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
-LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
+    INCLUDE_DIRECTORIES(/usr/local/include)
+    INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
+    INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
+    LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
 
 if (AuthServer)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
@@ -68,13 +70,13 @@ if (AuthServer)
 endif (AuthServer)
 
 FIND_PACKAGE(gRPC QUIET)
-if(gRPC_FOUND)
+if (gRPC_FOUND)
     set(LINK_LIBS
             ${LINK_LIBS}
             gRPC::grpc++
-    )
+            )
     message(STATUS "gRPC found using FIND_PACKAGE")
-else()
+else ()
     message(STATUS "gRPC not found using FIND_PACKAGE, using pkg-config instead")
     FIND_PACKAGE(PkgConfig REQUIRED)
     PKG_SEARCH_MODULE(GRPC REQUIRED grpc)
@@ -85,15 +87,20 @@ else()
                 grpc
                 grpc++
                 )
-    else()
+    else ()
         message(FATAL_ERROR "Could not import gRPC library")
-    endif()
-endif()
+    endif ()
+endif ()
 
 if (DisableContourCompression)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DISABLE_CONTOUR_COMPRESSION_")
-endif(DisableContourCompression)
+endif (DisableContourCompression)
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(LINK_LIBS
+            ${LINK_LIBS}
+            stdc++fs)
+endif()
 
 set(LINK_LIBS
         ${LINK_LIBS}
@@ -108,6 +115,8 @@ set(LINK_LIBS
         zfp
         zstd
         tbb
+        cfitsio
+        pugixml
         casa_casa
         casa_coordinates
         casa_tables
@@ -120,7 +129,6 @@ set(LINK_LIBS
         casa_imageanalysis
         ${OpenMP_CXX_LIBRARIES}
         ${HDF5_LIBRARIES}
-        ${LIBXML2_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
 set(SOURCE_FILES
@@ -142,9 +150,10 @@ set(SOURCE_FILES
         Region/RegionStats.cc
         Region/RegionProfiler.cc
         Region/Histogram.cc
-        Catalog/VOTableParser.cc
-        Catalog/VOTableCarrier.cc
-        Catalog/VOTableController.cc
+        Table/Columns.cc
+        Table/Table.cc
+        Table/TableView.cc
+        Table/TableController.cc
         OnMessageTask.cc
         FileSettings.cc
         Util.cc
@@ -152,6 +161,7 @@ set(SOURCE_FILES
         Ds9Parser.cc
         Contouring.cc
         Smoothing.cc
+        Timer/Timer.cc
         GrpcServer/CartaGrpcService.cc)
 
 add_definitions(-DHAVE_HDF5)
