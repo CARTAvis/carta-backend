@@ -14,10 +14,10 @@ typedef const std::function<void(float)> MomentProgressCallback;
 namespace carta {
 
 struct CollapseResult {
-    casacore::Int moment_type;
+    int file_id;
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> image;
-    CollapseResult(casacore::Int moment_type_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
-        moment_type = moment_type_;
+    CollapseResult(int file_id_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
+        file_id = file_id_;
         image = image_;
     }
 };
@@ -30,7 +30,8 @@ public:
 
     // Calculate moments
     void CalculateMoments(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
-    std::vector<CollapseResult> CalculateMoments2(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+    std::vector<CollapseResult> CalculateMoments2(
+        int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
 
     // Resulting message
     bool IsSuccess() const;

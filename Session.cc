@@ -974,10 +974,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
 
             // Open moment images from the cache, open files acknowledges will send to frontend
             for (int i = 0; i < collapse_results.size(); ++i) {
-                int moment_type = collapse_results[i].moment_type;
-                int moment_file_id = (file_id + 1) * 1000 + moment_type;
-                auto& image = collapse_results[i].image;
-                OnOpenFile(moment_file_id, image, request_id);
+                OnOpenFile(collapse_results[i].file_id, collapse_results[i].image, request_id);
             }
         }
     }

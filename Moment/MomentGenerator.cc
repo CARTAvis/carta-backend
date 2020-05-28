@@ -45,9 +45,6 @@ void MomentGenerator::CalculateMoments(const CARTA::MomentRequest& moment_reques
                 casacore::String out_file = GetOutputFileName();
                 std::size_t found = out_file.find_last_of("/");
                 std::string file_base_name = out_file.substr(found + 1);
-                std::string path_name = out_file.substr(0, found);
-                RemoveRootFolder(path_name);
-                moment_response.set_directory(path_name);
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
                     // Save collapse results in the disk
@@ -61,7 +58,7 @@ void MomentGenerator::CalculateMoments(const CARTA::MomentRequest& moment_reques
                             output_filename = file_base_name + "." + moment_suffix;
                         }
                         auto* output_files = moment_response.add_output_files();
-                        output_files->set_file_name(output_filename);
+                        output_files->set_name(output_filename);
                         output_files->set_moment_type(moment_request.moments(i));
                     }
                 } catch (const AipsError& x) {
@@ -83,7 +80,7 @@ void MomentGenerator::CalculateMoments(const CARTA::MomentRequest& moment_reques
 }
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments2(
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
+    int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     // Collapse results
     std::vector<CollapseResult> collapse_results;
 
@@ -110,18 +107,34 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments2(
                 _collapse_error = true;
             } else {
                 casacore::Bool do_temp = true;
-                casacore::String out_file = "";
                 casacore::Bool remove_axis = false;
+                casacore::String out_file = GetOutputFileName();
+                std::size_t found = out_file.find_last_of("/");
+                std::string file_base_name = out_file.substr(found + 1);
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
+
                     // Save collapse results in the memory
                     auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);
+
                     for (int i = 0; i < result_images.size(); ++i) {
+                        // Set temp moment file name
+                        std::string moment_suffix = GetMomentSuffix(_moments[i]);
+                        std::string output_filename = file_base_name + "." + moment_suffix;
+
+                        // Set temp moment file id
+                        int moment_type = _moments[i];
+                        int moment_file_id = (file_id + 1) * 1000 + moment_type;
+
+                        // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
                             dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                        collapse_results.push_back(CollapseResult(_moments[i], moment_image));
+                        collapse_results.push_back(CollapseResult(moment_file_id, moment_image));
+
+                        // Fill the response message
                         auto* output_files = moment_response.add_output_files();
-                        output_files->set_file_name("");
+                        output_files->set_name(output_filename);
+                        output_files->set_file_id(moment_file_id);
                         output_files->set_moment_type(moment_request.moments(i));
                     }
                 } catch (const AipsError& x) {
@@ -492,7 +505,6 @@ void MomentGenerator::Print(CARTA::MomentResponse message) {
     } else {
         std::cout << "success = false" << std::endl;
     }
-    std::cout << "directory = " << message.directory() << std::endl;
     for (int i = 0; i < message.output_files_size(); ++i) {
         Print(message.output_files(i));
     }
@@ -512,7 +524,8 @@ void MomentGenerator::Print(CARTA::FloatBounds message) {
 
 void MomentGenerator::Print(CARTA::MomentImage message) {
     std::cout << "CARTA::MomentImage:" << std::endl;
-    std::cout << "file_name = " << message.file_name() << std::endl;
+    std::cout << "name = " << message.name() << std::endl;
+    std::cout << "file_id = " << message.file_id() << std::endl;
     Print(message.moment_type());
 }
 
