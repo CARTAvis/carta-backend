@@ -42,11 +42,13 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, uS::Async* outgoing_async,
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, std::string base, uS::Async* outgoing_async,
     FileListHandler* file_list_handler, bool verbose)
     : _id(id),
       _socket(ws),
       _root_folder(root),
+      _base_folder(base),
+      _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
       _verbose_logging(verbose),
       _loader(nullptr),
       _outgoing_async(outgoing_async),
@@ -59,8 +61,6 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
     _ref_count = 0;
     _animation_object = nullptr;
     _connected = true;
-    _catalog_controller = std::unique_ptr<catalog::Controller>(new catalog::Controller(_root_folder));
-
     ++_num_sessions;
     DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
 }
@@ -908,41 +908,31 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 
 void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
     CARTA::CatalogListResponse file_list_response;
-    if (_catalog_controller) {
-        _catalog_controller->OnFileListRequest(file_list_request, file_list_response);
-        SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
-    }
+    _table_controller->OnFileListRequest(file_list_request, file_list_response);
+    SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
 }
 
 void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {
     CARTA::CatalogFileInfoResponse file_info_response;
-    if (_catalog_controller) {
-        _catalog_controller->OnFileInfoRequest(file_info_request, file_info_response);
-        SendEvent(CARTA::EventType::CATALOG_FILE_INFO_RESPONSE, request_id, file_info_response);
-    }
+    _table_controller->OnFileInfoRequest(file_info_request, file_info_response);
+    SendEvent(CARTA::EventType::CATALOG_FILE_INFO_RESPONSE, request_id, file_info_response);
 }
 
 void Session::OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id) {
     CARTA::OpenCatalogFileAck open_file_response;
-    if (_catalog_controller) {
-        _catalog_controller->OnOpenFileRequest(open_file_request, open_file_response);
-        SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
-    }
+    _table_controller->OnOpenFileRequest(open_file_request, open_file_response);
+    SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
 }
 
 void Session::OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request) {
-    if (_catalog_controller) {
-        _catalog_controller->OnCloseFileRequest(close_file_request);
-    }
+    _table_controller->OnCloseFileRequest(close_file_request);
 }
 
 void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id) {
-    if (_catalog_controller) {
-        _catalog_controller->OnFilterRequest(filter_request, [&](CARTA::CatalogFilterResponse filter_response) {
-            // Send partial or final results
-            SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
-        });
-    }
+    _table_controller->OnFilterRequest(filter_request, [&](const CARTA::CatalogFilterResponse& filter_response) {
+        // Send partial or final results
+        SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
+    });
 }
 
 void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id) {
@@ -1397,7 +1387,7 @@ void Session::RegionDataStreams(int file_id, int region_id) {
 // SEND uWEBSOCKET MESSAGES
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
-void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message, bool compress) {
+void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
     int message_length = message.ByteSize();
     size_t required_size = message_length + sizeof(carta::EventHeader);
     std::pair<std::vector<char>, bool> msg_vs_compress;

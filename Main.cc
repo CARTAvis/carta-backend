@@ -88,7 +88,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         current_session->SendPendingMessages();
     });
 
-    Session* session = new Session(ws, session_number, root_folder, outgoing, file_list_handler, verbose);
+    Session* session = new Session(ws, session_number, root_folder, base_folder, outgoing, file_list_handler, verbose);
 
     ws->setUserData(session);
     if (carta_grpc_service) {
@@ -411,6 +411,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::CloseCatalogFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCloseCatalogFile(message);
+                    } else {
+                        fmt::print("Bad CLOSE_CATALOG_FILE message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::CATALOG_FILTER_REQUEST: {
+                    CARTA::CatalogFilterRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnCatalogFilter(message, head.request_id);
                     } else {
                         fmt::print("Bad CLOSE_CATALOG_FILE message!\n");
                     }

@@ -29,15 +29,6 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
-        case CARTA::EventType::CATALOG_FILTER_REQUEST: {
-            CARTA::CatalogFilterRequest message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnCatalogFilter(message, _header.request_id);
-            } else {
-                fmt::print("Bad CATALOG_FILTER_REQUEST message!\n");
-            }
-            break;
-        }
         case CARTA::EventType::MOMENT_REQUEST: {
             CARTA::MomentRequest message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {

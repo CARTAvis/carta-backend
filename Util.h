@@ -43,6 +43,7 @@ inline void LOG(uint32_t id, const std::string& template_string, Args... args) {
 
 void ReadPermissions(const std::string& filename, std::unordered_map<std::string, std::vector<std::string>>& permissions_map);
 bool CheckRootBaseFolders(std::string& root, std::string& base);
+uint32_t GetMagicNumber(const std::string& filename);
 
 // split input string into a vector of strings by delimiter
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts);
