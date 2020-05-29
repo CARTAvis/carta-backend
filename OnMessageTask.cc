@@ -29,15 +29,6 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
-        case CARTA::EventType::CATALOG_FILTER_REQUEST: {
-            CARTA::CatalogFilterRequest message;
-            if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnCatalogFilter(message, _header.request_id);
-            } else {
-                fmt::print("Bad CATALOG_FILTER_REQUEST message!\n");
-            }
-            break;
-        }
         default: {
             fmt::print("Bad event type in MultiMessageType:execute : ({})\n", _header.type);
             break;
