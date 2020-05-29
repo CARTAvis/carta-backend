@@ -949,7 +949,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         // Calculate the moments
         CARTA::MomentResponse moment_response;
 
-        bool do_temp(false); /// Todo: this variable will be removed
+        bool do_temp(true); /// Todo: this variable will be removed
         if (!do_temp) {
             _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
 
