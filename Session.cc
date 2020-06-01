@@ -363,10 +363,14 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     return success;
 }
 
-bool Session::OnOpenFile(int file_id, std::shared_ptr<casacore::ImageInterface<float>> image, uint32_t request_id) {
-    // response message:
-    CARTA::OpenFileAck ack;
-    ack.set_file_id(file_id);
+bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::MomentResponse& moment_response, uint32_t request_id) {
+    int file_id = collapse_result.file_id;
+    std::string name = collapse_result.name;
+    auto image = collapse_result.image;
+
+    // Response message for opening a file
+    auto open_file_ack = moment_response.add_open_file_acks();
+    open_file_ack->set_file_id(file_id);
     string err_message;
 
     CARTA::FileInfoExtended file_info_extended;
@@ -386,13 +390,14 @@ bool Session::OnOpenFile(int file_id, std::shared_ptr<casacore::ImageInterface<f
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
             _frames[file_id] = move(frame);
             lock.unlock();
-            // copy file info, extended file info
+            // Set file info, extended file info
             CARTA::FileInfo response_file_info = CARTA::FileInfo();
+            response_file_info.set_name(name);
             response_file_info.set_type(CARTA::FileType::CASA);
-            *ack.mutable_file_info() = response_file_info;
-            *ack.mutable_file_info_extended() = file_info_extended;
+            *open_file_ack->mutable_file_info() = response_file_info;
+            *open_file_ack->mutable_file_info_extended() = file_info_extended;
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
-            ack.set_file_feature_flags(feature_flags);
+            open_file_ack->set_file_feature_flags(feature_flags);
 
             success = true;
         } else {
@@ -400,9 +405,8 @@ bool Session::OnOpenFile(int file_id, std::shared_ptr<casacore::ImageInterface<f
         }
     }
 
-    ack.set_success(success);
-    ack.set_message(err_message);
-    SendEvent(CARTA::EventType::OPEN_FILE_ACK, request_id, ack);
+    open_file_ack->set_success(success);
+    open_file_ack->set_message(err_message);
 
     if (success) {
         UpdateRegionData(file_id);
@@ -959,13 +963,14 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             std::vector<carta::CollapseResult> collapse_results =
                 _moment_controller->CalculateMoments2(file_id, frame, progress_callback, moment_request, moment_response);
 
-            // Send moment response message
-            SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
-
             // Open moment images from the cache, open files acknowledges will send to frontend
             for (int i = 0; i < collapse_results.size(); ++i) {
-                OnOpenFile(collapse_results[i].file_id, collapse_results[i].image, request_id);
+                auto& collapse_result = collapse_results[i];
+                OnOpenFile(collapse_result, moment_response, request_id);
             }
+
+            // Send moment response message
+            SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
         }
     }
 }

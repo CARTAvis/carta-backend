@@ -15,9 +15,11 @@ namespace carta {
 
 struct CollapseResult {
     int file_id;
+    std::string name;
     std::shared_ptr<casacore::ImageInterface<casacore::Float>> image;
-    CollapseResult(int file_id_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
+    CollapseResult(int file_id_, std::string name_, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image_) {
         file_id = file_id_;
+        name = name_;
         image = image_;
     }
 };
@@ -47,7 +49,6 @@ public:
     static void Print(CARTA::MomentResponse message);
     static void Print(CARTA::IntBounds message);
     static void Print(CARTA::FloatBounds message);
-    static void Print(CARTA::MomentImage message);
     static void Print(CARTA::Moment message);
     static void Print(CARTA::MomentAxis message);
     static void Print(CARTA::MomentStokes message);

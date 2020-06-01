@@ -51,15 +51,12 @@ void MomentGenerator::CalculateMoments(const CARTA::MomentRequest& moment_reques
                     auto result_images = _image_moments->createMoments(false, out_file, false);
                     for (int i = 0; i < result_images.size(); ++i) {
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
-                        std::string output_filename;
+                        std::string out_file_name;
                         if (result_images.size() == 1) {
-                            output_filename = file_base_name;
+                            out_file_name = file_base_name;
                         } else {
-                            output_filename = file_base_name + "." + moment_suffix;
+                            out_file_name = file_base_name + "." + moment_suffix;
                         }
-                        auto* output_files = moment_response.add_output_files();
-                        output_files->set_name(output_filename);
-                        output_files->set_moment_type(moment_request.moments(i));
                     }
                 } catch (const AipsError& x) {
                     _error_msg = x.getMesg();
@@ -120,7 +117,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments2(
                     for (int i = 0; i < result_images.size(); ++i) {
                         // Set temp moment file name
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
-                        std::string output_filename = file_base_name + "." + moment_suffix;
+                        std::string out_file_name = file_base_name + "." + moment_suffix;
 
                         // Set temp moment file id
                         int moment_type = _moments[i];
@@ -129,13 +126,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments2(
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
                             dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                        collapse_results.push_back(CollapseResult(moment_file_id, moment_image));
-
-                        // Fill the response message
-                        auto* output_files = moment_response.add_output_files();
-                        output_files->set_name(output_filename);
-                        output_files->set_file_id(moment_file_id);
-                        output_files->set_moment_type(moment_request.moments(i));
+                        collapse_results.push_back(CollapseResult(moment_file_id, out_file_name, moment_image));
                     }
                 } catch (const AipsError& x) {
                     _error_msg = x.getMesg();
@@ -505,9 +496,6 @@ void MomentGenerator::Print(CARTA::MomentResponse message) {
     } else {
         std::cout << "success = false" << std::endl;
     }
-    for (int i = 0; i < message.output_files_size(); ++i) {
-        Print(message.output_files(i));
-    }
 }
 
 void MomentGenerator::Print(CARTA::IntBounds message) {
@@ -520,13 +508,6 @@ void MomentGenerator::Print(CARTA::FloatBounds message) {
     std::cout << "CARTA::FloatBounds:" << std::endl;
     std::cout << "Float min = " << message.min() << std::endl;
     std::cout << "Float max = " << message.max() << std::endl;
-}
-
-void MomentGenerator::Print(CARTA::MomentImage message) {
-    std::cout << "CARTA::MomentImage:" << std::endl;
-    std::cout << "name = " << message.name() << std::endl;
-    std::cout << "file_id = " << message.file_id() << std::endl;
-    Print(message.moment_type());
 }
 
 void MomentGenerator::Print(CARTA::Moment message) {
