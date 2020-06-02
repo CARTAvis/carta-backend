@@ -76,10 +76,6 @@ private:
     bool CheckAndConvertParameter(std::string& parameter, const std::string& region_type);
     casacore::String ConvertTimeFormatToDeg(std::string& parameter);
 
-    // Convert wcs -> pixel
-    bool ConvertPointToPixels(std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords);
-    double AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis);
-
     // Export: add header string to _export_regions
     void AddHeader();
     std::string AddExportRegionPixel(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);

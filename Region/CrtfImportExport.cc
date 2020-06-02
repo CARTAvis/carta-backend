@@ -2,6 +2,7 @@
 
 #include "CrtfImportExport.h"
 
+#include <carta-protobuf/enums.pb.h>
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/casa/Quanta/Quantum.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
@@ -13,8 +14,6 @@
 #include <imageanalysis/Annotations/AnnRegion.h>
 #include <imageanalysis/Annotations/AnnRotBox.h>
 #include <imageanalysis/Annotations/AnnSymbol.h>
-
-#include <carta-protobuf/enums.pb.h>
 
 #include "../Util.h"
 
@@ -370,18 +369,26 @@ void CrtfImportExport::ImportAnnBox(casacore::CountedPtr<const casa::AnnotationB
     const casa::AnnPolygon* polygon = dynamic_cast<const casa::AnnPolygon*>(annotation_region.get());
 
     if (polygon != nullptr) {
-        // Get polygon pixel verticies (box corners)
+        // Get polygon pixel vertices (box corners)
         std::vector<casacore::Double> x, y;
         polygon->pixelVertices(x, y);
 
         // Get control points (cx, cy), (width, height) from corners
         std::vector<CARTA::Point> control_points;
-        RectangleControlPointsFromVertices(x, y, control_points);
+        float rotation(0.0);
+        if (!RectangleControlPointsFromVertices(x, y, control_points)) {
+            // Forms polygon in world coords; manually import box parameters to pixel control points
+            std::ostringstream oss;
+            polygon->print(oss);
+            std::string box_input(oss.str());
+            if (!GetBoxControlPoints(box_input, control_points, rotation)) {
+                return;
+            }
+        }
 
         // Other RegionState params
         std::string name = annotation_region->getLabel();
         CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
-        float rotation(0.0);
 
         // Create RegionState
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
@@ -398,43 +405,19 @@ void CrtfImportExport::ImportAnnRotBox(casacore::CountedPtr<const casa::Annotati
 
     if (rotbox != nullptr) {
         // Print region (known format) and parse to get rotbox input params
-        std::ostringstream rotbox_output;
-        rotbox->print(rotbox_output);
-        casacore::String outputstr(rotbox_output.str()); // "rotbox [[x, y], [x_width, y_width], rotang]"
+        std::ostringstream oss;
+        rotbox->print(oss);
+        std::string rotbox_input(oss.str());
 
-        // Create comma-delimited string of quantities
-        casacore::String params(outputstr.after("rotbox ")); // remove rotbox
-        params.gsub("[", "");                                // remove [
-        params.gsub("] ", "],");                             // add comma delimiter
-        params.gsub("]", "");                                // remove ]
-        // Split string by comma into string vector
-        std::vector<std::string> quantities;
-        SplitString(params, ',', quantities);
-        // Convert strings to Quantities (Quantum readQuantity)
-        casacore::Quantity cx, cy, xwidth, ywidth, rotang;
-        casacore::readQuantity(cx, quantities[0]);
-        casacore::readQuantity(cy, quantities[1]);
-        casacore::readQuantity(xwidth, quantities[2]);
-        casacore::readQuantity(ywidth, quantities[3]);
-        casacore::readQuantity(rotang, quantities[4]);
-        rotang.convert("deg");
-
-        // Make (unrotated) centerbox from parsed quantities then get corners
-        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
-        bool require_region(false);
-        casa::AnnCenterBox cbox = casa::AnnCenterBox(cx, cy, xwidth, ywidth, *_coord_sys, _image_shape, stokes_types, require_region);
-        // Get centerbox pixel vertices
-        std::vector<casacore::Double> x, y;
-        cbox.pixelVertices(x, y);
-
-        // Get control points from corners
         std::vector<CARTA::Point> control_points;
-        RectangleControlPointsFromVertices(x, y, control_points);
+        float rotation;
+        if (!GetBoxControlPoints(rotbox_input, control_points, rotation)) {
+            return;
+        }
 
         // Other RegionState params
         std::string name = annotation_region->getLabel();
         CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
-        float rotation = rotang.getValue();
 
         // Create RegionState
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
@@ -553,8 +536,8 @@ void CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::Annotat
             point.set_y(bmin.getValue());
             control_points.push_back(point);
         } else {
-            double bmaj_pixel = AngleToPixelLength(bmaj, 0);
-            double bmin_pixel = AngleToPixelLength(bmin, 1);
+            double bmaj_pixel = WorldToPixelLength(bmaj, 0);
+            double bmin_pixel = WorldToPixelLength(bmin, 1);
             point.set_x(bmaj_pixel);
             point.set_y(bmin_pixel);
             control_points.push_back(point);
@@ -572,11 +555,17 @@ void CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::Annotat
     }
 }
 
-void CrtfImportExport::RectangleControlPointsFromVertices(
+bool CrtfImportExport::RectangleControlPointsFromVertices(
     std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, std::vector<CARTA::Point>& control_points) {
     // Input: pixel vertices x and y
     // Returns: CARTA Points (cx, cy), (width, height)
     // Point 0 is blc, 1 is brc, 2 is trc, 3 is tlc
+
+    // Can only calculate if rectangle not polygon
+    if ((x[0] != x[3]) || (x[1] != x[2]) || (y[0] != y[1]) || (y[2] != y[3])) {
+        return false;
+    }
+
     casacore::Double blc_x = x[0];
     casacore::Double trc_x = x[2];
     casacore::Double blc_y = y[0];
@@ -594,6 +583,106 @@ void CrtfImportExport::RectangleControlPointsFromVertices(
     point.set_x(width);
     point.set_y(height);
     control_points.push_back(point);
+    return true;
+}
+
+bool CrtfImportExport::GetBoxControlPoints(std::string& region_definition, std::vector<CARTA::Point>& control_points, float& rotation) {
+    // Use box definition string to determine center, size, and angle
+    std::vector<std::string> parameters = ParseRegionParameters(region_definition);
+
+    // Parameters as Quantities
+    casacore::Quantity cx, cy, width, height, angle;
+    casacore::readQuantity(cx, parameters[1]);
+    casacore::readQuantity(cy, parameters[2]);
+    casacore::readQuantity(width, parameters[3]);
+    casacore::readQuantity(height, parameters[4]);
+
+    if (parameters[0] == "rotbox") {
+        // Set rotation
+        casacore::readQuantity(angle, parameters[5]);
+        rotation = angle.get("deg").getValue();
+
+        // Make (unrotated) centerbox from parsed quantities
+        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
+        bool require_region(false);
+        casa::AnnCenterBox cbox = casa::AnnCenterBox(cx, cy, width, height, *_coord_sys, _image_shape, stokes_types, require_region);
+
+        // Get centerbox pixel vertices, set control points from corners if shape is rectangle
+        std::vector<casacore::Double> x, y;
+        cbox.pixelVertices(x, y);
+        if (RectangleControlPointsFromVertices(x, y, control_points)) {
+            return true;
+        }
+    }
+
+    CARTA::Point point;
+    if (GetBoxCenterPixel(parameters, cx, cy, point)) {
+        control_points.push_back(point);
+        GetBoxSizePixel(width, height, point);
+        control_points.push_back(point);
+        return true;
+    }
+
+    return false;
+}
+
+std::vector<std::string> CrtfImportExport::ParseRegionParameters(std::string& region_definition) {
+    // Parse the input string by space, comma, brackets to get parameters vector (first item is region type)
+    std::vector<std::string> parameters;
+    std::string delim(" ,[]");
+    size_t next(0), current(0);
+    while (next != string::npos) {
+        next = region_definition.find_first_of(delim, current);
+        if ((next - current) > 0) {
+            parameters.push_back(region_definition.substr(current, next - current));
+        }
+        current = next + 1;
+    }
+    return parameters;
+}
+
+bool CrtfImportExport::GetBoxCenterPixel(
+    std::vector<std::string>& parameters, casacore::Quantity& cx, casacore::Quantity& cy, CARTA::Point& point) {
+    // Convert center coordinates to pixel and return as a CARTA::Point
+    if ((cx.getUnit() == "pix") && (cy.getUnit() == "pix")) {
+        point.set_x(cx.getValue());
+        point.set_y(cy.getValue());
+        return true;
+    }
+
+    // Region coordinate reference frame
+    std::string coord_frame;
+    for (auto& param : parameters) {
+        if (param.find("coord") != std::string::npos) {
+            size_t start = param.find("=");
+            coord_frame = param.substr(start + 1);
+            break;
+        }
+    }
+
+    std::vector<casacore::Quantity> center_point;
+    center_point.push_back(cx);
+    center_point.push_back(cy);
+    casacore::Vector<casacore::Double> pixel_coords;
+    if (ConvertPointToPixels(coord_frame, center_point, pixel_coords)) {
+        point.set_x(pixel_coords(0));
+        point.set_y(pixel_coords(1));
+        return true;
+    }
+
+    return false;
+}
+
+void CrtfImportExport::GetBoxSizePixel(casacore::Quantity& width, casacore::Quantity& height, CARTA::Point& point) {
+    // Convert width, height coordinates to pixel and return as a CARTA::Point
+    if ((width.getUnit() == "pix") && (height.getUnit() == "pix")) {
+        point.set_x(width.getValue());
+        point.set_y(height.getValue());
+        return;
+    }
+
+    point.set_x(WorldToPixelLength(width, 0));
+    point.set_y(WorldToPixelLength(height, 1));
 }
 
 casacore::Vector<casacore::Stokes::StokesTypes> CrtfImportExport::GetStokesTypes() {
@@ -618,16 +707,4 @@ casacore::Vector<casacore::Stokes::StokesTypes> CrtfImportExport::GetStokesTypes
         stokes_types(i) = casacore::Stokes::type(istokes(i));
     }
     return stokes_types;
-}
-
-double CrtfImportExport::AngleToPixelLength(casacore::Quantity angle, unsigned int pixel_axis) {
-    // world->pixel conversion of ellipse radius.
-    // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
-
-    // Convert to world axis units
-    casacore::Vector<casacore::String> units = _coord_sys->worldAxisUnits();
-    angle.convert(units[pixel_axis]);
-
-    casacore::Vector<casacore::Double> increments(_coord_sys->increment());
-    return fabs(angle.getValue() / increments[pixel_axis]);
 }

@@ -3,10 +3,9 @@
 #ifndef CARTA_BACKEND_REGION_REGIONIMPORTEXPORT_H_
 #define CARTA_BACKEND_REGION_REGIONIMPORTEXPORT_H_
 
+#include <carta-protobuf/defs.pb.h>
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
-
-#include <carta-protobuf/defs.pb.h>
 
 #include "Region.h"
 
@@ -37,6 +36,11 @@ public:
 protected:
     virtual bool AddExportRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation) = 0;
+
+    // Convert wcs -> pixel
+    bool ConvertPointToPixels(
+        std::string& region_frame, std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords);
+    double WorldToPixelLength(casacore::Quantity world_length, unsigned int pixel_axis);
 
     // Image info to which region is applied
     casacore::CoordinateSystem* _coord_sys;

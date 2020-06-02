@@ -2,11 +2,10 @@
 
 #include "Ds9ImportExport.h"
 
-#include <iomanip>
-
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
-#include <casacore/measures/Measures/MCDirection.h>
+
+#include <iomanip>
 
 #include "../Util.h"
 
@@ -306,8 +305,7 @@ bool Ds9ImportExport::SetFileReferenceFrame(std::string& ds9_coord) {
 void Ds9ImportExport::SetImageReferenceFrame() {
     // Set image coord sys direction frame
     if (_coord_sys->hasDirectionCoordinate()) {
-        casacore::MDirection::Types reference_frame;
-        reference_frame = _coord_sys->directionCoordinate().directionType();
+        casacore::MDirection::Types reference_frame = _coord_sys->directionCoordinate().directionType();
         _image_ref_frame = casacore::MDirection::showType(reference_frame);
     } else if (_coord_sys->hasLinearCoordinate()) {
         _image_ref_frame = "linear";
@@ -423,7 +421,7 @@ void Ds9ImportExport::ImportPointRegion(std::string& region, std::string& name, 
         control_points.push_back(point);
     } else {
         casacore::Vector<casacore::Double> pixel_coords;
-        if (ConvertPointToPixels(param_quantities, pixel_coords)) {
+        if (ConvertPointToPixels(_file_ref_frame, param_quantities, pixel_coords)) {
             CARTA::Point point;
             point.set_x(pixel_coords(0));
             point.set_y(pixel_coords(1));
@@ -511,7 +509,7 @@ void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name
             center_coords.push_back(param_quantities[0]);
             center_coords.push_back(param_quantities[1]);
             casacore::Vector<casacore::Double> pixel_coords;
-            if (ConvertPointToPixels(center_coords, pixel_coords)) {
+            if (ConvertPointToPixels(_file_ref_frame, center_coords, pixel_coords)) {
                 CARTA::Point point;
                 point.set_x(pixel_coords(0));
                 point.set_y(pixel_coords(1));
@@ -524,8 +522,8 @@ void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name
 
             // bmaj, bmin
             CARTA::Point point;
-            point.set_x(AngleToLength(param_quantities[2], 0));
-            point.set_y(AngleToLength(param_quantities[3], 1));
+            point.set_x(WorldToPixelLength(param_quantities[2], 0));
+            point.set_y(WorldToPixelLength(param_quantities[3], 1));
             control_points.push_back(point);
         }
 
@@ -608,7 +606,7 @@ void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& na
             center_coords.push_back(param_quantities[0]);
             center_coords.push_back(param_quantities[1]);
             casacore::Vector<casacore::Double> pixel_coords;
-            if (ConvertPointToPixels(center_coords, pixel_coords)) {
+            if (ConvertPointToPixels(_file_ref_frame, center_coords, pixel_coords)) {
                 CARTA::Point point;
                 point.set_x(pixel_coords(0));
                 point.set_y(pixel_coords(1));
@@ -621,8 +619,8 @@ void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& na
 
             // width, height
             CARTA::Point point;
-            point.set_x(AngleToLength(param_quantities[2], 0));
-            point.set_y(AngleToLength(param_quantities[3], 1));
+            point.set_x(WorldToPixelLength(param_quantities[2], 0));
+            point.set_y(WorldToPixelLength(param_quantities[3], 1));
             control_points.push_back(point);
         }
 
@@ -698,7 +696,7 @@ void Ds9ImportExport::ImportPolygonRegion(std::string& region, std::string& name
                 point.push_back(param_quantities[i]);
                 point.push_back(param_quantities[i + 1]);
                 casacore::Vector<casacore::Double> pixel_coords;
-                if (ConvertPointToPixels(point, pixel_coords)) {
+                if (ConvertPointToPixels(_file_ref_frame, point, pixel_coords)) {
                     CARTA::Point point;
                     point.set_x(pixel_coords(0));
                     point.set_y(pixel_coords(1));
@@ -838,69 +836,6 @@ casacore::String Ds9ImportExport::ConvertTimeFormatToDeg(std::string& parameter)
         converted_format.gsub(":", ".");
     }
     return converted_format;
-}
-
-bool Ds9ImportExport::ConvertPointToPixels(std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords) {
-    if (point.size() != 2) {
-        return false;
-    }
-
-    // must have matched coordinates
-    bool x_is_pix = point[0].getUnit() == "pixel";
-    bool y_is_pix = point[1].getUnit() == "pixel";
-    if (x_is_pix != y_is_pix) {
-        return false;
-    }
-
-    // if unit is pixels, just get values
-    if (x_is_pix) {
-        pixel_coords.resize(2);
-        pixel_coords(0) = point[0].getValue();
-        pixel_coords(1) = point[1].getValue();
-        return true;
-    }
-
-    if (_coord_sys->hasDirectionCoordinate()) {
-        if (_image_ref_frame.empty()) {
-            SetImageReferenceFrame();
-        }
-        if (_file_ref_frame.empty()) {
-            _file_ref_frame = _image_ref_frame;
-        }
-
-        // Make MDirection from wcs parameter
-        casacore::MDirection::Types from_dir_type;
-        if (!casacore::MDirection::getType(from_dir_type, _file_ref_frame)) {
-            return false;
-        }
-        casacore::MDirection direction(point[0], point[1], from_dir_type);
-
-        // Convert to image coordinate system
-        casacore::MDirection::Types to_dir_type = _coord_sys->directionCoordinate().directionType(false);
-        if (from_dir_type != to_dir_type) {
-            try {
-                direction = casacore::MDirection::Convert(direction, to_dir_type)();
-            } catch (casacore::AipsError& err) {
-                _import_errors.append("Conversion of region parameters to image coordinate system failed.\n");
-                return false;
-            }
-        }
-
-        // Convert world to pixel coordinates
-        return _coord_sys->directionCoordinate().toPixel(pixel_coords, direction);
-    }
-
-    return false;
-}
-
-double Ds9ImportExport::AngleToLength(casacore::Quantity angle, const unsigned int pixel_axis) {
-    // Convert input quantity to pixel length for given pixel axis for ellipse radius
-    // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
-    casacore::Vector<casacore::String> units = _coord_sys->directionCoordinate().worldAxisUnits();
-    casacore::Vector<casacore::Double> increments(_coord_sys->directionCoordinate().increment());
-    casacore::Int coord, coord_axis;
-    angle.convert(units[pixel_axis]);
-    return fabs(angle.getValue() / increments[pixel_axis]);
 }
 
 // For export

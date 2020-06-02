@@ -52,15 +52,22 @@ private:
     void ImportAnnRotBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnEllipse(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    void RectangleControlPointsFromVertices(
+
+    // Convert from CRTF to CARTA Control Points
+    bool RectangleControlPointsFromVertices(
         std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, std::vector<CARTA::Point>& control_points);
+    bool GetBoxControlPoints(std::string& region_definition, std::vector<CARTA::Point>& control_points, float& rotation);
+    std::vector<std::string> ParseRegionParameters(std::string& region_definition);
+    bool GetBoxCenterPixel(std::vector<std::string>& parameters, casacore::Quantity& cx, casacore::Quantity& cy, CARTA::Point& point);
+    void GetBoxSizePixel(casacore::Quantity& width, casacore::Quantity& height, CARTA::Point& point);
+
+    // AnnRegion parameter
     casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
-    double AngleToPixelLength(casacore::Quantity angle, unsigned int pixel_axis);
 
     // For export: add regions to list then print them
     casa::RegionTextList _region_list;
 
-    // AnnRegions need stokes types; fallback if coord sys has no StokesCoordinate
+    // AnnRegion needs StokesTypes parameter; fallback if coord sys has no StokesCoordinate
     int _stokes_axis;
 };
 

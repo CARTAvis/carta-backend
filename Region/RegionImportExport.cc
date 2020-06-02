@@ -2,6 +2,7 @@
 
 #include <casacore/casa/Arrays/ArrayMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
+#include <casacore/measures/Measures/MCDirection.h>
 #include <imageanalysis/Annotations/AnnotationBase.h>
 
 using namespace carta;
@@ -63,6 +64,70 @@ bool RegionImportExport::AddExportRegion(
     }
 
     return converted;
+}
+
+bool RegionImportExport::ConvertPointToPixels(
+    std::string& region_frame, std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords) {
+    if (point.size() != 2) {
+        return false;
+    }
+
+    // must have matched coordinates
+    bool x_is_pix = point[0].getUnit() == "pixel";
+    bool y_is_pix = point[1].getUnit() == "pixel";
+    if (x_is_pix != y_is_pix) {
+        return false;
+    }
+
+    // if unit is pixels, just get values
+    if (x_is_pix) {
+        pixel_coords.resize(2);
+        pixel_coords(0) = point[0].getValue();
+        pixel_coords(1) = point[1].getValue();
+        return true;
+    }
+
+    if (_coord_sys->hasDirectionCoordinate()) {
+        casacore::MDirection::Types image_direction_type = _coord_sys->directionCoordinate().directionType();
+
+        casacore::MDirection::Types region_direction_type;
+        if (region_frame.empty()) {
+            region_direction_type = image_direction_type;
+        } else {
+            casacore::MDirection::getType(region_direction_type, region_frame);
+        }
+
+        // Make MDirection from wcs parameter
+        casacore::MDirection direction(point[0], point[1], region_direction_type);
+
+        // Convert to image direction
+        if (region_direction_type != image_direction_type) {
+            try {
+                direction = casacore::MDirection::Convert(direction, image_direction_type)();
+            } catch (casacore::AipsError& err) {
+                _import_errors.append("Conversion of region parameters to image coordinate system failed.\n");
+                return false;
+            }
+        }
+
+        // Convert world to pixel coordinates
+        return _coord_sys->directionCoordinate().toPixel(pixel_coords, direction);
+    }
+
+    return false;
+}
+
+double RegionImportExport::WorldToPixelLength(casacore::Quantity world_length, unsigned int pixel_axis) {
+    // world->pixel conversion of ellipse radius or box width.
+    // The opposite of casacore::CoordinateSystem::toWorldLength for pixel->world conversion.
+
+    // Convert to world axis units
+    casacore::Vector<casacore::String> units = _coord_sys->worldAxisUnits();
+    world_length.convert(units[pixel_axis]);
+
+    // Find pixel length
+    casacore::Vector<casacore::Double> increments(_coord_sys->increment());
+    return fabs(world_length.getValue() / increments[pixel_axis]);
 }
 
 bool RegionImportExport::ConvertRecordToPoint(
