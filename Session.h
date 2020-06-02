@@ -201,8 +201,8 @@ private:
     // File info
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
         const std::string& filename, std::string hdu, std::string& message);
-    bool FillExtendedFileInfo(
-        CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image, std::string& message);
+    bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
+        const std::string& filename, std::string& message);
 
     // Delete Frame(s)
     void DeleteFrame(int file_id);

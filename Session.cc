@@ -180,14 +180,14 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
     return ext_file_info_ok;
 }
 
-bool Session::FillExtendedFileInfo(
-    CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image, std::string& message) {
+bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
+    const std::string& filename, std::string& message) {
     bool ext_file_info_ok(true);
     try {
         _loader.reset(carta::FileLoader::GetLoader(image));
 
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
-        ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, "", "", message);
+        ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
         ext_file_info_ok = false;
@@ -374,7 +374,7 @@ bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::Mo
     string err_message;
 
     CARTA::FileInfoExtended file_info_extended;
-    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, err_message);
+    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message);
 
     bool success(false);
 
