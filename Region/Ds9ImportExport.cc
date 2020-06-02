@@ -91,30 +91,29 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
         }
     }
 
-    std::string region;
-
+    std::string region_line;
     switch (region_state.type) {
         case CARTA::RegionType::POINT: {
             // point(x, y)
-            region = fmt::format("point({:.2f}, {:.2f})", points[0].x(), points[0].y());
+            region_line = fmt::format("point({:.2f}, {:.2f})", points[0].x(), points[0].y());
             break;
         }
         case CARTA::RegionType::RECTANGLE: {
             // box(x,y,width,height,angle)
-            region =
+            region_line =
                 fmt::format("box({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", points[0].x(), points[0].y(), points[1].x(), points[1].y(), angle);
             break;
         }
         case CARTA::RegionType::ELLIPSE: {
             // ellipse(x,y,radius,radius,angle) OR circle(x,y,radius)
             if (points[1].x() == points[1].y()) { // bmaj == bmin
-                region = fmt::format("circle({:.2f}, {:.2f}, {:.2f})", points[0].x(), points[0].y(), points[1].x());
+                region_line = fmt::format("circle({:.2f}, {:.2f}, {:.2f})", points[0].x(), points[0].y(), points[1].x());
             } else {
                 if (angle > 0.0) {
-                    region = fmt::format(
+                    region_line = fmt::format(
                         "ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f}, {})", points[0].x(), points[0].y(), points[1].x(), points[1].y(), angle);
                 } else {
-                    region =
+                    region_line =
                         fmt::format("ellipse({:.2f}, {:.2f}, {:.2f}, {:.2f})", points[0].x(), points[0].y(), points[1].x(), points[1].y());
                 }
             }
@@ -129,7 +128,7 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
                 os << "," << points[i].x() << "," << points[i].y();
             }
             os << ")";
-            region = os.str();
+            region_line = os.str();
             break;
         }
         default:
@@ -138,13 +137,13 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
 
     // Add region name
     if (!region_state.name.empty()) {
-        region.append(" # text={" + region_state.name + "}");
+        region_line.append(" # text={" + region_state.name + "}");
     }
 
     // End line and add to string vector
-    if (!region.empty()) {
-        region.append("\n");
-        _export_regions.push_back(region);
+    if (!region_line.empty()) {
+        region_line.append("\n");
+        _export_regions.push_back(region_line);
         return true;
     }
 

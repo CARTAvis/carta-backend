@@ -50,6 +50,7 @@ protected:
     int _file_id;
     std::string _import_errors;
     std::vector<RegionState> _import_regions;
+    std::vector<std::string> _export_regions;
 
 private:
     // Return control_points and qrotation Quantity for region type

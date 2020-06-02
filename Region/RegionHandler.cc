@@ -90,10 +90,12 @@ bool RegionHandler::RegionSet(int region_id) {
         return _regions.count(region_id) && _regions.at(region_id)->IsConnected();
     }
 }
+
 void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
     const std::string& region_file, bool file_is_filename, CARTA::ImportRegionAck& import_ack) {
     // Set regions from region file
-    // Importer must delete csys
+
+    // Importer must delete csys pointer
     casacore::CoordinateSystem* csys = frame->CoordinateSystem();
     const casacore::IPosition shape = frame->ImageShape();
     std::unique_ptr<RegionImportExport> importer;
@@ -185,7 +187,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
         // Export failed
         delete output_csys;
         export_ack.set_success(false);
-        export_ack.set_message("Invalid coordinate system, cannot export regions in world coordinates");
+        export_ack.set_message("Cannot export regions in world coordinates for linear coordinate system.");
         return;
     }
 

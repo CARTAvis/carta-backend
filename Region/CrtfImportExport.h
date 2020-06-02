@@ -53,6 +53,14 @@ private:
     void ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnEllipse(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
 
+    // Manually create header when printing to contents vector or printing region strings
+    std::string GetCrtfVersionHeader();
+
+    // Export RegionState as Annotation region or string
+    bool AddExportAnnotationRegion(const RegionState& region_state);
+    bool AddExportRegionLine(const RegionState& region_state);
+    void AddExportRegionKeywords(std::string& line, const std::string& region_name);
+
     // Convert from CRTF to CARTA Control Points
     bool RectangleControlPointsFromVertices(
         std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, std::vector<CARTA::Point>& control_points);

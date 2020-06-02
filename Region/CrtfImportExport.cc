@@ -15,6 +15,8 @@
 #include <imageanalysis/Annotations/AnnRotBox.h>
 #include <imageanalysis/Annotations/AnnSymbol.h>
 
+#include <iomanip>
+
 #include "../Util.h"
 
 using namespace carta;
@@ -22,21 +24,15 @@ using namespace carta;
 CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis,
     int file_id, const std::string& file, bool file_is_filename)
     : RegionImportExport(image_coord_sys, image_shape, file_id), _stokes_axis(stokes_axis) {
-    // Use casa RegionTextList to import file (by filename) and create annotation file lines
-    if (image_coord_sys->hasDirectionCoordinate()) {
-        bool require_region(false); // import regions outside image
-        casa::RegionTextList region_list;
-        try {
-            if (file_is_filename) {
-                region_list = casa::RegionTextList(
-                    file, *image_coord_sys, image_shape, "", "", "", casa::RegionTextParser::CURRENT_VERSION, true, require_region);
-            } else {
-                region_list = casa::RegionTextList(*image_coord_sys, file, image_shape, "", "", "", true, require_region);
-            }
-        } catch (const casacore::AipsError& err) {
-            casacore::String text_list_error = err.getMesg().before("at File");
-            _import_errors = text_list_error;
-            return;
+    // Use casa RegionTextList to import file (by filename or contents string) and create annotation file lines
+    casa::RegionTextList region_list;
+    bool require_region(false); // import regions outside image
+    try {
+        if (file_is_filename) {
+            region_list = casa::RegionTextList(
+                file, *image_coord_sys, image_shape, "", "", "", casa::RegionTextParser::CURRENT_VERSION, true, require_region);
+        } else {
+            region_list = casa::RegionTextList(*image_coord_sys, file, image_shape, "", "", "", true, require_region);
         }
 
         // Iterate through annotations to create regions
@@ -48,8 +44,10 @@ CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, 
                 _import_errors.append(err.getMesg() + "\n");
             }
         }
-    } else {
-        _import_errors = "Import error: image coordinate system has no direction coordinate";
+    } catch (const casacore::AipsError& err) {
+        casacore::String text_list_error = err.getMesg().before("at File");
+        _import_errors = text_list_error;
+        return;
     }
 }
 
@@ -67,6 +65,17 @@ CrtfImportExport::~CrtfImportExport() {
 
 bool CrtfImportExport::AddExportRegion(const RegionState& region_state) {
     // Add pixel region using RegionState
+    bool region_added(false);
+    if (_coord_sys->hasDirectionCoordinate()) {
+        region_added = AddExportAnnotationRegion(region_state);
+    } else {
+        region_added = AddExportRegionLine(region_state);
+    }
+    return region_added;
+}
+
+bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state) {
+    // Add Annotation region to RegionTextList
     casa::AnnRegion* ann_region(nullptr);
     casa::AnnSymbol* ann_symbol(nullptr); // not an AnnRegion subclass
     casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
@@ -140,6 +149,86 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state) {
         std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
         return false;
     }
+}
+
+bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state) {
+    // Print region parameters (pixel coordinates) to CRTF-format string and add to region vector
+    std::vector<CARTA::Point> points = region_state.control_points;
+    float angle = region_state.rotation;
+
+    std::string region_line;
+    switch (region_state.type) {
+        case CARTA::RegionType::POINT: {
+            // symbol [[x, y], .]
+            region_line = fmt::format("symbol [[{:.2f}pix, {:.2f}pix], .]", points[0].x(), points[0].y());
+            break;
+        }
+        case CARTA::RegionType::RECTANGLE: {
+            if (angle == 0.0) {
+                // centerbox [[x, y], [width, height]]
+                region_line = fmt::format("centerbox [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix]]", points[0].x(), points[0].y(),
+                    points[1].x(), points[1].y());
+            } else {
+                // rotbox [[x, y], [width, height], angle]
+                region_line = fmt::format("rotbox [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix], {}deg]", points[0].x(), points[0].y(),
+                    points[1].x(), points[1].y(), angle);
+            }
+            break;
+        }
+        case CARTA::RegionType::ELLIPSE: {
+            // ellipse [[x, y], [radius, radius], angle]
+            region_line = fmt::format("ellipse [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix], {}deg]", points[0].x(), points[0].y(),
+                points[1].x(), points[1].y(), angle);
+            break;
+        }
+        case CARTA::RegionType::POLYGON: {
+            // poly [[x1, y1], [x2, y2], [x3, y3],...]
+            std::ostringstream os; // format varies based on npoints
+            os << "poly [";
+            os << "[" << std::fixed << std::setprecision(2) << points[0].x() << "pix, " << points[0].y() << "pix]";
+            for (size_t i = 1; i < points.size(); ++i) {
+                os << ", [" << points[i].x() << "pix, " << points[i].y() << "pix]";
+            }
+            os << "]";
+            region_line = os.str();
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (!region_line.empty()) {
+        AddExportRegionKeywords(region_line, region_state.name);
+        _export_regions.push_back(region_line);
+        return true;
+    }
+
+    return false;
+}
+
+void CrtfImportExport::AddExportRegionKeywords(std::string& line, const std::string& region_name) {
+    // Add standard CRTF keywords with default values or optional label (name) to line
+    std::ostringstream oss;
+    oss << " linewidth=" << std::to_string(casa::AnnotationBase::DEFAULT_LINEWIDTH) << ", ";
+    oss << "linestyle=" << casa::AnnotationBase::lineStyleToString(casa::AnnotationBase::DEFAULT_LINESTYLE) << ", ";
+    oss << "symsize=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLSIZE) << ", ";
+    oss << "symthick=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLTHICKNESS) << ", ";
+    // colorToString only returns hex instead of color name; using specific current default instead
+    oss << "color=green, ";
+    oss << "font=\"" << casa::AnnotationBase::DEFAULT_FONT << "\", ";
+    oss << "fontsize=" << std::to_string(casa::AnnotationBase::DEFAULT_FONTSIZE) << ", ";
+    oss << "fontstyle=" << casa::AnnotationBase::fontStyleToString(casa::AnnotationBase::DEFAULT_FONTSTYLE) << ", ";
+    oss << "usetex=" << (casa::AnnotationBase::DEFAULT_USETEX ? "true" : "false");
+
+    // Add name (label) if set
+    if (!region_name.empty()) {
+        oss << ", label=\"" << region_name << "\", ";
+        oss << "labelcolor=green, ";
+        oss << "labelposition=" << casa::AnnotationBase::DEFAULT_LABELPOS;
+    }
+
+    oss << std::endl;
+    line.append(oss.str());
 }
 
 bool CrtfImportExport::AddExportRegion(const std::string& name, CARTA::RegionType type,
@@ -230,42 +319,71 @@ bool CrtfImportExport::AddExportRegion(const std::string& name, CARTA::RegionTyp
 
 bool CrtfImportExport::ExportRegions(std::string& filename, std::string& error) {
     // Print regions to CRTF file
-    if (_region_list.nLines() == 0) {
+    if ((_region_list.nLines() == 0) && _export_regions.empty()) {
         error = "Export region failed: no regions to export.";
         return false;
     }
 
     std::ofstream export_file(filename);
-    try {
-        _region_list.print(export_file);
-        export_file.close();
-    } catch (const casacore::AipsError& err) {
-        export_file.close();
-        error = err.getMesg();
-        return false;
+    if (_region_list.nLines() > 0) {
+        try {
+            _region_list.print(export_file);
+        } catch (const casacore::AipsError& err) {
+            export_file.close();
+            error = err.getMesg();
+            return false;
+        }
+    } else {
+        // print header
+        export_file << GetCrtfVersionHeader();
+
+        // print regions
+        for (auto& region : _export_regions) {
+            export_file << region;
+        }
     }
+
+    export_file.close();
     return true;
 }
 
 bool CrtfImportExport::ExportRegions(std::vector<std::string>& contents, std::string& error) {
     // Print regions to CRTF file lines in vector
-    if (_region_list.nLines() == 0) {
+    if ((_region_list.nLines() == 0) && _export_regions.empty()) {
         error = "Export region failed: no regions to export.";
         return false;
     }
 
-    try {
-        for (unsigned int i = 0; i < _region_list.nLines(); ++i) {
-            casa::AsciiAnnotationFileLine file_line = _region_list.lineAt(i);
-            std::ostringstream export_stream;
-            file_line.print(export_stream);
-            contents.push_back(export_stream.str());
+    // Print header
+    contents.push_back(GetCrtfVersionHeader());
+
+    if (_region_list.nLines() > 0) {
+        try {
+            for (unsigned int i = 0; i < _region_list.nLines(); ++i) {
+                casa::AsciiAnnotationFileLine file_line = _region_list.lineAt(i);
+                std::ostringstream export_stream;
+                file_line.print(export_stream);
+                contents.push_back(export_stream.str());
+            }
+        } catch (const casacore::AipsError& err) {
+            error = err.getMesg();
+            return false;
         }
-    } catch (const casacore::AipsError& err) {
-        error = err.getMesg();
-        return false;
+    } else {
+        for (auto& region : _export_regions) {
+            contents.push_back(region);
+        }
     }
-    return false;
+
+    return true;
+}
+
+std::string CrtfImportExport::GetCrtfVersionHeader() {
+    // First line indicates CRTF region file version
+    std::ostringstream header;
+    header << "#CRTFv" << casa::RegionTextParser::CURRENT_VERSION;
+    header << " CASA Region Text Format version " << casa::RegionTextParser::CURRENT_VERSION << std::endl;
+    return header.str();
 }
 
 // Process CRTF file import
