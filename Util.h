@@ -21,14 +21,6 @@
 
 #include "InterfaceConstants.h"
 
-#ifdef __linux__
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#elif __APPLE__
-#include <filesystem>
-namespace fs = std::__fs::filesystem;
-#endif
-
 void LOG(uint32_t id, const std::string& log_message);
 
 template <typename... Args>

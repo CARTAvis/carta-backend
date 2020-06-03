@@ -5,6 +5,7 @@
 #include <carta-protobuf/save_file.pb.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
 
+#include <filesystem>
 #include <iostream>
 #include <iterator>
 #include <set>

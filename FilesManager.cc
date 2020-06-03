@@ -36,7 +36,7 @@ void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface
         // Remove the old image file with the same output file name
         casacore::File old_filename(output_filename);
         if (old_filename.exists()) {
-            fs::remove_all(output_filename);
+            std::filesystem::remove_all(output_filename);
         }
 
         // Get a copy of the original pixel data
