@@ -56,7 +56,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _animation_id(0),
       _file_settings(this),
       _files_manager(std::make_unique<carta::FilesManager>(_root_folder)),
-      _moment_controller(std::make_unique<carta::MomentController>(_root_folder)) {
+      _moment_controller(std::make_unique<carta::MomentController>()) {
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
@@ -109,8 +109,6 @@ Session::~Session() {
             alarm(1);
         }
     }
-    // Delete a temporary folder with moment images
-    _moment_controller->DeleteTemporaryFolder();
 }
 
 void Session::SetInitExitTimeout(int secs) {
@@ -952,26 +950,17 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
 
         // Calculate the moments
         CARTA::MomentResponse moment_response;
-
-        bool do_temp(true); /// Todo: this variable will be removed
-        if (!do_temp) {
+        std::vector<carta::CollapseResult> collapse_results =
             _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
 
-            // Send moment response message
-            SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
-        } else {
-            std::vector<carta::CollapseResult> collapse_results =
-                _moment_controller->CalculateMoments2(file_id, frame, progress_callback, moment_request, moment_response);
-
-            // Open moment images from the cache, open files acknowledges will send to frontend
-            for (int i = 0; i < collapse_results.size(); ++i) {
-                auto& collapse_result = collapse_results[i];
-                OnOpenFile(collapse_result, moment_response, request_id);
-            }
-
-            // Send moment response message
-            SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
+        // Open moment images from the cache, open files acknowledges will send to frontend
+        for (int i = 0; i < collapse_results.size(); ++i) {
+            auto& collapse_result = collapse_results[i];
+            OnOpenFile(collapse_result, moment_response, request_id);
         }
+
+        // Send moment response message
+        SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
     }
 }
 

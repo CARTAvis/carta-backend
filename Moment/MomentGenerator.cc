@@ -2,11 +2,9 @@
 
 using namespace carta;
 
-MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, std::string root_folder,
-    casacore::String temp_folder, int spectral_axis, int stokes_axis, MomentProgressCallback progress_callback)
+MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, int spectral_axis,
+    int stokes_axis, MomentProgressCallback progress_callback)
     : _filename(filename),
-      _root_folder(root_folder),
-      _temp_folder(temp_folder),
       _image(image),
       _spectral_axis(spectral_axis),
       _stokes_axis(stokes_axis),
@@ -19,64 +17,7 @@ MomentGenerator::~MomentGenerator() {
     DeleteImageMoments();
 }
 
-void MomentGenerator::CalculateMoments(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
-    // Set moment axis
-    SetMomentAxis(moment_request);
-
-    // Set moment types
-    SetMomentTypes(moment_request);
-
-    // Set pixel range
-    SetPixelRange(moment_request);
-
-    // Recreate an ImageMoments
-    ResetImageMoments(moment_request);
-
-    // Calculate moments
-    try {
-        if (!_image_moments->setMoments(_moments)) {
-            _error_msg = _image_moments->errorMessage();
-            _collapse_error = true;
-        } else {
-            if (!_image_moments->setMomentAxis(_axis)) {
-                _error_msg = _image_moments->errorMessage();
-                _collapse_error = true;
-            } else {
-                casacore::String out_file = GetOutputFileName();
-                std::size_t found = out_file.find_last_of("/");
-                std::string file_base_name = out_file.substr(found + 1);
-                try {
-                    _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
-                    // Save collapse results in the disk
-                    auto result_images = _image_moments->createMoments(false, out_file, false);
-                    for (int i = 0; i < result_images.size(); ++i) {
-                        std::string moment_suffix = GetMomentSuffix(_moments[i]);
-                        std::string out_file_name;
-                        if (result_images.size() == 1) {
-                            out_file_name = file_base_name;
-                        } else {
-                            out_file_name = file_base_name + "." + moment_suffix;
-                        }
-                    }
-                } catch (const AipsError& x) {
-                    _error_msg = x.getMesg();
-                    _collapse_error = true;
-                }
-            }
-        }
-    } catch (AipsError& error) {
-        _error_msg = error.getLastMessage();
-        _collapse_error = true;
-    }
-
-    // Set is the moment calculation successful or not
-    moment_response.set_success(IsSuccess());
-
-    // Get error message if any
-    moment_response.set_message(GetErrorMessage());
-}
-
-std::vector<CollapseResult> MomentGenerator::CalculateMoments2(
+std::vector<CollapseResult> MomentGenerator::CalculateMoments(
     int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     // Collapse results
     std::vector<CollapseResult> collapse_results;
@@ -424,17 +365,7 @@ casacore::String MomentGenerator::GetOutputFileName() {
     if (found) {
         result.replace(0, found, "");
     }
-    result = _temp_folder + "/" + result;
     return result;
-}
-
-void MomentGenerator::RemoveRootFolder(std::string& directory) {
-    if (!_root_folder.empty() && directory.find(_root_folder) == 0) {
-        directory.replace(0, _root_folder.size(), "");
-    }
-    if (directory.empty()) {
-        directory = ".";
-    }
 }
 
 bool MomentGenerator::IsSuccess() const {

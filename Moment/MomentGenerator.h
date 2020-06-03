@@ -26,13 +26,12 @@ struct CollapseResult {
 
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
-    MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, std::string root_folder,
-        casacore::String temp_folder, int spectral_axis, int stokes_axis, MomentProgressCallback progress_callback);
+    MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
+        MomentProgressCallback progress_callback);
     ~MomentGenerator();
 
     // Calculate moments
-    void CalculateMoments(const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
-    std::vector<CollapseResult> CalculateMoments2(
+    std::vector<CollapseResult> CalculateMoments(
         int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
 
     // Resulting message
@@ -66,11 +65,9 @@ private:
     casacore::String GetMomentSuffix(casacore::Int moment);
     casacore::String GetStokes(CARTA::MomentStokes moment_stokes);
     casacore::String GetOutputFileName();
-    void RemoveRootFolder(std::string& directory);
 
     // Image parameters
     casacore::String _filename;
-    std::string _root_folder;
     casacore::ImageInterface<float>* _image;
     int _spectral_axis;
     int _stokes_axis;
@@ -91,9 +88,6 @@ private:
     float _progress;
     float _pre_progress;
     MomentProgressCallback _progress_callback;
-
-    // Temporary folder to save temporary moment images
-    casacore::String _temp_folder;
 };
 
 } // namespace carta

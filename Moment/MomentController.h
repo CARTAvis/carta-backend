@@ -8,20 +8,13 @@ namespace carta {
 
 class MomentController {
 public:
-    MomentController(std::string root_folder);
+    MomentController();
     ~MomentController();
 
-    void CalculateMoments(int file_id, const std::unique_ptr<Frame>& frame, MomentProgressCallback progress_callback,
+    std::vector<CollapseResult> CalculateMoments(int file_id, const std::unique_ptr<Frame>& frame, MomentProgressCallback progress_callback,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
-    std::vector<CollapseResult> CalculateMoments2(int file_id, const std::unique_ptr<Frame>& frame,
-        MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
-    void DeleteTemporaryFolder();
 
 private:
-    void MakeTemporaryFolder();
-
-    std::string _root_folder;
-    casacore::String _temp_folder;                                                // Temporary folder to save temporary moment images
     std::unordered_map<int, std::unique_ptr<MomentGenerator>> _moment_generators; // <file_id, MomentGenerator>
 };
 
