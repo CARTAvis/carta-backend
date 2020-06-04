@@ -72,7 +72,7 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
     }
 
     // Cache view
-    _view_cache.emplace(file_id, TableViewCache{view, std::vector<CARTA::FilterConfig>(), ""});
+    _view_cache.emplace(file_id, TableViewCache{view, std::vector<CARTA::FilterConfig>(), "", CARTA::Ascending});
     open_file_response.set_success(true);
 }
 
@@ -95,10 +95,11 @@ void TableController::OnFilterRequest(
         std::vector<CARTA::FilterConfig> new_filter_configs = {
             filter_request.filter_configs().begin(), filter_request.filter_configs().end()};
         string sort_column_name = filter_request.sort_column();
-
-        if (TableController::FilterParamsChanged(new_filter_configs, sort_column_name, cache)) {
+        CARTA::SortingType sorting_type = filter_request.sorting_type();
+        if (TableController::FilterParamsChanged(new_filter_configs, sort_column_name, sorting_type, cache)) {
             cache.filter_configs = new_filter_configs;
             cache.sort_column = sort_column_name;
+            cache.sorting_type = sorting_type;
             view.Reset();
 
             for (auto& config : filter_request.filter_configs()) {
@@ -284,9 +285,9 @@ void TableController::PopulateHeaders(google::protobuf::RepeatedPtrField<CARTA::
     }
 }
 
-bool TableController::FilterParamsChanged(
-    const std::vector<CARTA::FilterConfig>& filter_configs, std::string sort_column, const TableViewCache& cached_config) {
-    if (cached_config.sort_column != sort_column) {
+bool TableController::FilterParamsChanged(const std::vector<CARTA::FilterConfig>& filter_configs, std::string sort_column,
+    CARTA::SortingType sorting_type, const TableViewCache& cached_config) {
+    if (cached_config.sort_column != sort_column || cached_config.sorting_type != sorting_type) {
         return true;
     }
 

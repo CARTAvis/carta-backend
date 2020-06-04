@@ -21,6 +21,7 @@ struct TableViewCache {
     TableView view;
     std::vector<CARTA::FilterConfig> filter_configs;
     std::string sort_column;
+    CARTA::SortingType sorting_type;
 };
 
 class TableController {
@@ -36,8 +37,8 @@ public:
 protected:
     void PopulateHeaders(google::protobuf::RepeatedPtrField<CARTA::CatalogHeader>* headers, const Table& table);
     void ApplyFilter(const CARTA::FilterConfig& filter_config, TableView& view);
-    static bool FilterParamsChanged(
-        const std::vector<CARTA::FilterConfig>& filter_configs, std::string sort_column, const TableViewCache& cached_config);
+    static bool FilterParamsChanged(const std::vector<CARTA::FilterConfig>& filter_configs, std::string sort_column,
+        CARTA::SortingType sorting_type, const TableViewCache& cached_config);
     std::filesystem::path GetPath(std::string directory, std::string name = "");
     std::string _root_folder;
     std::string _base_folder;
