@@ -12,6 +12,7 @@
 #include <fmt/ostream.h>
 
 #include <casacore/casa/Inputs/Input.h>
+#include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/mirlib/miriad.h>
