@@ -34,6 +34,9 @@ public:
     virtual bool ExportRegions(std::vector<std::string>& contents, std::string& error) = 0;
 
 protected:
+    // Parse file into lines, return in string vector
+    virtual std::vector<std::string> ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim = '\0');
+
     virtual bool AddExportRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation) = 0;
 

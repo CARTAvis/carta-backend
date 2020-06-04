@@ -30,6 +30,7 @@ public:
 
     // Import constructor
     // Parse input file and convert region parameters to RegionState for given image
+    // file_is_filename : indicates whether file parameter contains file name or file contents.
     Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
         const std::string& file, bool file_is_filename);
 
@@ -88,8 +89,6 @@ private:
 
     // Whether import region file is in pixel or wcs coords
     bool _pixel_coord;
-
-    std::vector<std::string> _export_regions;
 };
 
 } // namespace carta

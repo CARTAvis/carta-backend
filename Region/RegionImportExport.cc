@@ -5,6 +5,8 @@
 #include <casacore/measures/Measures/MCDirection.h>
 #include <imageanalysis/Annotations/AnnotationBase.h>
 
+#include "../Util.h"
+
 using namespace carta;
 
 RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id)
@@ -15,6 +17,39 @@ RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_s
 RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape)
     : _coord_sys(image_coord_sys), _image_shape(image_shape) {
     // Constructor for export. Use AddExportRegion to add regions, then ExportRegions to finalize
+}
+
+std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim) {
+    // Return file lines as string vector
+    std::vector<std::string> file_lines;
+    if (file_is_filename) {
+        std::ifstream region_file;
+        region_file.open(file);
+        while (!region_file.eof()) {
+            std::string single_line;
+            getline(region_file, single_line);
+            file_lines.push_back(single_line);
+        }
+        region_file.close();
+    } else {
+        std::string contents(file);
+        SplitString(contents, '\n', file_lines);
+    }
+
+    if (extra_delim == '\0') {
+        return file_lines;
+    }
+
+    // Split lines by delimiter
+    std::vector<std::string> split_lines;
+    for (auto& line : file_lines) {
+        std::vector<std::string> compound_lines;
+        SplitString(line, extra_delim, compound_lines);
+        for (auto& single_line : compound_lines) {
+            split_lines.push_back(single_line);
+        }
+    }
+    return split_lines;
 }
 
 // public accessors

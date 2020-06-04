@@ -24,30 +24,38 @@ using namespace carta;
 CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis,
     int file_id, const std::string& file, bool file_is_filename)
     : RegionImportExport(image_coord_sys, image_shape, file_id), _stokes_axis(stokes_axis) {
-    // Use casa RegionTextList to import file (by filename or contents string) and create annotation file lines
-    casa::RegionTextList region_list;
+    // Import regions from CRTF region file
     bool require_region(false); // import regions outside image
-    try {
-        if (file_is_filename) {
-            region_list = casa::RegionTextList(
-                file, *image_coord_sys, image_shape, "", "", "", casa::RegionTextParser::CURRENT_VERSION, true, require_region);
-        } else {
-            region_list = casa::RegionTextList(*image_coord_sys, file, image_shape, "", "", "", true, require_region);
-        }
 
-        // Iterate through annotations to create regions
-        for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
-            casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
-            try {
-                ImportAnnotationFileLine(file_line);
-            } catch (const casacore::AipsError& err) {
-                _import_errors.append(err.getMesg() + "\n");
+    try {
+        if (image_coord_sys->hasDirectionCoordinate()) {
+            // Use casa RegionTextList to import file and create annotation file lines
+            casa::RegionTextList region_list;
+            if (file_is_filename) {
+                region_list = casa::RegionTextList(
+                    file, *image_coord_sys, image_shape, "", "", "", casa::RegionTextParser::CURRENT_VERSION, true, require_region);
+            } else {
+                region_list = casa::RegionTextList(*image_coord_sys, file, image_shape, "", "", "", true, require_region);
             }
+
+            // Iterate through annotations to create regions
+            for (unsigned int iline = 0; iline < region_list.nLines(); ++iline) {
+                casa::AsciiAnnotationFileLine file_line = region_list.lineAt(iline);
+                try {
+                    ImportAnnotationFileLine(file_line);
+                } catch (const casacore::AipsError& err) {
+                    // Catch error for this region and continue through list
+                    _import_errors.append(err.getMesg() + "\n");
+                }
+            }
+        } else {
+            // Workaround for images with no DirectionCoordinate (only if file in pixel coordinates)
+            std::vector<std::string> file_lines = ReadRegionFile(file, file_is_filename);
+            ProcessFileLines(file_lines);
         }
     } catch (const casacore::AipsError& err) {
-        casacore::String text_list_error = err.getMesg().before("at File");
-        _import_errors = text_list_error;
-        return;
+        casacore::String error = err.getMesg().before("at File");
+        _import_errors = error;
     }
 }
 
@@ -74,162 +82,68 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state) {
     return region_added;
 }
 
-bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state) {
-    // Add Annotation region to RegionTextList
-    casa::AnnRegion* ann_region(nullptr);
-    casa::AnnSymbol* ann_symbol(nullptr); // not an AnnRegion subclass
-    casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
-    bool require_region(false);       // can be outside image
-    casa::AnnotationBase::unitInit(); // enable "pix" unit
-
-    try {
-        switch (region_state.type) {
-            case CARTA::RegionType::POINT: {
-                casacore::Quantity x(region_state.control_points[0].x(), "pix");
-                casacore::Quantity y(region_state.control_points[0].y(), "pix");
-                ann_symbol = new casa::AnnSymbol(x, y, *_coord_sys, casa::AnnSymbol::POINT, stokes_types);
-                break;
-            }
-            case CARTA::RegionType::RECTANGLE: {
-                casacore::Quantity cx(region_state.control_points[0].x(), "pix");
-                casacore::Quantity cy(region_state.control_points[0].y(), "pix");
-                casacore::Quantity xwidth(region_state.control_points[1].x(), "pix");
-                casacore::Quantity ywidth(region_state.control_points[1].y(), "pix");
-                if (region_state.rotation == 0) {
-                    ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, *_coord_sys, _image_shape, stokes_types, require_region);
-                } else {
-                    casacore::Quantity angle(region_state.rotation, "deg");
-                    ann_region =
-                        new casa::AnnRotBox(cx, cy, xwidth, ywidth, angle, *_coord_sys, _image_shape, stokes_types, require_region);
-                }
-                break;
-            }
-            case CARTA::RegionType::ELLIPSE: {
-                casacore::Quantity cx(region_state.control_points[0].x(), "pix");
-                casacore::Quantity cy(region_state.control_points[0].y(), "pix");
-                casacore::Quantity bmaj(region_state.control_points[1].x(), "pix");
-                casacore::Quantity bmin(region_state.control_points[1].y(), "pix");
-                casacore::Quantity angle(region_state.rotation, "deg");
-                ann_region = new casa::AnnEllipse(cx, cy, bmaj, bmin, angle, *_coord_sys, _image_shape, stokes_types, require_region);
-                break;
-            }
-            case CARTA::RegionType::POLYGON: {
-                size_t npoints(region_state.control_points.size());
-                casacore::Vector<casacore::Quantity> x_coords(npoints), y_coords(npoints);
-                for (size_t i = 0; i < npoints; ++i) {
-                    x_coords(i) = casacore::Quantity(region_state.control_points[i].x(), "pix");
-                    y_coords(i) = casacore::Quantity(region_state.control_points[i].y(), "pix");
-                }
-                ann_region = new casa::AnnPolygon(x_coords, y_coords, *_coord_sys, _image_shape, stokes_types, require_region);
-                break;
-            }
-            default:
-                break;
-        }
-
-        casacore::CountedPtr<const casa::AnnotationBase> annotation_region;
-        if (ann_symbol) {
-            if (!region_state.name.empty()) {
-                ann_symbol->setLabel(region_state.name);
-            }
-            annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_symbol);
-        }
-        if (ann_region) {
-            ann_region->setAnnotationOnly(false);
-            if (!region_state.name.empty()) {
-                ann_region->setLabel(region_state.name);
-            }
-            annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_region);
-        }
-
-        casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
-        _region_list.addLine(file_line);
-        return true;
-    } catch (const casacore::AipsError& err) {
-        std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
+bool CrtfImportExport::ExportRegions(std::string& filename, std::string& error) {
+    // Print regions to CRTF file
+    if ((_region_list.nLines() == 0) && _export_regions.empty()) {
+        error = "Export region failed: no regions to export.";
         return false;
     }
+
+    std::ofstream export_file(filename);
+    if (_region_list.nLines() > 0) {
+        try {
+            _region_list.print(export_file);
+        } catch (const casacore::AipsError& err) {
+            export_file.close();
+            error = err.getMesg();
+            return false;
+        }
+    } else {
+        // print header
+        export_file << GetCrtfVersionHeader();
+
+        // print regions
+        for (auto& region : _export_regions) {
+            export_file << region;
+        }
+    }
+
+    export_file.close();
+    return true;
 }
 
-bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state) {
-    // Print region parameters (pixel coordinates) to CRTF-format string and add to region vector
-    std::vector<CARTA::Point> points = region_state.control_points;
-    float angle = region_state.rotation;
+bool CrtfImportExport::ExportRegions(std::vector<std::string>& contents, std::string& error) {
+    // Print regions to CRTF file lines in vector
+    if ((_region_list.nLines() == 0) && _export_regions.empty()) {
+        error = "Export region failed: no regions to export.";
+        return false;
+    }
 
-    std::string region_line;
-    switch (region_state.type) {
-        case CARTA::RegionType::POINT: {
-            // symbol [[x, y], .]
-            region_line = fmt::format("symbol [[{:.2f}pix, {:.2f}pix], .]", points[0].x(), points[0].y());
-            break;
-        }
-        case CARTA::RegionType::RECTANGLE: {
-            if (angle == 0.0) {
-                // centerbox [[x, y], [width, height]]
-                region_line = fmt::format("centerbox [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix]]", points[0].x(), points[0].y(),
-                    points[1].x(), points[1].y());
-            } else {
-                // rotbox [[x, y], [width, height], angle]
-                region_line = fmt::format("rotbox [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix], {}deg]", points[0].x(), points[0].y(),
-                    points[1].x(), points[1].y(), angle);
+    // Print header
+    contents.push_back(GetCrtfVersionHeader());
+
+    if (_region_list.nLines() > 0) {
+        try {
+            for (unsigned int i = 0; i < _region_list.nLines(); ++i) {
+                casa::AsciiAnnotationFileLine file_line = _region_list.lineAt(i);
+                std::ostringstream export_stream;
+                file_line.print(export_stream);
+                contents.push_back(export_stream.str());
             }
-            break;
+        } catch (const casacore::AipsError& err) {
+            error = err.getMesg();
+            return false;
         }
-        case CARTA::RegionType::ELLIPSE: {
-            // ellipse [[x, y], [radius, radius], angle]
-            region_line = fmt::format("ellipse [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix], {}deg]", points[0].x(), points[0].y(),
-                points[1].x(), points[1].y(), angle);
-            break;
+    } else {
+        for (auto& region : _export_regions) {
+            contents.push_back(region);
         }
-        case CARTA::RegionType::POLYGON: {
-            // poly [[x1, y1], [x2, y2], [x3, y3],...]
-            std::ostringstream os; // format varies based on npoints
-            os << "poly [";
-            os << "[" << std::fixed << std::setprecision(2) << points[0].x() << "pix, " << points[0].y() << "pix]";
-            for (size_t i = 1; i < points.size(); ++i) {
-                os << ", [" << points[i].x() << "pix, " << points[i].y() << "pix]";
-            }
-            os << "]";
-            region_line = os.str();
-            break;
-        }
-        default:
-            break;
     }
 
-    if (!region_line.empty()) {
-        AddExportRegionKeywords(region_line, region_state.name);
-        _export_regions.push_back(region_line);
-        return true;
-    }
-
-    return false;
+    return true;
 }
 
-void CrtfImportExport::AddExportRegionKeywords(std::string& line, const std::string& region_name) {
-    // Add standard CRTF keywords with default values or optional label (name) to line
-    std::ostringstream oss;
-    oss << " linewidth=" << std::to_string(casa::AnnotationBase::DEFAULT_LINEWIDTH) << ", ";
-    oss << "linestyle=" << casa::AnnotationBase::lineStyleToString(casa::AnnotationBase::DEFAULT_LINESTYLE) << ", ";
-    oss << "symsize=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLSIZE) << ", ";
-    oss << "symthick=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLTHICKNESS) << ", ";
-    // colorToString only returns hex instead of color name; using specific current default instead
-    oss << "color=green, ";
-    oss << "font=\"" << casa::AnnotationBase::DEFAULT_FONT << "\", ";
-    oss << "fontsize=" << std::to_string(casa::AnnotationBase::DEFAULT_FONTSIZE) << ", ";
-    oss << "fontstyle=" << casa::AnnotationBase::fontStyleToString(casa::AnnotationBase::DEFAULT_FONTSTYLE) << ", ";
-    oss << "usetex=" << (casa::AnnotationBase::DEFAULT_USETEX ? "true" : "false");
-
-    // Add name (label) if set
-    if (!region_name.empty()) {
-        oss << ", label=\"" << region_name << "\", ";
-        oss << "labelcolor=green, ";
-        oss << "labelposition=" << casa::AnnotationBase::DEFAULT_LABELPOS;
-    }
-
-    oss << std::endl;
-    line.append(oss.str());
-}
+// Protected: for exporting regions in world coordinates
 
 bool CrtfImportExport::AddExportRegion(const std::string& name, CARTA::RegionType type,
     const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
@@ -317,77 +231,9 @@ bool CrtfImportExport::AddExportRegion(const std::string& name, CARTA::RegionTyp
     return true;
 }
 
-bool CrtfImportExport::ExportRegions(std::string& filename, std::string& error) {
-    // Print regions to CRTF file
-    if ((_region_list.nLines() == 0) && _export_regions.empty()) {
-        error = "Export region failed: no regions to export.";
-        return false;
-    }
+// Private: for importing regions
 
-    std::ofstream export_file(filename);
-    if (_region_list.nLines() > 0) {
-        try {
-            _region_list.print(export_file);
-        } catch (const casacore::AipsError& err) {
-            export_file.close();
-            error = err.getMesg();
-            return false;
-        }
-    } else {
-        // print header
-        export_file << GetCrtfVersionHeader();
-
-        // print regions
-        for (auto& region : _export_regions) {
-            export_file << region;
-        }
-    }
-
-    export_file.close();
-    return true;
-}
-
-bool CrtfImportExport::ExportRegions(std::vector<std::string>& contents, std::string& error) {
-    // Print regions to CRTF file lines in vector
-    if ((_region_list.nLines() == 0) && _export_regions.empty()) {
-        error = "Export region failed: no regions to export.";
-        return false;
-    }
-
-    // Print header
-    contents.push_back(GetCrtfVersionHeader());
-
-    if (_region_list.nLines() > 0) {
-        try {
-            for (unsigned int i = 0; i < _region_list.nLines(); ++i) {
-                casa::AsciiAnnotationFileLine file_line = _region_list.lineAt(i);
-                std::ostringstream export_stream;
-                file_line.print(export_stream);
-                contents.push_back(export_stream.str());
-            }
-        } catch (const casacore::AipsError& err) {
-            error = err.getMesg();
-            return false;
-        }
-    } else {
-        for (auto& region : _export_regions) {
-            contents.push_back(region);
-        }
-    }
-
-    return true;
-}
-
-std::string CrtfImportExport::GetCrtfVersionHeader() {
-    // First line indicates CRTF region file version
-    std::ostringstream header;
-    header << "#CRTFv" << casa::RegionTextParser::CURRENT_VERSION;
-    header << " CASA Region Text Format version " << casa::RegionTextParser::CURRENT_VERSION << std::endl;
-    return header.str();
-}
-
-// Process CRTF file import
-
+// Process imageanalysis file import
 void CrtfImportExport::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line) {
     // Process a single CRTF annotation file line to set region; adds RegionState to vector
     switch (file_line.getType()) {
@@ -606,26 +452,22 @@ void CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::Annotat
             rotation = position_angle.getValue();
             have_region_parameters = true;
 
-            // Issue 495 check if axes were swapped: print file ellipse parameters
+            // Issue 495 check if axes were swapped: parse input ellipse parameters
             std::ostringstream ellipse_output;
             ellipse->print(ellipse_output);
-            casacore::String outputstr(ellipse_output.str()); // "ellipse [[x, y], [bmaj, bmin], rotang]"
-            // create comma-delimited string of quantities
-            casacore::String params(outputstr.after("ellipse ")); // remove "ellipse "
-            params.gsub("[", "");                                 // remove [
-            params.gsub("] ", "],");                              // add comma delimiter
-            params.gsub("]", "");                                 // remove ]
-            // split string by comma into string vector
-            std::vector<std::string> quantities;
-            SplitString(params, ',', quantities);
-            // check if rotang changed
+            std::string outputstr(ellipse_output.str()); // "ellipse [[x, y], [bmaj, bmin], rotang]"
+            std::vector<std::string> parameters;
+            std::unordered_map<std::string, std::string> properties;
+            ParseRegionParameters(outputstr, parameters, properties);
+
+            // Check if rotang changed from region definition when axes were swapped
             casacore::Quantity file_rotang;
-            casacore::readQuantity(file_rotang, quantities[4]);
+            casacore::readQuantity(file_rotang, parameters[5]);
             if (file_rotang != position_angle) {
-                // values were swapped, restore file values
+                // Restore region file values
                 casacore::Quantity file_bmaj, file_bmin;
-                casacore::readQuantity(file_bmaj, quantities[2]);
-                casacore::readQuantity(file_bmin, quantities[3]);
+                casacore::readQuantity(file_bmaj, parameters[3]);
+                casacore::readQuantity(file_bmin, parameters[4]);
                 bmaj = file_bmaj;
                 bmin = file_bmin;
                 rotation = file_rotang.getValue();
@@ -673,13 +515,233 @@ void CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::Annotat
     }
 }
 
+// Manual region import
+
+void CrtfImportExport::ParseRegionParameters(
+    std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
+    // Parse the input string by space, comma, brackets to get region parameters and properties (keyword=value)
+    std::string delim(" ,[]");
+    size_t next(0), current(0);
+    while (next != string::npos) {
+        next = region_definition.find_first_of(delim, current);
+        if ((next - current) > 0) {
+            std::string param = region_definition.substr(current, next - current);
+            if (param.find("=") == std::string::npos) {
+                parameters.push_back(param);
+            } else {
+                std::vector<std::string> kvpair;
+                SplitString(param, '=', kvpair);
+                if (kvpair.size() == 2) {
+                    properties[kvpair[0]] = kvpair[1];
+                } else {
+                    // value is in [], look for next space
+                    current = next + 1;
+                    std::string key = kvpair[0];
+                    next = region_definition.find_first_of(" ", current);
+                    if (next - current > 0) {
+                        std::string value = region_definition.substr(current, next - current);
+                        properties[key] = value;
+                    }
+                }
+            }
+        }
+        current = next + 1;
+    }
+}
+
+// Manual file import
+
+void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
+    // Import regions defined on each line of file
+    casa::AnnotationBase::unitInit(); // enable "pix" unit
+
+    for (auto& line : lines) {
+        if (line.empty() || (line[0] == '#')) {
+            continue; // ignore blank lines and comments
+        }
+
+        // Parse line
+        std::vector<std::string> parameters;
+        std::unordered_map<std::string, std::string> properties;
+        ParseRegionParameters(line, parameters, properties);
+
+        // For now, region name from properties; in the future, also style properties
+        std::string region_name;
+        if (properties.count("label")) {
+            region_name = properties["label"];
+        }
+
+        std::string region(parameters[0]);
+        if (region == "symbol") {
+            ImportAnnSymbol(parameters, region_name);
+        } else if (region.find("box") != std::string::npos) {
+            // Handles "box", "centerbox", "rotbox"
+            ImportAnnBox(parameters, region_name);
+        } else if (region == "ellipse") {
+            ImportAnnEllipse(parameters, region_name);
+        } else if (region == "poly") {
+            ImportAnnPolygon(parameters, region_name);
+        } else {
+            _import_errors.append(region + " not supported.\n");
+        }
+    }
+}
+
+void CrtfImportExport::ImportAnnSymbol(std::vector<std::string>& parameters, std::string& name) {
+    // Import AnnSymbol to RegionState; params must be in pixel coords for linear coord sys
+    if (parameters.size() >= 3) { // symbol x y, optional symbol shape
+        try {
+            casacore::Quantity x, y;
+            casacore::readQuantity(x, parameters[1]);
+            casacore::readQuantity(y, parameters[2]);
+            if ((x.getUnit() != "pix") || (y.getUnit() != "pix")) {
+                _import_errors.append("Cannot import symbol in world coordinates for this image.\n");
+                return;
+            }
+
+            // Set control points
+            std::vector<CARTA::Point> control_points;
+            CARTA::Point point;
+            point.set_x(x.getValue());
+            point.set_y(y.getValue());
+            control_points.push_back(point);
+
+            // Create RegionState and add to vector
+            CARTA::RegionType type(CARTA::RegionType::POINT);
+            float rotation(0.0);
+            RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
+            _import_regions.push_back(region_state);
+        } catch (const casacore::AipsError& err) {
+            std::cerr << "Import symbol Quantity error: " << err.getMesg() << std::endl;
+            _import_errors.append("symbol parameters invalid.\n");
+        }
+    } else {
+        _import_errors.append("symbol syntax invalid.\n");
+    }
+}
+
+void CrtfImportExport::ImportAnnBox(std::vector<std::string>& parameters, std::string& name) {
+    // Import Annotation box to RegionState; params must be in pixel coords for linear coord sys
+    if (parameters.size() >= 5) {
+        // [box blcx blcy trcx trcy], [centerbox cx cy width height], or [rotbox cx cy width height angle]
+        std::string region(parameters[0]);
+
+        // Use parameters to get control points and rotation
+        std::string coord_frame; // none or we would not be importing manually
+        std::vector<CARTA::Point> control_points;
+        float rotation(0.0);
+        if (!GetBoxControlPoints(parameters, coord_frame, control_points, rotation)) {
+            return;
+        }
+
+        // Create RegionState and add to vector
+        CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
+        RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
+        _import_regions.push_back(region_state);
+    } else {
+        _import_errors.append("box syntax invalid.\n");
+    }
+}
+
+void CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& parameters, std::string& name) {
+    // Import AnnEllipse to RegionState; params must be in pixel coords for linear coord sys
+    if (parameters.size() >= 6) { // ellipse cx cy bmaj bmin angle
+        try {
+            // Center point
+            casacore::Quantity cx, cy;
+            casacore::readQuantity(cx, parameters[1]);
+            casacore::readQuantity(cy, parameters[2]);
+            if ((cx.getUnit() != "pix") || (cy.getUnit() != "pix")) {
+                _import_errors.append("Cannot import ellipse in world coordinates for this image.\n");
+                return;
+            }
+
+            // Set control points
+            std::vector<CARTA::Point> control_points;
+            CARTA::Point point;
+            point.set_x(cx.getValue());
+            point.set_y(cy.getValue());
+            control_points.push_back(point);
+
+            // Width and height
+            casacore::Quantity width, height;
+            casacore::readQuantity(width, parameters[3]);
+            casacore::readQuantity(height, parameters[4]);
+            if ((width.getUnit() == "pix") && (height.getUnit() == "pix")) {
+                point.set_x(width.getValue());
+                point.set_y(height.getValue());
+                control_points.push_back(point);
+            } else {
+                // Use image coord sys pixel increment for conversion
+                point.set_x(WorldToPixelLength(width, 0));
+                point.set_y(WorldToPixelLength(height, 1));
+                control_points.push_back(point);
+            }
+
+            // rotation
+            casacore::Quantity angle;
+            casacore::readQuantity(angle, parameters[5]);
+            float rotation = angle.get("deg").getValue();
+
+            // Create RegionState and add to vector
+            CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
+            RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
+            _import_regions.push_back(region_state);
+        } catch (const casacore::AipsError& err) {
+            std::cerr << "Import ellipse Quantity error: " << err.getMesg() << std::endl;
+            _import_errors.append("ellipse parameters invalid.\n");
+        }
+    } else {
+        _import_errors.append("ellipse syntax invalid.\n");
+    }
+}
+
+void CrtfImportExport::ImportAnnPolygon(std::vector<std::string>& parameters, std::string& name) {
+    // Import AnnPolygon to RegionState; params must be in pixel coords for linear coord sys
+    if (parameters.size() >= 7) { // poly x1 y1 x2 y2 x3 y3 ... at least 3 points
+        try {
+            std::vector<CARTA::Point> control_points;
+            for (size_t i = 1; i < parameters.size(); i += 2) { // parameters[0] = "poly"
+                casacore::Quantity x, y;
+                casacore::readQuantity(x, parameters[i]);
+                casacore::readQuantity(y, parameters[i + 1]);
+                if ((x.getUnit() != "pix") || (y.getUnit() != "pix")) {
+                    _import_errors.append("Cannot import polygon in world coordinates for this image.\n");
+                    return;
+                }
+
+                // Set control point
+                CARTA::Point point;
+                point.set_x(x.getValue());
+                point.set_y(y.getValue());
+                control_points.push_back(point);
+            }
+
+            // Create RegionState and add to vector
+            CARTA::RegionType type(CARTA::RegionType::POLYGON);
+            float rotation(0.0);
+            RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
+            _import_regions.push_back(region_state);
+        } catch (const casacore::AipsError& err) {
+            std::cerr << "Import polygon Quantity error: " << err.getMesg() << std::endl;
+            _import_errors.append("polygon quantities invalid.\n");
+        }
+    } else {
+        _import_errors.append("polygon syntax invalid.\n");
+    }
+}
+
+// Private import helpers for rectangles
+
 bool CrtfImportExport::RectangleControlPointsFromVertices(
     std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, std::vector<CARTA::Point>& control_points) {
-    // Input: pixel vertices x and y
-    // Returns: CARTA Points (cx, cy), (width, height)
-    // Point 0 is blc, 1 is brc, 2 is trc, 3 is tlc
+    // Used when imageanalysis has converted box definition to polygon.
+    // Input: pixel vertices x and y.  Point 0 is blc, 1 is brc, 2 is trc, 3 is tlc
+    // Returns:
+    // - control points: (cx, cy), (width, height)
+    // - bool: true = vertices form rectangle, false = vertices form polygon
 
-    // Can only calculate if rectangle not polygon
+    // Check if vertices form rectangle not polygon
     if ((x[0] != x[3]) || (x[1] != x[2]) || (y[0] != y[1]) || (y[2] != y[3])) {
         return false;
     }
@@ -704,104 +766,314 @@ bool CrtfImportExport::RectangleControlPointsFromVertices(
     return true;
 }
 
-bool CrtfImportExport::GetBoxControlPoints(std::string& region_definition, std::vector<CARTA::Point>& control_points, float& rotation) {
-    // Use box definition string to determine center, size, and angle
-    std::vector<std::string> parameters = ParseRegionParameters(region_definition);
+bool CrtfImportExport::GetBoxControlPoints(std::string& box_definition, std::vector<CARTA::Point>& control_points, float& rotation) {
+    // Parse box definition to get parameters, then get CARTA control points (center and size) and rotation.
+    std::vector<std::string> parameters;
+    std::unordered_map<std::string, std::string> properties;
+    ParseRegionParameters(box_definition, parameters, properties);
 
-    // Parameters as Quantities
-    casacore::Quantity cx, cy, width, height, angle;
-    casacore::readQuantity(cx, parameters[1]);
-    casacore::readQuantity(cy, parameters[2]);
-    casacore::readQuantity(width, parameters[3]);
-    casacore::readQuantity(height, parameters[4]);
+    std::string coord_frame;
+    if (properties.count("coord")) {
+        coord_frame = properties["coord"];
+    }
 
-    if (parameters[0] == "rotbox") {
-        // Set rotation
-        casacore::readQuantity(angle, parameters[5]);
-        rotation = angle.get("deg").getValue();
+    return GetBoxControlPoints(parameters, coord_frame, control_points, rotation);
+}
 
-        // Make (unrotated) centerbox from parsed quantities
-        casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
-        bool require_region(false);
-        casa::AnnCenterBox cbox = casa::AnnCenterBox(cx, cy, width, height, *_coord_sys, _image_shape, stokes_types, require_region);
+bool CrtfImportExport::GetBoxControlPoints(
+    std::vector<std::string>& parameters, std::string& region_frame, std::vector<CARTA::Point>& control_points, float& rotation) {
+    // Use box parameters to determine CARTA control points (center and size) and rotation.
+    // Used for:
+    // - import rotbox (always a polygon)
+    // - import rectangle that forms a polygon in wcs
+    // - import rectangle to linear coord sys (must be pixel)
+    // Returns false if conversion from string to Quantity fails
+    std::string region(parameters[0]);
+    casacore::Quantity p1, p2, p3, p4;
+    try {
+        // Convert parameters to Quantity: (cx, cy, width, height) or (blc_x, blc_y, trc_x, trc_y)
+        casacore::readQuantity(p1, parameters[1]);
+        casacore::readQuantity(p2, parameters[2]);
+        casacore::readQuantity(p3, parameters[3]);
+        casacore::readQuantity(p4, parameters[4]);
 
-        // Get centerbox pixel vertices, set control points from corners if shape is rectangle
-        std::vector<casacore::Double> x, y;
-        cbox.pixelVertices(x, y);
-        if (RectangleControlPointsFromVertices(x, y, control_points)) {
-            return true;
+        if (region == "rotbox") {
+            casacore::Quantity angle;
+            casacore::readQuantity(angle, parameters[5]);
+            rotation = angle.get("deg").getValue();
+        } else {
+            rotation = 0.0;
+        }
+    } catch (const casacore::AipsError& err) {
+        std::cerr << "Import " << region << " Quantity error: " << err.getMesg() << std::endl;
+        return false;
+    }
+
+    if (region == "rotbox") {
+        // Make (unrotated) centerbox from parsed quantities, let imageanalysis do conversions
+        try {
+            // Set parameters needed for AnnCenterBox; frequency/stokes params not currently used
+            casacore::Quantity freq, rest_freq;
+            casacore::String freq_frame, doppler;
+            casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
+            bool annotation_only(false), require_region(false);
+            casa::AnnCenterBox centerbox = casa::AnnCenterBox(p1, p2, p3, p4, region_frame, *_coord_sys, _image_shape, freq, freq,
+                freq_frame, doppler, rest_freq, stokes_types, annotation_only, require_region);
+
+            // Get centerbox pixel vertices
+            std::vector<casacore::Double> x, y;
+            centerbox.pixelVertices(x, y);
+
+            // Set control points from corners if shape is rectangle
+            if (RectangleControlPointsFromVertices(x, y, control_points)) {
+                return true;
+            }
+        } catch (const casacore::AipsError& err) {
+            // AnnCenterBox failed: likely no direction coordinate
         }
     }
 
-    CARTA::Point point;
-    if (GetBoxCenterPixel(parameters, cx, cy, point)) {
-        control_points.push_back(point);
-        GetBoxSizePixel(width, height, point);
-        control_points.push_back(point);
-        return true;
+    // Try to determine control points manually from parameter Quantities
+    if ((region == "rotbox") || (region == "centerbox")) {
+        // Vertices are polygon, or AnnRegion failed (cannot get vertices)
+        return GetCenterBoxPoints(region, p1, p2, p3, p4, region_frame, control_points);
+    } else {
+        // region = "box" blc_x, blc_y, trc_x, trc_y
+        // AnnRectBox failed (cannot get vertices)
+        return GetRectBoxPoints(p1, p2, p3, p4, region_frame, control_points);
     }
 
     return false;
 }
 
-std::vector<std::string> CrtfImportExport::ParseRegionParameters(std::string& region_definition) {
-    // Parse the input string by space, comma, brackets to get parameters vector (first item is region type)
-    std::vector<std::string> parameters;
-    std::string delim(" ,[]");
-    size_t next(0), current(0);
-    while (next != string::npos) {
-        next = region_definition.find_first_of(delim, current);
-        if ((next - current) > 0) {
-            parameters.push_back(region_definition.substr(current, next - current));
-        }
-        current = next + 1;
-    }
-    return parameters;
-}
-
-bool CrtfImportExport::GetBoxCenterPixel(
-    std::vector<std::string>& parameters, casacore::Quantity& cx, casacore::Quantity& cy, CARTA::Point& point) {
-    // Convert center coordinates to pixel and return as a CARTA::Point
+bool CrtfImportExport::GetCenterBoxPoints(const std::string& region, casacore::Quantity& cx, casacore::Quantity& cy,
+    casacore::Quantity& width, casacore::Quantity& height, std::string& region_frame, std::vector<CARTA::Point>& control_points) {
+    // Convert coordinates to pixel and return as CARTA::Rectangle control points
+    // Center point
     if ((cx.getUnit() == "pix") && (cy.getUnit() == "pix")) {
+        CARTA::Point point;
         point.set_x(cx.getValue());
         point.set_y(cy.getValue());
-        return true;
-    }
-
-    // Region coordinate reference frame
-    std::string coord_frame;
-    for (auto& param : parameters) {
-        if (param.find("coord") != std::string::npos) {
-            size_t start = param.find("=");
-            coord_frame = param.substr(start + 1);
-            break;
+        control_points.push_back(point);
+    } else {
+        // Convert region world coords to image world coords using region frame
+        // TODO: global coordinate frame
+        if (region_frame.empty()) { // Cannot convert to image coord sys
+            if (!_coord_sys->hasDirectionCoordinate()) {
+                _import_errors.append("Cannot import " + region + " in world coordinates for this image.\n");
+            }
+            return false;
         }
-    }
 
-    std::vector<casacore::Quantity> center_point;
-    center_point.push_back(cx);
-    center_point.push_back(cy);
-    casacore::Vector<casacore::Double> pixel_coords;
-    if (ConvertPointToPixels(coord_frame, center_point, pixel_coords)) {
+        // Convert region center point to image pixel coords
+        std::vector<casacore::Quantity> center_point;
+        center_point.push_back(cx);
+        center_point.push_back(cy);
+        casacore::Vector<casacore::Double> pixel_coords;
+        if (!ConvertPointToPixels(region_frame, center_point, pixel_coords)) {
+            return false;
+        }
+
+        CARTA::Point point;
         point.set_x(pixel_coords(0));
         point.set_y(pixel_coords(1));
+        control_points.push_back(point);
+    }
+
+    // Width and height
+    if ((width.getUnit() == "pix") && (height.getUnit() == "pix")) {
+        CARTA::Point point;
+        point.set_x(width.getValue());
+        point.set_y(height.getValue());
+        control_points.push_back(point);
+    } else {
+        // Uses image coord sys pixel increment for conversion
+        CARTA::Point point;
+        point.set_x(WorldToPixelLength(width, 0));
+        point.set_y(WorldToPixelLength(height, 1));
+        control_points.push_back(point);
+    }
+    return true;
+}
+
+bool CrtfImportExport::GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quantity& blcy, casacore::Quantity& trcx,
+    casacore::Quantity& trcy, std::string& region_frame, std::vector<CARTA::Point>& control_points) {
+    // Use corners to calculate center and size
+    bool converted(false);
+    try {
+        // Quantity math will fail if non-compatible units
+        casacore::Quantity cx = (blcx + trcx) / 2.0;
+        casacore::Quantity cy = (blcy + trcy) / 2.0;
+        casacore::Quantity width = (trcx - blcx);
+        casacore::Quantity height = (trcy - blcy);
+        converted = GetCenterBoxPoints("box", cx, cy, width, height, region_frame, control_points);
+    } catch (const casacore::AipsError& err) {
+        std::cerr << "Import box Quantity error: " << err.getMesg() << std::endl;
+        converted = false;
+    }
+    return converted;
+}
+
+// Private: for exporting regions
+
+bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state) {
+    // Add Annotation region to RegionTextList
+    casa::AnnRegion* ann_region(nullptr);
+    casa::AnnSymbol* ann_symbol(nullptr); // not an AnnRegion subclass
+    casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
+    bool require_region(false);       // can be outside image
+    casa::AnnotationBase::unitInit(); // enable "pix" unit
+
+    try {
+        switch (region_state.type) {
+            case CARTA::RegionType::POINT: {
+                casacore::Quantity x(region_state.control_points[0].x(), "pix");
+                casacore::Quantity y(region_state.control_points[0].y(), "pix");
+                ann_symbol = new casa::AnnSymbol(x, y, *_coord_sys, casa::AnnSymbol::POINT, stokes_types);
+                break;
+            }
+            case CARTA::RegionType::RECTANGLE: {
+                casacore::Quantity cx(region_state.control_points[0].x(), "pix");
+                casacore::Quantity cy(region_state.control_points[0].y(), "pix");
+                casacore::Quantity xwidth(region_state.control_points[1].x(), "pix");
+                casacore::Quantity ywidth(region_state.control_points[1].y(), "pix");
+                if (region_state.rotation == 0) {
+                    ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, *_coord_sys, _image_shape, stokes_types, require_region);
+                } else {
+                    casacore::Quantity angle(region_state.rotation, "deg");
+                    ann_region =
+                        new casa::AnnRotBox(cx, cy, xwidth, ywidth, angle, *_coord_sys, _image_shape, stokes_types, require_region);
+                }
+                break;
+            }
+            case CARTA::RegionType::ELLIPSE: {
+                casacore::Quantity cx(region_state.control_points[0].x(), "pix");
+                casacore::Quantity cy(region_state.control_points[0].y(), "pix");
+                casacore::Quantity bmaj(region_state.control_points[1].x(), "pix");
+                casacore::Quantity bmin(region_state.control_points[1].y(), "pix");
+                casacore::Quantity angle(region_state.rotation, "deg");
+                ann_region = new casa::AnnEllipse(cx, cy, bmaj, bmin, angle, *_coord_sys, _image_shape, stokes_types, require_region);
+                break;
+            }
+            case CARTA::RegionType::POLYGON: {
+                size_t npoints(region_state.control_points.size());
+                casacore::Vector<casacore::Quantity> x_coords(npoints), y_coords(npoints);
+                for (size_t i = 0; i < npoints; ++i) {
+                    x_coords(i) = casacore::Quantity(region_state.control_points[i].x(), "pix");
+                    y_coords(i) = casacore::Quantity(region_state.control_points[i].y(), "pix");
+                }
+                ann_region = new casa::AnnPolygon(x_coords, y_coords, *_coord_sys, _image_shape, stokes_types, require_region);
+                break;
+            }
+            default:
+                break;
+        }
+
+        casacore::CountedPtr<const casa::AnnotationBase> annotation_region;
+        if (ann_symbol) {
+            if (!region_state.name.empty()) {
+                ann_symbol->setLabel(region_state.name);
+            }
+            annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_symbol);
+        }
+        if (ann_region) {
+            ann_region->setAnnotationOnly(false);
+            if (!region_state.name.empty()) {
+                ann_region->setLabel(region_state.name);
+            }
+            annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_region);
+        }
+
+        casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
+        _region_list.addLine(file_line);
+        return true;
+    } catch (const casacore::AipsError& err) {
+        std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
+        return false;
+    }
+}
+
+bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state) {
+    // Print region parameters (pixel coordinates) to CRTF-format string and add to region vector
+    std::vector<CARTA::Point> points = region_state.control_points;
+    float angle = region_state.rotation;
+
+    std::string region_line;
+    switch (region_state.type) {
+        case CARTA::RegionType::POINT: {
+            // symbol [[x, y], .]
+            region_line = fmt::format("symbol [[{:.2f}pix, {:.2f}pix], .]", points[0].x(), points[0].y());
+            break;
+        }
+        case CARTA::RegionType::RECTANGLE: {
+            if (angle == 0.0) {
+                // centerbox [[x, y], [width, height]]
+                region_line = fmt::format("centerbox [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix]]", points[0].x(), points[0].y(),
+                    points[1].x(), points[1].y());
+            } else {
+                // rotbox [[x, y], [width, height], angle]
+                region_line = fmt::format("rotbox [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix], {}deg]", points[0].x(), points[0].y(),
+                    points[1].x(), points[1].y(), angle);
+            }
+            break;
+        }
+        case CARTA::RegionType::ELLIPSE: {
+            // ellipse [[x, y], [radius, radius], angle]
+            region_line = fmt::format("ellipse [[{:.2f}pix, {:.2f}pix], [{:.2f}pix, {:.2f}pix], {}deg]", points[0].x(), points[0].y(),
+                points[1].x(), points[1].y(), angle);
+            break;
+        }
+        case CARTA::RegionType::POLYGON: {
+            // poly [[x1, y1], [x2, y2], [x3, y3],...]
+            std::ostringstream os; // format varies based on npoints
+            os << "poly [";
+            os << "[" << std::fixed << std::setprecision(2) << points[0].x() << "pix, " << points[0].y() << "pix]";
+            for (size_t i = 1; i < points.size(); ++i) {
+                os << ", [" << points[i].x() << "pix, " << points[i].y() << "pix]";
+            }
+            os << "]";
+            region_line = os.str();
+            break;
+        }
+        default:
+            break;
+    }
+
+    if (!region_line.empty()) {
+        AddExportRegionKeywords(region_line, region_state.name);
+        _export_regions.push_back(region_line);
         return true;
     }
 
     return false;
 }
 
-void CrtfImportExport::GetBoxSizePixel(casacore::Quantity& width, casacore::Quantity& height, CARTA::Point& point) {
-    // Convert width, height coordinates to pixel and return as a CARTA::Point
-    if ((width.getUnit() == "pix") && (height.getUnit() == "pix")) {
-        point.set_x(width.getValue());
-        point.set_y(height.getValue());
-        return;
+void CrtfImportExport::AddExportRegionKeywords(std::string& line, const std::string& region_name) {
+    // Add standard CRTF keywords with default values or optional label (name) to line
+    std::ostringstream oss;
+    oss << " linewidth=" << std::to_string(casa::AnnotationBase::DEFAULT_LINEWIDTH) << ", ";
+    oss << "linestyle=" << casa::AnnotationBase::lineStyleToString(casa::AnnotationBase::DEFAULT_LINESTYLE) << ", ";
+    oss << "symsize=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLSIZE) << ", ";
+    oss << "symthick=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLTHICKNESS) << ", ";
+    // colorToString only returns hex instead of color name; using specific current default instead
+    oss << "color=green, ";
+    oss << "font=\"" << casa::AnnotationBase::DEFAULT_FONT << "\", ";
+    oss << "fontsize=" << std::to_string(casa::AnnotationBase::DEFAULT_FONTSIZE) << ", ";
+    oss << "fontstyle=" << casa::AnnotationBase::fontStyleToString(casa::AnnotationBase::DEFAULT_FONTSTYLE) << ", ";
+    oss << "usetex=" << (casa::AnnotationBase::DEFAULT_USETEX ? "true" : "false");
+
+    // Add name (label) if set
+    if (!region_name.empty()) {
+        oss << ", label=\"" << region_name << "\", ";
+        oss << "labelcolor=green, ";
+        oss << "labelposition=" << casa::AnnotationBase::DEFAULT_LABELPOS;
     }
 
-    point.set_x(WorldToPixelLength(width, 0));
-    point.set_y(WorldToPixelLength(height, 1));
+    oss << std::endl;
+    line.append(oss.str());
 }
+
+// Private: export helpers
 
 casacore::Vector<casacore::Stokes::StokesTypes> CrtfImportExport::GetStokesTypes() {
     // convert ints to stokes types in vector
@@ -825,4 +1097,12 @@ casacore::Vector<casacore::Stokes::StokesTypes> CrtfImportExport::GetStokesTypes
         stokes_types(i) = casacore::Stokes::type(istokes(i));
     }
     return stokes_types;
+}
+
+std::string CrtfImportExport::GetCrtfVersionHeader() {
+    // First line indicates CRTF region file and version
+    std::ostringstream header;
+    header << "#CRTFv" << casa::RegionTextParser::CURRENT_VERSION;
+    header << " CASA Region Text Format version " << casa::RegionTextParser::CURRENT_VERSION << std::endl;
+    return header.str();
 }

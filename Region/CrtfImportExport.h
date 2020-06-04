@@ -19,15 +19,14 @@ public:
     CrtfImportExport() {}
 
     // Import constructor
-    // Use casa::RegionTextList to parse file and create casa::Annotation AnnRegions
-    // which are converted to RegionState (pixel coords) to set Region
+    // Use casa::RegionTextList to create casa::Annotation AnnRegions for RegionState parameters
+    // file_is_filename : indicates whether file parameter contains file name or file contents.
     CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis, int file_id,
         const std::string& file, bool file_is_filename);
 
     // Export constructor
-    // Set up casa::RegionTextList; when regions are added, a casa::Annotation
-    // AnnRegion is created and added to the list, which is then "print"-ed to
-    // a file or vector of strings
+    // Creates casa::RegionTextList to which casa::AnnRegion/AnnSymbol regions are added with AddExportRegion.
+    // ExportRegions prints these regions to a file or vector of strings.
     CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis);
 
     ~CrtfImportExport();
@@ -45,7 +44,7 @@ protected:
         const casacore::Quantity& rotation) override;
 
 private:
-    // Import Annotation regions to RegionState vector
+    // Import RegionTextList Annotation regions to RegionState vector
     void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line);
     void ImportAnnSymbol(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
@@ -53,24 +52,41 @@ private:
     void ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnEllipse(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
 
-    // Manually create header when printing to contents vector or printing region strings
-    std::string GetCrtfVersionHeader();
+    // Parse region definition string for manual region import
+    void ParseRegionParameters(
+        std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
+
+    // Manual region import to RegionState
+    // (workaround for imageanalysis RegionTextList exception for linear coord sys)
+    void ProcessFileLines(std::vector<std::string>& lines);
+    void ImportAnnSymbol(std::vector<std::string>& parameters, std::string& region_name);
+    void ImportAnnBox(std::vector<std::string>& parameters, std::string& region_name);
+    void ImportAnnEllipse(std::vector<std::string>& parameters, std::string& region_name);
+    void ImportAnnPolygon(std::vector<std::string>& parameters, std::string& region_name);
+
+    // Rectangle import helpers
+    // Convert AnnPolygon pixel vertices to CARTA Control Points (center and size)
+    bool RectangleControlPointsFromVertices(
+        std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, std::vector<CARTA::Point>& control_points);
+    // Determine control points from box parameters
+    bool GetBoxControlPoints(std::string& box_definition, std::vector<CARTA::Point>& control_points, float& rotation);
+    bool GetBoxControlPoints(
+        std::vector<std::string>& parameters, std::string& region_frame, std::vector<CARTA::Point>& control_points, float& rotation);
+    bool GetCenterBoxPoints(const std::string& region, casacore::Quantity& cx, casacore::Quantity& cy, casacore::Quantity& width,
+        casacore::Quantity& height, std::string& region_frame, std::vector<CARTA::Point>& control_points);
+    bool GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quantity& blcy, casacore::Quantity& trcx, casacore::Quantity& trcy,
+        std::string& region_frame, std::vector<CARTA::Point>& control_points);
 
     // Export RegionState as Annotation region or string
     bool AddExportAnnotationRegion(const RegionState& region_state);
     bool AddExportRegionLine(const RegionState& region_state);
     void AddExportRegionKeywords(std::string& line, const std::string& region_name);
 
-    // Convert from CRTF to CARTA Control Points
-    bool RectangleControlPointsFromVertices(
-        std::vector<casacore::Double>& x, std::vector<casacore::Double>& y, std::vector<CARTA::Point>& control_points);
-    bool GetBoxControlPoints(std::string& region_definition, std::vector<CARTA::Point>& control_points, float& rotation);
-    std::vector<std::string> ParseRegionParameters(std::string& region_definition);
-    bool GetBoxCenterPixel(std::vector<std::string>& parameters, casacore::Quantity& cx, casacore::Quantity& cy, CARTA::Point& point);
-    void GetBoxSizePixel(casacore::Quantity& width, casacore::Quantity& height, CARTA::Point& point);
-
+    // Export helpers
     // AnnRegion parameter
     casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
+    // Create header when printing region file
+    std::string GetCrtfVersionHeader();
 
     // For export: add regions to list then print them
     casa::RegionTextList _region_list;

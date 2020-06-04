@@ -15,36 +15,10 @@ Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, co
     const std::string& file, bool file_is_filename)
     : RegionImportExport(image_coord_sys, image_shape, file_id), _pixel_coord(true) {
     // Import regions in DS9 format
-    // Create vector of file lines, delimited with newline or semicolon
-    std::vector<std::string> file_lines;
-    if (file_is_filename) {
-        std::ifstream ds9_file;
-        ds9_file.open(file);
-        while (!ds9_file.eof()) {
-            std::string single_line;
-            getline(ds9_file, single_line); // get by newline
-            std::vector<std::string> lines;
-            SplitString(single_line, ';', lines); // split compound line by semicolon
-            for (auto& line : lines) {
-                file_lines.push_back(line);
-            }
-        }
-        ds9_file.close();
-    } else {
-        std::string contents(file);
-        std::vector<std::string> input_lines;
-        SplitString(contents, '\n', input_lines); // lines split by newline
-        for (auto single_line : input_lines) {
-            std::vector<std::string> lines;
-            SplitString(single_line, ';', lines); // lines split by semicolon
-            for (auto& line : lines) {
-                file_lines.push_back(line);
-            }
-        }
-    }
+    std::vector<std::string> lines = ReadRegionFile(file, file_is_filename, ';');
 
     // Process into regions
-    ProcessFileLines(file_lines);
+    ProcessFileLines(lines);
 }
 
 Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord)
