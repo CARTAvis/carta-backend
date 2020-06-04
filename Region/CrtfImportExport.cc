@@ -5,6 +5,7 @@
 #include <carta-protobuf/enums.pb.h>
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/casa/Quanta/Quantum.h>
+#include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
 #include <casacore/coordinates/Coordinates/StokesCoordinate.h>
 #include <imageanalysis/Annotations/AnnCenterBox.h>
 #include <imageanalysis/Annotations/AnnCircle.h>
@@ -54,8 +55,16 @@ CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, 
             ProcessFileLines(file_lines);
         }
     } catch (const casacore::AipsError& err) {
-        casacore::String error = err.getMesg().before("at File");
-        _import_errors = error;
+        // Possibly error thrown by AnnPolygon when importing rotated pixel region in image with non-square pixels.
+        // Try to do it manually:
+        try {
+            std::vector<std::string> file_lines = ReadRegionFile(file, file_is_filename);
+            ProcessFileLines(file_lines);
+        } catch (const casacore::AipsError& err) {
+            casacore::String error = err.getMesg().before("at File");
+            error = error.before("thrown by");
+            _import_errors = error;
+        }
     }
 }
 
@@ -923,6 +932,7 @@ bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state
     casacore::Vector<casacore::Stokes::StokesTypes> stokes_types = GetStokesTypes();
     bool require_region(false);       // can be outside image
     casa::AnnotationBase::unitInit(); // enable "pix" unit
+    bool region_line(false);
 
     try {
         switch (region_state.type) {
@@ -941,8 +951,15 @@ bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state
                     ann_region = new casa::AnnCenterBox(cx, cy, xwidth, ywidth, *_coord_sys, _image_shape, stokes_types, require_region);
                 } else {
                     casacore::Quantity angle(region_state.rotation, "deg");
-                    ann_region =
-                        new casa::AnnRotBox(cx, cy, xwidth, ywidth, angle, *_coord_sys, _image_shape, stokes_types, require_region);
+                    try {
+                        ann_region =
+                            new casa::AnnRotBox(cx, cy, xwidth, ywidth, angle, *_coord_sys, _image_shape, stokes_types, require_region);
+                    } catch (const casacore::AipsError& err) {
+                        // Cannot export rotated pixel regions with non-square pixels in imageanalysis, do it manually
+                        if (_coord_sys->hasDirectionCoordinate() && !_coord_sys->directionCoordinate().hasSquarePixels()) {
+                            region_line = AddExportRegionLine(region_state);
+                        }
+                    }
                 }
                 break;
             }
@@ -984,8 +1001,14 @@ bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state
             annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_region);
         }
 
-        casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
-        _region_list.addLine(file_line);
+        if (annotation_region) {
+            casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
+            _region_list.addLine(file_line);
+        } else {
+            // If no annotation region, region may have been exported manually
+            return region_line;
+        }
+
         return true;
     } catch (const casacore::AipsError& err) {
         std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
