@@ -36,7 +36,8 @@ void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface
         // Remove the old image file with the same output file name
         casacore::File old_filename(output_filename);
         if (old_filename.exists()) {
-            std::filesystem::remove_all(output_filename);
+            std::filesystem::path tmp_path(output_filename);
+            std::filesystem::remove_all(tmp_path);
         }
 
         // Get a copy of the original pixel data
@@ -56,9 +57,11 @@ void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface
 
         success = true;
     } else if (output_file_type == CARTA::FileType::FITS) {
-        if (casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename, 64, casacore::True, casacore::True, -32, 1.0, -1.0,
-                casacore::True, casacore::False, casacore::True, casacore::False, casacore::False, casacore::False, casacore::String(),
-                casacore::True)) {
+        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename, 64, casacore::True, casacore::True,
+            -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False, casacore::False,
+            casacore::String(), casacore::True);
+
+        if (ok) {
             success = true;
         }
     } else {
