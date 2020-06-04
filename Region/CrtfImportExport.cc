@@ -101,6 +101,7 @@ bool CrtfImportExport::ExportRegions(std::string& filename, std::string& error) 
     std::ofstream export_file(filename);
     if (_region_list.nLines() > 0) {
         try {
+            // Includes header and Annotation region lines
             _region_list.print(export_file);
         } catch (const casacore::AipsError& err) {
             export_file.close();
@@ -108,13 +109,14 @@ bool CrtfImportExport::ExportRegions(std::string& filename, std::string& error) 
             return false;
         }
     } else {
-        // print header
+        // Print header
         export_file << GetCrtfVersionHeader();
+    }
 
-        // print regions
-        for (auto& region : _export_regions) {
-            export_file << region;
-        }
+    // With workarounds, may have combination of Annotation region lines and export region strings.
+    // Print any region strings
+    for (auto& region : _export_regions) {
+        export_file << region;
     }
 
     export_file.close();

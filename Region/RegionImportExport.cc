@@ -108,8 +108,9 @@ bool RegionImportExport::ConvertPointToPixels(
     }
 
     // must have matched coordinates
-    bool x_is_pix = point[0].getUnit() == "pixel";
-    bool y_is_pix = point[1].getUnit() == "pixel";
+    casacore::String unit0(point[0].getUnit()), unit1(point[1].getUnit());
+    bool x_is_pix = unit0.contains("pix");
+    bool y_is_pix = unit1.contains("pix");
     if (x_is_pix != y_is_pix) {
         return false;
     }
@@ -145,7 +146,7 @@ bool RegionImportExport::ConvertPointToPixels(
             }
         }
 
-        // Convert world to pixel coordinates
+        // Convert world to pixel coordinates (uses wcslib wcss2p(); pixels are not fractional)
         return _coord_sys->directionCoordinate().toPixel(pixel_coords, direction);
     }
 
