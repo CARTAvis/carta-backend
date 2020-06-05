@@ -48,7 +48,6 @@ public:
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
-    // Convert to DS9 string and add to vector
     bool AddExportRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation) override;
 
@@ -63,19 +62,16 @@ private:
     void SetImageReferenceFrame();
 
     // Import regions
-    void SetRegion(std::string& region_description);
-    void ImportPointRegion(std::string& formatted_region, std::string& name, bool exclude_region);
-    void ImportCircleRegion(std::string& formatted_region, std::string& name, bool exclude_region);
-    void ImportEllipseRegion(std::string& formatted_region, std::string& name, bool exclude_region);
-    void ImportRectangleRegion(std::string& formatted_region, std::string& name, bool exclude_region);
-    void ImportPolygonRegion(std::string& formatted_region, std::string& name, bool exclude_region);
-
-    bool ParseRegion(std::string& region_definition, std::vector<std::string>& parameters, int nparams);
-    casacore::String GetRegionName(std::string& region_properties);
+    void SetRegion(std::string& region_definition);
+    void ImportPointRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
+    void ImportCircleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
+    void ImportEllipseRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
+    void ImportRectangleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
+    void ImportPolygonRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
 
     // Convert DS9 syntax -> CASA
     bool CheckAndConvertParameter(std::string& parameter, const std::string& region_type);
-    casacore::String ConvertTimeFormatToDeg(std::string& parameter);
+    void ConvertTimeFormatToDeg(std::string& parameter);
 
     // Export: add header string to _export_regions
     void AddHeader();

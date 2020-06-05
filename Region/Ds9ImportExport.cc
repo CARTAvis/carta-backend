@@ -13,11 +13,10 @@ using namespace carta;
 
 Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
     const std::string& file, bool file_is_filename)
-    : RegionImportExport(image_coord_sys, image_shape, file_id), _pixel_coord(true) {
+    : RegionImportExport(image_coord_sys, image_shape, file_id), _file_ref_frame("physical"), _pixel_coord(true) {
     // Import regions in DS9 format
+    SetParserDelim(" ,()#");
     std::vector<std::string> lines = ReadRegionFile(file, file_is_filename, ';');
-
-    // Process into regions
     ProcessFileLines(lines);
 }
 
@@ -202,7 +201,7 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         if (line[0] == '-') {
             continue;
         }
-        // skip global settings not used in carta
+        // skip global settings not used in carta (yet)
         if (line.find("global") != std::string::npos) {
             continue;
         }
@@ -210,9 +209,6 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         // process coordinate system; global or for a region definition
         if (IsDs9CoordSysKeyword(line)) {
             // Get ready for conversion
-            if (_image_ref_frame.empty()) {
-                SetImageReferenceFrame();
-            }
             ds9_coord_sys_ok = SetFileReferenceFrame(line);
             if (!ds9_coord_sys_ok) {
                 std::string csys_error = "coord sys " + line + " not supported.\n";
@@ -246,25 +242,29 @@ void Ds9ImportExport::InitDs9CoordMap() {
 }
 
 bool Ds9ImportExport::IsDs9CoordSysKeyword(std::string& input_line) {
-    // Check if region file has coordinate in map
+    // Check if region file line is coordinate in map
     std::string input_lower(input_line);
     std::transform(input_line.begin(), input_line.end(), input_lower.begin(), ::tolower); // convert to lowercase
     return _coord_map.count(input_lower);
 }
 
 bool Ds9ImportExport::SetFileReferenceFrame(std::string& ds9_coord) {
-    // Convert DS9 coord string in region file to CASA reference frame
-    // Returns whether conversion was successful or undefined/not supported
+    // Convert DS9 coord string in region file to CASA reference frame.
+    // Returns whether conversion was successful or undefined/not supported.
     _file_ref_frame = "UNSUPPORTED";
 
     // Convert in-place to lowercase for map
     std::transform(ds9_coord.begin(), ds9_coord.end(), ds9_coord.begin(), ::tolower);
 
-    // Convert to CASA and set pixel_coord
+    // Convert to CASA and reset pixel_coord
     if (_coord_map.count(ds9_coord)) {
         _file_ref_frame = _coord_map[ds9_coord];
-        if ((ds9_coord != "physical") && (ds9_coord != "image")) { // indicates pixel
+        if ((ds9_coord != "physical") && (ds9_coord != "image")) {
             _pixel_coord = false;
+            // Set image reference frame for conversion
+            if (_image_ref_frame.empty()) {
+                SetImageReferenceFrame();
+            }
         }
     }
 
@@ -272,6 +272,7 @@ bool Ds9ImportExport::SetFileReferenceFrame(std::string& ds9_coord) {
         _pixel_coord = false;
         return false;
     }
+
     return true;
 }
 
@@ -289,84 +290,79 @@ void Ds9ImportExport::SetImageReferenceFrame() {
 
 // Import regions into RegionState vector
 
-void Ds9ImportExport::SetRegion(std::string& region_description) {
+void Ds9ImportExport::SetRegion(std::string& region_definition) {
     // Convert ds9 region description into RegionState
     // Split into region definition, properties
-    std::string region_definition(region_description), region_properties;
-    if (region_description.find("#") != std::string::npos) {
-        std::vector<string> region_parts;
-        SplitString(region_description, '#', region_parts);
-        region_definition = region_parts[0];
-        region_properties = region_parts[1];
-    }
+    std::vector<std::string> parameters;
+    std::unordered_map<std::string, std::string> properties;
+    ParseRegionParameters(region_definition, parameters, properties);
 
-    // Process region definition include/exclude
+    // Process region definition include/exclude and remove indicator
+    std::string region_type(parameters[0]);
     bool exclude_region(false);
-    casacore::String formatted_region(region_definition); // handy utilities: trim, gsub (global substitution)
-    formatted_region.trim();                              // remove beginning and ending whitespace
-    formatted_region.ltrim('+');                          // remove 'include' property
-    if ((formatted_region[0] == '!') || (formatted_region[0] == '-')) {
+    if (region_type[0] == '+') {
+        region_type = region_type.substr(1);
+    } else if (region_type[0] == '-') {
         exclude_region = true;
-        formatted_region.ltrim('!'); // remove 'exclude' property
-        formatted_region.ltrim('-'); // remove 'exclude' property
+        region_type = region_type.substr(1);
     }
 
-    // Retrieve label from region properties
-    casacore::String label = GetRegionName(region_properties);
+    // For now, we only use the "text" property
+    std::string region_name;
+    if (properties.count("text")) {
+        region_name = properties["text"];
+    }
 
     // Create RegionState based on type
-    // Order is important, could be a shaped point e.g. "circle point" is a point
-    if (formatted_region.contains("point")) {
-        ImportPointRegion(formatted_region, label, exclude_region);
-    } else if (formatted_region.contains("circle")) {
-        ImportCircleRegion(formatted_region, label, exclude_region);
-    } else if (formatted_region.contains("ellipse")) {
-        ImportEllipseRegion(formatted_region, label, exclude_region);
-    } else if (formatted_region.contains("box")) {
-        ImportRectangleRegion(formatted_region, label, exclude_region);
-    } else if (formatted_region.contains("polygon")) {
-        ImportPolygonRegion(formatted_region, label, exclude_region);
-    } else if (formatted_region.contains("line")) {
+    // Order is important, could be a shaped point e.g. "circle point" is a point not a circle
+    if (region_type.find("point") != std::string::npos) {
+        ImportPointRegion(parameters, region_name, exclude_region);
+    } else if (region_type.find("circle") != std::string::npos) {
+        ImportCircleRegion(parameters, region_name, exclude_region);
+    } else if (region_type.find("ellipse") != std::string::npos) {
+        ImportEllipseRegion(parameters, region_name, exclude_region);
+    } else if (region_type.find("box") != std::string::npos) {
+        ImportRectangleRegion(parameters, region_name, exclude_region);
+    } else if (region_type.find("polygon") != std::string::npos) {
+        ImportPolygonRegion(parameters, region_name, exclude_region);
+    } else if (region_type.find("line") != std::string::npos) {
         _import_errors.append("DS9 line region not supported.\n");
-    } else if (formatted_region.contains("vector")) {
+    } else if (region_type.find("vector") != std::string::npos) {
         _import_errors.append("DS9 vector region not supported.\n");
-    } else if (formatted_region.contains("text")) {
+    } else if (region_type.find("text") != std::string::npos) {
         _import_errors.append("DS9 text not supported.\n");
-    } else if (formatted_region.contains("annulus")) {
+    } else if (region_type.find("annulus") != std::string::npos) {
         _import_errors.append("DS9 annulus region not supported.\n");
     }
 }
 
-void Ds9ImportExport::ImportPointRegion(std::string& region, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportPointRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
     // Import DS9 point into CARTA RegionState
-    // point x y, circle point x y
-    std::vector<std::string> params;
-    int first_param;
-    if (ParseRegion(region, params, 3)) {
-        first_param = 1;
-    } else if (ParseRegion(region, params, 4)) {
-        first_param = 2;
-    } else {
-        std::string syntax_error = "point syntax error: " + region + "\n";
+    // point x y, circle point x y (various shapes for "circle")
+    size_t nparam(parameters.size());
+    if ((nparam < 3) || ((parameters[0] != "point") && (parameters[1] != "point"))) {
+        std::string syntax_error = "point syntax error\n";
         _import_errors.append(syntax_error);
         return;
     }
 
+    size_t first_param(1);
+    if (parameters[1] == "point") {
+        first_param = 2;
+    }
+
     std::vector<casacore::Quantity> param_quantities;
-    for (size_t i = first_param; i < params.size(); ++i) {
-        std::string param(params[i]);
+    for (size_t i = first_param; i < nparam; ++i) {
+        std::string param(parameters[i]);
         // Convert DS9 unit to Quantity unit for readQuantity
         if (CheckAndConvertParameter(param, "point")) {
-            casacore::String converted_param(param);
-
             if (i == first_param + 1) {
-                // DS9 degrees use time format ":" instead of CASA "."
-                converted_param = ConvertTimeFormatToDeg(converted_param);
+                ConvertTimeFormatToDeg(param); // ':' to '.'
             }
 
             // Read string into casacore::Quantity, add to vector
             casacore::Quantity param_quantity;
-            if (readQuantity(param_quantity, converted_param)) {
+            if (readQuantity(param_quantity, param)) {
                 if (param_quantity.getUnit().empty()) {
                     if (_pixel_coord) {
                         param_quantity.setUnit("pixel");
@@ -400,7 +396,7 @@ void Ds9ImportExport::ImportPointRegion(std::string& region, std::string& name, 
             point.set_y(pixel_coords(1));
             control_points.push_back(point);
         } else {
-            std::string invalid_param("Failed to apply point to image: " + region + "\n");
+            std::string invalid_param("Failed to apply point to image.\n");
             _import_errors.append(invalid_param);
             return;
         }
@@ -413,43 +409,39 @@ void Ds9ImportExport::ImportPointRegion(std::string& region, std::string& name, 
     _import_regions.push_back(region_state);
 }
 
-void Ds9ImportExport::ImportCircleRegion(std::string& region, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportCircleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
     // Import DS9 circle into CARTA RegionState
     // circle x y radius
-    std::vector<std::string> params;
-    if (ParseRegion(region, params, 4)) {
-        // Convert params to ellipse region (CARTA only has ellipse region), angle = 0
-        std::string ellipse_region = fmt::format("ellipse {} {} {} {} 0", params[1], params[2], params[3], params[3]);
-        ImportEllipseRegion(ellipse_region, name, exclude_region);
+    // Convert params to ellipse region (CARTA only has ellipse region) with no angle
+    if (parameters.size() >= 4) {
+        std::vector<std::string> ellipse_params = {"ellipse", parameters[1], parameters[2], parameters[3], parameters[3]};
+        ImportEllipseRegion(ellipse_params, name, exclude_region);
     } else {
-        std::string syntax_error = "circle syntax error: " + region + "\n";
+        std::string syntax_error = "circle syntax error\n";
         _import_errors.append(syntax_error);
     }
 }
 
-void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
     // Import DS9 ellipse into CARTA RegionState
-    // ellipse x y radius radius angle
-    bool is_circle(false);
-    std::vector<std::string> params;
-    if (ParseRegion(region, params, 6) || ParseRegion(region, params, 5)) {
-        is_circle = (params[3] == params[4]);
+    // ellipse x y radius radius [angle]
+    size_t nparam(parameters.size());
+    if ((nparam == 5) || (nparam == 6)) {
+        bool is_circle = (parameters[3] == parameters[4]);
         // convert strings to Quantities
         std::vector<casacore::Quantity> param_quantities;
         std::vector<casacore::String> units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
-        size_t nparams(params.size());
-        for (size_t i = 1; i < nparams; ++i) {
-            std::string param(params[i]);
+        for (size_t i = 1; i < nparam; ++i) {
+            std::string param(parameters[i]);
             // Convert DS9 unit to Quantity unit for readQuantity
             if (CheckAndConvertParameter(param, "ellipse")) {
-                casacore::String converted_param(param);
                 if (i == 2) {
-                    converted_param = ConvertTimeFormatToDeg(param);
+                    ConvertTimeFormatToDeg(param); // ':' to '.'
                 }
                 casacore::Quantity param_quantity;
-                if (readQuantity(param_quantity, converted_param)) {
+                if (readQuantity(param_quantity, param)) {
                     if (param_quantity.getUnit().empty()) {
-                        if ((i == nparams - 1) || !_pixel_coord) {
+                        if ((i == nparam - 1) || !_pixel_coord) {
                             param_quantity.setUnit(units[i]);
                         } else {
                             param_quantity.setUnit("pixel");
@@ -488,8 +480,7 @@ void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name
                 point.set_y(pixel_coords(1));
                 control_points.push_back(point);
             } else {
-                std::string invalid_param("Failed to apply ellipse to image: " + region + "\n");
-                _import_errors.append(invalid_param);
+                _import_errors.append("Failed to apply ellipse to image\n");
                 return;
             }
 
@@ -503,7 +494,7 @@ void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name
         // Create RegionState
         CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
         float rotation(0.0);
-        if (param_quantities.size() > 4) {
+        if (nparam > 5) {
             rotation = param_quantities[4].getValue();
         }
         if (!is_circle) {
@@ -515,38 +506,34 @@ void Ds9ImportExport::ImportEllipseRegion(std::string& region, std::string& name
 
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
         _import_regions.push_back(region_state);
-    } else if (ParseRegion(region, params, 0)) {
+    } else if (nparam > 6) {
         // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
-        std::string invalid_params = "unsupported ellipse definition " + region + "\n";
-        _import_errors.append(invalid_params);
+        _import_errors.append("unsupported ellipse definition\n");
     } else {
-        std::string syntax_error = "ellipse syntax error: " + region + "\n";
-        _import_errors.append(syntax_error);
+        _import_errors.append("ellipse syntax error\n");
     }
 }
 
-void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
     // Import DS9 box into CARTA RegionState
-    // box x y width height angle
-    std::vector<std::string> params;
-    if (ParseRegion(region, params, 6) || ParseRegion(region, params, 5)) {
+    // box x y width height [angle]
+    size_t nparam(parameters.size());
+    if ((nparam == 5) || (nparam == 6)) {
         // convert strings to Quantities
         std::vector<casacore::Quantity> param_quantities;
         // DS9 wcs default units
         std::vector<casacore::String> ds9_units = {"", "deg", "deg", "arcsec", "arcsec", "deg"};
-        size_t nparams(params.size());
-        for (size_t i = 1; i < nparams; ++i) {
-            std::string param(params[i]);
+        for (size_t i = 1; i < nparam; ++i) {
+            std::string param(parameters[i]);
             // Convert DS9 unit to Quantity unit for readQuantity
             if (CheckAndConvertParameter(param, "box")) {
-                casacore::String converted_param(param);
-                if (i == 2) { // degree format, not time
-                    converted_param = ConvertTimeFormatToDeg(param);
+                if (i == 2) {
+                    ConvertTimeFormatToDeg(param); // ':' to '.'
                 }
                 casacore::Quantity param_quantity;
-                if (readQuantity(param_quantity, converted_param)) {
+                if (readQuantity(param_quantity, param)) {
                     if (param_quantity.getUnit().empty()) {
-                        if ((i == nparams - 1) || !_pixel_coord) {
+                        if ((i == nparam - 1) || !_pixel_coord) {
                             param_quantity.setUnit(ds9_units[i]);
                         } else {
                             param_quantity.setUnit("pixel");
@@ -585,8 +572,7 @@ void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& na
                 point.set_y(pixel_coords(1));
                 control_points.push_back(point);
             } else {
-                std::string invalid_param("Failed to apply box to image: " + region + "\n");
-                _import_errors.append(invalid_param);
+                _import_errors.append("Failed to apply box to image\n");
                 return;
             }
 
@@ -600,140 +586,87 @@ void Ds9ImportExport::ImportRectangleRegion(std::string& region, std::string& na
         // Create RegionState
         CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
         float rotation(0.0);
-        if (params.size() > 4) {
+        if (nparam > 5) {
             rotation = param_quantities[4].getValue();
         }
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
         _import_regions.push_back(region_state);
-    } else if (ParseRegion(region, params, 0)) {
+    } else if (nparam > 6) {
         // unsupported box annulus: box x y w1 h1 w2 h2 [angle]
-        std::string invalid_params = "unsupported box definition " + region + "\n";
-        _import_errors.append(invalid_params);
+        _import_errors.append("unsupported box definition\n");
     } else {
-        std::string syntax_error = "box syntax error: " + region + "\n";
-        _import_errors.append(syntax_error);
+        _import_errors.append("box syntax error\n");
     }
 }
 
-void Ds9ImportExport::ImportPolygonRegion(std::string& region, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportPolygonRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
     // Import DS9 polygon into CARTA RegionState
     // polygon x1 y1 x2 y2 x3 y3 ...
-    std::vector<std::string> params;
-    if (ParseRegion(region, params, 0)) {
-        if (params.size() % 2 != 1) {
-            std::string syntax_error = "polygon syntax error: " + region + "\n";
-            _import_errors.append(syntax_error);
+    size_t nparam(parameters.size());
+    if ((nparam % 2) != 1) { // parameters[0] is "polygon"
+        _import_errors.append("polygon syntax error, odd number of arguments.\n");
+        return;
+    }
+
+    // convert strings to Quantities
+    std::vector<casacore::Quantity> param_quantities;
+    for (size_t i = 1; i < nparam; ++i) {
+        std::string param(parameters[i]);
+        // Convert DS9 unit to Quantity unit for readQuantity
+        if (CheckAndConvertParameter(param, "polygon")) {
+            if ((i % 2) == 0) {
+                ConvertTimeFormatToDeg(param); // ':' to '.'
+            }
+            casacore::Quantity param_quantity;
+            if (readQuantity(param_quantity, param)) {
+                if (param_quantity.getUnit().empty()) {
+                    if (_pixel_coord) {
+                        param_quantity.setUnit("pixel");
+                    } else {
+                        param_quantity.setUnit("deg");
+                    }
+                }
+                param_quantities.push_back(param_quantity);
+            } else {
+                std::string invalid_param("invalid polygon parameter " + param + "\n");
+                _import_errors.append(invalid_param);
+                return;
+            }
+        } else {
             return;
         }
+    }
 
-        // convert strings to Quantities
-        std::vector<casacore::Quantity> param_quantities;
-        for (size_t i = 1; i < params.size(); ++i) {
-            std::string param(params[i]);
-            // Convert DS9 unit to Quantity unit for readQuantity
-            if (CheckAndConvertParameter(param, "polygon")) {
-                casacore::String converted_param(param);
-                if ((i % 2) == 0) {
-                    converted_param = ConvertTimeFormatToDeg(converted_param);
-                }
-                casacore::Quantity param_quantity;
-                if (readQuantity(param_quantity, converted_param)) {
-                    if (param_quantity.getUnit().empty()) {
-                        if (_pixel_coord) {
-                            param_quantity.setUnit("pixel");
-                        } else {
-                            param_quantity.setUnit("deg");
-                        }
-                    }
-                    param_quantities.push_back(param_quantity);
-                } else {
-                    std::string invalid_param("invalid polygon parameter " + param + "\n");
-                    _import_errors.append(invalid_param);
-                    return;
-                }
+    // Control points in pixel coordinates
+    std::vector<CARTA::Point> control_points;
+    for (size_t i = 0; i < param_quantities.size(); i += 2) {
+        if (_pixel_coord) {
+            CARTA::Point point;
+            point.set_x(param_quantities[i].getValue());
+            point.set_y(param_quantities[i + 1].getValue());
+            control_points.push_back(point);
+        } else {
+            std::vector<casacore::Quantity> point;
+            point.push_back(param_quantities[i]);
+            point.push_back(param_quantities[i + 1]);
+            casacore::Vector<casacore::Double> pixel_coords;
+            if (ConvertPointToPixels(_file_ref_frame, point, pixel_coords)) {
+                CARTA::Point point;
+                point.set_x(pixel_coords(0));
+                point.set_y(pixel_coords(1));
+                control_points.push_back(point);
             } else {
+                _import_errors.append("Failed to apply polygon to image\n");
                 return;
             }
         }
-
-        // Control points in pixel coordinates
-        std::vector<CARTA::Point> control_points;
-        for (size_t i = 0; i < param_quantities.size(); i += 2) {
-            if (_pixel_coord) {
-                CARTA::Point point;
-                point.set_x(param_quantities[i].getValue());
-                point.set_y(param_quantities[i + 1].getValue());
-                control_points.push_back(point);
-            } else {
-                std::vector<casacore::Quantity> point;
-                point.push_back(param_quantities[i]);
-                point.push_back(param_quantities[i + 1]);
-                casacore::Vector<casacore::Double> pixel_coords;
-                if (ConvertPointToPixels(_file_ref_frame, point, pixel_coords)) {
-                    CARTA::Point point;
-                    point.set_x(pixel_coords(0));
-                    point.set_y(pixel_coords(1));
-                    control_points.push_back(point);
-                } else {
-                    std::string invalid_param("Failed to apply polygon to image: " + region + "\n");
-                    _import_errors.append(invalid_param);
-                    return;
-                }
-            }
-        }
-
-        // Create RegionState
-        CARTA::RegionType type(CARTA::RegionType::POLYGON);
-        float rotation(0.0);
-        RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _import_regions.push_back(region_state);
-    } else {
-        std::string syntax_error = "polygon syntax error: " + region + "\n";
-        _import_errors.append(syntax_error);
-    }
-}
-
-bool Ds9ImportExport::ParseRegion(std::string& region_definition, std::vector<std::string>& parameters, int nparams) {
-    // Parse region definition into known number of parameters; first is region type.
-    // DS9 can have 3 formats: optional commas, and optional parentheses
-    // Ex: "circle 100 100 10", "circle(100 100 10)", "circle(100,100,10)"
-    // nparams = 0 for variable number of params.
-    // Returns whether syntax was parsed into nparams.
-    casacore::String definition(region_definition);
-    if (definition.freq('(') != definition.freq(')')) {
-        return false;
     }
 
-    definition.gsub("(", " "); // replace ( with space
-    definition.gsub(")", " "); // replace ) with space
-    definition.gsub(",", " "); // replace , with space
-    SplitString(definition, ' ', parameters);
-    if (nparams > 0) {
-        return (parameters.size() == nparams);
-    } else {
-        return true;
-    }
-}
-
-casacore::String Ds9ImportExport::GetRegionName(std::string& region_properties) {
-    // Parse region properties (everything after '#') for text, used as region name
-    casacore::String text_label;
-    if (region_properties.empty()) {
-        return text_label;
-    }
-
-    if (region_properties.find("text") != std::string::npos) {
-        casacore::String properties(region_properties);
-        text_label = properties.after("text=");
-        // strip delimiters
-        char text_delim = text_label[0];
-        text_label.ltrim(text_delim);
-        if (text_delim == '{') {
-            text_delim = '}';
-        }
-        text_label = text_label.before(text_delim); // e.g. "Region X"
-    }
-    return text_label;
+    // Create RegionState
+    CARTA::RegionType type(CARTA::RegionType::POLYGON);
+    float rotation(0.0);
+    RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
+    _import_regions.push_back(region_state);
 }
 
 bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std::string& region_type) {
@@ -754,8 +687,7 @@ bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std
 
     size_t param_length(parameter.length());
     valid = (param_length == idx); // no unit is valid
-    if (!valid) {
-        // check unit/format
+    if (!valid) {                  // check unit/format
         if (param_length == (idx + 1)) {
             // DS9 units are a single character
             const char unit = parameter.back();
@@ -802,13 +734,13 @@ bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std
     return valid;
 }
 
-casacore::String Ds9ImportExport::ConvertTimeFormatToDeg(std::string& parameter) {
+void Ds9ImportExport::ConvertTimeFormatToDeg(std::string& parameter) {
     // If parameter is in sexagesimal format dd:mm::ss.ssss, convert to angle format dd.mm.ss.ssss for readQuantity
-    casacore::String converted_format(parameter);
-    if (converted_format.contains(":")) {
-        converted_format.gsub(":", ".");
+    for (std::string::iterator it = parameter.begin(); it != parameter.end(); ++it) {
+        if (*it == ':') {
+            *it = '.';
+        }
     }
-    return converted_format;
 }
 
 // For export

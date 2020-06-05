@@ -26,6 +26,9 @@ CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, 
     int file_id, const std::string& file, bool file_is_filename)
     : RegionImportExport(image_coord_sys, image_shape, file_id), _stokes_axis(stokes_axis) {
     // Import regions from CRTF region file
+    // Set delimiters for parsing file lines
+    SetParserDelim(" ,[]");
+
     bool require_region(false); // import regions outside image
 
     try {
@@ -55,12 +58,19 @@ CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, 
             ProcessFileLines(file_lines);
         }
     } catch (const casacore::AipsError& err) {
-        // Possibly error thrown by AnnPolygon when importing rotated pixel region in image with non-square pixels.
-        // Try to do it manually:
-        try {
-            std::vector<std::string> file_lines = ReadRegionFile(file, file_is_filename);
-            ProcessFileLines(file_lines);
-        } catch (const casacore::AipsError& err) {
+        if (err.getMesg().contains("pixels are not square")) {
+            // Error thrown by AnnPolygon when importing rotated pixel region in image with non-square pixels.
+            // Try to read file manually:
+            try {
+                std::vector<std::string> file_lines = ReadRegionFile(file, file_is_filename);
+                ProcessFileLines(file_lines);
+            } catch (const casacore::AipsError& err) {
+                casacore::String error = err.getMesg().before("at File");
+                error = error.before("thrown by");
+                _import_errors = error;
+            }
+        } else {
+            // Note exception and quit
             casacore::String error = err.getMesg().before("at File");
             error = error.before("thrown by");
             _import_errors = error;
@@ -523,40 +533,6 @@ void CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::Annotat
         _import_regions.push_back(region_state);
     } else {
         _import_errors.append(region_name + " region failed.\n");
-    }
-}
-
-// Manual region import
-
-void CrtfImportExport::ParseRegionParameters(
-    std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
-    // Parse the input string by space, comma, brackets to get region parameters and properties (keyword=value)
-    std::string delim(" ,[]");
-    size_t next(0), current(0);
-    while (next != string::npos) {
-        next = region_definition.find_first_of(delim, current);
-        if ((next - current) > 0) {
-            std::string param = region_definition.substr(current, next - current);
-            if (param.find("=") == std::string::npos) {
-                parameters.push_back(param);
-            } else {
-                std::vector<std::string> kvpair;
-                SplitString(param, '=', kvpair);
-                if (kvpair.size() == 2) {
-                    properties[kvpair[0]] = kvpair[1];
-                } else {
-                    // value is in [], look for next space
-                    current = next + 1;
-                    std::string key = kvpair[0];
-                    next = region_definition.find_first_of(" ", current);
-                    if (next - current > 0) {
-                        std::string value = region_definition.substr(current, next - current);
-                        properties[key] = value;
-                    }
-                }
-            }
-        }
-        current = next + 1;
     }
 }
 

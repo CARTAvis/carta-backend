@@ -39,7 +39,6 @@ public:
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
-    // Create AnnRegion and add to RegionTextList
     bool AddExportRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation) override;
 
@@ -51,10 +50,6 @@ private:
     void ImportAnnRotBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnEllipse(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-
-    // Parse region definition string for manual region import
-    void ParseRegionParameters(
-        std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
 
     // Manual region import to RegionState
     // (workaround for imageanalysis RegionTextList exception for linear coord sys)

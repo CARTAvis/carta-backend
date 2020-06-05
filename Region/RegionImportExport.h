@@ -37,6 +37,13 @@ protected:
     // Parse file into lines, return in string vector
     virtual std::vector<std::string> ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim = '\0');
 
+    // Parse file line into region name and parameters
+    virtual inline void SetParserDelim(const std::string& delim) {
+        _parser_delim = delim;
+    }
+    virtual void ParseRegionParameters(
+        std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
+
     virtual bool AddExportRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation) = 0;
 
@@ -51,6 +58,7 @@ protected:
 
     // For import
     int _file_id;
+    std::string _parser_delim;
     std::string _import_errors;
     std::vector<RegionState> _import_regions;
     std::vector<std::string> _export_regions;

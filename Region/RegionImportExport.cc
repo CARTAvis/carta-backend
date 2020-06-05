@@ -19,40 +19,7 @@ RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_s
     // Constructor for export. Use AddExportRegion to add regions, then ExportRegions to finalize
 }
 
-std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim) {
-    // Return file lines as string vector
-    std::vector<std::string> file_lines;
-    if (file_is_filename) {
-        std::ifstream region_file;
-        region_file.open(file);
-        while (!region_file.eof()) {
-            std::string single_line;
-            getline(region_file, single_line);
-            file_lines.push_back(single_line);
-        }
-        region_file.close();
-    } else {
-        std::string contents(file);
-        SplitString(contents, '\n', file_lines);
-    }
-
-    if (extra_delim == '\0') {
-        return file_lines;
-    }
-
-    // Split lines by delimiter
-    std::vector<std::string> split_lines;
-    for (auto& line : file_lines) {
-        std::vector<std::string> compound_lines;
-        SplitString(line, extra_delim, compound_lines);
-        for (auto& single_line : compound_lines) {
-            split_lines.push_back(single_line);
-        }
-    }
-    return split_lines;
-}
-
-// public accessors
+// Public accessors
 
 std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& error) {
     // Parse the file in the constructor to create RegionStates with given reference file_id; return any errors in error
@@ -99,6 +66,72 @@ bool RegionImportExport::AddExportRegion(
     }
 
     return converted;
+}
+
+// Protected
+
+std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& file, bool file_is_filename, const char extra_delim) {
+    // Return file lines as string vector
+    std::vector<std::string> file_lines;
+    if (file_is_filename) {
+        std::ifstream region_file;
+        region_file.open(file);
+        while (!region_file.eof()) {
+            std::string single_line;
+            getline(region_file, single_line);
+            file_lines.push_back(single_line);
+        }
+        region_file.close();
+    } else {
+        std::string contents(file);
+        SplitString(contents, '\n', file_lines);
+    }
+
+    if (extra_delim == '\0') {
+        return file_lines;
+    }
+
+    // Split lines by delimiter
+    std::vector<std::string> split_lines;
+    for (auto& line : file_lines) {
+        std::vector<std::string> compound_lines;
+        SplitString(line, extra_delim, compound_lines);
+        for (auto& single_line : compound_lines) {
+            split_lines.push_back(single_line);
+        }
+    }
+    return split_lines;
+}
+
+void RegionImportExport::ParseRegionParameters(
+    std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
+    // Parse the input string by space, comma, parentheses to get region parameters and properties (keyword=value)
+    size_t next(0), current(0);
+    while (next != string::npos) {
+        next = region_definition.find_first_of(_parser_delim, current);
+        if ((next != std::string::npos) && ((next - current) > 0)) {
+            std::string param = region_definition.substr(current, next - current);
+            if (param.find("=") == std::string::npos) {
+                parameters.push_back(param);
+            } else {
+                std::vector<std::string> kvpair;
+                SplitString(param, '=', kvpair);
+                if (kvpair.size() == 2) {
+                    properties[kvpair[0]] = kvpair[1];
+                } else {
+                    // value is in [], look for next space
+                    current = next + 1;
+                    std::string key = kvpair[0];
+                    next = region_definition.find_first_of(" ", current);
+                    if (next - current > 0) {
+                        std::string value = region_definition.substr(current, next - current);
+                        properties[key] = value;
+                    }
+                }
+            }
+        }
+        current = next + 1;
+    }
 }
 
 bool RegionImportExport::ConvertPointToPixels(
