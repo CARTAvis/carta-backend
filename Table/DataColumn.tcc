@@ -139,11 +139,27 @@ void DataColumn<T>::SortIndices(IndexList& indices, bool ascending) const {
     // Perform ascending or descending sort
     if (ascending) {
         std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) {
-            return entries[a] < entries[b];
+            auto val_a = entries[a];
+            auto val_b = entries[b];
+            if (std::isnan(val_a)) {
+                return false;
+            } else if (std::isnan(val_b)) {
+                return true;
+            } else {
+                return val_a < val_b;
+            }
         });
     } else {
         std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) {
-            return entries[a] > entries[b];
+            auto val_a = entries[a];
+            auto val_b = entries[b];
+            if (std::isnan(val_a)) {
+                return false;
+            } else if (std::isnan(val_b)) {
+                return true;
+            } else {
+                return val_a > val_b;
+            }
         });
     }
 }
