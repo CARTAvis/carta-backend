@@ -178,7 +178,7 @@ void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t
 }
 
 // Specialisation for strings because they don't support std::isnan
-template<>
+template <>
 void DataColumn<string>::SortIndices(IndexList& indices, bool ascending) const {
     if (indices.empty() || entries.empty()) {
         return;
@@ -186,13 +186,9 @@ void DataColumn<string>::SortIndices(IndexList& indices, bool ascending) const {
 
     // Perform ascending or descending sort
     if (ascending) {
-        std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) {
-            return entries[a] < entries[b];
-        });
+        std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) { return entries[a] < entries[b]; });
     } else {
-        std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) {
-            return entries[a] > entries[b];
-        });
+        std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) { return entries[a] > entries[b]; });
     }
 }
 
