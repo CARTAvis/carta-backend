@@ -26,7 +26,7 @@ std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& err
     error = _import_errors;
 
     if ((_import_regions.size() == 0) && error.empty()) {
-        error = "Import error: zero regions set.";
+        error = "Import error: zero regions set. Regions may lie far outside image and cannot be converted to pixel coordinates.";
     }
 
     return _import_regions;
@@ -180,7 +180,11 @@ bool RegionImportExport::ConvertPointToPixels(
         }
 
         // Convert world to pixel coordinates (uses wcslib wcss2p(); pixels are not fractional)
-        return _coord_sys->directionCoordinate().toPixel(pixel_coords, direction);
+        bool pixel_ok = _coord_sys->directionCoordinate().toPixel(pixel_coords, direction);
+        if (!pixel_ok) {
+            _import_errors.append("Conversion of region parameters to image pixel coordinates failed.\n");
+        }
+        return pixel_ok;
     }
 
     return false;

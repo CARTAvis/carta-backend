@@ -341,7 +341,7 @@ void Ds9ImportExport::ImportPointRegion(std::vector<std::string>& parameters, st
     // point x y, circle point x y (various shapes for "circle")
     size_t nparam(parameters.size());
     if ((nparam < 3) || ((parameters[0] != "point") && (parameters[1] != "point"))) {
-        std::string syntax_error = "point syntax error\n";
+        std::string syntax_error = "point syntax error.\n";
         _import_errors.append(syntax_error);
         return;
     }
@@ -372,7 +372,7 @@ void Ds9ImportExport::ImportPointRegion(std::vector<std::string>& parameters, st
                 }
                 param_quantities.push_back(param_quantity);
             } else {
-                std::string invalid_param("invalid point parameter " + param + "\n");
+                std::string invalid_param("Invalid point parameter: " + param + ".\n");
                 _import_errors.append(invalid_param);
                 return;
             }
@@ -417,7 +417,7 @@ void Ds9ImportExport::ImportCircleRegion(std::vector<std::string>& parameters, s
         std::vector<std::string> ellipse_params = {"ellipse", parameters[1], parameters[2], parameters[3], parameters[3]};
         ImportEllipseRegion(ellipse_params, name, exclude_region);
     } else {
-        std::string syntax_error = "circle syntax error\n";
+        std::string syntax_error = "circle syntax error.\n";
         _import_errors.append(syntax_error);
     }
 }
@@ -449,7 +449,7 @@ void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, 
                     }
                     param_quantities.push_back(param_quantity);
                 } else {
-                    std::string invalid_param("invalid ellipse parameter " + param + "\n");
+                    std::string invalid_param("Invalid ellipse parameter " + param + ".\n");
                     _import_errors.append(invalid_param);
                     return;
                 }
@@ -480,7 +480,7 @@ void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, 
                 point.set_y(pixel_coords(1));
                 control_points.push_back(point);
             } else {
-                _import_errors.append("Failed to apply ellipse to image\n");
+                _import_errors.append("Failed to apply ellipse to image.\n");
                 return;
             }
 
@@ -508,9 +508,9 @@ void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, 
         _import_regions.push_back(region_state);
     } else if (nparam > 6) {
         // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
-        _import_errors.append("unsupported ellipse definition\n");
+        _import_errors.append("Unsupported ellipse definition.\n");
     } else {
-        _import_errors.append("ellipse syntax error\n");
+        _import_errors.append("ellipse syntax error.\n");
     }
 }
 
@@ -541,7 +541,7 @@ void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters
                     }
                     param_quantities.push_back(param_quantity);
                 } else {
-                    std::string invalid_param("invalid box parameter " + param + "\n");
+                    std::string invalid_param("Invalid box parameter: " + param + ".\n");
                     _import_errors.append(invalid_param);
                     return;
                 }
@@ -572,7 +572,7 @@ void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters
                 point.set_y(pixel_coords(1));
                 control_points.push_back(point);
             } else {
-                _import_errors.append("Failed to apply box to image\n");
+                _import_errors.append("Failed to apply box to image.\n");
                 return;
             }
 
@@ -593,9 +593,9 @@ void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters
         _import_regions.push_back(region_state);
     } else if (nparam > 6) {
         // unsupported box annulus: box x y w1 h1 w2 h2 [angle]
-        _import_errors.append("unsupported box definition\n");
+        _import_errors.append("Unsupported box definition.\n");
     } else {
-        _import_errors.append("box syntax error\n");
+        _import_errors.append("box syntax error.\n");
     }
 }
 
@@ -628,7 +628,7 @@ void Ds9ImportExport::ImportPolygonRegion(std::vector<std::string>& parameters, 
                 }
                 param_quantities.push_back(param_quantity);
             } else {
-                std::string invalid_param("invalid polygon parameter " + param + "\n");
+                std::string invalid_param("Invalid polygon parameter " + param + ".\n");
                 _import_errors.append(invalid_param);
                 return;
             }
@@ -656,7 +656,7 @@ void Ds9ImportExport::ImportPolygonRegion(std::vector<std::string>& parameters, 
                 point.set_y(pixel_coords(1));
                 control_points.push_back(point);
             } else {
-                _import_errors.append("Failed to apply polygon to image\n");
+                _import_errors.append("Failed to apply polygon to image.\n");
                 return;
             }
         }
@@ -708,7 +708,7 @@ bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std
                 // casacore unit for min, sec is the same
                 valid = true;
             } else {
-                std::string invalid_unit(error_prefix + "unit " + parameter + "\n");
+                std::string invalid_unit(error_prefix + "unit: " + parameter + ".\n");
                 _import_errors.append(invalid_unit);
                 valid = false;
             }
@@ -726,7 +726,7 @@ bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std
                      (sscanf(param_carray, "%fd%fm%fs", &h, &m, &s) == 3));
             if (!valid) {
                 // Unit not a single character or time/angle format
-                std::string invalid_unit(error_prefix + "unit " + parameter + "\n");
+                std::string invalid_unit(error_prefix + "unit: " + parameter + ".\n");
                 _import_errors.append(invalid_unit);
             }
         }

@@ -70,7 +70,7 @@ CrtfImportExport::CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, 
                 _import_errors = error;
             }
         } else {
-            // Note exception and quit
+            // Note exception and quit.
             casacore::String error = err.getMesg().before("at File");
             error = error.before("thrown by");
             _import_errors = error;
@@ -367,6 +367,7 @@ void CrtfImportExport::ImportAnnBox(casacore::CountedPtr<const casa::AnnotationB
             polygon->print(oss);
             std::string box_input(oss.str());
             if (!GetBoxControlPoints(box_input, control_points, rotation)) {
+                _import_errors.append("Import box region failed.");
                 return;
             }
         }
@@ -379,7 +380,7 @@ void CrtfImportExport::ImportAnnBox(casacore::CountedPtr<const casa::AnnotationB
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
         _import_regions.push_back(region_state);
     } else {
-        _import_errors.append("box region failed.\n");
+        _import_errors.append("Import box region failed.\n");
     }
 }
 
@@ -397,6 +398,7 @@ void CrtfImportExport::ImportAnnRotBox(casacore::CountedPtr<const casa::Annotati
         std::vector<CARTA::Point> control_points;
         float rotation;
         if (!GetBoxControlPoints(rotbox_input, control_points, rotation)) {
+            _import_errors.append("Import rotbox region failed.");
             return;
         }
 
@@ -408,7 +410,7 @@ void CrtfImportExport::ImportAnnRotBox(casacore::CountedPtr<const casa::Annotati
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
         _import_regions.push_back(region_state);
     } else {
-        _import_errors.append("rotbox region failed.\n");
+        _import_errors.append("Import rotbox region failed.\n");
     }
 }
 
@@ -439,7 +441,7 @@ void CrtfImportExport::ImportAnnPolygon(casacore::CountedPtr<const casa::Annotat
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
         _import_regions.push_back(region_state);
     } else {
-        _import_errors.append("poly region failed.\n");
+        _import_errors.append("Import poly region failed.\n");
     }
 }
 
@@ -532,7 +534,7 @@ void CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::Annotat
         RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
         _import_regions.push_back(region_state);
     } else {
-        _import_errors.append(region_name + " region failed.\n");
+        _import_errors.append("Import " + region_name + " failed.\n");
     }
 }
 
