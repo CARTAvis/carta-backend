@@ -156,6 +156,9 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
                 if (!info_loader.FillFileInfo(file_info)) {
                     return false;
                 }
+                if (hdu.empty()) { // use first when required
+                    hdu = file_info.hdu_list(0);
+                }
 
                 _loader.reset(carta::FileLoader::GetLoader(full_name));
 
