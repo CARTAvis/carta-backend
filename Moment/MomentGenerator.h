@@ -60,7 +60,6 @@ private:
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     casacore::Record MakeRegionRecord(const CARTA::MomentRequest& moment_request);
     void ResetImageMoments(const CARTA::MomentRequest& moment_request);
-    void DeleteImageMoments();
     int GetMomentMode(CARTA::Moment moment);
     casacore::String GetMomentSuffix(casacore::Int moment);
     casacore::String GetStokes(CARTA::MomentStokes moment_stokes);
@@ -73,8 +72,8 @@ private:
     int _stokes_axis;
 
     // Moment settings
-    casacore::ImageInterface<casacore::Float>* _sub_image;
-    casa::ImageMoments<float>* _image_moments;
+    std::unique_ptr<casacore::ImageInterface<casacore::Float>> _sub_image;
+    std::unique_ptr<casa::ImageMoments<float>> _image_moments;
     casacore::Vector<casacore::Int> _moments;
     int _axis;
     casacore::String _channels;

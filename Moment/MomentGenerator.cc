@@ -13,9 +13,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _collapse_error(false),
       _progress_callback(progress_callback) {}
 
-MomentGenerator::~MomentGenerator() {
-    DeleteImageMoments();
-}
+MomentGenerator::~MomentGenerator() {}
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(
     int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
@@ -178,9 +176,6 @@ casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& m
 }
 
 void MomentGenerator::ResetImageMoments(const CARTA::MomentRequest& moment_request) {
-    // Delete objects if exist
-    DeleteImageMoments();
-
     // Make a region record
     casacore::Record region = MakeRegionRecord(moment_request);
 
@@ -188,20 +183,15 @@ void MomentGenerator::ResetImageMoments(const CARTA::MomentRequest& moment_reque
     casacore::String empty("");
     std::shared_ptr<const SubImage<casacore::Float>> sub_image =
         casa::SubImageFactory<casacore::Float>::createSubImageRO(*_image, region, empty, NULL);
-    _sub_image = new SubImage<casacore::Float>(*sub_image);
+    _sub_image.reset(new SubImage<casacore::Float>(*sub_image));
     casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
     casacore::LogIO os(log);
 
     // Make an ImageMoments object (and overwrite the output file if it already exists)
-    _image_moments = new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true);
+    _image_moments.reset(new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
 
     // Set moment calculation progress monitor
     _image_moments->setProgressMonitor(this);
-}
-
-void MomentGenerator::DeleteImageMoments() {
-    delete _image_moments;
-    delete _sub_image;
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
