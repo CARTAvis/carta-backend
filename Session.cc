@@ -584,11 +584,20 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             }
         }
 
+        auto t_start_import_region = std::chrono::high_resolution_clock::now();
+
         if (!_region_handler) { // created on demand only
             _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_verbose_logging));
         }
 
         _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
+        if (_verbose_logging) {
+            // Measure duration for get tile data
+            auto t_end_import_region = std::chrono::high_resolution_clock::now();
+            auto dt_import_region =
+                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_import_region - t_start_import_region).count();
+            fmt::print("Import region in {} ms\n", dt_import_region);
+        }
 
         // send any errors to log
         std::string ack_message(import_ack.message());
