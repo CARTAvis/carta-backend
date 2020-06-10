@@ -13,9 +13,30 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _collapse_error(false),
       _progress_callback(progress_callback),
       _use_default_progress_reporter(true),
-      _stop(false) {}
+      _stop(false) {
+    // Get direction axes numbers
+    const casacore::CoordinateSystem& coord_sys = _image->coordinates();
+    casacore::Vector<casacore::Int> dir_axes_numbers;
+    if (coord_sys.hasDirectionCoordinate()) {
+        dir_axes_numbers = coord_sys.directionAxesNumbers();
+    } else {
+        dir_axes_numbers = coord_sys.linearAxesNumbers();
+    }
+
+    _dir_x_axis = dir_axes_numbers[0];
+    _dir_y_axis = dir_axes_numbers[1];
+}
 
 MomentGenerator::~MomentGenerator() {}
+
+bool MomentGenerator::ApplyStoppableMomentsCalculation() {
+    bool result(false);
+    const casacore::IPosition& image_shape = _image->shape();
+    if ((image_shape[_dir_x_axis] > AXIS_LENGTH_THRESHOLD) && (image_shape[_dir_y_axis] > AXIS_LENGTH_THRESHOLD)) {
+        result = true;
+    }
+    return result;
+}
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(
     int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
@@ -89,7 +110,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(
     return collapse_results;
 }
 
-std::vector<CollapseResult> MomentGenerator::CalculateMomentsStopable(
+std::vector<CollapseResult> MomentGenerator::CalculateMomentsStoppable(
     int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     // Disable the default progress reporter
     _use_default_progress_reporter = false;
@@ -119,6 +140,8 @@ std::vector<CollapseResult> MomentGenerator::CalculateMomentsStopable(
     for (int i = 0; i < boxes.size(); ++i) {
         // Check whether to stop the calculation
         if (_stop) {
+            // Clear collapse results if the calculation is interrupted
+            _collapse_results.clear();
             break;
         }
 
@@ -204,11 +227,6 @@ std::vector<CollapseResult> MomentGenerator::CalculateMomentsStopable(
 
     // Get error message if any
     moment_response.set_message(GetErrorMessage());
-
-    // Clear collapse results if the calculation is interrupted
-    if (_stop) {
-        _collapse_results.clear();
-    }
 
     return _collapse_results;
 }
@@ -342,17 +360,6 @@ casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& m
 
 std::vector<std::vector<casacore::Int>> MomentGenerator::GetPixelBoxes() {
     std::vector<std::vector<casacore::Int>> results;
-
-    const casacore::CoordinateSystem& coord_sys = _image->coordinates();
-    casacore::Vector<casacore::Int> dir_axes_numbers;
-    if (coord_sys.hasDirectionCoordinate()) {
-        dir_axes_numbers = coord_sys.directionAxesNumbers();
-    } else {
-        dir_axes_numbers = coord_sys.linearAxesNumbers();
-    }
-
-    _dir_x_axis = dir_axes_numbers[0];
-    _dir_y_axis = dir_axes_numbers[1];
 
     const casacore::IPosition& image_shape = _image->shape();
     casacore::Vector<casacore::Int> dir_shape(2);

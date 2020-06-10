@@ -48,12 +48,21 @@ void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface
         image->doGetSlice(temp_array, slice);
 
         // Construct a new CASA image
-        auto new_image = std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename);
-        new_image->setMiscInfo(image->miscInfo());
-        new_image->setImageInfo(image->imageInfo());
-        new_image->appendLog(image->logger());
-        new_image->setUnits(image->units());
-        new_image->putSlice(temp_array, start);
+        auto out_image = std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename);
+        out_image->setMiscInfo(image->miscInfo());
+        out_image->setImageInfo(image->imageInfo());
+        out_image->appendLog(image->logger());
+        out_image->setUnits(image->units());
+        out_image->putSlice(temp_array, start);
+
+        // Copy the mask if the original image has
+        if (image->hasPixelMask()) {
+            casacore::Array<casacore::Bool> image_mask;
+            image->getMaskSlice(image_mask, slice);
+            out_image->makeMask("mask0", true, true);
+            casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
+            out_image_mask.putSlice(image_mask, start);
+        }
 
         success = true;
     } else if (output_file_type == CARTA::FileType::FITS) {

@@ -31,9 +31,10 @@ public:
     ~MomentGenerator();
 
     // Calculate moments
+    bool ApplyStoppableMomentsCalculation();
     std::vector<CollapseResult> CalculateMoments(
         int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
-    std::vector<CollapseResult> CalculateMomentsStopable(
+    std::vector<CollapseResult> CalculateMomentsStoppable(
         int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
     void StopCalculation();
 

@@ -14,6 +14,7 @@ MomentController::~MomentController() {
 std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, const std::unique_ptr<Frame>& frame,
     MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     std::vector<CollapseResult> results;
+
     // Set moment generator with respect to the file id
     if (!_moment_generators.count(file_id)) {
         // Get the image ptr and spectral/stoke axis from the Frame
@@ -29,8 +30,12 @@ std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, cons
 
     // Calculate the moments
     if (_moment_generators.count(file_id)) {
-        // results = _moment_generators.at(file_id)->CalculateMoments(file_id, moment_request, moment_response);
-        results = _moment_generators.at(file_id)->CalculateMomentsStopable(file_id, moment_request, moment_response);
+        auto& moment_generators = _moment_generators.at(file_id);
+        if (moment_generators->ApplyStoppableMomentsCalculation()) {
+            results = moment_generators->CalculateMomentsStoppable(file_id, moment_request, moment_response);
+        } else {
+            results = moment_generators->CalculateMoments(file_id, moment_request, moment_response);
+        }
     }
 
     return results;
