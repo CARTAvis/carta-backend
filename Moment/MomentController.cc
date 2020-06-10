@@ -35,3 +35,9 @@ std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, cons
 
     return results;
 }
+
+void MomentController::StopCalculation(int file_id) {
+    if (_moment_generators.count(file_id)) {
+        _moment_generators.at(file_id)->StopCalculation();
+    }
+}

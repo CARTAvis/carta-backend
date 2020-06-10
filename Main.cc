@@ -428,7 +428,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::STOP_MOMENT_CALC: {
                     CARTA::StopMomentCalc message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        // Todo: Enable to cancel the moment calculation
+                        session->OnStopMomentCalc(message);
                     } else {
                         fmt::print("Bad STOP_MOMENT_CALC message!\n");
                     }

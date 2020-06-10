@@ -35,7 +35,7 @@ public:
         int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
     std::vector<CollapseResult> CalculateMomentsStopable(
         int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
-    std::vector<std::vector<casacore::Int>> GetPixelBoxes();
+    void StopCalculation();
 
     // Resulting message
     bool IsSuccess() const;
@@ -72,6 +72,7 @@ private:
     void InitCollapseResults(int file_id);
     casacore::CoordinateSystem MakeOutputCoordinates(casacore::IPosition& out_shape, const casacore::CoordinateSystem& in_coor_sys,
         const casacore::IPosition& in_shape, casacore::Int moment_axis, casacore::Bool remove_axis);
+    std::vector<std::vector<casacore::Int>> GetPixelBoxes();
 
     // Image parameters
     casacore::String _filename;
@@ -101,6 +102,9 @@ private:
 
     // Calculation results
     std::vector<CollapseResult> _collapse_results;
+
+    // Stop moment calculation
+    volatile bool _stop;
 };
 
 } // namespace carta

@@ -964,7 +964,10 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
     }
 }
 
-void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {}
+void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
+    int file_id(stop_moment_calc.file_id());
+    _moment_controller->StopCalculation(file_id);
+}
 
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
     int file_id(save_file.file_id());

@@ -12,7 +12,8 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _image_moments(nullptr),
       _collapse_error(false),
       _progress_callback(progress_callback),
-      _use_default_progress_reporter(true) {}
+      _use_default_progress_reporter(true),
+      _stop(false) {}
 
 MomentGenerator::~MomentGenerator() {}
 
@@ -93,6 +94,9 @@ std::vector<CollapseResult> MomentGenerator::CalculateMomentsStopable(
     // Disable the default progress reporter
     _use_default_progress_reporter = false;
 
+    // Reset the stop flag
+    _stop = false;
+
     // Set moment axis
     SetMomentAxis(moment_request);
 
@@ -113,9 +117,16 @@ std::vector<CollapseResult> MomentGenerator::CalculateMomentsStopable(
 
     // Calculate the moment images with respect to the 2D pixel box
     for (int i = 0; i < boxes.size(); ++i) {
+        // Check whether to stop the calculation
+        if (_stop) {
+            break;
+        }
+
         // Report the progress
-        progress = (float)(i) / boxes.size();
-        _progress_callback(progress);
+        if (i > 0) {
+            progress = (float)(i) / boxes.size();
+            _progress_callback(progress);
+        }
 
         // Reset an ImageMoments
         ResetSubImageMoments(moment_request, boxes[i]);
@@ -185,13 +196,25 @@ std::vector<CollapseResult> MomentGenerator::CalculateMomentsStopable(
         }
     }
 
+    // Report the calculation is done
+    _progress_callback(1.0);
+
     // Set is the moment calculation successful or not
     moment_response.set_success(IsSuccess());
 
     // Get error message if any
     moment_response.set_message(GetErrorMessage());
 
+    // Clear collapse results if the calculation is interrupted
+    if (_stop) {
+        _collapse_results.clear();
+    }
+
     return _collapse_results;
+}
+
+void MomentGenerator::StopCalculation() {
+    _stop = true;
 }
 
 void MomentGenerator::SetMomentAxis(const CARTA::MomentRequest& moment_request) {
@@ -337,24 +360,23 @@ std::vector<std::vector<casacore::Int>> MomentGenerator::GetPixelBoxes() {
     dir_shape[1] = image_shape[_dir_y_axis];
 
     // Calculate 2D pixel boxes
-    int SUB_AXIS_NUM = 3;
-    int len_x = dir_shape[0] / SUB_AXIS_NUM;
-    int len_y = dir_shape[1] / SUB_AXIS_NUM;
-    int res_x = dir_shape[0] % SUB_AXIS_NUM;
-    int res_y = dir_shape[1] % SUB_AXIS_NUM;
+    int len_x = dir_shape[0] / SUB_SECTION_COUNT;
+    int len_y = dir_shape[1] / SUB_SECTION_COUNT;
+    int res_x = dir_shape[0] % SUB_SECTION_COUNT;
+    int res_y = dir_shape[1] % SUB_SECTION_COUNT;
 
-    for (int i = 0; i < SUB_AXIS_NUM; ++i) {
-        for (int j = 0; j < SUB_AXIS_NUM; ++j) {
+    for (int i = 0; i < SUB_SECTION_COUNT; ++i) {
+        for (int j = 0; j < SUB_SECTION_COUNT; ++j) {
             std::vector<casacore::Int> box_corners;
             box_corners.resize(4);
             box_corners[0] = i * len_x;
             box_corners[1] = j * len_y;
             box_corners[2] = (i + 1) * len_x - 1;
             box_corners[3] = (j + 1) * len_y - 1;
-            if (i == (SUB_AXIS_NUM - 1)) {
+            if (i == (SUB_SECTION_COUNT - 1)) {
                 box_corners[2] += res_x;
             }
-            if (j == (SUB_AXIS_NUM - 1)) {
+            if (j == (SUB_SECTION_COUNT - 1)) {
                 box_corners[3] += res_y;
             }
             results.push_back(box_corners);
