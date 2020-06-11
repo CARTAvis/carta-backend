@@ -9,7 +9,7 @@
 
 #include "../InterfaceConstants.h"
 
-typedef const std::function<void(float)> MomentProgressCallback;
+using MomentProgressCallback = const std::function<void(float)>;
 
 namespace carta {
 
@@ -85,7 +85,7 @@ private:
 
     // Moment settings
     std::unique_ptr<casacore::ImageInterface<casacore::Float>> _sub_image;
-    std::unique_ptr<casa::ImageMoments<float>> _image_moments;
+    std::unique_ptr<casa::ImageMoments<casacore::Float>> _image_moments;
     casacore::Vector<casacore::Int> _moments;
     int _axis;
     casacore::String _channels;
