@@ -444,7 +444,14 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
     }
 }
 
+void GrpcSilentLogger(gpr_log_func_args*) {}
+
+extern void gpr_default_log(gpr_log_func_args* args);
+
 int StartGrpcService(int grpc_port) {
+    // Silence grpc error log
+    gpr_set_log_function(GrpcSilentLogger);
+
     // Set up address buffer
     std::string server_address = fmt::format("0.0.0.0:{}", grpc_port);
 
@@ -464,6 +471,8 @@ int StartGrpcService(int grpc_port) {
 
     if (selected_port > 0) { // available port found
         fmt::print("CARTA gRPC service available at 0.0.0.0:{}\n", selected_port);
+        // Turn logging back on
+        gpr_set_log_function(gpr_default_log);
         return 0;
     } else {
         fmt::print("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.\n", grpc_port);
