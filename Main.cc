@@ -444,26 +444,30 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
     }
 }
 
-void StartGrpcService(int grpc_port) {
+int StartGrpcService(int grpc_port) {
     // Set up address buffer
-    // When port is 0, grpc selects port returned in selected_port
-    int selected_port(grpc_port);
-    std::string server_address = fmt::format("0.0.0.0:{}", selected_port);
+    std::string server_address = fmt::format("0.0.0.0:{}", grpc_port);
 
     // Build grpc service
     grpc::ServerBuilder builder;
+    // BuildAndStart will populate this with the desired port if binding succeeds or 0 if it fails
+    int selected_port(-1);
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selected_port);
 
     // Register and start carta grpc server
     carta_grpc_service = std::unique_ptr<CartaGrpcService>(new CartaGrpcService(verbose));
     builder.RegisterService(carta_grpc_service.get());
+    // By default ports can be reused; we don't want this
+    builder.AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
     carta_grpc_server = builder.BuildAndStart();
+
     if (selected_port > 0) { // available port found
         fmt::print("CARTA gRPC service available at 0.0.0.0:{}\n", selected_port);
+        return 0;
     } else {
-        fmt::print("CARTA gRPC service failed to start");
-        carta_grpc_service.reset();
+        fmt::print("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.\n", grpc_port);
+        return 1;
     }
 }
 
@@ -582,7 +586,10 @@ int main(int argc, const char* argv[]) {
 
         // Start grpc service for scripting client
         if (grpc_port >= 0) {
-            StartGrpcService(grpc_port);
+            int grpc_status = StartGrpcService(grpc_port);
+            if (grpc_status) {
+                return 1;
+            }
         }
 
         session_number = 0;
