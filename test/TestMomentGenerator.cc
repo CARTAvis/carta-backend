@@ -7,7 +7,8 @@
 #include "../Moment/MomentGenerator.h"
 
 const std::string FITS_FILE_FULL_NAME = "images/test-moments/HD163296_CO_2_1.image.fits";
-const std::string CASA_FILE_FULL_NAME = "images/test-moments/M17_SWex.image";
+// const std::string CASA_FILE_FULL_NAME = "images/test-moments/M17_SWex.image";
+const std::string CASA_FILE_FULL_NAME = "images/test-moments/HD163296_CO_2_1.image";
 const std::string TEMP_FOLDER = "images/test-moments/temp";
 const std::string OUT_CASA_FILE_FULL_NAME = "images/test-moments/temp/HD163296_CO_2_1.image.fits.moment.image";
 const std::string OUT_FITS_FILE_FULL_NAME = "images/test-moments/temp/HD163296_CO_2_1.image.fits.moment.fits";
@@ -19,10 +20,14 @@ void FileManagerConvertCASAtoFITS();
 void TestTempImage();
 void TestCASAtoCASA();
 void TestFITStoFITS();
+void TestCalculateMoments();
+void TestCalculateMomentsStoppable();
 
 int main(int argc, char* argv[]) {
     int test_case;
     cout << "Choose a test case:" << endl;
+    cout << "    1) CalculateMoments()" << endl;
+    cout << "    2) CalculateMomentsStoppable()" << endl;
     cout << "    3) Convert FITS to CASA" << endl;
     cout << "    4) Convert CASA to FITS" << endl;
     cout << "    7) FileManager converts FITS to CASA" << endl;
@@ -33,6 +38,12 @@ int main(int argc, char* argv[]) {
     cin >> test_case;
 
     switch (test_case) {
+        case 1:
+            TestCalculateMoments();
+            break;
+        case 2:
+            TestCalculateMomentsStoppable();
+            break;
         case 3:
             ConvertFITStoCASA();
             break;
@@ -265,4 +276,136 @@ void TestFITStoFITS() {
     carta::FilesManager::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
     carta::FilesManager::Print(save_file_ack);
+}
+
+void TestCalculateMoments() {
+    // auto image = std::make_unique<casacore::FITSImage>(FITS_FILE_FULL_NAME);
+    auto image = std::make_unique<casacore::PagedImage<float>>(CASA_FILE_FULL_NAME);
+
+    // Get spectral and stokes indices
+    casacore::CoordinateSystem coord_sys = image->coordinates();
+    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
+    int spectral_axis = coord_sys.spectralAxisNumber();
+    int stokes_axis = coord_sys.polarizationAxisNumber();
+
+    // Set moment request message
+    CARTA::MomentRequest moment_request;
+    int file_id = 0;
+    moment_request.set_file_id(file_id);
+    moment_request.set_region_id(-1);
+
+    moment_request.add_moments(CARTA::Moment::MEAN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_COORD);
+    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD);
+    moment_request.add_moments(CARTA::Moment::MEDIAN_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::MEDIAN_COORDINATE);
+    moment_request.add_moments(CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::RMS_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::MAX_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
+
+    moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
+    auto* spectral_range = moment_request.mutable_spectral_range();
+    spectral_range->set_min(0);
+    spectral_range->set_max(249);
+    moment_request.set_mask(CARTA::MomentMask::None);
+    auto* pixel_range = moment_request.mutable_pixel_range();
+    pixel_range->set_min(-1.0);
+    pixel_range->set_max(1.0);
+
+    // Moment response
+    CARTA::MomentResponse moment_response;
+
+    // Set moment progress callback function
+    auto progress_callback = [&](float progress) {
+        CARTA::MomentProgress moment_progress;
+        moment_progress.set_progress(progress);
+        std::cout << "==========================================" << std::endl;
+        carta::MomentGenerator::Print(moment_progress);
+    };
+
+    // Calculate moments
+    auto moment_generator =
+        std::make_unique<carta::MomentGenerator>(FITS_FILE_FULL_NAME, image.get(), spectral_axis, stokes_axis, progress_callback);
+
+    auto t_start = std::chrono::high_resolution_clock::now();
+
+    std::vector<carta::CollapseResult> results = moment_generator->CalculateMoments(file_id, moment_request, moment_response);
+
+    auto t_end = std::chrono::high_resolution_clock::now();
+    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+    std::cout << "Time spend for CalculateMomentsStoppable(): " << dt * 1e-3 << " ms\n";
+}
+
+void TestCalculateMomentsStoppable() {
+    // auto image = std::make_unique<casacore::FITSImage>(FITS_FILE_FULL_NAME);
+    auto image = std::make_unique<casacore::PagedImage<float>>(CASA_FILE_FULL_NAME);
+
+    casacore::IPosition image_shape = image->shape();
+    casacore::IPosition nice_shape = image->niceCursorShape();
+    for (int i = 0; i < nice_shape.size(); ++i) {
+        std::cout << "nice_shape[" << i << "] = " << nice_shape[i] << ", image_shape[" << i << "] = " << image_shape[i] << "\n";
+    }
+
+    // Get spectral and stokes indices
+    casacore::CoordinateSystem coord_sys = image->coordinates();
+    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
+    int spectral_axis = coord_sys.spectralAxisNumber();
+    int stokes_axis = coord_sys.polarizationAxisNumber();
+
+    // Set moment request message
+    CARTA::MomentRequest moment_request;
+    int file_id = 0;
+    moment_request.set_file_id(file_id);
+    moment_request.set_region_id(-1);
+
+    moment_request.add_moments(CARTA::Moment::MEAN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_COORD);
+    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD);
+    moment_request.add_moments(CARTA::Moment::MEDIAN_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::MEDIAN_COORDINATE);
+    moment_request.add_moments(CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::RMS_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::MAX_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
+    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
+
+    moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
+    auto* spectral_range = moment_request.mutable_spectral_range();
+    spectral_range->set_min(0);
+    spectral_range->set_max(249);
+    moment_request.set_mask(CARTA::MomentMask::None);
+    auto* pixel_range = moment_request.mutable_pixel_range();
+    pixel_range->set_min(-1.0);
+    pixel_range->set_max(1.0);
+
+    // Moment response
+    CARTA::MomentResponse moment_response;
+
+    // Set moment progress callback function
+    auto progress_callback = [&](float progress) {
+        CARTA::MomentProgress moment_progress;
+        moment_progress.set_progress(progress);
+        std::cout << "==========================================" << std::endl;
+        carta::MomentGenerator::Print(moment_progress);
+    };
+
+    // Calculate moments
+    auto moment_generator =
+        std::make_unique<carta::MomentGenerator>(FITS_FILE_FULL_NAME, image.get(), spectral_axis, stokes_axis, progress_callback);
+
+    auto t_start = std::chrono::high_resolution_clock::now();
+
+    std::vector<carta::CollapseResult> results = moment_generator->CalculateMomentsStoppable(file_id, moment_request, moment_response);
+
+    auto t_end = std::chrono::high_resolution_clock::now();
+    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+    std::cout << "Time spend for CalculateMomentsStoppable(): " << dt * 1e-3 << " ms\n";
 }
