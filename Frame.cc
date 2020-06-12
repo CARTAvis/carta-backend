@@ -142,15 +142,17 @@ int Frame::StokesAxis() {
 casacore::Slicer Frame::GetImageSlicer(const ChannelRange& chan_range, int stokes) {
     // Slicer to apply channel range and stokes to image shape
 
-    // Normalize any constants
-    ChannelRange range(chan_range.from, chan_range.to);
-    if (range.from < 0) {
-        range.from = (range.from == ALL_CHANNELS ? 0 : range.from);
-        range.from = (range.from == CURRENT_CHANNEL ? CurrentChannel() : range.from);
+    // Normalize channel and stokes constants
+    int start_chan(chan_range.from), end_chan(chan_range.to);
+    if (start_chan == ALL_CHANNELS) {
+        start_chan = 0;
+    } else if (start_chan == CURRENT_CHANNEL) {
+        start_chan = CurrentChannel();
     }
-    if (range.to < 0) {
-        range.to = (range.to == ALL_CHANNELS ? NumChannels() - 1 : range.to);
-        range.to = (range.to == CURRENT_CHANNEL ? CurrentChannel() : range.to);
+    if (end_chan == ALL_CHANNELS) {
+        end_chan = NumChannels();
+    } else if (end_chan == CURRENT_CHANNEL) {
+        end_chan = CurrentChannel();
     }
     stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
 
@@ -160,10 +162,10 @@ casacore::Slicer Frame::GetImageSlicer(const ChannelRange& chan_range, int stoke
     casacore::IPosition end(_image_shape);
     end -= 1; // last position, not length
 
-    // Set start and end for channel, stokes axis
+    // Set channel and stokes axis ranges
     if (_spectral_axis >= 0) {
-        start(_spectral_axis) = range.from;
-        end(_spectral_axis) = range.to;
+        start(_spectral_axis) = start_chan;
+        end(_spectral_axis) = end_chan;
     }
     if (_stokes_axis >= 0) {
         start(_stokes_axis) = stokes;
