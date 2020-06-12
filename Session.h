@@ -35,7 +35,7 @@
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
 
-#include <cartavis/carta_service.grpc.pb.h>
+#include <carta-scripting-grpc/carta_service.grpc.pb.h>
 
 #include "AnimationObject.h"
 #include "EventHeader.h"
@@ -185,7 +185,7 @@ public:
 
     void SendScriptingRequest(uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async);
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
-    bool GetScriptingResponse(uint32_t scripting_request_id, CARTAVIS::ActionReply* reply);
+    bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
 private:
     // File info

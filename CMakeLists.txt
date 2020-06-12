@@ -43,7 +43,7 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
-ADD_SUBDIRECTORY(cartavis)
+ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
 INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
@@ -105,7 +105,7 @@ endif()
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
-        cartavis
+        carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
         fmt
         uWS
