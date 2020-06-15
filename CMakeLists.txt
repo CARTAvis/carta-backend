@@ -117,6 +117,7 @@ set(LINK_LIBS
         tbb
         cfitsio
         pugixml
+        curl
         casa_casa
         casa_coordinates
         casa_tables
@@ -162,7 +163,8 @@ set(SOURCE_FILES
         Contouring.cc
         Smoothing.cc
         Timer/Timer.cc
-        GrpcServer/CartaGrpcService.cc)
+        GrpcServer/CartaGrpcService.cc
+        SpectralLineRequest.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

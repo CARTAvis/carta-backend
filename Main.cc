@@ -425,6 +425,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
+                    CARTA::SpectralLineRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnSpectralLineRequest(message, head.request_id);
+                    } else {
+                        fmt::print("Bad SPECTRAL_LINE_REQUEST message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];

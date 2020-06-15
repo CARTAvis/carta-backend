@@ -34,6 +34,7 @@
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
+#include <carta-protobuf/spectral_line_request.pb.h>
 
 #include <cartavis/carta_service.grpc.pb.h>
 
@@ -81,6 +82,7 @@ public:
     void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id);
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
+    void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
 
     void SendPendingMessages();
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
