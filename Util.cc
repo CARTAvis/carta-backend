@@ -2,13 +2,17 @@
 
 using namespace std;
 
-void LOG(uint32_t id, const string& log_message) {
+namespace carta {
+
+void Log(uint32_t id, const string& log_message) {
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string time_string = ctime(&time);
     time_string = time_string.substr(0, time_string.length() - 1);
 
     fmt::print("Session {} ({}): {}\n", id, time_string, log_message);
 }
+
+} // namespace carta
 
 void ReadPermissions(const string& filename, unordered_map<string, vector<string>>& permissions_map) {
     ifstream permissions_file(filename);

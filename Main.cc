@@ -72,7 +72,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         auto cookie_header = http_request.getHeader("cookie");
         string auth_header_string(cookie_header.value, cookie_header.valueLength);
         if (auth_header_string.find(expected_auth_header) == string::npos) {
-            LOG(0, "Invalid authorization token header, closing socket");
+            carta::Log(0, "Invalid authorization token header, closing socket");
             ws->close(403, "Invalid authorization token");
             return;
         }
@@ -97,7 +97,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     session->IncreaseRefCount();
     outgoing->setData(session);
 
-    LOG(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, ws->getAddress().address,
+    carta::Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, ws->getAddress().address,
         Session::NumberOfSessions());
 }
 
@@ -113,7 +113,8 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
     if (session) {
         auto uuid = session->_id;
         session->DisconnectCalled();
-        LOG(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address, Session::NumberOfSessions());
+        carta::Log(
+            uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address, Session::NumberOfSessions());
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);
         }
