@@ -11,13 +11,15 @@
 #include <imageanalysis/ImageAnalysis/ImageHistograms.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgress.h>
 #include <imageanalysis/ImageAnalysis/SepImageConvolver.h>
-#include <imageanalysis/ImageTypedefs.h>
 
 #include "MomentClip.h"
 #include "MomentFit.h"
 #include "MomentWindow.h"
 #include "MomentsBase.h"
 #include "MyLatticeApply.h"
+
+#define SPIIT std::shared_ptr<casacore::ImageInterface<T>>
+#define SPCIIT std::shared_ptr<const casacore::ImageInterface<T>>
 
 namespace carta {
 
