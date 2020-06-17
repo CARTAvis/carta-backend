@@ -18,8 +18,11 @@
 #include <casacore/mirlib/miriad.h>
 
 #include <carta-protobuf/region_requirements.pb.h>
+#include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
+#include "ImageStats/BasicStatsCalculator.h"
+#include "ImageStats/Histogram.h"
 #include "InterfaceConstants.h"
 
 namespace carta {
@@ -50,9 +53,21 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
     return casacore::ImageOpener::imageType(filename);
 }
 
+// Image info: filename, type
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
-
 CARTA::FileType GetCartaFileType(const std::string& filename);
+
+// ************ Data Stream Helpers *************
+
+void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
+
+void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results);
+
+void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
+    std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
+
+void FillStatisticsValuesFromMap(
+    CARTA::RegionStatsData& stats_data, std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
 
 // ************ structs *************
 //
@@ -78,92 +93,40 @@ struct ChannelRange {
     }
 };
 
-struct CursorXy {
-    // CARTA::Point is float
+struct PointXy {
+    // Utilities for cursor and point regions
     float x, y;
-    CursorXy() {
+
+    PointXy() {
         x = -1.0;
         y = -1.0;
     }
-    CursorXy(float x_, float y_) {
+    PointXy(float x_, float y_) {
         x = x_;
         y = y_;
     }
-    void operator=(const CursorXy& other) {
+    void operator=(const PointXy& other) {
         x = other.x;
         y = other.y;
     }
-    bool operator==(const CursorXy& rhs) const {
+    bool operator==(const PointXy& rhs) const {
         if ((x != rhs.x) || (y != rhs.y)) {
             return false;
         }
         return true;
     }
-};
-
-struct RegionState {
-    std::string name;
-    CARTA::RegionType type;
-    std::vector<CARTA::Point> control_points;
-    float rotation;
-    RegionState() {}
-    RegionState(std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
-        name = name_;
-        type = type_;
-        control_points = control_points_;
-        rotation = rotation_;
+    void ToIndex(int& x_index, int& y_index) {
+        // convert float to int for index into image data array
+        x_index = static_cast<int>(std::round(x));
+        y_index = static_cast<int>(std::round(y));
     }
-    void operator=(const RegionState& other) {
-        name = other.name;
-        type = other.type;
-        control_points = other.control_points;
-        rotation = other.rotation;
-    }
-    bool operator==(const RegionState& rhs) {
-        if (name != rhs.name || type != rhs.type || rotation != rhs.rotation || control_points.size() != rhs.control_points.size()) {
-            return false;
-        }
-        for (int i = 0; i < control_points.size(); ++i) {
-            float x(control_points[i].x()), y(control_points[i].y());
-            float rhs_x(rhs.control_points[i].x()), rhs_y(rhs.control_points[i].y());
-            if (x != rhs_x || y != rhs_y) {
-                return false;
-            }
-        }
-        return true;
-    }
-    bool operator!=(const RegionState& rhs) {
-        if (name != rhs.name || type != rhs.type || rotation != rhs.rotation || control_points.size() != rhs.control_points.size()) {
-            return true;
-        }
-        for (int i = 0; i < control_points.size(); ++i) {
-            float x(control_points[i].x()), y(control_points[i].y());
-            float rhs_x(rhs.control_points[i].x()), rhs_y(rhs.control_points[i].y());
-            if (x != rhs_x || y != rhs_y) {
-                return true;
-            }
-        }
-        return false;
-    }
-    void UpdateState(std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
-        name = name_;
-        type = type_;
-        control_points = control_points_;
-        rotation = rotation_;
-    }
-};
-
-struct SpectralConfig {
-    int stokes_index;
-    std::vector<int> stats_types;
-
-    SpectralConfig() {}
-    SpectralConfig(int stokes_index_, std::vector<int> stats_types_) {
-        stokes_index = stokes_index_;
-        stats_types = stats_types_;
-    }
-    bool operator==(const SpectralConfig& rhs) const {
-        return ((stokes_index == rhs.stokes_index) && (stats_types == rhs.stats_types));
+    bool InImage(int xrange, int yrange) {
+        // returns whether x, y are within given image axis ranges
+        int x_index, y_index;
+        ToIndex(x_index, y_index);
+        bool x_in_image = (x_index >= 0) && (x_index < xrange);
+        bool y_in_image = (y_index >= 0) && (y_index < yrange);
+        return (x_in_image && y_in_image);
     }
 };
 

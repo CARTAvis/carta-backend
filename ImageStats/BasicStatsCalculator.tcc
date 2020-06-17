@@ -1,7 +1,5 @@
-#ifndef CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_TCC_
-#define CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_TCC_
-
-#include "BasicStatsCalculator.h"
+#ifndef CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_TCC_
+#define CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_TCC_
 
 namespace carta {
 
@@ -22,6 +20,7 @@ void BasicStats<T>::join(BasicStats<T>& other) {
 template <typename T>
 BasicStats<T>::BasicStats(size_t num_pixels, double sum, double mean, double stdDev, T min_val, T max_val, double rms, double sumSq)
     : num_pixels(num_pixels), sum(sum), mean(mean), stdDev(stdDev), min_val(min_val), max_val(max_val), rms(rms), sumSq(sumSq) {}
+
 template <typename T>
 BasicStats<T>::BasicStats()
     : num_pixels(0),
@@ -123,4 +122,4 @@ BasicStats<T> BasicStatsCalculator<T>::GetStats() const {
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_REGION_BASICSTATSCALCULATOR_TCC_
+#endif // CARTA_BACKEND_IMAGESTATS_BASICSTATSCALCULATOR_TCC_

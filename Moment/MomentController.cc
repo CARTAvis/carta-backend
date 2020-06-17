@@ -11,7 +11,7 @@ MomentController::~MomentController() {
     _moment_generators.clear();
 }
 
-std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, const std::unique_ptr<Frame>& frame,
+std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame,
     MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     std::vector<CollapseResult> results;
 

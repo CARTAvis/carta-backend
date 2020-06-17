@@ -11,7 +11,7 @@ public:
     MomentController();
     ~MomentController();
 
-    std::vector<CollapseResult> CalculateMoments(int file_id, const std::unique_ptr<Frame>& frame, MomentProgressCallback progress_callback,
+    std::vector<CollapseResult> CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
     void StopCalculation(int file_id);
 
