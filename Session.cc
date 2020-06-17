@@ -1670,7 +1670,7 @@ void Session::OnScriptingResponse(const CARTA::ScriptingResponse& message, uint3
 }
 
 // TODO: return pointer to original response type and copy in grpc service
-bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTAVIS::ActionReply* reply) {
+bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply) {
     std::unique_lock<std::mutex> lock(_scripting_mutex);
     auto scripting_response = _scripting_response.find(scripting_request_id);
     if (scripting_response == _scripting_response.end()) {
