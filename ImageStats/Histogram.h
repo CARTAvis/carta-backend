@@ -1,16 +1,22 @@
-#ifndef CARTA_BACKEND_REGION_HISTOGRAM_H_
-#define CARTA_BACKEND_REGION_HISTOGRAM_H_
+#ifndef CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
+#define CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
 
 #include <vector>
 
 #include <tbb/blocked_range2d.h>
 #include <tbb/blocked_range3d.h>
 
-#include <casacore/casa/Arrays/Matrix.h>
-
 namespace carta {
 
+struct HistogramResults {
+    int num_bins;
+    float bin_width;
+    float bin_center;
+    std::vector<int> histogram_bins;
+};
+
 class Histogram {
+    int _num_bins;
     float _bin_width;
     float _min_val;
     std::vector<int> _hist;
@@ -24,15 +30,9 @@ public:
     void join(Histogram& h); // NOLINT
     void setup_bins();
 
-    float GetBinWidth() const {
-        return _bin_width;
-    }
-
-    std::vector<int> GetHistogram() const {
-        return _hist;
-    }
+    HistogramResults GetHistogram() const;
 };
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_REGION_HISTOGRAM_H_
+#endif // CARTA_BACKEND_IMAGESTATS_HISTOGRAM_H_
