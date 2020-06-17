@@ -406,7 +406,7 @@ void MomentGenerator::ResetImageMoments(const CARTA::MomentRequest& moment_reque
     casacore::LogIO os(log);
 
     // Make an ImageMoments object (and overwrite the output file if it already exists)
-    _image_moments.reset(new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
+    _image_moments.reset(new ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
 
     if (_use_default_progress_reporter) {
         // Set moment calculation progress monitor
@@ -431,7 +431,7 @@ void MomentGenerator::ResetSubImageMoments(const CARTA::MomentRequest& moment_re
     casacore::LogIO os(log);
 
     // Make an ImageMoments object (and overwrite the output file if it already exists)
-    _image_moments.reset(new casa::ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
+    _image_moments.reset(new ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
 
     if (_use_default_progress_reporter) {
         // Set moment calculation progress monitor
@@ -443,55 +443,55 @@ int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
     int mode(-1);
     switch (moment) {
         case CARTA::Moment::MEAN_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::AVERAGE;
+            mode = ImageMoments<casacore::Float>::AVERAGE;
             break;
         }
         case CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::INTEGRATED;
+            mode = ImageMoments<casacore::Float>::INTEGRATED;
             break;
         }
         case CARTA::Moment::INTENSITY_WEIGHTED_COORD: {
-            mode = casa::ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE;
+            mode = ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE;
             break;
         }
         case CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD: {
-            mode = casa::ImageMoments<casacore::Float>::WEIGHTED_DISPERSION_COORDINATE;
+            mode = ImageMoments<casacore::Float>::WEIGHTED_DISPERSION_COORDINATE;
             break;
         }
         case CARTA::Moment::MEDIAN_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::MEDIAN;
+            mode = ImageMoments<casacore::Float>::MEDIAN;
             break;
         }
         case CARTA::Moment::MEDIAN_COORDINATE: {
-            mode = casa::ImageMoments<casacore::Float>::MEDIAN_COORDINATE;
+            mode = ImageMoments<casacore::Float>::MEDIAN_COORDINATE;
             break;
         }
         case CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::STANDARD_DEVIATION;
+            mode = ImageMoments<casacore::Float>::STANDARD_DEVIATION;
             break;
         }
         case CARTA::Moment::RMS_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::RMS;
+            mode = ImageMoments<casacore::Float>::RMS;
             break;
         }
         case CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::ABS_MEAN_DEVIATION;
+            mode = ImageMoments<casacore::Float>::ABS_MEAN_DEVIATION;
             break;
         }
         case CARTA::Moment::MAX_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::MAXIMUM;
+            mode = ImageMoments<casacore::Float>::MAXIMUM;
             break;
         }
         case CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::MAXIMUM_COORDINATE;
+            mode = ImageMoments<casacore::Float>::MAXIMUM_COORDINATE;
             break;
         }
         case CARTA::Moment::MIN_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::MINIMUM;
+            mode = ImageMoments<casacore::Float>::MINIMUM;
             break;
         }
         case CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM: {
-            mode = casa::ImageMoments<casacore::Float>::MINIMUM_COORDINATE;
+            mode = ImageMoments<casacore::Float>::MINIMUM_COORDINATE;
             break;
         }
         default: {
@@ -505,55 +505,55 @@ int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
 casacore::String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
     casacore::String suffix;
     switch (moment) {
-        case casa::ImageMoments<casacore::Float>::AVERAGE: {
+        case ImageMoments<casacore::Float>::AVERAGE: {
             suffix = "average";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::INTEGRATED: {
+        case ImageMoments<casacore::Float>::INTEGRATED: {
             suffix = "integrated";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE: {
+        case ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE: {
             suffix = "weighted_coord";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::WEIGHTED_DISPERSION_COORDINATE: {
+        case ImageMoments<casacore::Float>::WEIGHTED_DISPERSION_COORDINATE: {
             suffix = "weighted_dispersion_coord";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::MEDIAN: {
+        case ImageMoments<casacore::Float>::MEDIAN: {
             suffix = "median";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::MEDIAN_COORDINATE: {
+        case ImageMoments<casacore::Float>::MEDIAN_COORDINATE: {
             suffix = "median_coord";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::STANDARD_DEVIATION: {
+        case ImageMoments<casacore::Float>::STANDARD_DEVIATION: {
             suffix = "standard_deviation";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::RMS: {
+        case ImageMoments<casacore::Float>::RMS: {
             suffix = "rms";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::ABS_MEAN_DEVIATION: {
+        case ImageMoments<casacore::Float>::ABS_MEAN_DEVIATION: {
             suffix = "abs_mean_dev";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::MAXIMUM: {
+        case ImageMoments<casacore::Float>::MAXIMUM: {
             suffix = "maximum";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::MAXIMUM_COORDINATE: {
+        case ImageMoments<casacore::Float>::MAXIMUM_COORDINATE: {
             suffix = "maximum_coord";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::MINIMUM: {
+        case ImageMoments<casacore::Float>::MINIMUM: {
             suffix = "minimum";
             break;
         }
-        case casa::ImageMoments<casacore::Float>::MINIMUM_COORDINATE: {
+        case ImageMoments<casacore::Float>::MINIMUM_COORDINATE: {
             suffix = "minimum_coord";
             break;
         }

@@ -3,10 +3,10 @@
 
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
-#include <imageanalysis/ImageAnalysis/ImageMoments.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
 #include <imageanalysis/Regions/CasacRegionManager.h>
 
+#include "../Analysis/ImageMoments.h"
 #include "../InterfaceConstants.h"
 
 using MomentProgressCallback = const std::function<void(float)>;
@@ -85,7 +85,7 @@ private:
 
     // Moment settings
     std::unique_ptr<casacore::ImageInterface<casacore::Float>> _sub_image;
-    std::unique_ptr<casa::ImageMoments<casacore::Float>> _image_moments;
+    std::unique_ptr<ImageMoments<casacore::Float>> _image_moments;
     casacore::Vector<casacore::Int> _moments;
     int _axis;
     casacore::String _channels;

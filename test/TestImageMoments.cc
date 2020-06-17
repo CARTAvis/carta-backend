@@ -17,12 +17,12 @@ int main(int argc, char* argv[]) {
     // Construct moment helper object
     casacore::LogOrigin log_origin("myClass", "myFunction(...)", WHERE);
     casacore::LogIO os(log_origin);
-    casa::ImageMoments<casacore::Float> moment(casacore::SubImage<casacore::Float>(in_image), os);
+    ImageMoments<casacore::Float> moment(casacore::SubImage<casacore::Float>(in_image), os);
 
     // Set state function argument values
     casacore::Vector<casacore::Int> moments(2);
-    moments(0) = casa::ImageMoments<casacore::Float>::AVERAGE;
-    moments(1) = casa::ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE;
+    moments(0) = ImageMoments<casacore::Float>::AVERAGE;
+    moments(1) = ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE;
     // casacore::Vector<int> methods(2);
     // methods(0) = casa::ImageMoments<casacore::Float>::WINDOW;
     // methods(1) = casa::ImageMoments<casacore::Float>::FIT;
