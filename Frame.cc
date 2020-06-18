@@ -40,7 +40,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     }
 
     _filename = loader->GetFileName();
-    
+
     try {
         _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
