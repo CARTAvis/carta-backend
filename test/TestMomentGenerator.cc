@@ -21,13 +21,13 @@ void TestTempImage();
 void TestCASAtoCASA();
 void TestFITStoFITS();
 void TestCalculateMoments();
-void TestCalculateMomentsStoppable();
+void TestMedianCoord();
 
 int main(int argc, char* argv[]) {
     int test_case;
     cout << "Choose a test case:" << endl;
     cout << "    1) CalculateMoments()" << endl;
-    cout << "    2) CalculateMomentsStoppable()" << endl;
+    cout << "    2) TestMedianCoord()" << endl;
     cout << "    3) Convert FITS to CASA" << endl;
     cout << "    4) Convert CASA to FITS" << endl;
     cout << "    7) FileManager converts FITS to CASA" << endl;
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
             TestCalculateMoments();
             break;
         case 2:
-            TestCalculateMomentsStoppable();
+            TestMedianCoord();
             break;
         case 3:
             ConvertFITStoCASA();
@@ -341,7 +341,7 @@ void TestCalculateMoments() {
     std::cout << "Time spend for CalculateMomentsStoppable(): " << dt * 1e-3 << " ms\n";
 }
 
-void TestCalculateMomentsStoppable() {
+void TestMedianCoord() {
     // auto image = std::make_unique<casacore::FITSImage>(FITS_FILE_FULL_NAME);
     auto image = std::make_unique<casacore::PagedImage<float>>(CASA_FILE_FULL_NAME);
 
@@ -363,19 +363,20 @@ void TestCalculateMomentsStoppable() {
     moment_request.set_file_id(file_id);
     moment_request.set_region_id(-1);
 
-    moment_request.add_moments(CARTA::Moment::MEAN_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_COORD);
-    moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD);
-    moment_request.add_moments(CARTA::Moment::MEDIAN_OF_THE_SPECTRUM);
-    // moment_request.add_moments(CARTA::Moment::MEDIAN_COORDINATE);
-    moment_request.add_moments(CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::RMS_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::MAX_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
-    moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::MEAN_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_COORD);
+    // moment_request.add_moments(CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD);
+    // moment_request.add_moments(CARTA::Moment::MEDIAN_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::RMS_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::MAX_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::MIN_OF_THE_SPECTRUM);
+    // moment_request.add_moments(CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM);
+
+    moment_request.add_moments(CARTA::Moment::MEDIAN_COORDINATE);
 
     moment_request.set_axis(CARTA::MomentAxis::SPECTRAL);
     auto* spectral_range = moment_request.mutable_spectral_range();
@@ -383,7 +384,7 @@ void TestCalculateMomentsStoppable() {
     spectral_range->set_max(249);
     moment_request.set_mask(CARTA::MomentMask::None);
     auto* pixel_range = moment_request.mutable_pixel_range();
-    pixel_range->set_min(-1.0);
+    pixel_range->set_min(0.0);
     pixel_range->set_max(1.0);
 
     // Moment response

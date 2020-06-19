@@ -138,6 +138,7 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
             _exclude_pix[1] = pixel_max;
         }
     } else {
+        /// Todo: need to implement the min/max pixel values
         _include_pix.resize(1);
         _include_pix[0] = -1;
     }

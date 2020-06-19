@@ -194,10 +194,13 @@ void MomentsBase<T>::_checkMethod() {
                 }
             }
         }
-        ThrowIf(noGood,
-            "Request for the median coordinate moment, but it is only "
-            "available with the basic (no smooth, no window, no fit) method "
-            "and a pixel range that is either all positive or all negative");
+        std::cerr << "Request for the median coordinate moment, but it is only "
+                     "available with the basic (no smooth, no window, no fit) method "
+                     "and a pixel range that is either all positive or all negative\n";
+        // ThrowIf(noGood,
+        //     "Request for the median coordinate moment, but it is only "
+        //     "available with the basic (no smooth, no window, no fit) method "
+        //     "and a pixel range that is either all positive or all negative");
     }
     // Now check all the silly methods
     if (!((!doSmooth_p && !doWindow_p && !doFit_p && (noInclude_p && noExclude_p)) ||
