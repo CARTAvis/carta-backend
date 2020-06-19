@@ -16,7 +16,6 @@
 #include "MomentFit.h"
 #include "MomentWindow.h"
 #include "MomentsBase.h"
-#include "MyLatticeApply.h"
 
 namespace carta {
 

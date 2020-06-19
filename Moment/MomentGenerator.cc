@@ -11,32 +11,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _sub_image(nullptr),
       _image_moments(nullptr),
       _collapse_error(false),
-      _progress_callback(progress_callback),
-      _use_default_progress_reporter(true),
-      _stop(false) {
-    // Get direction axes numbers
-    const casacore::CoordinateSystem& coord_sys = _image->coordinates();
-    casacore::Vector<casacore::Int> dir_axes_numbers;
-    if (coord_sys.hasDirectionCoordinate()) {
-        dir_axes_numbers = coord_sys.directionAxesNumbers();
-    } else {
-        dir_axes_numbers = coord_sys.linearAxesNumbers();
-    }
-
-    _dir_x_axis = dir_axes_numbers[0];
-    _dir_y_axis = dir_axes_numbers[1];
-}
-
-MomentGenerator::~MomentGenerator() {}
-
-bool MomentGenerator::ApplyStoppableMomentsCalculation() {
-    bool result(false);
-    const casacore::IPosition& image_shape = _image->shape();
-    if ((image_shape[_dir_x_axis] > AXIS_LENGTH_THRESHOLD) && (image_shape[_dir_y_axis] > AXIS_LENGTH_THRESHOLD)) {
-        result = true;
-    }
-    return result;
-}
+      _progress_callback(progress_callback) {}
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(
     int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
@@ -110,130 +85,10 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(
     return collapse_results;
 }
 
-std::vector<CollapseResult> MomentGenerator::CalculateMomentsStoppable(
-    int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
-    // Disable the default progress reporter
-    _use_default_progress_reporter = false;
-
-    // Reset the stop flag
-    _stop = false;
-
-    // Set moment axis
-    SetMomentAxis(moment_request);
-
-    // Set moment types
-    SetMomentTypes(moment_request);
-
-    // Set pixel range
-    SetPixelRange(moment_request);
-
-    // Initialize the collapse results
-    InitCollapseResults(file_id);
-
-    // Get sub image pixel box
-    std::vector<std::vector<casacore::Int>> boxes = GetPixelBoxes();
-
-    // Initialize the progress
-    float progress = 0.0;
-
-    // Calculate the moment images with respect to the 2D pixel box
-    for (int i = 0; i < boxes.size(); ++i) {
-        // Check whether to stop the calculation
-        if (_stop) {
-            // Clear collapse results if the calculation is interrupted
-            _collapse_results.clear();
-            break;
-        }
-
-        // Report the progress
-        if (i > 0) {
-            progress = (float)(i) / boxes.size();
-            _progress_callback(progress);
-        }
-
-        // Reset an ImageMoments
-        ResetSubImageMoments(moment_request, boxes[i]);
-
-        // Calculate moments
-        try {
-            if (!_image_moments->setMoments(_moments)) {
-                _error_msg = _image_moments->errorMessage();
-                _collapse_error = true;
-            } else {
-                if (!_image_moments->setMomentAxis(_axis)) {
-                    _error_msg = _image_moments->errorMessage();
-                    _collapse_error = true;
-                } else {
-                    casacore::Bool do_temp = true;
-                    casacore::Bool remove_axis = false;
-                    casacore::String out_file = GetOutputFileName();
-                    std::size_t found = out_file.find_last_of("/");
-                    std::string file_base_name = out_file.substr(found + 1);
-                    try {
-                        _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
-
-                        // Save collapse results in the memory
-                        auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);
-
-                        // Fill the moment images with respect to the moment types
-                        for (int j = 0; j < result_images.size(); ++j) {
-                            // Get results
-                            std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
-                                dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[j]);
-
-                            // Fill results
-                            auto& out_image = _collapse_results[j].image;
-                            if (out_image != nullptr) {
-                                // Get a copy of the original pixel data
-                                casacore::IPosition start(moment_image->shape().size(), 0);
-                                casacore::IPosition count(moment_image->shape());
-                                casacore::Slicer slice(start, count);
-                                casacore::Array<casacore::Float> temp_array;
-                                moment_image->doGetSlice(temp_array, slice);
-
-                                // Copy sub-moment image pixels to the resulting image
-                                casacore::IPosition out_start(out_image->shape().size(), 0);
-                                out_start(_dir_x_axis) = boxes[i][0];
-                                out_start(_dir_y_axis) = boxes[i][1];
-                                out_image->putSlice(temp_array, out_start);
-                                out_image->setUnits(moment_image->units());
-
-                                // Copy sub-moment image mask to the resulting image
-                                if (moment_image->hasPixelMask() && out_image->hasPixelMask()) {
-                                    casacore::Array<casacore::Bool> moment_image_mask;
-                                    moment_image->getMaskSlice(moment_image_mask, slice);
-                                    casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
-                                    out_image_mask.putSlice(moment_image_mask, out_start);
-                                }
-                            }
-                        }
-                    } catch (const AipsError& x) {
-                        _error_msg = x.getMesg();
-                        _collapse_error = true;
-                    }
-                }
-            }
-        } catch (AipsError& error) {
-            _error_msg = error.getLastMessage();
-            _collapse_error = true;
-        }
-    }
-
-    // Report the calculation is done
-    _progress_callback(1.0);
-
-    // Set is the moment calculation successful or not
-    moment_response.set_success(IsSuccess());
-
-    // Get error message if any
-    moment_response.set_message(GetErrorMessage());
-
-    return _collapse_results;
-}
-
 void MomentGenerator::StopCalculation() {
-    _image_moments->StopCalculation();
-    _stop = true;
+    if (_image_moments) {
+        _image_moments->StopCalculation();
+    }
 }
 
 void MomentGenerator::SetMomentAxis(const CARTA::MomentRequest& moment_request) {
@@ -303,7 +158,6 @@ casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& m
     }
 
     casacore::String channels = std::to_string(chan_min) + "~" + std::to_string(chan_max); // Channel range for the moments calculation
-    _channels = std::to_string(chan_min) + "_" + std::to_string(chan_max);                 // This is used to set the output file name
     casacore::uInt num_selected_channels = chan_max - chan_min + 1;
 
     // Set the stokes (not apply this variable yet!)
@@ -324,76 +178,6 @@ casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& m
     return region;
 }
 
-casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& moment_request, const casacore::String& pixel_box) {
-    casacore::String infile = ""; // Original purpose is to access the region record from the image file
-
-    // Initialize the channels
-    int chan_min(moment_request.spectral_range().min());
-    int chan_max(moment_request.spectral_range().max());
-
-    // Check if the channel range is logical
-    if (chan_max < chan_min) {
-        int tmp = chan_max;
-        chan_max = chan_min;
-        chan_min = tmp;
-    }
-
-    casacore::String channels = std::to_string(chan_min) + "~" + std::to_string(chan_max); // Channel range for the moments calculation
-    _channels = std::to_string(chan_min) + "_" + std::to_string(chan_max);                 // This is used to set the output file name
-    casacore::uInt num_selected_channels = chan_max - chan_min + 1;
-
-    // Set the stokes (not apply this variable yet!)
-    casacore::String tmp_stokes = GetStokes(moment_request.stokes()); // "I" , "IV" , "IQU", or "IQUV"
-
-    // Make a region record
-    CoordinateSystem coordinate_system = _image->coordinates();
-    IPosition pos = _image->shape();
-    _image->shape();
-    casacore::String region_name;
-    casacore::String stokes = ""; // Not available yet, in principle can choose "I" , "IV" , "IQU", or "IQUV"
-    casa::CasacRegionManager crm(coordinate_system);
-    casacore::String diagnostics;
-    casacore::Record region = crm.fromBCS(diagnostics, num_selected_channels, stokes, NULL, region_name, channels,
-        casa::CasacRegionManager::USE_FIRST_STOKES, pixel_box, pos, infile);
-
-    return region;
-}
-
-std::vector<std::vector<casacore::Int>> MomentGenerator::GetPixelBoxes() {
-    std::vector<std::vector<casacore::Int>> results;
-
-    const casacore::IPosition& image_shape = _image->shape();
-    casacore::Vector<casacore::Int> dir_shape(2);
-    dir_shape[0] = image_shape[_dir_x_axis];
-    dir_shape[1] = image_shape[_dir_y_axis];
-
-    // Calculate 2D pixel boxes
-    int len_x = dir_shape[0] / SUB_SECTION_COUNT;
-    int len_y = dir_shape[1] / SUB_SECTION_COUNT;
-    int res_x = dir_shape[0] % SUB_SECTION_COUNT;
-    int res_y = dir_shape[1] % SUB_SECTION_COUNT;
-
-    for (int i = 0; i < SUB_SECTION_COUNT; ++i) {
-        for (int j = 0; j < SUB_SECTION_COUNT; ++j) {
-            std::vector<casacore::Int> box_corners;
-            box_corners.resize(4);
-            box_corners[0] = i * len_x;
-            box_corners[1] = j * len_y;
-            box_corners[2] = (i + 1) * len_x - 1;
-            box_corners[3] = (j + 1) * len_y - 1;
-            if (i == (SUB_SECTION_COUNT - 1)) {
-                box_corners[2] += res_x;
-            }
-            if (j == (SUB_SECTION_COUNT - 1)) {
-                box_corners[3] += res_y;
-            }
-            results.push_back(box_corners);
-        }
-    }
-
-    return results;
-}
-
 void MomentGenerator::ResetImageMoments(const CARTA::MomentRequest& moment_request) {
     // Make a region record
     casacore::Record region = MakeRegionRecord(moment_request);
@@ -409,35 +193,8 @@ void MomentGenerator::ResetImageMoments(const CARTA::MomentRequest& moment_reque
     // Make an ImageMoments object (and overwrite the output file if it already exists)
     _image_moments.reset(new ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
 
-    if (_use_default_progress_reporter) {
-        // Set moment calculation progress monitor
-        _image_moments->setProgressMonitor(this);
-    }
-}
-
-void MomentGenerator::ResetSubImageMoments(const CARTA::MomentRequest& moment_request, const std::vector<casacore::Int>& pixel_box) {
-    // Make a pixel box string
-    casacore::String box = std::to_string(pixel_box[0]) + ", " + std::to_string(pixel_box[1]) + ", " + std::to_string(pixel_box[2]) + ", " +
-                           std::to_string(pixel_box[3]);
-
-    // Make a region record
-    casacore::Record region = MakeRegionRecord(moment_request, box);
-
-    // Make a sub image interface
-    casacore::String empty("");
-    std::shared_ptr<const SubImage<casacore::Float>> sub_image =
-        casa::SubImageFactory<casacore::Float>::createSubImageRO(*_image, region, empty, NULL);
-    _sub_image.reset(new SubImage<casacore::Float>(*sub_image));
-    casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
-    casacore::LogIO os(log);
-
-    // Make an ImageMoments object (and overwrite the output file if it already exists)
-    _image_moments.reset(new ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
-
-    if (_use_default_progress_reporter) {
-        // Set moment calculation progress monitor
-        _image_moments->setProgressMonitor(this);
-    }
+    // Set moment calculation progress monitor
+    _image_moments->setProgressMonitor(this);
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
@@ -617,122 +374,26 @@ casacore::String MomentGenerator::GetErrorMessage() const {
 }
 
 void MomentGenerator::setStepCount(int count) {
-    if (_use_default_progress_reporter) {
-        // Initialize the progress parameters
-        _total_steps = count;
-        _progress = 0.0;
-        _pre_progress = 0.0;
-    }
+    // Initialize the progress parameters
+    _total_steps = count;
+    _progress = 0.0;
+    _pre_progress = 0.0;
 }
 
 void MomentGenerator::setStepsCompleted(int count) {
-    if (_use_default_progress_reporter) {
-        _progress = (float)count / _total_steps;
-        // Update the progress report every percent
-        if ((_progress - _pre_progress) >= REPORT_PROGRESS_EVERY_FACTOR) {
-            if (_progress > MOMENT_COMPLETE) {
-                _progress = MOMENT_COMPLETE;
-            }
-            // Report the progress
-            _progress_callback(_progress);
-            _pre_progress = _progress;
+    _progress = (float)count / _total_steps;
+    // Update the progress report every percent
+    if ((_progress - _pre_progress) >= REPORT_PROGRESS_EVERY_FACTOR) {
+        if (_progress > MOMENT_COMPLETE) {
+            _progress = MOMENT_COMPLETE;
         }
+        // Report the progress
+        _progress_callback(_progress);
+        _pre_progress = _progress;
     }
 }
 
 void MomentGenerator::done() {}
-
-void MomentGenerator::InitCollapseResults(int file_id) {
-    // Clear the vector if it is not empty
-    if (!_collapse_results.empty()) {
-        _collapse_results.clear();
-    }
-
-    // Get the file base name w/o path string
-    casacore::String out_file = GetOutputFileName();
-    std::size_t found = out_file.find_last_of("/");
-    std::string file_base_name = out_file.substr(found + 1);
-
-    // Initialize the collapse results vector
-    for (int i = 0; i < _moments.size(); ++i) {
-        // Set temp moment file name
-        std::string moment_suffix = GetMomentSuffix(_moments[i]);
-        std::string out_file_name = file_base_name + "." + moment_suffix;
-
-        // Set temp moment file id
-        int moment_type = _moments[i];
-        int moment_file_id = (file_id + 1) * 1000 + moment_type;
-
-        // Make an moment image interface
-        casacore::IPosition out_image_shape;
-        const auto out_coord_sys = MakeOutputCoordinates(out_image_shape, _image->coordinates(), _image->shape(), _axis, false);
-        std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
-            std::make_shared<casacore::TempImage<casacore::Float>>(casacore::TiledShape(out_image_shape), out_coord_sys);
-
-        // Copy the original image info
-        moment_image->setMiscInfo(_image->miscInfo());
-        moment_image->setImageInfo(_image->imageInfo());
-        moment_image->appendLog(_image->logger());
-        moment_image->makeMask("mask0", true, true);
-
-        // Fill the vector
-        _collapse_results.push_back(CollapseResult(moment_file_id, out_file_name, moment_image));
-    }
-}
-
-casacore::CoordinateSystem MomentGenerator::MakeOutputCoordinates(casacore::IPosition& out_shape,
-    const casacore::CoordinateSystem& in_coor_sys, const casacore::IPosition& in_shape, casacore::Int moment_axis,
-    casacore::Bool remove_axis) {
-    casacore::CoordinateSystem out_coor_sys;
-    out_coor_sys.setObsInfo(in_coor_sys.obsInfo());
-
-    // Find the casacore::Coordinate corresponding to the moment axis
-    casacore::Int coord;
-    casacore::Int axis_in_coord;
-    in_coor_sys.findPixelAxis(coord, axis_in_coord, moment_axis);
-    const casacore::Coordinate& c = in_coor_sys.coordinate(coord);
-
-    // Find the number of axes
-    if (remove_axis) {
-        // Shape with moment axis removed
-        casacore::uInt dim_in = in_shape.size();
-        casacore::uInt dim_out = dim_in - 1;
-        out_shape.resize(dim_out);
-        casacore::uInt k = 0;
-        for (casacore::uInt i = 0; i < dim_in; ++i) {
-            if (casacore::Int(i) != moment_axis) {
-                out_shape(k) = in_shape(i);
-                ++k;
-            }
-        }
-        if (c.nPixelAxes() == 1 && c.nWorldAxes() == 1) {
-            // We can physically remove the coordinate and axis
-            for (casacore::uInt i = 0; i < in_coor_sys.nCoordinates(); ++i) {
-                // If this coordinate is not the moment axis coordinate,
-                // and it has not been virtually removed in the input
-                // we add it to the output.  We don't cope with transposed
-                // CoordinateSystems yet.
-                auto pixel_axes = in_coor_sys.pixelAxes(i);
-                auto world_axes = in_coor_sys.worldAxes(i);
-                if (casacore::Int(i) != coord && pixel_axes[0] >= 0 && world_axes[0] >= 0) {
-                    out_coor_sys.addCoordinate(in_coor_sys.coordinate(i));
-                }
-            }
-        } else {
-            // Remove just world and pixel axis but not the coordinate
-            out_coor_sys = in_coor_sys;
-            casacore::Int world_axis = out_coor_sys.pixelAxisToWorldAxis(moment_axis);
-            out_coor_sys.removeWorldAxis(world_axis, in_coor_sys.referenceValue()(world_axis));
-        }
-    } else {
-        // Retain the casacore::Coordinate and give the moment axis  shape 1.
-        out_shape.resize(0);
-        out_shape = in_shape;
-        out_shape(moment_axis) = 1;
-        out_coor_sys = in_coor_sys;
-    }
-    return out_coor_sys;
-}
 
 // Print protobuf messages
 

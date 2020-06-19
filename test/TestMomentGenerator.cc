@@ -403,7 +403,7 @@ void TestCalculateMomentsStoppable() {
 
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    std::vector<carta::CollapseResult> results = moment_generator->CalculateMomentsStoppable(file_id, moment_request, moment_response);
+    std::vector<carta::CollapseResult> results = moment_generator->CalculateMoments(file_id, moment_request, moment_response);
 
     auto t_end = std::chrono::high_resolution_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
