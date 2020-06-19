@@ -232,6 +232,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMomentsStoppable(
 }
 
 void MomentGenerator::StopCalculation() {
+    _image_moments->StopCalculation();
     _stop = true;
 }
 

@@ -367,8 +367,12 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
         }
     }
 
-    for (auto& p : outPt) {
-        p->flush();
+    if (_stop) {
+        outPt.clear();
+    } else {
+        for (auto& p : outPt) {
+            p->flush();
+        }
     }
 
     return outPt;
@@ -569,6 +573,10 @@ void ImageMoments<T>::lineMultiApply(PtrBlock<MaskedLattice<T>*>& latticeOut, co
 
     uInt nDone = 0;
     for (latIter.reset(); !latIter.atEnd(); ++latIter) {
+        if (_stop) {
+            break;
+        }
+
         const IPosition cp = latIter.position();
         const Array<T>& chunk = latIter.cursor();
         IPosition chunkShape = chunk.shape();
@@ -591,6 +599,10 @@ void ImageMoments<T>::lineMultiApply(PtrBlock<MaskedLattice<T>*>& latticeOut, co
 
         Bool done = False;
         while (!done) {
+            if (_stop) {
+                break;
+            }
+
             Vector<T> data(chunk(chunkSliceStart, chunkSliceEnd));
             Vector<Bool> mask = useMask ? Vector<Bool>(maskChunk(chunkSliceStart, chunkSliceEnd)) : noMask;
             curPos = cp + chunkSliceStart;

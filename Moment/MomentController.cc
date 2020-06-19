@@ -31,11 +31,7 @@ std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, cons
     // Calculate the moments
     if (_moment_generators.count(file_id)) {
         auto& moment_generators = _moment_generators.at(file_id);
-        if (moment_generators->ApplyStoppableMomentsCalculation()) {
-            results = moment_generators->CalculateMomentsStoppable(file_id, moment_request, moment_response);
-        } else {
-            results = moment_generators->CalculateMoments(file_id, moment_request, moment_response);
-        }
+        results = moment_generators->CalculateMoments(file_id, moment_request, moment_response);
     }
 
     return results;
