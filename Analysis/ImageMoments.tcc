@@ -9,7 +9,7 @@ using namespace carta;
 template <class T>
 ImageMoments<T>::ImageMoments(
     const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool overWriteOutput, casacore::Bool showProgressU)
-    : MomentsBase<T>(os, overWriteOutput, showProgressU) {
+    : MomentsBase<T>(os, overWriteOutput, showProgressU), _stop(false) {
     setNewImage(image);
 }
 
@@ -359,8 +359,7 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     // Do expensive calculation
-    // casacore::LatticeApply<T>::lineMultiApply(ptrBlock, *_image, *momentCalculator, momentAxis_p, pProgressMeter.get());
-    MyLatticeApply<T>::lineMultiApply(ptrBlock, *_image, *momentCalculator, momentAxis_p, pProgressMeter.get());
+    lineMultiApply(ptrBlock, *_image, *momentCalculator, momentAxis_p, pProgressMeter.get());
 
     if (windowMethod || fitMethod) {
         if (momentCalculator->nFailedFits() != 0) {
@@ -521,6 +520,176 @@ void ImageMoments<T>::_whatIsTheNoise(T& sigma, const casacore::ImageInterface<T
 template <class T>
 void ImageMoments<T>::setProgressMonitor(casa::ImageMomentsProgressMonitor* monitor) {
     _progressMonitor = monitor;
+}
+
+template <class T>
+void ImageMoments<T>::lineMultiApply(PtrBlock<MaskedLattice<T>*>& latticeOut, const MaskedLattice<T>& latticeIn,
+    LineCollapser<T, T>& collapser, uInt collapseAxis, LatticeProgress* tellProgress) {
+    // First verify that all the output lattices have the same shape and tile shape
+    const uInt nOut = latticeOut.nelements();
+    AlwaysAssert(nOut > 0, AipsError);
+
+    const IPosition shape(latticeOut[0]->shape());
+    const uInt outDim = shape.nelements();
+    for (uInt i = 1; i < nOut; ++i) {
+        AlwaysAssert(latticeOut[i]->shape() == shape, AipsError);
+    }
+
+    const IPosition& inShape = latticeIn.shape();
+    IPosition outPos(outDim, 0);
+    IPosition outShape(outDim, 1);
+
+    // Does the input has a mask?
+    // If not, can the collapser handle a null mask.
+    Bool useMask = latticeIn.isMasked() ? True : (!collapser.canHandleNullMask());
+    const uInt inNDim = inShape.size();
+    const IPosition displayAxes = IPosition::makeAxisPath(inNDim).otherAxes(inNDim, IPosition(1, collapseAxis));
+    const uInt nDisplayAxes = displayAxes.size();
+    Vector<T> result(nOut);
+    Vector<Bool> resultMask(nOut);
+
+    // read in larger chunks than before, because that was very
+    // Inefficient and brought NRAO cluster to a snail's pace,
+    // and then do the accounting for the input lines in memory
+    IPosition chunkSliceStart(inNDim, 0);
+    IPosition chunkSliceEnd = chunkSliceStart;
+    chunkSliceEnd[collapseAxis] = inShape[collapseAxis] - 1;
+    const IPosition chunkSliceEndAtChunkIterBegin = chunkSliceEnd;
+    IPosition chunkShapeInit = _chunkShape(collapseAxis, latticeIn);
+    LatticeStepper myStepper(inShape, chunkShapeInit, LatticeStepper::RESIZE);
+    RO_MaskedLatticeIterator<T> latIter(latticeIn, myStepper);
+
+    IPosition curPos;
+    static const Vector<Bool> noMask;
+
+    if (tellProgress) {
+        uInt nExpectedIters = inShape.product() / chunkShapeInit.product();
+        tellProgress->init(nExpectedIters);
+    }
+
+    uInt nDone = 0;
+    for (latIter.reset(); !latIter.atEnd(); ++latIter) {
+        const IPosition cp = latIter.position();
+        const Array<T>& chunk = latIter.cursor();
+        IPosition chunkShape = chunk.shape();
+        const Array<Bool> maskChunk = useMask ? latIter.getMask() : Array<Bool>();
+
+        chunkSliceStart = 0;
+        chunkSliceEnd = chunkSliceEndAtChunkIterBegin;
+        IPosition resultArrayShape = chunkShape;
+        resultArrayShape[collapseAxis] = 1;
+        std::vector<Array<T>> resultArray(nOut);
+        std::vector<Array<Bool>> resultArrayMask(nOut);
+
+        // need to initialize this way rather than doing it in the constructor,
+        // because using a single Array in the constructor means that all Arrays
+        // in the vector reference the same Array.
+        for (uInt k = 0; k < nOut; k++) {
+            resultArray[k] = Array<T>(resultArrayShape);
+            resultArrayMask[k] = Array<Bool>(resultArrayShape);
+        }
+
+        Bool done = False;
+        while (!done) {
+            Vector<T> data(chunk(chunkSliceStart, chunkSliceEnd));
+            Vector<Bool> mask = useMask ? Vector<Bool>(maskChunk(chunkSliceStart, chunkSliceEnd)) : noMask;
+            curPos = cp + chunkSliceStart;
+
+            collapser.multiProcess(result, resultMask, data, mask, curPos);
+
+            for (uInt k = 0; k < nOut; ++k) {
+                resultArray[k](chunkSliceStart) = result[k];
+                resultArrayMask[k](chunkSliceStart) = resultMask[k];
+            }
+
+            done = True;
+
+            for (uInt k = 0; k < nDisplayAxes; ++k) {
+                uInt dax = displayAxes[k];
+                if (chunkSliceStart[dax] < chunkShape[dax] - 1) {
+                    ++chunkSliceStart[dax];
+                    ++chunkSliceEnd[dax];
+                    done = False;
+                    break;
+                } else {
+                    chunkSliceStart[dax] = 0;
+                    chunkSliceEnd[dax] = 0;
+                }
+            }
+        }
+
+        // put the result arrays in the output lattices
+        for (uInt k = 0; k < nOut; ++k) {
+            IPosition outpos = inNDim == outDim ? cp : cp.removeAxes(IPosition(1, collapseAxis));
+            Bool keepAxis = resultArray[k].ndim() == latticeOut[k]->ndim();
+            if (!keepAxis) {
+                resultArray[k].removeDegenerate(displayAxes);
+            }
+
+            latticeOut[k]->putSlice(resultArray[k], outpos);
+
+            if (latticeOut[k]->hasPixelMask()) {
+                Lattice<Bool>& maskOut = latticeOut[k]->pixelMask();
+                if (maskOut.isWritable()) {
+                    if (!keepAxis) {
+                        resultArrayMask[k].removeDegenerate(displayAxes);
+                    }
+                    maskOut.putSlice(resultArrayMask[k], outpos);
+                }
+            }
+        }
+
+        if (tellProgress != 0) {
+            ++nDone;
+            tellProgress->nstepsDone(nDone);
+        }
+    }
+
+    if (tellProgress != 0) {
+        tellProgress->done();
+    }
+}
+
+template <class T>
+IPosition ImageMoments<T>::_chunkShape(uInt axis, const MaskedLattice<T>& latticeIn) {
+    uInt ndim = latticeIn.ndim();
+    IPosition chunkShape(ndim, 1);
+    IPosition latShape = latticeIn.shape();
+    uInt nPixColAxis = latShape[axis];
+    chunkShape[axis] = nPixColAxis;
+
+    // arbitrary, but reasonable, max memory limit in bytes for storing arrays in bytes
+    static const uInt limit = 2e7; // Set memory limit (Bytes)
+    static const uInt sizeT = sizeof(T);
+    static const uInt sizeBool = sizeof(Bool);
+    uInt chunkMult = latticeIn.isMasked() ? sizeT + sizeBool : sizeT;
+    uInt subChunkSize = chunkMult * nPixColAxis; // (Bytes)
+
+    // integer division
+    const uInt maxChunkSize = limit / subChunkSize;
+    if (maxChunkSize <= 1) {
+        // can only go row by row
+        return chunkShape;
+    }
+
+    ssize_t x = maxChunkSize;
+    for (uInt i = 0; i < ndim; ++i) {
+        if (i != axis) {
+            chunkShape[i] = std::min(x, latShape[i]);
+            // integer division
+            x /= chunkShape[i];
+            if (x == 0) {
+                break;
+            }
+        }
+    }
+
+    return chunkShape;
+}
+
+template <class T>
+void ImageMoments<T>::StopCalculation() {
+    _stop = true;
 }
 
 #endif // CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_TCC_

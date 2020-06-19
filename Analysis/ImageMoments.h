@@ -18,9 +18,6 @@
 #include "MomentsBase.h"
 #include "MyLatticeApply.h"
 
-#define SPIIT std::shared_ptr<casacore::ImageInterface<T>>
-#define SPCIIT std::shared_ptr<const casacore::ImageInterface<T>>
-
 namespace carta {
 
 template <class T>
@@ -115,6 +112,9 @@ public:
     // progress of the collapse process.
     void setProgressMonitor(casa::ImageMomentsProgressMonitor* progressMonitor);
 
+    // Stop the calculation
+    void StopCalculation();
+
 private:
     SPCIIT _image = SPCIIT(nullptr);
     casa::ImageMomentsProgressMonitor* _progressMonitor = nullptr;
@@ -126,6 +126,16 @@ private:
     // of the entire image above the 25% levels.  If a plotting
     // device is set, the user can interact with this process.
     void _whatIsTheNoise(T& noise, const casacore::ImageInterface<T>& image);
+
+    // Iterate through a cube image with the moments calculator
+    void lineMultiApply(PtrBlock<MaskedLattice<T>*>& latticeOut, const MaskedLattice<T>& latticeIn, LineCollapser<T, T>& collapser,
+        uInt collapseAxis, LatticeProgress* tellProgress = 0);
+
+    // Get a suitable chunk shape in order for the iteration
+    casacore::IPosition _chunkShape(uInt axis, const MaskedLattice<T>& latticeIn);
+
+    // Stop moment calculation
+    volatile bool _stop;
 
 protected:
     using MomentsBase<T>::os_p;
