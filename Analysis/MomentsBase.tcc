@@ -182,26 +182,22 @@ void MomentsBase<T>::_checkMethod() {
     // Only can have the median coordinate under certain conditions
     casacore::Bool found;
     if (linearSearch(found, moments_p, casacore::Int(MEDIAN_COORDINATE), moments_p.nelements()) != -1) {
-        casacore::Bool noGood = false;
         if (doWindow_p || doFit_p || doSmooth_p) {
-            noGood = true;
+            std::cerr << "Request for the median coordinate moment, but it is only "
+                         "available with the basic (no smooth, no window, no fit) method\n";
         } else {
             if (noInclude_p && noExclude_p) {
-                noGood = true;
+                std::cerr << "Request for the median coordinate moment, but it is only "
+                             "available with a pixel range that is either inclusive or exclusive\n";
             } else {
                 if (selectRange_p(0) * selectRange_p(1) < T(0)) {
-                    noGood = true;
+                    std::cerr << "Request for the median coordinate moment, but it is only "
+                                 "available with a pixel range that is either all positive or all negative\n";
                 }
             }
         }
-        std::cerr << "Request for the median coordinate moment, but it is only "
-                     "available with the basic (no smooth, no window, no fit) method "
-                     "and a pixel range that is either all positive or all negative\n";
-        // ThrowIf(noGood,
-        //     "Request for the median coordinate moment, but it is only "
-        //     "available with the basic (no smooth, no window, no fit) method "
-        //     "and a pixel range that is either all positive or all negative");
     }
+
     // Now check all the silly methods
     if (!((!doSmooth_p && !doWindow_p && !doFit_p && (noInclude_p && noExclude_p)) ||
             (doSmooth_p && !doWindow_p && !doFit_p && (!noInclude_p || !noExclude_p)) ||
@@ -388,15 +384,15 @@ void MomentsBase<T>::_setIncludeExclude(casacore::Vector<T>& range, casacore::Bo
     //             no include range
     //   exclude   Exclude range given by user. As above.
     //   os        Output stream for reporting
+    //
     // Outputs:
-    //   noInclude If true user did not give an include range
-    //   noExclude If true user did not give an exclude range
-    //   range     A pixel value selection range.  Will be resized to
-    //             zero length if both noInclude and noExclude are true
-    //   casacore::Bool      true if successfull, will fail if user tries to give
-    //   too
-    //             many values for includeB or excludeB, or tries to give
-    //             values for both
+    //   noInclude      If true user did not give an include range
+    //   noExclude      If true user did not give an exclude range
+    //   range          A pixel value selection range.  Will be resized to
+    //                  zero length if both noInclude and noExclude are true
+    //   casacore::Bool True if successfull, will fail if user tries to give
+    //                  too many values for includeB or excludeB, or tries to give
+    //                  values for both
 
     noInclude = true;
     range.resize(0);
@@ -415,6 +411,7 @@ void MomentsBase<T>::_setIncludeExclude(casacore::Vector<T>& range, casacore::Bo
     } else {
         ThrowCc("Too many elements for argument include");
     }
+
     noExclude = true;
     if (exclude.size() == 0) {
         // do nothing
@@ -431,6 +428,7 @@ void MomentsBase<T>::_setIncludeExclude(casacore::Vector<T>& range, casacore::Bo
     } else {
         ThrowCc("Too many elements for argument exclude");
     }
+
     if (!noInclude && !noExclude) {
         ThrowCc("You can only give one of arguments include or exclude");
     }
@@ -443,13 +441,11 @@ casacore::CoordinateSystem MomentsBase<T>::_makeOutputCoordinates(casacore::IPos
     cSysOut.setObsInfo(cSysIn.obsInfo());
 
     // Find the casacore::Coordinate corresponding to the moment axis
-
     casacore::Int coord, axisInCoord;
     cSysIn.findPixelAxis(coord, axisInCoord, momentAxis);
     const casacore::Coordinate& c = cSysIn.coordinate(coord);
 
     // Find the number of axes
-
     if (removeAxis) {
         // Shape with moment axis removed
         casacore::uInt dimIn = inShape.size();

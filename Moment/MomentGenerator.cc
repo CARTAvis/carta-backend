@@ -68,6 +68,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(
                 } catch (const AipsError& x) {
                     _error_msg = x.getMesg();
                     _collapse_error = true;
+                    std::cerr << "Error: " << _error_msg << "\n";
                 }
             }
         }
@@ -128,6 +129,8 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
             _include_pix[0] = pixel_min;
             _include_pix[1] = pixel_max;
         }
+        // Clear the exclusive array
+        _exclude_pix.resize(0);
     } else if (moment_mask == CARTA::MomentMask::Exclude) {
         if ((pixel_min == ALL_PIXEL_RANGE) || (pixel_max == ALL_PIXEL_RANGE)) {
             _exclude_pix.resize(1);
@@ -137,10 +140,14 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
             _exclude_pix[0] = pixel_min;
             _exclude_pix[1] = pixel_max;
         }
+        // Clear the inclusive array
+        _include_pix.resize(0);
     } else {
-        /// Todo: need to implement the min/max pixel values
-        _include_pix.resize(1);
-        _include_pix[0] = -1;
+        _include_pix.resize(2);
+        _include_pix[0] = std::numeric_limits<float>::min();
+        _include_pix[1] = std::numeric_limits<float>::max();
+        // Clear the exclusive array
+        _exclude_pix.resize(0);
     }
 }
 
