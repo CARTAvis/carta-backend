@@ -34,10 +34,8 @@ void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface
 
     if (output_file_type == CARTA::FileType::CASA) {
         // Remove the old image file with the same output file name
-        casacore::File old_filename(output_filename);
-        if (old_filename.exists()) {
-            casacore::Directory tmp_dir(output_filename);
-            tmp_dir.removeRecursive();
+        if (fs::exists(output_filename)) {
+            fs::remove_all(output_filename);
         }
 
         // Get a copy of the original pixel data
