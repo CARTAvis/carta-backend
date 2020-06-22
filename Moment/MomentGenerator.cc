@@ -8,13 +8,14 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _image(image),
       _spectral_axis(spectral_axis),
       _stokes_axis(stokes_axis),
+      _current_stokes(0),
       _sub_image(nullptr),
       _image_moments(nullptr),
       _collapse_error(false),
       _progress_callback(progress_callback) {}
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(
-    int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
+    int file_id, int current_stokes, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     // Collapse results
     std::vector<CollapseResult> collapse_results;
 
@@ -28,6 +29,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(
     SetPixelRange(moment_request);
 
     // Reset an ImageMoments
+    _current_stokes = current_stokes;
     ResetImageMoments(moment_request);
 
     // Calculate moments
@@ -176,12 +178,12 @@ casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& m
     IPosition pos = _image->shape();
     _image->shape();
     casacore::String region_name;
-    casacore::String stokes = ""; // Not available yet, in principle can choose "I" , "IV" , "IQU", or "IQUV"
-    casa::CasacRegionManager crm(coordinate_system);
+    casacore::String stokes = coordinate_system.stokesAtPixel(_current_stokes);
+    carta::CasacRegionManager crm(coordinate_system);
     casacore::String diagnostics;
     casacore::String pixel_box = ""; // Not available yet
     casacore::Record region = crm.fromBCS(diagnostics, num_selected_channels, stokes, NULL, region_name, channels,
-        casa::CasacRegionManager::USE_FIRST_STOKES, pixel_box, pos, infile);
+        carta::CasacRegionManager::USE_FIRST_STOKES, pixel_box, pos, infile);
 
     return region;
 }
@@ -193,7 +195,7 @@ void MomentGenerator::ResetImageMoments(const CARTA::MomentRequest& moment_reque
     // Make a sub image interface
     casacore::String empty("");
     std::shared_ptr<const SubImage<casacore::Float>> sub_image =
-        casa::SubImageFactory<casacore::Float>::createSubImageRO(*_image, region, empty, NULL);
+        carta::SubImageFactory<casacore::Float>::createSubImageRO(*_image, region, empty, NULL);
     _sub_image.reset(new SubImage<casacore::Float>(*sub_image));
     casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
     casacore::LogIO os(log);

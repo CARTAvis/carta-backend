@@ -202,7 +202,7 @@ void TestTempImage() {
     auto moment_generator =
         std::make_unique<carta::MomentGenerator>(FITS_FILE_FULL_NAME, image.get(), spectral_axis, stokes_axis, progress_callback);
 
-    std::vector<carta::CollapseResult> results = moment_generator->CalculateMoments(file_id, moment_request, moment_response);
+    std::vector<carta::CollapseResult> results = moment_generator->CalculateMoments(file_id, 0, moment_request, moment_response);
 
     moment_generator.reset();
 
@@ -334,7 +334,7 @@ void TestCalculateMoments() {
 
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    std::vector<carta::CollapseResult> results = moment_generator->CalculateMoments(file_id, moment_request, moment_response);
+    std::vector<carta::CollapseResult> results = moment_generator->CalculateMoments(file_id, 0, moment_request, moment_response);
 
     auto t_end = std::chrono::high_resolution_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
@@ -404,7 +404,7 @@ void TestMedianCoord() {
 
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    std::vector<carta::CollapseResult> results = moment_generator->CalculateMoments(file_id, moment_request, moment_response);
+    std::vector<carta::CollapseResult> results = moment_generator->CalculateMoments(file_id, 0, moment_request, moment_response);
 
     auto t_end = std::chrono::high_resolution_clock::now();
     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();

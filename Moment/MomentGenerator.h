@@ -4,9 +4,10 @@
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
-#include <imageanalysis/Regions/CasacRegionManager.h>
 
+#include "../Analysis/CasacRegionManager.h"
 #include "../Analysis/ImageMoments.h"
+#include "../Analysis/SubImageFactory.h"
 #include "../InterfaceConstants.h"
 
 using MomentProgressCallback = const std::function<void(float)>;
@@ -32,7 +33,7 @@ public:
 
     // Calculate moments
     std::vector<CollapseResult> CalculateMoments(
-        int file_id, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+        int file_id, int current_stokes, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
 
     // Stop moments calculation
     void StopCalculation();
@@ -73,6 +74,7 @@ private:
     casacore::ImageInterface<float>* _image;
     int _spectral_axis;
     int _stokes_axis;
+    int _current_stokes;
 
     // Moment settings
     std::unique_ptr<casacore::ImageInterface<casacore::Float>> _sub_image;
