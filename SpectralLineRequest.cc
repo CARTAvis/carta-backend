@@ -1,5 +1,7 @@
 #include <cstdlib>
 #include <string>
+#include <iostream>
+#include <sstream>
 #include <curl/curl.h>
  
 #include "SpectralLineRequest.h"
@@ -86,4 +88,17 @@ size_t SpectralLineRequest::WriteMemoryCallback(void *contents, size_t size, siz
 
 void SpectralLineRequest::ParsingQueryResult(MemoryStruct& results) {
   std::cout << (unsigned long)results.size << "bytes retrieved\n\n";
+
+  std::istringstream stream(results.memory);
+  std::string line, token;
+  int dataSize = 0;
+
+  // handle header
+  std::getline(stream, line, '\n');
+
+  // handle data rows
+  while(std::getline(stream, line, '\n')) {
+      dataSize++;
+      std::cout << "line" << dataSize << " " << line << '\n';
+  }
 }
