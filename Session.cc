@@ -874,7 +874,7 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
 }
 
 void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
-    carta::SpectralLineRequest::SendRequest();
+    carta::SpectralLineRequest::SendRequest(spectral_line_request.frequency_range());
     /*
     _table_controller->OnSpectralLineRequest(spectral_line_request, [&](const CARTA::SpectralLineResponse& spectral_line_response) {
         SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response, true);
