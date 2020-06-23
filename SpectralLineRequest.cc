@@ -27,7 +27,7 @@ size_t SpectralLineRequest::WriteMemoryCallback(void *contents, size_t size, siz
   return realsize;
 }
  
-void SpectralLineRequest::SendRequest(CARTA::DoubleBounds frequencyRange) {
+void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
   CURL *curl_handle;
   CURLcode res;
  
@@ -59,18 +59,17 @@ void SpectralLineRequest::SendRequest(CARTA::DoubleBounds frequencyRange) {
   /* get it! */ 
   res = curl_easy_perform(curl_handle);
  
-  /* check for errors */ 
-  if(res != CURLE_OK) {
-    fprintf(stderr, "curl_easy_perform() failed: %s\n",
-            curl_easy_strerror(res));
-  }
-  else {
+  /* parsing fetched content */
+  if(res == CURLE_OK) {
     SpectralLineRequest::parsingQueryResult(chunk);
+    spectral_line_response.set_success(true);
+    // TODO: return parsed data columns
+  } else {
+    fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
   }
  
   /* cleanup curl stuff */ 
   curl_easy_cleanup(curl_handle);
- 
   free(chunk.memory);
  
   /* we're done with libcurl, so clean it up */ 
