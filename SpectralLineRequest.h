@@ -14,12 +14,12 @@ namespace carta {
         public:
         SpectralLineRequest();
         ~SpectralLineRequest();
-        static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
-        static void SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response);
+        void SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response);
 
         private:
         static const std::string SplatalogueURL;
-        static void parsingQueryResult(MemoryStruct& results);
+        static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
+        static void ParsingQueryResult(MemoryStruct& results);
     };
 }
 

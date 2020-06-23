@@ -7,26 +7,13 @@
 using namespace carta;
 
 const std::string SpectralLineRequest::SplatalogueURL = "https://www.cv.nrao.edu/php/splat/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU&displayRecomb=displayRecomb&displayLisa=displayLisa&displayRFI=displayRFI&ls1=ls1&ls2=ls2&ls3=ls3&ls4=ls4&ls5=ls5&el1=el1&el2=el2&el3=el3&el4=el4&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab&offset=0&limit=100000&range=on";
- 
-size_t SpectralLineRequest::WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
-  size_t realsize = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
- 
-  char *ptr = (char *)realloc(mem->memory, mem->size + realsize + 1);
-  if(ptr == NULL) {
-    /* out of memory! */ 
-    std::cout << "not enough memory (realloc returned NULL)\n";
-    return 0;
-  }
- 
-  mem->memory = ptr;
-  memcpy(&(mem->memory[mem->size]), contents, realsize);
-  mem->size += realsize;
-  mem->memory[mem->size] = 0;
- 
-  return realsize;
+
+SpectralLineRequest::SpectralLineRequest() {
 }
- 
+
+SpectralLineRequest::~SpectralLineRequest() {
+}
+
 void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
   CURL *curl_handle;
   CURLcode res;
@@ -61,7 +48,7 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
  
   /* parsing fetched content */
   if(res == CURLE_OK) {
-    SpectralLineRequest::parsingQueryResult(chunk);
+    SpectralLineRequest::ParsingQueryResult(chunk);
     spectral_line_response.set_success(true);
     // TODO: return parsed data columns
   } else {
@@ -78,6 +65,25 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
   return;
 }
 
-void SpectralLineRequest::parsingQueryResult(MemoryStruct& results) {
+size_t SpectralLineRequest::WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+  size_t realsize = size * nmemb;
+  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+
+  char *ptr = (char *)realloc(mem->memory, mem->size + realsize + 1);
+  if(ptr == NULL) {
+    /* out of memory! */
+    std::cout << "not enough memory (realloc returned NULL)\n";
+    return 0;
+  }
+
+  mem->memory = ptr;
+  memcpy(&(mem->memory[mem->size]), contents, realsize);
+  mem->size += realsize;
+  mem->memory[mem->size] = 0;
+
+  return realsize;
+}
+
+void SpectralLineRequest::ParsingQueryResult(MemoryStruct& results) {
   std::cout << (unsigned long)results.size << "bytes retrieved\n\n";
 }
