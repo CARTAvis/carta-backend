@@ -31,7 +31,7 @@ void CartaGrpcService::RemoveSession(Session* session) {
 }
 
 grpc::Status CartaGrpcService::CallAction(
-    grpc::ServerContext* context, const CARTAVIS::ActionRequest* request, CARTAVIS::ActionReply* reply) {
+    grpc::ServerContext* context, const CARTA::script::ActionRequest* request, CARTA::script::ActionReply* reply) {
     auto session_id = request->session_id();
     // TODO: rename path to target in the protobuf file
     auto path = request->path();

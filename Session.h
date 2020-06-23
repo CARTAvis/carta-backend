@@ -22,8 +22,10 @@
 
 #include <carta-protobuf/close_file.pb.h>
 #include <carta-protobuf/contour.pb.h>
+#include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
+#include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
@@ -36,13 +38,14 @@
 #include <carta-protobuf/user_preferences.pb.h>
 #include <carta-protobuf/spectral_line_request.pb.h>
 
-#include <cartavis/carta_service.grpc.pb.h>
+#include <carta-scripting-grpc/carta_service.grpc.pb.h>
 
 #include "AnimationObject.h"
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
 
@@ -85,6 +88,7 @@ public:
     void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
 
     void SendPendingMessages();
+
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
         // Empty current queue first.
@@ -176,18 +180,16 @@ public:
         return _id;
     }
 
-    // Region data streams
+    // RegionDataStreams
     void RegionDataStreams(int file_id, int region_id);
-    bool SendSpectralProfileData(int file_id, int region_id, bool channel_changed = false, bool stokes_changed = false);
+    bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
 
-    // TODO: should these be public? NO!!!!!!!!
-    uint32_t _id;
     FileSettings _file_settings;
     std::unordered_map<int, tbb::concurrent_queue<std::pair<CARTA::SetImageChannels, uint32_t>>> _set_channel_queues;
 
     void SendScriptingRequest(uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async);
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
-    bool GetScriptingResponse(uint32_t scripting_request_id, CARTAVIS::ActionReply* reply);
+    bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
 private:
     // File info
@@ -197,20 +199,17 @@ private:
     // Delete Frame(s)
     void DeleteFrame(int file_id);
 
-    // Histogram
-    CARTA::RegionHistogramData* GetRegionHistogramData(const int32_t file_id, const int32_t region_id, bool check_current_channel = false);
-    bool SendCubeHistogramData(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
-    // basic message to update progress
+    // Specialized for cube; accumulate per-channel histograms and send progress messages
+    bool CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message);
     void CreateCubeHistogramMessage(CARTA::RegionHistogramData& msg, int file_id, int stokes, float progress);
 
     // Send data streams
-    // Only set channel_changed and stokes_changed if they are the only trigger for new data
-    // (i.e. result of SET_IMAGE_CHANNELS) to prevent sending unneeded data streams.
-    bool SendSpatialProfileData(int file_id, int region_id, bool stokes_changed = false);
-    bool SendRegionHistogramData(int file_id, int region_id, bool channel_changed = false);
-    bool SendRegionStatsData(int file_id, int region_id); // update stats in all cases
     bool SendContourData(int file_id);
-    void UpdateRegionData(int file_id, bool send_image_histogram = true, bool channel_changed = false, bool stokes_changed = false);
+    bool SendSpatialProfileData(int file_id, int region_id);
+    bool SendRegionHistogramData(int file_id, int region_id);
+    bool SendRegionStatsData(int file_id, int region_id);
+    void UpdateImageData(int file_id, bool send_image_histogram, bool channel_changed, bool stokes_changed);
+    void UpdateRegionData(int file_id, int region_id, bool channel_changed, bool stokes_changed);
 
     // Send protobuf messages
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = false);
@@ -218,6 +217,7 @@ private:
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     uWS::WebSocket<uWS::SERVER>* _socket;
+    uint32_t _id;
     std::string _api_key;
     std::string _root_folder;
     std::string _base_folder;
@@ -226,14 +226,17 @@ private:
     // File browser
     FileListHandler* _file_list_handler;
 
-    // File loader
+    // Loader for reading image from disk
     std::unique_ptr<carta::FileLoader> _loader;
 
-    // Frame
-    std::unordered_map<int, std::unique_ptr<Frame>> _frames; // <file_id, Frame>: one frame per image file
-    std::mutex _frame_mutex;                                 // lock frames to create/destroy
+    // Frame; key is file_id; shared with RegionHandler for data streams
+    std::unordered_map<int, std::shared_ptr<Frame>> _frames;
+    std::mutex _frame_mutex;
 
     const std::unique_ptr<carta::TableController> _table_controller;
+
+    // Handler for region creation, import/export, requirements, and data
+    std::unique_ptr<carta::RegionHandler> _region_handler;
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
@@ -245,9 +248,11 @@ private:
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
 
-    // Outgoing messages
-    uS::Async* _outgoing_async;                                          // Notification mechanism when messages are ready
-    tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs; // message queue <msg, compress>
+    // Outgoing messages:
+    // Notification mechanism when messages are ready
+    uS::Async* _outgoing_async;
+    // message queue <msg, compress>
+    tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
     // TBB context that enables all tasks associated with a session to be cancelled.
     tbb::task_group_context _base_context;

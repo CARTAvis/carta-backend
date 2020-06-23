@@ -43,9 +43,8 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
-ADD_SUBDIRECTORY(cartavis)
+ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
 INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
 INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
 
@@ -105,7 +104,7 @@ endif()
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
-        cartavis
+        carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
         fmt
         uWS
@@ -137,33 +136,35 @@ set(SOURCE_FILES
         Main.cc
         Session.cc
         Frame.cc
-        Compression.cc
+        DataStream/Compression.cc
+        DataStream/Contouring.cc
+        DataStream/Smoothing.cc
+        DataStream/Tile.cc
+        FileList/FileExtInfoLoader.cc
+        FileList/FileInfoLoader.cc
+        FileList/FileListHandler.cc
+        FileList/FitsHduList.cc
+        GrpcServer/CartaGrpcService.cc
         ImageData/Hdf5Attributes.cc
         ImageData/FileLoader.cc
         ImageData/Hdf5Loader.cc
         ImageData/CartaHdf5Image.cc
         ImageData/CartaMiriadImage.cc
-        FileList/FileExtInfoLoader.cc
-        FileList/FileInfoLoader.cc
-        FileList/FileListHandler.cc
-        FileList/FitsHduList.cc
+        Region/RegionHandler.cc
+        Region/RegionImportExport.cc
+        Region/CrtfImportExport.cc
+        Region/Ds9ImportExport.cc
         Region/Region.cc
-        Region/RegionStats.cc
-        Region/RegionProfiler.cc
-        Region/Histogram.cc
+        ImageStats/StatsCalculator.cc
+        ImageStats/Histogram.cc
         Table/Columns.cc
         Table/Table.cc
         Table/TableView.cc
         Table/TableController.cc
+        Timer/Timer.cc
         OnMessageTask.cc
         FileSettings.cc
         Util.cc
-        Tile.cc
-        Ds9Parser.cc
-        Contouring.cc
-        Smoothing.cc
-        Timer/Timer.cc
-        GrpcServer/CartaGrpcService.cc
         SpectralLineRequest.cc)
 
 add_definitions(-DHAVE_HDF5)
