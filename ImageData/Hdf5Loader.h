@@ -26,15 +26,14 @@ public:
 
     bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex) override;
-    bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) override;
-    bool GetRegionSpectralData(int region_id, int profile_index, int stokes,
-        const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
-        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) override;
+
+    bool UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex) override;
+    bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const IPos& origin,
+        std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) override;
     bool GetDownsampledRasterData(
         std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex) override;
     bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes,
         std::mutex& image_mutex) override;
-    void SetFramePtr(Frame* frame) override;
 
     bool HasMip(int mip) const override;
     bool UseTileCache() const override;
@@ -47,7 +46,6 @@ private:
     std::unordered_map<int, std::unique_ptr<casacore::HDF5Lattice<float>>> _mipmaps;
 
     std::map<FileInfo::RegionStatsId, FileInfo::RegionSpectralStats> _region_stats;
-    Frame* _frame;
 
     H5D_layout_t _layout;
 

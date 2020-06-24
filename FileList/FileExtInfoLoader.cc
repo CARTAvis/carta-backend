@@ -22,9 +22,9 @@ using namespace carta;
 FileExtInfoLoader::FileExtInfoLoader(carta::FileLoader* loader) : _loader(loader) {}
 
 bool FileExtInfoLoader::FillFileExtInfo(
-    CARTA::FileInfoExtended* extended_info, const std::string& filename, const std::string& hdu, std::string& message) {
+    CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message) {
     // set name from filename
-    auto entry = extended_info->add_computed_entries();
+    auto entry = extended_info.add_computed_entries();
     entry->set_name("Name");
     entry->set_value(filename);
     entry->set_entry_type(CARTA::EntryType::STRING);
@@ -37,7 +37,7 @@ bool FileExtInfoLoader::FillFileExtInfo(
     return file_ok;
 }
 
-bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_info, const std::string& hdu, std::string& message) {
+bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_info, const std::string& hdu, std::string& message) {
     // add header_entries in FITS format (issue #13) using ImageInterface from FileLoader
     bool file_ok(false);
     if (_loader) {
@@ -154,7 +154,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                 if (!comment.empty()) {
                                     bool_string.append(" / " + comment);
                                 }
-                                auto header_entry = extended_info->add_header_entries();
+                                auto header_entry = extended_info.add_header_entries();
                                 header_entry->set_name(name);
                                 *header_entry->mutable_value() = bool_string;
                                 header_entry->set_entry_type(CARTA::EntryType::INT);
@@ -168,7 +168,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                 if (!comment.empty()) {
                                     string_value.append(" / " + comment);
                                 }
-                                auto header_entry = extended_info->add_header_entries();
+                                auto header_entry = extended_info.add_header_entries();
                                 header_entry->set_name(name);
                                 *header_entry->mutable_value() = string_value;
                                 header_entry->set_entry_type(CARTA::EntryType::INT);
@@ -192,7 +192,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                 if (!comment.empty()) {
                                     string_value.append(" / " + comment);
                                 }
-                                auto header_entry = extended_info->add_header_entries();
+                                auto header_entry = extended_info.add_header_entries();
                                 header_entry->set_name(name);
                                 *header_entry->mutable_value() = string_value;
                                 header_entry->set_entry_type(CARTA::EntryType::FLOAT);
@@ -219,7 +219,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
                                         fkw_string.append(" / " + comment);
                                     }
 
-                                    auto header_entry = extended_info->add_header_entries();
+                                    auto header_entry = extended_info.add_header_entries();
                                     header_entry->set_name(name);
                                     *header_entry->mutable_value() = fkw_string;
                                     header_entry->set_entry_type(CARTA::EntryType::STRING);
@@ -268,21 +268,21 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended* extended_
 // ***** Computed entries *****
 
 void FileExtInfoLoader::AddShapeEntries(
-    CARTA::FileInfoExtended* extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis) {
+    CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
-    extended_info->set_dimensions(num_dims);
-    extended_info->set_width(shape(0));
-    extended_info->set_height(shape(1));
+    extended_info.set_dimensions(num_dims);
+    extended_info.set_width(shape(0));
+    extended_info.set_height(shape(1));
     if (num_dims == 2) { // 2D
-        extended_info->set_depth(1);
-        extended_info->set_stokes(1);
+        extended_info.set_depth(1);
+        extended_info.set_stokes(1);
     } else if (num_dims == 3) { // 3D
-        extended_info->set_depth(shape(2));
-        extended_info->set_stokes(1);
+        extended_info.set_depth(shape(2));
+        extended_info.set_stokes(1);
     } else { // 4D
-        extended_info->set_depth(shape(chan_axis));
-        extended_info->set_stokes(shape(stokes_axis));
+        extended_info.set_depth(shape(chan_axis));
+        extended_info.set_stokes(shape(stokes_axis));
     }
 
     // shape computed_entry
@@ -298,7 +298,7 @@ void FileExtInfoLoader::AddShapeEntries(
             shape_string = fmt::format("[{}, {}, {}, {}]", shape(0), shape(1), shape(2), shape(3));
             break;
     }
-    auto shape_entry = extended_info->add_computed_entries();
+    auto shape_entry = extended_info.add_computed_entries();
     shape_entry->set_name("Shape");
     shape_entry->set_value(shape_string);
     shape_entry->set_entry_type(CARTA::EntryType::STRING);
@@ -306,7 +306,7 @@ void FileExtInfoLoader::AddShapeEntries(
     if (chan_axis >= 0) {
         // header entry for number of channels
         unsigned int nchan = shape(chan_axis);
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of channels");
         entry->set_value(casacore::String::toString(nchan));
         entry->set_entry_type(CARTA::EntryType::INT);
@@ -315,7 +315,7 @@ void FileExtInfoLoader::AddShapeEntries(
     if (stokes_axis >= 0) {
         // header entry for number of stokes
         unsigned int nstokes = shape(stokes_axis);
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Number of stokes");
         entry->set_value(casacore::String::toString(nstokes));
         entry->set_entry_type(CARTA::EntryType::INT);
@@ -324,7 +324,7 @@ void FileExtInfoLoader::AddShapeEntries(
 }
 
 void FileExtInfoLoader::AddComputedEntries(
-    CARTA::FileInfoExtended* extended_info, casacore::ImageInterface<float>* image, casacore::String& radesys) {
+    CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image, casacore::String& radesys) {
     // add computed_entries to extended info (ensures the proper order in file browser)
     casacore::CoordinateSystem coord_system(image->coordinates());
     casacore::Vector<casacore::String> axis_names = coord_system.worldAxisNames();
@@ -334,7 +334,7 @@ void FileExtInfoLoader::AddComputedEntries(
     casacore::Vector<casacore::Double> increment = coord_system.increment();
 
     if (!axis_names.empty()) {
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Coordinate type");
         std::string coord_type = fmt::format("{}, {}", axis_names(0), axis_names(1));
         entry->set_value(coord_type);
@@ -348,7 +348,7 @@ void FileExtInfoLoader::AddComputedEntries(
             projection = "SIN / NCP";
         }
         if (!projection.empty()) {
-            auto entry = extended_info->add_computed_entries();
+            auto entry = extended_info.add_computed_entries();
             entry->set_name("Projection");
             entry->set_value(projection);
             entry->set_entry_type(CARTA::EntryType::STRING);
@@ -356,7 +356,7 @@ void FileExtInfoLoader::AddComputedEntries(
     }
 
     if (!reference_pixels.empty()) {
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Image reference pixels");
         std::string ref_pix = fmt::format("[{}, {}]", reference_pixels(0) + 1.0, reference_pixels(1) + 1.0);
         entry->set_value(ref_pix);
@@ -364,7 +364,7 @@ void FileExtInfoLoader::AddComputedEntries(
     }
 
     if (!axis_names.empty() && !reference_values.empty() && !axis_units.empty()) {
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Image reference coords");
         std::string format_coord1 = MakeAngleString(axis_names(0), reference_values(0), axis_units(0));
         std::string format_coord2 = MakeAngleString(axis_names(1), reference_values(1), axis_units(1));
@@ -374,7 +374,7 @@ void FileExtInfoLoader::AddComputedEntries(
     }
 
     if (!reference_values.empty() && !axis_units.empty()) {
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Image ref coords (deg)");
         casacore::Quantity coord0(reference_values(0), axis_units(0));
         casacore::Quantity coord1(reference_values(1), axis_units(1));
@@ -397,7 +397,7 @@ void FileExtInfoLoader::AddComputedEntries(
             direction_frame = radesys + ", " + direction_frame;
         }
 
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Celestial frame");
         entry->set_value(direction_frame);
         entry->set_entry_type(CARTA::EntryType::STRING);
@@ -405,12 +405,12 @@ void FileExtInfoLoader::AddComputedEntries(
 
     if (coord_system.hasSpectralAxis()) {
         casacore::String spectral_frame = casacore::MFrequency::showType(coord_system.spectralCoordinate().frequencySystem(true));
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Spectral frame");
         entry->set_value(spectral_frame);
         entry->set_entry_type(CARTA::EntryType::STRING);
         casacore::String vel_doppler = casacore::MDoppler::showType(coord_system.spectralCoordinate().velocityDoppler());
-        entry = extended_info->add_computed_entries();
+        entry = extended_info.add_computed_entries();
         entry->set_name("Velocity definition");
         entry->set_value(vel_doppler);
         entry->set_entry_type(CARTA::EntryType::STRING);
@@ -418,25 +418,25 @@ void FileExtInfoLoader::AddComputedEntries(
 
     casacore::String brightness_unit(image->units().getName());
     if (!brightness_unit.empty()) {
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Pixel unit");
         entry->set_value(brightness_unit);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     if (!increment.empty() && !axis_units.empty()) {
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_name("Pixel increment");
         casacore::Quantity inc0(increment(0), axis_units(0));
         casacore::Quantity inc1(increment(1), axis_units(1));
-        std::string pixel_inc = fmt::format("{:.3f}\", {:.3f}\"", inc0.getValue("arcsec"), inc1.getValue("arcsec"));
+        std::string pixel_inc = fmt::format("{:g}\", {:g}\"", inc0.getValue("arcsec"), inc1.getValue("arcsec"));
         entry->set_value(pixel_inc);
         entry->set_entry_type(CARTA::EntryType::STRING);
     }
 
     casacore::ImageInfo image_info(image->imageInfo());
     if (image_info.hasBeam()) {
-        auto entry = extended_info->add_computed_entries();
+        auto entry = extended_info.add_computed_entries();
         entry->set_entry_type(CARTA::EntryType::STRING);
         casacore::GaussianBeam gaussian_beam;
         if (image_info.hasSingleBeam()) {

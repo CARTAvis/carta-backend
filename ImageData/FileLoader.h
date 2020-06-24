@@ -5,6 +5,7 @@
 #include <string>
 
 #include <casacore/images/Images/ImageInterface.h>
+#include <casacore/images/Images/SubImage.h>
 
 #include <carta-protobuf/enums.pb.h>
 
@@ -147,7 +148,11 @@ public:
     // Check to see if the file has a particular HDU/group/table/etc
     virtual bool HasData(FileInfo::Data ds) const = 0;
     // Slice image data (with mask applied)
-    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer, bool removeDegenerateAxes = false);
+    bool GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer);
+
+    // SubImage
+    bool GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
 
     // Image Statistics
     // Load image statistics, if they exist, from the file
@@ -155,21 +160,18 @@ public:
     // Retrieve stats for a particular channel or all channels
     virtual FileInfo::ImageStats& GetImageStats(int current_stokes, int channel);
 
-    // Spectral profiles
+    // Spectral profiles for cursor and region
     virtual bool GetCursorSpectralData(
         std::vector<float>& data, int stokes, int cursor_x, int count_x, int cursor_y, int count_y, std::mutex& image_mutex);
-    // check if one can apply swizzled data under such image format and region condition
-    virtual bool UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex);
-    virtual bool GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
-        const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
-        const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback);
+    // Check if one can apply swizzled data under such image format and region condition
+    virtual bool UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex);
+    virtual bool GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+        const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
+        float& progress);
     virtual bool GetDownsampledRasterData(
         std::vector<float>& data, int channel, int stokes, CARTA::ImageBounds& bounds, int mip, std::mutex& image_mutex);
     virtual bool GetChunk(std::vector<float>& data, int& data_width, int& data_height, int min_x, int min_y, int channel, int stokes,
         std::mutex& image_mutex);
-
-    // Implemented in Hdf5Loader, used to interrupt loading spectral profile
-    virtual void SetFramePtr(Frame* frame);
 
     virtual bool HasMip(int mip) const;
     virtual bool UseTileCache() const;
@@ -177,6 +179,7 @@ public:
 protected:
     // Dimension values used by stats functions
     size_t _width, _height, _num_channels, _num_stokes, _num_dims, _channel_size;
+    int _spectral_axis, _stokes_axis;
 
     // Storage for channel and cube statistics
     std::vector<std::vector<carta::FileInfo::ImageStats>> _channel_stats;
@@ -198,10 +201,6 @@ protected:
 
     // Basic flux density calculation
     double CalculateBeamArea();
-
-private:
-    // Find spectral and stokes coordinates
-    void FindCoordinates(int& spectral_axis, int& stokes_axis);
 };
 
 } // namespace carta

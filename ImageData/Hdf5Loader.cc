@@ -209,7 +209,7 @@ bool Hdf5Loader::GetCursorSpectralData(
     return data_ok;
 }
 
-bool Hdf5Loader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) {
+bool Hdf5Loader::UseRegionSpectralData(const IPos& region_shape, std::mutex& image_mutex) {
     std::unique_lock<std::mutex> ulock(image_mutex);
     bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
     ulock.unlock();
@@ -217,8 +217,8 @@ bool Hdf5Loader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLatt
         return false;
     }
 
-    int num_x = mask->shape()(0);
-    int num_y = mask->shape()(1);
+    int num_x = region_shape(0);
+    int num_y = region_shape(1);
     int num_z = _num_channels;
 
     // Using the normal dataset may be faster if the region is wider than it is deep.
@@ -230,11 +230,13 @@ bool Hdf5Loader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLatt
     return true;
 }
 
-bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
-    const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
-    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
-    // config_stokes is the stokes value in the spectral config, could be -1 for CURRENT_STOKES; used to retrieve config from region
-    // profile_stokes is the stokes index to use for slicing image data
+bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask, const IPos& origin,
+    std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
+    // Return calculated stats if valid and complete,
+    // or return accumulated stats for the next incomplete "x" slice of swizzled data (chan vs y).
+    // Calling function should check for complete progress when x-range of region is complete
+    // Mask is 2D mask for region only
+
     std::unique_lock<std::mutex> ulock(image_mutex);
     bool has_swizzled = HasData(FileInfo::Data::SWIZZLED);
     ulock.unlock();
@@ -242,188 +244,149 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int config_stokes, int pro
         return false;
     }
 
-    int num_x = mask->shape()(0);
-    int num_y = mask->shape()(1);
+    // Check if region stats calculated
+    auto region_stats_id = FileInfo::RegionStatsId(region_id, stokes);
+    IPos mask_shape(mask.shape());
+    if (_region_stats.count(region_stats_id) && _region_stats[region_stats_id].IsValid(origin, mask_shape) &&
+        _region_stats[region_stats_id].IsCompleted()) {
+        results = _region_stats[region_stats_id].stats;
+        progress = PROFILE_COMPLETE;
+        return true;
+    }
+
+    int num_x = mask_shape(0);
+    int num_y = mask_shape(1);
     int num_z = _num_channels;
-
-    bool recalculate(false);
-    auto region_stats_id = FileInfo::RegionStatsId(region_id, profile_stokes);
-
     double beam_area = CalculateBeamArea();
     bool has_flux = !std::isnan(beam_area);
 
     if (_region_stats.find(region_stats_id) == _region_stats.end()) { // region stats never calculated
-        _region_stats.emplace(std::piecewise_construct, std::forward_as_tuple(region_id, profile_stokes),
-            std::forward_as_tuple(origin, mask->shape(), num_z, has_flux));
-        recalculate = true;
-    } else if (!_region_stats[region_stats_id].IsValid(origin, mask->shape())) { // region stats expired
+        _region_stats.emplace(
+            std::piecewise_construct, std::forward_as_tuple(region_id, stokes), std::forward_as_tuple(origin, mask_shape, num_z, has_flux));
+    } else if (!_region_stats[region_stats_id].IsValid(origin, mask_shape)) { // region stats expired
         _region_stats[region_stats_id].origin = origin;
-        _region_stats[region_stats_id].shape = mask->shape();
+        _region_stats[region_stats_id].shape = mask_shape;
         _region_stats[region_stats_id].completed = false;
         _region_stats[region_stats_id].latest_x = 0;
-        recalculate = true;
-    } else if ( // region stats is not expired but previous calculation is not completed
-        _region_stats[region_stats_id].IsValid(origin, mask->shape()) && !_region_stats[region_stats_id].IsCompleted()) {
-        // resume the calculation
-        recalculate = true;
     }
 
-    if (recalculate) {
-        int x_min = origin(0);
-        int y_min = origin(1);
+    int x_min = origin(0);
+    int y_min = origin(1);
 
-        auto& stats = _region_stats[region_stats_id].stats;
+    auto& stats = _region_stats[region_stats_id].stats;
+    auto& num_pixels = stats[CARTA::StatsType::NumPixels];
+    auto& nan_count = stats[CARTA::StatsType::NanCount];
+    auto& sum = stats[CARTA::StatsType::Sum];
+    auto& mean = stats[CARTA::StatsType::Mean];
+    auto& rms = stats[CARTA::StatsType::RMS];
+    auto& sigma = stats[CARTA::StatsType::Sigma];
+    auto& sum_sq = stats[CARTA::StatsType::SumSq];
+    auto& min = stats[CARTA::StatsType::Min];
+    auto& max = stats[CARTA::StatsType::Max];
+    double* flux = has_flux ? stats[CARTA::StatsType::FluxDensity].data() : nullptr;
 
-        auto& num_pixels = stats[CARTA::StatsType::NumPixels];
-        auto& nan_count = stats[CARTA::StatsType::NanCount];
-        auto& sum = stats[CARTA::StatsType::Sum];
-        auto& mean = stats[CARTA::StatsType::Mean];
-        auto& rms = stats[CARTA::StatsType::RMS];
-        auto& sigma = stats[CARTA::StatsType::Sigma];
-        auto& sum_sq = stats[CARTA::StatsType::SumSq];
-        auto& min = stats[CARTA::StatsType::Min];
-        auto& max = stats[CARTA::StatsType::Max];
+    // get the start of X
+    size_t x_start = _region_stats[region_stats_id].latest_x;
 
-        double* flux = has_flux ? stats[CARTA::StatsType::FluxDensity].data() : nullptr;
+    // Set initial values of stats, or those set to NAN in previous iterations
+    for (size_t z = 0; z < num_z; z++) {
+        if ((x_start == 0) || (num_pixels[z] == 0)) {
+            min[z] = FLT_MAX;
+            max[z] = FLT_MIN;
+            num_pixels[z] = 0;
+            nan_count[z] = 0;
+            sum[z] = 0;
+            sum_sq[z] = 0;
+        }
+    }
 
-        std::vector<float> slice_data;
+    // Lambda to calculate additional stats
+    auto calculate_stats = [&]() {
+        double sum_z, sum_sq_z;
+        uint64_t num_pixels_z;
 
-        // get the start of X
-        size_t x_start = _region_stats[region_stats_id].latest_x;
+        for (size_t z = 0; z < num_z; z++) {
+            if (num_pixels[z]) {
+                sum_z = sum[z];
+                sum_sq_z = sum_sq[z];
+                num_pixels_z = num_pixels[z];
 
-        if (x_start == 0) {
-            // Set initial values of stats which will be incremented (we may have expired region data)
-            for (size_t z = 0; z < num_z; z++) {
-                min[z] = FLT_MAX;
-                max[z] = FLT_MIN;
-                num_pixels[z] = 0;
-                nan_count[z] = 0;
-                sum[z] = 0;
-                sum_sq[z] = 0;
+                mean[z] = sum_z / num_pixels_z;
+                rms[z] = sqrt(sum_sq_z / num_pixels_z);
+                sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
+                if (has_flux) {
+                    flux[z] = sum_z / beam_area;
+                }
+            } else {
+                // if there are no valid values, set all stats to NaN except the value and NaN counts
+                for (auto& kv : stats) {
+                    switch (kv.first) {
+                        case CARTA::StatsType::NanCount:
+                        case CARTA::StatsType::NumPixels:
+                            break;
+                        default:
+                            kv.second[z] = NAN;
+                            break;
+                    }
+                }
             }
         }
+    };
 
-        // get a copy of current region state
-        RegionState region_state;
-        if (!_frame->GetRegionState(region_id, region_state)) {
+    size_t delta_x = INIT_DELTA_CHANNEL; // since data is swizzled, third axis is x not channel
+    size_t max_x = x_start + delta_x;
+    if (max_x > num_x) {
+        max_x = num_x;
+    }
+    std::vector<float> slice_data;
+
+    for (size_t x = x_start; x < max_x; ++x) {
+        if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y, image_mutex)) {
             return false;
         }
 
-        // get a copy of current region configs
-        SpectralConfig config_stats;
-        if (!_frame->GetRegionSpectralConfig(region_id, config_stokes, config_stats)) {
-            return false;
-        }
-
-        std::map<CARTA::StatsType, std::vector<double>>* stats_values;
-        float progress;
-
-        // start the timer
-        auto t_start = std::chrono::high_resolution_clock::now();
-        auto t_latest = t_start;
-
-        // Lambda to calculate additional stats
-        auto calculate_stats = [&]() {
-            double sum_z, sum_sq_z;
-            uint64_t num_pixels_z;
+        for (size_t y = 0; y < num_y; y++) {
+            // skip all Z values for masked pixels
+            if (!mask.getAt(IPos(2, x, y))) {
+                continue;
+            }
 
             for (size_t z = 0; z < num_z; z++) {
-                if (num_pixels[z]) {
-                    sum_z = sum[z];
-                    sum_sq_z = sum_sq[z];
-                    num_pixels_z = num_pixels[z];
+                double v = slice_data[y * num_z + z];
 
-                    mean[z] = sum_z / num_pixels_z;
-                    rms[z] = sqrt(sum_sq_z / num_pixels_z);
-                    sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
-                    if (has_flux) {
-                        flux[z] = sum_z / beam_area;
-                    }
-                } else {
-                    // if there are no valid values, set all stats to NaN except the value and NaN counts
-                    for (auto& kv : stats) {
-                        switch (kv.first) {
-                            case CARTA::StatsType::NanCount:
-                            case CARTA::StatsType::NumPixels:
-                                break;
-                            default:
-                                kv.second[z] = NAN;
-                                break;
-                        }
+                // skip all NaN pixels
+                if (std::isfinite(v)) {
+                    num_pixels[z] += 1;
+                    sum[z] += v;
+                    sum_sq[z] += v * v;
+
+                    if (v < min[z]) {
+                        min[z] = v;
+                    } else if (v > max[z]) {
+                        max[z] = v;
                     }
                 }
-            }
-        };
-
-        // Load each X slice of the swizzled region bounding box and update Z stats incrementally
-        for (size_t x = x_start; x < num_x; x++) {
-            // check if frontend's requirements changed
-            if (_frame != nullptr && _frame->Interrupt(region_id, profile_stokes, region_state, config_stats, true)) {
-                // remember the latest x step
-                _region_stats[region_stats_id].latest_x = x;
-                return false;
-            }
-
-            bool have_spectral_data = GetCursorSpectralData(slice_data, profile_stokes, x + x_min, 1, y_min, num_y, image_mutex);
-            if (!have_spectral_data) {
-                return false;
-            }
-
-            for (size_t y = 0; y < num_y; y++) {
-                // skip all Z values for masked pixels
-                if (!mask->getAt(IPos(2, x, y))) {
-                    continue;
-                }
-                for (size_t z = 0; z < num_z; z++) {
-                    double v = slice_data[y * num_z + z];
-
-                    if (std::isfinite(v)) {
-                        num_pixels[z] += 1;
-
-                        sum[z] += v;
-                        sum_sq[z] += v * v;
-
-                        if (v < min[z]) {
-                            min[z] = v;
-                        } else if (v > max[z]) {
-                            max[z] = v;
-                        }
-
-                    } else {
-                        nan_count[z] += 1;
-                    }
-                }
-            }
-
-            // get the time elapse for this step
-            auto t_end = std::chrono::high_resolution_clock::now();
-            auto dt = std::chrono::duration<double, std::milli>(t_end - t_latest).count();
-
-            progress = (float)x / num_x;
-            // check whether to send partial results to the frontend
-            if (dt > TARGET_PARTIAL_REGION_TIME && x < num_x) {
-                // Calculate partial stats
-                calculate_stats();
-
-                stats_values = &_region_stats[region_stats_id].stats;
-
-                t_latest = std::chrono::high_resolution_clock::now();
-                // send partial result by the callback function
-                partial_results_callback(stats_values, progress);
             }
         }
+    }
 
-        // Calculate final stats
-        calculate_stats();
+    // Calculate partial stats
+    calculate_stats();
 
+    results = _region_stats[region_stats_id].stats;
+    if (max_x == num_x) {
+        progress = PROFILE_COMPLETE;
+    } else {
+        progress = (float)max_x / num_x;
+    }
+
+    // Update starting x for next time
+    _region_stats[region_stats_id].latest_x = max_x;
+
+    if (progress >= PROFILE_COMPLETE) {
         // the stats calculation is completed
         _region_stats[region_stats_id].completed = true;
     }
-
-    std::map<CARTA::StatsType, std::vector<double>>* stats_values = &_region_stats[region_stats_id].stats;
-
-    // send final result by the callback function
-    partial_results_callback(stats_values, 1.0f);
 
     return true;
 }
@@ -497,10 +460,6 @@ bool Hdf5Loader::GetChunk(
     }
 
     return data_ok;
-}
-
-void Hdf5Loader::SetFramePtr(Frame* frame) {
-    _frame = frame;
 }
 
 bool Hdf5Loader::UseTileCache() const {

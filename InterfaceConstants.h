@@ -17,6 +17,7 @@
 #define CUBE_REGION_ID -2
 #define IMAGE_REGION_ID -1
 #define CURSOR_REGION_ID 0
+#define ALL_REGIONS -10
 
 // channels
 #define DEFAULT_CHANNEL 0
@@ -46,6 +47,9 @@
 #define TARGET_PARTIAL_CURSOR_TIME 500
 #define TARGET_PARTIAL_REGION_TIME 1000
 #define PROFILE_COMPLETE 1.0
+
+// scripting timeouts
+#define SCRIPTING_TIMEOUT 10 // seconds
 
 // catalog files
 #define ALL_CATALOG_DATA -1

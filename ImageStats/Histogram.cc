@@ -1,6 +1,7 @@
 #include "Histogram.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include <omp.h>
 #include <tbb/parallel_for.h>
@@ -9,16 +10,19 @@
 using namespace carta;
 
 Histogram::Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data)
-    : _bin_width((max_value - min_value) / num_bins), _min_val(min_value), _hist(num_bins, 0), _data(data) {}
+    : _num_bins(num_bins), _bin_width((max_value - min_value) / num_bins), _min_val(min_value), _hist(num_bins, 0), _data(data) {}
 
-Histogram::Histogram(Histogram& h, tbb::split) : _bin_width(h._bin_width), _min_val(h._min_val), _hist(h._hist.size(), 0), _data(h._data) {}
+Histogram::Histogram(Histogram& h, tbb::split)
+    : _num_bins(h._num_bins), _bin_width(h._bin_width), _min_val(h._min_val), _hist(h._hist.size(), 0), _data(h._data) {}
 
 void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
     std::vector<int> tmp(_hist);
     for (auto i = r.begin(); i != r.end(); ++i) {
         auto v = _data[i];
-        if (std::isnan(v) || std::isinf(v))
+        if (std::isnan(v) || std::isinf(v)) {
             continue;
+        }
+
         size_t bin_number = std::max<size_t>(std::min<size_t>((size_t)((v - _min_val) / _bin_width), (size_t)_hist.size() - 1), 0);
 
         ++tmp[bin_number];
@@ -84,4 +88,13 @@ void Histogram::setup_bins() {
     for (omp_index = 0; omp_index < buckets; omp_index++) {
         delete[] bins_bin[omp_index];
     }
+}
+
+HistogramResults Histogram::GetHistogram() const {
+    HistogramResults results;
+    results.num_bins = _num_bins;
+    results.bin_width = _bin_width;
+    results.bin_center = _min_val + (_bin_width / 2.0);
+    results.histogram_bins = _hist;
+    return results;
 }

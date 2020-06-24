@@ -28,6 +28,7 @@
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
+#include "GrpcServer/CartaGrpcService.h"
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "Util.h"
@@ -46,6 +47,10 @@ static FileListHandler* file_list_handler;
 
 static uint32_t session_number;
 static uWS::Hub websocket_hub(uWS::PERMESSAGE_DEFLATE);
+
+// grpc server for scripting client
+static std::unique_ptr<CartaGrpcService> carta_grpc_service;
+static std::unique_ptr<grpc::Server> carta_grpc_server;
 
 // command-line arguments
 static string root_folder("/"), base_folder(".");
@@ -83,9 +88,12 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         current_session->SendPendingMessages();
     });
 
-    Session* session = new Session(ws, session_number, root_folder, outgoing, file_list_handler, verbose);
+    Session* session = new Session(ws, session_number, root_folder, base_folder, outgoing, file_list_handler, verbose);
 
     ws->setUserData(session);
+    if (carta_grpc_service) {
+        carta_grpc_service->AddSession(session);
+    }
     session->IncreaseRefCount();
     outgoing->setData(session);
 
@@ -103,9 +111,12 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
     Session* session = (Session*)ws->getUserData();
 
     if (session) {
-        auto uuid = session->_id;
+        auto uuid = session->GetId();
         session->DisconnectCalled();
         Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address, Session::NumberOfSessions());
+        if (carta_grpc_service) {
+            carta_grpc_service->RemoveSession(session);
+        }
         if (!session->DecreaseRefCount()) {
             delete session;
             ws->setUserData(nullptr);
@@ -333,6 +344,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
                     break;
                 }
+                case CARTA::EventType::SCRIPTING_RESPONSE: {
+                    CARTA::ScriptingResponse message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnScriptingResponse(message, head.request_id);
+                    } else {
+                        fmt::print("Bad SCRIPTING_RESPONSE message!\n");
+                    }
+                    break;
+                }
                 case CARTA::EventType::SET_REGION: {
                     CARTA::SetRegion message;
                     if (message.ParseFromArray(event_buf, event_length)) {
@@ -396,6 +416,15 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::CATALOG_FILTER_REQUEST: {
+                    CARTA::CatalogFilterRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnCatalogFilter(message, head.request_id);
+                    } else {
+                        fmt::print("Bad CLOSE_CATALOG_FILE message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
@@ -415,8 +444,47 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
     }
 }
 
+void GrpcSilentLogger(gpr_log_func_args*) {}
+
+extern void gpr_default_log(gpr_log_func_args* args);
+
+int StartGrpcService(int grpc_port) {
+    // Silence grpc error log
+    gpr_set_log_function(GrpcSilentLogger);
+
+    // Set up address buffer
+    std::string server_address = fmt::format("0.0.0.0:{}", grpc_port);
+
+    // Build grpc service
+    grpc::ServerBuilder builder;
+    // BuildAndStart will populate this with the desired port if binding succeeds or 0 if it fails
+    int selected_port(-1);
+    // Listen on the given address without any authentication mechanism.
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selected_port);
+
+    // Register and start carta grpc server
+    carta_grpc_service = std::unique_ptr<CartaGrpcService>(new CartaGrpcService(verbose));
+    builder.RegisterService(carta_grpc_service.get());
+    // By default ports can be reused; we don't want this
+    builder.AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
+    carta_grpc_server = builder.BuildAndStart();
+
+    if (selected_port > 0) { // available port found
+        fmt::print("CARTA gRPC service available at 0.0.0.0:{}\n", selected_port);
+        // Turn logging back on
+        gpr_set_log_function(gpr_default_log);
+        return 0;
+    } else {
+        fmt::print("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.\n", grpc_port);
+        return 1;
+    }
+}
+
 void ExitBackend(int s) {
     fmt::print("Exiting backend.\n");
+    if (carta_grpc_server) {
+        carta_grpc_server->Shutdown();
+    }
     exit(0);
 }
 
@@ -454,6 +522,7 @@ int main(int argc, const char* argv[]) {
         int port(3002);
         int thread_count = TBB_THREAD_COUNT;
         int omp_thread_count = OMP_THREAD_COUNT;
+        int grpc_port(-1);
         { // get values then let Input go out of scope
             casacore::Input inp;
             string json_fname;
@@ -462,6 +531,7 @@ int main(int argc, const char* argv[]) {
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
             inp.create("token", CARTA::token, "only accept connections with this authorization token", "String");
             inp.create("port", to_string(port), "set server port", "Int");
+            inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
@@ -477,6 +547,7 @@ int main(int argc, const char* argv[]) {
             use_mongodb = inp.getBool("use_mongodb");
             use_permissions = inp.getBool("permissions");
             port = inp.getInt("port");
+            grpc_port = inp.getInt("grpc_port");
             thread_count = inp.getInt("threads");
             omp_thread_count = inp.getInt("omp_threads");
             base_folder = inp.getString("base");
@@ -521,6 +592,14 @@ int main(int argc, const char* argv[]) {
 
         // One FileListHandler works for all sessions.
         file_list_handler = new FileListHandler(permissions_map, use_permissions, root_folder, base_folder);
+
+        // Start grpc service for scripting client
+        if (grpc_port >= 0) {
+            int grpc_status = StartGrpcService(grpc_port);
+            if (grpc_status) {
+                return 1;
+            }
+        }
 
         session_number = 0;
 

@@ -1,0 +1,108 @@
+FROM centos:8
+
+# Install the required packages
+RUN \
+  dnf -y install epel-release && \
+  dnf -y install https://www.elrepo.org/elrepo-release-8.el8.elrepo.noarch.rpm && \
+  dnf -y install 'dnf-command(config-manager)' && \
+  dnf -y config-manager --set-enabled PowerTools epel-testing elrepo-testing && \
+  dnf -y update && \
+  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel flex fmt-devel gcc \
+         gcc-c++ git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel \
+         libzstd-devel make openssl-devel tbb-devel wcslib-devel wcslib-devel wget zlib-devel
+
+# gRPC will need cmake >3.13 but CentOS8 only provides cmake 3.11.
+RUN \
+  cd /root && \
+  git clone https://github.com/Kitware/CMake.git && \
+  cd CMake && git checkout v3.17.0 && ./configure && \
+  make -j 2 && make install && \
+  cd /root && rm -rf CMake
+
+# gRPC needs protoc >3.6 but CentOS8 only provides 3.5
+RUN \
+  cd /root && \
+  git clone https://github.com/protocolbuffers/protobuf.git && cd protobuf && \
+  ./autogen.sh && ./configure && make && make install && \
+  cd /root && rm -rf protobuf
+
+# CARTA will have a problem finding the .h files in /usr/include/cfitsio/
+RUN \
+  source /etc/bashrc && \
+  cp /usr/include/cfitsio/* /usr/include/
+
+# Get the casacore data
+RUN \
+  git-lfs install && \
+  mkdir -p /usr/local/share/casacore && cd /usr/local/share/casacore && \
+  git clone --no-checkout https://open-bitbucket.nrao.edu/scm/casa/casa-data.git data && \
+  cd data && git show HEAD:distro | bash
+
+# Get libsofa.a for casacore
+RUN \
+  wget http://www.iausofa.org/2018_0130_F/sofa_f-20180130.tar.gz && \
+  tar xzf sofa_f-20180130.tar.gz && rm sofa_f-20180130.tar.gz && \
+  cd sofa/20180130/f77/src && make && cp libsofa.a /usr/lib/libsofa.a && \
+  cd /root && rm -rf sofa
+
+# Install carta-casacore
+RUN \
+  cd /root && \
+  git clone -q --recursive https://open-bitbucket.nrao.edu/scm/casa/carta-casacore.git && \
+  mkdir -p carta-casacore/build && cd carta-casacore/build && \
+  cmake .. -DUSE_FFTW3=ON \
+           -DUSE_HDF5=ON \
+           -DUSE_THREADS=ON \
+           -DUSE_OPENMP=ON \
+           -DCMAKE_BUILD_TYPE=Release \
+           -DDATA_DIR=/usr/local/share/casacore/data \
+           -DBUILD_TESTING=OFF \
+           -DBoost_NO_BOOST_CMAKE=1 \
+           -DBUILD_PYTHON=OFF \
+           -DUseCcache=1 \
+           -DHAS_CXX11=1 && \
+  make -j2 && make install && \
+  cd /root && rm -rf carta-casacore
+
+# Install gRPC for the scripting interface 
+RUN \
+  cd /root && \
+  wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm && \
+  git clone --recurse-submodules https://github.com/grpc/grpc && \
+  mkdir -p grpc/cmake/build && cd grpc/cmake/build && \
+  export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH && \
+  cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_SSL_PROVIDER=package ../.. && \
+  make -j 2 && make install && \
+  cd /root && rm -rf grpc
+
+# Install uWS
+RUN \
+  cd /root && \
+  git clone https://github.com/uNetworking/uWebSockets.git && \
+  cd uWebSockets && git checkout v0.14 && cd .. && \
+  make default install -C uWebSockets && \
+  rm -rf uWebSockets
+
+# Install zfp
+RUN \
+  cd /root && \
+  git clone https://github.com/LLNL/zfp.git && \
+  mkdir -p zfp/build && cd zfp/build && \
+  cmake .. && make all install && \
+  cd /root && rm -rf zfp
+
+# Forward port so that the webapp can properly access it
+# from outside of the container
+EXPOSE 3002
+
+ENV HOME /root
+
+# Required for running the backend
+ENV LD_LIBRARY_PATH "/usr/local/lib64:/usr/local/lib:$LD_LIBRARY_PATH"
+ENV CASAPATH "/usr/local/share/casacore linux local `hostname`"
+
+WORKDIR /root
+
+# overwrite this with 'CMD []' in a dependent Dockerfile
+CMD ["bash"]
+
