@@ -34,6 +34,8 @@ public:
     // Calculate moments
     std::vector<CollapseResult> CalculateMoments(
         int file_id, int current_stokes, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+    std::vector<CollapseResult> CalculateMoments(int file_id, int current_stokes, const casacore::ImageRegion& image_region,
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
 
     // Stop moments calculation
     void StopCalculation();
@@ -64,6 +66,7 @@ private:
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
     casacore::Record MakeRegionRecord(const CARTA::MomentRequest& moment_request);
     void ResetImageMoments(const CARTA::MomentRequest& moment_request);
+    void ResetImageMoments(const casacore::ImageRegion& image_region);
     int GetMomentMode(CARTA::Moment moment);
     casacore::String GetMomentSuffix(casacore::Int moment);
     casacore::String GetStokes(CARTA::MomentStokes moment_stokes);

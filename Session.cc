@@ -1017,6 +1017,8 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
 
 void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id) {
     int file_id(moment_request.file_id());
+    int region_id(moment_request.region_id());
+
     if (_frames.count(file_id)) {
         auto& frame = _frames.at(file_id);
         // Set moment progress callback function
@@ -1026,10 +1028,26 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             SendEvent(CARTA::EventType::MOMENT_PROGRESS, request_id, moment_progress);
         };
 
-        // Calculate the moments
+        casacore::ImageRegion image_region;
+        std::vector<carta::CollapseResult> collapse_results;
         CARTA::MomentResponse moment_response;
-        std::vector<carta::CollapseResult> collapse_results =
-            _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
+
+        // Calculate the moments
+        if (region_id > 0) {
+            // For a region
+            int chan_min(moment_request.spectral_range().min());
+            int chan_max(moment_request.spectral_range().max());
+            int current_stokes = frame->CurrentStokes();
+
+            if (_region_handler->ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), current_stokes, image_region)) {
+                collapse_results =
+                    _moment_controller->CalculateMoments(file_id, frame, image_region, progress_callback, moment_request, moment_response);
+            }
+        } else {
+            // For the whole image plane
+            collapse_results =
+                _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
+        }
 
         // Open moment images from the cache, open files acknowledges will send to frontend
         for (int i = 0; i < collapse_results.size(); ++i) {
