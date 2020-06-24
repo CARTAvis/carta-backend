@@ -31,7 +31,6 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _num_channels(1),
       _num_stokes(1),
       _image_cache_valid(false),
-      _verbose(verbose),
       _z_profile_count(0) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
@@ -992,7 +991,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         int tile_y = (y / TILE_SIZE) * TILE_SIZE;
         auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
         auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
-        value = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
+        cursor_value = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
     }
 
     // set message fields

@@ -28,7 +28,6 @@
 #include "InterfaceConstants.h"
 #include "Region/Region.h"
 #include "RequirementsCache.h"
-#include "Tile.h"
 #include "TileCache.h"
 
 struct ContourSettings {
