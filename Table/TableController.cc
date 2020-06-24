@@ -7,8 +7,6 @@
 using namespace carta;
 using namespace std;
 
-namespace fs = boost::filesystem;
-
 TableController::TableController(const string& root, const string& base) : _root_folder(root), _base_folder(base) {}
 
 void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
@@ -19,7 +17,6 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
     }
 
     open_file_response.set_file_id(file_id);
-
     auto file_path = GetPath(open_file_request.directory(), open_file_request.name());
     if (!fs::exists(file_path) || !fs::is_regular_file(file_path)) {
         open_file_response.set_message(fmt::format("Cannot find path {}", file_path.string()));
@@ -308,8 +305,8 @@ bool TableController::FilterParamsChanged(const std::vector<CARTA::FilterConfig>
 
     return false;
 }
-boost::filesystem::path TableController::GetPath(std::string directory, std::string name) {
-    boost::filesystem::path file_path(_root_folder);
+fs::path TableController::GetPath(std::string directory, std::string name) {
+    fs::path file_path(_root_folder);
     if (directory == "$BASE") {
         // Replace $BASE macro with the base folder
         file_path /= _base_folder;
