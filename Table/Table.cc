@@ -4,6 +4,8 @@
 #include <fmt/format.h>
 
 #include <filesystem>
+#include <boost/filesystem.hpp>
+
 #include <iostream>
 
 #include "../Util.h"
@@ -12,10 +14,12 @@
 namespace carta {
 using namespace std;
 
-Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0) {
-    filesystem::path file_path(filename);
+namespace fs = boost::filesystem;
 
-    if (!filesystem::exists(file_path)) {
+Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0) {
+    boost::filesystem::path file_path(filename);
+
+    if (!fs::exists(file_path)) {
         _parse_error_message = "File does not exist!";
         return;
     }
