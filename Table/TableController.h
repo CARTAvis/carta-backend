@@ -1,7 +1,7 @@
 #ifndef CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
 #define CARTA_BACKEND_TABLE_TABLECONTROLLER_H_
 
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -39,7 +39,7 @@ protected:
     void ApplyFilter(const CARTA::FilterConfig& filter_config, TableView& view);
     static bool FilterParamsChanged(const std::vector<CARTA::FilterConfig>& filter_configs, std::string sort_column,
         CARTA::SortingType sorting_type, const TableViewCache& cached_config);
-    std::filesystem::path GetPath(std::string directory, std::string name = "");
+    boost::filesystem::path GetPath(std::string directory, std::string name = "");
     std::string _root_folder;
     std::string _base_folder;
     std::unordered_map<int, Table> _tables;

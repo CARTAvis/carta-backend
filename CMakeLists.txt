@@ -101,6 +101,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
             stdc++fs)
 endif()
 
+find_package(Boost 1.56 REQUIRED COMPONENTS filesystem)
+set(LINK_LIBS ${LINK_LIBS} Boost::filesystem)
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
