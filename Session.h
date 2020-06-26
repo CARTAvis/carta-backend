@@ -3,10 +3,10 @@
 #ifndef CARTA_BACKEND__SESSION_H_
 #define CARTA_BACKEND__SESSION_H_
 
+#include <atomic>
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
-#include <atomic>
 #include <tuple>
 #include <unordered_map>
 #include <utility>

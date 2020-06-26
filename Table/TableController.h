@@ -22,8 +22,6 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-
-
 namespace carta {
 
 struct TableViewCache {
