@@ -125,7 +125,7 @@ TEST(Filtering, FailOnWrongFilterType) {
     EXPECT_FALSE(table.View().StringFilter(table["dummy"], "N 224"));
     EXPECT_FALSE(table.View().StringFilter(table["RA"], "N 224"));
 
-    EXPECT_FALSE(table.View().NumericFilter(table["dummy"], CARTA::RangeOpen, 0, 100));
+    EXPECT_FALSE(table.View().NumericFilter(table["dummy"], CARTA::RangeClosed, 0, 100));
     EXPECT_FALSE(table.View().NumericFilter(table["Name"], CARTA::RangeClosed, 0, 100));
 }
 
