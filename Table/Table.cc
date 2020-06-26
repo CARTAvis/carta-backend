@@ -3,19 +3,26 @@
 #include <fitsio.h>
 #include <fmt/format.h>
 
-#include <filesystem>
 #include <iostream>
 
 #include "../Util.h"
 #include "DataColumn.tcc"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 namespace carta {
 using namespace std;
 
 Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0) {
-    filesystem::path file_path(filename);
+    fs::path file_path(filename);
 
-    if (!filesystem::exists(file_path)) {
+    if (!fs::exists(file_path)) {
         _parse_error_message = "File does not exist!";
         return;
     }
