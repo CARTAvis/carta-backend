@@ -339,7 +339,7 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
     }
 
     casacore::Vector<casacore::Double> pixel_coords(_image_shape.size());
-    pixel_coords == 0.0;
+    pixel_coords = 0.0;
     pixel_coords(0) = center(0);
     pixel_coords(1) = center(1);
 
