@@ -14,7 +14,7 @@ namespace carta {
 class RegionImportExport {
 public:
     RegionImportExport() {}
-    ~RegionImportExport() {}
+    virtual ~RegionImportExport() {}
 
     // Import constructor: file_id to add to RegionState
     RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id);

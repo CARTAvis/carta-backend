@@ -38,7 +38,7 @@ public:
     // Each export region will be converted to a string in DS9 format and added to string vector
     Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, bool pixel_coord);
 
-    ~Ds9ImportExport();
+    ~Ds9ImportExport() override;
 
     // Export regions
     // Convert to DS9 string and add to vector
