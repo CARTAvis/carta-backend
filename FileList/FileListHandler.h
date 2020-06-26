@@ -4,9 +4,9 @@
 #define CARTA_BACKEND__FILELISTHANDLER_H_
 
 #include <unordered_map>
+#include <mutex>
 
 #include <fmt/format.h>
-#include <tbb/mutex.h>
 
 #include <casacore/casa/aips.h>
 
@@ -50,8 +50,8 @@ private:
     CARTA::FileType GetRegionType(const std::string& filename);                // parse first line for CRTF or DS9
 
     // lock on file list handler
-    tbb::mutex _file_list_mutex;
-    tbb::mutex _region_list_mutex;
+    std::mutex _file_list_mutex;
+    std::mutex _region_list_mutex;
     std::string _filelist_folder;
     std::string _regionlist_folder;
 

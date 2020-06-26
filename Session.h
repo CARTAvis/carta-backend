@@ -6,13 +6,13 @@
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
+#include <atomic>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include <fmt/format.h>
-#include <tbb/atomic.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
