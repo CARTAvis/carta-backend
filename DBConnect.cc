@@ -90,7 +90,6 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
     mongoc_client_t* client;
     mongoc_database_t* database;
     mongoc_collection_t* collection;
-    bson_t layout;
     char user[16];
     bson_error_t error;
     bool result = true;
@@ -99,23 +98,32 @@ bool SaveLayoutToDB(const std::string& name, const std::string& json_string) {
 
     cuserid(user);
 
-    bson_init(&layout);
-    BSON_APPEND_UTF8(&layout, "username", user);
-    BSON_APPEND_UTF8(&layout, "name", name.c_str());
+    bson_t opts_upsert = BSON_INITIALIZER;
+    BSON_APPEND_BOOL(&opts_upsert, "upsert", true);
+
+    bson_t existing = BSON_INITIALIZER;
+    BSON_APPEND_UTF8(&existing, "username", user);
+    BSON_APPEND_UTF8(&existing, "name", name.c_str());
 
     if (json_string.empty()) {
         // Remove entry from DB.
-        if (!mongoc_collection_delete_one(collection, &layout, NULL, NULL, &error)) {
-            fmt::print("Delete failed: {}", error.message);
+        if (!mongoc_collection_delete_one(collection, &existing, NULL, NULL, &error)) {
+            fmt::print("Layout deletion failed: {}\n", error.message);
             result = false;
         }
     } else {
-        BSON_APPEND_UTF8(&layout, "json_string", json_string.c_str());
-        if (!mongoc_collection_insert_one(collection, &layout, NULL, NULL, &error)) {
-            fmt::print("{}", error.message);
+        bson_t* updated = bson_copy(&existing);
+        BSON_APPEND_UTF8(updated, "json_string", json_string.c_str());
+
+        if (!mongoc_collection_replace_one(collection, &existing, updated, &opts_upsert, NULL, &error)) {
+            fmt::print("Layout update failed: {}\n", error.message);
             result = false;
         }
+
+        bson_destroy(updated);
     }
+
+    bson_destroy(&existing);
 
     mongoc_collection_destroy(collection);
     mongoc_database_destroy(database);
@@ -239,31 +247,44 @@ bool SaveUserPreferencesToDB(const CARTA::SetUserPreferences& request) {
 
     cuserid(user);
 
+    bson_t opts_upsert = BSON_INITIALIZER;
+    BSON_APPEND_BOOL(&opts_upsert, "upsert", true);
+
+    bson_t field_exists = BSON_INITIALIZER;
+    BSON_APPEND_BOOL(&field_exists, "$exists", true);
+
+    bson_t existing = BSON_INITIALIZER;
+
     for (auto& pair : request.preference_map()) {
-        bson_t* doc;
+        bson_reinit(&existing);
+        BSON_APPEND_UTF8(&existing, "username", user);
+        BSON_APPEND_DOCUMENT(&existing, pair.first.c_str(), &field_exists);
 
         if (pair.second.empty()) {
             // Remove this pair from the DB;
-            doc = bson_new();
-            BSON_APPEND_UTF8(doc, pair.first.c_str(), pair.second.c_str());
-            const bson_t* doc1 = (const bson_t*)doc;
-            if (!mongoc_collection_delete_one(collection, doc1, NULL, NULL, &error)) {
-                fmt::print("Delete failed: {}", error.message);
+            if (!mongoc_collection_delete_one(collection, &existing, NULL, NULL, &error)) {
+                fmt::print("Preference deletion failed: {}\n", error.message);
                 result = false;
             }
-            bson_destroy(doc);
         } else {
-            // Add this pair to the DB.
-            doc = bson_new();
-            BSON_APPEND_UTF8(doc, "username", user);
-            BSON_APPEND_UTF8(doc, pair.first.c_str(), pair.second.c_str());
-            if (!mongoc_collection_insert_one(collection, doc, NULL, NULL, &error)) {
-                fmt::print("{}", error.message);
+            // Update or insert this pair.
+            bson_t updated = BSON_INITIALIZER;
+            BSON_APPEND_UTF8(&updated, "username", user);
+            BSON_APPEND_UTF8(&updated, pair.first.c_str(), pair.second.c_str());
+
+            if (!mongoc_collection_replace_one(collection, &existing, &updated, &opts_upsert, NULL, &error)) {
+                fmt::print("Preference update failed: {}\n", error.message);
                 result = false;
             }
-            bson_free(doc);
+
+            bson_destroy(&updated);
         }
     }
+
+    bson_destroy(&opts_upsert);
+    bson_destroy(&field_exists);
+    bson_destroy(&existing);
+
     mongoc_collection_destroy(collection);
     mongoc_client_destroy(client);
     mongoc_database_destroy(database);
