@@ -183,7 +183,6 @@ void TableController::OnFileListRequest(
     file_list_response.set_parent(parent_path.string());
 
     for (const auto& entry : fs::directory_iterator(file_path)) {
-
         if (fs::is_directory(entry)) {
             file_list_response.add_subdirectories(entry.path().filename().string());
         } else if (fs::is_regular_file(entry) && fs::exists(entry)) {
