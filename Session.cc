@@ -899,7 +899,12 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
                 const CARTA::ContourSettings& contour_settings = image.contour_settings();
                 CARTA::SetContourParameters set_contour_params;
                 set_contour_params.set_file_id(image.file_id());
-                set_contour_params.set_reference_file_id(contour_settings.reference_file_id());
+                auto image_bounds = set_contour_params.mutable_image_bounds();
+                image_bounds->set_x_min(contour_settings.image_bounds().x_min());
+                image_bounds->set_x_max(contour_settings.image_bounds().x_max());
+                image_bounds->set_y_min(contour_settings.image_bounds().y_min());
+                image_bounds->set_y_max(contour_settings.image_bounds().y_max());
+
                 *set_contour_params.mutable_levels() = {contour_settings.levels().begin(), contour_settings.levels().end()};
                 set_contour_params.set_smoothing_mode(contour_settings.smoothing_mode());
                 set_contour_params.set_smoothing_factor(contour_settings.smoothing_factor());
