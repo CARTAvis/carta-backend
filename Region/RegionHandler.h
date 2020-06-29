@@ -5,8 +5,6 @@
 
 #include <vector>
 
-#include <tbb/atomic.h>
-
 #include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
@@ -90,7 +88,7 @@ private:
     volatile bool _cancel_all_jobs = false;
 
     // Track ongoing calculations
-    tbb::atomic<int> _z_profile_count;
+    std::atomic<int> _z_profile_count;
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;
