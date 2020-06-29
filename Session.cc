@@ -896,22 +896,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 
             // Set contours
             if (image.contour_settings().levels_size()) {
-                const CARTA::ContourSettings& contour_settings = image.contour_settings();
-                CARTA::SetContourParameters set_contour_params;
-                set_contour_params.set_file_id(image.file_id());
-                auto image_bounds = set_contour_params.mutable_image_bounds();
-                image_bounds->set_x_min(contour_settings.image_bounds().x_min());
-                image_bounds->set_x_max(contour_settings.image_bounds().x_max());
-                image_bounds->set_y_min(contour_settings.image_bounds().y_min());
-                image_bounds->set_y_max(contour_settings.image_bounds().y_max());
-
-                *set_contour_params.mutable_levels() = {contour_settings.levels().begin(), contour_settings.levels().end()};
-                set_contour_params.set_smoothing_mode(contour_settings.smoothing_mode());
-                set_contour_params.set_smoothing_factor(contour_settings.smoothing_factor());
-                set_contour_params.set_decimation_factor(contour_settings.decimation_factor());
-                set_contour_params.set_compression_level(contour_settings.compression_level());
-                set_contour_params.set_contour_chunk_size(contour_settings.contour_chunk_size());
-                OnSetContourParameters(set_contour_params);
+                OnSetContourParameters(image.contour_settings());
             }
         }
     }
