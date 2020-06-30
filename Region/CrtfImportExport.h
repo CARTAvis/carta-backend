@@ -29,7 +29,7 @@ public:
     // ExportRegions prints these regions to a file or vector of strings.
     CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis);
 
-    ~CrtfImportExport();
+    ~CrtfImportExport() override;
 
     // Export regions
     // Create AnnRegion and add to RegionTextList

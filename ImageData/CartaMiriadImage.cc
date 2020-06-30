@@ -71,7 +71,7 @@ void CartaMiriadImage::SetNativeType() {
         if (hdprsnt_c(_file_handle, header.c_str())) {                   // check if ctype header exists
             char ctype_value[30];
             rdhda_c(_file_handle, header.c_str(), ctype_value, "none", 30);
-            if (ctype_value != "none") { // default if not found
+            if (strncmp(ctype_value, "none", 4) != 0) { // default if not found
                 casacore::String spectral_ctype(ctype_value);
                 _native_type = casacore::SpectralCoordinate::FREQ;
                 if (spectral_ctype.contains("VRAD")) {

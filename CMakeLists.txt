@@ -6,8 +6,7 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 # Enable OpenMP if package is found
 find_package(OpenMP)
-if (OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+if (OPENMP_CXX_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 else ()
     message(WARNING "OpenMP not found!")
@@ -95,11 +94,16 @@ if (DisableContourCompression)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DISABLE_CONTOUR_COMPRESSION_")
 endif (DisableContourCompression)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    set(LINK_LIBS
-            ${LINK_LIBS}
-            stdc++fs)
+option(UseBoostFilesystem "UseBoostFilesystem" OFF)
+
+if (UseBoostFilesystem)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_BOOST_FILESYSTEM_")
+    find_package(Boost 1.56 REQUIRED COMPONENTS filesystem)
+    set(LINK_LIBS ${LINK_LIBS} Boost::filesystem)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(LINK_LIBS ${LINK_LIBS} stdc++fs)
 endif ()
+
 
 set(LINK_LIBS
         ${LINK_LIBS}

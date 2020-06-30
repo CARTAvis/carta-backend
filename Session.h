@@ -3,6 +3,7 @@
 #ifndef CARTA_BACKEND__SESSION_H_
 #define CARTA_BACKEND__SESSION_H_
 
+#include <atomic>
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
@@ -12,7 +13,6 @@
 #include <vector>
 
 #include <fmt/format.h>
-#include <tbb/atomic.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
