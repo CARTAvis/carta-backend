@@ -52,18 +52,13 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
     return column;
 }
 
-std::unique_ptr<Column> Column::FromValues(const std::vector<string>& values, string type, string name) {
+std::unique_ptr<Column> Column::FromValues(const std::vector<string>& values, string name) {
     unique_ptr<Column> column;
 
-    if (type == "char") {
-        column = make_unique<DataColumn<string>>(name);
-        column->Resize(values.size());
-        for (auto row_index = 0; row_index < values.size(); row_index++) {
-            (dynamic_cast<DataColumn<string>*>(column.get()))->SetFromValue(values[row_index], row_index);
-        }
-    } else if (type == "double") {
-        column = make_unique<DataColumn<double>>(name);
-        // TODO: handle for different types
+    column = make_unique<DataColumn<string>>(name);
+    column->Resize(values.size());
+    for (auto row_index = 0; row_index < values.size(); row_index++) {
+        (dynamic_cast<DataColumn<string>*>(column.get()))->SetFromValue(values[row_index], row_index);
     }
 
     column->id = "";

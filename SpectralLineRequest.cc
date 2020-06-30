@@ -4,7 +4,6 @@
 #include <sstream>
 #include <curl/curl.h>
 #include "Table/Columns.h"
- 
 #include "SpectralLineRequest.h"
 
 using namespace carta;
@@ -132,13 +131,13 @@ void SpectralLineRequest::ParsingQueryResult(const MemoryStruct& results, CARTA:
     std::unique_ptr<Column> column;
     if (column_index < REST_FREQUENCY_COLUMN_INDEX) {
       column_name = headers[column_index];
-      column = Column::FromValues(data_columns[column_index], "char", "");
+      column = Column::FromValues(data_columns[column_index], column_name);
     } else if (column_index == REST_FREQUENCY_COLUMN_INDEX) { // insert shifted frequency column
       column_name = "Shifted Frequency";
-      column = Column::FromValues(data_columns[column_index], "char", "");
+      column = Column::FromValues(data_columns[column_index], column_name);
     } else {
       column_name = headers[column_index - 1];
-      column = Column::FromValues(data_columns[column_index - 1], "char", "");
+      column = Column::FromValues(data_columns[column_index - 1], column_name);
     }
 
     // headers
@@ -149,7 +148,9 @@ void SpectralLineRequest::ParsingQueryResult(const MemoryStruct& results, CARTA:
     // columns
     auto carta_column = CARTA::ColumnData();
     carta_column.set_data_type(CARTA::String);
-    column->FillColumnData(carta_column, false, IndexList(), 0, num_data_rows);
+    if (column) {
+      column->FillColumnData(carta_column, false, IndexList(), 0, num_data_rows);
+    }
     (*response_columns)[column_index] = carta_column;
   }
 
