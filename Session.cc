@@ -816,10 +816,10 @@ void Session::OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t requ
     SendEvent(CARTA::EventType::SET_USER_LAYOUT_ACK, request_id, ack_message);
 }
 
-void Session::OnSetContourParameters(const CARTA::SetContourParameters& message) {
+void Session::OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent) {
     if (_frames.count(message.file_id())) {
         const int num_levels = message.levels_size();
-        if (_frames.at(message.file_id())->SetContourParameters(message) && num_levels) {
+        if (_frames.at(message.file_id())->SetContourParameters(message) && num_levels && !silent) {
             SendContourData(message.file_id());
         }
     }
@@ -896,7 +896,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 
             // Set contours
             if (image.contour_settings().levels_size()) {
-                OnSetContourParameters(image.contour_settings());
+                OnSetContourParameters(image.contour_settings(), true);
             }
         }
     }
@@ -904,7 +904,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     // Open Catalog files
     for (int i = 0; i < message.catalog_files_size(); ++i) {
         const CARTA::OpenCatalogFile& open_catalog_file_msg = message.catalog_files(i);
-        OnOpenCatalogFile(open_catalog_file_msg, request_id); // And response with OPEN_CATALOG_FILE_ACK
+        OnOpenCatalogFile(open_catalog_file_msg, request_id, true);
     }
 
     // Measure duration for resume
@@ -942,10 +942,12 @@ void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request,
     SendEvent(CARTA::EventType::CATALOG_FILE_INFO_RESPONSE, request_id, file_info_response);
 }
 
-void Session::OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id) {
+void Session::OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id, bool silent) {
     CARTA::OpenCatalogFileAck open_file_response;
     _table_controller->OnOpenFileRequest(open_file_request, open_file_response);
-    SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
+    if (!silent) {
+        SendEvent(CARTA::EventType::OPEN_CATALOG_FILE_ACK, request_id, open_file_response);
+    }
 }
 
 void Session::OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request) {
