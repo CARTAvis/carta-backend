@@ -3,6 +3,7 @@
 #ifndef CARTA_BACKEND__SESSION_H_
 #define CARTA_BACKEND__SESSION_H_
 
+#include <atomic>
 #include <cstdint>
 #include <cstdio>
 #include <mutex>
@@ -12,7 +13,6 @@
 #include <vector>
 
 #include <fmt/format.h>
-#include <tbb/atomic.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
@@ -72,7 +72,7 @@ public:
     void OnSetHistogramRequirements(const CARTA::SetHistogramRequirements& message, uint32_t request_id);
     void OnSetSpectralRequirements(const CARTA::SetSpectralRequirements& message);
     void OnSetStatsRequirements(const CARTA::SetStatsRequirements& message);
-    void OnSetContourParameters(const CARTA::SetContourParameters& message);
+    void OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent = false);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
 
@@ -82,7 +82,7 @@ public:
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
     void OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
     void OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
-    void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id);
+    void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id, bool silent = false);
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
     void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
