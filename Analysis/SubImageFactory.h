@@ -43,23 +43,32 @@ public:
     // Moved from ImageAnalysis
     // <src>outRegion</src> Pointer to the corresponding region. Pointer is
     // created internally by new(); it is the caller's responsibility to delete it.
+    //
     // <src>outMask</src> Pointer to corresponding mask. Pointer is created
     // internally via new(); it is the caller's responsibility to delete it.
+    //
     // <src>inImage</src> input image for which a subimage is desired.
     // <src>region</src> casacore::Input region record from which to make the subimage.
     // <src>mask</src> LEL mask description.
+    //
     // <src>os</src> Pointer to logger to which to log messages. If null, no logging (except exceptions).
+    //
     // <src>writableIfPossible</src> make the subimage writable. If input image is not writable, this
     // will always be false.
+    //
     // <src>axesSpecifier</src> Specifier for output axes.
+    //
     // <src>extendMask</src> If the mask has one
     // or more of degenerate axes whereas the corresponding axes of <src>inImage</src> are
     // not, extend the mask to match the shape of the input image.
+    //
     // <src>preserveAxesOrder</src>. Only used when dropping degenerate axes and coordinate order
     // and axes order are not the same. In that case, if false, the pixel/world axes order of the
-    // returned image will be different from the input, if true it will be the same. If not
+    // returned image will be different from the input, if true it will be the same.
+    //
+    // If not
     // dropping degenerate axes or if coordinate order and axes order are the same in the input
-    // image's coordinate system, the output axex order will always be preserved.
+    // image's coordinate system, the output axes order will always be preserved.
 
     static std::shared_ptr<casacore::SubImage<T> > createSubImageRW(casacore::CountedPtr<casacore::ImageRegion>& outRegion,
         casacore::CountedPtr<casacore::ImageRegion>& outMask, casacore::ImageInterface<T>& inImage, const casacore::Record& region,

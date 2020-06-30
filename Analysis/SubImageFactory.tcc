@@ -25,10 +25,13 @@ std::shared_ptr<casacore::SubImage<T> > SubImageFactory<T>::createSubImageRW(cas
     casacore::CountedPtr<casacore::ImageRegion>& outMask, casacore::ImageInterface<T>& inImage, const casacore::Record& region,
     const casacore::String& mask, casacore::LogIO* const& os, const casacore::AxesSpecifier& axesSpecifier, casacore::Bool extendMask,
     casacore::Bool preserveAxesOrder) {
+
     if (!mask.empty()) {
         _getMask(outMask, mask, extendMask, inImage.shape(), inImage.coordinates());
     }
+
     std::shared_ptr<casacore::SubImage<T> > subImage;
+
     // We can get away with no region processing if the region record
     // is empty and the user is not dropping degenerate axes
     if (region.nfields() == 0 && axesSpecifier.keep()) {
@@ -36,6 +39,7 @@ std::shared_ptr<casacore::SubImage<T> > SubImageFactory<T>::createSubImageRW(cas
                                 : new casacore::SubImage<T>(inImage, *outMask, true, axesSpecifier, preserveAxesOrder));
     } else {
         outRegion = casacore::ImageRegion::fromRecord(os, inImage.coordinates(), inImage.shape(), region);
+
         if (!outMask) {
             subImage.reset(new casacore::SubImage<T>(inImage, *outRegion, true, axesSpecifier, preserveAxesOrder));
         } else {
@@ -55,6 +59,7 @@ std::shared_ptr<casacore::SubImage<T> > SubImageFactory<T>::createSubImageRW(cas
     casacore::Bool extendMask, casacore::Bool preserveAxesOrder) {
     casacore::CountedPtr<casacore::ImageRegion> pRegion;
     casacore::CountedPtr<casacore::ImageRegion> pMask;
+
     return createSubImageRW(pRegion, pMask, inImage, region, mask, os, axesSpecifier, extendMask, preserveAxesOrder);
 }
 
@@ -66,6 +71,7 @@ std::shared_ptr<const casacore::SubImage<T> > SubImageFactory<T>::createSubImage
     if (!mask.empty()) {
         _getMask(outMask, mask, extendMask, inImage.shape(), inImage.coordinates());
     }
+
     std::shared_ptr<casacore::SubImage<T> > subImage;
     // We can get away with no region processing if the region record
     // is empty and the user is not dropping degenerate axes
@@ -84,6 +90,7 @@ std::shared_ptr<const casacore::SubImage<T> > SubImageFactory<T>::createSubImage
             subImage.reset(new casacore::SubImage<T>(subImage0, *outRegion, axesSpecifier, preserveAxesOrder));
         }
     }
+
     return subImage;
 }
 
@@ -93,6 +100,7 @@ std::shared_ptr<const casacore::SubImage<T> > SubImageFactory<T>::createSubImage
     casacore::Bool extendMask, casacore::Bool preserveAxesOrder) {
     casacore::CountedPtr<casacore::ImageRegion> pRegion;
     casacore::CountedPtr<casacore::ImageRegion> pMask;
+
     return createSubImageRO(pRegion, pMask, inImage, region, mask, os, axesSpecifier, extendMask, preserveAxesOrder);
 }
 
@@ -100,6 +108,7 @@ template <class T>
 SPIIT SubImageFactory<T>::createImage(const casacore::ImageInterface<T>& image, const casacore::String& outfile,
     const casacore::Record& region, const casacore::String& mask, casacore::Bool dropDegenerateAxes, casacore::Bool overwrite,
     casacore::Bool list, casacore::Bool extendMask, casacore::Bool attachMask, const casacore::Lattice<T>* const data) {
+
     return createImage(
         image, outfile, region, mask, casacore::AxesSpecifier(!dropDegenerateAxes), overwrite, list, extendMask, attachMask, data);
 }
@@ -110,6 +119,7 @@ SPIIT SubImageFactory<T>::createImage(const casacore::ImageInterface<T>& image, 
     casacore::Bool list, casacore::Bool extendMask, casacore::Bool attachMask, const casacore::Lattice<T>* const data) {
     casacore::LogIO log;
     log << casacore::LogOrigin("SubImageFactory", __func__);
+
     // Copy a portion of the image
     // Verify output file
     if (!overwrite && !outfile.empty()) {
@@ -123,7 +133,9 @@ SPIIT SubImageFactory<T>::createImage(const casacore::ImageInterface<T>& image, 
             ThrowCc(errmsg);
         }
     }
+
     std::shared_ptr<const casacore::SubImage<T> > x = createSubImageRO(image, region, mask, list ? &log : 0, axesSpec, extendMask, true);
+
     SPIIT outImage;
     if (outfile.empty()) {
         outImage.reset(new casacore::TempImage<T>(x->shape(), x->coordinates()));
@@ -133,25 +145,32 @@ SPIIT SubImageFactory<T>::createImage(const casacore::ImageInterface<T>& image, 
             log << casacore::LogIO::NORMAL << "Creating image '" << outfile << "' of shape " << outImage->shape() << casacore::LogIO::POST;
         }
     }
+
     casacore::ImageUtilities::copyMiscellaneous(*outImage, *x);
+
     if (attachMask || !casa::ImageMask::isAllMaskTrue(*x)) {
         // if we don't already have a mask, but the user has specified that one needs to
         // be present, attach it. This needs to be done prior to the copyDataAndMask() call
         // because in that implementation, the image to which the mask is to be copied must
         // have already have a mask; that call does not create one if it does not exist.
         casacore::String maskName = "";
+
         casa::ImageMaskAttacher::makeMask(*outImage, maskName, false, true, log, list);
+
         if (data) {
             casa::ImageMaskHandler<T> imh(outImage);
             imh.copy(*x);
         }
     }
+
     if (data) {
         outImage->copyData(*data);
     } else {
         casacore::LatticeUtilities::copyDataAndMask(log, *outImage, *x);
     }
+
     outImage->flush();
+
     return outImage;
 }
 
@@ -172,9 +191,11 @@ void SubImageFactory<T>::_getMask(casacore::CountedPtr<casacore::ImageRegion>& o
             ThrowCc("Input mask specification is incorrect: " + x.getMesg());
         }
     }
+
     if (outMask && outMask->asWCRegion().type() == "WCLELMask") {
         const casacore::ImageExpr<casacore::Bool>* myExpression =
             dynamic_cast<const casacore::WCLELMask*>(outMask->asWCRegionPtr())->getImageExpr();
+
         if (myExpression && !myExpression->shape().isEqual(imageShape)) {
             if (!extendMask) {
                 ostringstream os;
@@ -184,6 +205,7 @@ void SubImageFactory<T>::_getMask(casacore::CountedPtr<casacore::ImageRegion>& o
                       "(sub)image. Specifying that the mask should be extended may resolve the issue";
                 ThrowCc(os.str());
             }
+
             try {
                 casacore::ExtendImage<casacore::Bool> exIm(*myExpression, imageShape, csys);
                 outMask = new casacore::ImageRegion(casacore::LCMask(exIm));

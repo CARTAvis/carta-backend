@@ -1045,8 +1045,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             }
         } else {
             // For the whole image plane
-            collapse_results =
-                _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
+            collapse_results = _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
         }
 
         // Open moment images from the cache, open files acknowledges will send to frontend

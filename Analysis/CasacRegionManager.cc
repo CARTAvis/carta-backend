@@ -39,11 +39,13 @@ vector<uInt> CasacRegionManager::_setPolarizationRanges(
     LogOrigin origin("CasacRegionManager", __func__);
     // const LogIO *myLog = _getLog();
     *_getLog() << origin;
+
     vector<uInt> ranges(0);
     CoordinateSystem csys = getcoordsys();
     if (!csys.hasPolarizationCoordinate()) {
         return ranges;
     }
+
     specification.trim();
     specification.ltrim('[');
     specification.rtrim(']');
@@ -54,6 +56,7 @@ vector<uInt> CasacRegionManager::_setPolarizationRanges(
         ranges.push_back(nStokes - 1);
         return ranges;
     }
+
     if (specification.empty()) {
         // ranges.resize(2);
         // ranges[0] = 0;
@@ -71,19 +74,22 @@ vector<uInt> CasacRegionManager::_setPolarizationRanges(
                 // bug if we get here
                 ThrowCc("Logic error, unhandled stokes control");
                 break;
-        };
+        }
+
         return ranges;
     }
+
     // First split on commas and semi-colons.
     // in the past for polarization specification.
-
     Vector<String> parts = stringToVector(specification, Regex("[,;]"));
     Vector<String> polNames = Stokes::allNames(false);
     uInt nNames = polNames.size();
     Vector<uInt> nameLengths(nNames);
+
     for (uInt i = 0; i < nNames; i++) {
         nameLengths[i] = polNames[i].length();
     }
+
     uInt* lengthData = nameLengths.data();
 
     Vector<uInt> idx(nNames);
@@ -96,10 +102,12 @@ vector<uInt> CasacRegionManager::_setPolarizationRanges(
         sortedNames[i] = polNames[idx[i]];
         sortedNames[i].upcase();
     }
+
     for (uInt i = 0; i < parts.size(); i++) {
         String part = parts[i];
         part.trim();
         Vector<String>::iterator iter = sortedNames.begin();
+
         while (iter != sortedNames.end() && !part.empty()) {
             if (part.startsWith(*iter)) {
                 Int stokesPix = csys.stokesPixelNumber(*iter);
@@ -121,12 +129,15 @@ vector<uInt> CasacRegionManager::_setPolarizationRanges(
                 iter++;
             }
         }
+
         if (!part.empty()) {
             *_getLog() << "(Sub)String " << part << " in stokes specification part " << parts[i] << " does not match a known polarization."
                        << LogIO::EXCEPTION;
         }
     }
+
     uInt nSel;
+
     return casa::ParameterParser::consolidateAndOrderRanges(nSel, ranges);
 }
 
@@ -257,6 +268,7 @@ Record CasacRegionManager::fromBCS(String& diagnostics, uInt& nSelectedChannels,
         // With no box settings and no region record settings
         vector<uInt> chanEndPts, polEndPts;
         regionRecord = fromBCS(diagnostics, nSelectedChannels, stokes, chans, stokesControl, box, imShape).toRecord("");
+
         if (verbose) {
             *_getLog() << origin;
             *_getLog() << LogIO::NORMAL << "No directional region specified. Using full positional plane." << LogIO::POST;
@@ -815,9 +827,7 @@ vector<uInt> CasacRegionManager::_spectralRangeFromRegionRecord(
 }
 
 vector<uInt> CasacRegionManager::_spectralRangeFromRangeFormat(
-    uInt& nSelectedChannels, const String& specification, const IPosition& imShape /*, const String& globalChannelOverride,
-                                                          const String& globalStokesOverride */
-) const {
+    uInt& nSelectedChannels, const String& specification, const IPosition& imShape) const {
     Bool spectralParmsUpdated;
     // check and make sure there are no disallowed parameters
     const CoordinateSystem csys = getcoordsys();
