@@ -104,3 +104,8 @@ tbb::task* SpectralProfileTask::execute() {
     _session->SendSpectralProfileData(_file_id, _region_id);
     return nullptr;
 }
+
+tbb::task* OnSpectralLineRequestTask::execute() {
+    _session->OnSpectralLineRequest(_message, _request_id);
+    return nullptr;
+}
