@@ -244,7 +244,7 @@ casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& m
     casacore::uInt num_selected_channels = chan_max - chan_min + 1;
 
     // Set the stokes (not apply this variable yet!)
-    casacore::String tmp_stokes = GetStokes(moment_request.stokes()); // "I" , "IV" , "IQU", or "IQUV"
+    casacore::String tmp_stokes = GetStokes(moment_request.stokes()); // e.g., "I" , "IV" , "IQU", or "IQUV"
 
     // Make a region record
     CoordinateSystem coordinate_system = _image->coordinates();
@@ -252,7 +252,7 @@ casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& m
     _image->shape();
     casacore::String region_name;
     casacore::String stokes = coordinate_system.stokesAtPixel(_current_stokes);
-    carta::CasacRegionManager crm(coordinate_system);
+    carta::CasacRegionManager crm(coordinate_system, true);
     casacore::String diagnostics;
     casacore::String pixel_box = ""; // Not available yet
     casacore::Record region = crm.fromBCS(diagnostics, num_selected_channels, stokes, NULL, region_name, channels,

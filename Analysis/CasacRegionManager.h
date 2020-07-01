@@ -15,9 +15,7 @@ public:
 
     enum StokesControl { USE_FIRST_STOKES, USE_ALL_STOKES };
 
-    CasacRegionManager();
-
-    CasacRegionManager(const casacore::CoordinateSystem& csys);
+    CasacRegionManager(const casacore::CoordinateSystem& csys, bool verbose);
 
     CasacRegionManager(const CasacRegionManager&) = delete;
 
@@ -46,61 +44,33 @@ public:
     // stokes parameters, eg "IQUV". <src>chans</src> is specified in ways supported by CASA, eg
     // "1~10" for channels 1 through 10.
 
-    casacore::Record fromBCS(casacore::String& diagnostics, casacore::uInt& nSelectedChannels, casacore::String& stokes,
-        const casacore::Record* const& regionPtr, const casacore::String& regionName, const casacore::String& chans,
-        const StokesControl stokesControl, const casacore::String& box, const casacore::IPosition& imShape,
+    casacore::Record fromBCS(casacore::String& diagnostics, casacore::uInt& selected_channels_num, casacore::String& stokes,
+        const casacore::Record* const& region_ptr, const casacore::String& region_name, const casacore::String& chans,
+        const StokesControl stokes_control, const casacore::String& box, const casacore::IPosition& image_shape,
         const casacore::String& imageName = "", casacore::Bool verbose = true);
 
-    casacore::ImageRegion fromBCS(casacore::String& diagnostics, casacore::uInt& nSelectedChannels, casacore::String& stokes,
-        const casacore::String& chans, const StokesControl stokesControl, const casacore::String& box,
-        const casacore::IPosition& imShape) const;
+    casacore::ImageRegion fromBCS(casacore::String& diagnostics, casacore::uInt& selected_channels_num, casacore::String& stokes,
+        const casacore::String& chans, StokesControl stokes_control, const casacore::String& box,
+        const casacore::IPosition& image_shape) const;
 
-    static casacore::Record regionFromString(const casacore::CoordinateSystem& csys, const casacore::String& regionStr,
-        const casacore::String& imageName, const casacore::IPosition& imShape, casacore::Bool verbose = true);
-
-    // Return the range(s) of spectral channels selected by the specification or the
-    // region record (Note only one of <src>specification</src> or <src>regionRec</src>
-    // may be specified). <src>imShape</src> is not used if <src>specification</src>
-    // is in the "new" format (ie contains "range").
-    std::vector<casacore::uInt> setSpectralRanges(casacore::uInt& nSelectedChannels, const casacore::Record* const regionRec,
-        const casacore::IPosition& imShape = casacore::IPosition(0)) const;
-
-    std::vector<casacore::uInt> setSpectralRanges(casacore::String specification, casacore::uInt& nSelectedChannels,
-        const casacore::IPosition& imShape = casacore::IPosition(0)) const;
+    std::vector<casacore::uInt> SetSpectralRanges(casacore::String specification, casacore::uInt& selected_channels_num,
+        const casacore::IPosition& image_shape = casacore::IPosition(0)) const;
 
 private:
-    casacore::String _pairsToString(const std::vector<casacore::uInt>& pairs) const;
+    std::vector<casacore::uInt> SetPolarizationRanges(casacore::String& specification) const;
 
-    std::vector<casacore::uInt> _setPolarizationRanges(casacore::String& specification, const casacore::String& firstStokes,
-        const casacore::uInt nStokes, const StokesControl stokesControl) const;
+    // std::vector<casacore::Double> SetBoxCorners(const casacore::String& box) const;
 
-    std::vector<casacore::Double> _setBoxCorners(const casacore::String& box) const;
-
-    casacore::ImageRegion _fromBCS(casacore::String& diagnostics, const std::vector<casacore::Double>& boxCorners,
-        const std::vector<casacore::uInt>& chanEndPts, const std::vector<casacore::uInt>& polEndPts,
-        const casacore::IPosition imShape) const;
-
-    static void _setRegion(casacore::Record& regionRecord, casacore::String& diagnostics, const casacore::Record* regionPtr);
-
-    casacore::String _stokesFromRecord(
-        const casacore::Record& region, const StokesControl stokesControl, const casacore::IPosition& shape) const;
-
-    void _setRegion(casacore::Record& regionRecord, casacore::String& diagnostics, const casacore::String& regionName,
-        const casacore::IPosition& imShape, const casacore::String& imageName, const casacore::String& prependBox,
-        const casacore::String& globalOverrideChans, const casacore::String& globalStokesOverride, casacore::Bool verbose);
-
-    std::vector<casacore::uInt> _spectralRangeFromRangeFormat(
-        casacore::uInt& nSelectedChannels, const casacore::String& specification, const casacore::IPosition& imShape) const;
-
-    std::vector<casacore::uInt> _spectralRangeFromRegionRecord(
-        casacore::uInt& nSelectedChannels, const casacore::Record* const regionRec, const casacore::IPosition& imShape) const;
+    casacore::ImageRegion _fromBCS(casacore::String& diagnostics, const std::vector<casacore::Double>& box_corners,
+        const std::vector<casacore::uInt>& chan_end_pts, const std::vector<casacore::uInt>& pol_end_pts,
+        casacore::IPosition image_shape) const;
 
     // does the image support the setting of a two dimensional box(es).
-    // If except is true, an exception will be thrown if this image does not
-    // support it. If not, false is returned in that case.
-    casacore::Bool _supports2DBox(casacore::Bool except) const;
+    casacore::Bool Supports2DBox() const;
 
-    std::vector<casacore::uInt> _initSpectralRanges(casacore::uInt& nSelectedChannels, const casacore::IPosition& imShape) const;
+    std::vector<casacore::uInt> InitSpectralRanges(casacore::uInt& selected_channels_num, const casacore::IPosition& image_shape) const;
+
+    bool _verbose;
 };
 
 } // namespace carta
