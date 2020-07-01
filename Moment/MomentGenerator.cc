@@ -227,8 +227,6 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
 }
 
 casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& moment_request) {
-    casacore::String infile = ""; // Original purpose is to access the region record from the image file
-
     // Initialize the channels
     int chan_min(moment_request.spectral_range().min());
     int chan_max(moment_request.spectral_range().max());
@@ -241,19 +239,13 @@ casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& m
     }
 
     casacore::String channels = std::to_string(chan_min) + "~" + std::to_string(chan_max); // Channel range for the moments calculation
-    casacore::uInt num_selected_channels = chan_max - chan_min + 1;
 
     // Make a region record
     CoordinateSystem coordinate_system = _image->coordinates();
     IPosition pos = _image->shape();
-    _image->shape();
-    casacore::String region_name;
     casacore::String stokes = coordinate_system.stokesAtPixel(_current_stokes);
-    carta::CasacRegionManager crm(coordinate_system, true);
-    casacore::String diagnostics;
-    casacore::String pixel_box = ""; // Not available yet
-    casacore::Record region = crm.fromBCS(diagnostics, num_selected_channels, stokes, NULL, region_name, channels,
-        carta::CasacRegionManager::USE_FIRST_STOKES, pixel_box, pos, infile);
+    carta::CasacRegionManager crm(coordinate_system);
+    casacore::Record region = crm.MakeRegion(stokes, channels, pos);
 
     return region;
 }

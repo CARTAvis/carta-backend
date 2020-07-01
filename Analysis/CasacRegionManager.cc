@@ -1,16 +1,5 @@
-//
-// From the original file: "casa/code/imageanalysis/Regions/CasacRegionManager.cc"
-//
 #include "CasacRegionManager.h"
 
-#include <casacore/casa/Containers/Record.h>
-#include <casacore/casa/OS/File.h>
-#include <casacore/casa/namespace.h>
-#include <casacore/images/Regions/ImageRegion.h>
-#include <casacore/images/Regions/WCBox.h>
-#include <casacore/lattices/LRegions/LCBox.h>
-#include <casacore/lattices/LRegions/LCSlicer.h>
-#include <casacore/measures/Measures/Stokes.h>
 #include <imageanalysis/IO/ParameterParser.h>
 #include <imageanalysis/ImageAnalysis/ImageMetaData.h>
 
@@ -18,19 +7,19 @@
 
 using namespace casacore;
 
-namespace carta { //# name space carta begins
+namespace carta {
 
-const String CasacRegionManager::ALL = "ALL";
+CasacRegionManager::CasacRegionManager(const CoordinateSystem& csys) : _csys(new CoordinateSystem(csys)) {}
 
-CasacRegionManager::CasacRegionManager(const CoordinateSystem& csys, bool verbose) : RegionManager(csys), _verbose(verbose) {}
-
-CasacRegionManager::~CasacRegionManager() {}
+const CoordinateSystem& CasacRegionManager::GetCoordSys() const {
+    return *_csys;
+}
 
 vector<uInt> CasacRegionManager::SetPolarizationRanges(String& specification) const {
-    vector<uInt> ranges(0);
-    CoordinateSystem csys = getcoordsys();
+    vector<uInt> results(0);
+    CoordinateSystem csys = GetCoordSys();
     if (!csys.hasPolarizationCoordinate()) {
-        return ranges;
+        return results;
     }
 
     specification.trim();
@@ -39,45 +28,42 @@ vector<uInt> CasacRegionManager::SetPolarizationRanges(String& specification) co
     specification.upcase();
 
     // Split on commas and semicolons in the past for polarization specification.
-    Vector<String> parts = stringToVector(specification, Regex("[,;]"));
+    Vector<String> stokes_range = stringToVector(specification, Regex("[,;]"));
 
     // Get all defined stokes names
-    Vector<String> pol_names = Stokes::allNames(false);
-    uInt names_size = pol_names.size();
-    Vector<uInt> name_lengths(names_size);
-    for (uInt i = 0; i < names_size; i++) {
-        name_lengths[i] = pol_names[i].length();
+    Vector<String> all_stokes_names = Stokes::allNames(false);
+    uInt all_stokes_names_size = all_stokes_names.size();
+    Vector<uInt> stokes_name_lengths(all_stokes_names_size);
+    for (uInt i = 0; i < all_stokes_names_size; i++) {
+        stokes_name_lengths[i] = all_stokes_names[i].length();
     }
 
-    uInt* length_data = name_lengths.data();
-    Vector<uInt> index(names_size);
+    uInt* stokes_name_lengths_ptr = stokes_name_lengths.data();
+    Vector<uInt> index(all_stokes_names_size);
     Sort sorter;
-    sorter.sortKey(length_data, TpUInt, 0, Sort::Descending);
-    sorter.sort(index, names_size);
+    sorter.sortKey(stokes_name_lengths_ptr, TpUInt, 0, Sort::Descending);
+    sorter.sort(index, all_stokes_names_size);
 
-    Vector<String> sorted_names(names_size);
-    for (uInt i = 0; i < names_size; i++) {
-        sorted_names[i] = pol_names[index[i]];
+    Vector<String> sorted_names(all_stokes_names_size);
+    for (uInt i = 0; i < all_stokes_names_size; i++) {
+        sorted_names[i] = all_stokes_names[index[i]];
         sorted_names[i].upcase();
     }
 
     // Check are the stokes names from users requirements match the stokes names in the pocket
-    for (uInt i = 0; i < parts.size(); i++) {
-        String part = parts[i];
-        part.trim();
+    for (uInt i = 0; i < stokes_range.size(); i++) {
+        String stokes_part = stokes_range[i];
+        stokes_part.trim();
         Vector<String>::iterator iter = sorted_names.begin();
 
-        while (iter != sorted_names.end() && !part.empty()) {
-            if (part.startsWith(*iter)) {
-                if (_verbose) {
-                    std::cout << "Use the stoke: " << *iter << std::endl;
-                }
+        while (iter != sorted_names.end() && !stokes_part.empty()) {
+            if (stokes_part.startsWith(*iter)) {
                 Int stokes_pix = csys.stokesPixelNumber(*iter);
-                ranges.push_back(stokes_pix);
-                ranges.push_back(stokes_pix);
-                part = part.substr(iter->length());
+                results.push_back(stokes_pix);
+                results.push_back(stokes_pix);
+                stokes_part = stokes_part.substr(iter->length());
 
-                if (!part.empty()) {
+                if (!stokes_part.empty()) {
                     // Reset the iterator to start over at the beginning of the list for the next specified polarization
                     iter = sorted_names.begin();
                 }
@@ -86,19 +72,19 @@ vector<uInt> CasacRegionManager::SetPolarizationRanges(String& specification) co
             }
         }
 
-        if (!part.empty()) {
-            std::cerr << "Sub string " << part << " in stokes specification part " << parts[i] << " does not match a known polarization!"
-                      << std::endl;
+        if (!stokes_part.empty()) {
+            std::cerr << "Sub string " << stokes_part << " in stokes specification part " << stokes_range[i]
+                      << " does not match a known polarization!" << std::endl;
         }
     }
 
     uInt selected_num;
-    return casa::ParameterParser::consolidateAndOrderRanges(selected_num, ranges);
+    return casa::ParameterParser::consolidateAndOrderRanges(selected_num, results);
 }
 
 Bool CasacRegionManager::Supports2DBox() const {
     Bool ok = true;
-    const CoordinateSystem& csys = getcoordsys();
+    const CoordinateSystem& csys = GetCoordSys();
     Vector<Int> axes;
     if (csys.hasDirectionCoordinate()) {
         axes = csys.directionAxesNumbers();
@@ -125,222 +111,138 @@ Bool CasacRegionManager::Supports2DBox() const {
     return ok;
 }
 
-Record CasacRegionManager::fromBCS(String& diagnostics, uInt& selected_channels_num, String& stokes, const Record* const& region_ptr,
-    const String& region_name, const String& chans, const StokesControl stokes_control, const String& box, const IPosition& image_shape,
-    const String& imageName, Bool verbose) {
-    Record region_record;
-    region_record = fromBCS(diagnostics, selected_channels_num, stokes, chans, stokes_control, box, image_shape).toRecord("");
-
-    return region_record;
-}
-
-ImageRegion CasacRegionManager::fromBCS(String& diagnostics, uInt& selected_channels_num, String& stokes, const String& chans,
-    const StokesControl stokes_control, const String& box, const IPosition& image_shape) const {
-    vector<uInt> chan_end_pts = SetSpectralRanges(chans, selected_channels_num, image_shape);
-
-    const CoordinateSystem& csys = getcoordsys();
-    Int pol_axis_num = csys.polarizationAxisNumber();
-    uInt total_polarizations_num = pol_axis_num >= 0 ? image_shape[pol_axis_num] : 0;
-    String first_stokes = pol_axis_num >= 0 ? csys.stokesAtPixel(0) : "";
-
-    vector<uInt> pol_end_pts = SetPolarizationRanges(stokes);
+Record CasacRegionManager::MakeRegion(String& stokes, const String& channels, const IPosition& image_shape) {
+    uInt selected_channels_num;
+    vector<uInt> channels_range = SetSpectralRanges(channels, selected_channels_num, image_shape);
+    vector<uInt> stokes_range = SetPolarizationRanges(stokes);
 
     vector<Double> box_corners;
+    const CoordinateSystem& csys = GetCoordSys();
     if (Supports2DBox()) {
         if (csys.hasDirectionCoordinate() || csys.hasLinearCoordinate()) {
-            Vector<Int> dir_axis_numbers;
+            Vector<Int> direction_axis;
             if (csys.hasDirectionCoordinate()) {
-                dir_axis_numbers = csys.directionAxesNumbers();
+                direction_axis = csys.directionAxesNumbers();
             } else {
-                dir_axis_numbers = csys.linearAxesNumbers();
+                direction_axis = csys.linearAxesNumbers();
             }
 
-            Vector<Int> dir_shape(2);
-            dir_shape[0] = image_shape[dir_axis_numbers[0]];
-            dir_shape[1] = image_shape[dir_axis_numbers[1]];
+            Vector<Int> direction_shape(2);
+            direction_shape[0] = image_shape[direction_axis[0]];
+            direction_shape[1] = image_shape[direction_axis[1]];
 
             box_corners.resize(4);
-            box_corners[0] = 0;                // bl: x
-            box_corners[1] = 0;                // bl: y
-            box_corners[2] = dir_shape[0] - 1; // tr: x
-            box_corners[3] = dir_shape[1] - 1; // tr: y
+            box_corners[0] = 0;                      // bl: x
+            box_corners[1] = 0;                      // bl: y
+            box_corners[2] = direction_shape[0] - 1; // tr: x
+            box_corners[3] = direction_shape[1] - 1; // tr: y
         }
+    } else {
+        std::cerr << "Can not make a 2D box region!" << std::endl;
     }
 
-    return _fromBCS(diagnostics, box_corners, chan_end_pts, pol_end_pts, image_shape);
+    return MakeRegion(box_corners, channels_range, stokes_range, image_shape).toRecord("");
 }
 
-ImageRegion CasacRegionManager::_fromBCS(String& diagnostics, const vector<Double>& box_corners, const vector<uInt>& chan_end_pts,
-    const vector<uInt>& pol_end_pts, const IPosition image_shape) const {
+ImageRegion CasacRegionManager::MakeRegion(
+    const vector<Double>& box_corners, const vector<uInt>& channels_range, const vector<uInt>& stokes_range, IPosition image_shape) const {
     Vector<Double> blc(image_shape.nelements(), 0);
     Vector<Double> trc(image_shape.nelements(), 0);
 
-    const CoordinateSystem csys = getcoordsys();
-    Vector<Int> direction_axis_numbers = csys.directionAxesNumbers();
-    vector<Int> linear_axis_numbers = csys.linearAxesNumbers().tovector();
+    const CoordinateSystem csys = GetCoordSys();
+    Vector<Int> direction_axis = csys.directionAxesNumbers();
+    vector<Int> linear_axis = csys.linearAxesNumbers().tovector();
 
     // Stupidly, sometimes the values returned by linearAxesNumbers can be less than 0
     // This needs to be fixed in the implementation of that method
-    vector<Int>::iterator iter = linear_axis_numbers.begin();
-    vector<Int>::iterator end = linear_axis_numbers.end();
+    vector<Int>::iterator iter = linear_axis.begin();
+    vector<Int>::iterator end = linear_axis.end();
     while (iter != end) {
         if (*iter < 0) {
-            iter = linear_axis_numbers.erase(iter);
+            iter = linear_axis.erase(iter);
         }
         ++iter;
     }
 
-    Int spectral_axis_number = csys.spectralAxisNumber();
-    Int polarization_axis_number = csys.polarizationAxisNumber();
+    Int spectral_axis = csys.spectralAxisNumber();
+    Int polarization_axis = csys.polarizationAxisNumber();
 
-    Vector<Double> x_corners(box_corners.size() / 2);
-    Vector<Double> y_corners(x_corners.size());
+    size_t corners_size = 2;
+    Vector<Double> x_corners(corners_size);
+    Vector<Double> y_corners(corners_size);
 
-    for (uInt i = 0; i < x_corners.size(); i++) {
+    for (uInt i = 0; i < corners_size; i++) {
         Double x = box_corners[2 * i];
         Double y = box_corners[2 * i + 1];
-
-        // if (x < 0 || y < 0) {
-        //    *_getLog() << "blc in box spec is less than 0" << LogIO::EXCEPTION;
-        //}
-
-        // if (csys.hasDirectionCoordinate()) {
-        //    if (x >= imShape[direction_axis_numbers[0]] || y >= imShape[direction_axis_numbers[1]]) {
-        //        *_getLog() << "dAxisNum0=" << direction_axis_numbers[0] << " dAxisNum1=" << direction_axis_numbers[1];
-        //        *_getLog() << "x=" << x << " imShape[0]=" << imShape[direction_axis_numbers[0]] << " y=" << y
-        //                   << " imShape[1]=" << imShape[direction_axis_numbers[1]] << LogIO::POST;
-        //        *_getLog() << "trc in box spec is greater than or equal to number "
-        //                   << "of direction coordinate pixels in the image" << LogIO::EXCEPTION;
-        //    }
-        //} else if (csys.hasLinearCoordinate() && (x >= imShape[linear_axis_numbers[0]] || y >= imShape[linear_axis_numbers[1]])) {
-        //    *_getLog() << "trc in box spec is greater than or equal to number "
-        //               << "of linear coordinate pixels in the image" << LogIO::EXCEPTION;
-        //}
-
         x_corners[i] = x;
         y_corners[i] = y;
     }
 
-    Vector<Double> pol_end_pts_double(pol_end_pts.size());
-    for (uInt i = 0; i < pol_end_pts.size(); ++i) {
-        pol_end_pts_double[i] = (Double)pol_end_pts[i];
+    Vector<Double> x_corners_ext(corners_size, 0);
+    Vector<Double> y_corners_ext(corners_size, 0);
+    Vector<Double> stokes_corners_ext(corners_size, 0);
+    Vector<Double> channels_corners_ext(corners_size, 0);
+
+    if (csys.hasDirectionCoordinate() || csys.hasLinearCoordinate()) {
+        x_corners_ext[0] = x_corners[0];
+        x_corners_ext[1] = x_corners[1];
+        y_corners_ext[0] = y_corners[0];
+        y_corners_ext[1] = y_corners[1];
     }
 
-    Bool csys_supports_2d_box = Supports2DBox();
-    uInt regions_num = 1;
-    if (csys_supports_2d_box) {
-        if (csys.hasDirectionCoordinate()) {
-            regions_num *= box_corners.size() / 4;
-        }
-        if (csys.hasLinearCoordinate()) {
-            regions_num *= box_corners.size() / 4;
-        }
-    }
     if (csys.hasPolarizationCoordinate()) {
-        regions_num *= pol_end_pts.size() / 2;
+        stokes_corners_ext[0] = (Double)stokes_range[0];
+        stokes_corners_ext[1] = (Double)stokes_range[1];
     }
+
     if (csys.hasSpectralAxis()) {
-        regions_num *= chan_end_pts.size() / 2;
+        channels_corners_ext[0] = (Double)channels_range[0];
+        channels_corners_ext[1] = (Double)channels_range[1];
     }
 
-    Vector<Double> ext_x_corners(2 * regions_num, 0);
-    Vector<Double> ext_y_corners(2 * regions_num, 0);
-    Vector<Double> ext_pol_end_pts(2 * regions_num, 0);
-    Vector<Double> ext_chan_end_pts(2 * regions_num, 0);
+    map<uInt, Vector<Double> > axis_corner_map; // axis index v.s. its range as a vector
+    for (uInt axis = 0; axis < csys.nPixelAxes(); axis++) {
+        if ((direction_axis.size() > 1 && (Int)axis == direction_axis[0]) ||
+            (!csys.hasDirectionCoordinate() && linear_axis.size() > 1 && (Int)axis == linear_axis[0])) {
+            axis_corner_map[axis] = x_corners_ext;
 
-    uInt count = 0;
+        } else if ((direction_axis.size() > 1 && (Int)axis == direction_axis[1]) ||
+                   (!csys.hasDirectionCoordinate() && linear_axis.size() > 1 && (Int)axis == linear_axis[1])) {
+            axis_corner_map[axis] = y_corners_ext;
 
-    if (csys_supports_2d_box) {
-        for (uInt i = 0; i < max(uInt(1), x_corners.size() / 2); i++) {
-            for (uInt j = 0; j < max((uInt)1, pol_end_pts.size() / 2); j++) {
-                for (uInt k = 0; k < max(uInt(1), chan_end_pts.size() / 2); k++) {
-                    if (csys.hasDirectionCoordinate() || csys.hasLinearCoordinate()) {
-                        ext_x_corners[2 * count] = x_corners[2 * i];
-                        ext_x_corners[2 * count + 1] = x_corners[2 * i + 1];
-                        ext_y_corners[2 * count] = y_corners[2 * i];
-                        ext_y_corners[2 * count + 1] = y_corners[2 * i + 1];
-                    }
-                    if (csys.hasPolarizationCoordinate()) {
-                        ext_pol_end_pts[2 * count] = pol_end_pts_double[2 * j];
-                        ext_pol_end_pts[2 * count + 1] = pol_end_pts_double[2 * j + 1];
-                    }
-                    if (csys.hasSpectralAxis()) {
-                        ext_chan_end_pts[2 * count] = chan_end_pts[2 * k];
-                        ext_chan_end_pts[2 * count + 1] = chan_end_pts[2 * k + 1];
-                    }
-                    count++;
-                }
-            }
-        }
-    } else {
-        // here we have neither a direction nor linear coordinate with two
-        // pixel axes which are greater than 0
-        for (uInt j = 0; j < max((uInt)1, pol_end_pts.size() / 2); j++) {
-            for (uInt k = 0; k < max(uInt(1), chan_end_pts.size() / 2); k++) {
-                if (csys.hasPolarizationCoordinate()) {
-                    ext_pol_end_pts[2 * count] = pol_end_pts_double[2 * j];
-                    ext_pol_end_pts[2 * count + 1] = pol_end_pts_double[2 * j + 1];
-                }
-                if (csys.hasSpectralAxis()) {
-                    ext_chan_end_pts[2 * count] = chan_end_pts[2 * k];
-                    ext_chan_end_pts[2 * count + 1] = chan_end_pts[2 * k + 1];
-                }
-                count++;
-            }
+        } else if ((Int)axis == spectral_axis) {
+            axis_corner_map[axis] = channels_corners_ext;
+
+        } else if ((Int)axis == polarization_axis) {
+            axis_corner_map[axis] = stokes_corners_ext;
+
+        } else {
+            Vector<Double> range(corners_size, 0);
+            range[1] = image_shape[axis] - 1;
+            axis_corner_map[axis] = range;
         }
     }
 
-    map<uInt, Vector<Double> > axis_corner_map;
-
-    for (uInt i = 0; i < regions_num; i++) {
-        for (uInt axis_num = 0; axis_num < csys.nPixelAxes(); axis_num++) {
-            if ((direction_axis_numbers.size() > 1 && (Int)axis_num == direction_axis_numbers[0]) ||
-                (!csys.hasDirectionCoordinate() && linear_axis_numbers.size() > 1 && (Int)axis_num == linear_axis_numbers[0])) {
-                axis_corner_map[axis_num] = ext_x_corners;
-
-            } else if ((direction_axis_numbers.size() > 1 && (Int)axis_num == direction_axis_numbers[1]) ||
-                       (!csys.hasDirectionCoordinate() && linear_axis_numbers.size() > 1 && (Int)axis_num == linear_axis_numbers[1])) {
-                axis_corner_map[axis_num] = ext_y_corners;
-
-            } else if ((Int)axis_num == spectral_axis_number) {
-                axis_corner_map[axis_num] = ext_chan_end_pts;
-
-            } else if ((Int)axis_num == polarization_axis_number) {
-                axis_corner_map[axis_num] = ext_pol_end_pts;
-
-            } else {
-                Vector<Double> range(2, 0);
-                range[1] = image_shape[axis_num] - 1;
-                axis_corner_map[axis_num] = range;
-            }
-        }
+    for (uInt axis = 0; axis < csys.nPixelAxes(); axis++) {
+        blc(axis) = axis_corner_map[axis][0];
+        trc(axis) = axis_corner_map[axis][1];
     }
 
-    // Set results
-    ImageRegion image_region;
-    for (uInt i = 0; i < regions_num; i++) {
-        for (uInt axis = 0; axis < csys.nPixelAxes(); axis++) {
-            blc(axis) = axis_corner_map[axis][2 * i];
-            trc(axis) = axis_corner_map[axis][2 * i + 1];
-        }
-
-        LCBox lc_box(blc, trc, image_shape);
-        WCBox wc_box(lc_box, csys);
-        ImageRegion this_region(wc_box);
-        image_region = (i == 0) ? this_region : image_region = *(doUnion(image_region, this_region));
-    }
+    LCBox lc_box(blc, trc, image_shape);
+    WCBox wc_box(lc_box, csys);
+    ImageRegion image_region(wc_box);
 
     return image_region;
 }
 
 vector<uInt> CasacRegionManager::InitSpectralRanges(uInt& selected_channels_num, const IPosition& image_shape) const {
     vector<uInt> ranges(0);
-    if (!getcoordsys().hasSpectralAxis()) {
+    if (!GetCoordSys().hasSpectralAxis()) {
         selected_channels_num = 0;
         return ranges;
     }
 
-    uInt channels_num = image_shape[getcoordsys().spectralAxisNumber()];
+    uInt channels_num = image_shape[GetCoordSys().spectralAxisNumber()];
     ranges.push_back(0);
     ranges.push_back(channels_num - 1);
     selected_channels_num = channels_num;
@@ -353,17 +255,17 @@ vector<uInt> CasacRegionManager::SetSpectralRanges(String specification, uInt& s
     String chans = specification;
     chans.upcase();
 
-    if (chans.empty() || chans == ALL) {
+    if (chans.empty()) {
         return InitSpectralRanges(selected_channels_num, image_shape);
 
-    } else if (!getcoordsys().hasSpectralAxis()) {
+    } else if (!GetCoordSys().hasSpectralAxis()) {
         std::cerr << "Channel specification is not empty but the coordinate system has no spectral axis!"
                   << "Channel specification will be ignored." << std::endl;
         selected_channels_num = 0;
         return vector<uInt>(0);
 
     } else {
-        uInt channels_num = image_shape[getcoordsys().spectralAxisNumber()];
+        uInt channels_num = image_shape[GetCoordSys().spectralAxisNumber()];
         return casa::ParameterParser::spectralRangesFromChans(selected_channels_num, specification, channels_num);
     }
 }
