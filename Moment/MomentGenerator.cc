@@ -243,9 +243,6 @@ casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& m
     casacore::String channels = std::to_string(chan_min) + "~" + std::to_string(chan_max); // Channel range for the moments calculation
     casacore::uInt num_selected_channels = chan_max - chan_min + 1;
 
-    // Set the stokes (not apply this variable yet!)
-    casacore::String tmp_stokes = GetStokes(moment_request.stokes()); // e.g., "I" , "IV" , "IQU", or "IQUV"
-
     // Make a region record
     CoordinateSystem coordinate_system = _image->coordinates();
     IPosition pos = _image->shape();
@@ -425,33 +422,6 @@ casacore::String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
     return suffix;
 }
 
-casacore::String MomentGenerator::GetStokes(CARTA::MomentStokes moment_stokes) {
-    casacore::String stokes("");
-    switch (moment_stokes) {
-        case CARTA::MomentStokes::I: {
-            stokes = "I";
-            break;
-        }
-        case CARTA::MomentStokes::IV: {
-            stokes = "IV";
-            break;
-        }
-        case CARTA::MomentStokes::IQU: {
-            stokes = "IQU";
-            break;
-        }
-        case CARTA::MomentStokes::IQUV: {
-            stokes = "IQUV";
-            break;
-        }
-        default: {
-            std::cerr << "Unknown stokes!" << std::endl;
-            break;
-        }
-    }
-    return stokes;
-}
-
 casacore::String MomentGenerator::GetOutputFileName() {
     // Store moment images in a temporary folder
     casacore::String result(_filename);
@@ -509,7 +479,6 @@ void MomentGenerator::Print(CARTA::MomentRequest message) {
     std::cout << "region_id = " << message.region_id() << std::endl;
     std::cout << "spectral_range:" << std::endl;
     Print(message.spectral_range());
-    Print(message.stokes());
     Print(message.mask());
     std::cout << "pixel_range:" << std::endl;
     Print(message.pixel_range());
@@ -601,22 +570,6 @@ void MomentGenerator::Print(CARTA::Moment message) {
 void MomentGenerator::Print(CARTA::MomentAxis message) {
     std::cout << "Moment axis: ";
     switch (message) {
-        case CARTA::MomentAxis::RA: {
-            std::cout << "RA" << std::endl;
-            break;
-        }
-        case CARTA::MomentAxis::DEC: {
-            std::cout << "DEC" << std::endl;
-            break;
-        }
-        case CARTA::MomentAxis::LAT: {
-            std::cout << "LAT" << std::endl;
-            break;
-        }
-        case CARTA::MomentAxis::LONG: {
-            std::cout << "LONG" << std::endl;
-            break;
-        }
         case CARTA::MomentAxis::SPECTRAL: {
             std::cout << "SPECTRAL" << std::endl;
             break;
@@ -627,32 +580,6 @@ void MomentGenerator::Print(CARTA::MomentAxis message) {
         }
         default: {
             std::cerr << "Unknown moment axis!" << std::endl;
-            break;
-        }
-    }
-}
-
-void MomentGenerator::Print(CARTA::MomentStokes message) {
-    std::cout << "Moment stokes: ";
-    switch (message) {
-        case CARTA::MomentStokes::I: {
-            std::cout << "I" << std::endl;
-            break;
-        }
-        case CARTA::MomentStokes::IV: {
-            std::cout << "IV" << std::endl;
-            break;
-        }
-        case CARTA::MomentStokes::IQU: {
-            std::cout << "IQU" << std::endl;
-            break;
-        }
-        case CARTA::MomentStokes::IQUV: {
-            std::cout << "IQUV" << std::endl;
-            break;
-        }
-        default: {
-            std::cerr << "Unknown moment stokes!" << std::endl;
             break;
         }
     }

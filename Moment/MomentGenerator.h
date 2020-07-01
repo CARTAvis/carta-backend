@@ -56,7 +56,6 @@ public:
     static void Print(CARTA::FloatBounds message);
     static void Print(CARTA::Moment message);
     static void Print(CARTA::MomentAxis message);
-    static void Print(CARTA::MomentStokes message);
     static void Print(CARTA::MomentMask message);
     static void Print(CARTA::MomentProgress message);
 
@@ -69,7 +68,6 @@ private:
     void ResetImageMoments(const casacore::ImageRegion& image_region);
     int GetMomentMode(CARTA::Moment moment);
     casacore::String GetMomentSuffix(casacore::Int moment);
-    casacore::String GetStokes(CARTA::MomentStokes moment_stokes);
     casacore::String GetOutputFileName();
 
     // Image parameters
