@@ -8,7 +8,6 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _image(image),
       _spectral_axis(spectral_axis),
       _stokes_axis(stokes_axis),
-      _current_stokes(0),
       _sub_image(nullptr),
       _image_moments(nullptr),
       _collapse_error(false),
@@ -59,7 +58,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
 
                         // Set temp moment file id
                         int moment_type = _moments[i];
-                        int moment_file_id = (file_id + 1) * 1000 + moment_type;
+                        int moment_file_id = (file_id + 1) * OUTPUT_ID_MULTIPLIER + moment_type;
 
                         // Fill results
                         std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
@@ -336,148 +335,3 @@ void MomentGenerator::setStepsCompleted(int count) {
 }
 
 void MomentGenerator::done() {}
-
-// Print protobuf messages
-
-void MomentGenerator::Print(CARTA::MomentRequest message) {
-    std::cout << "CARTA::MomentRequest:" << std::endl;
-    std::cout << "file_id = " << message.file_id() << std::endl;
-    for (int i = 0; i < message.moments_size(); ++i) {
-        Print(message.moments(i));
-    }
-    Print(message.axis());
-    std::cout << "region_id = " << message.region_id() << std::endl;
-    std::cout << "spectral_range:" << std::endl;
-    Print(message.spectral_range());
-    Print(message.mask());
-    std::cout << "pixel_range:" << std::endl;
-    Print(message.pixel_range());
-}
-
-void MomentGenerator::Print(CARTA::MomentResponse message) {
-    std::cout << "CARTA::MomentResponse:" << std::endl;
-    if (message.success()) {
-        std::cout << "success = true" << std::endl;
-    } else {
-        std::cout << "success = false" << std::endl;
-    }
-}
-
-void MomentGenerator::Print(CARTA::IntBounds message) {
-    std::cout << "CARTA::IntBounds:" << std::endl;
-    std::cout << "Int min = " << message.min() << std::endl;
-    std::cout << "Int max = " << message.max() << std::endl;
-}
-
-void MomentGenerator::Print(CARTA::FloatBounds message) {
-    std::cout << "CARTA::FloatBounds:" << std::endl;
-    std::cout << "Float min = " << message.min() << std::endl;
-    std::cout << "Float max = " << message.max() << std::endl;
-}
-
-void MomentGenerator::Print(CARTA::Moment message) {
-    std::cout << "Moment type: ";
-    switch (message) {
-        case CARTA::Moment::MEAN_OF_THE_SPECTRUM: {
-            std::cout << "Mean of the spectrum" << std::endl;
-            break;
-        }
-        case CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM: {
-            std::cout << "Integrated of the spectrum" << std::endl;
-            break;
-        }
-        case CARTA::Moment::INTENSITY_WEIGHTED_COORD: {
-            std::cout << "Intensity weighted coord" << std::endl;
-            break;
-        }
-        case CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD: {
-            std::cout << "Intensity weighted dispersion of the coord" << std::endl;
-            break;
-        }
-        case CARTA::Moment::MEDIAN_OF_THE_SPECTRUM: {
-            std::cout << "Median of the spectrum" << std::endl;
-            break;
-        }
-        case CARTA::Moment::MEDIAN_COORDINATE: {
-            std::cout << "Median coordinate" << std::endl;
-            break;
-        }
-        case CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM: {
-            std::cout << "STD about the mean of the spectrum" << std::endl;
-            break;
-        }
-        case CARTA::Moment::RMS_OF_THE_SPECTRUM: {
-            std::cout << "RMS of the spectrum" << std::endl;
-            break;
-        }
-        case CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM: {
-            std::cout << "Abs mean deviation of the spectrum" << std::endl;
-            break;
-        }
-        case CARTA::Moment::MAX_OF_THE_SPECTRUM: {
-            std::cout << "Max of the spectrum" << std::endl;
-            break;
-        }
-        case CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM: {
-            std::cout << "Coord of the max of the spectrum" << std::endl;
-            break;
-        }
-        case CARTA::Moment::MIN_OF_THE_SPECTRUM: {
-            std::cout << "Min of the spectrum" << std::endl;
-            break;
-        }
-        case CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM: {
-            std::cout << "Coord of the min of the spectrum" << std::endl;
-            break;
-        }
-        default: {
-            std::cerr << "Unknown moment type!" << std::endl;
-            break;
-        }
-    }
-}
-
-void MomentGenerator::Print(CARTA::MomentAxis message) {
-    std::cout << "Moment axis: ";
-    switch (message) {
-        case CARTA::MomentAxis::SPECTRAL: {
-            std::cout << "SPECTRAL" << std::endl;
-            break;
-        }
-        case CARTA::MomentAxis::STOKES: {
-            std::cout << "STOKES" << std::endl;
-            break;
-        }
-        default: {
-            std::cerr << "Unknown moment axis!" << std::endl;
-            break;
-        }
-    }
-}
-
-void MomentGenerator::Print(CARTA::MomentMask message) {
-    std::cout << "Moment mask: ";
-    switch (message) {
-        case CARTA::MomentMask::None: {
-            std::cout << "None" << std::endl;
-            break;
-        }
-        case CARTA::MomentMask::Include: {
-            std::cout << "Include" << std::endl;
-            break;
-        }
-        case CARTA::MomentMask::Exclude: {
-            std::cout << "Exclude" << std::endl;
-            break;
-        }
-        default: {
-            std::cerr << "Unknown moment mask!" << std::endl;
-            break;
-        }
-    }
-}
-
-void MomentGenerator::Print(CARTA::MomentProgress message) {
-    std::cout << "CARTA::MomentProgress:" << std::endl;
-    std::cout << "progress = " << message.progress() << std::endl;
-}

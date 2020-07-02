@@ -45,16 +45,6 @@ public:
     void setStepsCompleted(int count);
     void done();
 
-    // Print protobuf messages
-    static void Print(CARTA::MomentRequest message);
-    static void Print(CARTA::MomentResponse message);
-    static void Print(CARTA::IntBounds message);
-    static void Print(CARTA::FloatBounds message);
-    static void Print(CARTA::Moment message);
-    static void Print(CARTA::MomentAxis message);
-    static void Print(CARTA::MomentMask message);
-    static void Print(CARTA::MomentProgress message);
-
 private:
     void SetMomentAxis(const CARTA::MomentRequest& moment_request);
     void SetMomentTypes(const CARTA::MomentRequest& moment_request);
@@ -69,9 +59,8 @@ private:
     casacore::ImageInterface<float>* _image;
     int _spectral_axis;
     int _stokes_axis;
-    int _current_stokes;
 
-    // Moment settings
+    // Moments settings
     std::unique_ptr<casacore::ImageInterface<casacore::Float>> _sub_image;
     std::unique_ptr<ImageMoments<casacore::Float>> _image_moments;
     casacore::Vector<casacore::Int> _moments; // Moment types
