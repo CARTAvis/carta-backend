@@ -12,33 +12,6 @@ MomentController::~MomentController() {
 }
 
 std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame,
-    MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
-    std::vector<CollapseResult> results;
-
-    // Set moment generator with respect to the file id
-    if (!_moment_generators.count(file_id)) {
-        // Get the image ptr and spectral/stoke axis from the Frame
-        std::string filename = frame->GetFileName();
-        casacore::ImageInterface<float>* image = frame->GetImage();
-        int spectral_axis = frame->GetSpectralAxis();
-        int stokes_axis = frame->GetStokesAxis();
-
-        // Create a moment generator
-        auto moment_generator = std::make_unique<MomentGenerator>(filename, image, spectral_axis, stokes_axis, progress_callback);
-        _moment_generators[file_id] = std::move(moment_generator);
-    }
-
-    // Calculate the moments
-    if (_moment_generators.count(file_id)) {
-        auto& moment_generators = _moment_generators.at(file_id);
-        int current_stokes = frame->CurrentStokes();
-        results = moment_generators->CalculateMoments(file_id, current_stokes, moment_request, moment_response);
-    }
-
-    return results;
-}
-
-std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame,
     const casacore::ImageRegion& image_region, MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request,
     CARTA::MomentResponse& moment_response) {
     std::vector<CollapseResult> results;
@@ -59,8 +32,7 @@ std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, cons
     // Calculate the moments
     if (_moment_generators.count(file_id)) {
         auto& moment_generators = _moment_generators.at(file_id);
-        int current_stokes = frame->CurrentStokes();
-        results = moment_generators->CalculateMoments(file_id, current_stokes, image_region, moment_request, moment_response);
+        results = moment_generators->CalculateMoments(file_id, image_region, moment_request, moment_response);
     }
 
     return results;

@@ -139,7 +139,6 @@ set(SOURCE_FILES
         Main.cc
         Session.cc
         Frame.cc
-        Analysis/CasacRegionManager.cc
         DataStream/Compression.cc
         DataStream/Contouring.cc
         DataStream/Smoothing.cc

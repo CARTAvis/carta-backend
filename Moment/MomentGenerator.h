@@ -5,7 +5,6 @@
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
 
-#include "../Analysis/CasacRegionManager.h"
 #include "../Analysis/ImageMoments.h"
 #include "../Analysis/SubImageFactory.h"
 #include "../InterfaceConstants.h"
@@ -32,9 +31,7 @@ public:
     ~MomentGenerator(){};
 
     // Calculate moments
-    std::vector<CollapseResult> CalculateMoments(
-        int file_id, int current_stokes, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
-    std::vector<CollapseResult> CalculateMoments(int file_id, int current_stokes, const casacore::ImageRegion& image_region,
+    std::vector<CollapseResult> CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
 
     // Stop moments calculation
@@ -63,8 +60,6 @@ private:
     void SetMomentAxis(const CARTA::MomentRequest& moment_request);
     void SetMomentTypes(const CARTA::MomentRequest& moment_request);
     void SetPixelRange(const CARTA::MomentRequest& moment_request);
-    casacore::Record MakeRegionRecord(const CARTA::MomentRequest& moment_request);
-    void ResetImageMoments(const CARTA::MomentRequest& moment_request);
     void ResetImageMoments(const casacore::ImageRegion& image_region);
     int GetMomentMode(CARTA::Moment moment);
     casacore::String GetMomentSuffix(casacore::Int moment);

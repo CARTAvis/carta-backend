@@ -14,81 +14,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _collapse_error(false),
       _progress_callback(progress_callback) {}
 
-std::vector<CollapseResult> MomentGenerator::CalculateMoments(
-    int file_id, int current_stokes, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
-    // Collapse results
-    std::vector<CollapseResult> collapse_results;
-
-    // Set moment axis
-    SetMomentAxis(moment_request);
-
-    // Set moment types
-    SetMomentTypes(moment_request);
-
-    // Set pixel range
-    SetPixelRange(moment_request);
-
-    // Reset an ImageMoments
-    _current_stokes = current_stokes;
-    ResetImageMoments(moment_request);
-
-    // Calculate moments
-    try {
-        if (!_image_moments->setMoments(_moments)) {
-            _error_msg = _image_moments->errorMessage();
-            _collapse_error = true;
-        } else {
-            if (!_image_moments->setMomentAxis(_axis)) {
-                _error_msg = _image_moments->errorMessage();
-                _collapse_error = true;
-            } else {
-                casacore::Bool do_temp = true;
-                casacore::Bool remove_axis = false;
-                casacore::String out_file = GetOutputFileName();
-                std::size_t found = out_file.find_last_of("/");
-                std::string file_base_name = out_file.substr(found + 1);
-                try {
-                    _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
-
-                    // Save collapse results in the memory
-                    auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);
-
-                    for (int i = 0; i < result_images.size(); ++i) {
-                        // Set temp moment file name
-                        std::string moment_suffix = GetMomentSuffix(_moments[i]);
-                        std::string out_file_name = file_base_name + "." + moment_suffix;
-
-                        // Set temp moment file id
-                        int moment_type = _moments[i];
-                        int moment_file_id = (file_id + 1) * 1000 + moment_type;
-
-                        // Fill results
-                        std::shared_ptr<casacore::ImageInterface<casacore::Float>> moment_image =
-                            dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
-                        collapse_results.push_back(CollapseResult(moment_file_id, out_file_name, moment_image));
-                    }
-                } catch (const AipsError& x) {
-                    _error_msg = x.getMesg();
-                    _collapse_error = true;
-                    std::cerr << "Error: " << _error_msg << "\n";
-                }
-            }
-        }
-    } catch (AipsError& error) {
-        _error_msg = error.getLastMessage();
-        _collapse_error = true;
-    }
-
-    // Set is the moment calculation successful or not
-    moment_response.set_success(IsSuccess());
-
-    // Get error message if any
-    moment_response.set_message(GetErrorMessage());
-
-    return collapse_results;
-}
-
-std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, int current_stokes, const casacore::ImageRegion& image_region,
+std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     // Collapse results
     std::vector<CollapseResult> collapse_results;
@@ -224,49 +150,6 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
         // Clear the exclusive array
         _exclude_pix.resize(0);
     }
-}
-
-casacore::Record MomentGenerator::MakeRegionRecord(const CARTA::MomentRequest& moment_request) {
-    // Initialize the channels
-    int chan_min(moment_request.spectral_range().min());
-    int chan_max(moment_request.spectral_range().max());
-
-    // Check if the channel range is logical
-    if (chan_max < chan_min) {
-        int tmp = chan_max;
-        chan_max = chan_min;
-        chan_min = tmp;
-    }
-
-    casacore::String channels = std::to_string(chan_min) + "~" + std::to_string(chan_max); // Channel range for the moments calculation
-
-    // Make a region record
-    CoordinateSystem coordinate_system = _image->coordinates();
-    IPosition pos = _image->shape();
-    casacore::String stokes = coordinate_system.stokesAtPixel(_current_stokes);
-    carta::CasacRegionManager crm(coordinate_system);
-    casacore::Record region = crm.MakeRegion(stokes, channels, pos);
-
-    return region;
-}
-
-void MomentGenerator::ResetImageMoments(const CARTA::MomentRequest& moment_request) {
-    // Make a region record
-    casacore::Record region = MakeRegionRecord(moment_request);
-
-    // Make a sub image interface
-    casacore::String empty("");
-    std::shared_ptr<const SubImage<casacore::Float>> sub_image =
-        carta::SubImageFactory<casacore::Float>::createSubImageRO(*_image, region, empty, NULL);
-    _sub_image.reset(new SubImage<casacore::Float>(*sub_image));
-    casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
-    casacore::LogIO os(log);
-
-    // Make an ImageMoments object (and overwrite the output file if it already exists)
-    _image_moments.reset(new ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
-
-    // Set moment calculation progress monitor
-    _image_moments->setProgressMonitor(this);
 }
 
 void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_region) {

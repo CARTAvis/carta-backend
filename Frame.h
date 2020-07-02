@@ -140,6 +140,7 @@ public:
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
+    bool GetImageRegion(const ChannelRange& chan_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns mask array
     bool GetRegionMask(const casacore::LattRegionHolder& region, casacore::Array<casacore::Bool>& mask);

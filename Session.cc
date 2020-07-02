@@ -1046,23 +1046,27 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         std::vector<carta::CollapseResult> collapse_results;
         CARTA::MomentResponse moment_response;
 
-        // Calculate the moments
+        // Get spectral channels range
+        int chan_min(moment_request.spectral_range().min());
+        int chan_max(moment_request.spectral_range().max());
+
+        // Calculate image moments
         if (region_id > 0) {
             // For a region
-            int chan_min(moment_request.spectral_range().min());
-            int chan_max(moment_request.spectral_range().max());
-            int current_stokes = frame->CurrentStokes();
-
-            if (_region_handler->ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), current_stokes, image_region)) {
+            if (_region_handler->ApplyRegionToFile(
+                    region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
                 collapse_results =
                     _moment_controller->CalculateMoments(file_id, frame, image_region, progress_callback, moment_request, moment_response);
             }
         } else {
             // For the whole image plane
-            collapse_results = _moment_controller->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
+            if (frame->GetImageRegion(ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
+                collapse_results =
+                    _moment_controller->CalculateMoments(file_id, frame, image_region, progress_callback, moment_request, moment_response);
+            }
         }
 
-        // Open moment images from the cache, open files acknowledges will send to frontend
+        // Open moment images from the cache, open files acknowledges will be sent to frontend
         for (int i = 0; i < collapse_results.size(); ++i) {
             auto& collapse_result = collapse_results[i];
             OnOpenFile(collapse_result, moment_response, request_id);
