@@ -153,14 +153,9 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
 }
 
 void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_region) {
-    // Make a region record
-    casacore::Record region = image_region.toRecord("");
+    // Reset the sub-image
+    _sub_image.reset(new casacore::SubImage<casacore::Float>(*_image, image_region));
 
-    // Make a sub image interface
-    casacore::String empty("");
-    std::shared_ptr<const SubImage<casacore::Float>> sub_image =
-        carta::SubImageFactory<casacore::Float>::createSubImageRO(*_image, region, empty, NULL);
-    _sub_image.reset(new SubImage<casacore::Float>(*sub_image));
     casacore::LogOrigin log("MomentGenerator", "MomentGenerator", WHERE);
     casacore::LogIO os(log);
 

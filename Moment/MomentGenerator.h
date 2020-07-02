@@ -6,7 +6,6 @@
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
 
 #include "../Analysis/ImageMoments.h"
-#include "../Analysis/SubImageFactory.h"
 #include "../InterfaceConstants.h"
 
 using MomentProgressCallback = const std::function<void(float)>;
