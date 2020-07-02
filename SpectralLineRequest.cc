@@ -18,6 +18,7 @@ SpectralLineRequest::SpectralLineRequest() {
 SpectralLineRequest::~SpectralLineRequest() {
 }
 
+/* Referenced from curl example https://curl.haxx.se/libcurl/c/getinmemory.html */
 void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
   CURL *curl_handle;
   CURLcode res;
@@ -54,7 +55,8 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
   if(res == CURLE_OK) {
     SpectralLineRequest::ParsingQueryResult(chunk, spectral_line_response);
   } else {
-    fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+    spectral_line_response.set_success(false);
+    spectral_line_response.set_message(fmt::format("curl_easy_perform() failed: {}", curl_easy_strerror(res)));
   }
  
   /* cleanup curl stuff */ 
@@ -87,14 +89,6 @@ size_t SpectralLineRequest::WriteMemoryCallback(void *contents, size_t size, siz
 }
 
 void SpectralLineRequest::ParsingQueryResult(const MemoryStruct& results, CARTA::SpectralLineResponse& spectral_line_response) {
-  /*
-  if (false) {
-    spectral_line_response.set_success(false);
-    spectral_line_response.set_message("");
-    return;
-  }
-  */
-
   std::vector<std::string> headers;
   std::vector<std::vector<std::string>> data_columns;
   int num_data_rows = 0;
@@ -156,4 +150,6 @@ void SpectralLineRequest::ParsingQueryResult(const MemoryStruct& results, CARTA:
 
   spectral_line_response.set_data_size(num_data_rows);
   spectral_line_response.set_success(true);
+
+  return;
 }
