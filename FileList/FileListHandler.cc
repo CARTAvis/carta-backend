@@ -322,7 +322,7 @@ CARTA::FileType FileListHandler::GetRegionType(const std::string& filename) {
         if (first_line.find("#CRTF") == 0) {
             file_type = CARTA::FileType::CRTF;
         } else if (first_line.find("# Region file format: DS9") == 0) { // optional header, but what else to do?
-            file_type = CARTA::FileType::REG;
+            file_type = CARTA::FileType::DS9_REG;
         }
     } catch (std::ios_base::failure& f) {
         region_file.close();
