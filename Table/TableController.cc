@@ -204,9 +204,9 @@ void TableController::OnFileListRequest(
             file_info->set_file_size(fs::file_size(entry));
 
             // Fill in file time
-            struct stat sb;
-            stat(entry.path().c_str(), &sb);
-            file_info->set_date(sb.st_mtim.tv_sec);
+            struct stat file_stats;
+            stat(entry.path().c_str(), &file_stats);
+            file_info->set_date(file_stats.st_mtim.tv_sec);
         }
     }
 
