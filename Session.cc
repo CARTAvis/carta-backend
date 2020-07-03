@@ -119,6 +119,7 @@ void Session::SetInitExitTimeout(int secs) {
 
 void Session::DisconnectCalled() {
     _connected = false;
+    _moment_controller->DeleteMomentGenerator(); // call to stop all image moments calculations
     for (auto& frame : _frames) {
         frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
@@ -429,6 +430,7 @@ void Session::DeleteFrame(int file_id) {
     // call destructor and erase from map
     std::unique_lock<std::mutex> lock(_frame_mutex);
     if (file_id == ALL_FILES) {
+        _moment_controller->DeleteMomentGenerator(); // call to stop all image moments calculations
         for (auto& frame : _frames) {
             frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
             frame.second.reset();             // delete Frame
@@ -437,7 +439,8 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
-        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        _moment_controller->DeleteMomentGenerator(file_id); // call to stop the image moments calculation
+        _frames[file_id]->DisconnectCalled();               // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);

@@ -11,7 +11,8 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _sub_image(nullptr),
       _image_moments(nullptr),
       _collapse_error(false),
-      _progress_callback(progress_callback) {}
+      _progress_callback(progress_callback),
+      _moments_calc_count(0) {}
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
@@ -335,3 +336,18 @@ void MomentGenerator::setStepsCompleted(int count) {
 }
 
 void MomentGenerator::done() {}
+
+void MomentGenerator::IncreaseMomentsCalcCount() {
+    _moments_calc_count++;
+}
+
+void MomentGenerator::DecreaseMomentsCalcCount() {
+    _moments_calc_count--;
+}
+
+void MomentGenerator::DisconnectCalled() {
+    StopCalculation();                // Call to stop the moments calculation
+    while (_moments_calc_count > 0) { // Wait the moments calculation finished
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}

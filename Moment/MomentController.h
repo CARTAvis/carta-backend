@@ -15,6 +15,8 @@ public:
         const casacore::ImageRegion& image_region, MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request,
         CARTA::MomentResponse& moment_response);
     void StopCalculation(int file_id);
+    void DeleteMomentGenerator(int file_id); // Delete a moment generator with respect to the file Id
+    void DeleteMomentGenerator();            // Delete all moment generators;
 
 private:
     std::unordered_map<int, std::unique_ptr<MomentGenerator>> _moment_generators; // <file_id, MomentGenerator>

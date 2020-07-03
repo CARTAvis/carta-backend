@@ -5,6 +5,8 @@
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
 
+#include <thread>
+
 #include "../Analysis/ImageMoments.h"
 #include "../InterfaceConstants.h"
 
@@ -45,6 +47,11 @@ public:
     void setStepsCompleted(int count);
     void done();
 
+    // Destruction control
+    void IncreaseMomentsCalcCount();
+    void DecreaseMomentsCalcCount();
+    void DisconnectCalled();
+
 private:
     void SetMomentAxis(const CARTA::MomentRequest& moment_request);
     void SetMomentTypes(const CARTA::MomentRequest& moment_request);
@@ -75,6 +82,9 @@ private:
     float _progress;
     float _pre_progress;
     MomentProgressCallback _progress_callback;
+
+    // Moments calculation counter, so MomentGenerator is not destroyed until finished
+    std::atomic<int> _moments_calc_count;
 };
 
 } // namespace carta

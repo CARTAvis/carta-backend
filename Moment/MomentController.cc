@@ -5,10 +5,7 @@ using namespace carta;
 MomentController::MomentController() {}
 
 MomentController::~MomentController() {
-    for (auto& moment_generator : _moment_generators) {
-        moment_generator.second.reset(); // delete Frame
-    }
-    _moment_generators.clear();
+    DeleteMomentGenerator();
 }
 
 std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame,
@@ -32,7 +29,11 @@ std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, cons
     // Calculate the moments
     if (_moment_generators.count(file_id)) {
         auto& moment_generators = _moment_generators.at(file_id);
-        results = moment_generators->CalculateMoments(file_id, image_region, moment_request, moment_response);
+
+        moment_generators->IncreaseMomentsCalcCount(); // Increase the moments calculation count (don't forget to decrease it after the
+                                                       // calculation is done)
+        results = moment_generators->CalculateMoments(file_id, image_region, moment_request, moment_response); // Do calculations
+        moment_generators->DecreaseMomentsCalcCount(); // Decrease the moments calculation count
     }
 
     return results;
@@ -41,5 +42,22 @@ std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, cons
 void MomentController::StopCalculation(int file_id) {
     if (_moment_generators.count(file_id)) {
         _moment_generators.at(file_id)->StopCalculation();
+    }
+}
+
+void MomentController::DeleteMomentGenerator(int file_id) {
+    if (_moment_generators.count(file_id)) {
+        _moment_generators.at(file_id)->DisconnectCalled();
+        _moment_generators[file_id].reset();
+    }
+}
+
+void MomentController::DeleteMomentGenerator() {
+    if (!_moment_generators.empty()) {
+        for (auto& moment_generator : _moment_generators) {
+            moment_generator.second->DisconnectCalled();
+            moment_generator.second.reset();
+        }
+        _moment_generators.clear();
     }
 }
