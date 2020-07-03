@@ -159,7 +159,7 @@ public:
 
     // Get the full name of image file
     std::string GetFileName() {
-        return _filename;
+        return _loader->GetFileName();
     }
     // Get image interface ptr
     casacore::ImageInterface<float>* GetImage() {
@@ -221,9 +221,6 @@ private:
 
     // Image loader for image type
     std::unique_ptr<carta::FileLoader> _loader;
-
-    // Full name of the image file
-    std::string _filename;
 
     // Shape, channel, and stokes
     casacore::IPosition _image_shape;  // (width, height, depth, stokes)

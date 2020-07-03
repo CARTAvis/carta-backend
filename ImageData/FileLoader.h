@@ -130,6 +130,7 @@ public:
     virtual ~FileLoader() = default;
 
     static FileLoader* GetLoader(const std::string& filename);
+    // Access an image from the memory, not from the disk
     static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
 
     // check for mirlib (MIRIAD) error; returns true for other image types

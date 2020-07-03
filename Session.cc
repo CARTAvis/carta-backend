@@ -367,6 +367,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 }
 
 bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::MomentResponse& moment_response, uint32_t request_id) {
+    // Set an image moment file id, name and its image interface
     int file_id = collapse_result.file_id;
     std::string name = collapse_result.name;
     auto image = collapse_result.image;
@@ -393,6 +394,7 @@ bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::Mo
             std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
             _frames[file_id] = move(frame);
             lock.unlock();
+
             // Set file info, extended file info
             CARTA::FileInfo response_file_info = CARTA::FileInfo();
             response_file_info.set_name(name);

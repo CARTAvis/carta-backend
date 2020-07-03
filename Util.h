@@ -12,7 +12,6 @@
 #include <fmt/ostream.h>
 
 #include <casacore/casa/Inputs/Input.h>
-#include <casacore/casa/OS/Directory.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/images/Images/ImageOpener.h>
 #include <casacore/mirlib/miriad.h>
@@ -24,6 +23,8 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "InterfaceConstants.h"
+
+// ************ Logging *************
 
 namespace carta {
 
@@ -40,6 +41,8 @@ inline void Log(uint32_t id, const std::string& template_string, Args... args) {
 }
 
 } // namespace carta
+
+// ************ Utilities *************
 
 void ReadPermissions(const std::string& filename, std::unordered_map<std::string, std::vector<std::string>>& permissions_map);
 bool CheckRootBaseFolders(std::string& root, std::string& base);
