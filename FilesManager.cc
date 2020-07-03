@@ -4,8 +4,6 @@ using namespace carta;
 
 FilesManager::FilesManager(std::string root_folder) : _root_folder(root_folder) {}
 
-FilesManager::~FilesManager() {}
-
 void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
     CARTA::SaveFileAck& save_file_ack) {
     int file_id(save_file_msg.file_id());
@@ -20,20 +18,18 @@ void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface
 
     // Get the full resolved name of the output image
     std::string temp_path = _root_folder + "/" + directory;
-    casacore::File cc_path(temp_path);
-    casacore::String resolved_path = cc_path.path().resolvedName();
-    std::string abs_path = resolved_path;
+    std::string abs_path = fs::absolute(temp_path);
     output_filename = abs_path + "/" + output_filename;
 
     if (output_filename == in_file) {
-        message = "The source file in the disk will not be overwritten!";
+        message = "The source file can not be overwritten!";
         save_file_ack.set_success(success);
         save_file_ack.set_message(message);
         return;
     }
 
     if (output_file_type == CARTA::FileType::CASA) {
-        // Remove the old image file with the same output file name
+        // Remove the old image file if it has a same file name
         if (fs::exists(output_filename)) {
             fs::remove_all(output_filename);
         }
@@ -61,16 +57,17 @@ void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface
             casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
             out_image_mask.putSlice(image_mask, start);
         }
-
         success = true;
+
     } else if (output_file_type == CARTA::FileType::FITS) {
+        // Remove the old image file if it has a same file name
         casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename, 64, casacore::True, casacore::True,
             -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False, casacore::False,
             casacore::String(), casacore::True);
-
         if (ok) {
             success = true;
         }
+
     } else {
         message = "No saving file action!";
     }

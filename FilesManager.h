@@ -6,13 +6,6 @@
 #include <casacore/images/Images/ImageFITSConverter.h>
 
 #include <filesystem>
-#include <iostream>
-#include <iterator>
-#include <set>
-#include <string>
-#include <unordered_map>
-
-#include "Util.h"
 
 namespace fs = std::filesystem;
 
@@ -21,7 +14,7 @@ namespace carta {
 class FilesManager {
 public:
     FilesManager(std::string root_folder);
-    ~FilesManager();
+    ~FilesManager(){};
 
     void SaveFile(const std::string& in_file, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
         CARTA::SaveFileAck& save_file_ack);
@@ -32,7 +25,6 @@ public:
 
 private:
     void RemoveRootFolder(std::string& directory);
-
     std::string _root_folder;
 };
 
