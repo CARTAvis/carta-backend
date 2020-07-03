@@ -1,6 +1,7 @@
 #include "TableController.h"
 
 #include <fmt/format.h>
+#include <sys/stat.h>
 
 #include "../Util.h"
 
@@ -201,6 +202,11 @@ void TableController::OnFileListRequest(
             file_info->set_name(entry.path().filename().string());
             file_info->set_type(file_type);
             file_info->set_file_size(fs::file_size(entry));
+
+            // Fill in file time
+            struct stat sb;
+            stat(entry.path().c_str(), &sb);
+            file_info->set_date(sb.st_mtim.tv_sec);
         }
     }
 

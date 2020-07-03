@@ -355,6 +355,7 @@ bool FileListHandler::FillRegionFileInfo(CARTA::FileInfo& file_info, const strin
         file_size = linked_file.size();
     }
     file_info.set_size(file_size);
+    file_info.set_date(cc_file.modifyTime());
     file_info.add_hdu_list("");
     return true;
 }
