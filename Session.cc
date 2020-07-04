@@ -411,8 +411,8 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                 raster_tile_data.set_file_id(file_id);
                 raster_tile_data.set_animation_id(animation_id);
                 auto tile = Tile::Decode(encoded_coordinate);
-                if (_frames.at(file_id)->FillRasterTileData(
-                        raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
+                if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(
+                                                  raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
                     SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
                 } else {
                     fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
