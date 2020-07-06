@@ -34,6 +34,7 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
         file_size = linked_file.size();
     }
 
+    file_info.set_date(cc_file.modifyTime());
     file_info.set_size(file_size);
     file_info.set_type(_type);
     // add hdu for FITS, HDF5
