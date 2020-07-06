@@ -1,8 +1,13 @@
 #include "TableController.h"
 
 #include <fmt/format.h>
+#include <sys/stat.h>
 
 #include "../Util.h"
+
+#if defined(__APPLE__)
+#define st_mtim st_mtimespec
+#endif
 
 using namespace carta;
 using namespace std;
@@ -201,6 +206,11 @@ void TableController::OnFileListRequest(
             file_info->set_name(entry.path().filename().string());
             file_info->set_type(file_type);
             file_info->set_file_size(fs::file_size(entry));
+
+            // Fill in file time
+            struct stat file_stats;
+            stat(entry.path().c_str(), &file_stats);
+            file_info->set_date(file_stats.st_mtim.tv_sec);
         }
     }
 
