@@ -26,7 +26,7 @@
 
 // ************ Logging *************
 
-namespace carta {
+namespace carta { // Add a name space to avoid the ambiguity with casacore Log() function
 
 void Log(uint32_t id, const std::string& log_message);
 

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory>
 
-#include "../FilesManager.h"
+#include "../FileConverter.h"
 #include "../Moment/MomentGenerator.h"
 
 const std::string FITS_FILE_FULL_NAME = "images/test-moments/HD163296_CO_2_1.image.fits";
@@ -116,13 +116,13 @@ void FileManagerConvertFITStoCASA() {
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
-    carta::FilesManager moment_files_manager("./");
+    carta::FileConverter moment_files_manager("./");
     moment_files_manager.SaveFile(FITS_FILE_FULL_NAME, image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_msg);
+    carta::FileConverter::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_ack);
+    carta::FileConverter::Print(save_file_ack);
 }
 
 void FileManagerConvertCASAtoFITS() {
@@ -138,13 +138,13 @@ void FileManagerConvertCASAtoFITS() {
 
     // Response message
     CARTA::SaveFileAck save_file_ack;
-    carta::FilesManager moment_files_manager("./");
+    carta::FileConverter moment_files_manager("./");
     moment_files_manager.SaveFile(CASA_FILE_FULL_NAME, image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_msg);
+    carta::FileConverter::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_ack);
+    carta::FileConverter::Print(save_file_ack);
 }
 
 void TestCASAtoCASA() {
@@ -160,13 +160,13 @@ void TestCASAtoCASA() {
     // Response message
     CARTA::SaveFileAck save_file_ack;
 
-    carta::FilesManager moment_files_manager("./");
+    carta::FileConverter moment_files_manager("./");
     moment_files_manager.SaveFile(CASA_FILE_FULL_NAME, image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_msg);
+    carta::FileConverter::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_ack);
+    carta::FileConverter::Print(save_file_ack);
 }
 
 void TestFITStoFITS() {
@@ -182,11 +182,11 @@ void TestFITStoFITS() {
     // Response message
     CARTA::SaveFileAck save_file_ack;
 
-    carta::FilesManager moment_files_manager("./");
+    carta::FileConverter moment_files_manager("./");
     moment_files_manager.SaveFile(FITS_FILE_FULL_NAME, image.get(), save_file_msg, save_file_ack);
 
     std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_msg);
+    carta::FileConverter::Print(save_file_msg);
     std::cout << "==========================================" << std::endl;
-    carta::FilesManager::Print(save_file_ack);
+    carta::FileConverter::Print(save_file_ack);
 }

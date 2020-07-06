@@ -166,7 +166,7 @@ set(SOURCE_FILES
         Table/TableController.cc
         Moment/MomentController.cc
         Moment/MomentGenerator.cc
-        FilesManager.cc
+        FileConverter.cc
         Timer/Timer.cc
         OnMessageTask.cc
         FileSettings.cc

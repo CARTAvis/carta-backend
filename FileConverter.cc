@@ -1,10 +1,10 @@
-#include "FilesManager.h"
+#include "FileConverter.h"
 
 using namespace carta;
 
-FilesManager::FilesManager(std::string root_folder) : _root_folder(root_folder) {}
+FileConverter::FileConverter(std::string root_folder) : _root_folder(root_folder) {}
 
-void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
+void FileConverter::SaveFile(const std::string& in_file, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
     CARTA::SaveFileAck& save_file_ack) {
     int file_id(save_file_msg.file_id());
     std::string output_filename(save_file_msg.output_file_name());
@@ -77,7 +77,7 @@ void FilesManager::SaveFile(const std::string& in_file, casacore::ImageInterface
     save_file_ack.set_message(message);
 }
 
-void FilesManager::RemoveRootFolder(std::string& directory) {
+void FileConverter::RemoveRootFolder(std::string& directory) {
     if (!_root_folder.empty() && directory.find(_root_folder) == 0) {
         directory.replace(0, _root_folder.size(), "");
     }
@@ -85,7 +85,7 @@ void FilesManager::RemoveRootFolder(std::string& directory) {
 
 // Print protobuf messages
 
-void FilesManager::Print(CARTA::SaveFile message) {
+void FileConverter::Print(CARTA::SaveFile message) {
     std::cout << "CARTA::SaveFile:" << std::endl;
     std::cout << "file_id = " << message.file_id() << std::endl;
     std::cout << "output_file_name = " << message.output_file_name() << std::endl;
@@ -99,7 +99,7 @@ void FilesManager::Print(CARTA::SaveFile message) {
     }
 }
 
-void FilesManager::Print(CARTA::SaveFileAck message) {
+void FileConverter::Print(CARTA::SaveFileAck message) {
     std::cout << "CARTA::SaveFileAck:" << std::endl;
     std::cout << "file_id = " << message.file_id() << std::endl;
     if (message.success()) {

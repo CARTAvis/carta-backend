@@ -11,10 +11,10 @@ namespace fs = std::filesystem;
 
 namespace carta {
 
-class FilesManager {
+class FileConverter {
 public:
-    FilesManager(std::string root_folder);
-    ~FilesManager(){};
+    FileConverter(std::string root_folder);
+    ~FileConverter(){};
 
     void SaveFile(const std::string& in_file, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
         CARTA::SaveFileAck& save_file_ack);

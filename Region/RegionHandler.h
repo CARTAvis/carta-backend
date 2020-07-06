@@ -47,7 +47,7 @@ public:
         std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
 
-    // Get an image region with respect to the region id, file id, channels range and a stoke index
+    // Get an image region with respect to the region id, file id, channels range and a stoke type
     bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
 
 private:

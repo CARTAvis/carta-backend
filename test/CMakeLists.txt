@@ -85,7 +85,7 @@ if (testImageMoments)
             casa_imageanalysis)
     set(IMAGE_MOMENTS_SOURCE_FILES ${IMAGE_MOMENTS_SOURCE_FILES}
             ${CMAKE_SOURCE_DIR}/Moment/MomentGenerator.cc
-            ${CMAKE_SOURCE_DIR}/FilesManager.cc)
+            ${CMAKE_SOURCE_DIR}/FileConverter.cc)
     add_executable(testImageMoments TestImageMoments.cc ${IMAGE_MOMENTS_SOURCE_FILES})
     target_link_libraries(testImageMoments ${IMAGE_MOMENTS_LINK_LIBS})
     add_executable(testMomentGenerator TestMomentGenerator.cc ${IMAGE_MOMENTS_SOURCE_FILES})

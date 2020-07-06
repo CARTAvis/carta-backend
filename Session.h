@@ -43,9 +43,9 @@
 
 #include "AnimationObject.h"
 #include "EventHeader.h"
+#include "FileConverter.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
-#include "FilesManager.h"
 #include "Frame.h"
 #include "Moment/MomentController.h"
 #include "Region/RegionHandler.h"
@@ -251,8 +251,8 @@ private:
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
 
-    // Image files manager
-    std::unique_ptr<carta::FilesManager> _files_manager;
+    // Image file converter
+    std::unique_ptr<carta::FileConverter> _file_converter;
 
     // Moments controller
     std::unique_ptr<carta::MomentController> _moment_controller;

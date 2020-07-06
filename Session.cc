@@ -55,7 +55,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root,
       _file_list_handler(file_list_handler),
       _animation_id(0),
       _file_settings(this),
-      _files_manager(std::make_unique<carta::FilesManager>(_root_folder)),
+      _file_converter(std::make_unique<carta::FileConverter>(_root_folder)),
       _moment_controller(std::make_unique<carta::MomentController>()) {
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
@@ -380,11 +380,10 @@ bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::Mo
 
     CARTA::FileInfoExtended file_info_extended;
     bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message);
-
     bool success(false);
 
     if (info_loaded) {
-        // create Frame for image
+        // Create Frame for image
         auto frame = std::make_unique<Frame>(_id, _loader.get(), "", _verbose_logging);
         _loader.release();
 
@@ -404,7 +403,6 @@ bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::Mo
             *open_file_ack->mutable_file_info_extended() = file_info_extended;
             uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
             open_file_ack->set_file_feature_flags(feature_flags);
-
             success = true;
         } else {
             err_message = frame->GetErrorMessage();
@@ -1094,7 +1092,7 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
         casacore::ImageInterface<float>* image = _frames.at(file_id)->GetImage();
 
         CARTA::SaveFileAck save_file_ack;
-        _files_manager->SaveFile(filename, image, save_file, save_file_ack);
+        _file_converter->SaveFile(filename, image, save_file, save_file_ack);
 
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
