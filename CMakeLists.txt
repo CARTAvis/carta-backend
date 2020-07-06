@@ -178,7 +178,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_link_libraries(carta_backend uv ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    target_link_libraries(carta_backend stdc++fs ${LINK_LIBS})
+    target_link_libraries(carta_backend ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Tests
