@@ -1,5 +1,5 @@
 //
-// From the original file: "casa/code/imageanalysis/ImageAnalysis/MomentsBase.h"
+// Modify from the original file: "casa/code/imageanalysis/ImageAnalysis/MomentsBase.h"
 //
 #ifndef CARTA_BACKEND_ANALYSIS_MOMENTSBASE_H_
 #define CARTA_BACKEND_ANALYSIS_MOMENTSBASE_H_

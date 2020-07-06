@@ -1,5 +1,5 @@
 //
-// From the original file: "casa/code/imageanalysis/ImageAnalysis/MomentCalcBase.tcc"
+// Modify from the original file: "casa/code/imageanalysis/ImageAnalysis/MomentCalcBase.tcc"
 //
 #ifndef CARTA_BACKEND_ANALYSIS_MOMENTCALCBASE_TCC_
 #define CARTA_BACKEND_ANALYSIS_MOMENTCALCBASE_TCC_
@@ -419,7 +419,7 @@ void MomentCalcBase<T>::setCoordinateSystem(casacore::CoordinateSystem& cSys, Mo
 // casacore::Input:
 // doCoordProfile - we need the coordinate for each pixel of the profile
 //                  and we precompute it if we can
-// doCoordRandom  - we need the coordinate for occaisional use
+// doCoordRandom  - we need the coordinate for occasional use
 //
 // This function does two things.  It sets up the pixelIn
 // and worldOut vectors needed by getMomentCoord. It also

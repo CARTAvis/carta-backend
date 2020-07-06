@@ -1,5 +1,5 @@
 //
-// From the original file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.tcc"
+// Modify from the original file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.tcc"
 //
 #ifndef CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_TCC_
 #define CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_TCC_

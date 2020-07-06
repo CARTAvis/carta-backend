@@ -1,5 +1,5 @@
 //
-// From the original file: "casa/code/imageanalysis/ImageAnalysis/MomentFit.tcc"
+// Modify from the original file: "casa/code/imageanalysis/ImageAnalysis/MomentFit.tcc"
 //
 #ifndef CARTA_BACKEND_ANALYSIS_MOMENTFIT_TCC_
 #define CARTA_BACKEND_ANALYSIS_MOMENTFIT_TCC_
