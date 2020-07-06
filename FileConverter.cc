@@ -82,30 +82,3 @@ void FileConverter::RemoveRootFolder(std::string& directory) {
         directory.replace(0, _root_folder.size(), "");
     }
 }
-
-// Print protobuf messages
-
-void FileConverter::Print(CARTA::SaveFile message) {
-    std::cout << "CARTA::SaveFile:" << std::endl;
-    std::cout << "file_id = " << message.file_id() << std::endl;
-    std::cout << "output_file_name = " << message.output_file_name() << std::endl;
-    std::cout << "output_file_directory = " << message.output_file_directory() << std::endl;
-    if (message.output_file_type() == CARTA::FileType::CASA) {
-        std::cout << "output_file_type = CASA" << std::endl;
-    } else if (message.output_file_type() == CARTA::FileType::FITS) {
-        std::cout << "output_file_type = FITS" << std::endl;
-    } else {
-        std::cout << "output_file_type = Unknown!" << std::endl;
-    }
-}
-
-void FileConverter::Print(CARTA::SaveFileAck message) {
-    std::cout << "CARTA::SaveFileAck:" << std::endl;
-    std::cout << "file_id = " << message.file_id() << std::endl;
-    if (message.success()) {
-        std::cout << "success = true" << std::endl;
-    } else {
-        std::cout << "success = false" << std::endl;
-    }
-    std::cout << "message = " << message.message() << std::endl;
-}

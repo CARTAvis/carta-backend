@@ -19,10 +19,6 @@ public:
     void SaveFile(const std::string& in_file, casacore::ImageInterface<float>* image, const CARTA::SaveFile& save_file_msg,
         CARTA::SaveFileAck& save_file_ack);
 
-    // Print protobuf messages
-    static void Print(CARTA::SaveFile message);
-    static void Print(CARTA::SaveFileAck message);
-
 private:
     void RemoveRootFolder(std::string& directory);
     std::string _root_folder;
