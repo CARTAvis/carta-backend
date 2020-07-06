@@ -10,12 +10,14 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _stokes_axis(stokes_axis),
       _sub_image(nullptr),
       _image_moments(nullptr),
-      _collapse_error(false),
+      _success(false),
       _progress_callback(progress_callback),
       _moments_calc_count(0) {}
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
+    _success = false;
+
     // Collapse results
     std::vector<CollapseResult> collapse_results;
 
@@ -35,11 +37,9 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
     try {
         if (!_image_moments->setMoments(_moments)) {
             _error_msg = _image_moments->errorMessage();
-            _collapse_error = true;
         } else {
             if (!_image_moments->setMomentAxis(_axis)) {
                 _error_msg = _image_moments->errorMessage();
-                _collapse_error = true;
             } else {
                 casacore::Bool do_temp = true;
                 casacore::Bool remove_axis = false;
@@ -57,7 +57,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
                         std::string moment_suffix = GetMomentSuffix(_moments[i]);
                         std::string out_file_name = file_base_name + "." + moment_suffix;
 
-                        // Set temp moment file id
+                        // Set a temp moment file Id. Todo: find another better way to assign the temp file Id
                         int moment_type = _moments[i];
                         int moment_file_id = (file_id + 1) * OUTPUT_ID_MULTIPLIER + moment_type;
 
@@ -66,16 +66,14 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
                             dynamic_pointer_cast<casacore::ImageInterface<casacore::Float>>(result_images[i]);
                         collapse_results.push_back(CollapseResult(moment_file_id, out_file_name, moment_image));
                     }
+                    _success = true;
                 } catch (const AipsError& x) {
                     _error_msg = x.getMesg();
-                    _collapse_error = true;
-                    std::cerr << "Error: " << _error_msg << "\n";
                 }
             }
         }
     } catch (AipsError& error) {
         _error_msg = error.getLastMessage();
-        _collapse_error = true;
     }
 
     // Set is the moment calculation successful or not
@@ -116,11 +114,13 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
     CARTA::MomentMask moment_mask = moment_request.mask();
     float pixel_min(moment_request.pixel_range().min());
     float pixel_max(moment_request.pixel_range().max());
+
     if (pixel_max < pixel_min) {
         float tmp = pixel_max;
         pixel_max = pixel_min;
         pixel_min = tmp;
     }
+
     if (moment_mask == CARTA::MomentMask::Include) {
         if ((pixel_min == ALL_PIXEL_RANGE) || (pixel_max == ALL_PIXEL_RANGE)) {
             _include_pix.resize(1);
@@ -132,6 +132,7 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
         }
         // Clear the exclusive array
         _exclude_pix.resize(0);
+
     } else if (moment_mask == CARTA::MomentMask::Exclude) {
         if ((pixel_min == ALL_PIXEL_RANGE) || (pixel_max == ALL_PIXEL_RANGE)) {
             _exclude_pix.resize(1);
@@ -143,6 +144,7 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
         }
         // Clear the inclusive array
         _include_pix.resize(0);
+
     } else {
         _include_pix.resize(2);
         _include_pix[0] = std::numeric_limits<float>::min();
@@ -304,11 +306,7 @@ casacore::String MomentGenerator::GetOutputFileName() {
 }
 
 bool MomentGenerator::IsSuccess() const {
-    bool success = false;
-    if (!_collapse_error) {
-        success = true;
-    }
-    return success;
+    return _success;
 }
 
 casacore::String MomentGenerator::GetErrorMessage() const {

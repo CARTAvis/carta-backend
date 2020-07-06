@@ -75,7 +75,7 @@ private:
     casacore::Vector<float> _include_pix;
     casacore::Vector<float> _exclude_pix;
     casacore::String _error_msg;
-    bool _collapse_error;
+    bool _success;
 
     // Progress parameters
     int _total_steps;
