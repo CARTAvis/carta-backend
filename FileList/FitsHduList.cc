@@ -6,7 +6,7 @@ FitsHduList::FitsHduList(const std::string& filename) {
     _filename = filename;
 }
 
-bool FitsHduList::GetHduList(CARTA::FileInfo* file_info) {
+bool FitsHduList::GetHduList(CARTA::FileInfo& file_info) {
     bool hdu_ok(false);
     casacore::FitsInput fits_input(_filename.c_str(), casacore::FITS::Disk, 10, FitsInfoErrHandler);
     if (fits_input.err() == casacore::FitsIO::OK) { // check for cfitsio error
@@ -27,7 +27,7 @@ bool FitsHduList::GetHduList(CARTA::FileInfo* file_info) {
                             if (!ext_name.empty()) {
                                 hdu_name += " ExtName: " + ext_name;
                             }
-                            file_info->add_hdu_list(hdu_name);
+                            file_info.add_hdu_list(hdu_name);
                         }
                         fits_input.skip_all(hdu_type); // skip data to next hdu
                     } else {

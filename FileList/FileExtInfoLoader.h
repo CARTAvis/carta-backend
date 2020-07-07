@@ -17,16 +17,16 @@ class FileExtInfoLoader {
 public:
     FileExtInfoLoader(carta::FileLoader* loader);
 
-    bool FillFileExtInfo(CARTA::FileInfoExtended* extended_info, const std::string& filename, const std::string& hdu, std::string& message);
+    bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, const std::string& filename, const std::string& hdu, std::string& message);
 
 private:
     // FileInfoExtended
-    bool FillFileInfoFromImage(CARTA::FileInfoExtended* ext_info, const std::string& hdu, std::string& message);
-    void AddMiscInfoHeaders(CARTA::FileInfoExtended* extended_info, const casacore::TableRecord& misc_info);
-    void AddShapeEntries(CARTA::FileInfoExtended* extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis);
+    bool FillFileInfoFromImage(CARTA::FileInfoExtended& ext_info, const std::string& hdu, std::string& message);
+    void AddMiscInfoHeaders(CARTA::FileInfoExtended& extended_info, const casacore::TableRecord& misc_info);
+    void AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis);
     void AddComputedEntries(
-        CARTA::FileInfoExtended* extended_info, casacore::ImageInterface<float>* image, casacore::String& radesys, bool use_fits_headers);
-    void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended* extended_info, std::string& radesys);
+        CARTA::FileInfoExtended& extended_info, casacore::ImageInterface<float>* image, casacore::String& radesys, bool use_fits_headers);
+    void AddComputedEntriesFromHeaders(CARTA::FileInfoExtended& extended_info, std::string& radesys);
 
     // FITS keyword conversion
     bool GetFitsKwList(casacore::FitsInput& fits_input, unsigned int hdu, casacore::FitsKeywordList& kwlist);
