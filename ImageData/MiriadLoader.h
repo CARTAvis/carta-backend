@@ -54,6 +54,9 @@ bool MiriadLoader::CanOpenFile(std::string& error) {
 void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
         _image.reset(new CartaMiriadImage(_filename));
+        if (!_image) {
+            throw(casacore::AipsError("Error opening image"));
+        }
         _num_dims = _image->shape().size();
     }
 }

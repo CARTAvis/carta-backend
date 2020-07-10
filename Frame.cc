@@ -43,7 +43,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     try {
         _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
-        _open_image_error = fmt::format("Problem opening image: {}", err.getMesg());
+        _open_image_error = err.getMesg();
         if (_verbose) {
             Log(session_id, _open_image_error);
         }
@@ -896,12 +896,8 @@ bool Frame::SetSpatialRequirements(int region_id, const std::vector<std::string>
 
 bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spatial_data) {
     // Fill spatial profile message for cursor only
+    // Send even if no requirements, to update value of data at cursor
     if (region_id != CURSOR_REGION_ID) {
-        return false;
-    }
-
-    // No spatial profile requirements
-    if (_cursor_spatial_configs.empty()) {
         return false;
     }
 
@@ -972,15 +968,14 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         }
     }
 
-    bool have_spatial_profiles = (spatial_data.profiles_size() > 0);
-    if (_verbose && have_spatial_profiles) {
+    if (_verbose) {
         auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
         auto dt_spatial_profile =
             std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
         fmt::print("Fill spatial profile in {} ms\n", dt_spatial_profile);
     }
 
-    return have_spatial_profiles;
+    return true;
 }
 
 // ****************************************************

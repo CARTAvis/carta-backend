@@ -27,6 +27,9 @@ CasaLoader::CasaLoader(const std::string& filename) {
 void CasaLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
         _image.reset(new casacore::PagedImage<float>(_filename));
+        if (!_image) {
+            throw(casacore::AipsError("Error opening image"));
+        }
         _num_dims = _image->shape().size();
     }
 }
