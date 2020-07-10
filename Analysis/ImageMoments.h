@@ -10,17 +10,16 @@
 #include <imageanalysis/ImageAnalysis/Image2DConvolver.h>
 #include <imageanalysis/ImageAnalysis/ImageHistograms.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgress.h>
+#include <imageanalysis/ImageAnalysis/MomentClip.h>
+#include <imageanalysis/ImageAnalysis/MomentFit.h>
+#include <imageanalysis/ImageAnalysis/MomentWindow.h>
+#include <imageanalysis/ImageAnalysis/MomentsBase.h>
 #include <imageanalysis/ImageAnalysis/SepImageConvolver.h>
-
-#include "MomentClip.h"
-#include "MomentFit.h"
-#include "MomentWindow.h"
-#include "MomentsBase.h"
 
 namespace carta {
 
 template <class T>
-class ImageMoments : public MomentsBase<T> {
+class ImageMoments : public casa::MomentsBase<T> {
 public:
     // Note that if I don't put MomentCalcBase as a forward declaration
     // and use instead  "friend class MomentCalcBase<T>"  The gnu compiler
@@ -137,34 +136,34 @@ private:
     volatile bool _stop;
 
 protected:
-    using MomentsBase<T>::os_p;
-    using MomentsBase<T>::showProgress_p;
-    using MomentsBase<T>::momentAxisDefault_p;
-    using MomentsBase<T>::peakSNR_p;
-    using MomentsBase<T>::stdDeviation_p;
-    using MomentsBase<T>::yMin_p;
-    using MomentsBase<T>::yMax_p;
-    using MomentsBase<T>::out_p;
-    using MomentsBase<T>::smoothOut_p;
-    using MomentsBase<T>::goodParameterStatus_p;
-    using MomentsBase<T>::doWindow_p;
-    using MomentsBase<T>::doFit_p;
-    using MomentsBase<T>::doSmooth_p;
-    using MomentsBase<T>::noInclude_p;
-    using MomentsBase<T>::noExclude_p;
-    using MomentsBase<T>::fixedYLimits_p;
-    using MomentsBase<T>::momentAxis_p;
-    using MomentsBase<T>::worldMomentAxis_p;
-    using MomentsBase<T>::kernelTypes_p;
-    using MomentsBase<T>::kernelWidths_p;
-    using MomentsBase<T>::moments_p;
-    using MomentsBase<T>::selectRange_p;
-    using MomentsBase<T>::smoothAxes_p;
-    using MomentsBase<T>::overWriteOutput_p;
-    using MomentsBase<T>::error_p;
-    using MomentsBase<T>::convertToVelocity_p;
-    using MomentsBase<T>::velocityType_p;
-    using MomentsBase<T>::_checkMethod;
+    using casa::MomentsBase<T>::os_p;
+    using casa::MomentsBase<T>::showProgress_p;
+    using casa::MomentsBase<T>::momentAxisDefault_p;
+    using casa::MomentsBase<T>::peakSNR_p;
+    using casa::MomentsBase<T>::stdDeviation_p;
+    using casa::MomentsBase<T>::yMin_p;
+    using casa::MomentsBase<T>::yMax_p;
+    using casa::MomentsBase<T>::out_p;
+    using casa::MomentsBase<T>::smoothOut_p;
+    using casa::MomentsBase<T>::goodParameterStatus_p;
+    using casa::MomentsBase<T>::doWindow_p;
+    using casa::MomentsBase<T>::doFit_p;
+    using casa::MomentsBase<T>::doSmooth_p;
+    using casa::MomentsBase<T>::noInclude_p;
+    using casa::MomentsBase<T>::noExclude_p;
+    using casa::MomentsBase<T>::fixedYLimits_p;
+    using casa::MomentsBase<T>::momentAxis_p;
+    using casa::MomentsBase<T>::worldMomentAxis_p;
+    using casa::MomentsBase<T>::kernelTypes_p;
+    using casa::MomentsBase<T>::kernelWidths_p;
+    using casa::MomentsBase<T>::moments_p;
+    using casa::MomentsBase<T>::selectRange_p;
+    using casa::MomentsBase<T>::smoothAxes_p;
+    using casa::MomentsBase<T>::overWriteOutput_p;
+    using casa::MomentsBase<T>::error_p;
+    using casa::MomentsBase<T>::convertToVelocity_p;
+    using casa::MomentsBase<T>::velocityType_p;
+    using casa::MomentsBase<T>::_checkMethod;
 };
 
 } // namespace carta

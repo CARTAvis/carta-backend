@@ -9,7 +9,7 @@ using namespace carta;
 template <class T>
 ImageMoments<T>::ImageMoments(
     const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool overWriteOutput, casacore::Bool showProgressU)
-    : MomentsBase<T>(os, overWriteOutput, showProgressU), _stop(false) {
+    : casa::MomentsBase<T>(os, overWriteOutput, showProgressU), _stop(false) {
     setNewImage(image);
 }
 
@@ -163,7 +163,7 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
 template <class T>
 casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore::Int>& smoothAxesU,
     const casacore::Vector<casacore::Int>& kernelTypesU, const casacore::Vector<casacore::Double>& kernelWidthsPix) {
-    return MomentsBase<T>::setSmoothMethod(smoothAxesU, kernelTypesU, kernelWidthsPix);
+    return casa::MomentsBase<T>::setSmoothMethod(smoothAxesU, kernelTypesU, kernelWidthsPix);
 }
 
 template <class T>
@@ -334,13 +334,13 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     // Create appropriate MomentCalculator object
     os_p << casacore::LogIO::NORMAL << "Begin computation of moments" << casacore::LogIO::POST;
 
-    shared_ptr<MomentCalcBase<T>> momentCalculator;
+    shared_ptr<casa::MomentCalcBase<T>> momentCalculator;
     if (clipMethod || smoothClipMethod) {
-        momentCalculator.reset(new MomentClip<T>(smoothedImage, *this, os_p, outPt.size()));
+        momentCalculator.reset(new casa::MomentClip<T>(smoothedImage, *this, os_p, outPt.size()));
     } else if (windowMethod) {
-        momentCalculator.reset(new MomentWindow<T>(smoothedImage, *this, os_p, outPt.size()));
+        momentCalculator.reset(new casa::MomentWindow<T>(smoothedImage, *this, os_p, outPt.size()));
     } else if (fitMethod) {
-        momentCalculator.reset(new MomentFit<T>(*this, os_p, outPt.size()));
+        momentCalculator.reset(new casa::MomentFit<T>(*this, os_p, outPt.size()));
     }
 
     // Iterate optimally through the image, compute the moments, fill the output lattices
