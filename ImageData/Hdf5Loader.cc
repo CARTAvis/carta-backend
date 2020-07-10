@@ -8,6 +8,10 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
     // Open hdf5 image with specified hdu
     if (!_image || (hdu != _hdu)) {
         _image.reset(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu));
+        if (!_image) {
+            throw(casacore::AipsError("Error opening image"));
+        }
+
         _hdu = hdu;
 
         // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
