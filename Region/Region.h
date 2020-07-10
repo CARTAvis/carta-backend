@@ -151,10 +151,10 @@ private:
     casacore::CoordinateSystem* _coord_sys;
 
     // casacore WCRegion
-    std::mutex _region_mutex;                            // creation of casacore regions is not threadsafe
-    std::vector<casacore::Quantity> _wcs_control_points; // needed for region export
-    std::shared_ptr<casacore::WCRegion> _ref_region;     // 2D region applied to reference image
-    float _ellipse_rotation;                             // (deg), may be adjusted from pixel rotation value
+    std::mutex _region_mutex;                              // creation of casacore regions is not threadsafe
+    std::vector<casacore::Quantity> _wcs_control_points;   // needed for region export
+    std::shared_ptr<casacore::WCRegion> _reference_region; // 2D region applied to reference image
+    float _ellipse_rotation;                               // (deg), may be adjusted from pixel rotation value
 
     // WCRegion applied to other images, used for different data streams; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
@@ -163,7 +163,7 @@ private:
     bool _valid;                // RegionState set properly
     bool _region_state_changed; // any parameters changed
     bool _region_changed;       // type, control points, or rotation changed
-    bool _ref_region_set;       // indicates attempt was made; may be null wcregion outside image
+    bool _reference_region_set;       // indicates attempt was made; may be null wcregion outside image
 
     // Communication
     std::atomic<int> _z_profile_count;

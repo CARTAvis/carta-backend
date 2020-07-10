@@ -24,7 +24,7 @@ Region::Region(int file_id, const std::string& name, CARTA::RegionType type, con
       _valid(false),
       _region_state_changed(false),
       _region_changed(false),
-      _ref_region_set(false),
+      _reference_region_set(false),
       _z_profile_count(0) {
     // validate and set region parameters
     _valid = UpdateState(file_id, name, type, points, rotation, csys);
@@ -35,7 +35,7 @@ Region::Region(const RegionState& state, casacore::CoordinateSystem* csys)
       _valid(false),
       _region_state_changed(false),
       _region_changed(false),
-      _ref_region_set(false),
+      _reference_region_set(false),
       _z_profile_count(0) {
     _valid = UpdateState(state, csys);
 }
@@ -70,7 +70,7 @@ bool Region::UpdateState(const RegionState& state, casacore::CoordinateSystem* c
 
         if (_region_changed) {
             _wcs_control_points.clear();
-            _ref_region_set = false;
+            _reference_region_set = false;
             if (_applied_regions.count(state.reference_file_id)) {
                 _applied_regions.at(state.reference_file_id).reset();
             }
@@ -232,17 +232,17 @@ casacore::LCRegion* Region::GetImageRegion(int file_id, casacore::CoordinateSyst
     }
 
     if (!ReferenceRegionValid()) {
-        if (_ref_region_set) {
+        if (_reference_region_set) {
             return null_region;
         } else {
             SetReferenceRegion();
-            _ref_region_set = true; // indicates that attempt was made, to avoid repeated attempts
+            _reference_region_set = true; // indicates that attempt was made, to avoid repeated attempts
         }
     }
 
     if (ReferenceRegionValid()) {
         // Create from stored wcregion
-        std::shared_ptr<const casacore::WCRegion> current_region = std::atomic_load(&_ref_region);
+        std::shared_ptr<const casacore::WCRegion> current_region = std::atomic_load(&_reference_region);
         try {
             std::lock_guard<std::mutex> guard(_region_mutex);
             auto lc_region = std::shared_ptr<casacore::LCRegion>(current_region->toLCRegion(image_csys, image_shape));
@@ -250,7 +250,7 @@ casacore::LCRegion* Region::GetImageRegion(int file_id, casacore::CoordinateSyst
             return _applied_regions.at(file_id)->cloneRegion(); // copy: this ptr will be owned by ImageRegion
         } catch (const casacore::AipsError& err) {
             // Likely region is outside image
-            std::cerr << "Error applying region to file " << file_id << " (toLCRegion): " << err.getMesg() << std::endl;
+            std::cerr << "Error applying region to file " << file_id << ": " << err.getMesg() << std::endl;
         }
     }
 
@@ -295,12 +295,12 @@ casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(int file_id) {
 // Apply region to reference image (WCRegion)
 
 bool Region::ReferenceRegionValid() {
-    return _ref_region_set && bool(_ref_region);
+    return _reference_region_set && bool(_reference_region);
 }
 
 void Region::SetReferenceRegion() {
     // Create WCRegion (world coordinate region) in the reference image according to type using wcs control points
-    // Sets _ref_region (maybe to nullptr)
+    // Sets _reference_region (maybe to nullptr)
     casacore::WCRegion* region(nullptr);
     std::vector<CARTA::Point> pixel_points(_region_state.control_points);
     std::vector<casacore::Quantity> world_points; // point holder; one CARTA point is two world points (x, y)
@@ -377,7 +377,7 @@ void Region::SetReferenceRegion() {
     }
 
     std::shared_ptr<casacore::WCRegion> shared_region = std::shared_ptr<casacore::WCRegion>(region);
-    std::atomic_store(&_ref_region, shared_region);
+    std::atomic_store(&_reference_region, shared_region);
 }
 
 bool Region::CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point) {
