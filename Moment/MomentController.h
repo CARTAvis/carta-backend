@@ -20,6 +20,7 @@ public:
 
 private:
     std::unordered_map<int, std::unique_ptr<MomentGenerator>> _moment_generators; // <file_id, MomentGenerator>
+    std::mutex _moment_generator_mutex;
 };
 
 } // namespace carta

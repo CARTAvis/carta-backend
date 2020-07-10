@@ -15,15 +15,13 @@ std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, cons
 
     // Set moment generator with respect to the file id
     if (!_moment_generators.count(file_id)) {
-        // Get the image ptr and spectral/stoke axis from the Frame
-        std::string filename = frame->GetFileName();
-        casacore::ImageInterface<float>* image = frame->GetImage();
-        int spectral_axis = frame->GetSpectralAxis();
-        int stokes_axis = frame->GetStokesAxis();
-
         // Create a moment generator
-        auto moment_generator = std::make_unique<MomentGenerator>(filename, image, spectral_axis, stokes_axis, progress_callback);
+        auto moment_generator = std::make_unique<MomentGenerator>(
+            frame->GetFileName(), frame->GetImage(), frame->GetSpectralAxis(), frame->GetStokesAxis(), progress_callback);
+
+        std::unique_lock<std::mutex> lock(_moment_generator_mutex);
         _moment_generators[file_id] = std::move(moment_generator);
+        lock.unlock();
     }
 
     // Calculate the moments
@@ -47,6 +45,7 @@ void MomentController::StopCalculation(int file_id) {
 
 void MomentController::DeleteMomentGenerator(int file_id) {
     if (_moment_generators.count(file_id)) {
+        std::unique_lock<std::mutex> lock(_moment_generator_mutex);
         _moment_generators.at(file_id)->DisconnectCalled();
         _moment_generators[file_id].reset();
     }
@@ -54,6 +53,7 @@ void MomentController::DeleteMomentGenerator(int file_id) {
 
 void MomentController::DeleteMomentGenerator() {
     if (!_moment_generators.empty()) {
+        std::unique_lock<std::mutex> lock(_moment_generator_mutex);
         for (auto& moment_generator : _moment_generators) {
             moment_generator.second->DisconnectCalled();
             moment_generator.second.reset();
