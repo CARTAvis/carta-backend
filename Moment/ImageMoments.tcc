@@ -23,6 +23,7 @@ casacore::Bool ImageMoments<T>::setNewImage(const casacore::ImageInterface<T>& i
 
     ThrowIf(imageType != casacore::TpFloat && imageType != casacore::TpDouble,
         "Moments can only be evaluated for Float or Double valued images");
+
     // Make a clone of the image
     _image.reset(image.cloneII());
     return true;
@@ -33,13 +34,16 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int momentAxisU) {
     if (!goodParameterStatus_p) {
         throw casacore::AipsError("Internal class status is bad");
     }
+
     momentAxis_p = momentAxisU;
+
     if (momentAxis_p == momentAxisDefault_p) {
         momentAxis_p = _image->coordinates().spectralAxisNumber();
         if (momentAxis_p == -1) {
             goodParameterStatus_p = false;
             throw casacore::AipsError("There is no spectral axis in this image -- specify the axis");
         }
+
     } else {
         if (momentAxis_p < 0 || momentAxis_p > casacore::Int(_image->ndim() - 1)) {
             goodParameterStatus_p = false;
@@ -65,18 +69,15 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int momentAxisU) {
         auto imageCopy = convolver.convolve();
 
         // replace the input image pointer with the convolved image pointer
-        // and proceed using the convolved image as if it were the input
-        // image
+        // and proceed using the convolved image as if it were the input image
         _image = imageCopy;
     }
 
     worldMomentAxis_p = _image->coordinates().pixelAxisToWorldAxis(momentAxis_p);
+
     return true;
 }
 
-//
-// Assign the desired smoothing parameters.
-//
 template <class T>
 casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore::Int>& smoothAxesU,
     const casacore::Vector<casacore::Int>& kernelTypesU, const casacore::Vector<casacore::Quantum<casacore::Double>>& kernelWidthsU) {
@@ -125,8 +126,8 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
         return false;
     }
 
-    // Now the desired smoothing kernels widths.  Allow for Hanning
-    // to not be given as it is always 1/4, 1/2, 1/4
+    // Now the desired smoothing kernels widths.
+    // Allow for Hanning to not be given as it is always 1/4, 1/2, 1/4
     kernelWidths_p.resize(smoothAxes_p.nelements());
     casacore::Int nK = kernelWidthsU.size();
     for (i = 0; i < casacore::Int(smoothAxes_p.nelements()); i++) {
@@ -134,6 +135,7 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
             // For Hanning, width is always 3pix
             casacore::Quantity tmp(3.0, casacore::String("pix"));
             kernelWidths_p(i) = tmp;
+
         } else if (kernelTypes_p(i) == casacore::VectorKernel::BOXCAR) {
             // For box must be odd number greater than 1
             if (i > nK - 1) {
@@ -143,6 +145,7 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
             } else {
                 kernelWidths_p(i) = kernelWidthsU(i);
             }
+
         } else if (kernelTypes_p(i) == casacore::VectorKernel::GAUSSIAN) {
             if (i > nK - 1) {
                 error_p = "Not enough smoothing widths given";
@@ -151,12 +154,14 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
             } else {
                 kernelWidths_p(i) = kernelWidthsU(i);
             }
+
         } else {
             error_p = "Internal logic error";
             goodParameterStatus_p = false;
             return false;
         }
     }
+
     return true;
 }
 
@@ -173,15 +178,12 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     os_p << myOrigin;
 
     if (!goodParameterStatus_p) {
-        // FIXME goodness, why are we waiting so long to throw an exception if this
-        // is the case?
+        // FIXME goodness, why are we waiting so long to throw an exception if this is the case?
         throw casacore::AipsError("Internal status of class is bad.  You have ignored errors");
     }
 
-    // Find spectral axis
-    // use a copy of the coordinate system here since, if the image has multiple
-    // beams, _image will change and hence a reference to its
-    // casacore::CoordinateSystem will disappear causing a seg fault.
+    // Find spectral axis use a copy of the coordinate system here since, if the image has multiple beams, _image
+    // will change and hence a reference to its casacore::CoordinateSystem will disappear causing a seg fault.
     casacore::CoordinateSystem cSys = _image->coordinates();
     casacore::Int spectralAxis = cSys.spectralAxisNumber(false);
     if (momentAxis_p == momentAxisDefault_p) {
@@ -201,12 +203,10 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
 
     os_p << casacore::LogIO::NORMAL << endl << "Moment axis type is " << cSys.worldAxisNames()(worldMomentAxis_p) << casacore::LogIO::POST;
 
-    // If the moment axis is a spectral axis, indicate we want to convert to
-    // velocity Check the user's requests are allowed
+    // If the moment axis is a spectral axis, indicate we want to convert to velocity. Check the user's requests are allowed
     _checkMethod();
 
-    // Check that input and output image names aren't the same.
-    // if there is only one output image
+    // Check that input and output image names aren't the same, if there is only one output image
     if (moments_p.nelements() == 1 && !doTemp) {
         if (!outName.empty() && (outName == _image->name())) {
             throw casacore::AipsError("Input image and output image have same name");
@@ -217,7 +217,6 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     auto windowMethod = false;
     auto fitMethod = false;
     auto clipMethod = false;
-    // auto doPlot = plotter_p.isAttached();
 
     if (doSmooth_p && !doWindow_p) {
         smoothClipMethod = true;
@@ -229,10 +228,8 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
         clipMethod = true;
     }
 
-    // We only smooth the image if we are doing the smooth/clip method
-    // or possibly the interactive window method.  Note that the convolution
-    // routines can only handle convolution when the image fits fully in core
-    // at present.
+    // We only smooth the image if we are doing the smooth/clip method or possibly the interactive window method.
+    // Note that the convolution routines can only handle convolution when the image fits fully in core at present.
     SPIIT smoothedImage;
     if (doSmooth_p) {
         smoothedImage = _smoothImage();
@@ -244,7 +241,7 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     auto nMoments = moments_p.nelements();
 
     // Resize the vector of pointers for output images
-    vector<std::shared_ptr<casacore::MaskedLattice<T>>> outPt(nMoments);
+    std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> outPt(nMoments);
 
     // Loop over desired output moments
     casacore::String suffix;
@@ -253,18 +250,17 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     const auto imageUnits = _image->units();
 
     for (casacore::uInt i = 0; i < nMoments; ++i) {
-        // Set moment image units and assign pointer to output moments array
-        // Value of goodUnits is the same for each output moment image
+        // Set moment image units and assign pointer to output moments array Value of goodUnits is the same for each output moment image
         casacore::Unit momentUnits;
         goodUnits = this->_setOutThings(suffix, momentUnits, imageUnits, momentAxisUnits, moments_p(i), convertToVelocity_p);
 
-        // Create output image(s).
-        // Either casacore::PagedImage or TempImage
+        // Create output image(s). Either casacore::PagedImage or TempImage
         SPIIT imgp;
 
         if (!doTemp) {
             const casacore::String in = _image->name(false);
             casacore::String outFileName;
+
             if (moments_p.size() == 1) {
                 if (outName.empty()) {
                     outFileName = in + suffix;
@@ -278,6 +274,7 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
                     outFileName = outName + suffix;
                 }
             }
+
             if (!overWriteOutput_p) {
                 casacore::NewFile x;
                 casacore::String error;
@@ -285,8 +282,10 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
                     throw casacore::AipsError(error);
                 }
             }
+
             imgp.reset(new casacore::PagedImage<T>(outImageShape, cSysOut, outFileName));
             os_p << casacore::LogIO::NORMAL << "Created " << outFileName << casacore::LogIO::POST;
+
         } else {
             imgp.reset(new casacore::TempImage<T>(casacore::TiledShape(outImageShape), cSysOut));
             os_p << casacore::LogIO::NORMAL << "Created TempImage" << casacore::LogIO::POST;
@@ -303,27 +302,23 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
             imgp->setUnits(momentUnits);
         } else {
             if (giveMessage) {
-                os_p << casacore::LogIO::NORMAL
-                     << "Could not determine the units of the moment image(s) so the "
-                        "units "
-                     << endl;
-                os_p << "will be the same as those of the input image. This may not be "
-                        "very useful."
-                     << casacore::LogIO::POST;
+                os_p << casacore::LogIO::NORMAL << "Could not determine the units of the moment image(s) so the units" << endl;
+                os_p << "will be the same as those of the input image. This may not be very useful." << casacore::LogIO::POST;
                 giveMessage = false;
             }
         }
+
         outPt[i] = imgp;
     }
 
-    // If the user is using the automatic, non-fitting window method, they need
-    // a good assessment of the noise.  The user can input that value, but if
-    // they don't, we work it out here.
+    // If the user is using the automatic, non-fitting window method, they need a good assessment of the noise.
+    // The user can input that value, but if they don't, we work it out here.
     T noise;
     if (stdDeviation_p <= T(0) && (doWindow_p || (doFit_p && !doWindow_p))) {
         if (smoothedImage) {
             os_p << casacore::LogIO::NORMAL << "Evaluating noise level from smoothed image" << casacore::LogIO::POST;
             _whatIsTheNoise(noise, *smoothedImage);
+
         } else {
             os_p << casacore::LogIO::NORMAL << "Evaluating noise level from input image" << casacore::LogIO::POST;
             _whatIsTheNoise(noise, *_image);
@@ -337,8 +332,10 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     shared_ptr<MomentCalcBase<T>> momentCalculator;
     if (clipMethod || smoothClipMethod) {
         momentCalculator.reset(new MomentClip<T>(smoothedImage, *this, os_p, outPt.size()));
+
     } else if (windowMethod) {
         momentCalculator.reset(new MomentWindow<T>(smoothedImage, *this, os_p, outPt.size()));
+
     } else if (fitMethod) {
         momentCalculator.reset(new MomentFit<T>(*this, os_p, outPt.size()));
     }
@@ -368,6 +365,7 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     if (_stop) {
+        // Clear the output image ptr vector if calculation is cancelled
         outPt.clear();
     } else {
         for (auto& p : outPt) {
@@ -378,9 +376,8 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     return outPt;
 }
 
-// casacore::Smooth image.   casacore::Input masked pixels are zeros before
-// smoothing. The output smoothed image is masked as well to reflect the input
-// mask.
+// casacore::Smooth image. casacore::Input masked pixels are zeros before smoothing.
+// The output smoothed image is masked as well to reflect the input mask.
 template <class T>
 SPIIT ImageMoments<T>::_smoothImage() {
     auto axMax = max(smoothAxes_p) + 1;
@@ -442,8 +439,10 @@ void ImageMoments<T>::_whatIsTheNoise(T& sigma, const casacore::ImageInterface<T
     while (more) {
         casacore::Int iMin = 0;
         casacore::Int iMax = 0;
+
         if (first) {
             first = false;
+
             iMax = yMaxPos(0);
             casacore::uInt i;
             for (i = yMaxPos(0); i < nBins; i++) {
@@ -452,6 +451,7 @@ void ImageMoments<T>::_whatIsTheNoise(T& sigma, const casacore::ImageInterface<T
                     break;
                 }
             }
+
             iMin = yMinPos(0);
             for (i = yMaxPos(0); i > 0; i--) {
                 if (counts(i) < yMax / 4) {
@@ -459,6 +459,7 @@ void ImageMoments<T>::_whatIsTheNoise(T& sigma, const casacore::ImageInterface<T
                     break;
                 }
             }
+
             // Check range is sensible
             if (iMax <= iMin || abs(iMax - iMin) < 3) {
                 os_p << casacore::LogIO::NORMAL << "The image histogram is strangely shaped, fitting to all bins" << casacore::LogIO::POST;

@@ -12,39 +12,26 @@
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgress.h>
 #include <imageanalysis/ImageAnalysis/SepImageConvolver.h>
 
-#include "MomentClip.h"
-#include "MomentFit.h"
-#include "MomentWindow.h"
-#include "MomentsBase.h"
+#include "../Analysis/MomentClip.h"
+#include "../Analysis/MomentFit.h"
+#include "../Analysis/MomentWindow.h"
+#include "../Analysis/MomentsBase.h"
 
 namespace carta {
 
 template <class T>
 class ImageMoments : public MomentsBase<T> {
 public:
-    // Note that if I don't put MomentCalcBase as a forward declaration
-    // and use instead  "friend class MomentCalcBase<T>"  The gnu compiler
-    // fails with a typedef problem.  But I can't solve it with say
-    // <src>typedef MomentCalcBase<T> gpp_type;</src>  because you can only do a
-    // typedef with an actual type, not a <tt>T</tt> !
-    // friend class MomentCalcBase<T>;
-
-    ImageMoments() = delete;
-
     // Constructor takes an image and a <src>casacore::LogIO</src> object for
     // logging purposes. You specify whether output images are automatically
-    // overwritten if pre-existing, or whether an intercative choice dialog widget
+    // overwritten if pre-existing, or whether an interactive choice dialog widget
     // appears (overWriteOutput=F) You may also determine whether a progress meter
     // is displayed or not.
     ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool overWriteOutput = false,
         casacore::Bool showProgress = true);
 
-    ImageMoments(const ImageMoments<T>& other) = delete;
-
     // Destructor
     ~ImageMoments();
-
-    ImageMoments<T>& operator=(const ImageMoments<T>& other) = delete;
 
     // Set the moment axis (0 relative).  A return value of <src>false</src>
     // indicates that the axis was not contained in the image. If you don't

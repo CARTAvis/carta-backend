@@ -7,8 +7,8 @@
 
 #include <thread>
 
-#include "../Analysis/ImageMoments.h"
 #include "../InterfaceConstants.h"
+#include "ImageMoments.h"
 
 using MomentProgressCallback = const std::function<void(float)>;
 
