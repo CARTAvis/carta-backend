@@ -428,8 +428,8 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
                     CARTA::SpectralLineRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk = new (tbb::task::allocate_root(session->Context()))
-                            OnSpectralLineRequestTask(session, message, head.request_id);
+                        tsk =
+                            new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
                     } else {
                         fmt::print("Bad SPECTRAL_LINE_REQUEST message!\n");
                     }

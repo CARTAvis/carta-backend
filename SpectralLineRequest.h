@@ -6,19 +6,20 @@
 
 namespace carta {
 struct MemoryStruct {
-    char *memory;
+    char* memory;
     size_t size;
 };
 class SpectralLineRequest {
-    public:
+public:
     SpectralLineRequest();
     ~SpectralLineRequest();
     void SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response);
-    private:
+
+private:
     static const std::string SplatalogueURL;
-    static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
+    static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp);
     static void ParsingQueryResult(const MemoryStruct& results, CARTA::SpectralLineResponse& spectral_line_response);
 };
-}
+} // namespace carta
 
 #endif // CARTA_BACKEND_SPECTRAL_LINE_REQUEST_H_
