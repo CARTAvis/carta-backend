@@ -1,5 +1,5 @@
 //
-// Modify from the original file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.h"
+// Re-write from the file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.h"
 //
 #ifndef CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_H_
 #define CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_H_
@@ -22,103 +22,66 @@ namespace carta {
 template <class T>
 class ImageMoments : public MomentsBase<T> {
 public:
-    // Constructor takes an image and a <src>casacore::LogIO</src> object for
-    // logging purposes. You specify whether output images are automatically
-    // overwritten if pre-existing, or whether an interactive choice dialog widget
-    // appears (overWriteOutput=F) You may also determine whether a progress meter
-    // is displayed or not.
-    ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool overWriteOutput = false,
-        casacore::Bool showProgress = true);
+    ImageMoments(const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool over_write_output = false,
+        casacore::Bool show_progress = true);
 
-    // Destructor
-    ~ImageMoments();
+    ~ImageMoments(){};
 
-    // Set the moment axis (0 relative).  A return value of <src>false</src>
-    // indicates that the axis was not contained in the image. If you don't
-    // call this function, the default state of the class is to set the
-    // moment axis to the spectral axis if it can find one.  Otherwise
-    // an error will result.
-    casacore::Bool setMomentAxis(casacore::Int momentAxis);
+    casacore::Bool setMomentAxis(const Int moment_axis);
 
-    // This function invokes smoothing of the input image.  Give
-    // <src>casacore::Int</src> arrays for the axes (0 relative) to be smoothed
-    // and the smoothing kernel types (use the <src>enum KernelTypes</src>) for
-    // each axis.  Give a <src>casacore::Double</src> array for the widths (full
-    // width for BOXCAR and full width at half maximum for GAUSSIAN) in pixels of
-    // the smoothing kernels for each axis.  For HANNING smoothing, you always get
-    // the quarter-half-quarter kernel (no matter what you might ask for).  A
-    // return value of <src>false</src> indicates that you have given an
-    // inconsistent or invalid set of smoothing parameters.  If you don't call
-    // this function the default state of the class is to do no smoothing.  The
-    // kernel types are specified with the casacore::VectorKernel::KernelTypes
-    // enum
-    casacore::Bool setSmoothMethod(const casacore::Vector<casacore::Int>& smoothAxes, const casacore::Vector<casacore::Int>& kernelTypes,
-        const casacore::Vector<casacore::Quantum<casacore::Double>>& kernelWidths);
+    // This function invokes smoothing of the input image. Give casacore::Int arrays for the axes (0 relative) to be smoothed and the
+    // smoothing kernel types (use the <src>enum KernelTypes</src>) for each axis. Give a casacore::Double array for the widths (full width
+    // for BOXCAR and full width at half maximum for GAUSSIAN) in pixels of the smoothing kernels for each axis. For HANNING smoothing, you
+    // always get the quarter-half-quarter kernel (no matter what you might ask for). A return value of false indicates that you have given
+    // an inconsistent or invalid set of smoothing parameters. If you don't call this function the default state of the class is to do no
+    // smoothing. The kernel types are specified with the casacore::VectorKernel::KernelTypes enum
+    casacore::Bool setSmoothMethod(const casacore::Vector<casacore::Int>& smooth_axes, const casacore::Vector<casacore::Int>& kernel_types,
+        const casacore::Vector<casacore::Quantum<casacore::Double>>& kernel_widths);
 
-    casacore::Bool setSmoothMethod(const casacore::Vector<casacore::Int>& smoothAxes, const casacore::Vector<casacore::Int>& kernelTypes,
-        const casacore::Vector<casacore::Double>& kernelWidths);
+    casacore::Bool setSmoothMethod(const casacore::Vector<casacore::Int>& smooth_axes, const casacore::Vector<casacore::Int>& kernel_types,
+        const casacore::Vector<casacore::Double>& kernel_widths_pix);
 
-    // This is the function that does all the computational work.  It should be
-    // called after the <src>set</src> functions. If the axis being collapsed
-    // comes from a coordinate with one axis only, the axis and its coordinate are
-    // physically removed from the output image.  Otherwise, if
-    // <src>removeAxes=true</src> then the output axis is logically removed from
-    // the the output CoordinateSystem.  If <src>removeAxes=false</src> then the
-    // axis is retained with shape=1 and with its original coordinate information
-    // (which is probably meaningless).
-    //
-    // The output vector will hold PagedImages or TempImages (doTemp=true).
-    // If doTemp is true, the outFileName is not used.
-    //
-    // If you create PagedImages, outFileName is the root name for
-    // the output files.  Suffixes will be made up internally to append
-    // to this root.  If you only ask for one moment,
-    // this will be the actual name of the output file.  If you don't set this
-    // variable, the default state of the class is to set the output name root to
-    // the name of the input file.
+    // This is the function that does all the computational work. The output vector will hold PagedImages or TempImages (do_temp = true).
+    // If do_temp is true, the out_file_name is not used. If you create PagedImages, out_file_name is the root name for the output files.
+    // If you don't set this variable, the default state of the class is to set the output name root to the name of the input file.
     std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> createMoments(
-        casacore::Bool doTemp, const casacore::String& outFileName, casacore::Bool removeAxes = true);
+        casacore::Bool do_temp, const casacore::String& out_file_name, casacore::Bool remove_axis = true);
 
-    // Set a new image.  A return value of <src>false</src> indicates the
-    // image had an invalid type (this class only accepts casacore::Float or
-    // casacore::Double images).
-    casacore::Bool setNewImage(const casacore::ImageInterface<T>& image);
-
-    // Get CoordinateSystem
+    // Get coordinate system
     const casacore::CoordinateSystem& coordinates() {
         return _image->coordinates();
     };
 
-    // Get shape
+    // Get image shape
     casacore::IPosition getShape() const {
         return _image->shape();
     }
 
-    // Set an ImageMomentsProgressMonitor interested in getting updates on the
-    // progress of the collapse process.
-    void setProgressMonitor(casa::ImageMomentsProgressMonitor* progressMonitor);
+    // Set an ImageMomentsProgressMonitor interested in getting updates on the progress of the collapse process
+    void SetProgressMonitor(casa::ImageMomentsProgressMonitor* progressMonitor);
 
     // Stop the calculation
     void StopCalculation();
 
 private:
     SPCIIT _image = SPCIIT(nullptr);
-    casa::ImageMomentsProgressMonitor* _progressMonitor = nullptr;
+    casa::ImageMomentsProgressMonitor* _progress_monitor = nullptr;
+
+    casacore::Bool SetNewImage(const casacore::ImageInterface<T>& image);
 
     // casacore::Smooth an image
-    SPIIT _smoothImage();
+    SPIIT SmoothImage();
 
-    // Determine the noise by fitting a Gaussian to a histogram
-    // of the entire image above the 25% levels.  If a plotting
-    // device is set, the user can interact with this process.
-    void _whatIsTheNoise(T& noise, const casacore::ImageInterface<T>& image);
+    // Determine the noise by fitting a Gaussian to a histogram of the entire image above the 25% levels. If a plotting device is set, the
+    // user can interact with this process.
+    void WhatIsTheNoise(T& noise, const casacore::ImageInterface<T>& image);
 
-    // Iterate through a cube image with the moments calculator
-    void lineMultiApply(PtrBlock<MaskedLattice<T>*>& latticeOut, const MaskedLattice<T>& latticeIn, LineCollapser<T, T>& collapser,
-        uInt collapseAxis, LatticeProgress* tellProgress = 0);
+    // Iterate through a cube image with the moments calculator. Re-write from the casacore::LatticeApply<T,U>::lineMultiApply() function
+    void LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out, const casacore::MaskedLattice<T>& lattice_in,
+        casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis, casacore::LatticeProgress* tell_progress = 0);
 
     // Get a suitable chunk shape in order for the iteration
-    casacore::IPosition _chunkShape(uInt axis, const MaskedLattice<T>& latticeIn);
+    casacore::IPosition ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in);
 
     // Stop moment calculation
     volatile bool _stop;

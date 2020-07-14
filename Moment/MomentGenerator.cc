@@ -165,7 +165,7 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
     _image_moments.reset(new ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
 
     // Set moment calculation progress monitor
-    _image_moments->setProgressMonitor(this);
+    _image_moments->SetProgressMonitor(this);
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {

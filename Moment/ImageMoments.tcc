@@ -1,5 +1,5 @@
 //
-// Modify from the original file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.tcc"
+// Re-write from the file: "casa/code/imageanalysis/ImageAnalysis/ImageMoments.tcc"
 //
 #ifndef CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_TCC_
 #define CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_TCC_
@@ -8,19 +8,15 @@ using namespace carta;
 
 template <class T>
 ImageMoments<T>::ImageMoments(
-    const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool overWriteOutput, casacore::Bool showProgressU)
-    : MomentsBase<T>(os, overWriteOutput, showProgressU), _stop(false) {
-    setNewImage(image);
+    const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool over_write_output, casacore::Bool show_progress)
+    : MomentsBase<T>(os, over_write_output, show_progress), _stop(false) {
+    SetNewImage(image);
 }
 
 template <class T>
-ImageMoments<T>::~ImageMoments() {}
-
-template <class T>
-casacore::Bool ImageMoments<T>::setNewImage(const casacore::ImageInterface<T>& image) {
+casacore::Bool ImageMoments<T>::SetNewImage(const casacore::ImageInterface<T>& image) {
     T* dummy = nullptr;
-    casacore::DataType imageType = whatType(dummy);
-
+    casacore::DataType imageType = casacore::whatType(dummy);
     ThrowIf(imageType != casacore::TpFloat && imageType != casacore::TpDouble,
         "Moments can only be evaluated for Float or Double valued images");
 
@@ -30,13 +26,12 @@ casacore::Bool ImageMoments<T>::setNewImage(const casacore::ImageInterface<T>& i
 }
 
 template <class T>
-casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int momentAxisU) {
+casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int moment_axis) {
     if (!goodParameterStatus_p) {
         throw casacore::AipsError("Internal class status is bad");
     }
 
-    momentAxis_p = momentAxisU;
-
+    momentAxis_p = moment_axis;
     if (momentAxis_p == momentAxisDefault_p) {
         momentAxis_p = _image->coordinates().spectralAxisNumber();
         if (momentAxis_p == -1) {
@@ -68,8 +63,8 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int momentAxisU) {
         convolver.setTargetRes(true);
         auto imageCopy = convolver.convolve();
 
-        // replace the input image pointer with the convolved image pointer
-        // and proceed using the convolved image as if it were the input image
+        // Replace the input image pointer with the convolved image pointer and proceed using the convolved image as if it were the input
+        // image
         _image = imageCopy;
     }
 
@@ -79,8 +74,8 @@ casacore::Bool ImageMoments<T>::setMomentAxis(const casacore::Int momentAxisU) {
 }
 
 template <class T>
-casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore::Int>& smoothAxesU,
-    const casacore::Vector<casacore::Int>& kernelTypesU, const casacore::Vector<casacore::Quantum<casacore::Double>>& kernelWidthsU) {
+casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore::Int>& smooth_axes,
+    const casacore::Vector<casacore::Int>& kernel_types, const casacore::Vector<casacore::Quantum<casacore::Double>>& kernel_widths) {
     if (!goodParameterStatus_p) {
         error_p = "Internal class status is bad";
         return false;
@@ -88,8 +83,8 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
 
     // First check the smoothing axes
     casacore::Int i;
-    if (smoothAxesU.nelements() > 0) {
-        smoothAxes_p = smoothAxesU;
+    if (smooth_axes.nelements() > 0) {
+        smoothAxes_p = smooth_axes;
         for (i = 0; i < casacore::Int(smoothAxes_p.nelements()); i++) {
             if (smoothAxes_p(i) < 0 || smoothAxes_p(i) > casacore::Int(_image->ndim() - 1)) {
                 error_p = "Illegal smoothing axis given";
@@ -104,8 +99,8 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
     }
 
     // Now check the smoothing types
-    if (kernelTypesU.nelements() > 0) {
-        kernelTypes_p = kernelTypesU;
+    if (kernel_types.nelements() > 0) {
+        kernelTypes_p = kernel_types;
         for (i = 0; i < casacore::Int(kernelTypes_p.nelements()); i++) {
             if (kernelTypes_p(i) < 0 || kernelTypes_p(i) > casacore::VectorKernel::NKERNELS - 1) {
                 error_p = "Illegal smoothing kernel types given";
@@ -120,16 +115,15 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
     }
 
     // Check user gave us enough smoothing types
-    if (smoothAxesU.nelements() != kernelTypes_p.nelements()) {
+    if (smooth_axes.nelements() != kernelTypes_p.nelements()) {
         error_p = "Different number of smoothing axes to kernel types";
         goodParameterStatus_p = false;
         return false;
     }
 
-    // Now the desired smoothing kernels widths.
-    // Allow for Hanning to not be given as it is always 1/4, 1/2, 1/4
+    // Now the desired smoothing kernels widths. Allow for Hanning to not be given as it is always 1/4, 1/2, 1/4
     kernelWidths_p.resize(smoothAxes_p.nelements());
-    casacore::Int nK = kernelWidthsU.size();
+    casacore::Int kernel_widths_size = kernel_widths.size();
     for (i = 0; i < casacore::Int(smoothAxes_p.nelements()); i++) {
         if (kernelTypes_p(i) == casacore::VectorKernel::HANNING) {
             // For Hanning, width is always 3pix
@@ -138,21 +132,21 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
 
         } else if (kernelTypes_p(i) == casacore::VectorKernel::BOXCAR) {
             // For box must be odd number greater than 1
-            if (i > nK - 1) {
+            if (i > kernel_widths_size - 1) {
                 error_p = "Not enough smoothing widths given";
                 goodParameterStatus_p = false;
                 return false;
             } else {
-                kernelWidths_p(i) = kernelWidthsU(i);
+                kernelWidths_p(i) = kernel_widths(i);
             }
 
         } else if (kernelTypes_p(i) == casacore::VectorKernel::GAUSSIAN) {
-            if (i > nK - 1) {
+            if (i > kernel_widths_size - 1) {
                 error_p = "Not enough smoothing widths given";
                 goodParameterStatus_p = false;
                 return false;
             } else {
-                kernelWidths_p(i) = kernelWidthsU(i);
+                kernelWidths_p(i) = kernel_widths(i);
             }
 
         } else {
@@ -166,24 +160,23 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
 }
 
 template <class T>
-casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore::Int>& smoothAxesU,
-    const casacore::Vector<casacore::Int>& kernelTypesU, const casacore::Vector<casacore::Double>& kernelWidthsPix) {
-    return MomentsBase<T>::setSmoothMethod(smoothAxesU, kernelTypesU, kernelWidthsPix);
+casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore::Int>& smooth_axes,
+    const casacore::Vector<casacore::Int>& kernel_types, const casacore::Vector<casacore::Double>& kernel_widths_pix) {
+    return MomentsBase<T>::setSmoothMethod(smooth_axes, kernel_types, kernel_widths_pix);
 }
 
 template <class T>
 std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::createMoments(
-    casacore::Bool doTemp, const casacore::String& outName, casacore::Bool removeAxis) {
-    casacore::LogOrigin myOrigin("ImageMoments", __func__);
+    casacore::Bool do_temp, const casacore::String& out_file_name, casacore::Bool remove_axis) {
+    casacore::LogOrigin myOrigin("carta::ImageMoments", __func__);
     os_p << myOrigin;
 
     if (!goodParameterStatus_p) {
-        // FIXME goodness, why are we waiting so long to throw an exception if this is the case?
         throw casacore::AipsError("Internal status of class is bad.  You have ignored errors");
     }
 
-    // Find spectral axis use a copy of the coordinate system here since, if the image has multiple beams, _image
-    // will change and hence a reference to its casacore::CoordinateSystem will disappear causing a seg fault.
+    // Find spectral axis use a copy of the coordinate system here since, if the image has multiple beams, "_image" will change and hence a
+    // reference to its casacore::CoordinateSystem will disappear causing a seg fault.
     casacore::CoordinateSystem cSys = _image->coordinates();
     casacore::Int spectralAxis = cSys.spectralAxisNumber(false);
     if (momentAxis_p == momentAxisDefault_p) {
@@ -196,320 +189,319 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     convertToVelocity_p = (momentAxis_p == spectralAxis) && (cSys.spectralCoordinate().restFrequency() > 0);
-
     os_p << myOrigin;
 
-    casacore::String momentAxisUnits = cSys.worldAxisUnits()(worldMomentAxis_p);
-
+    casacore::String moment_axis_units = cSys.worldAxisUnits()(worldMomentAxis_p);
     os_p << casacore::LogIO::NORMAL << endl << "Moment axis type is " << cSys.worldAxisNames()(worldMomentAxis_p) << casacore::LogIO::POST;
 
     // If the moment axis is a spectral axis, indicate we want to convert to velocity. Check the user's requests are allowed
     _checkMethod();
 
     // Check that input and output image names aren't the same, if there is only one output image
-    if (moments_p.nelements() == 1 && !doTemp) {
-        if (!outName.empty() && (outName == _image->name())) {
+    if (moments_p.nelements() == 1 && !do_temp) {
+        if (!out_file_name.empty() && (out_file_name == _image->name())) {
             throw casacore::AipsError("Input image and output image have same name");
         }
     }
 
-    auto smoothClipMethod = false;
-    auto windowMethod = false;
-    auto fitMethod = false;
-    auto clipMethod = false;
+    // Set methods
+    auto smooth_clip_method = false;
+    auto window_method = false;
+    auto fit_method = false;
+    auto clip_method = false;
 
     if (doSmooth_p && !doWindow_p) {
-        smoothClipMethod = true;
+        smooth_clip_method = true;
     } else if (doWindow_p) {
-        windowMethod = true;
+        window_method = true;
     } else if (doFit_p) {
-        fitMethod = true;
+        fit_method = true;
     } else {
-        clipMethod = true;
+        clip_method = true;
     }
 
-    // We only smooth the image if we are doing the smooth/clip method or possibly the interactive window method.
-    // Note that the convolution routines can only handle convolution when the image fits fully in core at present.
-    SPIIT smoothedImage;
+    // We only smooth the image if we are doing the smooth/clip method or possibly the interactive window method. Note that the convolution
+    // routines can only handle convolution when the image fits fully in core at present.
+    SPIIT smoothed_image;
     if (doSmooth_p) {
-        smoothedImage = _smoothImage();
+        smoothed_image = SmoothImage();
     }
 
     // Set output images shape and coordinates.
-    casacore::IPosition outImageShape;
-    const auto cSysOut = this->_makeOutputCoordinates(outImageShape, cSys, _image->shape(), momentAxis_p, removeAxis);
-    auto nMoments = moments_p.nelements();
+    casacore::IPosition out_image_shape;
+    const auto out_csys = this->_makeOutputCoordinates(out_image_shape, cSys, _image->shape(), momentAxis_p, remove_axis);
+    auto moments_size = moments_p.nelements();
 
     // Resize the vector of pointers for output images
-    std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> outPt(nMoments);
+    std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> output_images(moments_size);
 
     // Loop over desired output moments
     casacore::String suffix;
-    casacore::Bool goodUnits;
-    casacore::Bool giveMessage = true;
-    const auto imageUnits = _image->units();
+    casacore::Bool good_units;
+    casacore::Bool give_message = true;
+    const auto image_units = _image->units();
 
-    for (casacore::uInt i = 0; i < nMoments; ++i) {
+    for (casacore::uInt i = 0; i < moments_size; ++i) {
         // Set moment image units and assign pointer to output moments array Value of goodUnits is the same for each output moment image
-        casacore::Unit momentUnits;
-        goodUnits = this->_setOutThings(suffix, momentUnits, imageUnits, momentAxisUnits, moments_p(i), convertToVelocity_p);
+        casacore::Unit moment_units;
+        good_units = this->_setOutThings(suffix, moment_units, image_units, moment_axis_units, moments_p(i), convertToVelocity_p);
 
         // Create output image(s). Either casacore::PagedImage or TempImage
-        SPIIT imgp;
+        SPIIT output_image;
 
-        if (!doTemp) {
+        if (!do_temp) {
+            // Get the name of the original image file
             const casacore::String in = _image->name(false);
-            casacore::String outFileName;
+            casacore::String out_temp_file_name;
 
             if (moments_p.size() == 1) {
-                if (outName.empty()) {
-                    outFileName = in + suffix;
+                if (out_file_name.empty()) {
+                    out_temp_file_name = in + suffix;
                 } else {
-                    outFileName = outName;
+                    out_temp_file_name = out_file_name;
                 }
             } else {
-                if (outName.empty()) {
-                    outFileName = in + suffix;
+                if (out_file_name.empty()) {
+                    out_temp_file_name = in + suffix;
                 } else {
-                    outFileName = outName + suffix;
+                    out_temp_file_name = out_file_name + suffix;
                 }
             }
 
             if (!overWriteOutput_p) {
-                casacore::NewFile x;
+                casacore::NewFile new_file;
                 casacore::String error;
-                if (!x.valueOK(outFileName, error)) {
+                if (!new_file.valueOK(out_temp_file_name, error)) {
                     throw casacore::AipsError(error);
                 }
             }
 
-            imgp.reset(new casacore::PagedImage<T>(outImageShape, cSysOut, outFileName));
-            os_p << casacore::LogIO::NORMAL << "Created " << outFileName << casacore::LogIO::POST;
+            output_image.reset(new casacore::PagedImage<T>(out_image_shape, out_csys, out_temp_file_name));
+            os_p << casacore::LogIO::NORMAL << "Created " << out_temp_file_name << casacore::LogIO::POST;
 
         } else {
-            imgp.reset(new casacore::TempImage<T>(casacore::TiledShape(outImageShape), cSysOut));
+            output_image.reset(new casacore::TempImage<T>(casacore::TiledShape(out_image_shape), out_csys));
             os_p << casacore::LogIO::NORMAL << "Created TempImage" << casacore::LogIO::POST;
         }
 
-        ThrowIf(!imgp, "Failed to create output file");
-        imgp->setMiscInfo(_image->miscInfo());
-        imgp->setImageInfo(_image->imageInfo());
-        imgp->appendLog(_image->logger());
-        imgp->makeMask("mask0", true, true);
+        ThrowIf(!output_image, "Failed to create output file");
+        output_image->setMiscInfo(_image->miscInfo());
+        output_image->setImageInfo(_image->imageInfo());
+        output_image->appendLog(_image->logger());
+        output_image->makeMask("mask0", true, true);
 
         // Set output image units if possible
-        if (goodUnits) {
-            imgp->setUnits(momentUnits);
+        if (good_units) {
+            output_image->setUnits(moment_units);
         } else {
-            if (giveMessage) {
+            if (give_message) {
                 os_p << casacore::LogIO::NORMAL << "Could not determine the units of the moment image(s) so the units" << endl;
                 os_p << "will be the same as those of the input image. This may not be very useful." << casacore::LogIO::POST;
-                giveMessage = false;
+                give_message = false;
             }
         }
 
-        outPt[i] = imgp;
+        output_images[i] = output_image;
     }
 
-    // If the user is using the automatic, non-fitting window method, they need a good assessment of the noise.
-    // The user can input that value, but if they don't, we work it out here.
+    // If the user is using the automatic, non-fitting window method, they need a good assessment of the noise. The user can input that
+    // value, but if they don't, we work it out here.
     T noise;
     if (stdDeviation_p <= T(0) && (doWindow_p || (doFit_p && !doWindow_p))) {
-        if (smoothedImage) {
+        if (smoothed_image) {
             os_p << casacore::LogIO::NORMAL << "Evaluating noise level from smoothed image" << casacore::LogIO::POST;
-            _whatIsTheNoise(noise, *smoothedImage);
+            WhatIsTheNoise(noise, *smoothed_image);
 
         } else {
             os_p << casacore::LogIO::NORMAL << "Evaluating noise level from input image" << casacore::LogIO::POST;
-            _whatIsTheNoise(noise, *_image);
+            WhatIsTheNoise(noise, *_image);
         }
         stdDeviation_p = noise;
     }
 
-    // Create appropriate MomentCalculator object
     os_p << casacore::LogIO::NORMAL << "Begin computation of moments" << casacore::LogIO::POST;
 
-    shared_ptr<MomentCalcBase<T>> momentCalculator;
-    if (clipMethod || smoothClipMethod) {
-        momentCalculator.reset(new MomentClip<T>(smoothedImage, *this, os_p, outPt.size()));
+    // Create appropriate MomentCalculator object
+    shared_ptr<MomentCalcBase<T>> moment_calculator;
+    if (clip_method || smooth_clip_method) {
+        moment_calculator.reset(new MomentClip<T>(smoothed_image, *this, os_p, output_images.size()));
 
-    } else if (windowMethod) {
-        momentCalculator.reset(new MomentWindow<T>(smoothedImage, *this, os_p, outPt.size()));
+    } else if (window_method) {
+        moment_calculator.reset(new MomentWindow<T>(smoothed_image, *this, os_p, output_images.size()));
 
-    } else if (fitMethod) {
-        momentCalculator.reset(new MomentFit<T>(*this, os_p, outPt.size()));
+    } else if (fit_method) {
+        moment_calculator.reset(new MomentFit<T>(*this, os_p, output_images.size()));
     }
 
     // Iterate optimally through the image, compute the moments, fill the output lattices
-    unique_ptr<casa::ImageMomentsProgress> pProgressMeter;
+    unique_ptr<casa::ImageMomentsProgress> progress_meter;
     if (showProgress_p) {
-        pProgressMeter.reset(new casa::ImageMomentsProgress());
-        if (_progressMonitor) {
-            pProgressMeter->setProgressMonitor(_progressMonitor);
+        progress_meter.reset(new casa::ImageMomentsProgress());
+        if (_progress_monitor) {
+            progress_meter->setProgressMonitor(_progress_monitor);
         }
     }
 
-    casacore::uInt n = outPt.size();
-    casacore::PtrBlock<casacore::MaskedLattice<T>*> ptrBlock(n);
-    for (casacore::uInt i = 0; i < n; ++i) {
-        ptrBlock[i] = outPt[i].get();
+    casacore::uInt out_images_size = output_images.size();
+    casacore::PtrBlock<casacore::MaskedLattice<T>*> ptr_blocks(out_images_size);
+    for (casacore::uInt i = 0; i < out_images_size; ++i) {
+        ptr_blocks[i] = output_images[i].get();
     }
 
     // Do expensive calculation
-    lineMultiApply(ptrBlock, *_image, *momentCalculator, momentAxis_p, pProgressMeter.get());
+    LineMultiApply(ptr_blocks, *_image, *moment_calculator, momentAxis_p, progress_meter.get());
 
-    if (windowMethod || fitMethod) {
-        if (momentCalculator->nFailedFits() != 0) {
-            os_p << casacore::LogIO::NORMAL << "There were " << momentCalculator->nFailedFits() << " failed fits" << casacore::LogIO::POST;
+    if (window_method || fit_method) {
+        if (moment_calculator->nFailedFits() != 0) {
+            os_p << casacore::LogIO::NORMAL << "There were " << moment_calculator->nFailedFits() << " failed fits" << casacore::LogIO::POST;
         }
     }
 
     if (_stop) {
-        // Clear the output image ptr vector if calculation is cancelled
-        outPt.clear();
+        // Clear the output image ptrs vector if calculation is cancelled
+        output_images.clear();
     } else {
-        for (auto& p : outPt) {
-            p->flush();
+        for (auto& output_image : output_images) {
+            output_image->flush();
         }
     }
 
-    return outPt;
+    return output_images;
 }
 
-// casacore::Smooth image. casacore::Input masked pixels are zeros before smoothing.
-// The output smoothed image is masked as well to reflect the input mask.
+// casacore::Smooth image. casacore::Input masked pixels are zeros before smoothing. The output smoothed image is masked as well to reflect
+// the input mask.
 template <class T>
-SPIIT ImageMoments<T>::_smoothImage() {
-    auto axMax = max(smoothAxes_p) + 1;
-    ThrowIf(axMax > casacore::Int(_image->ndim()), "You have specified an illegal smoothing axis");
+SPIIT ImageMoments<T>::SmoothImage() {
+    auto max_axis = max(smoothAxes_p) + 1;
+    ThrowIf(max_axis > casacore::Int(_image->ndim()), "You have specified an illegal smoothing axis");
 
-    SPIIT smoothedImage;
+    SPIIT smoothed_image;
     if (smoothOut_p.empty()) {
-        smoothedImage.reset(new casacore::TempImage<T>(_image->shape(), _image->coordinates()));
+        smoothed_image.reset(new casacore::TempImage<T>(_image->shape(), _image->coordinates()));
     } else {
-        // This image has already been checked in setSmoothOutName
-        // to not exist
-        smoothedImage.reset(new casacore::PagedImage<T>(_image->shape(), _image->coordinates(), smoothOut_p));
+        // This image has already been checked in setSmoothOutName to not exist
+        smoothed_image.reset(new casacore::PagedImage<T>(_image->shape(), _image->coordinates(), smoothOut_p));
     }
 
-    smoothedImage->setMiscInfo(_image->miscInfo());
+    smoothed_image->setMiscInfo(_image->miscInfo());
 
     // Do the convolution. Conserve flux.
-    casa::SepImageConvolver<T> sic(*_image, os_p, true);
-    auto n = smoothAxes_p.size();
-    for (casacore::uInt i = 0; i < n; ++i) {
+    casa::SepImageConvolver<T> sep_image_con(*_image, os_p, true);
+    auto smooth_axes_size = smoothAxes_p.size();
+    for (casacore::uInt i = 0; i < smooth_axes_size; ++i) {
         casacore::VectorKernel::KernelTypes type = casacore::VectorKernel::KernelTypes(kernelTypes_p[i]);
-        sic.setKernel(casacore::uInt(smoothAxes_p[i]), type, kernelWidths_p[i], true, false, 1.0);
+        sep_image_con.setKernel(casacore::uInt(smoothAxes_p[i]), type, kernelWidths_p[i], true, false, 1.0);
     }
-    sic.convolve(*smoothedImage);
+    sep_image_con.convolve(*smoothed_image);
 
-    return smoothedImage;
+    return smoothed_image;
 }
 
-// Determine the noise level in the image by first making a histogram of
-// the image, then fitting a Gaussian between the 25% levels to give sigma
-// Find a histogram of the image
+// Determine the noise level in the image by first making a histogram of the image, then fitting a Gaussian between the 25% levels to give
+// sigma Find a histogram of the image
 template <class T>
-void ImageMoments<T>::_whatIsTheNoise(T& sigma, const casacore::ImageInterface<T>& image) {
-    casa::ImageHistograms<T> histo(image, false);
-    const casacore::uInt nBins = 100;
-    histo.setNBins(nBins);
+void ImageMoments<T>::WhatIsTheNoise(T& sigma, const casacore::ImageInterface<T>& image) {
+    casa::ImageHistograms<T> hist(image, false);
+    const casacore::uInt num_of_bins = 100;
+    hist.setNBins(num_of_bins);
 
-    // It is safe to use casacore::Vector rather than casacore::Array because
-    // we are binning the whole image and ImageHistograms will only resize
-    // these Vectors to a 1-D shape
-    casacore::Vector<T> values, counts;
-    ThrowIf(!histo.getHistograms(values, counts), "Unable to make histogram of image");
+    // It is safe to use casacore::Vector rather than casacore::Array because we are binning the whole image and ImageHistograms will only
+    // resize these Vectors to a 1-D shape
+    casacore::Vector<T> values, counts; // (x, y) for histograms vectors
+    ThrowIf(!hist.getHistograms(values, counts), "Unable to make histogram of image");
 
     // Enter into a plot/fit loop
-    auto binWidth = values(1) - values(0);
-    T xMin, xMax, yMin, yMax;
-    xMin = values(0) - binWidth;
-    xMax = values(nBins - 1) + binWidth;
-    casacore::Float xMinF = casacore::Float(real(xMin));
-    casacore::Float xMaxF = casacore::Float(real(xMax));
-    casacore::LatticeStatsBase::stretchMinMax(xMinF, xMaxF);
-    casacore::IPosition yMinPos(1), yMaxPos(1);
-    minMax(yMin, yMax, yMinPos, yMaxPos, counts);
-    casacore::Float yMaxF = casacore::Float(real(yMax));
-    yMaxF += yMaxF / 20;
+    auto bin_width = values(1) - values(0);
+    T x_min, x_max, y_min, y_max;
+
+    x_min = values(0) - bin_width;
+    x_max = values(num_of_bins - 1) + bin_width;
+    casacore::Float x_min_f = casacore::Float(real(x_min));
+    casacore::Float x_max_f = casacore::Float(real(x_max));
+    casacore::LatticeStatsBase::stretchMinMax(x_min_f, x_max_f);
+
+    casacore::IPosition y_min_pos(1), y_max_pos(1);
+    casacore::minMax(y_min, y_max, y_min_pos, y_max_pos, counts);
+    casacore::Float y_max_f = casacore::Float(real(y_max));
+    y_max_f += y_max_f / 20;
+
     auto first = true;
     auto more = true;
 
     while (more) {
-        casacore::Int iMin = 0;
-        casacore::Int iMax = 0;
+        casacore::Int index_min = 0;
+        casacore::Int index_max = 0;
 
         if (first) {
             first = false;
 
-            iMax = yMaxPos(0);
+            index_max = y_max_pos(0);
             casacore::uInt i;
-            for (i = yMaxPos(0); i < nBins; i++) {
-                if (counts(i) < yMax / 4) {
-                    iMax = i;
+            for (i = y_max_pos(0); i < num_of_bins; i++) {
+                if (counts(i) < y_max / 4) {
+                    index_max = i;
                     break;
                 }
             }
 
-            iMin = yMinPos(0);
-            for (i = yMaxPos(0); i > 0; i--) {
-                if (counts(i) < yMax / 4) {
-                    iMin = i;
+            index_min = y_min_pos(0);
+            for (i = y_max_pos(0); i > 0; i--) {
+                if (counts(i) < y_max / 4) {
+                    index_min = i;
                     break;
                 }
             }
 
             // Check range is sensible
-            if (iMax <= iMin || abs(iMax - iMin) < 3) {
+            if (index_max <= index_min || abs(index_max - index_min) < 3) {
                 os_p << casacore::LogIO::NORMAL << "The image histogram is strangely shaped, fitting to all bins" << casacore::LogIO::POST;
-                iMin = 0;
-                iMax = nBins - 1;
+                index_min = 0;
+                index_max = num_of_bins - 1;
             }
         }
 
-        // Now generate the distribution we want to fit.  Normalize to
-        // peak 1 to help fitter.
-        const casacore::uInt nPts2 = iMax - iMin + 1;
-        casacore::Vector<T> xx(nPts2);
-        casacore::Vector<T> yy(nPts2);
+        // Now generate the distribution we want to fit. Normalize to peak 1 to help fitter.
+        const casacore::uInt num_of_points = index_max - index_min + 1;
+        casacore::Vector<T> data_x(num_of_points);
+        casacore::Vector<T> data_y(num_of_points);
         casacore::Int i;
 
-        for (i = iMin; i <= iMax; i++) {
-            xx(i - iMin) = values(i);
-            yy(i - iMin) = counts(i) / yMax;
+        for (i = index_min; i <= index_max; i++) {
+            data_x(i - index_min) = values(i);
+            data_y(i - index_min) = counts(i) / y_max;
         }
 
-        // Create fitter
+        // Create a fitter
         casacore::NonLinearFitLM<T> fitter;
         casacore::Gaussian1D<casacore::AutoDiff<T>> gauss;
         fitter.setFunction(gauss);
 
-        // Initial guess
+        // Guess initial fit parameters
         casacore::Vector<T> v(3);
-        v(0) = 1.0;                  // height
-        v(1) = values(yMaxPos(0));   // position
-        v(2) = nPts2 * binWidth / 2; // width
+        v(0) = 1.0;                           // height
+        v(1) = values(y_max_pos(0));          // position
+        v(2) = num_of_points * bin_width / 2; // width
 
         // Fit
         fitter.setParameterValues(v);
         fitter.setMaxIter(50);
-        T tol = 0.001;
-        fitter.setCriteria(tol);
-        casacore::Vector<T> resultSigma(nPts2);
-        resultSigma = 1;
+        T criteria = 0.001;
+        fitter.setCriteria(criteria);
+        casacore::Vector<T> result_sigma(num_of_points);
+        result_sigma = 1;
         casacore::Vector<T> solution;
         casacore::Bool fail = false;
 
         try {
-            solution = fitter.fit(xx, yy, resultSigma);
+            solution = fitter.fit(data_x, data_y, result_sigma);
         } catch (const casacore::AipsError& x) {
             fail = true;
         }
 
         // Return values of fit
         if (!fail && fitter.converged()) {
-            sigma = T(abs(solution(2)) / C::sqrt2);
+            sigma = T(abs(solution(2)) / casacore::C::sqrt2);
             os_p << casacore::LogIO::NORMAL << "*** The fitted standard deviation of the noise is " << sigma << endl
                  << casacore::LogIO::POST;
         } else {
@@ -523,186 +515,192 @@ void ImageMoments<T>::_whatIsTheNoise(T& sigma, const casacore::ImageInterface<T
 }
 
 template <class T>
-void ImageMoments<T>::setProgressMonitor(casa::ImageMomentsProgressMonitor* monitor) {
-    _progressMonitor = monitor;
+void ImageMoments<T>::SetProgressMonitor(casa::ImageMomentsProgressMonitor* monitor) {
+    _progress_monitor = monitor;
 }
 
 template <class T>
-void ImageMoments<T>::lineMultiApply(PtrBlock<MaskedLattice<T>*>& latticeOut, const MaskedLattice<T>& latticeIn,
-    LineCollapser<T, T>& collapser, uInt collapseAxis, LatticeProgress* tellProgress) {
-    // First verify that all the output lattices have the same shape and tile shape
-    const uInt nOut = latticeOut.nelements();
-    AlwaysAssert(nOut > 0, AipsError);
+void ImageMoments<T>::StopCalculation() {
+    _stop = true;
+}
 
-    const IPosition shape(latticeOut[0]->shape());
-    const uInt outDim = shape.nelements();
-    for (uInt i = 1; i < nOut; ++i) {
-        AlwaysAssert(latticeOut[i]->shape() == shape, AipsError);
+template <class T>
+void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<T>*>& lattice_out,
+    const casacore::MaskedLattice<T>& lattice_in, casacore::LineCollapser<T, T>& collapser, casacore::uInt collapse_axis,
+    casacore::LatticeProgress* tell_progress) {
+    // First verify that all the output lattices have the same shape and tile shape
+    const casacore::uInt n_out = lattice_out.nelements();
+    AlwaysAssert(n_out > 0, AipsError);
+
+    const casacore::IPosition out_shape(lattice_out[0]->shape());
+    const casacore::uInt out_dim = out_shape.nelements();
+    for (casacore::uInt i = 1; i < n_out; ++i) {
+        AlwaysAssert(lattice_out[i]->shape() == out_shape, AipsError);
     }
 
-    const IPosition& inShape = latticeIn.shape();
-    IPosition outPos(outDim, 0);
-    IPosition outShape(outDim, 1);
+    const casacore::IPosition& in_shape = lattice_in.shape();
+    casacore::IPosition out_pos(out_dim, 0);
+    // casacore::IPosition outShape(out_dim, 1);
 
     // Does the input has a mask?
     // If not, can the collapser handle a null mask.
-    Bool useMask = latticeIn.isMasked() ? True : (!collapser.canHandleNullMask());
-    const uInt inNDim = inShape.size();
-    const IPosition displayAxes = IPosition::makeAxisPath(inNDim).otherAxes(inNDim, IPosition(1, collapseAxis));
-    const uInt nDisplayAxes = displayAxes.size();
-    Vector<T> result(nOut);
-    Vector<Bool> resultMask(nOut);
+    casacore::Bool use_mask = lattice_in.isMasked() ? casacore::True : (!collapser.canHandleNullMask());
+    const casacore::uInt in_ndim = in_shape.size();
+    const casacore::IPosition display_axes = IPosition::makeAxisPath(in_ndim).otherAxes(in_ndim, IPosition(1, collapse_axis));
+    const casacore::uInt n_display_axes = display_axes.size();
+
+    casacore::Vector<T> result(n_out);
+    casacore::Vector<casacore::Bool> result_mask(n_out);
 
     // read in larger chunks than before, because that was very
     // Inefficient and brought NRAO cluster to a snail's pace,
     // and then do the accounting for the input lines in memory
-    IPosition chunkSliceStart(inNDim, 0);
-    IPosition chunkSliceEnd = chunkSliceStart;
-    chunkSliceEnd[collapseAxis] = inShape[collapseAxis] - 1;
-    const IPosition chunkSliceEndAtChunkIterBegin = chunkSliceEnd;
-    IPosition chunkShapeInit = _chunkShape(collapseAxis, latticeIn);
-    LatticeStepper myStepper(inShape, chunkShapeInit, LatticeStepper::RESIZE);
-    RO_MaskedLatticeIterator<T> latIter(latticeIn, myStepper);
+    casacore::IPosition chunk_slice_start(in_ndim, 0);
+    casacore::IPosition chunk_slice_end = chunk_slice_start;
+    chunk_slice_end[collapse_axis] = in_shape[collapse_axis] - 1;
+    const casacore::IPosition chunk_slice_end_at_chunk_iter_begin = chunk_slice_end;
+    casacore::IPosition chunk_shape_init = ChunkShape(collapse_axis, lattice_in);
+    casacore::LatticeStepper my_stepper(in_shape, chunk_shape_init, LatticeStepper::RESIZE);
+    casacore::RO_MaskedLatticeIterator<T> lat_iter(lattice_in, my_stepper);
 
-    IPosition curPos;
-    static const Vector<Bool> noMask;
+    casacore::IPosition cur_pos;
+    static const casacore::Vector<casacore::Bool> no_mask;
 
-    if (tellProgress) {
-        uInt nExpectedIters = inShape.product() / chunkShapeInit.product();
-        tellProgress->init(nExpectedIters);
+    if (tell_progress) {
+        casacore::uInt n_expected_oters = in_shape.product() / chunk_shape_init.product();
+        tell_progress->init(n_expected_oters);
     }
 
-    uInt nDone = 0;
-    for (latIter.reset(); !latIter.atEnd(); ++latIter) {
+    casacore::uInt n_done = 0;
+
+    // Iterate through a cube image, chunk by chunk
+    for (lat_iter.reset(); !lat_iter.atEnd(); ++lat_iter) {
         if (_stop) {
             break;
         }
 
-        const IPosition cp = latIter.position();
-        const Array<T>& chunk = latIter.cursor();
-        IPosition chunkShape = chunk.shape();
-        const Array<Bool> maskChunk = useMask ? latIter.getMask() : Array<Bool>();
+        const casacore::IPosition iter_pos = lat_iter.position();
+        const casacore::Array<T>& chunk = lat_iter.cursor();
+        casacore::IPosition chunk_shape = chunk.shape();
+        const casacore::Array<casacore::Bool> mask_chunk = use_mask ? lat_iter.getMask() : Array<Bool>();
 
-        chunkSliceStart = 0;
-        chunkSliceEnd = chunkSliceEndAtChunkIterBegin;
-        IPosition resultArrayShape = chunkShape;
-        resultArrayShape[collapseAxis] = 1;
-        std::vector<Array<T>> resultArray(nOut);
-        std::vector<Array<Bool>> resultArrayMask(nOut);
+        chunk_slice_start = 0;
+        chunk_slice_end = chunk_slice_end_at_chunk_iter_begin;
+        casacore::IPosition result_array_shape = chunk_shape;
+        result_array_shape[collapse_axis] = 1;
+        std::vector<casacore::Array<T>> result_arrays(n_out);
+        std::vector<casacore::Array<casacore::Bool>> result_array_masks(n_out);
 
         // need to initialize this way rather than doing it in the constructor,
         // because using a single Array in the constructor means that all Arrays
         // in the vector reference the same Array.
-        for (uInt k = 0; k < nOut; k++) {
-            resultArray[k] = Array<T>(resultArrayShape);
-            resultArrayMask[k] = Array<Bool>(resultArrayShape);
+        for (casacore::uInt k = 0; k < n_out; k++) {
+            result_arrays[k] = Array<T>(result_array_shape);
+            result_array_masks[k] = Array<Bool>(result_array_shape);
         }
 
-        Bool done = False;
+        casacore::Bool done = casacore::False;
+
+        // Iterate through a chunk, slice by slice on the output image display axes
         while (!done) {
             if (_stop) {
                 break;
             }
 
-            Vector<T> data(chunk(chunkSliceStart, chunkSliceEnd));
-            Vector<Bool> mask = useMask ? Vector<Bool>(maskChunk(chunkSliceStart, chunkSliceEnd)) : noMask;
-            curPos = cp + chunkSliceStart;
+            casacore::Vector<T> data(chunk(chunk_slice_start, chunk_slice_end));
+            casacore::Vector<Bool> mask =
+                use_mask ? casacore::Vector<casacore::Bool>(mask_chunk(chunk_slice_start, chunk_slice_end)) : no_mask;
+            cur_pos = iter_pos + chunk_slice_start;
 
-            collapser.multiProcess(result, resultMask, data, mask, curPos);
+            collapser.multiProcess(result, result_mask, data, mask, cur_pos);
 
-            for (uInt k = 0; k < nOut; ++k) {
-                resultArray[k](chunkSliceStart) = result[k];
-                resultArrayMask[k](chunkSliceStart) = resultMask[k];
+            for (uInt k = 0; k < n_out; ++k) {
+                result_arrays[k](chunk_slice_start) = result[k];
+                result_array_masks[k](chunk_slice_start) = result_mask[k];
             }
 
             done = True;
-
-            for (uInt k = 0; k < nDisplayAxes; ++k) {
-                uInt dax = displayAxes[k];
-                if (chunkSliceStart[dax] < chunkShape[dax] - 1) {
-                    ++chunkSliceStart[dax];
-                    ++chunkSliceEnd[dax];
+            for (casacore::uInt k = 0; k < n_display_axes; ++k) {
+                casacore::uInt dax = display_axes[k];
+                if (chunk_slice_start[dax] < chunk_shape[dax] - 1) {
+                    ++chunk_slice_start[dax];
+                    ++chunk_slice_end[dax];
                     done = False;
                     break;
                 } else {
-                    chunkSliceStart[dax] = 0;
-                    chunkSliceEnd[dax] = 0;
+                    chunk_slice_start[dax] = 0;
+                    chunk_slice_end[dax] = 0;
                 }
             }
         }
 
         // put the result arrays in the output lattices
-        for (uInt k = 0; k < nOut; ++k) {
-            IPosition outpos = inNDim == outDim ? cp : cp.removeAxes(IPosition(1, collapseAxis));
-            Bool keepAxis = resultArray[k].ndim() == latticeOut[k]->ndim();
-            if (!keepAxis) {
-                resultArray[k].removeDegenerate(displayAxes);
+        for (casacore::uInt k = 0; k < n_out; ++k) {
+            casacore::IPosition result_pos = in_ndim == out_dim ? iter_pos : iter_pos.removeAxes(casacore::IPosition(1, collapse_axis));
+            casacore::Bool keep_axis = result_arrays[k].ndim() == lattice_out[k]->ndim();
+            if (!keep_axis) {
+                result_arrays[k].removeDegenerate(display_axes);
             }
 
-            latticeOut[k]->putSlice(resultArray[k], outpos);
+            lattice_out[k]->putSlice(result_arrays[k], result_pos);
 
-            if (latticeOut[k]->hasPixelMask()) {
-                Lattice<Bool>& maskOut = latticeOut[k]->pixelMask();
-                if (maskOut.isWritable()) {
-                    if (!keepAxis) {
-                        resultArrayMask[k].removeDegenerate(displayAxes);
+            if (lattice_out[k]->hasPixelMask()) {
+                casacore::Lattice<casacore::Bool>& mask_out = lattice_out[k]->pixelMask();
+                if (mask_out.isWritable()) {
+                    if (!keep_axis) {
+                        result_array_masks[k].removeDegenerate(display_axes);
                     }
-                    maskOut.putSlice(resultArrayMask[k], outpos);
+                    mask_out.putSlice(result_array_masks[k], result_pos);
                 }
             }
         }
 
-        if (tellProgress != 0) {
-            ++nDone;
-            tellProgress->nstepsDone(nDone);
+        if (tell_progress != 0) {
+            ++n_done;
+            tell_progress->nstepsDone(n_done);
         }
     }
 
-    if (tellProgress != 0) {
-        tellProgress->done();
+    if (tell_progress != 0) {
+        tell_progress->done();
     }
 }
 
 template <class T>
-IPosition ImageMoments<T>::_chunkShape(uInt axis, const MaskedLattice<T>& latticeIn) {
-    uInt ndim = latticeIn.ndim();
-    IPosition chunkShape(ndim, 1);
-    IPosition latShape = latticeIn.shape();
-    uInt nPixColAxis = latShape[axis];
-    chunkShape[axis] = nPixColAxis;
+casacore::IPosition ImageMoments<T>::ChunkShape(casacore::uInt axis, const casacore::MaskedLattice<T>& lattice_in) {
+    casacore::uInt ndim = lattice_in.ndim();
+    casacore::IPosition chunk_shape(ndim, 1);
+    casacore::IPosition lat_in_shape = lattice_in.shape();
+    casacore::uInt axis_length = lat_in_shape[axis];
+    chunk_shape[axis] = axis_length;
 
     // arbitrary, but reasonable, max memory limit in bytes for storing arrays in bytes
-    static const uInt limit = 2e7; // Set memory limit (Bytes)
-    static const uInt sizeT = sizeof(T);
-    static const uInt sizeBool = sizeof(Bool);
-    uInt chunkMult = latticeIn.isMasked() ? sizeT + sizeBool : sizeT;
-    uInt subChunkSize = chunkMult * nPixColAxis; // (Bytes)
+    static const casacore::uInt limit = 2e7; // Set memory limit (Bytes)
+    static const casacore::uInt size_of_T = sizeof(T);
+    static const casacore::uInt size_of_Bool = sizeof(casacore::Bool);
+    casacore::uInt chunk_mult = lattice_in.isMasked() ? size_of_T + size_of_Bool : size_of_T;
+    casacore::uInt sub_chunk_size = chunk_mult * axis_length; // (Bytes)
 
     // integer division
-    const uInt maxChunkSize = limit / subChunkSize;
-    if (maxChunkSize <= 1) {
+    const casacore::uInt max_chunk_size = limit / sub_chunk_size;
+    if (max_chunk_size <= 1) {
         // can only go row by row
-        return chunkShape;
+        return chunk_shape;
     }
 
-    ssize_t x = maxChunkSize;
-    for (uInt i = 0; i < ndim; ++i) {
+    ssize_t x = max_chunk_size;
+    for (casacore::uInt i = 0; i < ndim; ++i) {
         if (i != axis) {
-            chunkShape[i] = std::min(x, latShape[i]);
+            chunk_shape[i] = std::min(x, lat_in_shape[i]);
             // integer division
-            x /= chunkShape[i];
+            x /= chunk_shape[i];
             if (x == 0) {
                 break;
             }
         }
     }
 
-    return chunkShape;
-}
-
-template <class T>
-void ImageMoments<T>::StopCalculation() {
-    _stop = true;
+    return chunk_shape;
 }
 
 #endif // CARTA_BACKEND_ANALYSIS_IMAGEMOMENTS_TCC_
