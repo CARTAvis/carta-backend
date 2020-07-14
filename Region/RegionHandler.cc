@@ -35,7 +35,7 @@ int RegionHandler::GetNextRegionId() {
 }
 
 bool RegionHandler::SetRegion(int& region_id, int file_id, const std::string& name, CARTA::RegionType type,
-    const std::vector<CARTA::Point>& points, float rotation, casacore::CoordinateSystem* csys, casacore::IPosition& shape) {
+    const std::vector<CARTA::Point>& points, float rotation, casacore::CoordinateSystem* csys) {
     // Set region params for region id; if id < 0, create new id
     bool valid_region(false);
     if (_regions.count(region_id)) {
@@ -49,7 +49,7 @@ bool RegionHandler::SetRegion(int& region_id, int file_id, const std::string& na
         if (region_id < 0) {
             region_id = GetNextRegionId();
         }
-        auto region = std::shared_ptr<Region>(new Region(file_id, name, type, points, rotation, csys, shape));
+        auto region = std::shared_ptr<Region>(new Region(file_id, name, type, points, rotation, csys));
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
             valid_region = true;
@@ -138,8 +138,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     int region_id = GetNextRegionId();
     for (auto& region_state : region_states) {
         auto image_csys = frame->CoordinateSystem();
-        auto image_shape = frame->ImageShape();
-        auto region = std::shared_ptr<Region>(new Region(region_state, image_csys, image_shape));
+        auto region = std::shared_ptr<Region>(new Region(region_state, image_csys));
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
 

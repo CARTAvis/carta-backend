@@ -85,8 +85,8 @@ namespace carta {
 class Region {
 public:
     Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-        casacore::CoordinateSystem* csys, casacore::IPosition& shape);
-    Region(const RegionState& state, casacore::CoordinateSystem* csys, casacore::IPosition& shape);
+        casacore::CoordinateSystem* csys);
+    Region(const RegionState& state, casacore::CoordinateSystem* csys);
     ~Region();
 
     inline bool IsValid() { // control points validated
@@ -146,7 +146,7 @@ private:
     // Apply region to any image (convert to output coord sys) and return in Record
     casacore::TableRecord GetRegionPointsRecord(
         int file_id, casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
-    casacore::TableRecord GetControlPointsRecord(); // use control points for reference image, no conversion
+    casacore::TableRecord GetControlPointsRecord(int ndim); // use control points for reference image, no conversion
     casacore::TableRecord GetPointRecord(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
     casacore::TableRecord GetPolygonRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
@@ -157,7 +157,6 @@ private:
 
     // coord sys and shape of reference image
     casacore::CoordinateSystem* _coord_sys;
-    casacore::IPosition _image_shape;
 
     // Reference region cache
     std::mutex _region_mutex;                              // creation of casacore regions is not threadsafe

@@ -7,7 +7,6 @@
 
 #include <casacore/casa/Quanta/Quantum.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
-#include <casacore/images/Regions/ImageRegion.h>
 #include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/WCEllipsoid.h>
 #include <casacore/images/Regions/WCPolygon.h>
@@ -20,9 +19,8 @@
 using namespace carta;
 
 Region::Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-    casacore::CoordinateSystem* image_csys, casacore::IPosition& image_shape)
+    casacore::CoordinateSystem* image_csys)
     : _coord_sys(image_csys),
-      _image_shape(image_shape),
       _valid(false),
       _region_state_changed(false),
       _region_changed(false),
@@ -32,9 +30,8 @@ Region::Region(int file_id, const std::string& name, CARTA::RegionType type, con
     _valid = UpdateState(file_id, name, type, points, rotation);
 }
 
-Region::Region(const RegionState& state, casacore::CoordinateSystem* image_csys, casacore::IPosition& image_shape)
+Region::Region(const RegionState& state, casacore::CoordinateSystem* image_csys)
     : _coord_sys(image_csys),
-      _image_shape(image_shape),
       _valid(false),
       _region_state_changed(false),
       _region_changed(false),
@@ -189,7 +186,7 @@ casacore::TableRecord Region::GetRegionPointsRecord(
     // Convert control points to output coord sys if needed, and return completed record.
     casacore::TableRecord record;
     if (file_id == _region_state.reference_file_id) {
-        record = GetControlPointsRecord();
+        record = GetControlPointsRecord(output_shape.size());
     } else {
         switch (_region_state.type) {
             case CARTA::RegionType::POINT:
@@ -535,13 +532,12 @@ bool Region::EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::
     return true;
 }
 
-casacore::TableRecord Region::GetControlPointsRecord() {
+casacore::TableRecord Region::GetControlPointsRecord(int ndim) {
     // Return region Record in pixel coords in format of LCRegion::toRecord(); no conversion
     casacore::TableRecord record;
 
     switch (_region_state.type) {
         case CARTA::RegionType::POINT: {
-            size_t ndim(_image_shape.size());
             casacore::Vector<casacore::Float> blc(ndim, 0.0), trc(ndim, 0.0);
             blc(0) = _region_state.control_points[0].x();
             blc(1) = _region_state.control_points[0].y();
