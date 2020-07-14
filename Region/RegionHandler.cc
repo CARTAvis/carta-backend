@@ -5,6 +5,7 @@
 #include <chrono>
 
 #include <casacore/lattices/LRegions/LCBox.h>
+#include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
 
 #include "../ImageStats/StatsCalculator.h"
@@ -34,11 +35,11 @@ int RegionHandler::GetNextRegionId() {
 }
 
 bool RegionHandler::SetRegion(int& region_id, int file_id, const std::string& name, CARTA::RegionType type,
-    const std::vector<CARTA::Point>& points, float rotation, casacore::CoordinateSystem* csys) {
+    const std::vector<CARTA::Point>& points, float rotation, casacore::CoordinateSystem* csys, casacore::IPosition& shape) {
     // Set region params for region id; if id < 0, create new id
     bool valid_region(false);
     if (_regions.count(region_id)) {
-        _regions.at(region_id)->UpdateState(file_id, name, type, points, rotation, csys);
+        _regions.at(region_id)->UpdateState(file_id, name, type, points, rotation);
         valid_region = _regions.at(region_id)->IsValid();
         if (_regions.at(region_id)->RegionChanged()) {
             UpdateNewSpectralRequirements(region_id); // set all req "new"
@@ -48,7 +49,7 @@ bool RegionHandler::SetRegion(int& region_id, int file_id, const std::string& na
         if (region_id < 0) {
             region_id = GetNextRegionId();
         }
-        auto region = std::shared_ptr<Region>(new Region(file_id, name, type, points, rotation, csys));
+        auto region = std::shared_ptr<Region>(new Region(file_id, name, type, points, rotation, csys, shape));
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
             valid_region = true;
@@ -131,13 +132,14 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Set reference file pointer
     _frames[file_id] = frame;
 
-    // Set Regions from RegionStates and complete message
+    // Set Region from RegionState and complete message
     import_ack.set_success(true);
     import_ack.set_message(error);
     int region_id = GetNextRegionId();
     for (auto& region_state : region_states) {
-        auto region_csys = frame->CoordinateSystem();
-        auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
+        auto image_csys = frame->CoordinateSystem();
+        auto image_shape = frame->ImageShape();
+        auto region = std::shared_ptr<Region>(new Region(region_state, image_csys, image_shape));
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
 
@@ -658,19 +660,35 @@ bool RegionHandler::ApplyRegionToFile(
 
     try {
         casacore::LCRegion* applied_region = ApplyRegionToFile(region_id, file_id);
+        casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
         if (applied_region == nullptr) {
             return false;
         }
 
-        // Create LCRegion with chan range and stokes using a slicer
+        // Create LCBox with chan range and stokes using a slicer
         casacore::Slicer chan_stokes_slicer = _frames.at(file_id)->GetImageSlicer(chan_range, stokes);
-        casacore::LCBox chan_stokes_box(chan_stokes_slicer, _frames.at(file_id)->ImageShape());
+        casacore::LCBox chan_stokes_box(chan_stokes_slicer, image_shape);
 
-        // Intersection combines applied_region limits in xy axes and chan_stokes_box limits in channel and stokes axes
-        casacore::LCIntersection final_region(*applied_region, chan_stokes_box);
+        // Set returned region
+        // Combine applied region with chan/stokes box
+        if (applied_region->shape().size() == image_shape.size()) {
+            // Intersection combines applied_region xy limits and box chan/stokes limits
+            casacore::LCBox chan_stokes_box(chan_stokes_slicer, image_shape);
+            casacore::LCIntersection final_region(*applied_region, chan_stokes_box);
+            region = casacore::ImageRegion(final_region);
+        } else {
+            // Extension extends applied_region in xy axes by chan/stokes axes only
+            // Remove xy axes from chan/stokes box
+            casacore::IPosition remove_xy(2, 0, 1);
+            chan_stokes_slicer =
+                casacore::Slicer(chan_stokes_slicer.start().removeAxes(remove_xy), chan_stokes_slicer.end().removeAxes(remove_xy));
+            casacore::LCBox chan_stokes_box(chan_stokes_slicer, image_shape.removeAxes(remove_xy));
 
-        // Return ImageRegion
-        region = casacore::ImageRegion(final_region);
+            casacore::IPosition extend_axes = casacore::IPosition::makeAxisPath(image_shape.size()).removeAxes(remove_xy);
+            casacore::LCExtension final_region(*applied_region, extend_axes, chan_stokes_box);
+            region = casacore::ImageRegion(final_region);
+        }
+
         return true;
     } catch (const casacore::AipsError& err) {
         std::cerr << "Error applying region " << region_id << " to file " << file_id << ": " << err.getMesg() << std::endl;

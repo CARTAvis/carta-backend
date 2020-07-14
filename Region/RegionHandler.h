@@ -21,7 +21,7 @@ public:
 
     // Regions
     bool SetRegion(int& region_id, int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points,
-        float rotation, casacore::CoordinateSystem* csys);
+        float rotation, casacore::CoordinateSystem* csys, casacore::IPosition& shape);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
 
