@@ -77,7 +77,7 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     return;
 }
 
-size_t SpectralLineRequest::WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void *userp) {
+size_t SpectralLineRequest::WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     size_t realsize = size * nmemb;
     struct MemoryStruct* mem = (struct MemoryStruct*)userp;
 
