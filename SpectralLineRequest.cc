@@ -28,37 +28,37 @@ SpectralLineRequest::~SpectralLineRequest() {}
 void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
     CURL* curl_handle;
     CURLcode res;
- 
+
     struct MemoryStruct chunk;
- 
+
     /* will be grown as needed by the realloc above */
     chunk.memory = (char*)malloc(1);
     chunk.size = 0;
- 
+
     curl_global_init(CURL_GLOBAL_ALL);
- 
+
     /* init the curl session */
     curl_handle = curl_easy_init();
- 
+
     /* specify URL to get */
     std::string frequencyRangeStr =
         "&frequency_units=MHz&from=" + std::to_string(frequencyRange.min()) + "&to=" + std::to_string(frequencyRange.max());
     std::string URL = SpectralLineRequest::SplatalogueURL + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
- 
+
     /* send all data to this function  */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, SpectralLineRequest::WriteMemoryCallback);
- 
+
     /* we pass our 'chunk' struct to the callback function */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void*)&chunk);
- 
+
     /* some servers don't like requests that are made without a user-agent
       field, so we provide one */
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
- 
+
     /* get it! */
     res = curl_easy_perform(curl_handle);
- 
+
     /* parsing fetched content */
     if (res == CURLE_OK) {
         SpectralLineRequest::ParsingQueryResult(chunk, spectral_line_response);
@@ -66,18 +66,18 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
         spectral_line_response.set_success(false);
         spectral_line_response.set_message(fmt::format("curl_easy_perform() failed: {}", curl_easy_strerror(res)));
     }
- 
+
     /* cleanup curl stuff */
     curl_easy_cleanup(curl_handle);
     free(chunk.memory);
- 
+
     /* we're done with libcurl, so clean it up */
     curl_global_cleanup();
- 
+
     return;
 }
 
-size_t SpectralLineRequest::WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+size_t SpectralLineRequest::WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
     struct MemoryStruct* mem = (struct MemoryStruct*)userp;
 
@@ -115,7 +115,7 @@ void SpectralLineRequest::ParsingQueryResult(const MemoryStruct& results, CARTA:
     while (std::getline(line_stream, line, '\n')) {
         std::istringstream data_token_stream(line);
         int column_index = 0;
-        while(std::getline(data_token_stream, token, '\t')) {
+        while (std::getline(data_token_stream, token, '\t')) {
             if (column_index < headers.size()) {
                 (data_columns[column_index]).push_back(token);
             }
