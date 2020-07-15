@@ -13,12 +13,8 @@ using namespace carta;
 
 #define REST_FREQUENCY_COLUMN_INDEX 2
 
-const std::string SpectralLineRequest::SplatalogueURL =
-    "https://www.cv.nrao.edu/php/splat/"
-    "c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas&"
-    "displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU&displayRecomb=displayRecomb&displayLisa=displayLisa&"
-    "displayRFI=displayRFI&ls1=ls1&ls2=ls2&ls3=ls3&ls4=ls4&ls5=ls5&el1=el1&el2=el2&el3=el3&el4=el4&show_unres_qn=show_unres_qn&"
-    "submit=Export&export_type=current&export_delimiter=tab&offset=0&limit=100000&range=on";
+const std::string SpectralLineRequest::SplatalogueURLBase =
+    "https://www.cv.nrao.edu/php/splat/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
 
 SpectralLineRequest::SpectralLineRequest() {}
 
@@ -43,9 +39,22 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
     /* specify URL to get */
+    // TODO: assemble parameters when frontend offers split settings
+    std::string lineListParameters =
+        "&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas"
+        "&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU"
+        "&displayRecomb=displayRecomb&displayLisa=displayLisa&displayRFI=displayRFI";
+    std::string lineStrengthParameters =
+        "&ls1=ls1&ls2=ls2&ls3=ls3&ls4=ls4&ls5=ls5";
+    std::string energyLevelParameters =
+        "&el1=el1&el2=el2&el3=el3&el4=el4";
+    std::string miscellaneousParameters =
+        "&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab"
+        "&offset=0&limit=100000&range=on";
     std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}",
         std::to_string(frequencyRange.min()), std::to_string(frequencyRange.max()));
-    std::string URL = SpectralLineRequest::SplatalogueURL + frequencyRangeStr;
+    std::string URL = SpectralLineRequest::SplatalogueURLBase + lineListParameters + lineStrengthParameters +
+        energyLevelParameters + miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
     /* fetch data & parse */

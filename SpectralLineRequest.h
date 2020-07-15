@@ -12,7 +12,7 @@ public:
     void SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response);
 
 private:
-    static const std::string SplatalogueURL;
+    static const std::string SplatalogueURLBase;
     static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp);
     static void ParseQueryResult(const std::string& results, CARTA::SpectralLineResponse& spectral_line_response);
 };
