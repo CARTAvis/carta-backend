@@ -1,4 +1,4 @@
-#include "SpectralLineRequest.h"
+#include "SpectralLineCrawler.h"
 
 #include <curl/curl.h>
 
@@ -13,19 +13,19 @@ using namespace carta;
 
 #define REST_FREQUENCY_COLUMN_INDEX 2
 
-const std::string SpectralLineRequest::SplatalogueURLBase =
+const std::string SpectralLineCrawler::SplatalogueURLBase =
     "https://www.cv.nrao.edu/php/splat/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
 
-SpectralLineRequest::SpectralLineRequest() {}
+SpectralLineCrawler::SpectralLineCrawler() {}
 
-SpectralLineRequest::~SpectralLineRequest() {}
+SpectralLineCrawler::~SpectralLineCrawler() {}
 
 /*
     References:
     1. curl example https://curl.haxx.se/libcurl/c/getinmemory.html
     2. c++ example https://gist.github.com/alghanmi/c5d7b761b2c9ab199157
 */
-void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
+void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
     /* init the curl session */
     CURL* curl_handle = curl_easy_init();
     if (curl_handle == nullptr) {
@@ -35,7 +35,7 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     }
     std::string readBuffer;
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &readBuffer);
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, SpectralLineRequest::WriteMemoryCallback);
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, SpectralLineCrawler::WriteMemoryCallback);
     curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
     /* specify URL to get */
@@ -51,14 +51,14 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
         "&offset=0&limit=100000&range=on";
     std::string frequencyRangeStr =
         fmt::format("&frequency_units=MHz&from={}&to={}", std::to_string(frequencyRange.min()), std::to_string(frequencyRange.max()));
-    std::string URL = SpectralLineRequest::SplatalogueURLBase + lineListParameters + lineStrengthParameters + energyLevelParameters +
+    std::string URL = SpectralLineCrawler::SplatalogueURLBase + lineListParameters + lineStrengthParameters + energyLevelParameters +
                       miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
     /* fetch data & parse */
     CURLcode res = curl_easy_perform(curl_handle);
     if (res == CURLE_OK) {
-        SpectralLineRequest::ParseQueryResult(readBuffer, spectral_line_response);
+        SpectralLineCrawler::ParseQueryResult(readBuffer, spectral_line_response);
     } else {
         spectral_line_response.set_success(false);
         spectral_line_response.set_message(fmt::format("curl_easy_perform() failed: {}", curl_easy_strerror(res)));
@@ -70,12 +70,12 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     return;
 }
 
-size_t SpectralLineRequest::WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+size_t SpectralLineCrawler::WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
 }
 
-void SpectralLineRequest::ParseQueryResult(const std::string& results, CARTA::SpectralLineResponse& spectral_line_response) {
+void SpectralLineCrawler::ParseQueryResult(const std::string& results, CARTA::SpectralLineResponse& spectral_line_response) {
     std::vector<std::string> headers;
     std::vector<std::vector<std::string>> data_columns;
     int num_data_rows = 0;

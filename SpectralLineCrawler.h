@@ -1,15 +1,15 @@
-#ifndef CARTA_BACKEND_SPECTRAL_LINE_REQUEST_H_
-#define CARTA_BACKEND_SPECTRAL_LINE_REQUEST_H_
+#ifndef CARTA_BACKEND_SPECTRAL_LINE_CRAWLER_H_
+#define CARTA_BACKEND_SPECTRAL_LINE_CRAWLER_H_
 
 #include <carta-protobuf/spectral_line_request.pb.h>
 #include <string>
 
 namespace carta {
-class SpectralLineRequest {
+class SpectralLineCrawler {
 public:
-    SpectralLineRequest();
-    ~SpectralLineRequest();
-    void SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response);
+    SpectralLineCrawler();
+    ~SpectralLineCrawler();
+    static void SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response);
 
 private:
     static const std::string SplatalogueURLBase;
@@ -18,4 +18,4 @@ private:
 };
 } // namespace carta
 
-#endif // CARTA_BACKEND_SPECTRAL_LINE_REQUEST_H_
+#endif // CARTA_BACKEND_SPECTRAL_LINE_CRAWLER_H_

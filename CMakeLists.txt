@@ -169,7 +169,7 @@ set(SOURCE_FILES
         OnMessageTask.cc
         FileSettings.cc
         Util.cc
-        SpectralLineRequest.cc)
+        SpectralLineCrawler.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
