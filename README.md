@@ -44,6 +44,7 @@ The server build depends on the following libraries:
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.([Recommended: v0.14.8](https://github.com/uNetworking/uWebSockets/releases/tag/v0.14.8))
 * [tbb](https://www.threadingbuildingblocks.org/download) Threading Building Blocks for task parallelization. Debian package `libtbb-dev`.
 * [jsoncpp](https://github.com/open-source-parsers/jsoncpp) C++ library for parsing JSON. Debian package `libjsoncpp-dev`.
+* [libcurl](https://curl.haxx.se/libcurl/) curl library for fetching data. Debian package `libcurl4-openssl-dev`.
 
 [![Build Status](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend/badge/icon)](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend) 
 
