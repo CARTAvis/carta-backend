@@ -17,29 +17,27 @@
 #include <carta-protobuf/enums.pb.h>
 
 struct RegionState {
-    // struct used to determine whether region changed
+    // struct used for region parameters
     int reference_file_id;
     std::string name;
     CARTA::RegionType type;
     std::vector<CARTA::Point> control_points;
     float rotation;
+    std::string color;
+    int line_width;
+    int dash_length;
 
     RegionState() {}
-    RegionState(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
+    RegionState(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_,
+        std::string color_ = "2EE6D6", int line_width_ = 2, int dash_length_ = 0) {
         reference_file_id = ref_file_id_;
         name = name_;
         type = type_;
         control_points = control_points_;
         rotation = rotation_;
-    }
-
-    void UpdateState(
-        int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
-        reference_file_id = ref_file_id_;
-        name = name_;
-        type = type_;
-        control_points = control_points_;
-        rotation = rotation_;
+        color = color_;
+        line_width = line_width_;
+        dash_length = dash_length_;
     }
 
     void operator=(const RegionState& other) {
@@ -62,7 +60,7 @@ struct RegionState {
         return false;
     }
 
-    bool RegionChanged(const RegionState& rhs) { // ignores name change (does not interrupt region calculations)
+    bool RegionChanged(const RegionState& rhs) { // ignores name and style parameters (does not interrupt region calculations)
         return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || (rotation != rhs.rotation) || PointsChanged(rhs);
     }
     bool PointsChanged(const RegionState& rhs) {
@@ -84,8 +82,6 @@ namespace carta {
 
 class Region {
 public:
-    Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-        casacore::CoordinateSystem* csys);
     Region(const RegionState& state, casacore::CoordinateSystem* csys);
     ~Region();
 

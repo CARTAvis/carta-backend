@@ -18,18 +18,6 @@
 
 using namespace carta;
 
-Region::Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-    casacore::CoordinateSystem* csys)
-    : _coord_sys(nullptr),
-      _valid(false),
-      _region_state_changed(false),
-      _region_changed(false),
-      _ref_region_set(false),
-      _z_profile_count(0) {
-    // validate and set region parameters
-    _valid = UpdateState(file_id, name, type, points, rotation, csys);
-}
-
 Region::Region(const RegionState& state, casacore::CoordinateSystem* csys)
     : _coord_sys(nullptr),
       _valid(false),
@@ -46,18 +34,6 @@ Region::~Region() {
 
 // *************************************************************************
 // Region settings
-
-bool Region::UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points,
-    float rotation, casacore::CoordinateSystem* csys) {
-    // Set region state and update
-    RegionState new_state;
-    new_state.reference_file_id = file_id;
-    new_state.name = name;
-    new_state.type = type;
-    new_state.control_points = points;
-    new_state.rotation = rotation;
-    return UpdateState(new_state, csys);
-}
 
 bool Region::UpdateState(const RegionState& state, casacore::CoordinateSystem* csys) {
     // Update region from region state

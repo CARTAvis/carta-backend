@@ -33,12 +33,11 @@ int RegionHandler::GetNextRegionId() {
     return max_id + 1;
 }
 
-bool RegionHandler::SetRegion(int& region_id, int file_id, const std::string& name, CARTA::RegionType type,
-    const std::vector<CARTA::Point>& points, float rotation, casacore::CoordinateSystem* csys) {
+bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys) {
     // Set region params for region id; if id < 0, create new id
     bool valid_region(false);
     if (_regions.count(region_id)) {
-        _regions.at(region_id)->UpdateState(file_id, name, type, points, rotation, csys);
+        _regions.at(region_id)->UpdateState(region_state, csys);
         valid_region = _regions.at(region_id)->IsValid();
         if (_regions.at(region_id)->RegionChanged()) {
             UpdateNewSpectralRequirements(region_id); // set all req "new"
@@ -48,7 +47,7 @@ bool RegionHandler::SetRegion(int& region_id, int file_id, const std::string& na
         if (region_id < 0) {
             region_id = GetNextRegionId();
         }
-        auto region = std::shared_ptr<Region>(new Region(file_id, name, type, points, rotation, csys));
+        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
             valid_region = true;
