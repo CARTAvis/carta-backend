@@ -113,7 +113,6 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     if (!importer) {
         import_ack.set_success(false);
         import_ack.set_message("Region importer failed.");
-        import_ack.add_regions();
         return;
     }
 
@@ -123,7 +122,6 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     if (region_info_list.empty()) {
         import_ack.set_success(false);
         import_ack.set_message(error);
-        import_ack.add_regions();
         return;
     }
 
@@ -134,23 +132,25 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     import_ack.set_success(true);
     import_ack.set_message(error);
     int region_id = GetNextRegionId();
+    std::map<int, CARTA::RegionInfo> region_info_map;
     for (auto& region_info : region_info_list) {
         auto region_csys = frame->CoordinateSystem();
         auto region = std::shared_ptr<Region>(new Region(region_info, region_csys));
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
 
-            // Set Ack RegionProperties and its RegionInfo
-            auto region_properties = import_ack.add_regions();
-            region_properties->set_region_id(region_id);
-            auto msg_region_info = region_properties->mutable_region_info();
-            msg_region_info->set_region_name(region_info.name);
-            msg_region_info->set_region_type(region_info.type);
-            *msg_region_info->mutable_control_points() = {region_info.control_points.begin(), region_info.control_points.end()};
-            msg_region_info->set_rotation(region_info.rotation);
+            // Set CARTA::RegionInfo and add to map
+            CARTA::RegionInfo carta_region_info;
+            carta_region_info.set_region_name(region_info.name);
+            carta_region_info.set_region_type(region_info.type);
+            *carta_region_info.mutable_control_points() = {region_info.control_points.begin(), region_info.control_points.end()};
+            carta_region_info.set_rotation(region_info.rotation);
+            carta_region_info.set_color(region_info.color);
+            carta_region_info.set_line_width(region_info.line_width);
+            *carta_region_info.mutable_dash_list() = {region_info.dash_list.begin(), region_info.dash_list.end()};
 
             // increment region id for next region
-            region_id++;
+            region_info_map[region_id++] = carta_region_info;
         }
     }
 }

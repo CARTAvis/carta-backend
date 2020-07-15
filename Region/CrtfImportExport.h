@@ -50,14 +50,18 @@ private:
     void ImportAnnRotBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnEllipse(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
+    void ImportStyleParameters(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region, std::string& name, std::string& color,
+        int& line_width, std::vector<int>& dash_list);
 
     // Manual region import to RegionInfo
     // (workaround for imageanalysis RegionTextList exception for linear coord sys)
     void ProcessFileLines(std::vector<std::string>& lines);
-    void ImportAnnSymbol(std::vector<std::string>& parameters, std::string& region_name);
-    void ImportAnnBox(std::vector<std::string>& parameters, std::string& region_name);
-    void ImportAnnEllipse(std::vector<std::string>& parameters, std::string& region_name);
-    void ImportAnnPolygon(std::vector<std::string>& parameters, std::string& region_name);
+    void ImportAnnSymbol(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
+    void ImportAnnBox(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
+    void ImportAnnEllipse(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
+    void ImportAnnPolygon(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
+    void ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name, std::string& color,
+        int& line_width, std::vector<int>& dash_list);
 
     // Rectangle import helpers
     // Convert AnnPolygon pixel vertices to CARTA Control Points (center and size)
@@ -75,7 +79,7 @@ private:
     // Export RegionInfo as Annotation region or string
     bool AddExportAnnotationRegion(const RegionInfo& region_info);
     bool AddExportRegionLine(const RegionInfo& region_info);
-    void AddExportRegionKeywords(std::string& line, const std::string& region_name);
+    void AddExportRegionKeywords(std::string& line, const RegionInfo& region_info);
 
     // Export helpers
     // AnnRegion parameter

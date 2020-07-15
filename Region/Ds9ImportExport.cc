@@ -193,15 +193,18 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         if (line.empty()) {
             continue;
         }
+
         // skip comment
         if (line[0] == '#') {
             continue;
         }
+
         // skip regions excluded for later analysis (annotation-only)
         if (line[0] == '-') {
             continue;
         }
-        // skip global settings not used in carta (yet)
+
+        // TODO: add globals
         if (line.find("global") != std::string::npos) {
             continue;
         }
@@ -307,24 +310,18 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
         region_type = region_type.substr(1);
     }
 
-    // For now, we only use the "text" property
-    std::string region_name;
-    if (properties.count("text")) {
-        region_name = properties["text"];
-    }
-
     // Create RegionInfo based on type
     // Order is important, could be a shaped point e.g. "circle point" is a point not a circle
     if (region_type.find("point") != std::string::npos) {
-        ImportPointRegion(parameters, region_name, exclude_region);
+        ImportPointRegion(parameters, properties, exclude_region);
     } else if (region_type.find("circle") != std::string::npos) {
-        ImportCircleRegion(parameters, region_name, exclude_region);
+        ImportCircleRegion(parameters, properties, exclude_region);
     } else if (region_type.find("ellipse") != std::string::npos) {
-        ImportEllipseRegion(parameters, region_name, exclude_region);
+        ImportEllipseRegion(parameters, properties, exclude_region);
     } else if (region_type.find("box") != std::string::npos) {
-        ImportRectangleRegion(parameters, region_name, exclude_region);
+        ImportRectangleRegion(parameters, properties, exclude_region);
     } else if (region_type.find("polygon") != std::string::npos) {
-        ImportPolygonRegion(parameters, region_name, exclude_region);
+        ImportPolygonRegion(parameters, properties, exclude_region);
     } else if (region_type.find("line") != std::string::npos) {
         _import_errors.append("DS9 line region not supported.\n");
     } else if (region_type.find("vector") != std::string::npos) {
@@ -336,7 +333,8 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
     }
 }
 
-void Ds9ImportExport::ImportPointRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportPointRegion(
+    std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region) {
     // Import DS9 point into CARTA RegionInfo
     // point x y, circle point x y (various shapes for "circle")
     size_t nparam(parameters.size());
@@ -405,24 +403,31 @@ void Ds9ImportExport::ImportPointRegion(std::vector<std::string>& parameters, st
     // Create RegionInfo
     CARTA::RegionType type(CARTA::RegionType::POINT);
     float rotation(0.0);
-    RegionInfo region_info(_file_id, name, type, control_points, rotation);
+    std::string name, color;
+    int line_width;
+    std::vector<int> dash_list;
+    ImportStyleParameters(properties, name, color, line_width, dash_list);
+
+    RegionInfo region_info(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
     _import_regions.push_back(region_info);
 }
 
-void Ds9ImportExport::ImportCircleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportCircleRegion(
+    std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region) {
     // Import DS9 circle into CARTA RegionInfo
     // circle x y radius
     // Convert params to ellipse region (CARTA only has ellipse region) with no angle
     if (parameters.size() >= 4) {
         std::vector<std::string> ellipse_params = {"ellipse", parameters[1], parameters[2], parameters[3], parameters[3]};
-        ImportEllipseRegion(ellipse_params, name, exclude_region);
+        ImportEllipseRegion(ellipse_params, properties, exclude_region);
     } else {
         std::string syntax_error = "circle syntax error.\n";
         _import_errors.append(syntax_error);
     }
 }
 
-void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportEllipseRegion(
+    std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region) {
     // Import DS9 ellipse into CARTA RegionInfo
     // ellipse x y radius radius [angle]
     size_t nparam(parameters.size());
@@ -503,8 +508,12 @@ void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, 
                 rotation += 360.0;
             }
         }
+        std::string name, color;
+        int line_width;
+        std::vector<int> dash_list;
+        ImportStyleParameters(properties, name, color, line_width, dash_list);
 
-        RegionInfo region_info(_file_id, name, type, control_points, rotation);
+        RegionInfo region_info(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
         _import_regions.push_back(region_info);
     } else if (nparam > 6) {
         // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
@@ -514,7 +523,8 @@ void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, 
     }
 }
 
-void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportRectangleRegion(
+    std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region) {
     // Import DS9 box into CARTA RegionInfo
     // box x y width height [angle]
     size_t nparam(parameters.size());
@@ -589,7 +599,12 @@ void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters
         if (nparam > 5) {
             rotation = param_quantities[4].getValue();
         }
-        RegionInfo region_info(_file_id, name, type, control_points, rotation);
+        std::string name, color;
+        int line_width;
+        std::vector<int> dash_list;
+        ImportStyleParameters(properties, name, color, line_width, dash_list);
+
+        RegionInfo region_info(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
         _import_regions.push_back(region_info);
     } else if (nparam > 6) {
         // unsupported box annulus: box x y w1 h1 w2 h2 [angle]
@@ -599,7 +614,8 @@ void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters
     }
 }
 
-void Ds9ImportExport::ImportPolygonRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
+void Ds9ImportExport::ImportPolygonRegion(
+    std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region) {
     // Import DS9 polygon into CARTA RegionInfo
     // polygon x1 y1 x2 y2 x3 y3 ...
     size_t nparam(parameters.size());
@@ -665,8 +681,35 @@ void Ds9ImportExport::ImportPolygonRegion(std::vector<std::string>& parameters, 
     // Create RegionInfo
     CARTA::RegionType type(CARTA::RegionType::POLYGON);
     float rotation(0.0);
-    RegionInfo region_info(_file_id, name, type, control_points, rotation);
+    std::string name, color;
+    int line_width;
+    std::vector<int> dash_list;
+    ImportStyleParameters(properties, name, color, line_width, dash_list);
+
+    RegionInfo region_info(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
     _import_regions.push_back(region_info);
+}
+
+void Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name, std::string& color,
+    int& line_width, std::vector<int>& dash_list) {
+    // Get style params from properties
+    if (properties.count("text")) {
+        name = properties["text"];
+    }
+    if (properties.count("color")) {
+        color = properties["color"];
+    }
+    if (properties.count("width")) {
+        line_width = std::stoi(properties["width"]);
+    }
+    if (properties.count("dash") && (properties["dash"] == "1") && properties.count("dashlist")) {
+        // Convert string to vector then to int
+        std::vector<std::string> dash_values;
+        SplitString(properties["dashlist"], ' ', dash_values);
+        for (auto& value : dash_values) {
+            dash_list.push_back(std::stoi(value));
+        }
+    }
 }
 
 bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std::string& region_type) {

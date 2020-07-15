@@ -501,6 +501,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     // Create new Region or update existing Region
     auto file_id(message.file_id());
     auto region_id(message.region_id());
+    auto region_info(message.region_info());
     std::string err_message;
     bool success(false);
 
@@ -511,12 +512,27 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
             _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_verbose_logging));
         }
 
-        std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
+        std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
+        std::vector<int> dash_list = {region_info.dash_list().begin(), region_info.dash_list().end()};
 
-        RegionInfo region_info(file_id, message.region_name(), message.region_type(), points, message.rotation(), message.color(),
-            message.line_width(), message.dash_length());
+        // TODO: for testing, set frontend defaults
+        // Remove this section after frontend adds style
+        std::string color(region_info.color());
+        if (color.empty()) {
+            color = "2ee6d6";
+        }
+        int width(region_info.line_width());
+        if (width == 0) {
+            width = 2;
+        }
+        if (dash_list.empty()) {
+            dash_list = {0, 0};
+        }
 
-        success = _region_handler->SetRegion(region_id, region_info, csys);
+        RegionInfo info(
+            file_id, region_info.region_name(), region_info.region_type(), points, region_info.rotation(), color, width, dash_list);
+
+        success = _region_handler->SetRegion(region_id, info, csys);
 
         // log error
         if (!success) {
@@ -564,7 +580,6 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         if (!import_file && !import_contents) {
             import_ack.set_success(false);
             import_ack.set_message("Import region failed: cannot import by filename or contents.");
-            import_ack.add_regions();
             SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
             return;
         }
@@ -577,7 +592,6 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             if (!ccfile.exists() || !ccfile.isReadable()) {
                 import_ack.set_success(false);
                 import_ack.set_message("Import region failed: cannot open file.");
-                import_ack.add_regions();
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
                 return;
             }
@@ -880,20 +894,18 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
             OnSetImageChannels(set_image_channels_msg);
 
             // Set regions
-            for (int j = 0; j < image.regions_size(); ++j) {
-                const CARTA::RegionProperties& region = image.regions(j);
+            for (auto& region_id_info : image.regions()) {
+                // region_id_info is map<region_id, RegionInfo>
                 CARTA::SetRegion set_region_msg;
                 set_region_msg.set_file_id(file_id);
-                set_region_msg.set_region_id(region.region_id());
-                set_region_msg.set_region_name(region.region_info().region_name());
-                set_region_msg.set_rotation(region.region_info().rotation());
-                set_region_msg.set_region_type(region.region_info().region_type());
-                *set_region_msg.mutable_control_points() = {
-                    region.region_info().control_points().begin(), region.region_info().control_points().end()};
+                set_region_msg.set_region_id(region_id_info.first);
+                CARTA::RegionInfo resume_region_info = region_id_info.second;
+                *set_region_msg.mutable_region_info() = resume_region_info;
+
                 if (!OnSetRegion(set_region_msg, request_id, true)) {
                     success = false;
                     // Error message
-                    std::string region_id = std::to_string(region.region_id()) + " ";
+                    std::string region_id = std::to_string(region_id_info.first) + " ";
                     err_region_ids.append(region_id);
                 }
             }

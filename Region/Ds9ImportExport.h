@@ -63,11 +63,18 @@ private:
 
     // Import regions
     void SetRegion(std::string& region_definition);
-    void ImportPointRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
-    void ImportCircleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
-    void ImportEllipseRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
-    void ImportRectangleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
-    void ImportPolygonRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region);
+    void ImportPointRegion(
+        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
+    void ImportCircleRegion(
+        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
+    void ImportEllipseRegion(
+        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
+    void ImportRectangleRegion(
+        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
+    void ImportPolygonRegion(
+        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
+    void ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name, std::string& color,
+        int& line_width, std::vector<int>& dash_list);
 
     // Convert DS9 syntax -> CASA
     bool CheckAndConvertParameter(std::string& parameter, const std::string& region_type);
