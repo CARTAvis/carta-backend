@@ -44,17 +44,15 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
         "&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas"
         "&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU"
         "&displayRecomb=displayRecomb&displayLisa=displayLisa&displayRFI=displayRFI";
-    std::string lineStrengthParameters =
-        "&ls1=ls1&ls2=ls2&ls3=ls3&ls4=ls4&ls5=ls5";
-    std::string energyLevelParameters =
-        "&el1=el1&el2=el2&el3=el3&el4=el4";
+    std::string lineStrengthParameters = "&ls1=ls1&ls2=ls2&ls3=ls3&ls4=ls4&ls5=ls5";
+    std::string energyLevelParameters = "&el1=el1&el2=el2&el3=el3&el4=el4";
     std::string miscellaneousParameters =
         "&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab"
         "&offset=0&limit=100000&range=on";
-    std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}",
-        std::to_string(frequencyRange.min()), std::to_string(frequencyRange.max()));
-    std::string URL = SpectralLineRequest::SplatalogueURLBase + lineListParameters + lineStrengthParameters +
-        energyLevelParameters + miscellaneousParameters + frequencyRangeStr;
+    std::string frequencyRangeStr =
+        fmt::format("&frequency_units=MHz&from={}&to={}", std::to_string(frequencyRange.min()), std::to_string(frequencyRange.max()));
+    std::string URL = SpectralLineRequest::SplatalogueURLBase + lineListParameters + lineStrengthParameters + energyLevelParameters +
+                      miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
     /* fetch data & parse */
