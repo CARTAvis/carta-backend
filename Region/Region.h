@@ -16,7 +16,7 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
-struct RegionState {
+struct RegionInfo {
     // struct used for region parameters
     int reference_file_id;
     std::string name;
@@ -27,8 +27,8 @@ struct RegionState {
     int line_width;
     int dash_length;
 
-    RegionState() {}
-    RegionState(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_,
+    RegionInfo() {}
+    RegionInfo(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_,
         std::string color_ = "2EE6D6", int line_width_ = 2, int dash_length_ = 0) {
         reference_file_id = ref_file_id_;
         name = name_;
@@ -40,30 +40,30 @@ struct RegionState {
         dash_length = dash_length_;
     }
 
-    void operator=(const RegionState& other) {
+    void operator=(const RegionInfo& other) {
         reference_file_id = other.reference_file_id;
         name = other.name;
         type = other.type;
         control_points = other.control_points;
         rotation = other.rotation;
     }
-    bool operator==(const RegionState& rhs) {
+    bool operator==(const RegionInfo& rhs) {
         if ((name != rhs.name) || RegionChanged(rhs)) {
             return false;
         }
         return true;
     }
-    bool operator!=(const RegionState& rhs) {
+    bool operator!=(const RegionInfo& rhs) {
         if ((name != rhs.name) || RegionChanged(rhs)) {
             return true;
         }
         return false;
     }
 
-    bool RegionChanged(const RegionState& rhs) { // ignores name and style parameters (does not interrupt region calculations)
+    bool RegionChanged(const RegionInfo& rhs) { // ignores name and style parameters (does not interrupt region calculations)
         return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || (rotation != rhs.rotation) || PointsChanged(rhs);
     }
-    bool PointsChanged(const RegionState& rhs) {
+    bool PointsChanged(const RegionInfo& rhs) {
         if (control_points.size() != rhs.control_points.size()) {
             return true;
         }
@@ -82,25 +82,20 @@ namespace carta {
 
 class Region {
 public:
-    Region(const RegionState& state, casacore::CoordinateSystem* csys);
+    Region(const RegionInfo& info, casacore::CoordinateSystem* csys);
     ~Region();
 
     inline bool IsValid() { // control points validated
         return _valid;
     };
 
-    // set new region state and coord sys
-    bool UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-        casacore::CoordinateSystem* csys);
-    bool UpdateState(const RegionState& state, casacore::CoordinateSystem* csys);
+    // set new region parameters and coord sys
+    bool UpdateRegion(const RegionInfo& info, casacore::CoordinateSystem* csys);
 
-    // state accessors
-    inline RegionState GetRegionState() {
-        return _region_state;
+    // info accessors
+    inline RegionInfo GetRegionInfo() {
+        return _region_info;
     }
-    inline bool RegionStateChanged() { // any params changed
-        return _region_state_changed;
-    };
     inline bool RegionChanged() { // reference image, type, points, or rotation changed
         return _region_changed;
     }
@@ -140,8 +135,8 @@ private:
     casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
 
-    // region definition (name, type, control points in pixel coordinates, rotation)
-    RegionState _region_state;
+    // region parameters struct
+    RegionInfo _region_info;
 
     // coord sys of reference image
     casacore::CoordinateSystem* _coord_sys;
@@ -156,10 +151,9 @@ private:
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
     // region flags
-    bool _valid;                // RegionState set properly
-    bool _region_state_changed; // any parameters changed
-    bool _region_changed;       // type, control points, or rotation changed
-    bool _ref_region_set;       // indicates attempt was made; may be null wcregion outside image
+    bool _valid;          // RegionInfo set properly
+    bool _region_changed; // type, control points, or rotation changed
+    bool _ref_region_set; // indicates attempt was made; may be null wcregion outside image
 
     // Communication
     std::atomic<int> _z_profile_count;

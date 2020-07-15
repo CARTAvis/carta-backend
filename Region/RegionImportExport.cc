@@ -21,8 +21,8 @@ RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_s
 
 // Public accessors
 
-std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& error) {
-    // Parse the file in the constructor to create RegionStates with given reference file_id; return any errors in error
+std::vector<RegionInfo> RegionImportExport::GetImportedRegions(std::string& error) {
+    // Parse the file in the constructor to create RegionInfo vector with given reference file_id; return any errors in error
     error = _import_errors;
 
     if ((_import_regions.size() == 0) && error.empty()) {
@@ -32,8 +32,7 @@ std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& err
     return _import_regions;
 }
 
-bool RegionImportExport::AddExportRegion(
-    const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord) {
+bool RegionImportExport::AddExportRegion(const RegionInfo& region_info, const casacore::RecordInterface& region_record, bool pixel_coord) {
     // Convert Record to Quantities for region type then set region
     // Record is in pixel coords; convert to world coords if needed
     if (pixel_coord) {
@@ -43,8 +42,8 @@ bool RegionImportExport::AddExportRegion(
     bool converted(false);
     // Return control points and rotation as Quantity; rotation updated for ellipse only
     std::vector<casacore::Quantity> control_points;
-    casacore::Quantity rotation(region_state.rotation, "deg");
-    switch (region_state.type) {
+    casacore::Quantity rotation(region_info.rotation, "deg");
+    switch (region_info.type) {
         case CARTA::RegionType::POINT:
             converted = ConvertRecordToPoint(region_record, pixel_coord, control_points);
             break;
@@ -52,7 +51,7 @@ bool RegionImportExport::AddExportRegion(
             converted = ConvertRecordToRectangle(region_record, pixel_coord, control_points);
             break;
         case CARTA::RegionType::ELLIPSE:
-            converted = ConvertRecordToEllipse(region_state, region_record, pixel_coord, control_points, rotation);
+            converted = ConvertRecordToEllipse(region_info, region_record, pixel_coord, control_points, rotation);
             break;
         case CARTA::RegionType::POLYGON:
             converted = ConvertRecordToPolygon(region_record, pixel_coord, control_points);
@@ -62,7 +61,7 @@ bool RegionImportExport::AddExportRegion(
     }
 
     if (converted) {
-        return AddExportRegion(region_state.name, region_state.type, control_points, rotation); // add to CRTF or DS9 export
+        return AddExportRegion(region_info.name, region_info.type, control_points, rotation); // add to CRTF or DS9 export
     }
 
     return converted;
@@ -246,7 +245,7 @@ bool RegionImportExport::ConvertRecordToRectangle(
     const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points) {
     // Convert casacore Record to box Quantity control points.
     // Rectangles are exported to Record as LCPolygon with 4 points: blc, brc, trc, tlc.
-    // The input Record for a rotbox must be the corners of an unrotated box (rotation in the region state)
+    // The input Record for a rotbox must be the corners of an unrotated box (rotation in the region info)
     casacore::Vector<casacore::Float> x = region_record.asArrayFloat("x");
     casacore::Vector<casacore::Float> y = region_record.asArrayFloat("y");
 
@@ -301,17 +300,17 @@ bool RegionImportExport::ConvertRecordToRectangle(
     }
 }
 
-bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record,
+bool RegionImportExport::ConvertRecordToEllipse(const RegionInfo& region_info, const casacore::RecordInterface& region_record,
     bool pixel_coord, std::vector<casacore::Quantity>& control_points, casacore::Quantity& rotation) {
     // Convert casacore Record to ellipse Quantity control points
-    // RegionState needed to check if bmaj/bmin swapped for LCEllipsoid
+    // RegionInfo needed to check if bmaj/bmin swapped for LCEllipsoid
     casacore::Vector<casacore::Float> center = region_record.asArrayFloat("center");
     casacore::Vector<casacore::Float> radii = region_record.asArrayFloat("radii");
     casacore::Float theta = region_record.asFloat("theta"); // radians
     rotation = casacore::Quantity(theta, "rad");
     rotation.convert("deg"); // CASA rotang, from x-axis
 
-    CARTA::Point ellipse_axes = region_state.control_points[1];
+    CARTA::Point ellipse_axes = region_info.control_points[1];
     bool reversed((ellipse_axes.x() < ellipse_axes.y()) == (radii(0) > radii(1)));
 
     // Make zero-based

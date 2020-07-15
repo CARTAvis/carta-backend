@@ -53,11 +53,11 @@ Ds9ImportExport::~Ds9ImportExport() {
 
 // Public: for exporting regions
 
-bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
-    // Add pixel-coord region using RegionState
-    std::vector<CARTA::Point> points = region_state.control_points;
-    float angle = region_state.rotation;
-    if (region_state.type == CARTA::RegionType::ELLIPSE) {
+bool Ds9ImportExport::AddExportRegion(const RegionInfo& region_info) {
+    // Add pixel-coord region using RegionInfo
+    std::vector<CARTA::Point> points = region_info.control_points;
+    float angle = region_info.rotation;
+    if (region_info.type == CARTA::RegionType::ELLIPSE) {
         angle += 90.0; // DS9 angle measured from x-axis
         if (angle > 360.0) {
             angle -= 360.0;
@@ -65,7 +65,7 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
     }
 
     std::string region_line;
-    switch (region_state.type) {
+    switch (region_info.type) {
         case CARTA::RegionType::POINT: {
             // point(x, y)
             region_line = fmt::format("point({:.2f}, {:.2f})", points[0].x(), points[0].y());
@@ -109,8 +109,8 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
     }
 
     // Add region name
-    if (!region_state.name.empty()) {
-        region_line.append(" # text={" + region_state.name + "}");
+    if (!region_info.name.empty()) {
+        region_line.append(" # text={" + region_info.name + "}");
     }
 
     // End line and add to string vector
@@ -288,10 +288,10 @@ void Ds9ImportExport::SetImageReferenceFrame() {
     }
 }
 
-// Import regions into RegionState vector
+// Import regions into RegionInfo vector
 
 void Ds9ImportExport::SetRegion(std::string& region_definition) {
-    // Convert ds9 region description into RegionState
+    // Convert ds9 region description into RegionInfo
     // Split into region definition, properties
     std::vector<std::string> parameters;
     std::unordered_map<std::string, std::string> properties;
@@ -313,7 +313,7 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
         region_name = properties["text"];
     }
 
-    // Create RegionState based on type
+    // Create RegionInfo based on type
     // Order is important, could be a shaped point e.g. "circle point" is a point not a circle
     if (region_type.find("point") != std::string::npos) {
         ImportPointRegion(parameters, region_name, exclude_region);
@@ -337,7 +337,7 @@ void Ds9ImportExport::SetRegion(std::string& region_definition) {
 }
 
 void Ds9ImportExport::ImportPointRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
-    // Import DS9 point into CARTA RegionState
+    // Import DS9 point into CARTA RegionInfo
     // point x y, circle point x y (various shapes for "circle")
     size_t nparam(parameters.size());
     if ((nparam < 3) || ((parameters[0] != "point") && (parameters[1] != "point"))) {
@@ -402,15 +402,15 @@ void Ds9ImportExport::ImportPointRegion(std::vector<std::string>& parameters, st
         }
     }
 
-    // Create RegionState
+    // Create RegionInfo
     CARTA::RegionType type(CARTA::RegionType::POINT);
     float rotation(0.0);
-    RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-    _import_regions.push_back(region_state);
+    RegionInfo region_info(_file_id, name, type, control_points, rotation);
+    _import_regions.push_back(region_info);
 }
 
 void Ds9ImportExport::ImportCircleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
-    // Import DS9 circle into CARTA RegionState
+    // Import DS9 circle into CARTA RegionInfo
     // circle x y radius
     // Convert params to ellipse region (CARTA only has ellipse region) with no angle
     if (parameters.size() >= 4) {
@@ -423,7 +423,7 @@ void Ds9ImportExport::ImportCircleRegion(std::vector<std::string>& parameters, s
 }
 
 void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
-    // Import DS9 ellipse into CARTA RegionState
+    // Import DS9 ellipse into CARTA RegionInfo
     // ellipse x y radius radius [angle]
     size_t nparam(parameters.size());
     if ((nparam == 5) || (nparam == 6)) {
@@ -491,7 +491,7 @@ void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, 
             control_points.push_back(point);
         }
 
-        // Create RegionState
+        // Create RegionInfo
         CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
         float rotation(0.0);
         if (nparam > 5) {
@@ -504,8 +504,8 @@ void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, 
             }
         }
 
-        RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _import_regions.push_back(region_state);
+        RegionInfo region_info(_file_id, name, type, control_points, rotation);
+        _import_regions.push_back(region_info);
     } else if (nparam > 6) {
         // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
         _import_errors.append("Unsupported ellipse definition.\n");
@@ -515,7 +515,7 @@ void Ds9ImportExport::ImportEllipseRegion(std::vector<std::string>& parameters, 
 }
 
 void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
-    // Import DS9 box into CARTA RegionState
+    // Import DS9 box into CARTA RegionInfo
     // box x y width height [angle]
     size_t nparam(parameters.size());
     if ((nparam == 5) || (nparam == 6)) {
@@ -583,14 +583,14 @@ void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters
             control_points.push_back(point);
         }
 
-        // Create RegionState
+        // Create RegionInfo
         CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
         float rotation(0.0);
         if (nparam > 5) {
             rotation = param_quantities[4].getValue();
         }
-        RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-        _import_regions.push_back(region_state);
+        RegionInfo region_info(_file_id, name, type, control_points, rotation);
+        _import_regions.push_back(region_info);
     } else if (nparam > 6) {
         // unsupported box annulus: box x y w1 h1 w2 h2 [angle]
         _import_errors.append("Unsupported box definition.\n");
@@ -600,7 +600,7 @@ void Ds9ImportExport::ImportRectangleRegion(std::vector<std::string>& parameters
 }
 
 void Ds9ImportExport::ImportPolygonRegion(std::vector<std::string>& parameters, std::string& name, bool exclude_region) {
-    // Import DS9 polygon into CARTA RegionState
+    // Import DS9 polygon into CARTA RegionInfo
     // polygon x1 y1 x2 y2 x3 y3 ...
     size_t nparam(parameters.size());
     if ((nparam % 2) != 1) { // parameters[0] is "polygon"
@@ -662,11 +662,11 @@ void Ds9ImportExport::ImportPolygonRegion(std::vector<std::string>& parameters, 
         }
     }
 
-    // Create RegionState
+    // Create RegionInfo
     CARTA::RegionType type(CARTA::RegionType::POLYGON);
     float rotation(0.0);
-    RegionState region_state = RegionState(_file_id, name, type, control_points, rotation);
-    _import_regions.push_back(region_state);
+    RegionInfo region_info(_file_id, name, type, control_points, rotation);
+    _import_regions.push_back(region_info);
 }
 
 bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std::string& region_type) {
