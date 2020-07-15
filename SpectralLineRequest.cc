@@ -41,8 +41,8 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     curl_handle = curl_easy_init();
 
     /* specify URL to get */
-    std::string frequencyRangeStr =
-        "&frequency_units=MHz&from=" + std::to_string(frequencyRange.min()) + "&to=" + std::to_string(frequencyRange.max());
+    std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}",
+        std::to_string(frequencyRange.min()), std::to_string(frequencyRange.max()));
     std::string URL = SpectralLineRequest::SplatalogueURL + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
@@ -61,7 +61,7 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
 
     /* parsing fetched content */
     if (res == CURLE_OK) {
-        SpectralLineRequest::ParsingQueryResult(chunk, spectral_line_response);
+        SpectralLineRequest::ParseQueryResult(chunk, spectral_line_response);
     } else {
         spectral_line_response.set_success(false);
         spectral_line_response.set_message(fmt::format("curl_easy_perform() failed: {}", curl_easy_strerror(res)));
@@ -96,7 +96,7 @@ size_t SpectralLineRequest::WriteMemoryCallback(void* contents, size_t size, siz
     return realsize;
 }
 
-void SpectralLineRequest::ParsingQueryResult(const MemoryStruct& results, CARTA::SpectralLineResponse& spectral_line_response) {
+void SpectralLineRequest::ParseQueryResult(const MemoryStruct& results, CARTA::SpectralLineResponse& spectral_line_response) {
     std::vector<std::string> headers;
     std::vector<std::vector<std::string>> data_columns;
     int num_data_rows = 0;

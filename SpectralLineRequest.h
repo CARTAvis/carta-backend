@@ -18,7 +18,7 @@ public:
 private:
     static const std::string SplatalogueURL;
     static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp);
-    static void ParsingQueryResult(const MemoryStruct& results, CARTA::SpectralLineResponse& spectral_line_response);
+    static void ParseQueryResult(const MemoryStruct& results, CARTA::SpectralLineResponse& spectral_line_response);
 };
 } // namespace carta
 

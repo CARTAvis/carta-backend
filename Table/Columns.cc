@@ -57,8 +57,11 @@ std::unique_ptr<Column> Column::FromValues(const std::vector<string>& values, st
 
     column = make_unique<DataColumn<string>>(name);
     column->Resize(values.size());
-    for (auto row_index = 0; row_index < values.size(); row_index++) {
-        (dynamic_cast<DataColumn<string>*>(column.get()))->SetFromValue(values[row_index], row_index);
+    auto dataColumnPtr = dynamic_cast<DataColumn<string>*>(column.get());
+    if (dataColumnPtr != nullptr) {
+        for (auto row_index = 0; row_index < values.size(); row_index++) {
+            dataColumnPtr->SetFromValue(values[row_index], row_index);
+        }
     }
 
     column->id = "";
