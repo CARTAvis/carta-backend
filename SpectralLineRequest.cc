@@ -28,7 +28,7 @@ SpectralLineRequest::~SpectralLineRequest() {}
 void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
     /* init the curl session */
     CURL* curl_handle = curl_easy_init();
-    if (!curl_handle) {
+    if (curl_handle == nullptr) {
         spectral_line_response.set_success(false);
         spectral_line_response.set_message("Init curl failed.");
         return;
