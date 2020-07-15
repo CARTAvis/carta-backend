@@ -513,21 +513,9 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         }
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
-        std::vector<int> dash_list = {region_info.dash_list().begin(), region_info.dash_list().end()};
-
-        // TODO: for testing, set frontend defaults
-        // Remove this section after frontend adds style
         std::string color(region_info.color());
-        if (color.empty()) {
-            color = "2ee6d6";
-        }
         int width(region_info.line_width());
-        if (width == 0) {
-            width = 2;
-        }
-        if (dash_list.empty()) {
-            dash_list = {0, 0};
-        }
+        std::vector<int> dash_list = {region_info.dash_list().begin(), region_info.dash_list().end()};
 
         RegionInfo info(
             file_id, region_info.region_name(), region_info.region_type(), points, region_info.rotation(), color, width, dash_list);
