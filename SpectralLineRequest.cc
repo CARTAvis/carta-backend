@@ -30,14 +30,17 @@ SpectralLineRequest::~SpectralLineRequest() {}
     2. c++ example https://gist.github.com/alghanmi/c5d7b761b2c9ab199157
 */
 void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
-    CURL* curl_handle;
-    CURLcode res;
-    std::string readBuffer;
-
-    curl_global_init(CURL_GLOBAL_ALL);
-
     /* init the curl session */
-    curl_handle = curl_easy_init();
+    CURL* curl_handle = curl_easy_init();
+    if (!curl_handle) {
+        spectral_line_response.set_success(false);
+        spectral_line_response.set_message("Init curl failed.");
+        return;
+    }
+    std::string readBuffer;
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &readBuffer);
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, SpectralLineRequest::WriteMemoryCallback);
+    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 
     /* specify URL to get */
     std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}",
@@ -45,19 +48,8 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     std::string URL = SpectralLineRequest::SplatalogueURL + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
-    /* send all data to this function  */
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, SpectralLineRequest::WriteMemoryCallback);
-
-    /* we pass our 'chunk' struct to the callback function */
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &readBuffer);
-
-    /* some servers don't like requests that are made without a user-agent field, so we provide one */
-    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-
-    /* get it! */
-    res = curl_easy_perform(curl_handle);
-
-    /* parsing fetched content */
+    /* fetch data & parse */
+    CURLcode res = curl_easy_perform(curl_handle);
     if (res == CURLE_OK) {
         SpectralLineRequest::ParseQueryResult(readBuffer, spectral_line_response);
     } else {
@@ -67,9 +59,6 @@ void SpectralLineRequest::SendRequest(const CARTA::DoubleBounds& frequencyRange,
 
     /* cleanup curl stuff */
     curl_easy_cleanup(curl_handle);
-
-    /* we're done with libcurl, so clean it up */
-    curl_global_cleanup();
 
     return;
 }

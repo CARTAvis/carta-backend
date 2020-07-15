@@ -21,6 +21,7 @@
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
+#include <curl/curl.h>
 
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/HostInfo.h>
@@ -610,6 +611,9 @@ int main(int argc, const char* argv[]) {
                 return 1;
             }
         }
+
+        // Init curl
+        curl_global_init(CURL_GLOBAL_ALL);
 
         session_number = 0;
 
