@@ -161,6 +161,7 @@ set(SOURCE_FILES
         Region/Region.cc
         ImageStats/StatsCalculator.cc
         ImageStats/Histogram.cc
+        SpectralLine/SpectralLineCrawler.cc
         Table/Columns.cc
         Table/Table.cc
         Table/TableView.cc
@@ -168,8 +169,7 @@ set(SOURCE_FILES
         Timer/Timer.cc
         OnMessageTask.cc
         FileSettings.cc
-        Util.cc
-        SpectralLineCrawler.cc)
+        Util.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

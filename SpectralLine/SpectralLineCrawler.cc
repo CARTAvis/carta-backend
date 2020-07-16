@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 
-#include "Table/Columns.h"
+#include "../Table/Columns.h"
 
 using namespace carta;
 

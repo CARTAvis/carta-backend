@@ -29,7 +29,7 @@
 #include "FileList/FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
-#include "SpectralLineCrawler.h"
+#include "SpectralLine/SpectralLineCrawler.h"
 
 #include "DBConnect.h"
 #include "Util.h"
