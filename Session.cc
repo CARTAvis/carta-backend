@@ -513,14 +513,11 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         }
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
-        std::string color(region_info.color());
-        int width(region_info.line_width());
         std::vector<int> dash_list = {region_info.dash_list().begin(), region_info.dash_list().end()};
+        RegionState region_state(
+            file_id, region_info.region_name(), region_info.region_type(), points, region_info.rotation(), region_info.color(), region_info.line_width(), dash_list);
 
-        RegionInfo info(
-            file_id, region_info.region_name(), region_info.region_type(), points, region_info.rotation(), color, width, dash_list);
-
-        success = _region_handler->SetRegion(region_id, info, csys);
+        success = _region_handler->SetRegion(region_id, region_state, csys);
 
         // log error
         if (!success) {
@@ -883,7 +880,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 
             // Set regions
             for (auto& region_id_info : image.regions()) {
-                // region_id_info is map<region_id, RegionInfo>
+                // region_id_info is map<region_id, CARTA::RegionInfo>
                 CARTA::SetRegion set_region_msg;
                 set_region_msg.set_file_id(file_id);
                 set_region_msg.set_region_id(region_id_info.first);

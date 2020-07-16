@@ -16,7 +16,7 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
-struct RegionInfo {
+struct RegionState {
     // struct used for region parameters
     int reference_file_id;
     std::string name;
@@ -27,8 +27,8 @@ struct RegionInfo {
     int line_width;
     std::vector<int> dash_list;
 
-    RegionInfo() {}
-    RegionInfo(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_,
+    RegionState() {}
+    RegionState(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_,
         std::string color_, int line_width_, std::vector<int>& dash_list_) {
         reference_file_id = ref_file_id_;
         name = name_;
@@ -40,7 +40,7 @@ struct RegionInfo {
         dash_list = dash_list_;
     }
 
-    void operator=(const RegionInfo& other) {
+    void operator=(const RegionState& other) {
         reference_file_id = other.reference_file_id;
         name = other.name;
         type = other.type;
@@ -50,22 +50,22 @@ struct RegionInfo {
         line_width = other.line_width;
         dash_list = other.dash_list;
     }
-    bool operator==(const RegionInfo& rhs) {
+    bool operator==(const RegionState& rhs) {
         return (reference_file_id == rhs.reference_file_id) && (type == rhs.type) && !AnnotationChanged(rhs) && !RegionChanged(rhs);
     }
-    bool operator!=(const RegionInfo& rhs) {
+    bool operator!=(const RegionState& rhs) {
         return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || AnnotationChanged(rhs) || RegionChanged(rhs);
     }
 
-    bool AnnotationChanged(const RegionInfo& rhs) {
+    bool AnnotationChanged(const RegionState& rhs) {
         // name and style params
         return (name != rhs.name) || (color != rhs.color) || (line_width == rhs.line_width) || (dash_list != rhs.dash_list);
     }
-    bool RegionChanged(const RegionInfo& rhs) {
+    bool RegionChanged(const RegionState& rhs) {
         // Ignores annotation params (for interrupting region calculations)
         return (rotation != rhs.rotation) || PointsChanged(rhs);
     }
-    bool PointsChanged(const RegionInfo& rhs) {
+    bool PointsChanged(const RegionState& rhs) {
         // Points must be same size, order, and value to be unchanged
         if (control_points.size() != rhs.control_points.size()) {
             return true;
@@ -85,7 +85,7 @@ namespace carta {
 
 class Region {
 public:
-    Region(const RegionInfo& info, casacore::CoordinateSystem* csys);
+    Region(const RegionState& state, casacore::CoordinateSystem* csys);
     ~Region();
 
     inline bool IsValid() { // control points validated
@@ -93,17 +93,17 @@ public:
     };
 
     // set new region parameters
-    bool UpdateRegion(const RegionInfo& info);
+    bool UpdateRegion(const RegionState& state);
 
-    // info accessors
-    inline RegionInfo GetRegionInfo() {
-        return _region_info;
+    // state accessors
+    inline RegionState GetRegionState() {
+        return _region_state;
     }
     inline int GetReferenceFileId() {
-        return _region_info.reference_file_id;
+        return _region_state.reference_file_id;
     }
     inline bool IsRotbox() {
-        return ((_region_info.type == CARTA::RegionType::RECTANGLE) && (_region_info.rotation != 0.0));
+        return ((_region_state.type == CARTA::RegionType::RECTANGLE) && (_region_state.rotation != 0.0));
     }
     inline bool RegionChanged() { // reference image, type, points, or rotation changed
         return _region_changed;
@@ -148,7 +148,7 @@ private:
     casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
 
     // region parameters struct
-    RegionInfo _region_info;
+    RegionState _region_state;
 
     // coord sys and shape of reference image
     casacore::CoordinateSystem* _coord_sys;
@@ -162,7 +162,7 @@ private:
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
     // region flags
-    bool _valid;                // RegionInfo set properly
+    bool _valid;                // RegionState set properly
     bool _region_changed;       // control points or rotation changed
     bool _reference_region_set; // indicates attempt was made; may be null wcregion outside image
 

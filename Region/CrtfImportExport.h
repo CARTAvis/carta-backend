@@ -19,7 +19,7 @@ public:
     CrtfImportExport() {}
 
     // Import constructor
-    // Use casa::RegionTextList to create casa::Annotation AnnRegions for RegionInfo parameters
+    // Use casa::RegionTextList to create casa::Annotation AnnRegions for RegionState parameters
     // file_is_filename : indicates whether file parameter contains file name or file contents.
     CrtfImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int stokes_axis, int file_id,
         const std::string& file, bool file_is_filename);
@@ -33,7 +33,7 @@ public:
 
     // Export regions
     // Create AnnRegion and add to RegionTextList
-    bool AddExportRegion(const RegionInfo& region_info) override;
+    bool AddExportRegion(const RegionState& region_state) override;
     // Print regions to file or string vector
     bool ExportRegions(std::string& filename, std::string& error) override;
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
@@ -43,7 +43,7 @@ protected:
         const casacore::Quantity& rotation) override;
 
 private:
-    // Import RegionTextList Annotation regions to RegionInfo vector
+    // Import RegionTextList Annotation regions to RegionState vector
     void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line);
     void ImportAnnSymbol(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
@@ -53,7 +53,7 @@ private:
     void ImportStyleParameters(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region, std::string& name, std::string& color,
         int& line_width, std::vector<int>& dash_list);
 
-    // Manual region import to RegionInfo
+    // Manual region import to RegionState
     // (workaround for imageanalysis RegionTextList exception for linear coord sys)
     void ProcessFileLines(std::vector<std::string>& lines);
     void ImportAnnSymbol(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
@@ -76,10 +76,10 @@ private:
     bool GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quantity& blcy, casacore::Quantity& trcx, casacore::Quantity& trcy,
         std::string& region_frame, std::vector<CARTA::Point>& control_points);
 
-    // Export RegionInfo as Annotation region or string
-    bool AddExportAnnotationRegion(const RegionInfo& region_info);
-    bool AddExportRegionLine(const RegionInfo& region_info);
-    void AddExportRegionKeywords(std::string& line, const RegionInfo& region_info);
+    // Export RegionState as Annotation region or string
+    bool AddExportAnnotationRegion(const RegionState& region_state);
+    bool AddExportRegionLine(const RegionState& region_state);
+    void AddExportRegionKeywords(std::string& line, const RegionState& region_state);
 
     // Export helpers
     // AnnRegion parameter

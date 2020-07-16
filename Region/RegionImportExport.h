@@ -16,18 +16,18 @@ public:
     RegionImportExport() {}
     virtual ~RegionImportExport() {}
 
-    // Import constructor: file_id to add to RegionInfo
+    // Import constructor: file_id to add to RegionState
     RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id);
     // Export constructor
     RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape);
 
-    // Retrieve imported regions as RegionInfo vector
-    std::vector<RegionInfo> GetImportedRegions(std::string& error);
+    // Retrieve imported regions as RegionState vector
+    std::vector<RegionState> GetImportedRegions(std::string& error);
 
-    // Add region to export: RegionInfo for pixel coords in reference image,
+    // Add region to export: RegionState for pixel coords in reference image,
     // Quantities for world coordinates or for either coordinate type applied to another image
-    virtual bool AddExportRegion(const RegionInfo& region) = 0;
-    bool AddExportRegion(const RegionInfo& region_info, const casacore::RecordInterface& region_record, bool pixel_coord);
+    virtual bool AddExportRegion(const RegionState& region) = 0;
+    bool AddExportRegion(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord);
 
     // Perform export; ostream could be for output file (ofstream) or string (ostringstream)
     virtual bool ExportRegions(std::string& filename, std::string& error) = 0;
@@ -60,7 +60,7 @@ protected:
     int _file_id;
     std::string _parser_delim;
     std::string _import_errors;
-    std::vector<RegionInfo> _import_regions;
+    std::vector<RegionState> _import_regions;
     std::vector<std::string> _export_regions;
 
 private:
@@ -69,7 +69,7 @@ private:
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);
     bool ConvertRecordToRectangle(
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);
-    bool ConvertRecordToEllipse(const RegionInfo& region_info, const casacore::RecordInterface& region_record, bool pixel_coord,
+    bool ConvertRecordToEllipse(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord,
         std::vector<casacore::Quantity>& control_points, casacore::Quantity& qrotation);
     bool ConvertRecordToPolygon(
         const casacore::RecordInterface& region_record, bool pixel_coord, std::vector<casacore::Quantity>& control_points);

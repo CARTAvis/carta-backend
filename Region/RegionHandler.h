@@ -20,7 +20,7 @@ public:
     RegionHandler(bool verbose);
 
     // Regions
-    bool SetRegion(int& region_id, RegionInfo& region_info, casacore::CoordinateSystem* csys);
+    bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
 

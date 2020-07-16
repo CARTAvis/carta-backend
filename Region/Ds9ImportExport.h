@@ -29,7 +29,7 @@ public:
     Ds9ImportExport() {}
 
     // Import constructor
-    // Parse input file and convert region parameters to RegionInfo for given image
+    // Parse input file and convert region parameters to RegionState for given image
     // file_is_filename : indicates whether file parameter contains file name or file contents.
     Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
         const std::string& file, bool file_is_filename);
@@ -42,7 +42,7 @@ public:
 
     // Export regions
     // Convert to DS9 string and add to vector
-    bool AddExportRegion(const RegionInfo& region) override;
+    bool AddExportRegion(const RegionState& region) override;
     // Print regions to file or vector
     bool ExportRegions(std::string& filename, std::string& error) override;
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;

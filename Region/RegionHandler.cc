@@ -34,11 +34,11 @@ int RegionHandler::GetNextRegionId() {
     return max_id + 1;
 }
 
-bool RegionHandler::SetRegion(int& region_id, RegionInfo& region_info, casacore::CoordinateSystem* csys) {
+bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys) {
     // Set region params for region id; if id < 0, create new id
     bool valid_region(false);
     if (_regions.count(region_id)) {
-        _regions.at(region_id)->UpdateRegion(region_info);
+        _regions.at(region_id)->UpdateRegion(region_state);
         valid_region = _regions.at(region_id)->IsValid();
         if (_regions.at(region_id)->RegionChanged()) {
             UpdateNewSpectralRequirements(region_id); // set all req "new"
@@ -48,7 +48,7 @@ bool RegionHandler::SetRegion(int& region_id, RegionInfo& region_info, casacore:
         if (region_id < 0) {
             region_id = GetNextRegionId();
         }
-        auto region = std::shared_ptr<Region>(new Region(region_info, csys));
+        auto region = std::shared_ptr<Region>(new Region(region_state, csys));
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
             valid_region = true;
@@ -119,8 +119,8 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
 
     // Get regions from parser or error message
     std::string error;
-    std::vector<RegionInfo> region_info_list = importer->GetImportedRegions(error);
-    if (region_info_list.empty()) {
+    std::vector<RegionState> region_state_list = importer->GetImportedRegions(error);
+    if (region_state_list.empty()) {
         import_ack.set_success(false);
         import_ack.set_message(error);
         return;
@@ -129,26 +129,27 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     // Set reference file pointer
     _frames[file_id] = frame;
 
-    // Set Regions from RegionInfo list and complete message
+    // Set Regions from RegionState list and complete message
     import_ack.set_success(true);
     import_ack.set_message(error);
     int region_id = GetNextRegionId();
     std::map<int, CARTA::RegionInfo> region_info_map;
-    for (auto& region_info : region_info_list) {
+    for (auto& region_state : region_state_list) {
         auto region_csys = frame->CoordinateSystem();
-        auto region = std::shared_ptr<Region>(new Region(region_info, region_csys));
+        auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
+
         if (region && region->IsValid()) {
             _regions[region_id] = std::move(region);
 
             // Set CARTA::RegionInfo and add to map
             CARTA::RegionInfo carta_region_info;
-            carta_region_info.set_region_name(region_info.name);
-            carta_region_info.set_region_type(region_info.type);
-            *carta_region_info.mutable_control_points() = {region_info.control_points.begin(), region_info.control_points.end()};
-            carta_region_info.set_rotation(region_info.rotation);
-            carta_region_info.set_color(region_info.color);
-            carta_region_info.set_line_width(region_info.line_width);
-            *carta_region_info.mutable_dash_list() = {region_info.dash_list.begin(), region_info.dash_list.end()};
+            carta_region_info.set_region_name(region_state.name);
+            carta_region_info.set_region_type(region_state.type);
+            *carta_region_info.mutable_control_points() = {region_state.control_points.begin(), region_state.control_points.end()};
+            carta_region_info.set_rotation(region_state.rotation);
+            carta_region_info.set_color(region_state.color);
+            carta_region_info.set_line_width(region_state.line_width);
+            *carta_region_info.mutable_dash_list() = {region_state.dash_list.begin(), region_state.dash_list.end()};
 
             // increment region id for next region
             region_info_map[region_id++] = carta_region_info;
@@ -209,17 +210,17 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     for (auto region_id : region_ids) {
         if (_regions.count(region_id)) {
             bool region_added(false);
-            RegionInfo region_info = _regions[region_id]->GetRegionInfo();
+            RegionState region_state = _regions[region_id]->GetRegionState();
 
-            // Use RegionInfo control points with reference file id and pixel export
-            if ((region_info.reference_file_id == file_id) && pixel_coord) {
-                region_added = exporter->AddExportRegion(region_info);
+            // Use RegionState control points with reference file id and pixel export
+            if ((region_state.reference_file_id == file_id) && pixel_coord) {
+                region_added = exporter->AddExportRegion(region_state);
             } else {
                 try {
                     // Get converted lattice region parameters (pixel) as a Record
                     casacore::TableRecord region_record = _regions.at(region_id)->GetImageRegionRecord(file_id, *output_csys, output_shape);
                     if (!region_record.empty()) {
-                        region_added = exporter->AddExportRegion(region_info, region_record, pixel_coord);
+                        region_added = exporter->AddExportRegion(region_state, region_record, pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
                     std::cerr << "Export region record failed: " << err.getMesg() << std::endl;
@@ -1012,7 +1013,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     }
 
     // Get initial region info to cancel profile if it changes
-    RegionInfo initial_region_info = _regions.at(region_id)->GetRegionInfo();
+    RegionState initial_region_state = _regions.at(region_id)->GetRegionState();
 
     // Use loader swizzled data for efficiency
     if (_frames.at(file_id)->UseLoaderSpectralData(lcregion->shape())) {
@@ -1037,7 +1038,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
 
                 // Cancel if region, current stokes, or spectral requirements changed
-                if (_regions.at(region_id)->GetRegionInfo() != initial_region_info) {
+                if (_regions.at(region_id)->GetRegionState() != initial_region_state) {
                     _frames.at(file_id)->DecreaseZProfileCount();
                     _regions.at(region_id)->DecreaseZProfileCount();
                     return false;
@@ -1167,7 +1168,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             return false;
         }
         // Cancel if region, current stokes, or spectral requirements changed
-        if (_regions.at(region_id)->GetRegionInfo() != initial_region_info) {
+        if (_regions.at(region_id)->GetRegionState() != initial_region_state) {
             _frames.at(file_id)->DecreaseZProfileCount();
             _regions.at(region_id)->DecreaseZProfileCount();
             return false;
