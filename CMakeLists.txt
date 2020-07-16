@@ -1,17 +1,20 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(carta_backend)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 # Enable OpenMP if package is found
 find_package(OpenMP)
-if(OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+if (OPENMP_CXX_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-else()
+else ()
     message(WARNING "OpenMP not found!")
-endif()
+endif ()
+
+# Enable parallel GCC algorithms (needed until there is relable support for C++17 from compilers)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_PARALLEL")
+
 
 # Use the -march=native flags when building on the same architecture as deploying to get a slight performance
 # increase when running CPU intensive tasks such as compression and down-sampling of data. If targeting AVX-capable
@@ -22,9 +25,9 @@ option(EnableAvx "Enable AVX codepaths instead of SSE4" OFF)
 
 if (EnableAvx)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
-else()
+else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
-endif()
+endif ()
 
 # use -DAuthServer:BOOL=ON to link mongodb and jsonccpp
 option(AuthServer "AuthServer" OFF)
@@ -36,12 +39,20 @@ FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
+ADD_SUBDIRECTORY(carta-scripting-grpc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/ImageData)
-INCLUDE_DIRECTORIES(/usr/include/casacore)
-INCLUDE_DIRECTORIES(/usr/local/include/casacode)
+INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
+INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    INCLUDE_DIRECTORIES(/usr/local/include)
+    INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
+    INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
+    LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
+endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 if (AuthServer)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
@@ -56,14 +67,48 @@ if (AuthServer)
             DBConnect.cc)
 endif (AuthServer)
 
+FIND_PACKAGE(gRPC QUIET)
+if (gRPC_FOUND)
+    set(LINK_LIBS
+            ${LINK_LIBS}
+            gRPC::grpc++
+            )
+    message(STATUS "gRPC found using FIND_PACKAGE")
+else ()
+    message(STATUS "gRPC not found using FIND_PACKAGE, using pkg-config instead")
+    FIND_PACKAGE(PkgConfig REQUIRED)
+    PKG_SEARCH_MODULE(GRPC REQUIRED grpc)
+    if (GRPC_FOUND)
+        message(STATUS "gRPC found using pkg-config")
+        set(LINK_LIBS
+                ${LINK_LIBS}
+                grpc
+                grpc++
+                )
+    else ()
+        message(FATAL_ERROR "Could not import gRPC library")
+    endif ()
+endif ()
+
 if (DisableContourCompression)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DISABLE_CONTOUR_COMPRESSION_")
-endif(DisableContourCompression)
+endif (DisableContourCompression)
+
+option(UseBoostFilesystem "UseBoostFilesystem" OFF)
+
+if (UseBoostFilesystem)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_BOOST_FILESYSTEM_")
+    find_package(Boost 1.56 REQUIRED COMPONENTS filesystem)
+    set(LINK_LIBS ${LINK_LIBS} Boost::filesystem)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(LINK_LIBS ${LINK_LIBS} stdc++fs)
+endif ()
 
 
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
+        carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
         fmt
         uWS
@@ -73,6 +118,8 @@ set(LINK_LIBS
         zfp
         zstd
         tbb
+        cfitsio
+        pugixml
         casa_casa
         casa_coordinates
         casa_tables
@@ -83,6 +130,7 @@ set(LINK_LIBS
         casa_mirlib
         casa_scimath
         casa_imageanalysis
+        ${OpenMP_CXX_LIBRARIES}
         ${HDF5_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
 
@@ -91,27 +139,35 @@ set(SOURCE_FILES
         Main.cc
         Session.cc
         Frame.cc
-        Compression.cc
+        DataStream/Compression.cc
+        DataStream/Contouring.cc
+        DataStream/Smoothing.cc
+        DataStream/Tile.cc
+        FileList/FileExtInfoLoader.cc
+        FileList/FileInfoLoader.cc
+        FileList/FileListHandler.cc
+        FileList/FitsHduList.cc
+        GrpcServer/CartaGrpcService.cc
         ImageData/Hdf5Attributes.cc
         ImageData/FileLoader.cc
         ImageData/Hdf5Loader.cc
         ImageData/CartaHdf5Image.cc
         ImageData/CartaMiriadImage.cc
-        FileList/FileExtInfoLoader.cc
-        FileList/FileInfoLoader.cc
-        FileList/FileListHandler.cc
-        FileList/FitsHduList.cc
+        Region/RegionHandler.cc
+        Region/RegionImportExport.cc
+        Region/CrtfImportExport.cc
+        Region/Ds9ImportExport.cc
         Region/Region.cc
-        Region/RegionStats.cc
-        Region/RegionProfiler.cc
-        Region/Histogram.cc
+        ImageStats/StatsCalculator.cc
+        ImageStats/Histogram.cc
+        Table/Columns.cc
+        Table/Table.cc
+        Table/TableView.cc
+        Table/TableController.cc
+        Timer/Timer.cc
         OnMessageTask.cc
         FileSettings.cc
-        Util.cc
-        Tile.cc
-        Ds9Parser.cc
-        Contouring.cc
-        Smoothing.cc)
+        Util.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
@@ -123,17 +179,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Tests
-option(test "Build all tests." OFF)
+option(test "Build tests." OFF)
 if (test)
-    enable_testing()
-    find_package(GTest)
-    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
-
-    add_executable(testTileEncoding test/TestTileEncoding.cc)
-    target_link_libraries(testTileEncoding gtest gtest_main Threads::Threads fmt)
-
-    add_test(NAME TestTileEncoding COMMAND testTileEncoding)
-endif (test)
-
-# Install executable
-install(TARGETS carta_backend DESTINATION bin)
+    add_subdirectory(test)
+endif ()

@@ -11,13 +11,13 @@ class FileInfoLoader {
 public:
     FileInfoLoader(const std::string& filename);
 
-    bool FillFileInfo(CARTA::FileInfo* file_info);
-    bool FillFileExtInfo(CARTA::FileInfoExtended* ext_info, std::string& hdu, std::string& message);
+    bool FillFileInfo(CARTA::FileInfo& file_info);
+    bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, std::string& hdu, std::string& message);
 
 private:
     // FileInfo
-    bool GetFitsHduList(CARTA::FileInfo* file_info, const std::string& abs_filename);
-    bool GetHdf5HduList(CARTA::FileInfo* file_info, const std::string& abs_filename);
+    bool GetFitsHduList(CARTA::FileInfo& file_info, const std::string& abs_filename);
+    bool GetHdf5HduList(CARTA::FileInfo& file_info, const std::string& abs_filename);
 
     std::string _filename;
     CARTA::FileType _type;
