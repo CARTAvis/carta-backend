@@ -92,12 +92,18 @@ public:
         return _valid;
     };
 
-    // set new region parameters and coord sys
-    bool UpdateRegion(const RegionInfo& info, casacore::CoordinateSystem* csys);
+    // set new region parameters
+    bool UpdateRegion(const RegionInfo& info);
 
     // info accessors
     inline RegionInfo GetRegionInfo() {
         return _region_info;
+    }
+    inline int GetReferenceFileId() {
+        return _region_info.reference_file_id;
+    }
+    inline bool IsRotbox() {
+        return ((_region_info.type == CARTA::RegionType::RECTANGLE) && (_region_info.rotation != 0.0));
     }
     inline bool RegionChanged() { // reference image, type, points, or rotation changed
         return _region_changed;
@@ -109,11 +115,12 @@ public:
     void IncreaseZProfileCount();
     void DecreaseZProfileCount();
 
-    // 2D region in reference image applied to input image parameters
+    // Converted region in Record for export
     casacore::TableRecord GetImageRegionRecord(
         int file_id, casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+
+    // Converted region as lcregion and mask
     casacore::LCRegion* GetImageRegion(int file_id, casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
-    // Mask requires that image region for file_id has been set with GetImageRegion()
     casacore::ArrayLattice<casacore::Bool> GetImageRegionMask(int file_id);
 
 private:
@@ -123,16 +130,18 @@ private:
     bool CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionType type);
     bool PointsFinite(const std::vector<CARTA::Point>& points);
 
-    // Apply region to reference image, ultimately to get LCRegion
+    // Apply region to reference image, set LCRegion _reference_region and wcs control points.  Reset when changed.
     bool ReferenceRegionValid();
     void SetReferenceRegion();
+    void ResetRegionCache();
     bool CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
     bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
     bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
 
-    // Apply region to any image (indicated by output coord sys).
-    // Return control points in Record in format of LCRegion::toRecord().
-    casacore::TableRecord GetControlPointsRecord(const casacore::IPosition& image_shape); // output is reference image
+    // Apply region to any image (convert to output coord sys) and return in Record
+    casacore::TableRecord GetRegionPointsRecord(
+        int file_id, casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+    casacore::TableRecord GetControlPointsRecord(int ndim); // use control points for reference image, no conversion
     casacore::TableRecord GetPointRecord(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
     casacore::TableRecord GetPolygonRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
@@ -141,22 +150,21 @@ private:
     // region parameters struct
     RegionInfo _region_info;
 
-    // coord sys of reference image
+    // coord sys and shape of reference image
     casacore::CoordinateSystem* _coord_sys;
 
-    // casacore WCRegion
-    std::mutex _region_mutex;                            // creation of casacore regions is not threadsafe
-    std::vector<casacore::Quantity> _wcs_control_points; // needed for region export
-    std::shared_ptr<casacore::WCRegion> _ref_region;     // 2D region applied to reference image
-    float _ellipse_rotation;                             // (deg), may be adjusted from pixel rotation value
-
-    // WCRegion applied to other images, used for different data streams; key is file_id
+    // Reference region cache
+    std::mutex _region_mutex;                              // creation of casacore regions is not threadsafe
+    std::shared_ptr<casacore::WCRegion> _reference_region; // 2D region applied to reference image
+    std::vector<casacore::Quantity> _wcs_control_points;   // used for region export
+    float _ellipse_rotation;                               // (deg), may be adjusted from pixel rotation value
+    // Reference region applied to other images; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
     // region flags
-    bool _valid;          // RegionInfo set properly
-    bool _region_changed; // type, control points, or rotation changed
-    bool _ref_region_set; // indicates attempt was made; may be null wcregion outside image
+    bool _valid;                // RegionInfo set properly
+    bool _region_changed;       // control points or rotation changed
+    bool _reference_region_set; // indicates attempt was made; may be null wcregion outside image
 
     // Communication
     std::atomic<int> _z_profile_count;
