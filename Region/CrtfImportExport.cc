@@ -166,8 +166,8 @@ bool CrtfImportExport::ExportRegions(std::vector<std::string>& contents, std::st
 
 // Protected: for exporting regions in world coordinates
 
-bool CrtfImportExport::AddExportRegion(const std::string& name, CARTA::RegionType type,
-    const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
+bool CrtfImportExport::AddExportRegion(
+    const RegionState& region_state, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
     // Add world-coord region using input Quantities
     if (control_points.empty()) {
         return false;
@@ -179,7 +179,7 @@ bool CrtfImportExport::AddExportRegion(const std::string& name, CARTA::RegionTyp
     bool require_region(false); // can be outside image
 
     try {
-        switch (type) {
+        switch (region_state.type) {
             case CARTA::RegionType::POINT: {
                 casacore::Quantity x(control_points[0]);
                 casacore::Quantity y(control_points[1]);
@@ -227,23 +227,26 @@ bool CrtfImportExport::AddExportRegion(const std::string& name, CARTA::RegionTyp
                 break;
         }
 
-        casacore::CountedPtr<const casa::AnnotationBase> annotation_region;
+        casacore::CountedPtr<casa::AnnotationBase> annotation_region;
         if (ann_symbol) {
-            if (!name.empty()) {
-                ann_symbol->setLabel(name);
+            if (!region_state.name.empty()) {
+                ann_symbol->setLabel(region_state.name);
             }
             annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_symbol);
         }
         if (ann_region) {
             ann_region->setAnnotationOnly(false);
-            if (!name.empty()) {
-                ann_region->setLabel(name);
+            if (!region_state.name.empty()) {
+                ann_region->setLabel(region_state.name);
             }
             annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_region);
         }
 
-        casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
-        _region_list.addLine(file_line);
+        if (annotation_region) {
+            ExportStyleParameters(region_state, annotation_region);
+            casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
+            _region_list.addLine(file_line);
+        }
     } catch (const casacore::AipsError& err) {
         std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
         return false;
@@ -307,7 +310,10 @@ void CrtfImportExport::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& f
             }
             break;
         }
-        case casa::AsciiAnnotationFileLine::GLOBAL: // TODO
+        case casa::AsciiAnnotationFileLine::GLOBAL: {
+            _global_properties = file_line.getGloabalParams();
+            break;
+        }
         case casa::AsciiAnnotationFileLine::COMMENT:
         case casa::AsciiAnnotationFileLine::UNKNOWN_TYPE: {
             break;
@@ -556,12 +562,31 @@ void CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::Annotat
 void CrtfImportExport::ImportStyleParameters(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region, std::string& name,
     std::string& color, int& line_width, std::vector<int>& dash_list) {
     name = annotation_region->getLabel();
-    color = annotation_region->getColorString();
+    color = FormatColor(annotation_region->getColorString());
     line_width = annotation_region->getLineWidth();
     if (annotation_region->getLineStyle() == casa::AnnotationBase::SOLID) {
         dash_list = {0, 0};
     } else {
-        dash_list = {3, 3};
+        dash_list = {2, 2};
+    }
+}
+
+void CrtfImportExport::ImportGlobalParameters(std::unordered_map<std::string, std::string>& properties) {
+    // Import properties from global file line to map
+    // AnnotationBase has keywordToString but not the reverse
+    std::unordered_map<std::string, casa::AnnotationBase::Keyword> global_map = {{"coord", casa::AnnotationBase::COORD},
+        {"range", casa::AnnotationBase::RANGE}, {"frame", casa::AnnotationBase::FRAME}, {"corr", casa::AnnotationBase::CORR},
+        {"veltype", casa::AnnotationBase::VELTYPE}, {"restfreq", casa::AnnotationBase::RESTFREQ},
+        {"linewidth", casa::AnnotationBase::LINEWIDTH}, {"linestyle", casa::AnnotationBase::LINESTYLE},
+        {"symsize", casa::AnnotationBase::SYMSIZE}, {"symthick", casa::AnnotationBase::SYMTHICK}, {"color", casa::AnnotationBase::COLOR},
+        {"font", casa::AnnotationBase::FONT}, {"fontsize", casa::AnnotationBase::FONTSIZE}, {"fontstyle", casa::AnnotationBase::FONTSTYLE},
+        {"usetex", casa::AnnotationBase::USETEX}, {"label", casa::AnnotationBase::LABEL}, {"labelcolor", casa::AnnotationBase::LABELCOLOR},
+        {"labelpos", casa::AnnotationBase::LABELPOS}, {"labeloff", casa::AnnotationBase::LABELOFF}};
+
+    for (auto& property : properties) {
+        if (global_map.count(property.first)) {
+            _global_properties[global_map[property.first]] = property.second;
+        }
     }
 }
 
@@ -592,8 +617,6 @@ void CrtfImportExport::ProcessFileLines(std::vector<std::string>& lines) {
         } else if (region == "poly") {
             ImportAnnPolygon(parameters, properties);
         } else if (region == "global") {
-            // TODO
-            _import_errors.append(region + " not supported.\n");
         } else {
             _import_errors.append(region + " not supported.\n");
         }
@@ -763,22 +786,40 @@ void CrtfImportExport::ImportAnnPolygon(std::vector<std::string>& parameters, st
 void CrtfImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name,
     std::string& color, int& line_width, std::vector<int>& dash_list) {
     // Get RegionState style parameters from properties map
+    // name
     if (properties.count("label")) {
         name = properties["label"];
     }
+
+    // color
     if (properties.count("color")) {
-        color = properties["color"];
+        color = FormatColor(properties["color"]);
+    } else if (_global_properties.count(casa::AnnotationBase::COLOR)) {
+        color = FormatColor(_global_properties[casa::AnnotationBase::COLOR]);
     }
+    if (!color.empty() && std::strtoul(color.c_str(), nullptr, 16)) {
+        // add prefix if hex
+        color = "#" + color;
+    }
+
+    // linewidth
     if (properties.count("linewidth")) {
         line_width = std::stoi(properties["linewidth"]);
+    } else if (_global_properties.count(casa::AnnotationBase::LINEWIDTH)) {
+        line_width = std::stoi(_global_properties[casa::AnnotationBase::LINEWIDTH]);
     }
+
+    // linestyle
+    std::string style("-"); // solid
     if (properties.count("linestyle")) {
-        std::string style = properties["linestyle"];
-        if (style == "-") { // solid line
-            dash_list = {0, 0};
-        } else {
-            dash_list = {3, 3};
-        }
+        style = properties["linestyle"];
+    } else if (_global_properties.count(casa::AnnotationBase::LINESTYLE)) {
+        style = _global_properties[casa::AnnotationBase::LINESTYLE];
+    }
+    if (style == "-") { // solid line
+        dash_list = {0, 0};
+    } else {
+        dash_list = {2, 2};
     }
 }
 
@@ -1028,22 +1069,18 @@ bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state
                 break;
         }
 
-        casacore::CountedPtr<const casa::AnnotationBase> annotation_region;
+        casacore::CountedPtr<casa::AnnotationBase> annotation_region;
         if (ann_symbol) {
-            if (!region_state.name.empty()) {
-                ann_symbol->setLabel(region_state.name);
-            }
             annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_symbol);
         }
         if (ann_region) {
             ann_region->setAnnotationOnly(false);
-            if (!region_state.name.empty()) {
-                ann_region->setLabel(region_state.name);
-            }
             annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_region);
         }
 
         if (annotation_region) {
+            ExportStyleParameters(region_state, annotation_region);
+
             casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
             _region_list.addLine(file_line);
         } else {
@@ -1105,7 +1142,7 @@ bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state) {
     }
 
     if (!region_line.empty()) {
-        AddExportRegionKeywords(region_line, region_state);
+        ExportStyleParameters(region_state, region_line);
         _export_regions.push_back(region_line);
         return true;
     }
@@ -1113,26 +1150,58 @@ bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state) {
     return false;
 }
 
-void CrtfImportExport::AddExportRegionKeywords(std::string& line, const RegionState& region_state) {
-    // Add standard CRTF keywords with default values or optional label (name) to line
+void CrtfImportExport::ExportStyleParameters(
+    const RegionState& region_state, casacore::CountedPtr<casa::AnnotationBase> annotation_region) {
+    // Set annotation_region style parameters from RegionState
+    // label
+    if (!region_state.name.empty()) {
+        annotation_region->setLabel(region_state.name);
+        annotation_region->setLabelColor(casa::AnnotationBase::DEFAULT_LABELCOLOR);
+        annotation_region->setLabelPosition(casa::AnnotationBase::DEFAULT_LABELPOS);
+    }
+
+    // color: remove leading '#', keep lower case
+    std::string color = region_state.color.substr(1);
+    annotation_region->setColor(color);
+
+    // linewidth
+    annotation_region->setLineWidth(region_state.line_width);
+
+    // linestyle
+    casa::AnnotationBase::LineStyle style(casa::AnnotationBase::SOLID);
+    if (region_state.dash_list.empty() || region_state.dash_list[0] != 0) {
+        style = casa::AnnotationBase::DASHED;
+    }
+    annotation_region->setLineStyle(style);
+}
+
+void CrtfImportExport::ExportStyleParameters(const RegionState& region_state, std::string& region_line) {
+    // Add standard CRTF keywords with default values or optional label to region_line
     std::ostringstream oss;
+    // linewidth
     oss << " linewidth=" << std::to_string(region_state.line_width) << ", ";
 
-    std::string line_style("-");
-    if (region_state.dash_list[0] != 0) {
-        line_style = casa::AnnotationBase::lineStyleToString(casa::AnnotationBase::DASHED);
+    // linestyle
+    casa::AnnotationBase::LineStyle style(casa::AnnotationBase::SOLID);
+    if (region_state.dash_list.empty() || (region_state.dash_list[0] != 0)) {
+        style = casa::AnnotationBase::DASHED;
     }
-    oss << "linestyle=" << line_style << ", ";
+    oss << "linestyle=" << casa::AnnotationBase::lineStyleToString(style) << ", ";
 
+    // symsize, symthick
     oss << "symsize=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLSIZE) << ", ";
     oss << "symthick=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLTHICKNESS) << ", ";
+
+    // color: lowercase, no leading #
     oss << "color=" << region_state.color << ", ";
+
+    // font, fontsize, fontstyle, usetex
     oss << "font=\"" << casa::AnnotationBase::DEFAULT_FONT << "\", ";
     oss << "fontsize=" << std::to_string(casa::AnnotationBase::DEFAULT_FONTSIZE) << ", ";
     oss << "fontstyle=" << casa::AnnotationBase::fontStyleToString(casa::AnnotationBase::DEFAULT_FONTSTYLE) << ", ";
     oss << "usetex=" << (casa::AnnotationBase::DEFAULT_USETEX ? "true" : "false");
 
-    // Add name (label) if set
+    // label if set
     if (!region_state.name.empty()) {
         oss << ", label=\"" << region_state.name << "\", ";
         oss << "labelcolor=green, ";
@@ -1140,7 +1209,7 @@ void CrtfImportExport::AddExportRegionKeywords(std::string& line, const RegionSt
     }
 
     oss << std::endl;
-    line.append(oss.str());
+    region_line.append(oss.str());
 }
 
 // Private: export helpers

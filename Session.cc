@@ -514,8 +514,8 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
         std::vector<int> dash_list = {region_info.dash_list().begin(), region_info.dash_list().end()};
-        RegionState region_state(
-            file_id, region_info.region_name(), region_info.region_type(), points, region_info.rotation(), region_info.color(), region_info.line_width(), dash_list);
+        RegionState region_state(file_id, region_info.region_name(), region_info.region_type(), points, region_info.rotation(),
+            region_info.color(), region_info.line_width(), dash_list);
 
         success = _region_handler->SetRegion(region_id, region_state, csys);
 

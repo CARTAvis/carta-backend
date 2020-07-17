@@ -133,7 +133,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
     import_ack.set_success(true);
     import_ack.set_message(error);
     int region_id = GetNextRegionId();
-    std::map<int, CARTA::RegionInfo> region_info_map;
+    auto region_info_map = import_ack.mutable_regions();
     for (auto& region_state : region_state_list) {
         auto region_csys = frame->CoordinateSystem();
         auto region = std::shared_ptr<Region>(new Region(region_state, region_csys));
@@ -152,7 +152,7 @@ void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CART
             *carta_region_info.mutable_dash_list() = {region_state.dash_list.begin(), region_state.dash_list.end()};
 
             // increment region id for next region
-            region_info_map[region_id++] = carta_region_info;
+            (*region_info_map)[region_id++] = carta_region_info;
         }
     }
 }

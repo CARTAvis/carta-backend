@@ -24,6 +24,7 @@ Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, co
     : RegionImportExport(image_coord_sys, image_shape), _pixel_coord(pixel_coord) {
     // Export regions to DS9 format
     // Set coordinate system for file header
+    InitGlobalProperties();
     if (pixel_coord) {
         _file_ref_frame = "physical";
     } else {
@@ -49,6 +50,23 @@ Ds9ImportExport::Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, co
 
 Ds9ImportExport::~Ds9ImportExport() {
     delete _coord_sys;
+}
+
+void Ds9ImportExport::InitGlobalProperties() {
+    // Set global properties to defaults
+    _global_properties["color"] = "green";
+    _global_properties["dashlist"] = "8 3";
+    _global_properties["width"] = "1";
+    _global_properties["font"] = "\"helvetica 10 normal roman\"";
+    _global_properties["select"] = "1";
+    _global_properties["highlite"] = "1";
+    _global_properties["dash"] = "0";
+    _global_properties["fixed"] = "0";
+    _global_properties["edit"] = "1";
+    _global_properties["move"] = "1";
+    _global_properties["delete"] = "1";
+    _global_properties["include"] = "1";
+    _global_properties["source"] = "1";
 }
 
 // Public: for exporting regions
@@ -108,14 +126,9 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
             break;
     }
 
-    // Add region name
-    if (!region_state.name.empty()) {
-        region_line.append(" # text={" + region_state.name + "}");
-    }
-
-    // End line and add to string vector
+    // Add region style and add to list
     if (!region_line.empty()) {
-        region_line.append("\n");
+        AddExportStyleParameters(region_state, region_line);
         _export_regions.push_back(region_line);
         return true;
     }
@@ -123,28 +136,22 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
     return false;
 }
 
-bool Ds9ImportExport::AddExportRegion(const std::string& name, CARTA::RegionType type,
-    const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
+bool Ds9ImportExport::AddExportRegion(
+    const RegionState& region_state, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
     // Add region using values from LCRegion Record (pixel or converted to world)
-
     float angle = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
 
-    std::string region;
+    std::string region_line;
     if (_pixel_coord) {
-        region = AddExportRegionPixel(type, control_points, angle);
+        region_line = AddExportRegionPixel(region_state.type, control_points, angle);
     } else {
-        region = AddExportRegionWorld(type, control_points, angle);
+        region_line = AddExportRegionWorld(region_state.type, control_points, angle);
     }
 
-    // Add region name
-    if (!name.empty()) {
-        region.append(" # text={" + name + "}");
-    }
-
-    // Add to string vector
-    if (!region.empty()) {
-        region.append("\n");
-        _export_regions.push_back(region);
+    // Add region style and add to list
+    if (!region_line.empty()) {
+        AddExportStyleParameters(region_state, region_line);
+        _export_regions.push_back(region_line);
         return true;
     }
 
@@ -204,8 +211,8 @@ void Ds9ImportExport::ProcessFileLines(std::vector<std::string>& lines) {
             continue;
         }
 
-        // TODO: add globals
         if (line.find("global") != std::string::npos) {
+            SetGlobals(line);
             continue;
         }
 
@@ -292,6 +299,25 @@ void Ds9ImportExport::SetImageReferenceFrame() {
 }
 
 // Import regions into RegionState vector
+
+void Ds9ImportExport::SetGlobals(std::string& global_line) {
+    // Set global properties
+    std::vector<std::string> parameters;
+    SplitString(global_line, ' ', parameters);
+    for (int i = 0; i < parameters.size(); ++i) {
+        std::string property = parameters[i];
+        size_t equals_pos = property.find('=');
+        if (equals_pos != std::string::npos) {
+            std::string key = property.substr(0, equals_pos);
+            std::string value = property.substr(equals_pos + 1, property.size() - equals_pos);
+            if (key == "dashlist") { // add next parameter
+                ++i;
+                value += " " + parameters[i];
+            }
+            _global_properties[key] = value;
+        }
+    }
+}
 
 void Ds9ImportExport::SetRegion(std::string& region_definition) {
     // Convert ds9 region description into RegionState
@@ -693,19 +719,39 @@ void Ds9ImportExport::ImportPolygonRegion(
 void Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name, std::string& color,
     int& line_width, std::vector<int>& dash_list) {
     // Get style params from properties
+    // name
     if (properties.count("text")) {
-        name = properties["text"];
+        std::string text(properties["text"]);
+        // Remove { }
+        name = text.substr(1, text.size() - 2);
     }
+
+    // color
     if (properties.count("color")) {
-        color = properties["color"];
+        color = FormatColor(properties["color"]);
+    } else if (_global_properties.count("color")) {
+        color = FormatColor(_global_properties["color"]);
     }
+
+    // width
     if (properties.count("width")) {
         line_width = std::stoi(properties["width"]);
+    } else if (_global_properties.count("width")) {
+        line_width = std::stoi(_global_properties["width"]);
     }
+
+    // dash
+    std::string dashlist;
     if (properties.count("dash") && (properties["dash"] == "1") && properties.count("dashlist")) {
+        dashlist = properties["dashlist"];
+    } else if (_global_properties.count("dash") && (_global_properties["dash"] == "1") && _global_properties.count("dashlist")) {
+        dashlist = _global_properties["dashlist"];
+    }
+
+    if (!dashlist.empty()) {
         // Convert string to vector then to int
         std::vector<std::string> dash_values;
-        SplitString(properties["dashlist"], ' ', dash_values);
+        SplitString(dashlist, ' ', dash_values);
         for (auto& value : dash_values) {
             dash_list.push_back(std::stoi(value));
         }
@@ -792,21 +838,26 @@ void Ds9ImportExport::AddHeader() {
     // print file format, globals, and coord sys
     std::ostringstream os;
     os << "# Region file format: DS9 CARTA " << VERSION_ID << std::endl;
-    Ds9Properties globals;
-    os << "global color=" << globals.color << " delete=" << globals.delete_region << " edit=" << globals.edit_region
-       << " fixed=" << globals.fixed_region << " font=\"" << globals.font << "\" highlite=" << globals.highlite_region
-       << " include=" << globals.include_region << " move=" << globals.move_region << " select=" << globals.select_region << "\n";
+    os << "global";
+
+    std::vector<std::string> ordered_keys = {
+        "color", "dashlist", "width", "font", "select", "highlite", "dash", "fixed", "edit", "move", "delete", "include", "source"};
+    for (auto& key : ordered_keys) {
+        os << " " << key << "=" << _global_properties[key];
+    }
+    os << std::endl;
+
     std::string header = os.str();
     _export_regions.push_back(header);
 
+    // Add coordinate frame
     os.str("");
     if (_file_ref_frame.empty()) {
         os << "image\n";
     } else {
-        os << _file_ref_frame << "\n";
+        os << _file_ref_frame << std::endl;
     }
-    std::string csys = os.str();
-    _export_regions.push_back(csys);
+    _export_regions.push_back(os.str());
 }
 
 std::string Ds9ImportExport::AddExportRegionPixel(
@@ -937,4 +988,25 @@ std::string Ds9ImportExport::AddExportRegionWorld(
     }
 
     return region;
+}
+
+void Ds9ImportExport::AddExportStyleParameters(const RegionState& region_state, std::string& region_line) {
+    // Add region style properties from RegionState to line
+    region_line.append(" #");
+
+    // color
+    region_line.append(" color=" + FormatColor(region_state.color));
+    // line width
+    region_line.append(" width=" + std::to_string(region_state.line_width));
+    // name
+    if (!region_state.name.empty()) {
+        region_line.append(" text={" + region_state.name + "}");
+    }
+    // dash list for enclosed regions
+    if ((region_state.type != CARTA::RegionType::POINT) && !region_state.dash_list.empty()) {
+        std::string dash_on(std::to_string(region_state.dash_list[0]));
+        std::string dash_off = (region_state.dash_list.size() == 2 ? std::to_string(region_state.dash_list[1]) : dash_on);
+        region_line.append(" dash=1 dashlist=" + dash_on + " " + dash_off);
+    }
+    region_line.append("\n");
 }

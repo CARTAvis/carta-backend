@@ -39,7 +39,7 @@ public:
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
-    bool AddExportRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points,
+    bool AddExportRegion(const RegionState& region_state, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation) override;
 
 private:
@@ -62,6 +62,7 @@ private:
     void ImportAnnPolygon(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
     void ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name, std::string& color,
         int& line_width, std::vector<int>& dash_list);
+    void ImportGlobalParameters(std::unordered_map<std::string, std::string>& properties);
 
     // Rectangle import helpers
     // Convert AnnPolygon pixel vertices to CARTA Control Points (center and size)
@@ -76,16 +77,22 @@ private:
     bool GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quantity& blcy, casacore::Quantity& trcx, casacore::Quantity& trcy,
         std::string& region_frame, std::vector<CARTA::Point>& control_points);
 
-    // Export RegionState as Annotation region or string
+    // Export RegionState as Annotation region
     bool AddExportAnnotationRegion(const RegionState& region_state);
+    // Export RegionState as string
     bool AddExportRegionLine(const RegionState& region_state);
-    void AddExportRegionKeywords(std::string& line, const RegionState& region_state);
+    // Append style parameters to annotation region or line
+    void ExportStyleParameters(const RegionState& region_state, casacore::CountedPtr<casa::AnnotationBase> annotation_region);
+    void ExportStyleParameters(const RegionState& region_state, std::string& region_line);
 
     // Export helpers
     // AnnRegion parameter
     casacore::Vector<casacore::Stokes::StokesTypes> GetStokesTypes();
     // Create header when printing region file
     std::string GetCrtfVersionHeader();
+
+    // Imported globals
+    std::map<casa::AnnotationBase::Keyword, casacore::String> _global_properties;
 
     // For export: add regions to list then print them
     casa::RegionTextList _region_list;

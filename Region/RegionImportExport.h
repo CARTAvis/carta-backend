@@ -44,13 +44,16 @@ protected:
     virtual void ParseRegionParameters(
         std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
 
-    virtual bool AddExportRegion(const std::string& name, CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points,
-        const casacore::Quantity& rotation) = 0;
+    virtual bool AddExportRegion(
+        const RegionState& region_state, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) = 0;
 
     // Convert wcs -> pixel
     bool ConvertPointToPixels(
         std::string& region_frame, std::vector<casacore::Quantity>& point, casacore::Vector<casacore::Double>& pixel_coords);
     double WorldToPixelLength(casacore::Quantity world_length, unsigned int pixel_axis);
+
+    // Format hex string e.g. "10161a" -> "#10161A"
+    std::string FormatColor(const std::string& color);
 
     // Image info to which region is applied
     casacore::CoordinateSystem* _coord_sys;
