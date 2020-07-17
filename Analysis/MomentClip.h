@@ -97,10 +97,9 @@ namespace carta {
 template <class T>
 class MomentClip : public MomentCalcBase<T> {
 public:
-    // Constructor.  The pointer is to an ancilliary  lattice used as a mask.
-    // If no masking lattice is desired, the pointer value must be zero.  We also
-    // need the ImageMoments or MSMoments object which is calling us, its
-    // logger, and the number of output lattices it has created.
+    // Constructor.  The pointer is to an ancilliary  lattice used as a mask. If no masking lattice is desired, the pointer value must be
+    // zero.  We also need the ImageMoments or MSMoments object which is calling us, its logger, and the number of output lattices it has
+    // created.
     MomentClip(
         shared_ptr<casacore::Lattice<T>> pAncilliaryLattice, MomentsBase<T>& iMom, casacore::LogIO& os, const casacore::uInt nLatticeOut);
 
@@ -111,8 +110,7 @@ public:
     virtual void process(T& out, casacore::Bool& outMask, const casacore::Vector<T>& in, const casacore::Vector<casacore::Bool>& inMask,
         const casacore::IPosition& pos);
 
-    // This function returns a vector of numbers from each input vector.
-    // the output vector contains the moments known to the ImageMoments
+    // This function returns a vector of numbers from each input vector. the output vector contains the moments known to the ImageMoments
     // or MSMoments object passed into the constructor.
     virtual void multiProcess(casacore::Vector<T>& out, casacore::Vector<casacore::Bool>& outMask, const casacore::Vector<T>& in,
         const casacore::Vector<casacore::Bool>& inMask, const casacore::IPosition& pos);
@@ -153,7 +151,6 @@ protected:
     using MomentCalcBase<T>::integratedScaleFactor_p;
     using MomentCalcBase<T>::momAxisType_p;
     using MomentCalcBase<T>::nFailed_p;
-    // using MomentCalcBase<T>::abcissa_p;
 };
 
 } // namespace carta

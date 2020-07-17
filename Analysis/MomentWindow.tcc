@@ -26,13 +26,10 @@ MomentWindow<T>::MomentWindow(
         sliceShape_p(momAxis) = _ancilliaryLattice->shape()(momAxis);
     }
 
-    // this->yAutoMinMax(yMinAuto_p, yMaxAuto_p, iMom_p);
-
     // Are we computing the expensive moments ?
     this->costlyMoments(iMom_p, doMedianI_p, doMedianV_p, doAbsDev_p);
 
-    // Are we computing coordinate-dependent moments.  If
-    // so precompute coordinate vector is momebt axis separable
+    // Are we computing coordinate-dependent moments. If so precompute coordinate vector is momebt axis separable
     this->setCoordinateSystem(cSys_p, iMom_p);
     this->doCoordCalc(doCoordProfile_p, doCoordRandom_p, iMom_p);
     this->setUpCoords(
@@ -64,19 +61,10 @@ void MomentWindow<T>::process(
 template <class T>
 void MomentWindow<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vector<casacore::Bool>& momentsMask,
     const casacore::Vector<T>& profileIn, const casacore::Vector<casacore::Bool>& profileInMask, const casacore::IPosition& inPos) {
-    //
-    // Generate windowed moments of this profile.
-    // The profile comes with its own mask (or a null mask
-    // which means all good).  In addition, we create
-    // a further mask by applying the clip range to either
-    // the primary lattice, or the ancilliary lattice (e.g.
-    // the smoothed lattice)
-    //
-
-    // Fish out the ancilliary image slice if needed.  Stupid slice functions
-    // require me to create the slice empty every time so degenerate
-    // axes can be chucked out.  We set up a pointer to the primary or
-    // ancilliary vector object  that we can use for fast access
+    // Generate windowed moments of this profile. The profile comes with its own mask (or a null mask which means all good).  In addition,
+    // we create a further mask by applying the clip range to either the primary lattice, or the ancilliary lattice (e.g. the smoothed
+    // lattice). Fish out the ancilliary image slice if needed. Stupid slice functions require me to create the slice empty every time so
+    // degenerate axes can be chucked out. We set up a pointer to the primary or ancilliary vector object  that we can use for fast access
     const T* pProfileSelect = 0;
     casacore::Bool deleteIt;
     if (_ancilliaryLattice) {
@@ -99,21 +87,11 @@ void MomentWindow<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vecto
     abcissa_p.resize(pProfileSelect_p->size());
     indgen(abcissa_p);
 
-    // this->makeAbcissa (abcissa_p, pProfileSelect_p->nelements());
-
-    casacore::String xLabel;
-    if (momAxisType_p.empty()) {
-        xLabel = "x (pixels)";
-    } else {
-        xLabel = momAxisType_p + " (pixels)";
-    }
     const casacore::String yLabel("Intensity");
     casacore::String title;
     setPosLabel(title, inPos);
 
-    // Do the window selection
-
-    // Define the window automatically
+    // Do the window selection. Define the window automatically
     casacore::Vector<T> gaussPars;
     if (getAutoWindow(nFailed_p, window, abcissa_p, *pProfileSelect_p, profileInMask, peakSNR_p, stdDeviation_p, doFit_p)) {
         nPts = window(1) - window(0) + 1;
@@ -140,10 +118,7 @@ void MomentWindow<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vecto
     // Were the profile coordinates precomputed ?
     casacore::Bool preComp = (sepWorldCoord_p.nelements() > 0);
 
-    //
-    // We must fill in the input pixel coordinate if we need
-    // coordinates, but did not pre compute them
-    //
+    // We must fill in the input pixel coordinate if we need coordinates, but did not pre compute them
     if (!preComp) {
         if (doCoordRandom_p || doCoordProfile_p) {
             for (casacore::uInt i = 0; i < inPos.nelements(); i++) {
@@ -152,8 +127,7 @@ void MomentWindow<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vecto
         }
     }
 
-    // Set up a pointer for fast access to the profile mask
-    // if it exists.
+    // Set up a pointer for fast access to the profile mask if it exists.
     casacore::Bool deleteIt2;
     const casacore::Bool* pProfileInMask = profileInMask.getStorage(deleteIt2);
 
@@ -219,7 +193,6 @@ void MomentWindow<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vecto
     }
 }
 
-//
 // Automatically fit a Gaussian and return the +/- 3-sigma window or
 // invoke Bosma's method to set a window.  If a plotting device is
 // active, we also plot the spectra and fits
@@ -233,9 +206,7 @@ void MomentWindow<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vecto
 // casacore::Input/output
 //   nFailed    Cumulative number of failed fits
 // Output:
-//   window     The window (pixels).  If both 0,  then discard this spectrum
-//              and mask moments
-//
+//   window     The window (pixels).  If both 0,  then discard this spectrum and mask moments
 template <class T>
 casacore::Bool MomentWindow<T>::getAutoWindow(casacore::uInt& nFailed, casacore::Vector<casacore::Int>& window,
     const casacore::Vector<T>& x, const casacore::Vector<T>& y, const casacore::Vector<casacore::Bool>& mask, const T peakSNR,
@@ -246,9 +217,7 @@ casacore::Bool MomentWindow<T>::getAutoWindow(casacore::uInt& nFailed, casacore:
             window = 0;
             return false;
         } else {
-            // Set 3-sigma limits.  This assumes that there are some unmasked
-            // points in the window !
-
+            // Set 3-sigma limits.  This assumes that there are some unmasked points in the window !
             if (!setNSigmaWindow(window, gaussPars(1), gaussPars(2), y.nelements(), 3)) {
                 window = 0;
                 return false;
@@ -256,7 +225,6 @@ casacore::Bool MomentWindow<T>::getAutoWindow(casacore::uInt& nFailed, casacore:
         }
     } else {
         // Invoke Albert's method (see AJ, 86, 1791)
-
         if (!_getBosmaWindow(window, y, mask, peakSNR, stdDeviation)) {
             window = 0;
             return false;
@@ -265,19 +233,16 @@ casacore::Bool MomentWindow<T>::getAutoWindow(casacore::uInt& nFailed, casacore:
     return true;
 }
 
-// Automatically work out the spectral window
-// with Albert Bosma's algorithm.
+// Automatically work out the spectral window with Albert Bosma's algorithm.
 // Inputs:
 //   x,y       Spectrum
 // Output:
 //   window    The window
-//   casacore::Bool      false if we reject this spectrum.  This may
-//             be because it is all noise, or all masked
+//   casacore::Bool      false if we reject this spectrum.  This may be because it is all noise, or all masked
 template <class T>
 casacore::Bool MomentWindow<T>::_getBosmaWindow(casacore::Vector<casacore::Int>& window, const casacore::Vector<T>& y,
     const casacore::Vector<casacore::Bool>& mask, const T peakSNR, const T stdDeviation) const {
-    // See if this spectrum is all noise first.  If so, forget it.
-    // Return straight away if all maske
+    // See if this spectrum is all noise first.  If so, forget it. Return straight away if all maske
     T dMean;
     casacore::uInt iNoise = this->allNoise(dMean, y, mask, peakSNR, stdDeviation);
     if (iNoise == 2) {
@@ -349,10 +314,7 @@ casacore::Bool MomentWindow<T>::_getBosmaWindow(casacore::Vector<casacore::Int>&
     }
 }
 
-//
-// Take the fitted Gaussian position and width and
-// set an N-sigma window.  If the window is too small
-// return a Fail condition.
+// Take the fitted Gaussian position and width and set an N-sigma window.  If the window is too small return a Fail condition.
 //
 // Inputs:
 //   pos,width   The position and width in pixels
@@ -361,7 +323,6 @@ casacore::Bool MomentWindow<T>::_getBosmaWindow(casacore::Vector<casacore::Int>&
 // Outputs:
 //   window      The window in pixels
 //   casacore::Bool        false if window too small to be sensible
-//
 template <class T>
 casacore::Bool MomentWindow<T>::setNSigmaWindow(
     casacore::Vector<casacore::Int>& window, const T pos, const T width, const casacore::Int nPts, const casacore::Int N) const {

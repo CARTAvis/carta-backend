@@ -44,43 +44,35 @@ public:
     }
 
 protected:
-    // A number of private data members are kept here in the base class
-    // as they are common to the derived classes.  Since this class
-    // is abstract, they have to be filled by the derived classes.
+    // A number of private data members are kept here in the base class as they are common to the derived classes. Since this class is
+    // abstract, they have to be filled by the derived classes.
 
     // CoordinateSystem
     casacore::CoordinateSystem cSys_p;
 
-    // This vector is a container for all the possible moments that
-    // can be calculated.  They are in the order given by the MomentsBase
+    // This vector is a container for all the possible moments that can be calculated. They are in the order given by the MomentsBase
     // enum MomentTypes
     casacore::Vector<T> calcMoments_p;
     casacore::Vector<casacore::Bool> calcMomentsMask_p;
 
-    // This vector tells us which elements of the calcMoments_p vector
-    // we wish to select
+    // This vector tells us which elements of the calcMoments_p vector we wish to select
     casacore::Vector<casacore::Int> selectMoments_p;
 
-    // Although the general philosophy of these classes is to compute
-    // all the posisble moments and then select the ones we want,
-    // some of them are too expensive to calculate unless they are
-    // really wanted.  These are the median moments and those that
-    // require a second pass.  These control Bools tell us whether
-    // we really want to compute the expensive ones.
+    // Although the general philosophy of these classes is to compute all the posisble moments and then select the ones we want, some of
+    // them are too expensive to calculate unless they are really wanted.  These are the median moments and those that require a second
+    // pass.  These control Bools tell us whether we really want to compute the expensive ones.
     casacore::Bool doMedianI_p, doMedianV_p, doAbsDev_p;
 
     // These vectors are used to transform coordinates between pixel and world
     casacore::Vector<casacore::Double> pixelIn_p, worldOut_p;
 
-    // All computations involving casacore::Coordinate conversions are relatively
-    // expensive These Bools signifies whether we need coordinate calculations or
-    // not for the full profile, and for some occaisional calculations
+    // All computations involving casacore::Coordinate conversions are relatively expensive These Bools signifies whether we need coordinate
+    // calculations or not for the full profile, and for some occaisional calculations
     casacore::Bool doCoordProfile_p, doCoordRandom_p;
 
-    // This vector houses the world coordinate values for the profile if it
-    // was from a separable axis. This means this vector can be pre computed
-    // just once, instead of working out the coordinates for each profile
-    // (expensive).  It should only be filled if doCoordCalc_p is true
+    // This vector houses the world coordinate values for the profile if it was from a separable axis. This means this vector can be pre
+    // computed just once, instead of working out the coordinates for each profile (expensive). It should only be filled if doCoordCalc_p is
+    // true
     casacore::Vector<casacore::Double> sepWorldCoord_p;
 
     // This vector is used to hold the abscissa values
@@ -92,11 +84,9 @@ protected:
     // This is the number of Gaussian fits that failed.
     casacore::uInt nFailed_p;
 
-    // This scale factor is the increment along the moment axis
-    // applied so that units for the Integrated moment are like
-    // Jy/beam.km/s (or whatever is needed for the moment axis units)
-    // For non-linear velocities (e.g. optical) this is approximate
-    // only and is computed at the reference pixel
+    // This scale factor is the increment along the moment axis applied so that units for the Integrated moment are like Jy/beam, km/s (or
+    // whatever is needed for the moment axis units) For non-linear velocities (e.g. optical) this is approximate only and is computed at
+    // the reference pixel
     casacore::Double integratedScaleFactor_p;
 
     // Accumulate statistical sums from a vector
@@ -106,17 +96,19 @@ protected:
         // Accumulate statistical sums from this datum
         //
         // casacore::Input:
-        //  i              Index
-        //  datum          Pixel value
-        //  coord          casacore::Coordinate value on moment axis
+        //   i              Index
+        //   datum          Pixel value
+        //   coord          casacore::Coordinate value on moment axis
+        //
         // casacore::Input/output:
-        //  iMin,max       index of dMin and dMax
-        //  dMin,dMax      minimum and maximum value
+        //   iMin, iMax     index of dMin and dMax
+        //   dMin, dMax     minimum and maximum value
+        //
         // Output:
-        //  s0             sum (I)
-        //  s0Sq           sum (I*I)
-        //  s1             sum (I*v)
-        //  s2             sum (I*v*v)
+        //   s0             sum (I)
+        //   s0Sq           sum (I*I)
+        //   s1             sum (I*v)
+        //   s2             sum (I*v*v)
 
         typename casacore::NumericTraits<T>::PrecisionType dDatum = datum;
         s0 += dDatum;
@@ -141,16 +133,14 @@ protected:
     void constructorCheck(casacore::Vector<T>& calcMoments, casacore::Vector<casacore::Bool>& calcMomentsMask,
         const casacore::Vector<casacore::Int>& selectMoments, casacore::uInt nLatticeOut) const;
 
-    // Find out from the selectMoments array whether we want
-    // to compute the more expensive moments
+    // Find out from the selectMoments array whether we want to compute the more expensive moments
     void costlyMoments(MomentsBase<T>& iMom, casacore::Bool& doMedianI, casacore::Bool& doMedianV, casacore::Bool& doAbsDev) const;
 
-    // Return the casacore::Bool saying whether we need to compute coordinates
-    // or not for the requested moments
+    // Return the casacore::Bool saying whether we need to compute coordinates or not for the requested moments
     void doCoordCalc(casacore::Bool& doCoordProfile, casacore::Bool& doCoordRandom, const MomentsBase<T>& iMom) const;
 
-    // Return the casacore::Bool from the ImageMoments or MSMoments object saying
-    // whether we are going to fit Gaussians to the profiles or not.
+    // Return the casacore::Bool from the ImageMoments or MSMoments object saying whether we are going to fit Gaussians to the profiles or
+    // not.
     casacore::Bool doFit(const MomentsBase<T>& iMom) const;
 
     // Find the next masked or unmasked point in a vector
@@ -166,8 +156,7 @@ protected:
     casacore::Bool getAutoGaussianFit(casacore::uInt& nFailed, casacore::Vector<T>& gaussPars, const casacore::Vector<T>& x,
         const casacore::Vector<T>& y, const casacore::Vector<casacore::Bool>& mask, T peakSNR, T stdDeviation) const;
 
-    // Automatically work out a guess for the Gaussian parameters
-    // Returns false if all pixels masked.
+    // Automatically work out a guess for the Gaussian parameters Returns false if all pixels masked.
     casacore::Bool getAutoGaussianGuess(T& peakGuess, T& posGuess, T& widthGuess, T& levelGuess, const casacore::Vector<T>& x,
         const casacore::Vector<T>& y, const casacore::Vector<casacore::Bool>& mask) const;
 
@@ -179,6 +168,7 @@ protected:
         //
         // Input
         //   momentPixel   is the index in the profile extracted from the data
+        //
         // casacore::Input/output
         //   pixelIn       Pixels to convert.  Must all be filled in except for
         //                 pixelIn(momentPixel).
@@ -186,7 +176,6 @@ protected:
         //
         // Should really return a casacore::Fallible as I don't check and see
         // if the coordinate transformation fails or not
-        //
 
         // Should really check the result is true, but for speed ...
         pixelIn[iMom.momentAxis_p] = momentPixel;
@@ -212,17 +201,15 @@ protected:
     // Return the peak SNR for determination of all noise spectra from the ImageMoments or MSMoments object
     T& peakSNR(MomentsBase<T>& iMom) const;
 
-    // Return the selected pixel intensity range from the ImageMoments or
-    // MSMoments object and the Bools describing whether it is inclusion or
-    // exclusion
+    // Return the selected pixel intensity range from the ImageMoments or MSMoments object and the Bools describing whether it is inclusion
+    // or exclusion
     void selectRange(casacore::Vector<T>& pixelRange, casacore::Bool& doInclude, casacore::Bool& doExlude, MomentsBase<T>& iMom) const;
 
-    // The MomentCalculators compute a vector of all possible moments.
-    // This function returns a vector which selects the desired moments from that
-    // "all moment" vector.
+    // The MomentCalculators compute a vector of all possible moments. This function returns a vector which selects the desired moments from
+    // that "all moment" vector.
     casacore::Vector<casacore::Int> selectMoments(MomentsBase<T>& iMom) const;
 
-    // Fill the ouput moments array
+    // Fill the output moments array
     void setCalcMoments(const MomentsBase<T>& iMom, casacore::Vector<T>& calcMoments, casacore::Vector<casacore::Bool>& calcMomentsMask,
         casacore::Vector<casacore::Double>& pixelIn, casacore::Vector<casacore::Double>& worldOut, casacore::Bool doCoord,
         casacore::Double integratedScaleFactor, T dMedian, T vMedian, casacore::Int nPts,

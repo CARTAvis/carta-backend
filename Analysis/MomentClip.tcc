@@ -20,14 +20,10 @@ MomentClip<T>::MomentClip(
         sliceShape_p(momAxis) = _ancilliaryLattice->shape()(momAxis);
     }
 
-    // this->yAutoMinMax(yMinAuto_p, yMaxAuto_p, iMom_p);
-
     this->selectRange(range_p, doInclude_p, doExclude_p, iMom_p);
-
     this->costlyMoments(iMom_p, doMedianI_p, doMedianV_p, doAbsDev_p);
 
-    // Are we computing coordinate-dependent moments. If so
-    // precompute coordinate vector if moment axis separable
+    // Are we computing coordinate-dependent moments. If so precompute coordinate vector if moment axis separable
     this->setCoordinateSystem(cSys_p, iMom_p);
     this->doCoordCalc(doCoordProfile_p, doCoordRandom_p, iMom_p);
     this->setUpCoords(
@@ -52,17 +48,10 @@ void MomentClip<T>::process(
 template <class T>
 void MomentClip<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vector<casacore::Bool>& momentsMask,
     const casacore::Vector<T>& profileIn, const casacore::Vector<casacore::Bool>& profileInMask, const casacore::IPosition& inPos) {
-    // The profile comes with its own mask (or a null mask
-    // which means all good).  In addition, we create
-    // a further mask by applying the clip range to either
-    // the primary lattice, or the ancilliary lattice (e.g.
-    // the smoothed lattice)
-
-    // Fish out the ancilliary image slice if needed.  Stupid slice functions
-    // require me to create the slice empty every time so degenerate
-    // axes can be chucked out.  We set up a pointer to the primary or
-    // ancilliary vector object  that we can use for fast access
-
+    // The profile comes with its own mask (or a null mask which means all good).  In addition, we create a further mask by applying the
+    // clip range to either the primary lattice, or the ancilliary lattice (e.g. the smoothed lattice). Fish out the ancilliary image slice
+    // if needed. Stupid slice functions require me to create the slice empty every time so degenerate axes can be chucked out.  We set up a
+    // pointer to the primary or ancilliary vector object  that we can use for fast access
     const T* pProfileSelect = nullptr;
     auto deleteIt = false;
 
@@ -86,17 +75,15 @@ void MomentClip<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vector<
     // Were the profile coordinates precomputed ?
     auto preComp = sepWorldCoord_p.nelements() > 0;
 
-    // We must fill in the input pixel coordinate if we need
-    // coordinates, but did not pre compute them
+    // We must fill in the input pixel coordinate if we need coordinates, but did not pre compute them
     if (!preComp && (doCoordRandom_p || doCoordProfile_p)) {
         for (casacore::uInt i = 0; i < inPos.size(); ++i) {
             pixelIn_p[i] = casacore::Double(inPos[i]);
         }
     }
 
-    // Compute moments.  The actual moment computation always done with
-    // the original data, regardless of whether the pixel selection is
-    // done with the primary or ancilliary data.
+    // Compute moments.  The actual moment computation always done with the original data, regardless of whether the pixel selection is done
+    // with the primary or ancilliary data.
     typename casacore::NumericTraits<T>::PrecisionType s0 = 0.0;
     typename casacore::NumericTraits<T>::PrecisionType s0Sq = 0.0;
     typename casacore::NumericTraits<T>::PrecisionType s1 = 0.0;
@@ -235,9 +222,8 @@ void MomentClip<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vector<
         dMedian = median(selectedData_p);
     }
 
-    // Median coordinate.  ImageMoments will only be allowing this if
-    // we are not offering the ancilliary lattice, and with an include
-    // or exclude range.   Pretty dodgy
+    // Median coordinate. ImageMoments will only be allowing this if we are not offering the ancilliary lattice, and with an include
+    // or exclude range. Pretty dodgy
     T vMedian(0.0);
     if (doMedianV_p) {
         if (doInclude_p || doExclude_p) {
@@ -251,8 +237,8 @@ void MomentClip<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vector<
                 selectedData_p[i] += abs(selectedData_p[i - 1]);
                 dataMax = max(dataMax, selectedData_p[i]);
             }
-            // Find 1/2 way value (well, the first one that occurs)
 
+            // Find 1/2 way value (well, the first one that occurs)
             auto halfMax = dataMax / 2.0;
             casacore::Int iVal = 0;
             for (i = 0; i < nPts; ++i) {

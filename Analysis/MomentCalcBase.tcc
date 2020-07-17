@@ -16,12 +16,8 @@ void MomentCalcBase<T>::init(casacore::uInt nOutPixelsPerCollapse) {
     AlwaysAssert(nOutPixelsPerCollapse == 1, casacore::AipsError);
 }
 
-// Try and work out whether this spectrum is all noise
-// or not.  We don't bother with it if it is noise.
-// We compare the peak with sigma and a cutoff SNR
-// Returns 1 if all noise
-// Returns 2 if all masked
-// Returns 0 otherwise
+// Try and work out whether this spectrum is all noise or not. We don't bother with it if it is noise. We compare the peak with sigma and a
+// cutoff SNR Returns 1 if all noise. Returns 2 if all masked. Returns 0 otherwise
 template <class T>
 casacore::uInt MomentCalcBase<T>::allNoise(
     T& dMean, const casacore::Vector<T>& data, const casacore::Vector<casacore::Bool>& mask, const T peakSNR, const T stdDeviation) const {
@@ -44,8 +40,7 @@ casacore::uInt MomentCalcBase<T>::allNoise(
 template <class T>
 void MomentCalcBase<T>::constructorCheck(casacore::Vector<T>& calcMoments, casacore::Vector<casacore::Bool>& calcMomentsMask,
     const casacore::Vector<casacore::Int>& selectMoments, const casacore::uInt nLatticeOut) const {
-    // Number of output lattices must equal the number of moments
-    // the user asked to calculate
+    // Number of output lattices must equal the number of moments the user asked to calculate
     AlwaysAssert(nLatticeOut == selectMoments.nelements(), casacore::AipsError);
 
     // Number of requested moments must be in allowed range
@@ -85,13 +80,11 @@ casacore::Bool MomentCalcBase<T>::doFit(const MomentsBase<T>& iMom) const {
     return iMom.doFit_p;
 }
 
-//
 // doCoordProfile - we need the coordinate for each pixel of the profile
 // doCoordRandom  - we need the coordinate for occasional use
 //
 // Figure out if we need to compute the coordinate of each profile pixel index
 // for each profile.  This is very expensive for non-separable axes.
-//
 template <class T>
 void MomentCalcBase<T>::doCoordCalc(casacore::Bool& doCoordProfile, casacore::Bool& doCoordRandom, const MomentsBase<T>& iMom) const {
     doCoordProfile = false;
@@ -108,7 +101,6 @@ void MomentCalcBase<T>::doCoordCalc(casacore::Bool& doCoordProfile, casacore::Bo
     }
 }
 
-//
 // Find the next good (or bad) point in an array.
 // A good point in the array has a non-zero value.
 //
@@ -121,7 +113,6 @@ void MomentCalcBase<T>::doCoordCalc(casacore::Bool& doCoordProfile, casacore::Bo
 // Outputs:
 //  iFound   Index of found point
 //  casacore::Bool     false if didn't find another valid datum
-//
 template <class T>
 casacore::Bool MomentCalcBase<T>::findNextDatum(casacore::uInt& iFound, const casacore::uInt& n,
     const casacore::Vector<casacore::Bool>& mask, const casacore::uInt& iStart, const casacore::Bool& findGood) const {
@@ -134,12 +125,8 @@ casacore::Bool MomentCalcBase<T>::findNextDatum(casacore::uInt& iFound, const ca
     return false;
 }
 
-//
-// Fit Gaussian pos * exp(-4ln2*(x-pos)**2/width**2)
-// width = fwhm
-// Returns false if fit fails or all masked
-// Select unmasked pixels
-//
+// Fit Gaussian: y = pos * exp(-4ln2*(x-pos)**2/width**2), where width = fwhm
+// Given (x, y) and get (peak, pos, width, level).  Returns false if fit fails or all masked. Select unmasked pixels.
 template <class T>
 casacore::Bool MomentCalcBase<T>::fitGaussian(casacore::uInt& nFailed, T& peak, T& pos, T& width, T& level, const casacore::Vector<T>& x,
     const casacore::Vector<T>& y, const casacore::Vector<casacore::Bool>& mask, const T peakGuess, const T posGuess, const T widthGuess,
@@ -210,7 +197,6 @@ casacore::Bool MomentCalcBase<T>::fitGaussian(casacore::uInt& nFailed, T& peak, 
     return converged;
 }
 
-//
 // Automatically fit a Gaussian and return the Gaussian parameters.
 // If a plotting device is active, we also plot the spectra and fits
 //
@@ -224,12 +210,9 @@ casacore::Bool MomentCalcBase<T>::fitGaussian(casacore::uInt& nFailed, T& peak, 
 //   nFailed    Cumulative number of failed fits
 // Output:
 //   gaussPars  The gaussian parameters, peak, pos, fwhm
-//   casacore::Bool       If false then this spectrum has been rejected (all
-//              masked, all noise, failed fit)
+//   casacore::Bool       If false then this spectrum has been rejected (all masked, all noise, failed fit)
 //
-// See if this spectrum is all noise.  If so, forget it.
-// Return straight away if all masked
-//
+// See if this spectrum is all noise. If so, forget it. Return straight away if all masked
 template <class T>
 casacore::Bool MomentCalcBase<T>::getAutoGaussianFit(casacore::uInt& nFailed, casacore::Vector<T>& gaussPars, const casacore::Vector<T>& x,
     const casacore::Vector<T>& y, const casacore::Vector<casacore::Bool>& mask, const T peakSNR, const T stdDeviation) const {
@@ -268,8 +251,7 @@ casacore::Bool MomentCalcBase<T>::getAutoGaussianFit(casacore::uInt& nFailed, ca
 template <class T>
 casacore::Bool MomentCalcBase<T>::getAutoGaussianGuess(T& peakGuess, T& posGuess, T& widthGuess, T& levelGuess,
     const casacore::Vector<T>& x, const casacore::Vector<T>& y, const casacore::Vector<casacore::Bool>& mask) const {
-    // Make a wild stab in the dark as to what the Gaussian
-    // parameters of this spectrum might be
+    // Make a wild stab in the dark as to what the Gaussian parameters of this spectrum might be
     casacore::ClassicalStatistics<AccumType, DataIterator, MaskIterator> statsCalculator;
     statsCalculator.addData(y.begin(), mask.begin(), y.size());
     casacore::StatsData<AccumType> stats = statsCalculator.getStatistics();
@@ -283,17 +265,14 @@ casacore::Bool MomentCalcBase<T>::getAutoGaussianGuess(T& peakGuess, T& posGuess
     peakGuess = *stats.max;
     levelGuess = stats.mean;
 
-    // Nothing much is very robust.  Assume the line is reasonably
-    // sampled and set its width to a few pixels.  Totally ridiculous.
+    // Nothing much is very robust. Assume the line is reasonably sampled and set its width to a few pixels. Totally ridiculous.
     widthGuess = 5;
 
     return true;
 }
 
-//
-// Examine an array and determine how many segments
-// of good points it consists of.    A good point
-// occurs if the array value is greater than zero.
+// Examine an array and determine how many segments of good points it consists of. A good point occurs if the array value is greater than
+// zero.
 //
 // Inputs:
 //   mask  The array mask. true is good.
@@ -301,7 +280,6 @@ casacore::Bool MomentCalcBase<T>::getAutoGaussianGuess(T& peakGuess, T& posGuess
 //   nSeg  Number of segments
 //   start Indices of start of each segment
 //   nPts  Number of points in segment
-//
 template <class T>
 void MomentCalcBase<T>::lineSegments(casacore::uInt& nSeg, casacore::Vector<casacore::uInt>& start, casacore::Vector<casacore::uInt>& nPts,
     const casacore::Vector<casacore::Bool>& mask) const {
@@ -359,9 +337,7 @@ void MomentCalcBase<T>::selectRange(
     doExclude = (!(iMom.noExclude_p));
 }
 
-//
 // Fill the moment selection vector according to what the user requests
-//
 template <class T>
 casacore::Vector<casacore::Int> MomentCalcBase<T>::selectMoments(MomentsBase<T>& iMom) const {
     using IM = MomentsBase<casacore::Float>;
@@ -415,17 +391,13 @@ void MomentCalcBase<T>::setCoordinateSystem(casacore::CoordinateSystem& cSys, Mo
     cSys = iMom.coordinates();
 }
 
-//
 // casacore::Input:
 // doCoordProfile - we need the coordinate for each pixel of the profile
 //                  and we precompute it if we can
 // doCoordRandom  - we need the coordinate for occasional use
 //
-// This function does two things.  It sets up the pixelIn
-// and worldOut vectors needed by getMomentCoord. It also
-// precomputes the vector of coordinates for the moment axis
-// profile if it is separable
-//
+// This function does two things. It sets up the pixelIn and worldOut vectors needed by getMomentCoord. It also precomputes the vector of
+// coordinates for the moment axis profile if it is separable
 template <class T>
 void MomentCalcBase<T>::setUpCoords(const MomentsBase<T>& iMom, casacore::Vector<casacore::Double>& pixelIn,
     casacore::Vector<casacore::Double>& worldOut, casacore::Vector<casacore::Double>& sepWorldCoord, casacore::LogIO& os,
@@ -462,9 +434,8 @@ void MomentCalcBase<T>::setUpCoords(const MomentsBase<T>& iMom, casacore::Vector
     casacore::Int nPixelAxes = cSys.coordinate(coordinate).nPixelAxes();
     casacore::Int nWorldAxes = cSys.coordinate(coordinate).nWorldAxes();
 
-    // Precompute the profile coordinates if it is separable and needed
-    // The Integrated moment scale factor is worked out here as well so the
-    // logic is a bit contorted
+    // Precompute the profile coordinates if it is separable and needed. The Integrated moment scale factor is worked out here as well so
+    // the logic is a bit contorted
     casacore::Bool doneIntScale = false;
     if (nPixelAxes == 1 && nWorldAxes == 1) {
         pixelIn = cSys_p.referencePixel();
@@ -475,10 +446,8 @@ void MomentCalcBase<T>::setUpCoords(const MomentsBase<T>& iMom, casacore::Vector
             }
         }
 
-        // If the coordinate of the moment axis is Spectral convert to km/s
-        // Although I could work this out here, it would be decoupled from
-        // ImageMoments which works the same thing out and sets the units.
-        // So to ensure coupling, i pass in this switch via the IM object
+        // If the coordinate of the moment axis is Spectral convert to km/s Although I could work this out here, it would be decoupled from
+        // ImageMoments which works the same thing out and sets the units. So to ensure coupling, i pass in this switch via the IM object
         if (iMom.convertToVelocity_p) {
             AlwaysAssert(cSys.type(coordinate) == casacore::Coordinate::SPECTRAL,
                 casacore::AipsError); // Should never fail !
@@ -509,8 +478,7 @@ void MomentCalcBase<T>::setUpCoords(const MomentsBase<T>& iMom, casacore::Vector
     }
 
     if (doIntScaleFactor && !doneIntScale) {
-        // We need the Integrated moment scale factor but the moment
-        // axis is non-separable
+        // We need the Integrated moment scale factor but the moment axis is non-separable
         const casacore::Coordinate& c = cSys.coordinate(coordinate);
         casacore::Double inc = c.increment()(axisInCoordinate);
         integratedScaleFactor = abs(inc * inc);
@@ -523,14 +491,12 @@ T& MomentCalcBase<T>::stdDeviation(MomentsBase<T>& iMom) const {
     return iMom.stdDeviation_p;
 }
 
-//
 // Fill the moments vector
 //
 // Inputs
-//   integratedScaleFactor  width of a channel in km/s or Hz or whatever
+//   integratedScaleFactor width of a channel in km/s or Hz or whatever
 // Outputs:
 //   calcMoments The moments
-//
 template <class T>
 void MomentCalcBase<T>::setCalcMoments(const MomentsBase<T>& iMom, casacore::Vector<T>& calcMoments,
     casacore::Vector<casacore::Bool>& calcMomentsMask, casacore::Vector<casacore::Double>& pixelIn,
@@ -538,9 +504,8 @@ void MomentCalcBase<T>::setCalcMoments(const MomentsBase<T>& iMom, casacore::Vec
     casacore::Int nPts, typename casacore::NumericTraits<T>::PrecisionType s0, typename casacore::NumericTraits<T>::PrecisionType s1,
     typename casacore::NumericTraits<T>::PrecisionType s2, typename casacore::NumericTraits<T>::PrecisionType s0Sq,
     typename casacore::NumericTraits<T>::PrecisionType sumAbsDev, T dMin, T dMax, casacore::Int iMin, casacore::Int iMax) const {
-    // casacore::Short hand to fish ImageMoments enum values out
-    // Despite being our friend, we cannot refer to the
-    // enum values as just, say, "AVERAGE"
+    // casacore::Short hand to fish ImageMoments enum values out. Despite being our friend, we cannot refer to the enum values as just, say,
+    // "AVERAGE"
     using IM = MomentsBase<casacore::Float>;
 
     // Normalize and fill moments

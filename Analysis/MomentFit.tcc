@@ -14,13 +14,10 @@ MomentFit<T>::MomentFit(MomentsBase<T>& iMom, casacore::LogIO& os, const casacor
     // Set/check some dimensionality
     constructorCheck(calcMoments_p, calcMomentsMask_p, selectMoments_p, nLatticeOut);
 
-    // this->yAutoMinMax(yMinAuto_p, yMaxAuto_p, iMom_p);
-
     // Are we computing the expensive moments ?
     this->costlyMoments(iMom_p, doMedianI_p, doMedianV_p, doAbsDev_p);
 
-    // Are we computing coordinate-dependent moments.  If so
-    // precompute coordinate vector if moment axis is separable
+    // Are we computing coordinate-dependent moments. If so precompute coordinate vector if moment axis is separable
     this->setCoordinateSystem(cSys_p, iMom_p);
     this->doCoordCalc(doCoordProfile_p, doCoordRandom_p, iMom_p);
     this->setUpCoords(
@@ -67,18 +64,14 @@ void MomentFit<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vector<c
     // Were the profile coordinates precomputed ?
     auto preComp = sepWorldCoord_p.size() > 0;
 
-    //
-    // We must fill in the input pixel coordinate if we need
-    // coordinates, but did not pre compute them
-    //
+    // We must fill in the input pixel coordinate if we need coordinates, but did not pre compute them
     if (!preComp && (doCoordRandom_p || doCoordProfile_p)) {
         for (casacore::uInt i = 0; i < inPos.size(); ++i) {
             pixelIn_p[i] = casacore::Double(inPos[i]);
         }
     }
 
-    // Set Gaussian functional values.  We reuse the same functional that
-    // was used in the interactive fitting display process.
+    // Set Gaussian functional values.  We reuse the same functional that was used in the interactive fitting display process.
     gauss_p.setHeight(gaussPars(0));
     gauss_p.setCenter(gaussPars(1));
     gauss_p.setWidth(gaussPars(2));
@@ -113,8 +106,7 @@ void MomentFit<T>::multiProcess(casacore::Vector<T>& moments, casacore::Vector<c
         }
     }
 
-    // If no unmasked points go home.  This shouldn't happen
-    // as we can't have done a fit under these conditions.
+    // If no unmasked points go home.  This shouldn't happen as we can't have done a fit under these conditions.
     nPts = j;
     if (nPts == 0) {
         moments = 0;

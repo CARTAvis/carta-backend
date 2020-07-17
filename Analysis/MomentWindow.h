@@ -135,10 +135,8 @@ public:
     using DataIterator = typename casacore::Vector<T>::const_iterator;
     using MaskIterator = casacore::Vector<casacore::Bool>::const_iterator;
 
-    // Constructor.  The pointer is to a lattice containing the masking
-    // lattice (created by ImageMoments or MSMoments).   We also need the
-    // ImageMoments or MSMoments object which is calling us, its logger,
-    // and the number of output lattices it has created.
+    // Constructor.  The pointer is to a lattice containing the masking lattice (created by ImageMoments or MSMoments).   We also need the
+    // ImageMoments or MSMoments object which is calling us, its logger, and the number of output lattices it has created.
     MomentWindow(
         shared_ptr<casacore::Lattice<T>> pAncilliaryLattice, MomentsBase<T>& iMom, casacore::LogIO& os, const casacore::uInt nLatticeOut);
 
@@ -149,8 +147,7 @@ public:
     virtual void process(T& out, casacore::Bool& outMask, const casacore::Vector<T>& in, const casacore::Vector<casacore::Bool>& inMask,
         const casacore::IPosition& pos);
 
-    // This function returns a vector of numbers from each input vector.
-    // the output vector contains the moments known to the ImageMoments
+    // This function returns a vector of numbers from each input vector. the output vector contains the moments known to the ImageMoments
     // or MSMoments object passed into the constructor.
     virtual void multiProcess(casacore::Vector<T>& out, casacore::Vector<casacore::Bool>& outMask, const casacore::Vector<T>& in,
         const casacore::Vector<casacore::Bool>& inMask, const casacore::IPosition& pos);
@@ -176,8 +173,7 @@ private:
     casacore::Bool _getBosmaWindow(casacore::Vector<casacore::Int>& window, const casacore::Vector<T>& y,
         const casacore::Vector<casacore::Bool>& mask, const T peakSNR, const T stdDeviation) const;
 
-    // Take the fitted Gaussian parameters and set an N-sigma window.
-    // If the window is too small return a Fail condition.
+    // Take the fitted Gaussian parameters and set an N-sigma window. If the window is too small return a Fail condition.
     casacore::Bool setNSigmaWindow(
         casacore::Vector<casacore::Int>& window, const T pos, const T width, const casacore::Int nPts, const casacore::Int N) const;
 
@@ -185,7 +181,6 @@ private:
 protected:
     using MomentCalcBase<T>::constructorCheck;
     using MomentCalcBase<T>::setPosLabel;
-    // using MomentCalcBase<T>::convertF;
     using MomentCalcBase<T>::selectMoments_p;
     using MomentCalcBase<T>::calcMoments_p;
     using MomentCalcBase<T>::calcMomentsMask_p;

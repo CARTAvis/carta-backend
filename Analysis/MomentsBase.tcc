@@ -121,14 +121,12 @@ void MomentsBase<T>::setVelocityType(casacore::MDoppler::Types velocityType) {
     velocityType_p = velocityType;
 }
 
-//
 // Helper function to convert a string containing a list of desired smoothed
 // kernel types to the correct <src>casacore::Vector<casacore::Int></src>
 // required for the <src>setSmooth</src> function.
 //
 // Inputs:
 //   Methods should contain some of "win", "fit", "inter"
-//
 template <class T>
 casacore::Vector<casacore::Int> MomentsBase<T>::toMethodTypes(const casacore::String& methods) {
     casacore::Vector<casacore::Int> methodTypes(3);
