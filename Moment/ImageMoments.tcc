@@ -9,7 +9,7 @@ using namespace carta;
 template <class T>
 ImageMoments<T>::ImageMoments(
     const casacore::ImageInterface<T>& image, casacore::LogIO& os, casacore::Bool over_write_output, casacore::Bool show_progress)
-    : MomentsBase<T>(os, over_write_output, show_progress), _stop(false) {
+    : casa::MomentsBase<T>(os, over_write_output, show_progress), _stop(false) {
     SetNewImage(image);
 }
 
@@ -161,7 +161,7 @@ casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore:
 template <class T>
 casacore::Bool ImageMoments<T>::setSmoothMethod(const casacore::Vector<casacore::Int>& smooth_axes,
     const casacore::Vector<casacore::Int>& kernel_types, const casacore::Vector<casacore::Double>& kernel_widths_pix) {
-    return MomentsBase<T>::setSmoothMethod(smooth_axes, kernel_types, kernel_widths_pix);
+    return casa::MomentsBase<T>::setSmoothMethod(smooth_axes, kernel_types, kernel_widths_pix);
 }
 
 template <class T>
@@ -312,15 +312,15 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     // Create appropriate MomentCalculator object
-    shared_ptr<MomentCalcBase<T>> moment_calculator;
+    shared_ptr<casa::MomentCalcBase<T>> moment_calculator;
     if (clip_method || smooth_clip_method) {
-        moment_calculator.reset(new MomentClip<T>(smoothed_image, *this, os_p, output_images.size()));
+        moment_calculator.reset(new casa::MomentClip<T>(smoothed_image, *this, os_p, output_images.size()));
 
     } else if (window_method) {
-        moment_calculator.reset(new MomentWindow<T>(smoothed_image, *this, os_p, output_images.size()));
+        moment_calculator.reset(new casa::MomentWindow<T>(smoothed_image, *this, os_p, output_images.size()));
 
     } else if (fit_method) {
-        moment_calculator.reset(new MomentFit<T>(*this, os_p, output_images.size()));
+        moment_calculator.reset(new casa::MomentFit<T>(*this, os_p, output_images.size()));
     }
 
     // Iterate optimally through the image, compute the moments, fill the output lattices
