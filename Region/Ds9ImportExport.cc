@@ -1003,7 +1003,7 @@ void Ds9ImportExport::AddExportStyleParameters(const RegionState& region_state, 
         region_line.append(" text={" + region_state.name + "}");
     }
     // dash list for enclosed regions
-    if ((region_state.type != CARTA::RegionType::POINT) && !region_state.dash_list.empty()) {
+    if ((region_state.type != CARTA::RegionType::POINT) && !region_state.dash_list.empty() && (region_state.dash_list[0] != 0)) {
         std::string dash_on(std::to_string(region_state.dash_list[0]));
         std::string dash_off = (region_state.dash_list.size() == 2 ? std::to_string(region_state.dash_list[1]) : dash_on);
         region_line.append(" dash=1 dashlist=" + dash_on + " " + dash_off);

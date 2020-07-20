@@ -1169,7 +1169,7 @@ void CrtfImportExport::ExportStyleParameters(
 
     // linestyle
     casa::AnnotationBase::LineStyle style(casa::AnnotationBase::SOLID);
-    if (region_state.dash_list.empty() || region_state.dash_list[0] != 0) {
+    if (!region_state.dash_list.empty() && region_state.dash_list[0] != 0) {
         style = casa::AnnotationBase::DASHED;
     }
     annotation_region->setLineStyle(style);
@@ -1183,7 +1183,7 @@ void CrtfImportExport::ExportStyleParameters(const RegionState& region_state, st
 
     // linestyle
     casa::AnnotationBase::LineStyle style(casa::AnnotationBase::SOLID);
-    if (region_state.dash_list.empty() || (region_state.dash_list[0] != 0)) {
+    if (!region_state.dash_list.empty() && (region_state.dash_list[0] != 0)) {
         style = casa::AnnotationBase::DASHED;
     }
     oss << "linestyle=" << casa::AnnotationBase::lineStyleToString(style) << ", ";
