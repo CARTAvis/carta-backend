@@ -16,7 +16,7 @@ public:
     Ds9ImportExport() {}
 
     // Import constructor
-    // Parse input file and convert region parameters to RegionState for given image
+    // Parse input file and convert region parameters to RegionProperties for given image
     // file_is_filename : indicates whether file parameter contains file name or file contents.
     Ds9ImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape, int file_id,
         const std::string& file, bool file_is_filename);
@@ -29,13 +29,13 @@ public:
 
     // Export regions
     // Convert to DS9 string and add to vector
-    bool AddExportRegion(const RegionState& region) override;
+    bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) override;
     // Print regions to file or vector
     bool ExportRegions(std::string& filename, std::string& error) override;
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
-    bool AddExportRegion(const RegionState& region_state, const std::vector<casacore::Quantity>& control_points,
+    bool AddExportRegion(const RegionState& region_state, const RegionStyle& style, const std::vector<casacore::Quantity>& control_points,
         const casacore::Quantity& rotation) override;
 
 private:
@@ -64,8 +64,7 @@ private:
         std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
     void ImportPolygonRegion(
         std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
-    void ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name, std::string& color,
-        int& line_width, std::vector<int>& dash_list);
+    RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
 
     // Convert DS9 syntax -> CASA
     bool CheckAndConvertParameter(std::string& parameter, const std::string& region_type);
@@ -75,7 +74,7 @@ private:
     void AddHeader();
     std::string AddExportRegionPixel(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
     std::string AddExportRegionWorld(CARTA::RegionType type, const std::vector<casacore::Quantity>& control_points, float angle);
-    void AddExportStyleParameters(const RegionState& region_state, std::string& region_line);
+    void AddExportStyleParameters(const RegionStyle& region_style, std::string& region_line);
 
     // DS9/CASA conversion map
     std::unordered_map<std::string, std::string> _coord_map;

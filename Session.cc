@@ -513,9 +513,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         }
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
-        std::vector<int> dash_list = {region_info.dash_list().begin(), region_info.dash_list().end()};
-        RegionState region_state(file_id, region_info.region_name(), region_info.region_type(), points, region_info.rotation(),
-            region_info.color(), region_info.line_width(), dash_list);
+        RegionState region_state(file_id, region_info.region_type(), points, region_info.rotation());
 
         success = _region_handler->SetRegion(region_id, region_state, csys);
 
@@ -636,10 +634,11 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
             abs_filename = root_path.absoluteName();
         }
 
-        std::vector<int> region_ids = {message.region_id().begin(), message.region_id().end()};
+        std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
+
         CARTA::ExportRegionAck export_ack;
         _region_handler->ExportRegion(
-            file_id, _frames.at(file_id), message.type(), message.coord_type(), region_ids, abs_filename, export_ack);
+            file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
         SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
     } else {
         string error = fmt::format("File id {} not found", file_id);

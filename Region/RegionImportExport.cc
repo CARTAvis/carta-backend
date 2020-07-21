@@ -21,8 +21,8 @@ RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_s
 
 // Public accessors
 
-std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& error) {
-    // Parse the file in the constructor to create RegionState vector with given reference file_id; return any errors in error
+std::vector<RegionProperties> RegionImportExport::GetImportedRegions(std::string& error) {
+    // Parse the file in the constructor to create RegionProperties vector; return any errors in error
     error = _import_errors;
 
     if ((_import_regions.size() == 0) && error.empty()) {
@@ -33,7 +33,7 @@ std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& err
 }
 
 bool RegionImportExport::AddExportRegion(
-    const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord) {
+    const RegionState& region_state, const RegionStyle& region_style, const casacore::RecordInterface& region_record, bool pixel_coord) {
     // Convert Record to Quantities for region type then set region
     // Record is in pixel coords; convert to world coords if needed
     if (pixel_coord) {
@@ -62,7 +62,7 @@ bool RegionImportExport::AddExportRegion(
     }
 
     if (converted) {
-        return AddExportRegion(region_state, control_points, rotation); // add to CRTF or DS9 export
+        return AddExportRegion(region_state, region_style, control_points, rotation); // add to CRTF or DS9 export
     }
 
     return converted;

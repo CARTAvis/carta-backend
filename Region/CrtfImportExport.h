@@ -33,14 +33,14 @@ public:
 
     // Export regions
     // Create AnnRegion and add to RegionTextList
-    bool AddExportRegion(const RegionState& region_state) override;
+    bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) override;
     // Print regions to file or string vector
     bool ExportRegions(std::string& filename, std::string& error) override;
     bool ExportRegions(std::vector<std::string>& contents, std::string& error) override;
 
 protected:
-    bool AddExportRegion(const RegionState& region_state, const std::vector<casacore::Quantity>& control_points,
-        const casacore::Quantity& rotation) override;
+    bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style,
+        const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) override;
 
 private:
     // Import RegionTextList Annotation regions to RegionState vector
@@ -50,8 +50,7 @@ private:
     void ImportAnnRotBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     void ImportAnnEllipse(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    void ImportStyleParameters(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region, std::string& name, std::string& color,
-        int& line_width, std::vector<int>& dash_list);
+    RegionStyle ImportStyleParameters(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
 
     // Manual region import to RegionState
     // (workaround for imageanalysis RegionTextList exception for linear coord sys)
@@ -60,8 +59,7 @@ private:
     void ImportAnnBox(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
     void ImportAnnEllipse(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
     void ImportAnnPolygon(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
-    void ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name, std::string& color,
-        int& line_width, std::vector<int>& dash_list);
+    RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
     void ImportGlobalParameters(std::unordered_map<std::string, std::string>& properties);
 
     // Rectangle import helpers
@@ -78,12 +76,12 @@ private:
         std::string& region_frame, std::vector<CARTA::Point>& control_points);
 
     // Export RegionState as Annotation region
-    bool AddExportAnnotationRegion(const RegionState& region_state);
+    bool AddExportAnnotationRegion(const RegionState& region_state, const RegionStyle& region_style);
     // Export RegionState as string
-    bool AddExportRegionLine(const RegionState& region_state);
+    bool AddExportRegionLine(const RegionState& region_state, const RegionStyle& region_style);
     // Append style parameters to annotation region or line
-    void ExportStyleParameters(const RegionState& region_state, casacore::CountedPtr<casa::AnnotationBase> annotation_region);
-    void ExportStyleParameters(const RegionState& region_state, std::string& region_line);
+    void ExportStyleParameters(const RegionStyle& region_style, casacore::CountedPtr<casa::AnnotationBase> annotation_region);
+    void ExportStyleParameters(const RegionStyle& region_style, std::string& region_line);
 
     // Export helpers
     // AnnRegion parameter

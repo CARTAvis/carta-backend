@@ -19,48 +19,27 @@
 struct RegionState {
     // struct used for region parameters
     int reference_file_id;
-    std::string name;
     CARTA::RegionType type;
     std::vector<CARTA::Point> control_points;
     float rotation;
-    std::string color;
-    int line_width;
-    std::vector<int> dash_list;
 
     RegionState() {}
-    RegionState(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_,
-        std::string color_, int line_width_, std::vector<int>& dash_list_) {
-        reference_file_id = ref_file_id_;
-        name = name_;
-        type = type_;
-        control_points = control_points_;
-        rotation = rotation_;
-        color = color_;
-        line_width = line_width_;
-        dash_list = dash_list_;
-    }
+    RegionState(int ref_file_id_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_)
+        : reference_file_id(ref_file_id_), type(type_), control_points(control_points_), rotation(rotation_) {}
 
     void operator=(const RegionState& other) {
         reference_file_id = other.reference_file_id;
-        name = other.name;
         type = other.type;
         control_points = other.control_points;
         rotation = other.rotation;
-        color = other.color;
-        line_width = other.line_width;
-        dash_list = other.dash_list;
     }
     bool operator==(const RegionState& rhs) {
-        return (reference_file_id == rhs.reference_file_id) && (type == rhs.type) && !AnnotationChanged(rhs) && !RegionChanged(rhs);
+        return (reference_file_id == rhs.reference_file_id) && (type == rhs.type) && !RegionChanged(rhs);
     }
     bool operator!=(const RegionState& rhs) {
-        return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || AnnotationChanged(rhs) || RegionChanged(rhs);
+        return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || RegionChanged(rhs);
     }
 
-    bool AnnotationChanged(const RegionState& rhs) {
-        // name and style params
-        return (name != rhs.name) || (color != rhs.color) || (line_width == rhs.line_width) || (dash_list != rhs.dash_list);
-    }
     bool RegionChanged(const RegionState& rhs) {
         // Ignores annotation params (for interrupting region calculations)
         return (rotation != rhs.rotation) || PointsChanged(rhs);

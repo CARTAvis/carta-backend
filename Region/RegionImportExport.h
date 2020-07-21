@@ -7,7 +7,7 @@
 #include <casacore/casa/Arrays/IPosition.h>
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 
-#include "Region.h"
+#include "RegionHandler.h"
 
 namespace carta {
 
@@ -22,12 +22,13 @@ public:
     RegionImportExport(casacore::CoordinateSystem* image_coord_sys, const casacore::IPosition& image_shape);
 
     // Retrieve imported regions as RegionState vector
-    std::vector<RegionState> GetImportedRegions(std::string& error);
+    std::vector<RegionProperties> GetImportedRegions(std::string& error);
 
     // Add region to export: RegionState for pixel coords in reference image,
     // Quantities for world coordinates or for either coordinate type applied to another image
-    virtual bool AddExportRegion(const RegionState& region) = 0;
-    bool AddExportRegion(const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord);
+    virtual bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) = 0;
+    bool AddExportRegion(
+        const RegionState& region_state, const RegionStyle& region_style, const casacore::RecordInterface& region_record, bool pixel_coord);
 
     // Perform export; ostream could be for output file (ofstream) or string (ostringstream)
     virtual bool ExportRegions(std::string& filename, std::string& error) = 0;
@@ -44,8 +45,8 @@ protected:
     virtual void ParseRegionParameters(
         std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
 
-    virtual bool AddExportRegion(
-        const RegionState& region_state, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) = 0;
+    virtual bool AddExportRegion(const RegionState& region_state, const RegionStyle& region_style,
+        const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) = 0;
 
     // Convert wcs -> pixel
     bool ConvertPointToPixels(
@@ -63,7 +64,7 @@ protected:
     int _file_id;
     std::string _parser_delim;
     std::string _import_errors;
-    std::vector<RegionState> _import_regions;
+    std::vector<RegionProperties> _import_regions;
     std::vector<std::string> _export_regions;
 
 private:

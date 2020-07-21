@@ -90,13 +90,13 @@ CrtfImportExport::~CrtfImportExport() {
 
 // Public: for exporting regions
 
-bool CrtfImportExport::AddExportRegion(const RegionState& region_state) {
+bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) {
     // Add pixel region using RegionState
     bool region_added(false);
     if (_coord_sys->hasDirectionCoordinate()) {
-        region_added = AddExportAnnotationRegion(region_state);
+        region_added = AddExportAnnotationRegion(region_state, region_style);
     } else {
-        region_added = AddExportRegionLine(region_state);
+        region_added = AddExportRegionLine(region_state, region_style);
     }
     return region_added;
 }
@@ -166,8 +166,8 @@ bool CrtfImportExport::ExportRegions(std::vector<std::string>& contents, std::st
 
 // Protected: for exporting regions in world coordinates
 
-bool CrtfImportExport::AddExportRegion(
-    const RegionState& region_state, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
+bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style,
+    const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
     // Add world-coord region using input Quantities
     if (control_points.empty()) {
         return false;
@@ -229,21 +229,15 @@ bool CrtfImportExport::AddExportRegion(
 
         casacore::CountedPtr<casa::AnnotationBase> annotation_region;
         if (ann_symbol) {
-            if (!region_state.name.empty()) {
-                ann_symbol->setLabel(region_state.name);
-            }
             annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_symbol);
         }
         if (ann_region) {
             ann_region->setAnnotationOnly(false);
-            if (!region_state.name.empty()) {
-                ann_region->setLabel(region_state.name);
-            }
             annotation_region = casacore::CountedPtr<casa::AnnotationBase>(ann_region);
         }
 
         if (annotation_region) {
-            ExportStyleParameters(region_state, annotation_region);
+            ExportStyleParameters(region_style, annotation_region);
             casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
             _region_list.addLine(file_line);
         }
@@ -259,7 +253,7 @@ bool CrtfImportExport::AddExportRegion(
 
 // Process imageanalysis file import
 void CrtfImportExport::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line) {
-    // Process a single CRTF annotation file line to set region; adds RegionState to vector
+    // Process a single CRTF annotation file line to set region; adds RegionProperties to vector
     switch (file_line.getType()) {
         case casa::AsciiAnnotationFileLine::ANNOTATION: {
             auto annotation_base = file_line.getAnnotationBase();
@@ -322,7 +316,7 @@ void CrtfImportExport::ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& f
 }
 
 void CrtfImportExport::ImportAnnSymbol(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region) {
-    // Create RegionState from casa::AnnSymbol
+    // Create RegionProperties from casa::AnnSymbol
     const casa::AnnSymbol* point = dynamic_cast<const casa::AnnSymbol*>(annotation_region.get());
 
     if (point != nullptr) {
@@ -342,17 +336,19 @@ void CrtfImportExport::ImportAnnSymbol(casacore::CountedPtr<const casa::Annotati
         point.set_y(pixel_coords[1]);
         control_points.push_back(point);
 
-        // Other RegionState parameters
+        // Set other RegionState parameters
         CARTA::RegionType type(CARTA::RegionType::POINT);
         float rotation(0.0);
-        std::string name, color;
-        int line_width;
-        std::vector<int> dash_list;
-        ImportStyleParameters(annotation_region, name, color, line_width, dash_list);
+        RegionState region_state(_file_id, type, control_points, rotation);
 
-        // Add RegionState to list
-        RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-        _import_regions.push_back(region_state);
+        // Set RegionStyle
+        RegionStyle region_style = ImportStyleParameters(annotation_region);
+
+        // Add RegionProperties to list
+        RegionProperties region_properties;
+        region_properties.state = region_state;
+        region_properties.style = region_style;
+        _import_regions.push_back(region_properties);
     } else {
         _import_errors.append("symbol region failed.\n");
     }
@@ -383,14 +379,16 @@ void CrtfImportExport::ImportAnnBox(casacore::CountedPtr<const casa::AnnotationB
 
         // Add other RegionState params
         CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
-        std::string name, color;
-        int line_width;
-        std::vector<int> dash_list;
-        ImportStyleParameters(annotation_region, name, color, line_width, dash_list);
+        RegionState region_state(_file_id, type, control_points, rotation);
 
-        // Add RegionState to list
-        RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-        _import_regions.push_back(region_state);
+        // Set RegionStyle
+        RegionStyle region_style = ImportStyleParameters(annotation_region);
+
+        // Add RegionProperties to list
+        RegionProperties region_properties;
+        region_properties.state = region_state;
+        region_properties.style = region_style;
+        _import_regions.push_back(region_properties);
     } else {
         _import_errors.append("Import box region failed.\n");
     }
@@ -416,14 +414,16 @@ void CrtfImportExport::ImportAnnRotBox(casacore::CountedPtr<const casa::Annotati
 
         // Other RegionState parameters
         CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
-        std::string name, color;
-        int line_width;
-        std::vector<int> dash_list;
-        ImportStyleParameters(annotation_region, name, color, line_width, dash_list);
+        RegionState region_state(_file_id, type, control_points, rotation);
 
-        // Add RegionState to list
-        RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-        _import_regions.push_back(region_state);
+        // Set RegionStyle
+        RegionStyle region_style = ImportStyleParameters(annotation_region);
+
+        // Add RegionProperties to list
+        RegionProperties region_properties;
+        region_properties.state = region_state;
+        region_properties.style = region_style;
+        _import_regions.push_back(region_properties);
     } else {
         _import_errors.append("Import rotbox region failed.\n");
     }
@@ -447,17 +447,19 @@ void CrtfImportExport::ImportAnnPolygon(casacore::CountedPtr<const casa::Annotat
             control_points.push_back(point);
         }
 
-        // Other RegionState parameters
+        // Set RegionState
         CARTA::RegionType type(CARTA::RegionType::POLYGON);
         float rotation(0.0);
-        std::string name, color;
-        int line_width;
-        std::vector<int> dash_list;
-        ImportStyleParameters(annotation_region, name, color, line_width, dash_list);
+        RegionState region_state(_file_id, type, control_points, rotation);
 
-        // Add RegionState to list
-        RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-        _import_regions.push_back(region_state);
+        // Set RegionStyle
+        RegionStyle region_style = ImportStyleParameters(annotation_region);
+
+        // Add RegionProperties to list
+        RegionProperties region_properties;
+        region_properties.state = region_state;
+        region_properties.style = region_style;
+        _import_regions.push_back(region_properties);
     } else {
         _import_errors.append("Import poly region failed.\n");
     }
@@ -546,29 +548,32 @@ void CrtfImportExport::ImportAnnEllipse(casacore::CountedPtr<const casa::Annotat
 
         // Other RegionState parameters
         CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
-        std::string name, color;
-        int line_width;
-        std::vector<int> dash_list;
-        ImportStyleParameters(annotation_region, name, color, line_width, dash_list);
+        RegionState region_state(_file_id, type, control_points, rotation);
 
-        // Add RegionState to list
-        RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-        _import_regions.push_back(region_state);
+        // Set RegionStyle
+        RegionStyle region_style = ImportStyleParameters(annotation_region);
+
+        // Add RegionProperties to list
+        RegionProperties region_properties;
+        region_properties.state = region_state;
+        region_properties.style = region_style;
+        _import_regions.push_back(region_properties);
     } else {
         _import_errors.append("Import " + region_name + " failed.\n");
     }
 }
 
-void CrtfImportExport::ImportStyleParameters(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region, std::string& name,
-    std::string& color, int& line_width, std::vector<int>& dash_list) {
-    name = annotation_region->getLabel();
-    color = FormatColor(annotation_region->getColorString());
-    line_width = annotation_region->getLineWidth();
+RegionStyle CrtfImportExport::ImportStyleParameters(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region) {
+    RegionStyle style;
+    style.name = annotation_region->getLabel();
+    style.color = FormatColor(annotation_region->getColorString());
+    style.line_width = annotation_region->getLineWidth();
     if (annotation_region->getLineStyle() == casa::AnnotationBase::SOLID) {
-        dash_list = {0, 0};
+        style.dash_list = {0, 0};
     } else {
-        dash_list = {2, 2};
+        style.dash_list = {2, 2};
     }
+    return style;
 }
 
 void CrtfImportExport::ImportGlobalParameters(std::unordered_map<std::string, std::string>& properties) {
@@ -642,15 +647,19 @@ void CrtfImportExport::ImportAnnSymbol(std::vector<std::string>& parameters, std
             point.set_y(y.getValue());
             control_points.push_back(point);
 
-            // Create RegionState and add to vector
+            // Set RegionState
             CARTA::RegionType type(CARTA::RegionType::POINT);
             float rotation(0.0);
-            std::string name, color;
-            int line_width;
-            std::vector<int> dash_list;
-            ImportStyleParameters(properties, name, color, line_width, dash_list);
-            RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-            _import_regions.push_back(region_state);
+            RegionState region_state(_file_id, type, control_points, rotation);
+
+            // Set RegionStyle
+            RegionStyle region_style = ImportStyleParameters(properties);
+
+            // Set RegionProperties and add to list
+            RegionProperties region_properties;
+            region_properties.state = region_state;
+            region_properties.style = region_style;
+            _import_regions.push_back(region_properties);
         } catch (const casacore::AipsError& err) {
             std::cerr << "Import symbol Quantity error: " << err.getMesg() << std::endl;
             _import_errors.append("symbol parameters invalid.\n");
@@ -676,12 +685,16 @@ void CrtfImportExport::ImportAnnBox(std::vector<std::string>& parameters, std::u
 
         // Create RegionState and add to vector
         CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
-        std::string name, color;
-        int line_width;
-        std::vector<int> dash_list;
-        ImportStyleParameters(properties, name, color, line_width, dash_list);
-        RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-        _import_regions.push_back(region_state);
+        RegionState region_state(_file_id, type, control_points, rotation);
+
+        // Set RegionStyle
+        RegionStyle region_style = ImportStyleParameters(properties);
+
+        // Set RegionProperties and add to list
+        RegionProperties region_properties;
+        region_properties.state = region_state;
+        region_properties.style = region_style;
+        _import_regions.push_back(region_properties);
     } else {
         _import_errors.append("box syntax invalid.\n");
     }
@@ -729,12 +742,16 @@ void CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& parameters, st
 
             // Create RegionState and add to vector
             CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
-            std::string name, color;
-            int line_width;
-            std::vector<int> dash_list;
-            ImportStyleParameters(properties, name, color, line_width, dash_list);
-            RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-            _import_regions.push_back(region_state);
+            RegionState region_state(_file_id, type, control_points, rotation);
+
+            // Set RegionStyle
+            RegionStyle region_style = ImportStyleParameters(properties);
+
+            // Set RegionProperties and add to list
+            RegionProperties region_properties;
+            region_properties.state = region_state;
+            region_properties.style = region_style;
+            _import_regions.push_back(region_properties);
         } catch (const casacore::AipsError& err) {
             std::cerr << "Import ellipse Quantity error: " << err.getMesg() << std::endl;
             _import_errors.append("ellipse parameters invalid.\n");
@@ -768,12 +785,16 @@ void CrtfImportExport::ImportAnnPolygon(std::vector<std::string>& parameters, st
             // Create RegionState and add to vector
             CARTA::RegionType type(CARTA::RegionType::POLYGON);
             float rotation(0.0);
-            std::string name, color;
-            int line_width;
-            std::vector<int> dash_list;
-            ImportStyleParameters(properties, name, color, line_width, dash_list);
-            RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-            _import_regions.push_back(region_state);
+            RegionState region_state(_file_id, type, control_points, rotation);
+
+            // Set RegionStyle
+            RegionStyle region_style = ImportStyleParameters(properties);
+
+            // Set RegionProperties and add to list
+            RegionProperties region_properties;
+            region_properties.state = region_state;
+            region_properties.style = region_style;
+            _import_regions.push_back(region_properties);
         } catch (const casacore::AipsError& err) {
             std::cerr << "Import polygon Quantity error: " << err.getMesg() << std::endl;
             _import_errors.append("polygon quantities invalid.\n");
@@ -783,44 +804,49 @@ void CrtfImportExport::ImportAnnPolygon(std::vector<std::string>& parameters, st
     }
 }
 
-void CrtfImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name,
-    std::string& color, int& line_width, std::vector<int>& dash_list) {
-    // Get RegionState style parameters from properties map
+RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties) {
+    // Get RegionStyle parameters from properties map
+    RegionStyle style;
+
     // name
     if (properties.count("label")) {
-        name = properties["label"];
+        style.name = properties["label"];
     }
 
     // color
+    std::string import_color;
     if (properties.count("color")) {
-        color = FormatColor(properties["color"]);
+        import_color = FormatColor(properties["color"]);
     } else if (_global_properties.count(casa::AnnotationBase::COLOR)) {
-        color = FormatColor(_global_properties[casa::AnnotationBase::COLOR]);
+        import_color = FormatColor(_global_properties[casa::AnnotationBase::COLOR]);
     }
-    if (!color.empty() && std::strtoul(color.c_str(), nullptr, 16)) {
+    if (!import_color.empty() && std::strtoul(import_color.c_str(), nullptr, 16)) {
         // add prefix if hex
-        color = "#" + color;
+        import_color = "#" + import_color;
     }
+    style.color = import_color;
 
     // linewidth
     if (properties.count("linewidth")) {
-        line_width = std::stoi(properties["linewidth"]);
+        style.line_width = std::stoi(properties["linewidth"]);
     } else if (_global_properties.count(casa::AnnotationBase::LINEWIDTH)) {
-        line_width = std::stoi(_global_properties[casa::AnnotationBase::LINEWIDTH]);
+        style.line_width = std::stoi(_global_properties[casa::AnnotationBase::LINEWIDTH]);
     }
 
     // linestyle
-    std::string style("-"); // solid
+    std::string linestyle("-"); // solid
     if (properties.count("linestyle")) {
-        style = properties["linestyle"];
+        linestyle = properties["linestyle"];
     } else if (_global_properties.count(casa::AnnotationBase::LINESTYLE)) {
-        style = _global_properties[casa::AnnotationBase::LINESTYLE];
+        linestyle = _global_properties[casa::AnnotationBase::LINESTYLE];
     }
-    if (style == "-") { // solid line
-        dash_list = {0, 0};
+    if (linestyle == "-") { // solid line
+        style.dash_list = {0, 0};
     } else {
-        dash_list = {2, 2};
+        style.dash_list = {2, 2};
     }
+
+    return style;
 }
 
 // Private import helpers for rectangles
@@ -1008,7 +1034,7 @@ bool CrtfImportExport::GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quan
 
 // Private: for exporting regions
 
-bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state) {
+bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state, const RegionStyle& region_style) {
     // Add Annotation region to RegionTextList
     casa::AnnRegion* ann_region(nullptr);
     casa::AnnSymbol* ann_symbol(nullptr); // not an AnnRegion subclass
@@ -1040,7 +1066,7 @@ bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state
                     } catch (const casacore::AipsError& err) {
                         // Cannot export rotated pixel regions with non-square pixels in imageanalysis, do it manually
                         if (_coord_sys->hasDirectionCoordinate() && !_coord_sys->directionCoordinate().hasSquarePixels()) {
-                            region_line = AddExportRegionLine(region_state);
+                            region_line = AddExportRegionLine(region_state, region_style);
                         }
                     }
                 }
@@ -1079,7 +1105,7 @@ bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state
         }
 
         if (annotation_region) {
-            ExportStyleParameters(region_state, annotation_region);
+            ExportStyleParameters(region_style, annotation_region);
 
             casa::AsciiAnnotationFileLine file_line = casa::AsciiAnnotationFileLine(annotation_region);
             _region_list.addLine(file_line);
@@ -1095,7 +1121,7 @@ bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state
     }
 }
 
-bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state) {
+bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state, const RegionStyle& region_style) {
     // Print region parameters (pixel coordinates) to CRTF-format string and add to region vector
     std::vector<CARTA::Point> points = region_state.control_points;
     float angle = region_state.rotation;
@@ -1142,7 +1168,7 @@ bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state) {
     }
 
     if (!region_line.empty()) {
-        ExportStyleParameters(region_state, region_line);
+        ExportStyleParameters(region_style, region_line);
         _export_regions.push_back(region_line);
         return true;
     }
@@ -1151,39 +1177,39 @@ bool CrtfImportExport::AddExportRegionLine(const RegionState& region_state) {
 }
 
 void CrtfImportExport::ExportStyleParameters(
-    const RegionState& region_state, casacore::CountedPtr<casa::AnnotationBase> annotation_region) {
+    const RegionStyle& region_style, casacore::CountedPtr<casa::AnnotationBase> annotation_region) {
     // Set annotation_region style parameters from RegionState
     // label
-    if (!region_state.name.empty()) {
-        annotation_region->setLabel(region_state.name);
+    if (!region_style.name.empty()) {
+        annotation_region->setLabel(region_style.name);
         annotation_region->setLabelColor(casa::AnnotationBase::DEFAULT_LABELCOLOR);
         annotation_region->setLabelPosition(casa::AnnotationBase::DEFAULT_LABELPOS);
     }
 
     // color: remove leading '#', keep lower case
-    std::string color = region_state.color.substr(1);
+    std::string color = region_style.color.substr(1);
     annotation_region->setColor(color);
 
     // linewidth
-    annotation_region->setLineWidth(region_state.line_width);
+    annotation_region->setLineWidth(region_style.line_width);
 
     // linestyle
     casa::AnnotationBase::LineStyle style(casa::AnnotationBase::SOLID);
-    if (!region_state.dash_list.empty() && region_state.dash_list[0] != 0) {
+    if (!region_style.dash_list.empty() && region_style.dash_list[0] != 0) {
         style = casa::AnnotationBase::DASHED;
     }
     annotation_region->setLineStyle(style);
 }
 
-void CrtfImportExport::ExportStyleParameters(const RegionState& region_state, std::string& region_line) {
+void CrtfImportExport::ExportStyleParameters(const RegionStyle& region_style, std::string& region_line) {
     // Add standard CRTF keywords with default values or optional label to region_line
     std::ostringstream oss;
     // linewidth
-    oss << " linewidth=" << std::to_string(region_state.line_width) << ", ";
+    oss << " linewidth=" << std::to_string(region_style.line_width) << ", ";
 
     // linestyle
     casa::AnnotationBase::LineStyle style(casa::AnnotationBase::SOLID);
-    if (!region_state.dash_list.empty() && (region_state.dash_list[0] != 0)) {
+    if (!region_style.dash_list.empty() && (region_style.dash_list[0] != 0)) {
         style = casa::AnnotationBase::DASHED;
     }
     oss << "linestyle=" << casa::AnnotationBase::lineStyleToString(style) << ", ";
@@ -1193,7 +1219,7 @@ void CrtfImportExport::ExportStyleParameters(const RegionState& region_state, st
     oss << "symthick=" << std::to_string(casa::AnnotationBase::DEFAULT_SYMBOLTHICKNESS) << ", ";
 
     // color: lowercase, no leading #
-    oss << "color=" << region_state.color << ", ";
+    oss << "color=" << region_style.color << ", ";
 
     // font, fontsize, fontstyle, usetex
     oss << "font=\"" << casa::AnnotationBase::DEFAULT_FONT << "\", ";
@@ -1202,8 +1228,8 @@ void CrtfImportExport::ExportStyleParameters(const RegionState& region_state, st
     oss << "usetex=" << (casa::AnnotationBase::DEFAULT_USETEX ? "true" : "false");
 
     // label if set
-    if (!region_state.name.empty()) {
-        oss << ", label=\"" << region_state.name << "\", ";
+    if (!region_style.name.empty()) {
+        oss << ", label=\"" << region_style.name << "\", ";
         oss << "labelcolor=green, ";
         oss << "labelposition=" << casa::AnnotationBase::DEFAULT_LABELPOS;
     }

@@ -71,7 +71,7 @@ void Ds9ImportExport::InitGlobalProperties() {
 
 // Public: for exporting regions
 
-bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
+bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style) {
     // Add pixel-coord region using RegionState
     std::vector<CARTA::Point> points = region_state.control_points;
     float angle = region_state.rotation;
@@ -128,7 +128,7 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
 
     // Add region style and add to list
     if (!region_line.empty()) {
-        AddExportStyleParameters(region_state, region_line);
+        AddExportStyleParameters(region_style, region_line);
         _export_regions.push_back(region_line);
         return true;
     }
@@ -136,8 +136,8 @@ bool Ds9ImportExport::AddExportRegion(const RegionState& region_state) {
     return false;
 }
 
-bool Ds9ImportExport::AddExportRegion(
-    const RegionState& region_state, const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
+bool Ds9ImportExport::AddExportRegion(const RegionState& region_state, const RegionStyle& region_style,
+    const std::vector<casacore::Quantity>& control_points, const casacore::Quantity& rotation) {
     // Add region using values from LCRegion Record (pixel or converted to world)
     float angle = rotation.get("deg").getValue(); // from LCRegion "theta" value in radians
 
@@ -150,7 +150,7 @@ bool Ds9ImportExport::AddExportRegion(
 
     // Add region style and add to list
     if (!region_line.empty()) {
-        AddExportStyleParameters(region_state, region_line);
+        AddExportStyleParameters(region_style, region_line);
         _export_regions.push_back(region_line);
         return true;
     }
@@ -426,16 +426,19 @@ void Ds9ImportExport::ImportPointRegion(
         }
     }
 
-    // Create RegionState
+    // Set RegionState
     CARTA::RegionType type(CARTA::RegionType::POINT);
     float rotation(0.0);
-    std::string name, color;
-    int line_width;
-    std::vector<int> dash_list;
-    ImportStyleParameters(properties, name, color, line_width, dash_list);
+    RegionState region_state(_file_id, type, control_points, rotation);
 
-    RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-    _import_regions.push_back(region_state);
+    // Set RegionStyle
+    RegionStyle region_style = ImportStyleParameters(properties);
+
+    // Add RegionProperties to list
+    RegionProperties region_properties;
+    region_properties.state = region_state;
+    region_properties.style = region_style;
+    _import_regions.push_back(region_properties);
 }
 
 void Ds9ImportExport::ImportCircleRegion(
@@ -522,7 +525,7 @@ void Ds9ImportExport::ImportEllipseRegion(
             control_points.push_back(point);
         }
 
-        // Create RegionState
+        // Set RegionState
         CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
         float rotation(0.0);
         if (nparam > 5) {
@@ -534,13 +537,16 @@ void Ds9ImportExport::ImportEllipseRegion(
                 rotation += 360.0;
             }
         }
-        std::string name, color;
-        int line_width;
-        std::vector<int> dash_list;
-        ImportStyleParameters(properties, name, color, line_width, dash_list);
+        RegionState region_state(_file_id, type, control_points, rotation);
 
-        RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-        _import_regions.push_back(region_state);
+        // Set RegionStyle
+        RegionStyle region_style = ImportStyleParameters(properties);
+
+        // Add RegionProperties to list
+        RegionProperties region_properties;
+        region_properties.state = region_state;
+        region_properties.style = region_style;
+        _import_regions.push_back(region_properties);
     } else if (nparam > 6) {
         // unsupported ellipse annulus: ellipse x y r11 r12 r21 r22 [angle]
         _import_errors.append("Unsupported ellipse definition.\n");
@@ -625,13 +631,16 @@ void Ds9ImportExport::ImportRectangleRegion(
         if (nparam > 5) {
             rotation = param_quantities[4].getValue();
         }
-        std::string name, color;
-        int line_width;
-        std::vector<int> dash_list;
-        ImportStyleParameters(properties, name, color, line_width, dash_list);
+        RegionState region_state(_file_id, type, control_points, rotation);
 
-        RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-        _import_regions.push_back(region_state);
+        // Set RegionStyle
+        RegionStyle region_style = ImportStyleParameters(properties);
+
+        // Add RegionProperties to list
+        RegionProperties region_properties;
+        region_properties.state = region_state;
+        region_properties.style = region_style;
+        _import_regions.push_back(region_properties);
     } else if (nparam > 6) {
         // unsupported box annulus: box x y w1 h1 w2 h2 [angle]
         _import_errors.append("Unsupported box definition.\n");
@@ -704,40 +713,44 @@ void Ds9ImportExport::ImportPolygonRegion(
         }
     }
 
-    // Create RegionState
+    // Set RegionState
     CARTA::RegionType type(CARTA::RegionType::POLYGON);
     float rotation(0.0);
-    std::string name, color;
-    int line_width;
-    std::vector<int> dash_list;
-    ImportStyleParameters(properties, name, color, line_width, dash_list);
+    RegionState region_state(_file_id, type, control_points, rotation);
 
-    RegionState region_state(_file_id, name, type, control_points, rotation, color, line_width, dash_list);
-    _import_regions.push_back(region_state);
+    // Set RegionStyle
+    RegionStyle region_style = ImportStyleParameters(properties);
+
+    // Add RegionProperties to list
+    RegionProperties region_properties;
+    region_properties.state = region_state;
+    region_properties.style = region_style;
+    _import_regions.push_back(region_properties);
 }
 
-void Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties, std::string& name, std::string& color,
-    int& line_width, std::vector<int>& dash_list) {
+RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::string, std::string>& properties) {
     // Get style params from properties
+    RegionStyle style;
+
     // name
     if (properties.count("text")) {
         std::string text(properties["text"]);
         // Remove { }
-        name = text.substr(1, text.size() - 2);
+        style.name = text.substr(1, text.size() - 2);
     }
 
     // color
     if (properties.count("color")) {
-        color = FormatColor(properties["color"]);
+        style.color = FormatColor(properties["color"]);
     } else if (_global_properties.count("color")) {
-        color = FormatColor(_global_properties["color"]);
+        style.color = FormatColor(_global_properties["color"]);
     }
 
     // width
     if (properties.count("width")) {
-        line_width = std::stoi(properties["width"]);
+        style.line_width = std::stoi(properties["width"]);
     } else if (_global_properties.count("width")) {
-        line_width = std::stoi(_global_properties["width"]);
+        style.line_width = std::stoi(_global_properties["width"]);
     }
 
     // dash
@@ -752,10 +765,15 @@ void Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::string, std:
         // Convert string to vector then to int
         std::vector<std::string> dash_values;
         SplitString(dashlist, ' ', dash_values);
+
+        std::vector<int> dash_list;
         for (auto& value : dash_values) {
             dash_list.push_back(std::stoi(value));
         }
+        style.dash_list = dash_list;
     }
+
+    return style;
 }
 
 bool Ds9ImportExport::CheckAndConvertParameter(std::string& parameter, const std::string& region_type) {
@@ -990,22 +1008,22 @@ std::string Ds9ImportExport::AddExportRegionWorld(
     return region;
 }
 
-void Ds9ImportExport::AddExportStyleParameters(const RegionState& region_state, std::string& region_line) {
+void Ds9ImportExport::AddExportStyleParameters(const RegionStyle& region_style, std::string& region_line) {
     // Add region style properties from RegionState to line
     region_line.append(" #");
 
     // color
-    region_line.append(" color=" + FormatColor(region_state.color));
+    region_line.append(" color=" + FormatColor(region_style.color));
     // line width
-    region_line.append(" width=" + std::to_string(region_state.line_width));
+    region_line.append(" width=" + std::to_string(region_style.line_width));
     // name
-    if (!region_state.name.empty()) {
-        region_line.append(" text={" + region_state.name + "}");
+    if (!region_style.name.empty()) {
+        region_line.append(" text={" + region_style.name + "}");
     }
     // dash list for enclosed regions
-    if ((region_state.type != CARTA::RegionType::POINT) && !region_state.dash_list.empty() && (region_state.dash_list[0] != 0)) {
-        std::string dash_on(std::to_string(region_state.dash_list[0]));
-        std::string dash_off = (region_state.dash_list.size() == 2 ? std::to_string(region_state.dash_list[1]) : dash_on);
+    if (!region_style.dash_list.empty() && (region_style.dash_list[0] != 0)) {
+        std::string dash_on(std::to_string(region_style.dash_list[0]));
+        std::string dash_off = (region_style.dash_list.size() == 2 ? std::to_string(region_style.dash_list[1]) : dash_on);
         region_line.append(" dash=1 dashlist=" + dash_on + " " + dash_off);
     }
     region_line.append("\n");
