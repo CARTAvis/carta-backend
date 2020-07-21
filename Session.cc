@@ -879,18 +879,25 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 
             // Set regions
             for (auto& region_id_info : image.regions()) {
-                // region_id_info is map<region_id, CARTA::RegionInfo>
-                CARTA::SetRegion set_region_msg;
-                set_region_msg.set_file_id(file_id);
-                set_region_msg.set_region_id(region_id_info.first);
-                CARTA::RegionInfo resume_region_info = region_id_info.second;
-                *set_region_msg.mutable_region_info() = resume_region_info;
+                // region_id_info is <region_id, CARTA::RegionInfo>
+                if (region_id_info.first == 0) {
+                    CARTA::Point cursor = region_id_info.second.control_points(0);
+                    CARTA::SetCursor set_cursor_msg;
+                    *set_cursor_msg.mutable_point() = cursor;
+                    OnSetCursor(set_cursor_msg, request_id);
+                } else {
+                    CARTA::SetRegion set_region_msg;
+                    set_region_msg.set_file_id(file_id);
+                    set_region_msg.set_region_id(region_id_info.first);
+                    CARTA::RegionInfo resume_region_info = region_id_info.second;
+                    *set_region_msg.mutable_region_info() = resume_region_info;
 
-                if (!OnSetRegion(set_region_msg, request_id, true)) {
-                    success = false;
-                    // Error message
-                    std::string region_id = std::to_string(region_id_info.first) + " ";
-                    err_region_ids.append(region_id);
+                    if (!OnSetRegion(set_region_msg, request_id, true)) {
+                        success = false;
+                        // Error message
+                        std::string region_id = std::to_string(region_id_info.first) + " ";
+                        err_region_ids.append(region_id);
+                    }
                 }
             }
 
