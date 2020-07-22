@@ -243,7 +243,9 @@ std::string RegionImportExport::FormatColor(const std::string& color) {
         hex_color = color.substr(1);
     }
 
-    if (std::strtoul(hex_color.c_str(), nullptr, 16)) {
+    // Check if can convert entire string to hex number
+    char* endptr(nullptr);
+    if (std::strtoul(hex_color.c_str(), &endptr, 16) && (*endptr == '\0')) {
         std::transform(hex_color.begin(), hex_color.end(), hex_color.begin(), ::toupper);
         hex_color = "#" + hex_color;
     }
