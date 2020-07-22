@@ -7,6 +7,8 @@
 # If changes are necessary the script will print a diff -- please run reformat.sh to fix the code.
 # The clang-format configuration is found in .clang-format
 
-find . -regex ".*\.\(cc\|h\)" -not -path "./*/carta-protobuf/*" -exec cat {} \; | diff -u <(find . -regex ".*\.\(cc\|h\)" -not -path "./*/carta-protobuf/*" -exec clang-format {} \;) -
+PARAMS=(\( -regex '.*\.\(cc\|h\)' -not -path './*/carta-protobuf/*' -not -path './*/carta-scripting-grpc/*' \))
+
+find . "${PARAMS[@]}" -exec cat {} \; | diff -u <(find . "${PARAMS[@]}" -exec clang-format {} \;) -
 
 exit
