@@ -25,8 +25,11 @@ struct RegionStyle {
 };
 
 struct RegionProperties {
-    RegionState state; // params in CARTA::RegionInfo
-    RegionStyle style; // params in CARTA::RegionStyle
+    RegionProperties() {}
+    RegionProperties(RegionState& region_state, RegionStyle& region_style) : state(region_state), style(region_style) {}
+
+    RegionState state;
+    RegionStyle style;
 };
 
 namespace carta {

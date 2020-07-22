@@ -45,20 +45,20 @@ protected:
 private:
     // Import RegionTextList Annotation regions to RegionState vector
     void ImportAnnotationFileLine(casa::AsciiAnnotationFileLine& file_line);
-    void ImportAnnSymbol(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    void ImportAnnBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    void ImportAnnRotBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    void ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
-    void ImportAnnEllipse(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
+    RegionState ImportAnnSymbol(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
+    RegionState ImportAnnBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
+    RegionState ImportAnnRotBox(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
+    RegionState ImportAnnPolygon(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
+    RegionState ImportAnnEllipse(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
     RegionStyle ImportStyleParameters(casacore::CountedPtr<const casa::AnnotationBase>& annotation_region);
 
     // Manual region import to RegionState
     // (workaround for imageanalysis RegionTextList exception for linear coord sys)
     void ProcessFileLines(std::vector<std::string>& lines);
-    void ImportAnnSymbol(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
-    void ImportAnnBox(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
-    void ImportAnnEllipse(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
-    void ImportAnnPolygon(std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties);
+    RegionState ImportAnnSymbol(std::vector<std::string>& parameters);
+    RegionState ImportAnnBox(std::vector<std::string>& parameters);
+    RegionState ImportAnnEllipse(std::vector<std::string>& parameters);
+    RegionState ImportAnnPolygon(std::vector<std::string>& parameters);
     RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
     void ImportGlobalParameters(std::unordered_map<std::string, std::string>& properties);
 

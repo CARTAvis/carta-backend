@@ -40,6 +40,10 @@ struct RegionState {
         return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || RegionChanged(rhs);
     }
 
+    bool RegionDefined() {
+        return !control_points.empty();
+    }
+
     bool RegionChanged(const RegionState& rhs) {
         // Ignores annotation params (for interrupting region calculations)
         return (rotation != rhs.rotation) || PointsChanged(rhs);

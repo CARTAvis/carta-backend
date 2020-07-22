@@ -54,16 +54,11 @@ private:
     // Import regions
     void SetGlobals(std::string& global_line);
     void SetRegion(std::string& region_definition);
-    void ImportPointRegion(
-        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
-    void ImportCircleRegion(
-        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
-    void ImportEllipseRegion(
-        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
-    void ImportRectangleRegion(
-        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
-    void ImportPolygonRegion(
-        std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties, bool exclude_region);
+    RegionState ImportPointRegion(std::vector<std::string>& parameters);
+    RegionState ImportCircleRegion(std::vector<std::string>& parameters);
+    RegionState ImportEllipseRegion(std::vector<std::string>& parameters);
+    RegionState ImportRectangleRegion(std::vector<std::string>& parameters);
+    RegionState ImportPolygonRegion(std::vector<std::string>& parameters);
     RegionStyle ImportStyleParameters(std::unordered_map<std::string, std::string>& properties);
 
     // Convert DS9 syntax -> CASA
