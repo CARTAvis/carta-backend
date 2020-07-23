@@ -17,55 +17,39 @@
 #include <carta-protobuf/enums.pb.h>
 
 struct RegionState {
-    // struct used to determine whether region changed
+    // struct used for region parameters
     int reference_file_id;
-    std::string name;
     CARTA::RegionType type;
     std::vector<CARTA::Point> control_points;
     float rotation;
 
     RegionState() {}
-    RegionState(int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
-        reference_file_id = ref_file_id_;
-        name = name_;
-        type = type_;
-        control_points = control_points_;
-        rotation = rotation_;
-    }
-
-    void UpdateState(
-        int ref_file_id_, std::string name_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_) {
-        reference_file_id = ref_file_id_;
-        name = name_;
-        type = type_;
-        control_points = control_points_;
-        rotation = rotation_;
-    }
+    RegionState(int ref_file_id_, CARTA::RegionType type_, std::vector<CARTA::Point> control_points_, float rotation_)
+        : reference_file_id(ref_file_id_), type(type_), control_points(control_points_), rotation(rotation_) {}
 
     void operator=(const RegionState& other) {
         reference_file_id = other.reference_file_id;
-        name = other.name;
         type = other.type;
         control_points = other.control_points;
         rotation = other.rotation;
     }
     bool operator==(const RegionState& rhs) {
-        if ((name != rhs.name) || RegionChanged(rhs)) {
-            return false;
-        }
-        return true;
+        return (reference_file_id == rhs.reference_file_id) && (type == rhs.type) && !RegionChanged(rhs);
     }
     bool operator!=(const RegionState& rhs) {
-        if ((name != rhs.name) || RegionChanged(rhs)) {
-            return true;
-        }
-        return false;
+        return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || RegionChanged(rhs);
     }
 
-    bool RegionChanged(const RegionState& rhs) { // ignores name change (does not interrupt region calculations)
-        return (reference_file_id != rhs.reference_file_id) || (type != rhs.type) || (rotation != rhs.rotation) || PointsChanged(rhs);
+    bool RegionDefined() {
+        return !control_points.empty();
+    }
+
+    bool RegionChanged(const RegionState& rhs) {
+        // Ignores annotation params (for interrupting region calculations)
+        return (rotation != rhs.rotation) || PointsChanged(rhs);
     }
     bool PointsChanged(const RegionState& rhs) {
+        // Points must be same size, order, and value to be unchanged
         if (control_points.size() != rhs.control_points.size()) {
             return true;
         }
@@ -84,8 +68,6 @@ namespace carta {
 
 class Region {
 public:
-    Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-        casacore::CoordinateSystem* csys);
     Region(const RegionState& state, casacore::CoordinateSystem* csys);
     ~Region();
 
@@ -93,9 +75,8 @@ public:
         return _valid;
     };
 
-    // set new region state and coord sys
-    bool UpdateState(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation);
-    bool UpdateState(const RegionState& state);
+    // set new region parameters
+    bool UpdateRegion(const RegionState& state);
 
     // state accessors
     inline RegionState GetRegionState() {
@@ -107,9 +88,6 @@ public:
     inline bool IsRotbox() {
         return ((_region_state.type == CARTA::RegionType::RECTANGLE) && (_region_state.rotation != 0.0));
     }
-    inline bool RegionStateChanged() { // any params changed
-        return _region_state_changed;
-    };
     inline bool RegionChanged() { // reference image, type, points, or rotation changed
         return _region_changed;
     }
@@ -152,7 +130,7 @@ private:
     casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
 
-    // region definition (name, type, control points in pixel coordinates, rotation)
+    // region parameters struct
     RegionState _region_state;
 
     // coord sys and shape of reference image
@@ -168,8 +146,7 @@ private:
 
     // region flags
     bool _valid;                // RegionState set properly
-    bool _region_state_changed; // any parameters changed
-    bool _region_changed;       // type, control points, or rotation changed
+    bool _region_changed;       // control points or rotation changed
     bool _reference_region_set; // indicates attempt was made; may be null wcregion outside image
 
     // Communication

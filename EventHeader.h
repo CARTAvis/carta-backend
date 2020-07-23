@@ -2,7 +2,7 @@
 #define CARTA_BACKEND__EVENTHEADER_H_
 
 namespace carta {
-const uint16_t ICD_VERSION = 15;
+const uint16_t ICD_VERSION = 16;
 struct EventHeader {
     uint16_t type;
     uint16_t icd_version;
