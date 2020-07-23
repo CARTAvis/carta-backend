@@ -18,26 +18,9 @@
 
 using namespace carta;
 
-Region::Region(int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation,
-    casacore::CoordinateSystem* image_csys)
-    : _coord_sys(image_csys),
-      _valid(false),
-      _region_state_changed(false),
-      _region_changed(false),
-      _reference_region_set(false),
-      _z_profile_count(0) {
-    // validate and set region parameters
-    _valid = UpdateState(file_id, name, type, points, rotation);
-}
-
-Region::Region(const RegionState& state, casacore::CoordinateSystem* image_csys)
-    : _coord_sys(image_csys),
-      _valid(false),
-      _region_state_changed(false),
-      _region_changed(false),
-      _reference_region_set(false),
-      _z_profile_count(0) {
-    _valid = UpdateState(state);
+Region::Region(const RegionState& state, casacore::CoordinateSystem* csys)
+    : _coord_sys(csys), _valid(false), _region_changed(false), _reference_region_set(false), _z_profile_count(0) {
+    _valid = UpdateRegion(state);
 }
 
 Region::~Region() {
@@ -47,35 +30,20 @@ Region::~Region() {
 // *************************************************************************
 // Region settings
 
-bool Region::UpdateState(
-    int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points, float rotation) {
-    // Set region state and update
-    RegionState new_state;
-    new_state.reference_file_id = file_id;
-    new_state.name = name;
-    new_state.type = type;
-    new_state.control_points = points;
-    new_state.rotation = rotation;
-    return UpdateState(new_state);
-}
-
-bool Region::UpdateState(const RegionState& state) {
+bool Region::UpdateRegion(const RegionState& state) {
     // Update region from region state
     bool valid = CheckPoints(state.control_points, state.type);
 
     if (valid) {
         // discern changes
-        _region_state_changed = (_region_state != state);
         _region_changed = (_region_state.RegionChanged(state));
-
         if (_region_changed) {
             ResetRegionCache();
         }
 
-        // set new region state and coord sys
+        // set new region state
         _region_state = state;
     } else { // keep existing state
-        _region_state_changed = false;
         _region_changed = false;
     }
 
