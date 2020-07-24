@@ -122,33 +122,20 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
     }
 
     if (moment_mask == CARTA::MomentMask::Include) {
-        if ((pixel_min == ALL_PIXEL_RANGE) || (pixel_max == ALL_PIXEL_RANGE)) {
-            _include_pix.resize(1);
-            _include_pix[0] = ALL_PIXEL_RANGE;
-        } else {
-            _include_pix.resize(2);
-            _include_pix[0] = pixel_min;
-            _include_pix[1] = pixel_max;
-        }
+        _include_pix.resize(2);
+        _include_pix[0] = pixel_min;
+        _include_pix[1] = pixel_max;
         // Clear the exclusive array
         _exclude_pix.resize(0);
-
     } else if (moment_mask == CARTA::MomentMask::Exclude) {
-        if ((pixel_min == ALL_PIXEL_RANGE) || (pixel_max == ALL_PIXEL_RANGE)) {
-            _exclude_pix.resize(1);
-            _exclude_pix[0] = ALL_PIXEL_RANGE;
-        } else {
-            _exclude_pix.resize(2);
-            _exclude_pix[0] = pixel_min;
-            _exclude_pix[1] = pixel_max;
-        }
+        _exclude_pix.resize(2);
+        _exclude_pix[0] = pixel_min;
+        _exclude_pix[1] = pixel_max;
         // Clear the inclusive array
         _include_pix.resize(0);
-
     } else {
-        _include_pix.resize(2);
-        _include_pix[0] = std::numeric_limits<float>::min();
-        _include_pix[1] = std::numeric_limits<float>::max();
+        _include_pix.resize(1);
+        _include_pix[0] = ALL_PIXEL_RANGE;
         // Clear the exclusive array
         _exclude_pix.resize(0);
     }
