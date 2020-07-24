@@ -13,6 +13,25 @@
 #include "../RequirementsCache.h"
 #include "Region.h"
 
+struct RegionStyle {
+    std::string name;
+    std::string color;
+    int line_width;
+    std::vector<int> dash_list;
+
+    RegionStyle() {}
+    RegionStyle(const std::string& name_, const std::string& color_, int line_width_, const std::vector<int> dash_list_)
+        : name(name_), color(color_), line_width(line_width_), dash_list(dash_list_) {}
+};
+
+struct RegionProperties {
+    RegionProperties() {}
+    RegionProperties(RegionState& region_state, RegionStyle& region_style) : state(region_state), style(region_style) {}
+
+    RegionState state;
+    RegionStyle style;
+};
+
 namespace carta {
 
 class RegionHandler {
@@ -20,8 +39,7 @@ public:
     RegionHandler(bool verbose);
 
     // Regions
-    bool SetRegion(int& region_id, int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points,
-        float rotation, casacore::CoordinateSystem* csys);
+    bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
 
@@ -29,7 +47,7 @@ public:
     void ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, const std::string& region_file,
         bool file_is_filename, CARTA::ImportRegionAck& import_ack);
     void ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, CARTA::CoordinateType coord_type,
-        std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
+        std::map<int, CARTA::RegionStyle>& region_styles, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Frames
     void RemoveFrame(int file_id);

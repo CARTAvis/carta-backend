@@ -60,4 +60,7 @@
 #define MOMENT_COMPLETE 1.0
 #define OUTPUT_ID_MULTIPLIER 1000
 
+// region style
+#define DASH_LENGTH 2
+
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_
