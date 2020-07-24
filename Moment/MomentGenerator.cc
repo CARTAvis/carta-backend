@@ -310,7 +310,7 @@ void MomentGenerator::setStepCount(int count) {
 void MomentGenerator::setStepsCompleted(int count) {
     _progress = (float)count / _total_steps;
     // Update the progress report every percent
-    if ((_progress - _pre_progress) >= REPORT_PROGRESS_EVERY_FACTOR) {
+    if ((_progress > 0.01 && _pre_progress == 0.0) || ((_progress - _pre_progress) >= REPORT_PROGRESS_EVERY_FACTOR)) {
         if (_progress > MOMENT_COMPLETE) {
             _progress = MOMENT_COMPLETE;
         }
