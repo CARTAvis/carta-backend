@@ -49,7 +49,13 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
                 try {
                     _image_moments->setInExCludeRange(_include_pix, _exclude_pix);
 
-                    // Save collapse results in the memory
+                    // Start the timer
+                    _start_time = std::chrono::high_resolution_clock::now();
+
+                    // Reset the first progress report
+                    _first_report = false;
+
+                    // Do calculations and save collapse results in the memory
                     auto result_images = _image_moments->createMoments(do_temp, out_file, remove_axis);
 
                     for (int i = 0; i < result_images.size(); ++i) {
@@ -309,14 +315,26 @@ void MomentGenerator::setStepCount(int count) {
 
 void MomentGenerator::setStepsCompleted(int count) {
     _progress = (float)count / _total_steps;
-    // Update the progress report every percent
-    if ((_progress > 0.01 && _pre_progress == 0.0) || ((_progress - _pre_progress) >= REPORT_PROGRESS_EVERY_FACTOR)) {
-        if (_progress > MOMENT_COMPLETE) {
-            _progress = MOMENT_COMPLETE;
+    if (_progress > MOMENT_COMPLETE) {
+        _progress = MOMENT_COMPLETE;
+    }
+
+    if (!_first_report) {
+        auto current_time = std::chrono::high_resolution_clock::now();
+        auto dt = std::chrono::duration<double, std::milli>(current_time - _start_time).count();
+        if (dt > REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS) {
+            _progress_callback(_progress);
+            _first_report = true;
         }
-        // Report the progress
+    }
+
+    // Update the progress report every percent
+    if ((_progress - _pre_progress) >= REPORT_PROGRESS_EVERY_FACTOR) {
         _progress_callback(_progress);
         _pre_progress = _progress;
+        if (!_first_report) {
+            _first_report = true;
+        }
     }
 }
 

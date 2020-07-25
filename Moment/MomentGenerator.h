@@ -5,6 +5,7 @@
 #include <carta-protobuf/stop_moment_calc.pb.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgressMonitor.h>
 
+#include <chrono>
 #include <thread>
 
 #include "../InterfaceConstants.h"
@@ -82,6 +83,8 @@ private:
     float _progress;
     float _pre_progress;
     MomentProgressCallback _progress_callback;
+    std::chrono::high_resolution_clock::time_point _start_time;
+    bool _first_report;
 
     // Moments calculation counter, so MomentGenerator is not destroyed until finished
     std::atomic<int> _moments_calc_count;
