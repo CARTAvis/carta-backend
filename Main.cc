@@ -97,8 +97,14 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     session->IncreaseRefCount();
     outgoing->setData(session);
 
-    Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, ws->getAddress().address,
-        Session::NumberOfSessions());
+    string address;
+    auto ip_header = http_request.getHeader("x-forwarded-for");
+    if (ip_header) {
+        address = ip_header.toString();
+    } else {
+        address = ws->getAddress().address;
+    }
+    Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
