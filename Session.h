@@ -50,8 +50,8 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, std::string base, uS::Async* outgoing_async,
-        FileListHandler* file_list_handler, bool verbose = false);
+    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
+        uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose = false);
     ~Session();
 
     // CARTA ICD
@@ -178,6 +178,10 @@ public:
         return _id;
     }
 
+    inline std::string GetAddress() {
+        return _address;
+    }
+
     // RegionDataStreams
     void RegionDataStreams(int file_id, int region_id);
     bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
@@ -216,6 +220,7 @@ private:
 
     uWS::WebSocket<uWS::SERVER>* _socket;
     uint32_t _id;
+    std::string _address;
     std::string _api_key;
     std::string _root_folder;
     std::string _base_folder;
