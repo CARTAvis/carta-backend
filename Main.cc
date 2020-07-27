@@ -88,7 +88,15 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         current_session->SendPendingMessages();
     });
 
-    Session* session = new Session(ws, session_number, root_folder, base_folder, outgoing, file_list_handler, verbose);
+    string address;
+    auto ip_header = http_request.getHeader("x-forwarded-for");
+    if (ip_header) {
+        address = ip_header.toString();
+    } else {
+        address = ws->getAddress().address;
+    }
+
+    Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose);
 
     ws->setUserData(session);
     if (carta_grpc_service) {
@@ -96,9 +104,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     }
     session->IncreaseRefCount();
     outgoing->setData(session);
-
-    Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, ws->getAddress().address,
-        Session::NumberOfSessions());
+    Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -112,8 +118,9 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
 
     if (session) {
         auto uuid = session->GetId();
+        auto address = session->GetAddress();
         session->DisconnectCalled();
-        Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address, Session::NumberOfSessions());
+        Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);
         }

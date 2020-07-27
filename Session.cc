@@ -41,10 +41,11 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, std::string base, uS::Async* outgoing_async,
-    FileListHandler* file_list_handler, bool verbose)
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
+    uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose)
     : _socket(ws),
       _id(id),
+      _address(address),
       _root_folder(root),
       _base_folder(base),
       _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
