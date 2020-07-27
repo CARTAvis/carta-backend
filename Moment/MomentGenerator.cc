@@ -140,9 +140,8 @@ void MomentGenerator::SetPixelRange(const CARTA::MomentRequest& moment_request) 
         // Clear the inclusive array
         _include_pix.resize(0);
     } else {
-        _include_pix.resize(1);
-        _include_pix[0] = ALL_PIXEL_RANGE;
-        // Clear the exclusive array
+        // Clear inclusive and exclusive array
+        _include_pix.resize(0);
         _exclude_pix.resize(0);
     }
 }
