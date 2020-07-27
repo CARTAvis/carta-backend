@@ -1084,6 +1084,9 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
 
         // Send moment response message
         SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"Moments"}, CARTA::ErrorSeverity::DEBUG);
     }
 }
 

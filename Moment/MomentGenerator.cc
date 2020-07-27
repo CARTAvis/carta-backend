@@ -321,7 +321,7 @@ void MomentGenerator::setStepsCompleted(int count) {
     if (!_first_report) {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration<double, std::milli>(current_time - _start_time).count();
-        if (dt > REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS) {
+        if (dt >= REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS) {
             _progress_callback(_progress);
             _first_report = true;
         }
