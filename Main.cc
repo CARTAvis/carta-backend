@@ -14,6 +14,7 @@
 
 #include <omp.h>
 
+#include <curl/curl.h>
 #include <fmt/format.h>
 #include <signal.h>
 #include <tbb/concurrent_queue.h>
@@ -432,6 +433,16 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
+                    CARTA::SpectralLineRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk =
+                            new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
+                    } else {
+                        fmt::print("Bad SPECTRAL_LINE_REQUEST message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
@@ -607,6 +618,9 @@ int main(int argc, const char* argv[]) {
                 return 1;
             }
         }
+
+        // Init curl
+        curl_global_init(CURL_GLOBAL_ALL);
 
         session_number = 0;
 

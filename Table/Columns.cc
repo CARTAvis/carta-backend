@@ -52,6 +52,22 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
     return column;
 }
 
+std::unique_ptr<Column> Column::FromValues(const std::vector<string>& values, string name) {
+    auto data_column_ptr = make_unique<DataColumn<string>>(name);
+    data_column_ptr->Resize(values.size());
+    if (data_column_ptr != nullptr) {
+        for (auto row_index = 0; row_index < values.size(); row_index++) {
+            data_column_ptr->SetFromValue(values[row_index], row_index);
+        }
+    }
+
+    data_column_ptr->id = "";
+    data_column_ptr->description = "";
+    data_column_ptr->unit = "";
+    data_column_ptr->ucd = "";
+    return data_column_ptr;
+}
+
 void TrimSpaces(string& str) {
     str.erase(str.find_last_not_of(' ') + 1);
 }

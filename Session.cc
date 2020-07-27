@@ -29,6 +29,7 @@
 #include "FileList/FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
+#include "SpectralLine/SpectralLineCrawler.h"
 
 #include "DBConnect.h"
 #include "Util.h"
@@ -967,6 +968,12 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
         // Send partial or final results
         SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
     });
+}
+
+void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
+    CARTA::SpectralLineResponse spectral_line_response;
+    carta::SpectralLineCrawler::SendRequest(spectral_line_request.frequency_range(), spectral_line_response);
+    SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response, true);
 }
 
 // ******** SEND DATA STREAMS *********
