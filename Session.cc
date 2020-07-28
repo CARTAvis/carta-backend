@@ -29,6 +29,7 @@
 #include "FileList/FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
+#include "SpectralLine/SpectralLineCrawler.h"
 
 #include "DBConnect.h"
 #include "Util.h"
@@ -41,10 +42,11 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, std::string base, uS::Async* outgoing_async,
-    FileListHandler* file_list_handler, bool verbose)
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
+    uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose)
     : _socket(ws),
       _id(id),
+      _address(address),
       _root_folder(root),
       _base_folder(base),
       _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
@@ -1110,6 +1112,12 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::DEBUG);
     }
+}
+
+void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
+    CARTA::SpectralLineResponse spectral_line_response;
+    carta::SpectralLineCrawler::SendRequest(spectral_line_request.frequency_range(), spectral_line_response);
+    SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response, true);
 }
 
 // ******** SEND DATA STREAMS *********
