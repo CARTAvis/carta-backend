@@ -114,9 +114,10 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
         casacore::Directory start_dir(folder_path);
         casacore::DirectoryIterator dir_iter(start_dir);
         while (!dir_iter.pastEnd()) {
-            casacore::File cc_file(dir_iter.file());           // directory is also a File
-            casacore::String name(cc_file.path().baseName());  // in case it is a link
-            if (cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
+            casacore::File cc_file(dir_iter.file());          // directory is also a File
+            casacore::String name(cc_file.path().baseName()); // to keep link name before resolve
+
+            if (cc_file.isReadable() && cc_file.exists() && name.firstchar() != '.') { // ignore hidden files/folders
                 casacore::String full_path(cc_file.path().absoluteName());
                 try {
                     bool is_region(false);
@@ -134,7 +135,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                     }
                     if (!is_region) {
                         bool add_image(false);
-                        if (cc_file.isDirectory(true) && cc_file.isExecutable() && cc_file.isReadable()) {
+                        if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                             casacore::ImageOpener::ImageTypes image_type = casacore::ImageOpener::imageType(full_path);
                             if ((image_type == casacore::ImageOpener::AIPSPP) || (image_type == casacore::ImageOpener::MIRIAD)) {
                                 add_image = true;
