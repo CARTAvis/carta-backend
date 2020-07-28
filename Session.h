@@ -34,8 +34,8 @@
 #include <carta-protobuf/scripting.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
-#include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/spectral_line_request.pb.h>
+#include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
