@@ -1106,6 +1106,9 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
 
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::DEBUG);
     }
 }
 

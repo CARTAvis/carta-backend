@@ -19,8 +19,15 @@ void FileConverter::SaveFile(const std::string& in_file, casacore::ImageInterfac
     // Get the full resolved name of the output image
     std::string temp_path = _root_folder + "/" + directory;
     std::string abs_path = fs::absolute(temp_path);
-    output_filename = abs_path + "/" + output_filename;
 
+    if (!fs::exists(abs_path)) {
+        message = "Can not access the path!";
+        save_file_ack.set_success(success);
+        save_file_ack.set_message(message);
+        return;
+    }
+
+    output_filename = abs_path + "/" + output_filename;
     if (output_filename == in_file) {
         message = "The source file can not be overwritten!";
         save_file_ack.set_success(success);
