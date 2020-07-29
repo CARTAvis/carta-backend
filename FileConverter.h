@@ -3,6 +3,7 @@
 
 #include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/save_file.pb.h>
+#include <casacore/casa/OS/Directory.h>
 #include <casacore/images/Images/ImageFITSConverter.h>
 
 #include <filesystem>
