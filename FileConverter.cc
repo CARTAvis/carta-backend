@@ -32,7 +32,7 @@ void FileConverter::SaveFile(const std::string& in_file, casacore::ImageInterfac
     casacore::File tmp_filename(output_filename);
     casacore::Directory tmp_dir = tmp_filename.path().dirName();
     if (!tmp_dir.exists() || !tmp_dir.isWritable()) {
-        message = "Can not access the path!";
+        message = "No write permission!";
         save_file_ack.set_success(success);
         save_file_ack.set_message(message);
         return;
