@@ -30,6 +30,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "GrpcServer/CartaGrpcService.h"
+#include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "Util.h"
@@ -64,6 +65,9 @@ string mongo_db_contact_string;
 void GetMongoURIString(string& uri) {
     uri = CARTA::mongo_db_contact_string;
 }
+
+// Log event types for receiving from the frontend
+void LogReceiveEventType(uint16_t event_type);
 
 // Called on connection. Creates session objects and assigns UUID and API keys to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
@@ -161,6 +165,10 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             char* event_buf = raw_message + sizeof(carta::EventHeader);
             int event_length = length - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
+
+            if (verbose) {
+                LogReceiveEventType(head.type);
+            }
 
             switch (head.type) {
                 case CARTA::EventType::REGISTER_VIEWER: {
@@ -595,6 +603,9 @@ int main(int argc, const char* argv[]) {
                 json_fname = inp.getString("read_json_file");
                 ReadJsonFile(json_fname);
             }
+            if (verbose) {
+                InitLoggers(); // Initialize loggers
+            }
         }
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
@@ -646,4 +657,142 @@ int main(int argc, const char* argv[]) {
     }
 
     return 0;
+}
+
+void LogReceiveEventType(uint16_t event_type) {
+    std::shared_ptr<spdlog::logger> receive_logger = spdlog::get("RECEIVE");
+    switch (event_type) {
+        case CARTA::EventType::REGISTER_VIEWER: {
+            receive_logger->info("REGISTER_VIEWER");
+            break;
+        }
+        case CARTA::EventType::RESUME_SESSION: {
+            receive_logger->info("RESUME_SESSION");
+            break;
+        }
+        case CARTA::EventType::SET_IMAGE_CHANNELS: {
+            receive_logger->info("SET_IMAGE_CHANNELS");
+            break;
+        }
+        case CARTA::EventType::SET_CURSOR: {
+            receive_logger->info("SET_CURSOR");
+            break;
+        }
+        case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS: {
+            receive_logger->info("SET_HISTOGRAM_REQUIREMENTS");
+            break;
+        }
+        case CARTA::EventType::CLOSE_FILE: {
+            receive_logger->info("CLOSE_FILE");
+            break;
+        }
+        case CARTA::EventType::START_ANIMATION: {
+            receive_logger->info("START_ANIMATION");
+            break;
+        }
+        case CARTA::EventType::STOP_ANIMATION: {
+            receive_logger->info("STOP_ANIMATION");
+            break;
+        }
+        case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
+            receive_logger->info("ANIMATION_FLOW_CONTROL");
+            break;
+        }
+        case CARTA::EventType::FILE_INFO_REQUEST: {
+            receive_logger->info("FILE_INFO_REQUEST");
+            break;
+        }
+        case CARTA::EventType::FILE_LIST_REQUEST: {
+            receive_logger->info("FILE_LIST_REQUEST");
+            break;
+        }
+        case CARTA::EventType::OPEN_FILE: {
+            receive_logger->info("OPEN_FILE");
+            break;
+        }
+        case CARTA::EventType::ADD_REQUIRED_TILES: {
+            receive_logger->info("ADD_REQUIRED_TILES");
+            break;
+        }
+        case CARTA::EventType::REGION_LIST_REQUEST: {
+            receive_logger->info("REGION_LIST_REQUEST");
+            break;
+        }
+        case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
+            receive_logger->info("REGION_FILE_INFO_REQUEST");
+            break;
+        }
+        case CARTA::EventType::IMPORT_REGION: {
+            receive_logger->info("IMPORT_REGION");
+            break;
+        }
+        case CARTA::EventType::EXPORT_REGION: {
+            receive_logger->info("EXPORT_REGION");
+            break;
+        }
+        case CARTA::EventType::SET_USER_PREFERENCES: {
+            receive_logger->info("SET_USER_PREFERENCES");
+            break;
+        }
+        case CARTA::EventType::SET_USER_LAYOUT: {
+            receive_logger->info("SET_USER_LAYOUT");
+            break;
+        }
+        case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
+            receive_logger->info("SET_CONTOUR_PARAMETERS");
+            break;
+        }
+        case CARTA::EventType::SCRIPTING_RESPONSE: {
+            receive_logger->info("SCRIPTING_RESPONSE");
+            break;
+        }
+        case CARTA::EventType::SET_REGION: {
+            receive_logger->info("SET_REGION");
+            break;
+        }
+        case CARTA::EventType::REMOVE_REGION: {
+            receive_logger->info("REMOVE_REGION");
+            break;
+        }
+        case CARTA::EventType::SET_SPECTRAL_REQUIREMENTS: {
+            receive_logger->info("SET_SPECTRAL_REQUIREMENTS");
+            break;
+        }
+        case CARTA::EventType::CATALOG_LIST_REQUEST: {
+            receive_logger->info("CATALOG_LIST_REQUEST");
+            break;
+        }
+        case CARTA::EventType::CATALOG_FILE_INFO_REQUEST: {
+            receive_logger->info("CATALOG_FILE_INFO_REQUEST");
+            break;
+        }
+        case CARTA::EventType::OPEN_CATALOG_FILE: {
+            receive_logger->info("OPEN_CATALOG_FILE");
+            break;
+        }
+        case CARTA::EventType::CLOSE_CATALOG_FILE: {
+            receive_logger->info("CLOSE_CATALOG_FILE");
+            break;
+        }
+        case CARTA::EventType::CATALOG_FILTER_REQUEST: {
+            receive_logger->info("CATALOG_FILTER_REQUEST");
+            break;
+        }
+        case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
+            receive_logger->info("SPECTRAL_LINE_REQUEST");
+            break;
+        }
+        case CARTA::EventType::SET_SPATIAL_REQUIREMENTS: {
+            receive_logger->info("SET_SPATIAL_REQUIREMENTS");
+            break;
+        }
+        case CARTA::EventType::SET_STATS_REQUIREMENTS: {
+            receive_logger->info("SET_STATS_REQUIREMENTS");
+            break;
+        }
+        default: {
+            receive_logger->info("Unknown event type: {}!", event_type);
+            break;
+        }
+    }
 }

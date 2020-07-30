@@ -220,6 +220,9 @@ private:
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
+    // Log event types for sending from the Session
+    void LogSendEventType(CARTA::EventType event_type);
+
     uWS::WebSocket<uWS::SERVER>* _socket;
     uint32_t _id;
     std::string _address;
