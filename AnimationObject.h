@@ -9,7 +9,7 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 
 namespace CARTA {
-const int AnimationWaitsPerSecond = 3;
+const int InitialAnimationWaitsPerSecond = 3;
 const int InitialWindowScale = 1;
 } // namespace CARTA
 
