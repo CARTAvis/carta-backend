@@ -45,6 +45,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "Logger/Logger.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
@@ -219,9 +220,6 @@ private:
     void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = false);
     void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
-
-    // Log event types for sending from the Session
-    void LogSendEventType(CARTA::EventType event_type);
 
     uWS::WebSocket<uWS::SERVER>* _socket;
     uint32_t _id;

@@ -156,6 +156,7 @@ set(SOURCE_FILES
         ImageData/Hdf5Loader.cc
         ImageData/CartaHdf5Image.cc
         ImageData/CartaMiriadImage.cc
+        Logger/Logger.cc
         Region/RegionHandler.cc
         Region/RegionImportExport.cc
         Region/CrtfImportExport.cc
