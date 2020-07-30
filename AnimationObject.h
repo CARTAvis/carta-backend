@@ -9,8 +9,8 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 
 namespace CARTA {
-const int AnimationFlowWindowConstant = 5;
-const int AnimationFlowWindowScaler = 2;
+const int InitialAnimationWaitsPerSecond = 3;
+const int InitialWindowScale = 1;
 } // namespace CARTA
 
 class AnimationObject {
@@ -25,6 +25,8 @@ class AnimationObject {
     CARTA::AnimationFrame _next_frame;
     CARTA::AnimationFrame _last_flow_frame;
     int _frame_rate;
+    int _waits_per_second;
+    int _window_scale;
     std::chrono::microseconds _frame_interval;
     std::chrono::time_point<std::chrono::high_resolution_clock> _t_start;
     std::chrono::time_point<std::chrono::high_resolution_clock> _t_last;
@@ -69,9 +71,11 @@ public:
         _file_open = true;
         _waiting_flow_event = false;
         _last_flow_frame = start_frame;
+        _waits_per_second = CARTA::InitialAnimationWaitsPerSecond;
+        _window_scale = CARTA::InitialWindowScale;
     }
     int CurrentFlowWindowSize() {
-        return (CARTA::AnimationFlowWindowConstant * CARTA::AnimationFlowWindowScaler * _frame_rate);
+        return (_frame_rate / _waits_per_second) * _window_scale;
     }
     void CancelExecution() {
         _tbb_context.cancel_group_execution();
