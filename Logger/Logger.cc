@@ -11,6 +11,8 @@ static std::size_t rotated_files = 0;
 static std::string log_default_dir = fs::path(getenv("HOME")).string() + "/CARTA/log/";
 static std::string icd_log_name("icd_msg.log");
 
+std::unordered_map<CARTA::EventType, std::string> event_type_map;
+
 void CreateLoggers(const std::string& log_dir) {
     // Set ICD log file name and its path
     std::string icd_log_full_name;
@@ -53,6 +55,9 @@ void CreateLoggers(const std::string& log_dir) {
 
     // Register the logger (outgoing tag) so we can get it globally
     spdlog::register_logger(send_logger);
+
+    // Fill the event type map
+    FillEventTypeMap();
 }
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
@@ -62,140 +67,10 @@ void LogReceivedEventType(const CARTA::EventType& event_type) {
         spdlog::error("Fail to get the logger {0}", logger_name);
         return;
     }
-
-    switch (event_type) {
-        case CARTA::EventType::REGISTER_VIEWER: {
-            receive_logger->info("REGISTER_VIEWER");
-            break;
-        }
-        case CARTA::EventType::RESUME_SESSION: {
-            receive_logger->info("RESUME_SESSION");
-            break;
-        }
-        case CARTA::EventType::SET_IMAGE_CHANNELS: {
-            receive_logger->info("SET_IMAGE_CHANNELS");
-            break;
-        }
-        case CARTA::EventType::SET_CURSOR: {
-            receive_logger->info("SET_CURSOR");
-            break;
-        }
-        case CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS: {
-            receive_logger->info("SET_HISTOGRAM_REQUIREMENTS");
-            break;
-        }
-        case CARTA::EventType::CLOSE_FILE: {
-            receive_logger->info("CLOSE_FILE");
-            break;
-        }
-        case CARTA::EventType::START_ANIMATION: {
-            receive_logger->info("START_ANIMATION");
-            break;
-        }
-        case CARTA::EventType::STOP_ANIMATION: {
-            receive_logger->info("STOP_ANIMATION");
-            break;
-        }
-        case CARTA::EventType::ANIMATION_FLOW_CONTROL: {
-            receive_logger->info("ANIMATION_FLOW_CONTROL");
-            break;
-        }
-        case CARTA::EventType::FILE_INFO_REQUEST: {
-            receive_logger->info("FILE_INFO_REQUEST");
-            break;
-        }
-        case CARTA::EventType::FILE_LIST_REQUEST: {
-            receive_logger->info("FILE_LIST_REQUEST");
-            break;
-        }
-        case CARTA::EventType::OPEN_FILE: {
-            receive_logger->info("OPEN_FILE");
-            break;
-        }
-        case CARTA::EventType::ADD_REQUIRED_TILES: {
-            receive_logger->info("ADD_REQUIRED_TILES");
-            break;
-        }
-        case CARTA::EventType::REGION_LIST_REQUEST: {
-            receive_logger->info("REGION_LIST_REQUEST");
-            break;
-        }
-        case CARTA::EventType::REGION_FILE_INFO_REQUEST: {
-            receive_logger->info("REGION_FILE_INFO_REQUEST");
-            break;
-        }
-        case CARTA::EventType::IMPORT_REGION: {
-            receive_logger->info("IMPORT_REGION");
-            break;
-        }
-        case CARTA::EventType::EXPORT_REGION: {
-            receive_logger->info("EXPORT_REGION");
-            break;
-        }
-        case CARTA::EventType::SET_USER_PREFERENCES: {
-            receive_logger->info("SET_USER_PREFERENCES");
-            break;
-        }
-        case CARTA::EventType::SET_USER_LAYOUT: {
-            receive_logger->info("SET_USER_LAYOUT");
-            break;
-        }
-        case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
-            receive_logger->info("SET_CONTOUR_PARAMETERS");
-            break;
-        }
-        case CARTA::EventType::SCRIPTING_RESPONSE: {
-            receive_logger->info("SCRIPTING_RESPONSE");
-            break;
-        }
-        case CARTA::EventType::SET_REGION: {
-            receive_logger->info("SET_REGION");
-            break;
-        }
-        case CARTA::EventType::REMOVE_REGION: {
-            receive_logger->info("REMOVE_REGION");
-            break;
-        }
-        case CARTA::EventType::SET_SPECTRAL_REQUIREMENTS: {
-            receive_logger->info("SET_SPECTRAL_REQUIREMENTS");
-            break;
-        }
-        case CARTA::EventType::CATALOG_LIST_REQUEST: {
-            receive_logger->info("CATALOG_LIST_REQUEST");
-            break;
-        }
-        case CARTA::EventType::CATALOG_FILE_INFO_REQUEST: {
-            receive_logger->info("CATALOG_FILE_INFO_REQUEST");
-            break;
-        }
-        case CARTA::EventType::OPEN_CATALOG_FILE: {
-            receive_logger->info("OPEN_CATALOG_FILE");
-            break;
-        }
-        case CARTA::EventType::CLOSE_CATALOG_FILE: {
-            receive_logger->info("CLOSE_CATALOG_FILE");
-            break;
-        }
-        case CARTA::EventType::CATALOG_FILTER_REQUEST: {
-            receive_logger->info("CATALOG_FILTER_REQUEST");
-            break;
-        }
-        case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
-            receive_logger->info("SPECTRAL_LINE_REQUEST");
-            break;
-        }
-        case CARTA::EventType::SET_SPATIAL_REQUIREMENTS: {
-            receive_logger->info("SET_SPATIAL_REQUIREMENTS");
-            break;
-        }
-        case CARTA::EventType::SET_STATS_REQUIREMENTS: {
-            receive_logger->info("SET_STATS_REQUIREMENTS");
-            break;
-        }
-        default: {
-            receive_logger->info("Unknown event type: {}!", event_type);
-            break;
-        }
+    if (event_type_map.count(event_type)) {
+        receive_logger->info("{0}", event_type_map[event_type]);
+    } else {
+        receive_logger->info("Unknown event type: {0}!", event_type);
     }
 }
 
@@ -206,131 +81,74 @@ void LogSentEventType(const CARTA::EventType& event_type) {
         spdlog::error("Fail to get the logger {0}", logger_name);
         return;
     }
-
-    switch (event_type) {
-        case CARTA::EventType::EMPTY_EVENT: {
-            send_logger->info("EMPTY_EVENT");
-            break;
-        }
-        case CARTA::EventType::FILE_INFO_REQUEST: {
-            send_logger->info("FILE_INFO_REQUEST");
-            break;
-        }
-        case CARTA::EventType::START_ANIMATION_ACK: {
-            send_logger->info("START_ANIMATION_ACK");
-            break;
-        }
-        case CARTA::EventType::REGISTER_VIEWER_ACK: {
-            send_logger->info("REGISTER_VIEWER_ACK");
-            break;
-        }
-        case CARTA::EventType::FILE_LIST_RESPONSE: {
-            send_logger->info("FILE_LIST_RESPONSE");
-            break;
-        }
-        case CARTA::EventType::FILE_INFO_RESPONSE: {
-            send_logger->info("FILE_INFO_RESPONSE");
-            break;
-        }
-        case CARTA::EventType::OPEN_FILE_ACK: {
-            send_logger->info("OPEN_FILE_ACK");
-            break;
-        }
-        case CARTA::EventType::SET_REGION_ACK: {
-            send_logger->info("SET_REGION_ACK");
-            break;
-        }
-        case CARTA::EventType::REGION_HISTOGRAM_DATA: {
-            send_logger->info("REGION_HISTOGRAM_DATA");
-            break;
-        }
-        case CARTA::EventType::SPATIAL_PROFILE_DATA: {
-            send_logger->info("SPATIAL_PROFILE_DATA");
-            break;
-        }
-        case CARTA::EventType::SPECTRAL_PROFILE_DATA: {
-            send_logger->info("SPECTRAL_PROFILE_DATA");
-            break;
-        }
-        case CARTA::EventType::REGION_STATS_DATA: {
-            send_logger->info("REGION_STATS_DATA");
-            break;
-        }
-        case CARTA::EventType::ERROR_DATA: {
-            send_logger->info("ERROR_DATA");
-            break;
-        }
-        case CARTA::EventType::REMOVE_REQUIRED_TILES: {
-            send_logger->info("REMOVE_REQUIRED_TILES");
-            break;
-        }
-        case CARTA::EventType::RASTER_TILE_DATA: {
-            send_logger->info("RASTER_TILE_DATA");
-            break;
-        }
-        case CARTA::EventType::REGION_LIST_RESPONSE: {
-            send_logger->info("REGION_LIST_RESPONSE");
-            break;
-        }
-        case CARTA::EventType::REGION_FILE_INFO_RESPONSE: {
-            send_logger->info("REGION_FILE_INFO_RESPONSE");
-            break;
-        }
-        case CARTA::EventType::IMPORT_REGION_ACK: {
-            send_logger->info("IMPORT_REGION_ACK");
-            break;
-        }
-        case CARTA::EventType::EXPORT_REGION_ACK: {
-            send_logger->info("EXPORT_REGION_ACK");
-            break;
-        }
-        case CARTA::EventType::SET_USER_PREFERENCES_ACK: {
-            send_logger->info("SET_USER_PREFERENCES_ACK");
-            break;
-        }
-        case CARTA::EventType::SET_USER_LAYOUT_ACK: {
-            send_logger->info("SET_USER_LAYOUT_ACK");
-            break;
-        }
-        case CARTA::EventType::CONTOUR_IMAGE_DATA: {
-            send_logger->info("CONTOUR_IMAGE_DATA");
-            break;
-        }
-        case CARTA::EventType::RESUME_SESSION_ACK: {
-            send_logger->info("RESUME_SESSION_ACK");
-            break;
-        }
-        case CARTA::EventType::RASTER_TILE_SYNC: {
-            send_logger->info("RASTER_TILE_SYNC");
-            break;
-        }
-        case CARTA::EventType::CATALOG_LIST_RESPONSE: {
-            send_logger->info("CATALOG_LIST_RESPONSE");
-            break;
-        }
-        case CARTA::EventType::CATALOG_FILE_INFO_RESPONSE: {
-            send_logger->info("CATALOG_FILE_INFO_RESPONSE");
-            break;
-        }
-        case CARTA::EventType::OPEN_CATALOG_FILE_ACK: {
-            send_logger->info("OPEN_CATALOG_FILE_ACK");
-            break;
-        }
-        case CARTA::EventType::CATALOG_FILTER_RESPONSE: {
-            send_logger->info("CATALOG_FILTER_RESPONSE");
-            break;
-        }
-        case CARTA::EventType::SCRIPTING_REQUEST: {
-            send_logger->info("SCRIPTING_REQUEST");
-            break;
-        }
-        case CARTA::EventType::SPECTRAL_LINE_RESPONSE: {
-            send_logger->info("SPECTRAL_LINE_RESPONSE");
-            break;
-        }
-        default: {
-            send_logger->info("Unknown event type: {}!", event_type);
-            break;
-        }
+    if (event_type_map.count(event_type)) {
+        send_logger->info("{0}", event_type_map[event_type]);
+    } else {
+        send_logger->info("Unknown event type: {0}!", event_type);
     }
+}
+
+void FillEventTypeMap() {
+    event_type_map[CARTA::EventType::REGISTER_VIEWER] = "REGISTER_VIEWER";
+    event_type_map[CARTA::EventType::RESUME_SESSION] = "RESUME_SESSION";
+    event_type_map[CARTA::EventType::SET_IMAGE_CHANNELS] = "SET_IMAGE_CHANNELS";
+    event_type_map[CARTA::EventType::SET_CURSOR] = "SET_CURSOR";
+    event_type_map[CARTA::EventType::SET_HISTOGRAM_REQUIREMENTS] = "SET_HISTOGRAM_REQUIREMENTS";
+    event_type_map[CARTA::EventType::CLOSE_FILE] = "CLOSE_FILE";
+    event_type_map[CARTA::EventType::START_ANIMATION] = "START_ANIMATION";
+    event_type_map[CARTA::EventType::STOP_ANIMATION] = "STOP_ANIMATION";
+    event_type_map[CARTA::EventType::ANIMATION_FLOW_CONTROL] = "ANIMATION_FLOW_CONTROL";
+    event_type_map[CARTA::EventType::FILE_INFO_REQUEST] = "FILE_INFO_REQUEST";
+    event_type_map[CARTA::EventType::FILE_LIST_REQUEST] = "FILE_LIST_REQUEST";
+    event_type_map[CARTA::EventType::OPEN_FILE] = "OPEN_FILE";
+    event_type_map[CARTA::EventType::ADD_REQUIRED_TILES] = "ADD_REQUIRED_TILES";
+    event_type_map[CARTA::EventType::REGION_LIST_REQUEST] = "REGION_LIST_REQUEST";
+    event_type_map[CARTA::EventType::REGION_FILE_INFO_REQUEST] = "REGION_FILE_INFO_REQUEST";
+    event_type_map[CARTA::EventType::IMPORT_REGION] = "IMPORT_REGION";
+    event_type_map[CARTA::EventType::EXPORT_REGION] = "EXPORT_REGION";
+    event_type_map[CARTA::EventType::SET_USER_PREFERENCES] = "SET_USER_PREFERENCES";
+    event_type_map[CARTA::EventType::SET_USER_LAYOUT] = "SET_USER_LAYOUT";
+    event_type_map[CARTA::EventType::SET_CONTOUR_PARAMETERS] = "SET_CONTOUR_PARAMETERS";
+    event_type_map[CARTA::EventType::SCRIPTING_RESPONSE] = "SCRIPTING_RESPONSE";
+    event_type_map[CARTA::EventType::SET_REGION] = "SET_REGION";
+    event_type_map[CARTA::EventType::REMOVE_REGION] = "REMOVE_REGION";
+    event_type_map[CARTA::EventType::SET_SPECTRAL_REQUIREMENTS] = "SET_SPECTRAL_REQUIREMENTS";
+    event_type_map[CARTA::EventType::CATALOG_LIST_REQUEST] = "CATALOG_LIST_REQUEST";
+    event_type_map[CARTA::EventType::CATALOG_FILE_INFO_REQUEST] = "CATALOG_FILE_INFO_REQUEST";
+    event_type_map[CARTA::EventType::OPEN_CATALOG_FILE] = "OPEN_CATALOG_FILE";
+    event_type_map[CARTA::EventType::CLOSE_CATALOG_FILE] = "CLOSE_CATALOG_FILE";
+    event_type_map[CARTA::EventType::CATALOG_FILTER_REQUEST] = "CATALOG_FILTER_REQUEST";
+    event_type_map[CARTA::EventType::SPECTRAL_LINE_REQUEST] = "SPECTRAL_LINE_REQUEST";
+    event_type_map[CARTA::EventType::SET_SPATIAL_REQUIREMENTS] = "SET_SPATIAL_REQUIREMENTS";
+    event_type_map[CARTA::EventType::SET_STATS_REQUIREMENTS] = "SET_STATS_REQUIREMENTS";
+    event_type_map[CARTA::EventType::EMPTY_EVENT] = "EMPTY_EVENT";
+
+    event_type_map[CARTA::EventType::FILE_INFO_RESPONSE] = "FILE_INFO_RESPONSE";
+    event_type_map[CARTA::EventType::START_ANIMATION_ACK] = "START_ANIMATION_ACK";
+    event_type_map[CARTA::EventType::REGISTER_VIEWER_ACK] = "REGISTER_VIEWER_ACK";
+    event_type_map[CARTA::EventType::FILE_LIST_RESPONSE] = "FILE_LIST_RESPONSE";
+    event_type_map[CARTA::EventType::OPEN_FILE_ACK] = "OPEN_FILE_ACK";
+    event_type_map[CARTA::EventType::SET_REGION_ACK] = "SET_REGION_ACK";
+    event_type_map[CARTA::EventType::REGION_HISTOGRAM_DATA] = "REGION_HISTOGRAM_DATA";
+    event_type_map[CARTA::EventType::SPATIAL_PROFILE_DATA] = "SPATIAL_PROFILE_DATA";
+    event_type_map[CARTA::EventType::SPECTRAL_PROFILE_DATA] = "SPECTRAL_PROFILE_DATA";
+    event_type_map[CARTA::EventType::REGION_STATS_DATA] = "REGION_STATS_DATA";
+    event_type_map[CARTA::EventType::ERROR_DATA] = "ERROR_DATA";
+    event_type_map[CARTA::EventType::REMOVE_REQUIRED_TILES] = "REMOVE_REQUIRED_TILES";
+    event_type_map[CARTA::EventType::RASTER_TILE_DATA] = "RASTER_TILE_DATA";
+    event_type_map[CARTA::EventType::REGION_LIST_RESPONSE] = "REGION_LIST_RESPONSE";
+    event_type_map[CARTA::EventType::REGION_FILE_INFO_RESPONSE] = "REGION_FILE_INFO_RESPONSE";
+    event_type_map[CARTA::EventType::IMPORT_REGION_ACK] = "IMPORT_REGION_ACK";
+    event_type_map[CARTA::EventType::EXPORT_REGION_ACK] = "EXPORT_REGION_ACK";
+    event_type_map[CARTA::EventType::SET_USER_PREFERENCES_ACK] = "SET_USER_PREFERENCES_ACK";
+    event_type_map[CARTA::EventType::SET_USER_LAYOUT_ACK] = "SET_USER_LAYOUT_ACK";
+    event_type_map[CARTA::EventType::CONTOUR_IMAGE_DATA] = "CONTOUR_IMAGE_DATA";
+    event_type_map[CARTA::EventType::RESUME_SESSION_ACK] = "RESUME_SESSION_ACK";
+    event_type_map[CARTA::EventType::RASTER_TILE_SYNC] = "RASTER_TILE_SYNC";
+    event_type_map[CARTA::EventType::CATALOG_LIST_RESPONSE] = "CATALOG_LIST_RESPONSE";
+    event_type_map[CARTA::EventType::CATALOG_FILE_INFO_RESPONSE] = "CATALOG_FILE_INFO_RESPONSE";
+    event_type_map[CARTA::EventType::OPEN_CATALOG_FILE_ACK] = "OPEN_CATALOG_FILE_ACK";
+    event_type_map[CARTA::EventType::CATALOG_FILTER_RESPONSE] = "CATALOG_FILTER_RESPONSE";
+    event_type_map[CARTA::EventType::SCRIPTING_REQUEST] = "SCRIPTING_REQUEST";
+    event_type_map[CARTA::EventType::SPECTRAL_LINE_RESPONSE] = "SPECTRAL_LINE_RESPONSE";
 }
