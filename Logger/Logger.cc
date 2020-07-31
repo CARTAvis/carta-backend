@@ -49,7 +49,7 @@ void CreateLoggers(std::string log_filename) {
     spdlog::register_logger(send_logger);
 }
 
-void LogReceiveEventType(uint16_t event_type) {
+void LogReceivedEventType(uint16_t event_type) {
     std::string logger_name = "<<==";
     std::shared_ptr<spdlog::logger> receive_logger = spdlog::get(logger_name);
     if (!receive_logger) {
@@ -193,7 +193,7 @@ void LogReceiveEventType(uint16_t event_type) {
     }
 }
 
-void LogSendEventType(CARTA::EventType event_type) {
+void LogSentEventType(CARTA::EventType event_type) {
     std::string logger_name = "==>>";
     std::shared_ptr<spdlog::logger> send_logger = spdlog::get(logger_name);
     if (!send_logger) {
