@@ -35,14 +35,14 @@ void CreateLoggers(std::string log_filename) {
     log_file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] %v");
 
     // Create a logger (tag RECEIVE) and save its messages to a log file
-    auto receive_logger = std::make_shared<spdlog::logger>("RECEIVE", log_file_sink);
+    auto receive_logger = std::make_shared<spdlog::logger>("<<==", log_file_sink);
     receive_logger->info("\">>>>>>>>> Start the RECEIVE logger <<<<<<<<<\"");
 
     // Register the logger (tag RECEIVE) so we can get it globally
     spdlog::register_logger(receive_logger);
 
     // Create a logger (tag SEND) and save its messages to a log file
-    auto send_logger = std::make_shared<spdlog::logger>("SEND", log_file_sink);
+    auto send_logger = std::make_shared<spdlog::logger>("==>>", log_file_sink);
     send_logger->info("\">>>>>>>>> Start the SEND logger <<<<<<<<<\"");
 
     // Register the logger (tag SEND) so we can get it globally
@@ -50,7 +50,7 @@ void CreateLoggers(std::string log_filename) {
 }
 
 void LogReceiveEventType(uint16_t event_type) {
-    std::string logger_name = "RECEIVE";
+    std::string logger_name = "<<==";
     std::shared_ptr<spdlog::logger> receive_logger = spdlog::get(logger_name);
     if (!receive_logger) {
         spdlog::error("Fail to get the logger {0}", logger_name);
@@ -194,7 +194,7 @@ void LogReceiveEventType(uint16_t event_type) {
 }
 
 void LogSendEventType(CARTA::EventType event_type) {
-    std::string logger_name = "SEND";
+    std::string logger_name = "==>>";
     std::shared_ptr<spdlog::logger> send_logger = spdlog::get(logger_name);
     if (!send_logger) {
         spdlog::error("Fail to get the logger {0}", logger_name);
