@@ -55,7 +55,7 @@ static std::unique_ptr<CartaGrpcService> carta_grpc_service;
 static std::unique_ptr<grpc::Server> carta_grpc_server;
 
 // command-line arguments
-static string root_folder("/"), base_folder(".");
+static string root_folder("/"), base_folder("."), log_folder("");
 static bool verbose, use_permissions, use_mongodb;
 namespace CARTA {
 string token;
@@ -551,6 +551,7 @@ int main(int argc, const char* argv[]) {
             string json_fname;
             inp.version(VERSION_ID);
             inp.create("verbose", "False", "display verbose logging", "Bool");
+            inp.create("log_dir", "", "set the path and name of a log file", "String");
             inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
             inp.create("token", CARTA::token, "only accept connections with this authorization token", "String");
             inp.create("port", to_string(port), "set server port", "Int");
@@ -567,6 +568,7 @@ int main(int argc, const char* argv[]) {
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
+            log_folder = inp.getString("log_dir");
             use_mongodb = inp.getBool("use_mongodb");
             use_permissions = inp.getBool("permissions");
             port = inp.getInt("port");
@@ -601,7 +603,7 @@ int main(int argc, const char* argv[]) {
                 ReadJsonFile(json_fname);
             }
             if (verbose) {
-                CreateLoggers();
+                CreateLoggers(log_folder);
             }
         }
 

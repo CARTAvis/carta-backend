@@ -7,12 +7,8 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include <filesystem>
-
-namespace fs = std::filesystem;
-
 // Create loggers
-void CreateLoggers();
+void CreateLoggers(std::string log_filename = "");
 
 // Log event types for receiving from the frontend
 void LogReceiveEventType(uint16_t event_type);

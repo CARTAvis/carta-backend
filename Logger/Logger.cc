@@ -1,9 +1,32 @@
 #include "Logger.h"
 
-void CreateLoggers() {
+#include <casacore/casa/OS/Directory.h>
+
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+void CreateLoggers(std::string log_filename) {
     // Set a log file name and its path
-    std::string log_filename = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
-    spdlog::info("Set the log file name {0}", log_filename);
+    if (!log_filename.empty()) {
+        try {
+            casacore::File tmp_filename(log_filename);
+            casacore::Directory tmp_dir = tmp_filename.path().dirName();
+            if (!tmp_dir.exists() || !tmp_dir.isWritable() || fs::path(log_filename).filename().empty() ||
+                !fs::is_regular_file(fs::status(log_filename))) {
+                log_filename = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
+                spdlog::warn("Can not create a log file! Use the default path name {0}", log_filename);
+            } else {
+                spdlog::info("Set the log file {0}", log_filename);
+            }
+        } catch (...) {
+            log_filename = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
+            spdlog::warn("Can not create a log file! Use the default path name {0}", log_filename);
+        }
+    } else {
+        log_filename = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
+        spdlog::info("Set the log file {0}", log_filename);
+    }
 
     // Set a log file with its maximum size 5 MB and with 0 rotated file
     auto log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_filename, 1048576 * 5, 0);
@@ -27,7 +50,13 @@ void CreateLoggers() {
 }
 
 void LogReceiveEventType(uint16_t event_type) {
-    std::shared_ptr<spdlog::logger> receive_logger = spdlog::get("RECEIVE");
+    std::string logger_name = "RECEIVE";
+    std::shared_ptr<spdlog::logger> receive_logger = spdlog::get(logger_name);
+    if (!receive_logger) {
+        spdlog::error("Fail to get the logger {0}", logger_name);
+        return;
+    }
+
     switch (event_type) {
         case CARTA::EventType::REGISTER_VIEWER: {
             receive_logger->info("REGISTER_VIEWER");
@@ -165,7 +194,13 @@ void LogReceiveEventType(uint16_t event_type) {
 }
 
 void LogSendEventType(CARTA::EventType event_type) {
-    std::shared_ptr<spdlog::logger> send_logger = spdlog::get("SEND");
+    std::string logger_name = "SEND";
+    std::shared_ptr<spdlog::logger> send_logger = spdlog::get(logger_name);
+    if (!send_logger) {
+        spdlog::error("Fail to get the logger {0}", logger_name);
+        return;
+    }
+
     switch (event_type) {
         case CARTA::EventType::EMPTY_EVENT: {
             send_logger->info("EMPTY_EVENT");
