@@ -34,23 +34,23 @@ void CreateLoggers(std::string log_filename) {
     // Set a log file pattern
     log_file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] %v");
 
-    // Create a logger (tag RECEIVE) and save its messages to a log file
-    auto receive_logger = std::make_shared<spdlog::logger>("<<==", log_file_sink);
-    receive_logger->info("\">>>>>>>>> Start the RECEIVE logger <<<<<<<<<\"");
+    // Create a logger (incoming tag) and save its messages to a log file
+    auto receive_logger = std::make_shared<spdlog::logger>("<==", log_file_sink);
+    receive_logger->info("\">>>>>>>>> Start the incoming logger <<<<<<<<<\"");
 
-    // Register the logger (tag RECEIVE) so we can get it globally
+    // Register the logger (incoming tag) so we can get it globally
     spdlog::register_logger(receive_logger);
 
-    // Create a logger (tag SEND) and save its messages to a log file
-    auto send_logger = std::make_shared<spdlog::logger>("==>>", log_file_sink);
-    send_logger->info("\">>>>>>>>> Start the SEND logger <<<<<<<<<\"");
+    // Create a logger (outgoing tag) and save its messages to a log file
+    auto send_logger = std::make_shared<spdlog::logger>("==>", log_file_sink);
+    send_logger->info("\">>>>>>>>> Start the outgoing logger <<<<<<<<<\"");
 
-    // Register the logger (tag SEND) so we can get it globally
+    // Register the logger (outgoing tag) so we can get it globally
     spdlog::register_logger(send_logger);
 }
 
 void LogReceivedEventType(uint16_t event_type) {
-    std::string logger_name = "<<==";
+    std::string logger_name = "<==";
     std::shared_ptr<spdlog::logger> receive_logger = spdlog::get(logger_name);
     if (!receive_logger) {
         spdlog::error("Fail to get the logger {0}", logger_name);
@@ -194,7 +194,7 @@ void LogReceivedEventType(uint16_t event_type) {
 }
 
 void LogSentEventType(CARTA::EventType event_type) {
-    std::string logger_name = "==>>";
+    std::string logger_name = "==>";
     std::shared_ptr<spdlog::logger> send_logger = spdlog::get(logger_name);
     if (!send_logger) {
         spdlog::error("Fail to get the logger {0}", logger_name);
