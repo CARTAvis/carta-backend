@@ -45,7 +45,6 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
-#include "Logger/Logger.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
