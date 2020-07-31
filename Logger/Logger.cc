@@ -6,6 +6,11 @@
 
 namespace fs = std::filesystem;
 
+static std::size_t log_file_size = 1048576 * 5; // (Bytes)
+static std::size_t rotated_files = 0;
+static std::string log_default_dir = fs::path(getenv("HOME")).string() + "/CARTA/log/";
+static std::string icd_log_filename("icd_msg.log");
+
 void CreateLoggers(std::string log_filename) {
     // Set a log file name and its path
     if (!log_filename.empty()) {
@@ -14,22 +19,22 @@ void CreateLoggers(std::string log_filename) {
             casacore::Directory tmp_dir = tmp_filename.path().dirName();
             if (!tmp_dir.exists() || !tmp_dir.isWritable() || fs::path(log_filename).filename().empty() ||
                 !fs::is_regular_file(fs::status(log_filename))) {
-                log_filename = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
+                log_filename = log_default_dir + icd_log_filename;
                 spdlog::warn("Can not create a log file! Use the default path name {0}", log_filename);
             } else {
                 spdlog::info("Set the log file {0}", log_filename);
             }
         } catch (...) {
-            log_filename = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
+            log_filename = log_default_dir + icd_log_filename;
             spdlog::warn("Can not create a log file! Use the default path name {0}", log_filename);
         }
     } else {
-        log_filename = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
+        log_filename = log_default_dir + icd_log_filename;
         spdlog::info("Set the log file {0}", log_filename);
     }
 
-    // Set a log file with its maximum size 5 MB and with 0 rotated file
-    auto log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_filename, 1048576 * 5, 0);
+    // Set a log file with its maximum size and the number of rotated files
+    auto log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_filename, log_file_size, rotated_files);
 
     // Set a log file pattern
     log_file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] %v");
