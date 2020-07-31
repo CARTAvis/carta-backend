@@ -8,7 +8,7 @@
 #include <spdlog/spdlog.h>
 
 // Create loggers
-void CreateLoggers(std::string log_filename = "");
+void CreateLoggers(const std::string& log_dir);
 
 // Log event types for receiving from the frontend
 void LogReceivedEventType(uint16_t event_type);
