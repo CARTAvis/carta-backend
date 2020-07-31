@@ -11,9 +11,9 @@
 void CreateLoggers(const std::string& log_dir);
 
 // Log event types for receiving from the frontend
-void LogReceivedEventType(uint16_t event_type);
+void LogReceivedEventType(const CARTA::EventType& event_type);
 
 // Log event types for sending from the Session
-void LogSentEventType(CARTA::EventType event_type);
+void LogSentEventType(const CARTA::EventType& event_type);
 
 #endif // CARTA_BACKEND__LOGGER_H_

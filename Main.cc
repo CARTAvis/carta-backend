@@ -164,7 +164,8 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             OnMessageTask* tsk = nullptr;
 
             if (verbose) {
-                LogReceivedEventType(head.type);
+                CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
+                LogReceivedEventType(event_type);
             }
 
             switch (head.type) {

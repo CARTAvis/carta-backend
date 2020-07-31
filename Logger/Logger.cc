@@ -55,7 +55,7 @@ void CreateLoggers(const std::string& log_dir) {
     spdlog::register_logger(send_logger);
 }
 
-void LogReceivedEventType(uint16_t event_type) {
+void LogReceivedEventType(const CARTA::EventType& event_type) {
     std::string logger_name = "<==";
     std::shared_ptr<spdlog::logger> receive_logger = spdlog::get(logger_name);
     if (!receive_logger) {
@@ -199,7 +199,7 @@ void LogReceivedEventType(uint16_t event_type) {
     }
 }
 
-void LogSentEventType(CARTA::EventType event_type) {
+void LogSentEventType(const CARTA::EventType& event_type) {
     std::string logger_name = "==>";
     std::shared_ptr<spdlog::logger> send_logger = spdlog::get(logger_name);
     if (!send_logger) {
