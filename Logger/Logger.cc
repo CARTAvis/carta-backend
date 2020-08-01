@@ -10,6 +10,8 @@ static std::size_t log_file_size = 1048576 * 5; // (Bytes)
 static std::size_t rotated_files = 0;
 static std::string log_default_dir = fs::path(getenv("HOME")).string() + "/CARTA/log/";
 static std::string icd_log_name("icd_msg.log");
+static std::string outgoing_tag("==>");
+static std::string incoming_tag("<==");
 
 std::unordered_map<CARTA::EventType, std::string> event_type_map;
 
@@ -37,58 +39,56 @@ void CreateLoggers(const std::string& log_dir) {
     }
 
     // Set a log file with its maximum size and the number of rotated files
-    auto log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(icd_log_full_name, log_file_size, rotated_files);
+    auto icd_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(icd_log_full_name, log_file_size, rotated_files);
 
     // Set a log file pattern
-    log_file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] %v");
+    icd_log_file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] %v");
 
     // Create a logger (incoming tag) and save its messages to a log file
-    auto receive_logger = std::make_shared<spdlog::logger>("<==", log_file_sink);
-    receive_logger->info("\">>>>>>>>> Start the incoming logger <<<<<<<<<\"");
+    auto incoming_logger = std::make_shared<spdlog::logger>(incoming_tag, icd_log_file_sink);
+    incoming_logger->info("\">>>>>>>>> Start the incoming logger <<<<<<<<<\"");
 
     // Register the logger (incoming tag) so we can get it globally
-    spdlog::register_logger(receive_logger);
+    spdlog::register_logger(incoming_logger);
 
     // Create a logger (outgoing tag) and save its messages to a log file
-    auto send_logger = std::make_shared<spdlog::logger>("==>", log_file_sink);
-    send_logger->info("\">>>>>>>>> Start the outgoing logger <<<<<<<<<\"");
+    auto outgoing_logger = std::make_shared<spdlog::logger>(outgoing_tag, icd_log_file_sink);
+    outgoing_logger->info("\">>>>>>>>> Start the outgoing logger <<<<<<<<<\"");
 
     // Register the logger (outgoing tag) so we can get it globally
-    spdlog::register_logger(send_logger);
+    spdlog::register_logger(outgoing_logger);
 
     // Fill the event type map
     FillEventTypeMap();
 }
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
-    std::string logger_name = "<==";
-    std::shared_ptr<spdlog::logger> receive_logger = spdlog::get(logger_name);
-    if (!receive_logger) {
-        spdlog::error("Fail to get the logger {0}", logger_name);
+    std::shared_ptr<spdlog::logger> incoming_logger = spdlog::get(incoming_tag);
+    if (!incoming_logger) {
+        spdlog::error("Fail to get the logger {0}", incoming_tag);
         return;
     }
     if (event_type_map.count(event_type)) {
-        receive_logger->info("{0}", event_type_map[event_type]);
+        incoming_logger->info("{0}", event_type_map[event_type]);
     } else {
-        receive_logger->info("Unknown event type: {0}!", event_type);
+        incoming_logger->info("Unknown event type: {}!", event_type);
     }
 }
 
 void LogSentEventType(const CARTA::EventType& event_type) {
-    std::string logger_name = "==>";
-    std::shared_ptr<spdlog::logger> send_logger = spdlog::get(logger_name);
-    if (!send_logger) {
-        spdlog::error("Fail to get the logger {0}", logger_name);
+    std::shared_ptr<spdlog::logger> outgoing_logger = spdlog::get(outgoing_tag);
+    if (!outgoing_logger) {
+        spdlog::error("Fail to get the logger {}", outgoing_tag);
         return;
     }
     if (event_type_map.count(event_type)) {
-        send_logger->info("{0}", event_type_map[event_type]);
+        outgoing_logger->info("{0}", event_type_map[event_type]);
     } else {
-        send_logger->info("Unknown event type: {0}!", event_type);
+        outgoing_logger->info("Unknown event type: {}!", event_type);
     }
 }
 
-void FillEventTypeMap() {
+inline void FillEventTypeMap() {
     event_type_map[CARTA::EventType::REGISTER_VIEWER] = "REGISTER_VIEWER";
     event_type_map[CARTA::EventType::RESUME_SESSION] = "RESUME_SESSION";
     event_type_map[CARTA::EventType::SET_IMAGE_CHANNELS] = "SET_IMAGE_CHANNELS";

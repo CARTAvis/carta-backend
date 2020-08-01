@@ -17,6 +17,6 @@ void LogReceivedEventType(const CARTA::EventType& event_type);
 void LogSentEventType(const CARTA::EventType& event_type);
 
 // Fill the event type map
-void FillEventTypeMap();
+inline void FillEventTypeMap();
 
 #endif // CARTA_BACKEND__LOGGER_H_
