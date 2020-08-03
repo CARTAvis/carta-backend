@@ -55,7 +55,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     uS::Async* outgoing = new uS::Async(websocket_hub.getLoop());
 
     outgoing->start([](uS::Async* async) -> void {
-        Session* current_session = ((Session*) async->getData());
+        Session* current_session = ((Session*)async->getData());
         current_session->SendPendingMessages();
     });
 
@@ -85,7 +85,7 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
         return;
     }
 
-    Session* session = (Session*) ws->getUserData();
+    Session* session = (Session*)ws->getUserData();
 
     if (session) {
         auto uuid = session->GetId();
@@ -105,18 +105,21 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
 }
 
 void OnError(void* user) {
-    switch ((long) user) {
-        case 3:cerr << "Client emitted error on connection timeout (non-SSL)" << endl;
+    switch ((long)user) {
+        case 3:
+            cerr << "Client emitted error on connection timeout (non-SSL)" << endl;
             break;
-        case 5:cerr << "Client emitted error on connection timeout (SSL)" << endl;
+        case 5:
+            cerr << "Client emitted error on connection timeout (SSL)" << endl;
             break;
-        default:cerr << "FAILURE: " << user << " should not emit error!" << endl;
+        default:
+            cerr << "FAILURE: " << user << " should not emit error!" << endl;
     }
 }
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
 void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length, uWS::OpCode op_code) {
-    Session* session = (Session*) ws->getUserData();
+    Session* session = (Session*)ws->getUserData();
     if (!session) {
         fmt::print("Missing session!\n");
         return;
@@ -153,7 +156,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->ImageChannelLock(message.file_id());
                         if (!session->ImageChannelTaskTestAndSet(message.file_id())) {
-                            tsk = new(tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session, message.file_id());
+                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session, message.file_id());
                         }
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
@@ -167,7 +170,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::SetCursor message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->AddCursorSetting(message, head.request_id);
-                        tsk = new(tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
+                        tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
                     } else {
                         fmt::print("Bad SET_CURSOR message!\n");
                     }
@@ -180,7 +183,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                             session->CancelSetHistRequirements();
                         } else {
                             session->ResetHistContext();
-                            tsk = new(tbb::task::allocate_root(session->HistContext()))
+                            tsk = new (tbb::task::allocate_root(session->HistContext()))
                                 SetHistogramRequirementsTask(session, head, event_length, event_buf);
                         }
                     } else {
@@ -202,7 +205,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->CancelExistingAnimation();
                         session->BuildAnimationObject(message, head.request_id);
-                        tsk = new(tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                        tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     } else {
                         fmt::print("Bad START_ANIMATION message!\n");
                     }
@@ -256,7 +259,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::ADD_REQUIRED_TILES: {
                     CARTA::AddRequiredTiles message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new(tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
+                    tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
                     break;
                 }
                 case CARTA::EventType::REGION_LIST_REQUEST: {
@@ -298,7 +301,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                 case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
                     CARTA::SetContourParameters message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new(tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
+                    tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
                     break;
                 }
                 case CARTA::EventType::SCRIPTING_RESPONSE: {
@@ -386,7 +389,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     CARTA::SpectralLineRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         tsk =
-                            new(tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
+                            new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
                     } else {
                         fmt::print("Bad SPECTRAL_LINE_REQUEST message!\n");
                     }
@@ -396,7 +399,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
                     memcpy(message_buffer, event_buf, event_length);
-                    tsk = new(tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
+                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
                 }
             }
 
@@ -533,7 +536,7 @@ int main(int argc, const char* argv[]) {
 
         if (websocket_hub.listen(port)) {
             fmt::print("Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP threads\n",
-                       port, root_folder, base_folder, thread_count, omp_thread_count);
+                port, root_folder, base_folder, thread_count, omp_thread_count);
             websocket_hub.run();
         } else {
             fmt::print("Error listening on port {}\n", port);

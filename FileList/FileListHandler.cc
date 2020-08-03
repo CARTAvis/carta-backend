@@ -7,9 +7,7 @@
 
 // Default constructor
 FileListHandler::FileListHandler(const std::string& root, const std::string& base)
-    : _root_folder(root),
-      _base_folder(base),
-      _filelist_folder("nofolder") {}
+    : _root_folder(root), _base_folder(base), _filelist_folder("nofolder") {}
 
 void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg) {
     // use tbb scoped lock so that it only processes the file list a time for one user
@@ -171,19 +169,26 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
 std::string FileListHandler::GetCasacoreTypeString(casacore::ImageOpener::ImageTypes type) { // convert enum to string
     std::string type_str;
     switch (type) {
-        case casacore::ImageOpener::GIPSY:type_str = "Gipsy";
+        case casacore::ImageOpener::GIPSY:
+            type_str = "Gipsy";
             break;
-        case casacore::ImageOpener::CAIPS:type_str = "Classic AIPS";
+        case casacore::ImageOpener::CAIPS:
+            type_str = "Classic AIPS";
             break;
-        case casacore::ImageOpener::NEWSTAR:type_str = "Newstar";
+        case casacore::ImageOpener::NEWSTAR:
+            type_str = "Newstar";
             break;
-        case casacore::ImageOpener::IMAGECONCAT:type_str = "ImageConcat";
+        case casacore::ImageOpener::IMAGECONCAT:
+            type_str = "ImageConcat";
             break;
-        case casacore::ImageOpener::IMAGEEXPR:type_str = "ImageExpr";
+        case casacore::ImageOpener::IMAGEEXPR:
+            type_str = "ImageExpr";
             break;
-        case casacore::ImageOpener::COMPLISTIMAGE:type_str = "ComponentListImage";
+        case casacore::ImageOpener::COMPLISTIMAGE:
+            type_str = "ComponentListImage";
             break;
-        default:type_str = "Unknown";
+        default:
+            type_str = "Unknown";
             break;
     }
     return type_str;
