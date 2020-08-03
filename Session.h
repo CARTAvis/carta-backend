@@ -33,6 +33,7 @@
 #include <carta-protobuf/scripting.pb.h>
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
+#include <carta-protobuf/spectral_line_request.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 #include <carta-protobuf/user_layout.pb.h>
 #include <carta-protobuf/user_preferences.pb.h>
@@ -50,8 +51,8 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, std::string base, uS::Async* outgoing_async,
-        FileListHandler* file_list_handler, bool verbose = false);
+    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
+        uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose = false);
     ~Session();
 
     // CARTA ICD
@@ -84,6 +85,7 @@ public:
     void OnOpenCatalogFile(CARTA::OpenCatalogFile open_file_request, uint32_t request_id, bool silent = false);
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
+    void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
 
     void SendPendingMessages();
 
@@ -178,6 +180,10 @@ public:
         return _id;
     }
 
+    inline std::string GetAddress() {
+        return _address;
+    }
+
     // RegionDataStreams
     void RegionDataStreams(int file_id, int region_id);
     bool SendSpectralProfileData(int file_id, int region_id, bool stokes_changed = false);
@@ -216,6 +222,7 @@ private:
 
     uWS::WebSocket<uWS::SERVER>* _socket;
     uint32_t _id;
+    std::string _address;
     std::string _api_key;
     std::string _root_folder;
     std::string _base_folder;

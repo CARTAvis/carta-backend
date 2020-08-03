@@ -29,6 +29,7 @@
 #include "FileList/FileInfoLoader.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
+#include "SpectralLine/SpectralLineCrawler.h"
 
 #include "DBConnect.h"
 #include "Util.h"
@@ -41,10 +42,11 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string root, std::string base, uS::Async* outgoing_async,
-    FileListHandler* file_list_handler, bool verbose)
+Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
+    uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose)
     : _socket(ws),
       _id(id),
+      _address(address),
       _root_folder(root),
       _base_folder(base),
       _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
@@ -396,7 +398,6 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         start_message.set_stokes(stokes);
         start_message.set_animation_id(animation_id);
         start_message.set_end_sync(false);
-        start_message.set_animation_id(animation_id);
         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
 
         int n = message.tiles_size();
@@ -442,7 +443,6 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         final_message.set_stokes(stokes);
         final_message.set_animation_id(animation_id);
         final_message.set_end_sync(true);
-        final_message.set_animation_id(animation_id);
         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
     }
 }
@@ -501,6 +501,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
     // Create new Region or update existing Region
     auto file_id(message.file_id());
     auto region_id(message.region_id());
+    auto region_info(message.region_info());
     std::string err_message;
     bool success(false);
 
@@ -510,9 +511,11 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         if (!_region_handler) { // created on demand only
             _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_verbose_logging));
         }
-        std::vector<CARTA::Point> points = {message.control_points().begin(), message.control_points().end()};
-        success =
-            _region_handler->SetRegion(region_id, file_id, message.region_name(), message.region_type(), points, message.rotation(), csys);
+
+        std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
+        RegionState region_state(file_id, region_info.region_type(), points, region_info.rotation());
+
+        success = _region_handler->SetRegion(region_id, region_state, csys);
 
         // log error
         if (!success) {
@@ -560,7 +563,6 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         if (!import_file && !import_contents) {
             import_ack.set_success(false);
             import_ack.set_message("Import region failed: cannot import by filename or contents.");
-            import_ack.add_regions();
             SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
             return;
         }
@@ -573,7 +575,6 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             if (!ccfile.exists() || !ccfile.isReadable()) {
                 import_ack.set_success(false);
                 import_ack.set_message("Import region failed: cannot open file.");
-                import_ack.add_regions();
                 SendFileEvent(file_id, CARTA::EventType::IMPORT_REGION_ACK, request_id, import_ack);
                 return;
             }
@@ -633,10 +634,11 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
             abs_filename = root_path.absoluteName();
         }
 
-        std::vector<int> region_ids = {message.region_id().begin(), message.region_id().end()};
+        std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
+
         CARTA::ExportRegionAck export_ack;
         _region_handler->ExportRegion(
-            file_id, _frames.at(file_id), message.type(), message.coord_type(), region_ids, abs_filename, export_ack);
+            file_id, _frames.at(file_id), message.type(), message.coord_type(), region_styles, abs_filename, export_ack);
         SendFileEvent(file_id, CARTA::EventType::EXPORT_REGION_ACK, request_id, export_ack);
     } else {
         string error = fmt::format("File id {} not found", file_id);
@@ -876,21 +878,26 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
             OnSetImageChannels(set_image_channels_msg);
 
             // Set regions
-            for (int j = 0; j < image.regions_size(); ++j) {
-                const CARTA::RegionProperties& region = image.regions(j);
-                CARTA::SetRegion set_region_msg;
-                set_region_msg.set_file_id(file_id);
-                set_region_msg.set_region_id(region.region_id());
-                set_region_msg.set_region_name(region.region_info().region_name());
-                set_region_msg.set_rotation(region.region_info().rotation());
-                set_region_msg.set_region_type(region.region_info().region_type());
-                *set_region_msg.mutable_control_points() = {
-                    region.region_info().control_points().begin(), region.region_info().control_points().end()};
-                if (!OnSetRegion(set_region_msg, request_id, true)) {
-                    success = false;
-                    // Error message
-                    std::string region_id = std::to_string(region.region_id()) + " ";
-                    err_region_ids.append(region_id);
+            for (auto& region_id_info : image.regions()) {
+                // region_id_info is <region_id, CARTA::RegionInfo>
+                if (region_id_info.first == 0) {
+                    CARTA::Point cursor = region_id_info.second.control_points(0);
+                    CARTA::SetCursor set_cursor_msg;
+                    *set_cursor_msg.mutable_point() = cursor;
+                    OnSetCursor(set_cursor_msg, request_id);
+                } else {
+                    CARTA::SetRegion set_region_msg;
+                    set_region_msg.set_file_id(file_id);
+                    set_region_msg.set_region_id(region_id_info.first);
+                    CARTA::RegionInfo resume_region_info = region_id_info.second;
+                    *set_region_msg.mutable_region_info() = resume_region_info;
+
+                    if (!OnSetRegion(set_region_msg, request_id, true)) {
+                        success = false;
+                        // Error message
+                        std::string region_id = std::to_string(region_id_info.first) + " ";
+                        err_region_ids.append(region_id);
+                    }
                 }
             }
 
@@ -959,6 +966,12 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
         // Send partial or final results
         SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
     });
+}
+
+void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
+    CARTA::SpectralLineResponse spectral_line_response;
+    carta::SpectralLineCrawler::SendRequest(spectral_line_request.frequency_range(), spectral_line_response);
+    SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response, true);
 }
 
 // ******** SEND DATA STREAMS *********

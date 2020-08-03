@@ -14,6 +14,7 @@
 
 #include <omp.h>
 
+#include <curl/curl.h>
 #include <fmt/format.h>
 #include <signal.h>
 #include <tbb/concurrent_queue.h>
@@ -88,7 +89,15 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         current_session->SendPendingMessages();
     });
 
-    Session* session = new Session(ws, session_number, root_folder, base_folder, outgoing, file_list_handler, verbose);
+    string address;
+    auto ip_header = http_request.getHeader("x-forwarded-for");
+    if (ip_header) {
+        address = ip_header.toString();
+    } else {
+        address = ws->getAddress().address;
+    }
+
+    Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose);
 
     ws->setUserData(session);
     if (carta_grpc_service) {
@@ -96,9 +105,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     }
     session->IncreaseRefCount();
     outgoing->setData(session);
-
-    Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, ws->getAddress().address,
-        Session::NumberOfSessions());
+    Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -112,8 +119,9 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
 
     if (session) {
         auto uuid = session->GetId();
+        auto address = session->GetAddress();
         session->DisconnectCalled();
-        Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, ws->getAddress().address, Session::NumberOfSessions());
+        Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);
         }
@@ -425,6 +433,16 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
+                case CARTA::EventType::SPECTRAL_LINE_REQUEST: {
+                    CARTA::SpectralLineRequest message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        tsk =
+                            new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
+                    } else {
+                        fmt::print("Bad SPECTRAL_LINE_REQUEST message!\n");
+                    }
+                    break;
+                }
                 default: {
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
@@ -600,6 +618,9 @@ int main(int argc, const char* argv[]) {
                 return 1;
             }
         }
+
+        // Init curl
+        curl_global_init(CURL_GLOBAL_ALL);
 
         session_number = 0;
 

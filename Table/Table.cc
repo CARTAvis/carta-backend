@@ -191,9 +191,9 @@ bool Table::ConstructFromFITS(bool header_only) {
     char ext_name[80];
     // read table extension name
     if (fits_read_key(file_ptr, TSTRING, "EXTNAME", ext_name, nullptr, &status)) {
-        _parse_error_message = "File does not contain a FITS table!";
-        fits_close_file(file_ptr, &status);
-        return false;
+        _parse_error_message = "Table does not contain an extension name";
+        ext_name[0] = '\0';
+        status = 0;
     }
 
     // Read table dimensions

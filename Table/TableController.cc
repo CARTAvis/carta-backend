@@ -187,34 +187,45 @@ void TableController::OnFileListRequest(
     auto parent_path = fs::relative(file_path.parent_path(), root_path);
     file_list_response.set_parent(parent_path.string());
 
-    for (const auto& entry : fs::directory_iterator(file_path)) {
-        if (fs::is_directory(entry)) {
-            file_list_response.add_subdirectories(entry.path().filename().string());
-        } else if (fs::is_regular_file(entry) && fs::exists(entry)) {
-            uint32_t file_magic_number = GetMagicNumber(entry.path().string());
-            CARTA::CatalogFileType file_type;
-            if (file_magic_number == XML_MAGIC_NUMBER) {
-                file_type = CARTA::VOTable;
-            } else if (file_magic_number == FITS_MAGIC_NUMBER) {
-                file_type = CARTA::FITSTable;
-            } else {
-                continue;
+    try {
+        for (const auto& entry : fs::directory_iterator(file_path)) {
+            if (fs::is_directory(entry)) {
+                try {
+                    // Try to construct a directory iterator. If it fails, the directory is inaccessible
+                    auto test_directory_iterator = fs::directory_iterator(entry);
+                    file_list_response.add_subdirectories(entry.path().filename().string());
+                } catch (fs::filesystem_error) {
+                    // Skip inaccessible folders
+                    continue;
+                }
+            } else if (fs::is_regular_file(entry) && fs::exists(entry)) {
+                uint32_t file_magic_number = GetMagicNumber(entry.path().string());
+                CARTA::CatalogFileType file_type;
+                if (file_magic_number == XML_MAGIC_NUMBER) {
+                    file_type = CARTA::VOTable;
+                } else if (file_magic_number == FITS_MAGIC_NUMBER) {
+                    file_type = CARTA::FITSTable;
+                } else {
+                    continue;
+                }
+
+                // Fill the file info
+                auto file_info = file_list_response.add_files();
+                file_info->set_name(entry.path().filename().string());
+                file_info->set_type(file_type);
+                file_info->set_file_size(fs::file_size(entry));
+
+                // Fill in file time
+                struct stat file_stats;
+                stat(entry.path().c_str(), &file_stats);
+                file_info->set_date(file_stats.st_mtim.tv_sec);
             }
-
-            // Fill the file info
-            auto file_info = file_list_response.add_files();
-            file_info->set_name(entry.path().filename().string());
-            file_info->set_type(file_type);
-            file_info->set_file_size(fs::file_size(entry));
-
-            // Fill in file time
-            struct stat file_stats;
-            stat(entry.path().c_str(), &file_stats);
-            file_info->set_date(file_stats.st_mtim.tv_sec);
         }
+        file_list_response.set_success(true);
+    } catch (fs::filesystem_error) {
+        file_list_response.set_success(false);
+        file_list_response.set_message("Cannot list directory contents");
     }
-
-    file_list_response.set_success(true);
 }
 
 void TableController::OnFileInfoRequest(
