@@ -6,20 +6,15 @@
 #include "FileInfoLoader.h"
 
 // Default constructor
-FileListHandler::FileListHandler(std::unordered_map<std::string, std::vector<std::string>>& permissions_map, bool enforce_permissions,
-    const std::string& root, const std::string& base)
-    : _permissions_map(permissions_map),
-      _permissions_enabled(enforce_permissions),
-      _root_folder(root),
+FileListHandler::FileListHandler(const std::string& root, const std::string& base)
+    : _root_folder(root),
       _base_folder(base),
       _filelist_folder("nofolder") {}
 
-void FileListHandler::OnFileListRequest(
-    std::string api_key, const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg) {
+void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg) {
     // use tbb scoped lock so that it only processes the file list a time for one user
+    // TODO: Do we still need a lock here if there are no API keys?
     std::scoped_lock lock(_file_list_mutex);
-    _api_key = api_key; // different users may have different api keys, so it is necessary to lock this variable setting to avoid using the
-                        // wrong key
     string folder = request.directory();
     // do not process same directory simultaneously (e.g. double-click folder in browser)
     if (folder == _filelist_folder) {
@@ -54,8 +49,9 @@ void FileListHandler::GetRelativePath(std::string& folder) {
         folder.replace(0, 2, ""); // remove leading "./"
     } else if (folder.find(_root_folder) == 0) {
         folder.replace(0, _root_folder.length(), ""); // remove root folder path
-        if (folder.front() == '/')
-            folder.replace(0, 1, ""); // remove leading '/'
+        if (folder.front() == '/') {
+            folder.replace(0, 1, "");
+        } // remove leading '/'
     }
     if (folder.empty()) {
         folder = ".";
@@ -104,12 +100,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
             return;
         }
 
-        if (!region_list && !CheckPermissionForDirectory(folder)) {
-            file_list.set_success(false);
-            file_list.set_message("Cannot read directory; check name and permissions.");
-            return;
-        }
-
         // Iterate through directory to generate file list
         casacore::Directory start_dir(folder_path);
         casacore::DirectoryIterator dir_iter(start_dir);
@@ -142,10 +132,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
                             } else if (image_type == casacore::ImageOpener::UNKNOWN) {
                                 // Check if it is a directory and the user has permission to access it
                                 casacore::String dir_name(cc_file.path().baseName());
-                                string path_name_relative = (folder.length() && folder != "/") ? folder + "/" + string(dir_name) : dir_name;
-                                if (CheckPermissionForDirectory(path_name_relative)) {
-                                    file_list.add_subdirectories(dir_name);
-                                }
+                                file_list.add_subdirectories(dir_name);
                             } else {
                                 std::string image_type_msg = fmt::format(
                                     "{}: image type {} not supported", cc_file.path().baseName(), GetCasacoreTypeString(image_type));
@@ -181,84 +168,22 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, string fol
     file_list.set_success(true);
 }
 
-// Checks whether the user's API key is valid for a particular directory.
-// This function is called recursively, starting with the requested directory, and then working
-// its way up parent directories until it finds a matching directory in the permissions map.
-bool FileListHandler::CheckPermissionForDirectory(std::string prefix) {
-    // skip permissions map if we're not running with permissions enabled
-    if (!_permissions_enabled) {
-        return true;
-    }
-
-    // trim leading dot
-    if (prefix.length() && prefix[0] == '.') {
-        prefix.erase(0, 1);
-    }
-    // Check for root folder permissions
-    if (!prefix.length() || prefix == "/") {
-        if (_permissions_map.count("/")) {
-            return CheckPermissionForEntry("/");
-        }
-        return false;
-    }
-
-    // trim trailing and leading slash
-    if (prefix[prefix.length() - 1] == '/') {
-        prefix = prefix.substr(0, prefix.length() - 1);
-    }
-    if (prefix[0] == '/') {
-        prefix = prefix.substr(1);
-    }
-    while (prefix.length() > 0) {
-        if (_permissions_map.count(prefix)) {
-            return CheckPermissionForEntry(prefix);
-        }
-
-        auto last_slash = prefix.find_last_of('/');
-        if (last_slash == string::npos) {
-            return false;
-        }
-
-        prefix = prefix.substr(0, last_slash);
-    }
-    return false;
-}
-
-bool FileListHandler::CheckPermissionForEntry(const string& entry) {
-    // skip permissions map if we're not running with permissions enabled
-    if (!_permissions_enabled) {
-        return true;
-    }
-    if (!_permissions_map.count(entry)) {
-        return false;
-    }
-    auto& keys = _permissions_map[entry];
-    return (find(keys.begin(), keys.end(), "*") != keys.end()) || (find(keys.begin(), keys.end(), _api_key) != keys.end());
-}
-
 std::string FileListHandler::GetCasacoreTypeString(casacore::ImageOpener::ImageTypes type) { // convert enum to string
     std::string type_str;
     switch (type) {
-        case casacore::ImageOpener::GIPSY:
-            type_str = "Gipsy";
+        case casacore::ImageOpener::GIPSY:type_str = "Gipsy";
             break;
-        case casacore::ImageOpener::CAIPS:
-            type_str = "Classic AIPS";
+        case casacore::ImageOpener::CAIPS:type_str = "Classic AIPS";
             break;
-        case casacore::ImageOpener::NEWSTAR:
-            type_str = "Newstar";
+        case casacore::ImageOpener::NEWSTAR:type_str = "Newstar";
             break;
-        case casacore::ImageOpener::IMAGECONCAT:
-            type_str = "ImageConcat";
+        case casacore::ImageOpener::IMAGECONCAT:type_str = "ImageConcat";
             break;
-        case casacore::ImageOpener::IMAGEEXPR:
-            type_str = "ImageExpr";
+        case casacore::ImageOpener::IMAGEEXPR:type_str = "ImageExpr";
             break;
-        case casacore::ImageOpener::COMPLISTIMAGE:
-            type_str = "ComponentListImage";
+        case casacore::ImageOpener::COMPLISTIMAGE:type_str = "ComponentListImage";
             break;
-        default:
-            type_str = "Unknown";
+        default:type_str = "Unknown";
             break;
     }
     return type_str;

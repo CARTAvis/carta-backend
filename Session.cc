@@ -30,8 +30,6 @@
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
-
-#include "DBConnect.h"
 #include "Util.h"
 
 #define DEBUG(_DB_TEXT_) \
@@ -202,7 +200,6 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
         }
     }
 
-    _api_key = message.api_key();
     // response
     CARTA::RegisterViewerAck ack_message;
     ack_message.set_session_id(session_id);
@@ -211,18 +208,6 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_session_type(type);
 
     uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
-#ifdef _AUTH_SERVER_
-    feature_flags |= CARTA::ServerFeatureFlags::USER_LAYOUTS;
-    feature_flags |= CARTA::ServerFeatureFlags::USER_PREFERENCES;
-
-    if (!GetLayoutsFromDB(&ack_message)) {
-        // Can log failure here
-    }
-    if (!GetPreferencesFromDB(&ack_message)) {
-        // Can log failure here
-    }
-
-#endif
     ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 }
@@ -230,7 +215,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id) {
     CARTA::FileListResponse response;
     FileListHandler::ResultMsg result_msg;
-    _file_list_handler->OnFileListRequest(_api_key, request, response, result_msg);
+    _file_list_handler->OnFileListRequest(request, response, result_msg);
     SendEvent(CARTA::EventType::FILE_LIST_RESPONSE, request_id, response);
     if (!result_msg.message.empty()) {
         SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
@@ -787,35 +772,6 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
         string error = fmt::format("File id {} not found", file_id);
         SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::DEBUG);
     }
-}
-
-void Session::OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id) {
-    CARTA::SetUserPreferencesAck ack_message;
-    bool result;
-
-#ifdef _AUTH_SERVER_
-    result = SaveUserPreferencesToDB(request);
-#endif
-
-    ack_message.set_success(result);
-
-    SendEvent(CARTA::EventType::SET_USER_PREFERENCES_ACK, request_id, ack_message);
-}
-
-void Session::OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id) {
-    CARTA::SetUserLayoutAck ack_message;
-
-#ifdef _AUTH_SERVER_
-    if (SaveLayoutToDB(request.name(), request.value())) {
-        ack_message.set_success(true);
-    } else {
-        ack_message.set_success(false);
-    }
-#else
-    ack_message.set_success(false);
-#endif
-
-    SendEvent(CARTA::EventType::SET_USER_LAYOUT_ACK, request_id, ack_message);
 }
 
 void Session::OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent) {
