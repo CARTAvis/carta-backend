@@ -1,6 +1,4 @@
-#include <fstream>
 #include <iostream>
-#include <mutex>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -10,8 +8,6 @@
 #include <curl/curl.h>
 #include <fmt/format.h>
 #include <signal.h>
-#include <tbb/concurrent_queue.h>
-#include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
@@ -44,6 +40,8 @@ static std::unique_ptr<grpc::Server> carta_grpc_server;
 
 // command-line arguments
 static string root_folder("/"), base_folder(".");
+// token to validate incoming WS connection header against
+static string auth_token = "";
 static bool verbose;
 
 // Called on connection. Creates session objects and assigns UUID to it
@@ -65,6 +63,19 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         address = ip_header.toString();
     } else {
         address = ws->getAddress().address;
+    }
+
+    // Check if there's a token
+    if (!auth_token.empty()) {
+        auto token_header_entry = http_request.getHeader("carta-auth-token");
+        if (token_header_entry) {
+            string token_header_value = token_header_entry.toString();
+            if (token_header_value != auth_token) {
+                ws->close(1000, "Header auth failed");
+            }
+        } else {
+            ws->close(1000, "Header auth failed");
+        }
     }
 
     Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose);
@@ -507,6 +518,11 @@ int main(int argc, const char* argv[]) {
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
             return 1;
+        }
+
+        auto env_entry = getenv("CARTA_AUTH_TOKEN");
+        if (env_entry) {
+            auth_token = env_entry;
         }
 
         tbb::task_scheduler_init task_scheduler(thread_count);
