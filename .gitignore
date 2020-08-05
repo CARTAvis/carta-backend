@@ -10,11 +10,7 @@ crashlytics-build.properties
 fabric.properties
 
 # CMake
-cmake-build-debug/
-cmake-build-release/
+cmake-build-*/
 build/
-
-# Custom
-permissions.txt
 
 

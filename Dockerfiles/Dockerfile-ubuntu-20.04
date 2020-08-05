@@ -7,7 +7,7 @@ RUN \
   DEBIAN_FRONTEND=noninteractive \
   apt-get install -y apt-utils autoconf bison build-essential cmake curl fftw3-dev flex gcc g++ \
     gdb gfortran git git-lfs googletest libblas-dev libcfitsio-dev libfmt-dev libgrpc-dev libgrpc++-dev \
-    libgsl-dev libgtest-dev libhdf5-dev libjsoncpp-dev liblapack-dev libncurses-dev libprotobuf-dev \
+    libgsl-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev libprotobuf-dev \
     libreadline-dev libssl-dev libstarlink-ast-dev libtool libtbb-dev libxml2-dev libxslt1-dev libzstd-dev \
     pkg-config protobuf-compiler-grpc software-properties-common unzip wcslib-dev wget
 
