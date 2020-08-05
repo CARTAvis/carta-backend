@@ -9,9 +9,9 @@ RUN \
 # Install the required packages
 RUN \
   yum -y install epel-release && \
-  yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel flex fmt-devel \
+  yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel curl-devel flex \
     git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
-    make openssl-devel wcslib-devel wget zlib-devel
+    make openssl-devel pugixml-devel systemd-devel wcslib-devel wget zlib-devel
 
 # gRPC will need cmake >3.13
 RUN \
@@ -21,6 +21,25 @@ RUN \
   cd CMake && git checkout v3.17.0 && ./configure && \
   make -j 2 && make install && \
   cd /root && rm -rf CMake
+
+# Install fmt of at least version 5.3.0 because spdlog will need it for external 'fmt'
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  git clone https://github.com/fmtlib/fmt && \
+  mkdir -p fmt/build && cd fmt/build && \
+  cmake .. && make && make install && \
+  cd /root && rm -rf fmt
+
+# Install spdlog with external 'fmt' library support
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  git clone https://github.com/gabime/spdlog && \
+  mkdir -p spdlog/build && cd spdlog/build && \
+  cmake .. -DSPDLOG_FMT_EXTERNAL=ON && \
+  make && make install && \
+  cd /root && rm -rf spdlog
 
 # CASA needs wcslib 4.7 but CentOS6 and CentOS7 provide 4.3, so install newer wcslib from source
 RUN \

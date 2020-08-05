@@ -3,6 +3,8 @@
 
 #include <carta-protobuf/enums.pb.h>
 #include <fmt/format.h> // This header must be before spdlog headers
+#define SPDLOG_FMT_EXTERNAL
+#define FMT_HEADER_ONLY
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
