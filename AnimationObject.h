@@ -24,6 +24,7 @@ class AnimationObject {
     CARTA::AnimationFrame _current_frame;
     CARTA::AnimationFrame _next_frame;
     CARTA::AnimationFrame _last_flow_frame;
+    std::unordered_map<int32_t, std::vector<float>> _matched_frames;
     int _frame_rate;
     int _waits_per_second;
     int _window_scale;
@@ -42,7 +43,8 @@ class AnimationObject {
 
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
-        CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, bool always_wait)
+        CARTA::AnimationFrame& delta_frame, const google::protobuf::Map<google::protobuf::int32, CARTA::MatchedFrameList>& matched_frames,
+        int frame_rate, bool looping, bool reverse_at_end, bool always_wait)
         : _file_id(file_id),
           _start_frame(start_frame),
           _first_frame(first_frame),
@@ -53,6 +55,10 @@ public:
           _always_wait(always_wait) {
         _current_frame = start_frame;
         _next_frame = start_frame;
+
+        for (auto const& entry : matched_frames) {
+            _matched_frames[entry.first] = {entry.second.frame_numbers().begin(), entry.second.frame_numbers().end()};
+        }
 
         // handle negative deltas
         if (delta_frame.channel() < 0 || delta_frame.stokes() < 0) {
