@@ -1524,18 +1524,6 @@ void Session::ExecuteAnimationFrameInner() {
                         fmt::print("Animator: Missing matched frame list for file {}\n", sibling_file_id);
                     }
                 }
-                // Send image histogram and profiles
-                bool send_histogram(true);
-                UpdateImageData(file_id, send_histogram, channel_changed, stokes_changed);
-
-                // Send contour data if required
-                SendContourData(file_id);
-
-                // Send tile data
-                OnAddRequiredTiles(frame->GetAnimationViewSettings());
-
-                // Send region histograms and profiles
-                UpdateRegionData(file_id, ALL_REGIONS, channel_changed, stokes_changed);
             } else {
                 if (!err_message.empty()) {
                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
