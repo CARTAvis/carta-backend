@@ -399,7 +399,9 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                 auto tile = Tile::Decode(encoded_coordinate);
                 if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(
                                                   raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
-                    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
+                    // Only use deflate on outgoing message if the raster image compression type is NONE
+                    SendFileEvent(
+                        file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
                 } else {
                     fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
                 }
@@ -920,14 +922,14 @@ void Session::OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request) {
 void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id) {
     _table_controller->OnFilterRequest(filter_request, [&](const CARTA::CatalogFilterResponse& filter_response) {
         // Send partial or final results
-        SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
+        SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response);
     });
 }
 
 void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
     CARTA::SpectralLineResponse spectral_line_response;
     carta::SpectralLineCrawler::SendRequest(spectral_line_request.frequency_range(), spectral_line_response);
-    SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response, true);
+    SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response);
 }
 
 // ******** SEND DATA STREAMS *********
@@ -1295,7 +1297,8 @@ bool Session::SendContourData(int file_id, bool ignore_empty) {
                     contour_set->set_decimation_factor(pixel_rounding);
                 }
             }
-            SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response);
+            // Only use deflate compression if contours don't have ZSTD compression
+            SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response, compression_level < 1);
         };
 
         if (frame->ContourImage(callback)) {
@@ -1371,15 +1374,17 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     head->icd_version = carta::ICD_VERSION;
     head->request_id = event_id;
     message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
-    msg_vs_compress.second = compress;
+    // Skip compression on files smaller than 1 kB
+    msg_vs_compress.second = compress && required_size > 1024;
     _out_msgs.push(msg_vs_compress);
     _outgoing_async->send();
 }
 
-void Session::SendFileEvent(int32_t file_id, CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message) {
+void Session::SendFileEvent(
+    int32_t file_id, CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message, bool compress) {
     // do not send if file is closed
     if (_frames.count(file_id)) {
-        SendEvent(event_type, event_id, message);
+        SendEvent(event_type, event_id, message, compress);
     }
 }
 
