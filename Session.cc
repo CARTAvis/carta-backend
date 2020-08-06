@@ -1227,14 +1227,25 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     return data_sent;
 }
 
-bool Session::SendContourData(int file_id) {
+bool Session::SendContourData(int file_id, bool ignore_empty) {
     if (_frames.count(file_id)) {
         auto frame = _frames.at(file_id);
         const ContourSettings settings = frame->GetContourParameters();
         int num_levels = settings.levels.size();
 
         if (!num_levels) {
-            return false;
+            if (ignore_empty) {
+                return false;
+            } else {
+                CARTA::ContourImageData empty_response;
+                empty_response.set_file_id(file_id);
+                empty_response.set_reference_file_id(settings.reference_file_id);
+                empty_response.set_channel(frame->CurrentChannel());
+                empty_response.set_stokes(frame->CurrentStokes());
+                empty_response.set_progress(1.0);
+                SendFileEvent(file_id, CARTA::EventType::CONTOUR_IMAGE_DATA, 0, empty_response);
+                return true;
+            }
         }
 
         int64_t total_vertices = 0;
@@ -1493,8 +1504,8 @@ void Session::ExecuteAnimationFrameInner() {
                                 // Send image histogram and profiles
                                 // TODO: do we need to send this?
                                 UpdateImageData(sibling_file_id, true, true, false);
-                                // Send contour data if required
-                                SendContourData(sibling_file_id);
+                                // Send contour data if required. Empty contour data messages are sent if there are no contour levels
+                                SendContourData(sibling_file_id, false);
 
                                 // Send region histograms and profiles
                                 UpdateRegionData(sibling_file_id, ALL_REGIONS, true, false);
