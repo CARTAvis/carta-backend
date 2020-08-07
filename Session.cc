@@ -1450,70 +1450,58 @@ void Session::ExecuteAnimationFrameInner() {
     CARTA::AnimationFrame curr_frame;
 
     curr_frame = _animation_object->_next_frame;
-    auto file_id(_animation_object->_file_id);
-    if (_frames.count(file_id)) {
-        auto frame = _frames.at(file_id);
+    auto active_file_id(_animation_object->_file_id);
+    if (_frames.count(active_file_id)) {
+        auto active_frame = _frames.at(active_file_id);
 
         try {
             std::string err_message;
-            auto channel = curr_frame.channel();
-            auto stokes = curr_frame.stokes();
+            auto active_frame_channel = curr_frame.channel();
+            auto active_frame_stokes = curr_frame.stokes();
 
             if ((_animation_object->_tbb_context).is_group_execution_cancelled()) {
                 return;
             }
 
-            bool channel_changed(channel != frame->CurrentChannel());
-            bool stokes_changed(stokes != frame->CurrentStokes());
+            bool channel_changed(active_frame_channel != active_frame->CurrentChannel());
+            bool stokes_changed(active_frame_stokes != active_frame->CurrentStokes());
 
             _animation_object->_current_frame = curr_frame;
+            auto offset = active_frame_channel - _animation_object->_first_frame.channel();
 
             auto t_start_change_frame = std::chrono::high_resolution_clock::now();
-            if (frame->SetImageChannels(channel, stokes, err_message)) {
-                // Send image histogram and profiles
-                bool send_histogram(true);
-                UpdateImageData(file_id, send_histogram, channel_changed, stokes_changed);
 
-                // Send contour data if required
-                SendContourData(file_id);
-
-                // Send tile data
-                OnAddRequiredTiles(frame->GetAnimationViewSettings());
-
-                // Send region histograms and profiles
-                UpdateRegionData(file_id, ALL_REGIONS, channel_changed, stokes_changed);
-            } else {
-                if (!err_message.empty()) {
-                    SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
-                }
-            }
-
-            // Send secondary images (only if channels have been changed)
-            auto offset = channel - _animation_object->_first_frame.channel();
+            // Apply channel changes in parallel
             if (channel_changed && offset >= 0 && !_animation_object->_matched_frames.empty()) {
                 for (auto& entry : _animation_object->_matched_frames) {
-                    auto sibling_file_id = entry.first;
+                    auto file_id = entry.first;
                     auto& frame_numbers = entry.second;
-                    if (_frames.count(sibling_file_id)) {
-                        auto& sibling = _frames.at(sibling_file_id);
+                    bool is_active_frame = file_id == active_file_id;
+                    if (_frames.count(file_id)) {
+                        auto& frame = _frames.at(file_id);
                         // Skip out of bounds frames
-                        if (offset >= frame_numbers.size()) {
-                            fmt::print("Animator: Missing entries in matched frame list for file {}\n", sibling_file_id);
+                        if (!is_active_frame && offset >= frame_numbers.size()) {
+                            fmt::print("Animator: Missing entries in matched frame list for file {}\n", file_id);
                             continue;
                         }
-                        auto channel_val = frame_numbers[offset];
+                        float channel_val = is_active_frame ? active_frame_channel : frame_numbers[offset];
                         if (std::isfinite(channel_val)) {
-                            int rounded_channel = std::round(std::clamp(channel_val, 0.0f, (float)(sibling->NumChannels() - 1)));
-                            if (rounded_channel != sibling->CurrentChannel() &&
-                                sibling->SetImageChannels(rounded_channel, sibling->CurrentStokes(), err_message)) {
+                            int rounded_channel = std::round(std::clamp(channel_val, 0.0f, (float)(frame->NumChannels() - 1)));
+                            if (rounded_channel != frame->CurrentChannel() &&
+                                frame->SetImageChannels(rounded_channel, frame->CurrentStokes(), err_message)) {
                                 // Send image histogram and profiles
                                 // TODO: do we need to send this?
-                                UpdateImageData(sibling_file_id, true, true, false);
+                                UpdateImageData(file_id, true, true, false);
                                 // Send contour data if required. Empty contour data messages are sent if there are no contour levels
-                                SendContourData(sibling_file_id, false);
+                                SendContourData(file_id, is_active_frame);
+
+                                // Send tile data for active frame
+                                if (is_active_frame) {
+                                    OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
+                                }
 
                                 // Send region histograms and profiles
-                                UpdateRegionData(sibling_file_id, ALL_REGIONS, true, false);
+                                UpdateRegionData(file_id, ALL_REGIONS, true, false);
                             } else {
                                 if (!err_message.empty()) {
                                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
@@ -1521,12 +1509,27 @@ void Session::ExecuteAnimationFrameInner() {
                             }
                         }
                     } else {
-                        fmt::print("Animator: Missing matched frame list for file {}\n", sibling_file_id);
+                        fmt::print("Animator: Missing matched frame list for file {}\n", file_id);
                     }
                 }
             } else {
-                if (!err_message.empty()) {
-                    SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
+                if (active_frame->SetImageChannels(active_frame_channel, active_frame_stokes, err_message)) {
+                    // Send image histogram and profiles
+                    bool send_histogram(true);
+                    UpdateImageData(active_file_id, send_histogram, channel_changed, stokes_changed);
+
+                    // Send contour data if required
+                    SendContourData(active_file_id);
+
+                    // Send tile data
+                    OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
+
+                    // Send region histograms and profiles
+                    UpdateRegionData(active_file_id, ALL_REGIONS, channel_changed, stokes_changed);
+                } else {
+                    if (!err_message.empty()) {
+                        SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
+                    }
                 }
             }
 
@@ -1540,11 +1543,11 @@ void Session::ExecuteAnimationFrameInner() {
                 }
             }
         } catch (std::out_of_range& range_error) {
-            string error = fmt::format("File id {} closed", file_id);
+            string error = fmt::format("File id {} closed", active_file_id);
             SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
         }
     } else {
-        string error = fmt::format("File id {} not found", file_id);
+        string error = fmt::format("File id {} not found", active_file_id);
         SendLogEvent(error, {"animation"}, CARTA::ErrorSeverity::DEBUG);
     }
 }

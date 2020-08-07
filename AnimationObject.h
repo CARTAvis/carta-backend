@@ -60,6 +60,9 @@ public:
             _matched_frames[entry.first] = {entry.second.frame_numbers().begin(), entry.second.frame_numbers().end()};
         }
 
+        // Empty array for the active file_id, since its channel will be set automatically
+        _matched_frames[file_id] = {};
+
         // handle negative deltas
         if (delta_frame.channel() < 0 || delta_frame.stokes() < 0) {
             _delta_frame.set_channel(-delta_frame.channel());
