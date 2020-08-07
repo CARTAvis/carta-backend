@@ -1,6 +1,5 @@
 #include "Session.h"
 
-#include <omp.h>
 #include <signal.h>
 #include <algorithm>
 #include <chrono>
@@ -1471,8 +1470,9 @@ void Session::ExecuteAnimationFrameInner() {
 
             auto t_start_change_frame = std::chrono::high_resolution_clock::now();
 
-            // Apply channel changes in parallel
             if (channel_changed && offset >= 0 && !_animation_object->_matched_frames.empty()) {
+                std::vector<int32_t> file_ids_to_update;
+                // Update channels sequentially
                 for (auto& entry : _animation_object->_matched_frames) {
                     auto file_id = entry.first;
                     auto& frame_numbers = entry.second;
@@ -1489,19 +1489,7 @@ void Session::ExecuteAnimationFrameInner() {
                             int rounded_channel = std::round(std::clamp(channel_val, 0.0f, (float)(frame->NumChannels() - 1)));
                             if (rounded_channel != frame->CurrentChannel() &&
                                 frame->SetImageChannels(rounded_channel, frame->CurrentStokes(), err_message)) {
-                                // Send image histogram and profiles
-                                // TODO: do we need to send this?
-                                UpdateImageData(file_id, true, true, false);
-                                // Send contour data if required. Empty contour data messages are sent if there are no contour levels
-                                SendContourData(file_id, is_active_frame);
-
-                                // Send tile data for active frame
-                                if (is_active_frame) {
-                                    OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
-                                }
-
-                                // Send region histograms and profiles
-                                UpdateRegionData(file_id, ALL_REGIONS, true, false);
+                                file_ids_to_update.push_back(file_id);
                             } else {
                                 if (!err_message.empty()) {
                                     SendLogEvent(err_message, {"animation"}, CARTA::ErrorSeverity::ERROR);
@@ -1511,6 +1499,25 @@ void Session::ExecuteAnimationFrameInner() {
                     } else {
                         fmt::print("Animator: Missing matched frame list for file {}\n", file_id);
                     }
+                }
+                // Calculate and send images, contours and profiles
+                auto num_files = file_ids_to_update.size();
+                for (auto i = 0; i < num_files; i++) {
+                    auto file_id = file_ids_to_update[i];
+                    bool is_active_frame = file_id == active_file_id;
+                    // Send image histogram and profiles
+                    // TODO: do we need to send this?
+                    UpdateImageData(file_id, true, channel_changed, stokes_changed);
+                    // Send contour data if required. Empty contour data messages are sent if there are no contour levels
+                    SendContourData(file_id, is_active_frame);
+
+                    // Send tile data for active frame
+                    if (is_active_frame) {
+                        OnAddRequiredTiles(active_frame->GetAnimationViewSettings());
+                    }
+
+                    // Send region histograms and profiles
+                    UpdateRegionData(file_id, ALL_REGIONS, channel_changed, stokes_changed);
                 }
             } else {
                 if (active_frame->SetImageChannels(active_frame_channel, active_frame_stokes, err_message)) {
