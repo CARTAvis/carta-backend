@@ -1486,9 +1486,17 @@ void Session::ExecuteAnimationFrameInner() {
                         }
                         float channel_val = is_active_frame ? active_frame_channel : frame_numbers[offset];
                         if (std::isfinite(channel_val)) {
-                            int rounded_channel = std::round(std::clamp(channel_val, 0.0f, (float)(frame->NumChannels() - 1)));
+                            int rounded_channel;
+                            if (is_active_frame) {
+                                rounded_channel = active_frame_channel;
+                            } else {
+                                rounded_channel = std::round(std::clamp(channel_val, 0.0f, (float)(frame->NumChannels() - 1)));
+                            }
                             if (rounded_channel != frame->CurrentChannel() &&
                                 frame->SetImageChannels(rounded_channel, frame->CurrentStokes(), err_message)) {
+                                // Send image histogram and profiles
+                                // TODO: do we need to send this?
+                                UpdateImageData(file_id, true, channel_changed, stokes_changed);
                                 file_ids_to_update.push_back(file_id);
                             } else {
                                 if (!err_message.empty()) {
@@ -1505,9 +1513,6 @@ void Session::ExecuteAnimationFrameInner() {
                 for (auto i = 0; i < num_files; i++) {
                     auto file_id = file_ids_to_update[i];
                     bool is_active_frame = file_id == active_file_id;
-                    // Send image histogram and profiles
-                    // TODO: do we need to send this?
-                    UpdateImageData(file_id, true, channel_changed, stokes_changed);
                     // Send contour data if required. Empty contour data messages are sent if there are no contour levels
                     SendContourData(file_id, is_active_frame);
 
