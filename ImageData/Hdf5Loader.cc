@@ -267,8 +267,8 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     // Set initial values of stats, or those set to NAN in previous iterations
     for (size_t z = 0; z < num_z; z++) {
         if ((x_start == 0) || (num_pixels[z] == 0)) {
-            min[z] = FLT_MAX;
-            max[z] = FLT_MIN;
+            min[z] = std::numeric_limits<float>::max();
+            max[z] = std::numeric_limits<float>::lowest();
             num_pixels[z] = 0;
             nan_count[z] = 0;
             sum[z] = 0;

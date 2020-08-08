@@ -30,8 +30,6 @@
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
-
-#include "DBConnect.h"
 #include "Util.h"
 
 #define DEBUG(_DB_TEXT_) \
@@ -220,7 +218,6 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
         }
     }
 
-    _api_key = message.api_key();
     // response
     CARTA::RegisterViewerAck ack_message;
     ack_message.set_session_id(session_id);
@@ -229,18 +226,6 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_session_type(type);
 
     uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
-#ifdef _AUTH_SERVER_
-    feature_flags |= CARTA::ServerFeatureFlags::USER_LAYOUTS;
-    feature_flags |= CARTA::ServerFeatureFlags::USER_PREFERENCES;
-
-    if (!GetLayoutsFromDB(&ack_message)) {
-        // Can log failure here
-    }
-    if (!GetPreferencesFromDB(&ack_message)) {
-        // Can log failure here
-    }
-
-#endif
     ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 }
@@ -248,7 +233,7 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
 void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id) {
     CARTA::FileListResponse response;
     FileListHandler::ResultMsg result_msg;
-    _file_list_handler->OnFileListRequest(_api_key, request, response, result_msg);
+    _file_list_handler->OnFileListRequest(request, response, result_msg);
     SendEvent(CARTA::EventType::FILE_LIST_RESPONSE, request_id, response);
     if (!result_msg.message.empty()) {
         SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
@@ -469,7 +454,6 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         start_message.set_stokes(stokes);
         start_message.set_animation_id(animation_id);
         start_message.set_end_sync(false);
-        start_message.set_animation_id(animation_id);
         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
 
         int n = message.tiles_size();
@@ -486,7 +470,9 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                 auto tile = Tile::Decode(encoded_coordinate);
                 if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(
                                                   raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
-                    SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data);
+                    // Only use deflate on outgoing message if the raster image compression type is NONE
+                    SendFileEvent(
+                        file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
                 } else {
                     fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
                 }
@@ -515,7 +501,6 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         final_message.set_stokes(stokes);
         final_message.set_animation_id(animation_id);
         final_message.set_end_sync(true);
-        final_message.set_animation_id(animation_id);
         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, final_message);
     }
 }
@@ -862,35 +847,6 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
     }
 }
 
-void Session::OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id) {
-    CARTA::SetUserPreferencesAck ack_message;
-    bool result;
-
-#ifdef _AUTH_SERVER_
-    result = SaveUserPreferencesToDB(request);
-#endif
-
-    ack_message.set_success(result);
-
-    SendEvent(CARTA::EventType::SET_USER_PREFERENCES_ACK, request_id, ack_message);
-}
-
-void Session::OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id) {
-    CARTA::SetUserLayoutAck ack_message;
-
-#ifdef _AUTH_SERVER_
-    if (SaveLayoutToDB(request.name(), request.value())) {
-        ack_message.set_success(true);
-    } else {
-        ack_message.set_success(false);
-    }
-#else
-    ack_message.set_success(false);
-#endif
-
-    SendEvent(CARTA::EventType::SET_USER_LAYOUT_ACK, request_id, ack_message);
-}
-
 void Session::OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent) {
     if (_frames.count(message.file_id())) {
         const int num_levels = message.levels_size();
@@ -1037,7 +993,7 @@ void Session::OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request) {
 void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id) {
     _table_controller->OnFilterRequest(filter_request, [&](const CARTA::CatalogFilterResponse& filter_response) {
         // Send partial or final results
-        SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response, true);
+        SendEvent(CARTA::EventType::CATALOG_FILTER_RESPONSE, request_id, filter_response);
     });
 }
 
@@ -1117,7 +1073,7 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
 void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
     CARTA::SpectralLineResponse spectral_line_response;
     carta::SpectralLineCrawler::SendRequest(spectral_line_request.frequency_range(), spectral_line_response);
-    SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response, true);
+    SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response);
 }
 
 // ******** SEND DATA STREAMS *********
@@ -1474,7 +1430,8 @@ bool Session::SendContourData(int file_id) {
                     contour_set->set_decimation_factor(pixel_rounding);
                 }
             }
-            SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response);
+            // Only use deflate compression if contours don't have ZSTD compression
+            SendFileEvent(partial_response.file_id(), CARTA::EventType::CONTOUR_IMAGE_DATA, 0, partial_response, compression_level < 1);
         };
 
         if (frame->ContourImage(callback)) {
@@ -1550,15 +1507,17 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     head->icd_version = carta::ICD_VERSION;
     head->request_id = event_id;
     message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
-    msg_vs_compress.second = compress;
+    // Skip compression on files smaller than 1 kB
+    msg_vs_compress.second = compress && required_size > 1024;
     _out_msgs.push(msg_vs_compress);
     _outgoing_async->send();
 }
 
-void Session::SendFileEvent(int32_t file_id, CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message) {
+void Session::SendFileEvent(
+    int32_t file_id, CARTA::EventType event_type, uint32_t event_id, google::protobuf::MessageLite& message, bool compress) {
     // do not send if file is closed
     if (_frames.count(file_id)) {
-        SendEvent(event_type, event_id, message);
+        SendEvent(event_type, event_id, message, compress);
     }
 }
 

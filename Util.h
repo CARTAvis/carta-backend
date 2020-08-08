@@ -44,7 +44,6 @@ inline void Log(uint32_t id, const std::string& template_string, Args... args) {
 
 // ************ Utilities *************
 
-void ReadPermissions(const std::string& filename, std::unordered_map<std::string, std::vector<std::string>>& permissions_map);
 bool CheckRootBaseFolders(std::string& root, std::string& base);
 uint32_t GetMagicNumber(const std::string& filename);
 

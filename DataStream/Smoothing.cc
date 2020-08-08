@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <fmt/ostream.h>
-#include <tbb/tbb.h>
 
 using namespace std;
 

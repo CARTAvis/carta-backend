@@ -14,31 +14,6 @@ void Log(uint32_t id, const string& log_message) {
 
 } // namespace carta
 
-void ReadPermissions(const string& filename, unordered_map<string, vector<string>>& permissions_map) {
-    ifstream permissions_file(filename);
-    if (permissions_file.good()) {
-        fmt::print("Reading permissions file\n");
-        string line;
-        regex comment_regex("\\s*#.*");
-        regex folder_regex("\\s*(\\S+):\\s*");
-        regex key_regex("\\s*(\\S{4,}|\\*)\\s*");
-        string current_folder;
-        while (getline(permissions_file, line)) {
-            smatch matches;
-            if (regex_match(line, comment_regex)) {
-                continue;
-            } else if (regex_match(line, matches, folder_regex) && matches.size() == 2) {
-                current_folder = matches[1].str();
-            } else if (current_folder.length() && regex_match(line, matches, key_regex) && matches.size() == 2) {
-                string key = matches[1].str();
-                permissions_map[current_folder].push_back(key);
-            }
-        }
-    } else {
-        fmt::print("Missing permissions file\n");
-    }
-}
-
 bool CheckRootBaseFolders(string& root, string& base) {
     if (root == "base" && base == "root") {
         fmt::print("ERROR: Must set root or base directory.\n");

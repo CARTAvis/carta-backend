@@ -6,7 +6,7 @@ RUN \
   apt-get -y upgrade && \
   apt-get install -y apt-utils autoconf bison build-essential byobu curl fftw3-dev flex \
     gdb gfortran git htop libblas-dev libcfitsio-dev libgsl-dev libgtest-dev libhdf5-dev \
-    libjsoncpp-dev liblapack-dev libncurses-dev libreadline-dev libssl-dev libstarlink-ast-dev \
+    liblapack-dev libncurses-dev libreadline-dev libssl-dev libstarlink-ast-dev \
     libtool libtbb-dev libxml2-dev libxslt1-dev libx11-dev libzstd-dev pkg-config \
     software-properties-common unzip wcslib-dev wget
 
