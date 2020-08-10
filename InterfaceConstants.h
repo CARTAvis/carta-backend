@@ -57,4 +57,7 @@
 // region style
 #define DASH_LENGTH 2
 
+// Shared region polygon approximation
+#define DEFAULT_VERTEX_COUNT 100
+
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_
