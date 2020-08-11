@@ -1235,49 +1235,6 @@ casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& regi
     return lattice_region.shape();
 }
 
-bool Frame::GetRegionMask(const casacore::LattRegionHolder& region, casacore::Array<casacore::Bool>& mask) {
-    // Return mask slice for applied region
-
-    // Get SubImage image with the region applied
-    auto t_start_get_subimage_mask = std::chrono::high_resolution_clock::now();
-    casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(region, sub_image);
-    ulock.unlock();
-
-    if (!subimage_ok) {
-        return false;
-    }
-
-    casacore::IPosition subimage_shape = sub_image.shape();
-    if (subimage_shape.empty()) {
-        return false;
-    }
-
-    mask.resize(subimage_shape); // must size correctly before sharing
-    casacore::Array<casacore::Bool> tmp(subimage_shape, mask.data(), casacore::StorageInitPolicy::SHARE);
-    try {
-        casacore::IPosition start(subimage_shape.size(), 0);
-        casacore::IPosition count(subimage_shape);
-        casacore::Slicer slicer(start, count); // entire subimage
-        std::unique_lock<std::mutex> ulock(_image_mutex);
-        sub_image.doGetMaskSlice(tmp, slicer);
-        ulock.unlock();
-
-        if (_verbose) {
-            auto t_end_get_subimage_mask = std::chrono::high_resolution_clock::now();
-            auto dt_get_subimage_mask =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_get_subimage_mask - t_start_get_subimage_mask).count();
-            fmt::print("Get region subimage mask in {} ms\n", dt_get_subimage_mask);
-        }
-        return true;
-    } catch (casacore::AipsError& err) {
-        mask.resize();
-    }
-
-    return false;
-}
-
 bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data) {
     // Get image data with a region applied
     auto t_start_get_subimage_data = std::chrono::high_resolution_clock::now();
@@ -1360,6 +1317,10 @@ bool Frame::GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::St
 bool Frame::UseLoaderSpectralData(const casacore::IPosition& region_shape) {
     // Check if loader has swizzled data and more efficient than image data
     return _loader->UseRegionSpectralData(region_shape, _image_mutex);
+}
+
+bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point) {
+    return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
 bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

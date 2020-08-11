@@ -1032,6 +1032,24 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
 
     // Use loader swizzled data for efficiency
     if (_frames.at(file_id)->UseLoaderSpectralData(lcregion->shape())) {
+        // Use cursor spectral profile for point region
+        if (initial_region_state.type == CARTA::RegionType::POINT) {
+            CARTA::Point point = initial_region_state.control_points[0];
+            std::vector<float> profile;
+            bool ok = _frames.at(file_id)->GetLoaderPointSpectralData(profile, stokes_index, point);
+            if (ok) {
+                // Set results; there is only one required stat for point
+                std::vector<double> data(profile.begin(), profile.end());
+                results[required_stats[0]] = data;
+                progress = PROFILE_COMPLETE;
+                partial_results_callback(results, progress);
+            }
+
+            _frames.at(file_id)->DecreaseZProfileCount();
+            _regions.at(region_id)->DecreaseZProfileCount();
+            return ok;
+        }
+
         // Get 2D origin and 2D mask for Hdf5Loader
         casacore::IPosition origin = lcregion->boundingBox().start();
         casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1)); // keep first two axes only
