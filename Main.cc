@@ -1,13 +1,4 @@
-#if _AUTH_SERVER_
-#include <jsoncpp/json/json.h>
-#include <jsoncpp/json/value.h>
-
-#include "DBConnect.h"
-#endif
-
-#include <fstream>
 #include <iostream>
-#include <mutex>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -17,8 +8,6 @@
 #include <curl/curl.h>
 #include <fmt/format.h>
 #include <signal.h>
-#include <tbb/concurrent_queue.h>
-#include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
 #include <uWS/uWS.h>
@@ -39,11 +28,7 @@ using namespace std;
 
 namespace CARTA {
 int global_thread_count = 0;
-const char* mongo_default_uri = "mongodb://localhost:27017/";
-} // namespace CARTA
-// key is current folder
-unordered_map<string, vector<string>> permissions_map;
-
+}
 // file list handler for the file browser
 static FileListHandler* file_list_handler;
 
@@ -56,29 +41,12 @@ static std::unique_ptr<grpc::Server> carta_grpc_server;
 
 // command-line arguments
 static string root_folder("/"), base_folder("."), log_folder("");
-static bool verbose, use_permissions, use_mongodb;
-namespace CARTA {
-string token;
-string mongo_db_contact_string;
-} // namespace CARTA
+// token to validate incoming WS connection header against
+static string auth_token = "";
+static bool verbose;
 
-void GetMongoURIString(string& uri) {
-    uri = CARTA::mongo_db_contact_string;
-}
-
-// Called on connection. Creates session objects and assigns UUID and API keys to it
+// Called on connection. Creates session objects and assigns UUID to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
-    // Check for authorization token
-    if (!CARTA::token.empty()) {
-        string expected_auth_header = fmt::format("CARTA-Authorization={}", CARTA::token);
-        auto cookie_header = http_request.getHeader("cookie");
-        string auth_header_string(cookie_header.value, cookie_header.valueLength);
-        if (auth_header_string.find(expected_auth_header) == string::npos) {
-            Log(0, "Invalid authorization token header, closing socket");
-            ws->close(403, "Invalid authorization token");
-            return;
-        }
-    }
     session_number++;
     // protect against overflow
     session_number = max(session_number, 1u);
@@ -96,6 +64,19 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         address = ip_header.toString();
     } else {
         address = ws->getAddress().address;
+    }
+
+    // Check if there's a token
+    if (!auth_token.empty()) {
+        auto token_header_entry = http_request.getHeader("carta-auth-token");
+        if (token_header_entry) {
+            string token_header_value = token_header_entry.toString();
+            if (token_header_value != auth_token) {
+                ws->close(1000, "Header auth failed");
+            }
+        } else {
+            ws->close(1000, "Header auth failed");
+        }
     }
 
     Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose);
@@ -334,24 +315,6 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                     }
                     break;
                 }
-                case CARTA::EventType::SET_USER_PREFERENCES: {
-                    CARTA::SetUserPreferences message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnSetUserPreferences(message, head.request_id);
-                    } else {
-                        fmt::print("Bad SET_USER_PREFERENCES message!\n");
-                    }
-                    break;
-                }
-                case CARTA::EventType::SET_USER_LAYOUT: {
-                    CARTA::SetUserLayout message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnSetUserLayout(message, head.request_id);
-                    } else {
-                        fmt::print("Bad SET_USER_LAYOUT message!\n");
-                    }
-                    break;
-                }
                 case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
                     CARTA::SetContourParameters message;
                     message.ParseFromArray(event_buf, event_length);
@@ -512,26 +475,6 @@ void ExitBackend(int s) {
     exit(0);
 }
 
-void ReadJsonFile(const string& fname) {
-#if _AUTH_SERVER_
-    std::ifstream config_file(fname);
-    if (!config_file.is_open()) {
-        std::cerr << "Failed to open config file " << fname << std::endl;
-        exit(1);
-    }
-    Json::Value json_config;
-    Json::Reader reader;
-    reader.parse(config_file, json_config);
-    CARTA::token = json_config["token"].asString();
-    if (CARTA::token.empty()) {
-        std::cerr << "Bad config file.\n";
-        exit(1);
-    }
-#else
-    std::cerr << "Not configured to use JSON." << std::endl;
-#endif
-}
-
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
@@ -549,12 +492,9 @@ int main(int argc, const char* argv[]) {
         int grpc_port(-1);
         { // get values then let Input go out of scope
             casacore::Input inp;
-            string json_fname;
             inp.version(VERSION_ID);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("log_dir", "", "set the path and name of a log file", "String");
-            inp.create("permissions", "False", "use a permissions file for determining access", "Bool");
-            inp.create("token", CARTA::token, "only accept connections with this authorization token", "String");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
@@ -563,34 +503,17 @@ int main(int argc, const char* argv[]) {
             inp.create("root", root_folder, "set top-level folder for data files", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
-            inp.create("read_json_file", json_fname, "read in json file with secure token", "String");
-            inp.create("use_mongodb", "False", "use mongo db", "Bool");
-            inp.create("mongo_uri", CARTA::mongo_db_contact_string, "URI to connect to MongoDB", "String");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
             log_folder = inp.getString("log_dir");
-            use_mongodb = inp.getBool("use_mongodb");
-            use_permissions = inp.getBool("permissions");
             port = inp.getInt("port");
             grpc_port = inp.getInt("grpc_port");
             thread_count = inp.getInt("threads");
             omp_thread_count = inp.getInt("omp_threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
-            CARTA::token = inp.getString("token");
-            CARTA::mongo_db_contact_string = CARTA::mongo_default_uri;
-            if (!inp.getString("mongo_uri").empty()) {
-                CARTA::mongo_db_contact_string = inp.getString("mongo_uri");
-            }
-            if (use_mongodb) {
-#if _AUTH_SERVER_
-                ConnectToMongoDB();
-#else
-                std::cerr << "Not configured to use MongoDB" << std::endl;
-                exit(1);
-#endif
-            }
+
             if (!inp.getString("exit_after").empty()) {
                 int wait_time = inp.getInt("exit_after");
                 Session::SetExitTimeout(wait_time);
@@ -598,10 +521,6 @@ int main(int argc, const char* argv[]) {
             if (!inp.getString("init_exit_after").empty()) {
                 int init_wait_time = inp.getInt("init_exit_after");
                 Session::SetInitExitTimeout(init_wait_time);
-            }
-            if (!inp.getString("read_json_file").empty()) {
-                json_fname = inp.getString("read_json_file");
-                ReadJsonFile(json_fname);
             }
             if (verbose) {
                 CreateLoggers(log_folder);
@@ -612,15 +531,17 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
+        auto env_entry = getenv("CARTA_AUTH_TOKEN");
+        if (env_entry) {
+            auth_token = env_entry;
+        }
+
         tbb::task_scheduler_init task_scheduler(thread_count);
         omp_set_num_threads(omp_thread_count);
         CARTA::global_thread_count = omp_thread_count;
-        if (use_permissions) {
-            ReadPermissions("permissions.txt", permissions_map);
-        }
 
         // One FileListHandler works for all sessions.
-        file_list_handler = new FileListHandler(permissions_map, use_permissions, root_folder, base_folder);
+        file_list_handler = new FileListHandler(root_folder, base_folder);
 
         // Start grpc service for scripting client
         if (grpc_port >= 0) {

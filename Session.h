@@ -35,8 +35,6 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/spectral_line_request.pb.h>
 #include <carta-protobuf/tiles.pb.h>
-#include <carta-protobuf/user_layout.pb.h>
-#include <carta-protobuf/user_preferences.pb.h>
 
 #include <carta-scripting-grpc/carta_service.grpc.pb.h>
 
@@ -75,10 +73,6 @@ public:
     void OnSetContourParameters(const CARTA::SetContourParameters& message, bool silent = false);
     void OnRegionListRequest(const CARTA::RegionListRequest& request, uint32_t request_id);
     void OnRegionFileInfoRequest(const CARTA::RegionFileInfoRequest& request, uint32_t request_id);
-
-    void OnSetUserPreferences(const CARTA::SetUserPreferences& request, uint32_t request_id);
-    void OnSetUserLayout(const CARTA::SetUserLayout& request, uint32_t request_id);
-
     void OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id);
     void OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id);
     void OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id);
@@ -216,14 +210,14 @@ private:
     void UpdateRegionData(int file_id, int region_id, bool channel_changed, bool stokes_changed);
 
     // Send protobuf messages
-    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = false);
-    void SendFileEvent(int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message);
+    void SendEvent(CARTA::EventType event_type, u_int32_t event_id, const google::protobuf::MessageLite& message, bool compress = true);
+    void SendFileEvent(
+        int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     uWS::WebSocket<uWS::SERVER>* _socket;
     uint32_t _id;
     std::string _address;
-    std::string _api_key;
     std::string _root_folder;
     std::string _base_folder;
     bool _verbose_logging;
