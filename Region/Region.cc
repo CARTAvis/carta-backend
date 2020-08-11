@@ -54,11 +54,13 @@ bool Region::UpdateRegion(const RegionState& state) {
 
 void Region::ResetRegionCache() {
     // Invalid when region changes
-    _wcs_control_points.clear();
     _reference_region_set = false;
     std::lock_guard<std::mutex> guard(_region_mutex);
+    _wcs_control_points.clear();
+    _polygon_control_points.clear();
     _reference_region.reset();
     _applied_regions.clear();
+    _polygon_regions.clear();
 }
 
 // *************************************************************************
@@ -348,119 +350,148 @@ bool Region::EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::
 // *************************************************************************
 // Apply region to any image
 
-casacore::LCPolygon* Region::GetImageRegion(int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
+casacore::LCRegion* Region::GetImageRegion(
+    int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
     // Apply region to any image as converted polygon vertices
 
     // Check polygon regions cache
-    casacore::LCPolygon* lc_polygon = GetCachedPolygonRegion(file_id);
+    casacore::LCRegion* lc_region = GetCachedPolygonRegion(file_id);
 
-    if (!lc_polygon) {
+    if (!lc_region) {
         // Apply reference polygon vertices to output image
-        lc_polygon = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
+        lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
-        if (lc_polygon) {
+        if (lc_region) {
             // Cache converted polygon
             std::lock_guard<std::mutex> guard(_region_mutex);
-            casacore::LCPolygon* poly_copy = static_cast<casacore::LCPolygon*>(lc_polygon->cloneRegion());
-            auto polygon_region = std::shared_ptr<casacore::LCPolygon>(poly_copy);
+            casacore::LCRegion* region_copy = lc_region->cloneRegion();
+            auto polygon_region = std::shared_ptr<casacore::LCRegion>(region_copy);
             _polygon_regions[file_id] = std::move(polygon_region);
         }
     }
 
-    return lc_polygon;
+    return lc_region;
 }
 
-casacore::LCPolygon* Region::GetCachedPolygonRegion(int file_id) {
+casacore::LCRegion* Region::GetCachedPolygonRegion(int file_id) {
     // Return cached polygon region applied to image with file_id
-    casacore::LCPolygon* lc_polygon(nullptr);
+    casacore::LCRegion* lc_polygon(nullptr);
     if (_polygon_regions.count(file_id)) {
         std::unique_lock<std::mutex> ulock(_region_mutex);
-        lc_polygon = static_cast<casacore::LCPolygon*>(_polygon_regions.at(file_id)->cloneRegion());
+        lc_polygon = _polygon_regions.at(file_id)->cloneRegion();
         ulock.unlock();
     }
     return lc_polygon;
 }
 
-casacore::LCPolygon* Region:: GetAppliedPolygonRegion(
+casacore::LCRegion* Region::GetAppliedPolygonRegion(
     int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
-    // Approximate region as polygon pixels, and convert to given csys
-    casacore::LCPolygon* lc_polygon(nullptr);
+    // Approximate region as polygon pixel vertices, and convert to given csys
+    casacore::LCRegion* lc_region(nullptr);
+    bool is_point(_region_state.type == CARTA::RegionType::POINT);
 
-    if (_polygon_control_points.empty() && !SetRegionPolygonPoints(DEFAULT_VERTEX_COUNT)) {
-        return lc_polygon;
+    size_t npoints(is_point ? 1 : DEFAULT_VERTEX_COUNT);
+    if (_polygon_control_points.empty() && !SetRegionPolygonPoints(npoints)) {
+        return lc_region;
     }
 
+    bool convert_ok(true);
+    casacore::Vector<casacore::Double> x(npoints), y(npoints);
     try {
-        casacore::Vector<casacore::Double> x(DEFAULT_VERTEX_COUNT), y(DEFAULT_VERTEX_COUNT);
-        bool convert_ok(true);
-
-        for (auto i = 0; i < DEFAULT_VERTEX_COUNT; ++i) {
-            // Convert polygon pixel point to world
-            std::vector<casacore::Quantity> world_point;
-            if (CartaPointToWorld(_polygon_control_points[i], world_point)) {
-                // Convert polygon world point to output csys
-                casacore::Vector<casacore::Double> pixel_point;
-                if (ConvertedWorldToPixel(world_point, output_csys, pixel_point)) {
-                    x[i] = pixel_point[0];
-                    y[i] = pixel_point[1];
-                } else { // polygon reference world to output pixel failed
+        for (auto i = 0; i < npoints; ++i) {
+            if (file_id == _region_state.reference_file_id) {
+                // Use polygon pixel coords
+                x[i] = _polygon_control_points[i].x();
+                y[i] = _polygon_control_points[i].y();
+            } else {
+                // Convert polygon pixel point to world in reference csys
+                std::vector<casacore::Quantity> world_point;
+                if (CartaPointToWorld(_polygon_control_points[i], world_point)) {
+                    // Convert polygon world point to output csys
+                    casacore::Vector<casacore::Double> pixel_point;
+                    if (ConvertedWorldToPixel(world_point, output_csys, pixel_point)) {
+                        x[i] = pixel_point[0];
+                        y[i] = pixel_point[1];
+                    } else { // polygon reference world to output pixel failed
+                        convert_ok = false;
+                        break;
+                    }
+                } else { // polygon reference pixel to world failed
                     convert_ok = false;
                     break;
                 }
-            } else { // polygon reference pixel to world failed
-                convert_ok = false;
-                break;
             }
-        }
-
-        if (convert_ok) {
-            lc_polygon = new casacore::LCPolygon(x, y, output_shape);
-        } else {
-            std::cerr << "Error approximating region as polygon in matched image " << std::endl;
         }
     } catch (const casacore::AipsError& err) {
         std::cerr << "Error approximating region as polygon: " << err.getMesg() << std::endl;
     }
 
-    return lc_polygon;        
+    if (convert_ok) {
+        try {
+            if (is_point) {
+                // Point is not a polygon (needs at least 3 points), use LCBox instead
+                // Form blc, trc
+                size_t ndim(output_shape.size());
+                casacore::Vector<casacore::Float> blc(ndim, 0.0), trc(ndim);
+                blc(0) = x(0);
+                blc(1) = y(0);
+                trc(0) = x(0);
+                trc(1) = y(0);
+                for (size_t i = 2; i < ndim; ++i) {
+                    trc(i) = output_shape(i);
+                }
+    
+                lc_region = new casacore::LCBox(blc, trc, output_shape);
+            } else {
+                lc_region = new casacore::LCPolygon(x, y, output_shape);
+            }
+        } catch (const casacore::AipsError& err) {
+            std::cerr << "Cannot apply region to file " << file_id << ": region outside image." << std::endl;
+        }
+    } else {
+        std::cerr << "Error approximating region as polygon in matched image." << std::endl;
+    }
+
+    return lc_region;
 }
 
 bool Region::SetRegionPolygonPoints(int npoints) {
     // Approximates region as polygon with npoints vertices.
     // Sets _polygon_control_points in reference image pixel coordinates
-    // TODO !!!
-    return false;
+    bool polygon_set(false);
+    switch (_region_state.type) {
+        case CARTA::POINT: {
+            _polygon_control_points = _region_state.control_points;
+            polygon_set = true;
+            break;
+        }
+        case CARTA::RECTANGLE: {
+            break;
+        }
+        case CARTA::POLYGON: {
+            break;
+        }
+        case CARTA::ELLIPSE: {
+            break;
+        }
+        default:
+            break;
+    }
+
+    return polygon_set;
 }
 
 casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(int file_id) {
     // Return pixel mask for this region; requires that image region for this file id has been set.
     // Otherwise mask is empty array.
     casacore::ArrayLattice<casacore::Bool> mask;
-    if (_applied_regions.count(file_id) && _applied_regions.at(file_id)) {
+    if (_polygon_regions.count(file_id) && _polygon_regions.at(file_id)) {
         std::unique_lock<std::mutex> ulock(_region_mutex);
-        auto lcregion = _applied_regions.at(file_id)->cloneRegion();
+        auto lcregion = _polygon_regions.at(file_id)->cloneRegion();
         auto extended_region = static_cast<casacore::LCExtension*>(lcregion);
         if (extended_region) {
-            switch (_region_state.type) {
-                case CARTA::POINT: {
-                    auto region = static_cast<const casacore::LCBox&>(extended_region->region());
-                    mask = region.getMask();
-                    break;
-                }
-                case CARTA::RECTANGLE:
-                case CARTA::POLYGON: {
-                    auto region = static_cast<const casacore::LCPolygon&>(extended_region->region());
-                    mask = region.getMask();
-                    break;
-                }
-                case CARTA::ELLIPSE: {
-                    auto region = static_cast<const casacore::LCEllipsoid&>(extended_region->region());
-                    mask = region.getMask();
-                    break;
-                }
-                default:
-                    break;
-            }
+            auto region = static_cast<const casacore::LCPolygon&>(extended_region->region());
+            mask = region.getMask();
         }
         ulock.unlock();
     }
@@ -690,7 +721,7 @@ casacore::TableRecord Region::GetPointRecord(const casacore::CoordinateSystem& o
         casacore::Vector<casacore::Double> pixel_point;
         if (ConvertedWorldToPixel(_wcs_control_points, output_csys, pixel_point)) {
             // Complete record
-            casacore::Vector<casacore::Float> blc(output_shape.size(), 1.0), trc(output_shape);
+            casacore::Vector<casacore::Float> blc(output_shape.size(), 0.0), trc(output_shape.asVector());
             blc(0) = pixel_point(0);
             blc(1) = pixel_point(1);
             trc(0) = pixel_point(0);
