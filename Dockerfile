@@ -10,7 +10,7 @@ RUN \
     libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libxml2-dev \
     libzstd-dev libgsl-dev man pkg-config python-pip python3-pip \
     software-properties-common unzip vim wcslib-dev wget cmake
-
+    
 # Get carta dependencies
 # casacore data from Kernsuite PPA
 RUN \
