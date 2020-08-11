@@ -214,6 +214,9 @@ void Region::SetReferenceRegion() {
 
     std::shared_ptr<casacore::WCRegion> shared_region = std::shared_ptr<casacore::WCRegion>(region);
     std::atomic_store(&_reference_region, shared_region);
+
+    // Flag indicates that attempt was made, to avoid repeated attempts
+    _reference_region_set = true;
 }
 
 bool Region::CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point) {
@@ -352,21 +355,33 @@ bool Region::EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::
 
 casacore::LCRegion* Region::GetImageRegion(
     int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
-    // Apply region to any image as converted polygon vertices
+    // Apply region to non-reference image as converted polygon vertices
+    casacore::LCRegion* lc_region(nullptr);
 
-    // Check polygon regions cache
-    casacore::LCRegion* lc_region = GetCachedPolygonRegion(file_id);
+    if (file_id == _region_state.reference_file_id) {
+        // Use reference region
+        // Get from applied regions cache
+        lc_region = GetCachedLCRegion(file_id);
 
-    if (!lc_region) {
-        // Apply reference polygon vertices to output image
-        lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
+        // If not in cache, create it
+        lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
+    } else {
+        // Use polygon approximation to translate region to another image
+        // Get from polygon regions cache
+        lc_region = GetCachedPolygonRegion(file_id);
 
-        if (lc_region) {
+        // If not in cache, create it
+        if (!lc_region) {
+            // Apply reference polygon vertices to output image
+            lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
+
             // Cache converted polygon
-            std::lock_guard<std::mutex> guard(_region_mutex);
-            casacore::LCRegion* region_copy = lc_region->cloneRegion();
-            auto polygon_region = std::shared_ptr<casacore::LCRegion>(region_copy);
-            _polygon_regions[file_id] = std::move(polygon_region);
+            if (lc_region) {
+                std::lock_guard<std::mutex> guard(_region_mutex);
+                casacore::LCRegion* region_copy = lc_region->cloneRegion();
+                auto polygon_region = std::shared_ptr<casacore::LCRegion>(region_copy);
+                _polygon_regions[file_id] = std::move(polygon_region);
+            }
         }
     }
 
@@ -440,7 +455,7 @@ casacore::LCRegion* Region::GetAppliedPolygonRegion(
                 for (size_t i = 2; i < ndim; ++i) {
                     trc(i) = output_shape(i);
                 }
-    
+
                 lc_region = new casacore::LCBox(blc, trc, output_shape);
             } else {
                 lc_region = new casacore::LCPolygon(x, y, output_shape);
@@ -551,7 +566,7 @@ casacore::LCRegion* Region::GetConvertedLCRegion(
     // Convert 2D reference WCRegion to LCRegion with input coord_sys and shape
     casacore::LCRegion* lc_region(nullptr);
 
-    if (IsRotbox()) {
+    if ((file_id != _region_state.reference_file_id) && IsRotbox()) {
         // Cannot convert region, it is a polygon type.
         return lc_region;
     }
@@ -560,8 +575,6 @@ casacore::LCRegion* Region::GetConvertedLCRegion(
     try {
         if (!_reference_region_set) {
             SetReferenceRegion();
-            // Flag indicates that attempt was made, to avoid repeated attempts
-            _reference_region_set = true;
         }
 
         std::lock_guard<std::mutex> guard(_region_mutex);
