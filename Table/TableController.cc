@@ -250,7 +250,17 @@ void TableController::OnFileInfoRequest(
     file_info->set_name(file_path.filename().string());
     file_info->set_type(table.Type());
     file_info->set_file_size(fs::file_size(file_path));
-    file_info->set_description(table.Description());
+    string file_info_string = fmt::format("Name: {}\n", file_info->name());
+    if (!table.Description().empty()) {
+        file_info_string += fmt::format("Description: {}\n", table.Description());
+    }
+    file_info_string += fmt::format("Column Count: {}\n", table.NumColumns());
+    if (table.NumRows()) {
+        file_info_string += fmt::format("Row Count: {}\n", table.NumRows());
+    }
+    file_info_string += table.Parameters();
+
+    file_info->set_description(file_info_string);
 
     int num_columns = table.NumColumns();
     for (auto i = 0; i < num_columns; i++) {

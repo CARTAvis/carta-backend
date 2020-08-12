@@ -100,6 +100,8 @@ bool Table::ConstructFromXML(bool header_only) {
         _description = description.text().as_string();
     }
 
+    PopulateParams(table_node);
+
     if (!PopulateFields(table_node)) {
         _parse_error_message = "Cannot parse table headers!";
         return false;
@@ -107,12 +109,36 @@ bool Table::ConstructFromXML(bool header_only) {
 
     // Once fields are populated, stop parsing
     if (header_only) {
+        auto num_rows_attribute = table_node.attribute("nrows");
+        if (num_rows_attribute) {
+            _num_rows = num_rows_attribute.as_int();
+        }
+
         return true;
     }
 
     if (!PopulateRows(table_node)) {
         _parse_error_message = "Cannot parse table data!";
         return false;
+    }
+
+    return true;
+}
+
+bool Table::PopulateParams(const pugi::xml_node& table) {
+    if (!table) {
+        return false;
+    }
+
+    for (auto& field : table.children("PARAM")) {
+        string name = field.attribute("name").as_string();
+        string value = field.attribute("value").as_string();
+        auto description_node = field.child("DESCRIPTION");
+        string description;
+        if (description_node) {
+            description = description_node.child_value();
+        }
+        _params.emplace_back(carta::TableParam({name, description, value}));
     }
 
     return true;
@@ -203,7 +229,7 @@ bool Table::ConstructFromFITS(bool header_only) {
     fits_get_num_rowsll(file_ptr, &rows, &status);
     fits_get_num_cols(file_ptr, &num_cols, &status);
     fits_read_key(file_ptr, TINT, "NAXIS1", &total_width, nullptr, &status);
-    _num_rows = header_only ? 0 : rows;
+    int allocated_rows = header_only ? 0 : rows;
 
     if (num_cols <= 0) {
         _parse_error_message = "Table is empty!";
@@ -216,28 +242,29 @@ bool Table::ConstructFromFITS(bool header_only) {
     for (auto i = 1; i <= num_cols; i++) {
         auto& column = _columns.emplace_back(Column::FromFitsPtr(file_ptr, i, col_offset));
         // Resize column's entries vector to contain all rows
-        column->Resize(_num_rows);
+        column->Resize(allocated_rows);
         // Add columns to map
         if (!column->name.empty()) {
             _column_name_map[column->name] = column.get();
         }
     }
-    if (_num_rows) {
+    if (allocated_rows) {
         // Read entire table into a memory buffer
-        std::size_t size_bytes = total_width * _num_rows;
+        std::size_t size_bytes = total_width * allocated_rows;
         auto buffer = make_unique<uint8_t[]>(size_bytes);
         fits_read_tblbytes(file_ptr, 1, 1, size_bytes, buffer.get(), &status);
         // File is no longer needed after table is read
         fits_close_file(file_ptr, &status);
 
         // Dynamic schedule of OpenMP division, as some columns will be easier to parse than others
-#pragma omp parallel for default(none) schedule(dynamic) shared(num_cols, buffer, _num_rows, total_width)
+#pragma omp parallel for default(none) schedule(dynamic) shared(num_cols, buffer, allocated_rows, total_width)
         for (auto i = 0; i < num_cols; i++) {
-            _columns[i]->FillFromBuffer(buffer.get(), _num_rows, total_width);
+            _columns[i]->FillFromBuffer(buffer.get(), allocated_rows, total_width);
         }
     } else {
         fits_close_file(file_ptr, &status);
     }
+    _num_rows = rows;
     return true;
 }
 
@@ -298,6 +325,14 @@ CARTA::CatalogFileType Table::Type() const {
 }
 std::string Table::ParseError() const {
     return _parse_error_message;
+}
+const std::string Table::Parameters() const {
+    string parameter_string;
+
+    for (auto& p : _params) {
+        parameter_string += fmt::format("{}: {}\n", p.name, p.value);
+    }
+    return parameter_string;
 }
 
 } // namespace carta

@@ -17,6 +17,12 @@ namespace carta {
 
 class TableView;
 
+struct TableParam {
+    std::string name;
+    std::string description;
+    std::string value;
+};
+
 class Table {
 public:
     Table(const std::string& filename, bool header_only = false);
@@ -28,6 +34,7 @@ public:
     size_t NumRows() const;
     CARTA::CatalogFileType Type() const;
     const std::string& Description() const;
+    const std::string Parameters() const;
     TableView View() const;
 
     const Column* operator[](size_t i) const;
@@ -35,6 +42,7 @@ public:
 
 protected:
     bool ConstructFromXML(bool header_only = false);
+    bool PopulateParams(const pugi::xml_node& table);
     bool PopulateFields(const pugi::xml_node& table);
     bool PopulateRows(const pugi::xml_node& table);
 
@@ -46,6 +54,7 @@ protected:
     std::string _parse_error_message;
     std::string _filename;
     std::string _description;
+    std::vector<TableParam> _params;
     std::vector<std::unique_ptr<Column>> _columns;
     std::unordered_map<std::string, Column*> _column_name_map;
     std::unordered_map<std::string, Column*> _column_id_map;
