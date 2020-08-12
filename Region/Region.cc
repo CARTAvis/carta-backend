@@ -254,26 +254,27 @@ casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(int file_id) {
         std::unique_lock<std::mutex> ulock(_region_mutex);
         auto lcregion = _applied_regions.at(file_id)->cloneRegion();
         auto extended_region = static_cast<casacore::LCExtension*>(lcregion);
-
-        switch (_region_state.type) {
-            case CARTA::POINT: {
-                auto region = static_cast<const casacore::LCBox&>(extended_region->region());
-                mask = region.getMask();
-                break;
+        if (extended_region) {
+            switch (_region_state.type) {
+                case CARTA::POINT: {
+                    auto region = static_cast<const casacore::LCBox&>(extended_region->region());
+                    mask = region.getMask();
+                    break;
+                }
+                case CARTA::RECTANGLE:
+                case CARTA::POLYGON: {
+                    auto region = static_cast<const casacore::LCPolygon&>(extended_region->region());
+                    mask = region.getMask();
+                    break;
+                }
+                case CARTA::ELLIPSE: {
+                    auto region = static_cast<const casacore::LCEllipsoid&>(extended_region->region());
+                    mask = region.getMask();
+                    break;
+                }
+                default:
+                    break;
             }
-            case CARTA::RECTANGLE:
-            case CARTA::POLYGON: {
-                auto region = static_cast<const casacore::LCPolygon&>(extended_region->region());
-                mask = region.getMask();
-                break;
-            }
-            case CARTA::ELLIPSE: {
-                auto region = static_cast<const casacore::LCEllipsoid&>(extended_region->region());
-                mask = region.getMask();
-                break;
-            }
-            default:
-                break;
         }
         ulock.unlock();
     }
