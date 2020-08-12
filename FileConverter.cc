@@ -1,5 +1,13 @@
 #include "FileConverter.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 using namespace carta;
 
 FileConverter::FileConverter(std::string root_folder) : _root_folder(root_folder) {}
@@ -29,9 +37,9 @@ void FileConverter::SaveFile(const std::string& in_file, casacore::ImageInterfac
     }
 
     // Check the writing permission
-    casacore::File tmp_filename(output_filename);
-    casacore::Directory tmp_dir = tmp_filename.path().dirName();
-    if (!tmp_dir.exists() || !tmp_dir.isWritable()) {
+    fs::path tmp_dir = fs::path(output_filename).parent_path();
+    fs::perms tmp_perm = fs::status(tmp_dir).permissions();
+    if (!fs::exists(tmp_dir) || ((tmp_perm & fs::perms::owner_write) == fs::perms::none)) {
         message = "No write permission!";
         save_file_ack.set_success(success);
         save_file_ack.set_message(message);
