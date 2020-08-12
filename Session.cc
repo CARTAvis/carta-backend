@@ -1072,7 +1072,8 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
 
 void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
     CARTA::SpectralLineResponse spectral_line_response;
-    carta::SpectralLineCrawler::SendRequest(spectral_line_request.frequency_range(), spectral_line_response);
+    carta::SpectralLineCrawler::SendRequest(
+        spectral_line_request.frequency_range(), spectral_line_request.line_intensity_lower_limit(), spectral_line_response);
     SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response);
 }
 
