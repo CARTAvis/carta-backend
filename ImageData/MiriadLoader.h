@@ -20,9 +20,7 @@ private:
     std::unique_ptr<casacore::MIRIADImage> _image;
 };
 
-MiriadLoader::MiriadLoader(const std::string& filename) {
-    _filename = filename;
-}
+MiriadLoader::MiriadLoader(const std::string& filename) : FileLoader(filename) {}
 
 bool MiriadLoader::CanOpenFile(std::string& error) {
     // Some MIRIAD images throw an error in the miriad libs which cannot be caught in casacore::MIRIADImage, which crashes the backend.

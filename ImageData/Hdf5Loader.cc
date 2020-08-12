@@ -2,9 +2,7 @@
 
 namespace carta {
 
-Hdf5Loader::Hdf5Loader(const std::string& filename) : _hdu("0") {
-    _filename = filename;
-}
+Hdf5Loader::Hdf5Loader(const std::string& filename) : FileLoader(filename), _hdu("0") {}
 
 void Hdf5Loader::OpenFile(const std::string& hdu) {
     // Open hdf5 image with specified hdu

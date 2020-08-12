@@ -18,7 +18,7 @@ private:
     std::shared_ptr<casacore::ImageInterface<float>> _image;
 };
 
-ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
+ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image) : FileLoader("") {
     _image = image;
     _num_dims = _image->shape().size();
 }

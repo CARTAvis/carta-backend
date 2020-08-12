@@ -20,9 +20,7 @@ private:
     std::unique_ptr<casacore::PagedImage<float>> _image;
 };
 
-CasaLoader::CasaLoader(const std::string& filename) {
-    _filename = filename;
-}
+CasaLoader::CasaLoader(const std::string& filename) : FileLoader(filename) {}
 
 void CasaLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {

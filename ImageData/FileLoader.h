@@ -127,6 +127,7 @@ public:
     using ImageRef = casacore::ImageInterface<float>*;
     using IPos = casacore::IPosition;
 
+    FileLoader(const std::string& filename);
     virtual ~FileLoader() = default;
 
     static FileLoader* GetLoader(const std::string& filename);

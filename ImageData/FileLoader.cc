@@ -49,6 +49,8 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     }
 }
 
+FileLoader::FileLoader(const std::string& filename) : _filename(filename) {}
+
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
