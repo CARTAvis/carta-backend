@@ -2,6 +2,8 @@
 
 using namespace carta;
 
+using IM = ImageMoments<casacore::Float>;
+
 MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, int spectral_axis,
     int stokes_axis, MomentProgressCallback progress_callback)
     : _filename(filename),
@@ -14,6 +16,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _progress_callback(progress_callback),
       _moments_calc_count(0) {
     SetMomentMap();
+    SetMomentSuffixMap();
 }
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
@@ -156,7 +159,7 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
     casacore::LogIO os(log);
 
     // Make an ImageMoments object (and overwrite the output file if it already exists)
-    _image_moments.reset(new ImageMoments<casacore::Float>(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
+    _image_moments.reset(new IM(casacore::SubImage<casacore::Float>(*_sub_image), os, true));
 
     // Set moment calculation progress monitor
     _image_moments->SetProgressMonitor(this);
@@ -174,63 +177,11 @@ int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
 
 casacore::String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
     casacore::String suffix;
-    switch (moment) {
-        case ImageMoments<casacore::Float>::AVERAGE: {
-            suffix = "average";
-            break;
-        }
-        case ImageMoments<casacore::Float>::INTEGRATED: {
-            suffix = "integrated";
-            break;
-        }
-        case ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE: {
-            suffix = "weighted_coord";
-            break;
-        }
-        case ImageMoments<casacore::Float>::WEIGHTED_DISPERSION_COORDINATE: {
-            suffix = "weighted_dispersion_coord";
-            break;
-        }
-        case ImageMoments<casacore::Float>::MEDIAN: {
-            suffix = "median";
-            break;
-        }
-        case ImageMoments<casacore::Float>::MEDIAN_COORDINATE: {
-            suffix = "median_coord";
-            break;
-        }
-        case ImageMoments<casacore::Float>::STANDARD_DEVIATION: {
-            suffix = "standard_deviation";
-            break;
-        }
-        case ImageMoments<casacore::Float>::RMS: {
-            suffix = "rms";
-            break;
-        }
-        case ImageMoments<casacore::Float>::ABS_MEAN_DEVIATION: {
-            suffix = "abs_mean_dev";
-            break;
-        }
-        case ImageMoments<casacore::Float>::MAXIMUM: {
-            suffix = "maximum";
-            break;
-        }
-        case ImageMoments<casacore::Float>::MAXIMUM_COORDINATE: {
-            suffix = "maximum_coord";
-            break;
-        }
-        case ImageMoments<casacore::Float>::MINIMUM: {
-            suffix = "minimum";
-            break;
-        }
-        case ImageMoments<casacore::Float>::MINIMUM_COORDINATE: {
-            suffix = "minimum_coord";
-            break;
-        }
-        default: {
-            std::cerr << "Unknown moment mode: " << moment << std::endl;
-            break;
-        }
+    auto moment_type = static_cast<IM::MomentTypes>(moment);
+    if (_moment_suffix_map.count(moment_type)) {
+        suffix = _moment_suffix_map[moment_type];
+    } else {
+        std::cerr << "Unknown moment mode: " << moment << std::endl;
     }
     return suffix;
 }
@@ -304,7 +255,6 @@ void MomentGenerator::DisconnectCalled() {
 }
 
 void MomentGenerator::SetMomentMap() {
-    using IM = ImageMoments<casacore::Float>;
     _moment_map[CARTA::Moment::MEAN_OF_THE_SPECTRUM] = IM::AVERAGE;
     _moment_map[CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM] = IM::INTEGRATED;
     _moment_map[CARTA::Moment::INTENSITY_WEIGHTED_COORD] = IM::WEIGHTED_MEAN_COORDINATE;
@@ -318,4 +268,20 @@ void MomentGenerator::SetMomentMap() {
     _moment_map[CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM] = IM::MAXIMUM_COORDINATE;
     _moment_map[CARTA::Moment::MIN_OF_THE_SPECTRUM] = IM::MINIMUM;
     _moment_map[CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM] = IM::MINIMUM_COORDINATE;
+}
+
+void MomentGenerator::SetMomentSuffixMap() {
+    _moment_suffix_map[IM::AVERAGE] = "average";
+    _moment_suffix_map[IM::INTEGRATED] = "integrated";
+    _moment_suffix_map[IM::WEIGHTED_MEAN_COORDINATE] = "weighted_coord";
+    _moment_suffix_map[IM::WEIGHTED_DISPERSION_COORDINATE] = "weighted_dispersion_coord";
+    _moment_suffix_map[IM::MEDIAN] = "median";
+    _moment_suffix_map[IM::MEDIAN_COORDINATE] = "median_coord";
+    _moment_suffix_map[IM::STANDARD_DEVIATION] = "standard_deviation";
+    _moment_suffix_map[IM::RMS] = "rms";
+    _moment_suffix_map[IM::ABS_MEAN_DEVIATION] = "abs_mean_dev";
+    _moment_suffix_map[IM::MAXIMUM] = "maximum";
+    _moment_suffix_map[IM::MAXIMUM_COORDINATE] = "maximum_coord";
+    _moment_suffix_map[IM::MINIMUM] = "minimum";
+    _moment_suffix_map[IM::MINIMUM_COORDINATE] = "minimum_coord";
 }

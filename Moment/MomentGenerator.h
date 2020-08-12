@@ -62,6 +62,7 @@ private:
     casacore::String GetMomentSuffix(casacore::Int moment);
     casacore::String GetOutputFileName();
     void SetMomentMap();
+    void SetMomentSuffixMap();
 
     // Image parameters
     casacore::String _filename;
@@ -73,12 +74,13 @@ private:
     std::unique_ptr<casacore::ImageInterface<casacore::Float>> _sub_image;
     std::unique_ptr<ImageMoments<casacore::Float>> _image_moments;
     casacore::Vector<casacore::Int> _moments; // Moment types
-    std::unordered_map<CARTA::Moment, ImageMoments<casacore::Float>::MomentTypes> _moment_map;
-    int _axis; // Moment axis
+    int _axis;                                // Moment axis
     casacore::Vector<float> _include_pix;
     casacore::Vector<float> _exclude_pix;
     casacore::String _error_msg;
     bool _success;
+    std::unordered_map<CARTA::Moment, ImageMoments<casacore::Float>::MomentTypes> _moment_map;
+    std::unordered_map<ImageMoments<casacore::Float>::MomentTypes, casacore::String> _moment_suffix_map;
 
     // Progress parameters
     int _total_steps;
