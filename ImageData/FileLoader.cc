@@ -41,7 +41,12 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
 }
 
 FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
-    return new ImagePtrLoader(image);
+    if (image) {
+        return new ImagePtrLoader(image);
+    } else {
+        std::cerr << "Fail to assign an image pointer!" << std::endl;
+        return nullptr;
+    }
 }
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {

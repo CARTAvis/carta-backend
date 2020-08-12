@@ -20,11 +20,7 @@ private:
 
 ImagePtrLoader::ImagePtrLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
     _image = image;
-    if (_image) {
-        _num_dims = _image->shape().size();
-    } else {
-        std::cerr << "Fail to assign an image pointer!" << std::endl;
-    }
+    _num_dims = _image->shape().size();
 }
 
 void ImagePtrLoader::OpenFile(const std::string& /*hdu*/) {}
