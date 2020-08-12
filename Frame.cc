@@ -1320,7 +1320,7 @@ bool Frame::UseLoaderSpectralData(const casacore::IPosition& region_shape) {
 }
 
 bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point) {
-    return _loader->GetCursorSpectralData(profile, stokes, round(point.x()), 1, round(point.y()), 1, _image_mutex);
+    return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
 }
 
 bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,

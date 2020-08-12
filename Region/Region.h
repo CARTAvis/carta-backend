@@ -122,17 +122,21 @@ private:
 
     // Apply region to reference image, set WCRegion and wcs control points.
     void SetReferenceRegion();
-    bool CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
     bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
+    void RectanglePointsToCorners(std::vector<CARTA::Point>& pixel_points, float rotation, casacore::Vector<casacore::Double>& x,
+        casacore::Vector<casacore::Double>& y);
     bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
-    casacore::Vector<casacore::Double> ConvertWorldToPixel(std::vector<casacore::Quantity>& input_point,
-        const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
 
     // Reference region as approximate polygon converted to image coordinates; used for data streams
     casacore::LCRegion* GetCachedPolygonRegion(int file_id);
     casacore::LCRegion* GetAppliedPolygonRegion(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
-    bool SetRegionPolygonPoints(int npoints);
+    bool SetRegionPolygonPoints(int nvertices);
+    bool SetApproximatePolygonPoints(int nvertices);
+    bool SetApproximateEllipsePoints(int nvertices);
+    double GetPolygonLength(std::vector<CARTA::Point>& polygon_points);
+    bool ConvertPolygonToImage(
+        const casacore::CoordinateSystem& output_csys, casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
 
     // Region applied to any image; used for export
     casacore::LCRegion* GetCachedLCRegion(int file_id);
@@ -147,8 +151,12 @@ private:
     casacore::TableRecord GetPolygonRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
-    // Utility to convert a reference world point to output_csys then to pixel coord
-    bool ConvertedWorldToPixel(std::vector<casacore::Quantity>& world_point, const casacore::CoordinateSystem& output_csys,
+
+    // Utilities to convert control points
+    // Input: CARTA::Point. Returns: point (x, y) in reference world coords
+    bool ConvertCartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
+    // Input: point (x,y) in reference world coords. Returns: point (x,y) in output pixel coords
+    bool ConvertWorldToPixel(std::vector<casacore::Quantity>& world_point, const casacore::CoordinateSystem& output_csys,
         casacore::Vector<casacore::Double>& pixel_point);
 
     // region parameters struct
@@ -167,8 +175,9 @@ private:
     // Reference region applied to image; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
-    // Region cached as polygon approximation; key is file_id
-    std::vector<CARTA::Point> _polygon_control_points;
+    // Region approximated as polygon (reference image pixel coords)
+    std::vector<CARTA::Point> _polygon_points;
+    // Polygon approximation region (LCPolygon or LCBox for point) converted to image; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _polygon_regions;
 
     // region flags
