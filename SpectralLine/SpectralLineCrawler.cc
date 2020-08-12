@@ -12,6 +12,7 @@
 using namespace carta;
 
 #define REST_FREQUENCY_COLUMN_INDEX 2
+#define INTENSITY_LIMIT_WORKAROUND 0.000001
 
 const std::string SpectralLineCrawler::SplatalogueURLBase =
     "https://www.cv.nrao.edu/php/splat/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
@@ -42,7 +43,7 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     /* specify URL to get */
     // TODO: assemble parameters when frontend offers split settings
     std::string intensityLimit =
-        line_intensity_lower_limit == 0 ? "" : fmt::format("&lill_cdms_jpl={}", std::to_string(line_intensity_lower_limit));
+        std::isnan(line_intensity_lower_limit) ? "" : fmt::format("&lill_cdms_jpl={}", std::to_string(line_intensity_lower_limit == 0 ? INTENSITY_LIMIT_WORKAROUND : line_intensity_lower_limit));
     std::string lineListParameters =
         "&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas"
         "&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU"
