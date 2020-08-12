@@ -43,7 +43,10 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     /* specify URL to get */
     // TODO: assemble parameters when frontend offers split settings
     std::string intensityLimit =
-        std::isnan(line_intensity_lower_limit) ? "" : fmt::format("&lill_cdms_jpl={}", std::to_string(line_intensity_lower_limit == 0 ? INTENSITY_LIMIT_WORKAROUND : line_intensity_lower_limit));
+        std::isnan(line_intensity_lower_limit)
+            ? ""
+            : fmt::format("&lill_cdms_jpl={}",
+                std::to_string(line_intensity_lower_limit == 0 ? INTENSITY_LIMIT_WORKAROUND : line_intensity_lower_limit));
     std::string lineListParameters =
         "&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas"
         "&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU"
