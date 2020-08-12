@@ -564,10 +564,6 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
 
     // Iterate through a cube image, chunk by chunk
     for (lat_iter.reset(); !lat_iter.atEnd(); ++lat_iter) {
-        if (_stop) {
-            break;
-        }
-
         const casacore::IPosition iter_pos = lat_iter.position();
         const casacore::Array<T>& chunk = lat_iter.cursor();
         casacore::IPosition chunk_shape = chunk.shape();
@@ -590,7 +586,7 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
         // Iterate through a chunk, slice by slice on the output image display axes
         casacore::Bool done = casacore::False;
         while (!done) {
-            if (_stop) {
+            if (_stop) { // Break the iteration in a chunk
                 break;
             }
 
@@ -625,6 +621,10 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
             }
         }
 
+        if (_stop) { // Break the iteration in a cube image
+            break;
+        }
+
         // Put partial results in the output lattices (as a chunk size)
         for (casacore::uInt k = 0; k < n_out; ++k) {
             casacore::IPosition result_pos = in_ndim == out_dim ? iter_pos : iter_pos.removeAxes(casacore::IPosition(1, collapse_axis));
@@ -647,7 +647,7 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
 
         if (tell_progress != 0) {
             ++n_done;
-            tell_progress->nstepsDone(n_done);
+            tell_progress->nstepsDone(n_done); // Report the umber of chunks have done
         }
     }
 
