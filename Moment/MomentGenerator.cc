@@ -12,7 +12,9 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _image_moments(nullptr),
       _success(false),
       _progress_callback(progress_callback),
-      _moments_calc_count(0) {}
+      _moments_calc_count(0) {
+    SetMomentMap();
+}
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
@@ -162,63 +164,10 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
     int mode(-1);
-    switch (moment) {
-        case CARTA::Moment::MEAN_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::AVERAGE;
-            break;
-        }
-        case CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::INTEGRATED;
-            break;
-        }
-        case CARTA::Moment::INTENSITY_WEIGHTED_COORD: {
-            mode = ImageMoments<casacore::Float>::WEIGHTED_MEAN_COORDINATE;
-            break;
-        }
-        case CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD: {
-            mode = ImageMoments<casacore::Float>::WEIGHTED_DISPERSION_COORDINATE;
-            break;
-        }
-        case CARTA::Moment::MEDIAN_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::MEDIAN;
-            break;
-        }
-        case CARTA::Moment::MEDIAN_COORDINATE: {
-            mode = ImageMoments<casacore::Float>::MEDIAN_COORDINATE;
-            break;
-        }
-        case CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::STANDARD_DEVIATION;
-            break;
-        }
-        case CARTA::Moment::RMS_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::RMS;
-            break;
-        }
-        case CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::ABS_MEAN_DEVIATION;
-            break;
-        }
-        case CARTA::Moment::MAX_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::MAXIMUM;
-            break;
-        }
-        case CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::MAXIMUM_COORDINATE;
-            break;
-        }
-        case CARTA::Moment::MIN_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::MINIMUM;
-            break;
-        }
-        case CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM: {
-            mode = ImageMoments<casacore::Float>::MINIMUM_COORDINATE;
-            break;
-        }
-        default: {
-            std::cerr << "Unknown moment mode: " << moment << std::endl;
-            break;
-        }
+    if (_moment_map.count(moment)) {
+        mode = _moment_map[moment];
+    } else {
+        std::cerr << "Unknown moment mode: " << moment << std::endl;
     }
     return mode;
 }
@@ -352,4 +301,21 @@ void MomentGenerator::DisconnectCalled() {
     while (_moments_calc_count > 0) { // Wait the moments calculation finished
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+}
+
+void MomentGenerator::SetMomentMap() {
+    using IM = ImageMoments<casacore::Float>;
+    _moment_map[CARTA::Moment::MEAN_OF_THE_SPECTRUM] = IM::AVERAGE;
+    _moment_map[CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM] = IM::INTEGRATED;
+    _moment_map[CARTA::Moment::INTENSITY_WEIGHTED_COORD] = IM::WEIGHTED_MEAN_COORDINATE;
+    _moment_map[CARTA::Moment::INTENSITY_WEIGHTED_DISPERSION_OF_THE_COORD] = IM::WEIGHTED_DISPERSION_COORDINATE;
+    _moment_map[CARTA::Moment::MEDIAN_OF_THE_SPECTRUM] = IM::MEDIAN;
+    _moment_map[CARTA::Moment::MEDIAN_COORDINATE] = IM::MEDIAN_COORDINATE;
+    _moment_map[CARTA::Moment::STD_ABOUT_THE_MEAN_OF_THE_SPECTRUM] = IM::STANDARD_DEVIATION;
+    _moment_map[CARTA::Moment::RMS_OF_THE_SPECTRUM] = IM::RMS;
+    _moment_map[CARTA::Moment::ABS_MEAN_DEVIATION_OF_THE_SPECTRUM] = IM::ABS_MEAN_DEVIATION;
+    _moment_map[CARTA::Moment::MAX_OF_THE_SPECTRUM] = IM::MAXIMUM;
+    _moment_map[CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM] = IM::MAXIMUM_COORDINATE;
+    _moment_map[CARTA::Moment::MIN_OF_THE_SPECTRUM] = IM::MINIMUM;
+    _moment_map[CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM] = IM::MINIMUM_COORDINATE;
 }
