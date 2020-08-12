@@ -9,7 +9,7 @@ class SpectralLineCrawler {
 public:
     SpectralLineCrawler();
     ~SpectralLineCrawler();
-    static void SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response);
+    static void SendRequest(const CARTA::DoubleBounds& frequencyRange, const double line_intensity_lower_limit, CARTA::SpectralLineResponse& spectral_line_response);
 
 private:
     static const std::string SplatalogueURLBase;
