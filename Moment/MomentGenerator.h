@@ -61,8 +61,7 @@ private:
     int GetMomentMode(CARTA::Moment moment);
     casacore::String GetMomentSuffix(casacore::Int moment);
     casacore::String GetOutputFileName();
-    void SetMomentMap();
-    void SetMomentSuffixMap();
+    inline void SetMomentTypeMaps();
 
     // Image parameters
     casacore::String _filename;

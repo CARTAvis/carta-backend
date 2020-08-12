@@ -15,8 +15,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _success(false),
       _progress_callback(progress_callback),
       _moments_calc_count(0) {
-    SetMomentMap();
-    SetMomentSuffixMap();
+    SetMomentTypeMaps();
 }
 
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
@@ -166,24 +165,22 @@ void MomentGenerator::ResetImageMoments(const casacore::ImageRegion& image_regio
 }
 
 int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
-    int mode(-1);
     if (_moment_map.count(moment)) {
-        mode = _moment_map[moment];
+        return _moment_map[moment];
     } else {
         std::cerr << "Unknown moment mode: " << moment << std::endl;
+        return -1;
     }
-    return mode;
 }
 
 casacore::String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
-    casacore::String suffix;
     auto moment_type = static_cast<IM::MomentTypes>(moment);
     if (_moment_suffix_map.count(moment_type)) {
-        suffix = _moment_suffix_map[moment_type];
+        return _moment_suffix_map[moment_type];
     } else {
         std::cerr << "Unknown moment mode: " << moment << std::endl;
+        return "";
     }
-    return suffix;
 }
 
 casacore::String MomentGenerator::GetOutputFileName() {
@@ -254,7 +251,7 @@ void MomentGenerator::DisconnectCalled() {
     }
 }
 
-void MomentGenerator::SetMomentMap() {
+inline void MomentGenerator::SetMomentTypeMaps() {
     _moment_map[CARTA::Moment::MEAN_OF_THE_SPECTRUM] = IM::AVERAGE;
     _moment_map[CARTA::Moment::INTEGRATED_OF_THE_SPECTRUM] = IM::INTEGRATED;
     _moment_map[CARTA::Moment::INTENSITY_WEIGHTED_COORD] = IM::WEIGHTED_MEAN_COORDINATE;
@@ -268,9 +265,7 @@ void MomentGenerator::SetMomentMap() {
     _moment_map[CARTA::Moment::COORD_OF_THE_MAX_OF_THE_SPECTRUM] = IM::MAXIMUM_COORDINATE;
     _moment_map[CARTA::Moment::MIN_OF_THE_SPECTRUM] = IM::MINIMUM;
     _moment_map[CARTA::Moment::COORD_OF_THE_MIN_OF_THE_SPECTRUM] = IM::MINIMUM_COORDINATE;
-}
 
-void MomentGenerator::SetMomentSuffixMap() {
     _moment_suffix_map[IM::AVERAGE] = "average";
     _moment_suffix_map[IM::INTEGRATED] = "integrated";
     _moment_suffix_map[IM::WEIGHTED_MEAN_COORDINATE] = "weighted_coord";
