@@ -75,13 +75,14 @@ bool Table::ConstructFromXML(bool header_only) {
             return false;
         }
     }
-
     auto votable = doc.child("VOTABLE");
 
     if (!votable) {
         _parse_error_message = "Missing XML element VOTABLE!";
         return false;
     }
+
+    PopulateCoosys(votable);
 
     auto resource = votable.child("RESOURCE");
     if (!resource) {
@@ -123,6 +124,44 @@ bool Table::ConstructFromXML(bool header_only) {
     }
 
     return true;
+}
+
+bool Table::PopulateCoosys(const pugi::xml_node& votable) {
+    if (!votable) {
+        return false;
+    }
+
+    auto resource = votable.child("RESOURCE");
+    if (!resource) {
+        return false;
+    }
+
+    pugi::xml_node coosys_node;
+    if (votable.child("COOSYS")) {
+        coosys_node = votable.child("COOSYS");
+    } else if (votable.child("DEFINITIONS").child("COOSYS")) {
+        coosys_node = votable.child("DEFINITIONS").child("COOSYS");
+    } else {
+        coosys_node = resource.child("COOSYS");
+    }
+
+    if (coosys_node) {
+        auto epoch = coosys_node.attribute("epoch").value();
+        auto equinox = coosys_node.attribute("equinox").value();
+        auto system = coosys_node.attribute("system").value();
+        if (epoch) {
+            _coosys.set_epoch(epoch);
+        }
+        if (equinox) {
+            _coosys.set_equinox(equinox);
+        }
+        if (system) {
+            _coosys.set_system(system);
+        }
+        return true;
+    } else {
+        return false;
+    }
 }
 
 bool Table::PopulateParams(const pugi::xml_node& table) {
@@ -323,8 +362,13 @@ TableView Table::View() const {
 CARTA::CatalogFileType Table::Type() const {
     return _file_type;
 }
+
 std::string Table::ParseError() const {
     return _parse_error_message;
+}
+
+const CARTA::Coosys& Table::Coosys() const {
+    return _coosys;
 }
 const std::string Table::Parameters() const {
     string parameter_string;

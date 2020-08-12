@@ -251,16 +251,37 @@ void TableController::OnFileInfoRequest(
     file_info->set_type(table.Type());
     file_info->set_file_size(fs::file_size(file_path));
     string file_info_string = fmt::format("Name: {}\n", file_info->name());
-    if (!table.Description().empty()) {
+    if (table.Description().size()) {
         file_info_string += fmt::format("Description: {}\n", table.Description());
     }
     file_info_string += fmt::format("Column Count: {}\n", table.NumColumns());
     if (table.NumRows()) {
         file_info_string += fmt::format("Row Count: {}\n", table.NumRows());
     }
-    file_info_string += table.Parameters();
 
+    auto coosys = table.Coosys();
+    bool has_coosys = false;
+    if (coosys.system().size()) {
+        file_info_string += fmt::format("Coordinate System: {}\n", coosys.system());
+        has_coosys = true;
+    }
+    if (coosys.epoch().size()) {
+        file_info_string += fmt::format("Epoch: {}\n", coosys.epoch());
+        has_coosys = true;
+    }
+    if (coosys.equinox().size()) {
+        file_info_string += fmt::format("Equinox: {}\n", coosys.equinox());
+        has_coosys = true;
+    }
+
+    file_info_string += table.Parameters();
     file_info->set_description(file_info_string);
+
+    if (has_coosys) {
+        std::vector<CARTA::Coosys> coosys_list;
+        coosys_list.push_back(coosys);
+        *file_info->mutable_coosys() = {coosys_list.begin(), coosys_list.end()};
+    }
 
     int num_columns = table.NumColumns();
     for (auto i = 0; i < num_columns; i++) {

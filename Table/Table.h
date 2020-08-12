@@ -35,6 +35,7 @@ public:
     CARTA::CatalogFileType Type() const;
     const std::string& Description() const;
     const std::string Parameters() const;
+    const CARTA::Coosys& Coosys() const;
     TableView View() const;
 
     const Column* operator[](size_t i) const;
@@ -42,6 +43,7 @@ public:
 
 protected:
     bool ConstructFromXML(bool header_only = false);
+    bool PopulateCoosys(const pugi::xml_node& votable);
     bool PopulateParams(const pugi::xml_node& table);
     bool PopulateFields(const pugi::xml_node& table);
     bool PopulateRows(const pugi::xml_node& table);
@@ -50,6 +52,7 @@ protected:
 
     bool _valid;
     CARTA::CatalogFileType _file_type;
+    CARTA::Coosys _coosys;
     int64_t _num_rows;
     std::string _parse_error_message;
     std::string _filename;
