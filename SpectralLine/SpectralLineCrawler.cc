@@ -45,8 +45,7 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     std::string intensityLimit =
         std::isnan(line_intensity_lower_limit)
             ? ""
-            : fmt::format("&lill_cdms_jpl={}",
-                  std::to_string(line_intensity_lower_limit == 0 ? INTENSITY_LIMIT_WORKAROUND : line_intensity_lower_limit));
+            : fmt::format("&lill_cdms_jpl={}", line_intensity_lower_limit == 0 ? INTENSITY_LIMIT_WORKAROUND : line_intensity_lower_limit);
     std::string lineListParameters =
         "&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas"
         "&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU"
@@ -56,8 +55,7 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     std::string miscellaneousParameters =
         "&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab"
         "&offset=0&limit=100000&range=on";
-    std::string frequencyRangeStr =
-        fmt::format("&frequency_units=MHz&from={}&to={}", std::to_string(frequencyRange.min()), std::to_string(frequencyRange.max()));
+    std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}", frequencyRange.min(), frequencyRange.max());
     std::string URL = SpectralLineCrawler::SplatalogueURLBase + intensityLimit + lineListParameters + lineStrengthParameters +
                       energyLevelParameters + miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
