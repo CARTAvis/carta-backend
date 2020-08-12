@@ -25,7 +25,8 @@ SpectralLineCrawler::~SpectralLineCrawler() {}
     1. curl example https://curl.haxx.se/libcurl/c/getinmemory.html
     2. c++ example https://gist.github.com/alghanmi/c5d7b761b2c9ab199157
 */
-void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange, const double line_intensity_lower_limit, CARTA::SpectralLineResponse& spectral_line_response) {
+void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange, const double line_intensity_lower_limit,
+    CARTA::SpectralLineResponse& spectral_line_response) {
     /* init the curl session */
     CURL* curl_handle = curl_easy_init();
     if (curl_handle == nullptr) {
@@ -40,7 +41,8 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
 
     /* specify URL to get */
     // TODO: assemble parameters when frontend offers split settings
-    std::string intensityLimit = line_intensity_lower_limit == 0 ? "" : fmt::format("&lill_cdms_jpl={}", std::to_string(line_intensity_lower_limit));
+    std::string intensityLimit =
+        line_intensity_lower_limit == 0 ? "" : fmt::format("&lill_cdms_jpl={}", std::to_string(line_intensity_lower_limit));
     std::string lineListParameters =
         "&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas"
         "&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU"
@@ -52,8 +54,8 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
         "&offset=0&limit=100000&range=on";
     std::string frequencyRangeStr =
         fmt::format("&frequency_units=MHz&from={}&to={}", std::to_string(frequencyRange.min()), std::to_string(frequencyRange.max()));
-    std::string URL = SpectralLineCrawler::SplatalogueURLBase + intensityLimit + lineListParameters + lineStrengthParameters + energyLevelParameters +
-                      miscellaneousParameters + frequencyRangeStr;
+    std::string URL = SpectralLineCrawler::SplatalogueURLBase + intensityLimit + lineListParameters + lineStrengthParameters +
+                      energyLevelParameters + miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
     /* fetch data & parse */
