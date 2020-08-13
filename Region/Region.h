@@ -131,12 +131,12 @@ private:
     casacore::LCRegion* GetCachedPolygonRegion(int file_id);
     casacore::LCRegion* GetAppliedPolygonRegion(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
-    bool SetRegionPolygonPoints(int nvertices);
-    bool SetApproximatePolygonPoints(int nvertices);
-    bool SetApproximateEllipsePoints(int nvertices);
+    std::vector<CARTA::Point> GetRegionPolygonPoints(int num_vertices);
+    std::vector<CARTA::Point> GetApproximatePolygonPoints(int num_vertices);
+    std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
     double GetPolygonLength(std::vector<CARTA::Point>& polygon_points);
-    bool ConvertPolygonToImage(
-        const casacore::CoordinateSystem& output_csys, casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
+    bool ConvertPolygonToImage(const std::vector<CARTA::Point>& polygon_points, const casacore::CoordinateSystem& output_csys,
+        casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
 
     // Region applied to any image; used for export
     casacore::LCRegion* GetCachedLCRegion(int file_id);
@@ -175,8 +175,6 @@ private:
     // Reference region applied to image; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
-    // Region approximated as polygon (reference image pixel coords)
-    std::vector<CARTA::Point> _polygon_points;
     // Polygon approximation region (LCPolygon or LCBox for point) converted to image; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _polygon_regions;
 
