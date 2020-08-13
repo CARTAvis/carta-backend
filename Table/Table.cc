@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 namespace carta {
 using namespace std;
 
-Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0) {
+Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0), _available_rows(0) {
     fs::path file_path(filename);
 
     if (!fs::exists(file_path)) {
@@ -112,9 +112,8 @@ bool Table::ConstructFromXML(bool header_only) {
     if (header_only) {
         auto num_rows_attribute = table_node.attribute("nrows");
         if (num_rows_attribute) {
-            _num_rows = num_rows_attribute.as_int();
+            _available_rows = num_rows_attribute.as_int();
         }
-
         return true;
     }
 
@@ -268,7 +267,10 @@ bool Table::ConstructFromFITS(bool header_only) {
     fits_get_num_rowsll(file_ptr, &rows, &status);
     fits_get_num_cols(file_ptr, &num_cols, &status);
     fits_read_key(file_ptr, TINT, "NAXIS1", &total_width, nullptr, &status);
-    int allocated_rows = header_only ? 0 : rows;
+    // Number of rows to allocate and read from the table. When reading the header, this will always be zero
+    _num_rows = header_only ? 0 : rows;
+    // Number of rows in the table itself
+    _available_rows = rows;
 
     if (num_cols <= 0) {
         _parse_error_message = "Table is empty!";
@@ -281,29 +283,28 @@ bool Table::ConstructFromFITS(bool header_only) {
     for (auto i = 1; i <= num_cols; i++) {
         auto& column = _columns.emplace_back(Column::FromFitsPtr(file_ptr, i, col_offset));
         // Resize column's entries vector to contain all rows
-        column->Resize(allocated_rows);
+        column->Resize(_num_rows);
         // Add columns to map
         if (!column->name.empty()) {
             _column_name_map[column->name] = column.get();
         }
     }
-    if (allocated_rows) {
+    if (_num_rows) {
         // Read entire table into a memory buffer
-        std::size_t size_bytes = total_width * allocated_rows;
+        std::size_t size_bytes = total_width * _num_rows;
         auto buffer = make_unique<uint8_t[]>(size_bytes);
         fits_read_tblbytes(file_ptr, 1, 1, size_bytes, buffer.get(), &status);
         // File is no longer needed after table is read
         fits_close_file(file_ptr, &status);
 
         // Dynamic schedule of OpenMP division, as some columns will be easier to parse than others
-#pragma omp parallel for default(none) schedule(dynamic) shared(num_cols, buffer, allocated_rows, total_width)
+#pragma omp parallel for default(none) schedule(dynamic) shared(num_cols, buffer, _num_rows, total_width)
         for (auto i = 0; i < num_cols; i++) {
-            _columns[i]->FillFromBuffer(buffer.get(), allocated_rows, total_width);
+            _columns[i]->FillFromBuffer(buffer.get(), _num_rows, total_width);
         }
     } else {
         fits_close_file(file_ptr, &status);
     }
-    _num_rows = rows;
     return true;
 }
 
@@ -349,6 +350,10 @@ size_t Table::NumColumns() const {
 
 size_t Table::NumRows() const {
     return _num_rows;
+}
+
+std::size_t Table::AvailableRows() const {
+    return _available_rows;
 }
 
 const std::string& Table::Description() const {

@@ -32,6 +32,7 @@ public:
     const Column* GetColumnById(const std::string& id) const;
     size_t NumColumns() const;
     size_t NumRows() const;
+    size_t AvailableRows() const;
     CARTA::CatalogFileType Type() const;
     const std::string& Description() const;
     const std::string Parameters() const;
@@ -54,6 +55,7 @@ protected:
     CARTA::CatalogFileType _file_type;
     CARTA::Coosys _coosys;
     int64_t _num_rows;
+    int64_t _available_rows;
     std::string _parse_error_message;
     std::string _filename;
     std::string _description;

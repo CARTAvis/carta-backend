@@ -259,8 +259,8 @@ void TableController::OnFileInfoRequest(
         file_info_string += fmt::format("Description: {}\n", table.Description());
     }
     file_info_string += fmt::format("Column Count: {}\n", table.NumColumns());
-    if (table.NumRows()) {
-        file_info_string += fmt::format("Row Count: {}\n", table.NumRows());
+    if (table.AvailableRows()) {
+        file_info_string += fmt::format("Row Count: {}\n", table.AvailableRows());
     }
 
     auto coosys = table.Coosys();
