@@ -167,6 +167,7 @@ private:
 
     // Reference region cache
     std::mutex _region_mutex; // creation of casacore regions is not threadsafe
+    std::mutex _region_approx_mutex;
 
     // Region cached as original type
     std::shared_ptr<casacore::WCRegion> _reference_region; // 2D region applied to reference image
