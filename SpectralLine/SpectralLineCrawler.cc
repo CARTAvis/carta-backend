@@ -12,6 +12,7 @@
 using namespace carta;
 
 #define REST_FREQUENCY_COLUMN_INDEX 2
+#define INTENSITY_LIMIT_WORKAROUND 0.000001
 
 const std::string SpectralLineCrawler::SplatalogueURLBase =
     "https://www.cv.nrao.edu/php/splat/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
@@ -25,7 +26,8 @@ SpectralLineCrawler::~SpectralLineCrawler() {}
     1. curl example https://curl.haxx.se/libcurl/c/getinmemory.html
     2. c++ example https://gist.github.com/alghanmi/c5d7b761b2c9ab199157
 */
-void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
+void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange, const double line_intensity_lower_limit,
+    CARTA::SpectralLineResponse& spectral_line_response) {
     /* init the curl session */
     CURL* curl_handle = curl_easy_init();
     if (curl_handle == nullptr) {
@@ -40,6 +42,10 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
 
     /* specify URL to get */
     // TODO: assemble parameters when frontend offers split settings
+    std::string intensityLimit =
+        std::isnan(line_intensity_lower_limit)
+            ? ""
+            : fmt::format("&lill_cdms_jpl={}", line_intensity_lower_limit == 0 ? INTENSITY_LIMIT_WORKAROUND : line_intensity_lower_limit);
     std::string lineListParameters =
         "&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas"
         "&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU"
@@ -49,10 +55,9 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     std::string miscellaneousParameters =
         "&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab"
         "&offset=0&limit=100000&range=on";
-    std::string frequencyRangeStr =
-        fmt::format("&frequency_units=MHz&from={}&to={}", std::to_string(frequencyRange.min()), std::to_string(frequencyRange.max()));
-    std::string URL = SpectralLineCrawler::SplatalogueURLBase + lineListParameters + lineStrengthParameters + energyLevelParameters +
-                      miscellaneousParameters + frequencyRangeStr;
+    std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}", frequencyRange.min(), frequencyRange.max());
+    std::string URL = SpectralLineCrawler::SplatalogueURLBase + intensityLimit + lineListParameters + lineStrengthParameters +
+                      energyLevelParameters + miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
     /* fetch data & parse */
