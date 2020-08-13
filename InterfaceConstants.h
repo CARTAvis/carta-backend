@@ -4,7 +4,7 @@
 #define CARTA_BACKEND__INTERFACECONSTANTS_H_
 
 // version
-#define VERSION_ID "1.3"
+#define VERSION_ID "1.4"
 
 // thread counts
 #define TBB_THREAD_COUNT 2
