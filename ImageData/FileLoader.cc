@@ -7,6 +7,7 @@
 #include "CasaLoader.h"
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
+#include "ImagePtrLoader.h"
 #include "MiriadLoader.h"
 
 using namespace carta;
@@ -38,6 +39,17 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
     }
     return nullptr;
 }
+
+FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
+    if (image) {
+        return new ImagePtrLoader(image);
+    } else {
+        std::cerr << "Fail to assign an image pointer!" << std::endl;
+        return nullptr;
+    }
+}
+
+FileLoader::FileLoader(const std::string& filename) : _filename(filename) {}
 
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
@@ -589,6 +601,10 @@ bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore
     const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Must be implemented in subclasses
     return false;
+}
+
+std::string FileLoader::GetFileName() {
+    return _filename;
 }
 
 double FileLoader::CalculateBeamArea() {

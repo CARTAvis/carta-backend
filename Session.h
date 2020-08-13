@@ -26,6 +26,7 @@
 #include <carta-protobuf/file_info.pb.h>
 #include <carta-protobuf/file_list.pb.h>
 #include <carta-protobuf/import_region.pb.h>
+#include <carta-protobuf/moment_request.pb.h>
 #include <carta-protobuf/open_file.pb.h>
 #include <carta-protobuf/region.pb.h>
 #include <carta-protobuf/register_viewer.pb.h>
@@ -34,15 +35,18 @@
 #include <carta-protobuf/set_cursor.pb.h>
 #include <carta-protobuf/set_image_channels.pb.h>
 #include <carta-protobuf/spectral_line_request.pb.h>
+#include <carta-protobuf/stop_moment_calc.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
 #include <carta-scripting-grpc/carta_service.grpc.pb.h>
 
 #include "AnimationObject.h"
 #include "EventHeader.h"
+#include "FileConverter.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "Moment/MomentController.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
@@ -58,6 +62,7 @@ public:
     void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
+    bool OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::MomentResponse& moment_response, uint32_t request_id);
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);
@@ -80,6 +85,10 @@ public:
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
     void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
+
+    void OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id);
+    void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
+    void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);
 
     void SendPendingMessages();
 
@@ -193,6 +202,8 @@ private:
     // File info
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
         const std::string& filename, std::string hdu, std::string& message);
+    bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
+        const std::string& filename, std::string& message);
 
     // Delete Frame(s)
     void DeleteFrame(int file_id);
@@ -239,6 +250,12 @@ private:
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
+
+    // Image file converter
+    std::unique_ptr<carta::FileConverter> _file_converter;
+
+    // Moments controller
+    std::unique_ptr<carta::MomentController> _moment_controller;
 
     // Manage image channel
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
