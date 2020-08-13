@@ -57,7 +57,6 @@ void Region::ResetRegionCache() {
     _reference_region_set = false;
     std::lock_guard<std::mutex> guard(_region_mutex);
     _wcs_control_points.clear();
-    _polygon_points.clear();
     _reference_region.reset();
     _applied_regions.clear();
     _polygon_regions.clear();
@@ -382,12 +381,13 @@ casacore::LCRegion* Region::GetAppliedPolygonRegion(
     size_t nvertices(is_point ? 1 : DEFAULT_VERTEX_COUNT);
 
     // Set reference region as polygon vertices
-    if (_polygon_points.empty() && !SetRegionPolygonPoints(nvertices)) {
+    auto polygon_points = GetRegionPolygonPoints(nvertices);
+    if (polygon_points.empty()) {
         return lc_region;
     }
 
     casacore::Vector<casacore::Double> x, y;
-    if (ConvertPolygonToImage(output_csys, x, y)) {
+    if (ConvertPolygonToImage(polygon_points, output_csys, x, y)) {
         try {
             if (is_point) {
                 // Point is not a polygon (needs at least 3 points), use LCBox instead
@@ -419,36 +419,29 @@ casacore::LCRegion* Region::GetAppliedPolygonRegion(
     return lc_region;
 }
 
-bool Region::SetRegionPolygonPoints(int nvertices) {
+std::vector<CARTA::Point> Region::GetRegionPolygonPoints(int num_vertices) {
     // Approximates region as polygon with input number of vertices.
     // Sets _polygon_control_points in reference image pixel coordinates.
     // Returns true as long as region type is supported.
-    bool polygon_set(false);
 
     switch (_region_state.type) {
         case CARTA::POINT: {
-            _polygon_points = _region_state.control_points;
-            polygon_set = true;
-            break;
+            return _region_state.control_points;
         }
         case CARTA::RECTANGLE:
         case CARTA::POLYGON: {
-            polygon_set = SetApproximatePolygonPoints(nvertices);
-            break;
+            return GetApproximatePolygonPoints(num_vertices);
         }
         case CARTA::ELLIPSE: {
-            polygon_set = SetApproximateEllipsePoints(nvertices);
-            break;
+            return GetApproximateEllipsePoints(num_vertices);
         }
         default:
-            break;
+            return {};
     }
-
-    return polygon_set;
 }
 
-bool Region::SetApproximatePolygonPoints(int nvertices) {
-    // Approximate additional points in polygon region to set _polygon_points with nvertices.
+std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) {
+    // Approximate additional points in polygon region to set _polygon_points with num_vertices.
     // Polygon points are pixel coordinates in reference image.
     CARTA::RegionType region_type(_region_state.type);
 
@@ -469,7 +462,7 @@ bool Region::SetApproximatePolygonPoints(int nvertices) {
         region_points = _region_state.control_points;
     } else {
         std::cerr << "Error approximating region as polygon: region type not supported" << std::endl;
-        return false;
+        return {};
     }
 
     if (closed_region) {
@@ -478,8 +471,9 @@ bool Region::SetApproximatePolygonPoints(int nvertices) {
     }
 
     double total_length = GetPolygonLength(region_points);
-    double target_segment_length = total_length / nvertices;
+    double target_segment_length = total_length / num_vertices;
 
+    std::vector<CARTA::Point> polygon_points;
     // Divide each region polygon segment into target number of segments with target length
     for (size_t i = 1; i < region_points.size(); ++i) {
         // Handle segment from point[i-1] to point[i]
@@ -493,7 +487,7 @@ bool Region::SetApproximatePolygonPoints(int nvertices) {
         auto target_length = segment_length / target_nsegment;
 
         auto first_segment_point(region_points[i - 1]);
-        _polygon_points.push_back(first_segment_point);
+        polygon_points.push_back(first_segment_point);
         auto first_x(first_segment_point.x());
         auto first_y(first_segment_point.y());
 
@@ -504,26 +498,28 @@ bool Region::SetApproximatePolygonPoints(int nvertices) {
             CARTA::Point point;
             point.set_x(first_x + x_offset);
             point.set_y(first_y + y_offset);
-            _polygon_points.push_back(point);
+            polygon_points.push_back(point);
         }
     }
 
-    return true;
+    return polygon_points;
 }
 
-bool Region::SetApproximateEllipsePoints(int nvertices) {
-    // Approximate ellipse region as polygon to set _polygon_points with nvertices
+std::vector<CARTA::Point> Region::GetApproximateEllipsePoints(int num_vertices) {
+    // Approximate ellipse region as polygon to set _polygon_points with num_vertices
     auto cx = _region_state.control_points[0].x();
     auto cy = _region_state.control_points[0].y();
     auto bmaj = _region_state.control_points[1].x();
     auto bmin = _region_state.control_points[1].y();
 
-    auto delta_theta = 2.0 * M_PI / nvertices;
+    auto delta_theta = 2.0 * M_PI / num_vertices;
     auto rotation = _region_state.rotation * M_PI / 180.0;
     auto cos_rotation = cos(rotation);
     auto sin_rotation = sin(rotation);
 
-    for (int i = 0; i < nvertices; ++i) {
+    std::vector<CARTA::Point> polygon_points;
+
+    for (int i = 0; i < num_vertices; ++i) {
         auto theta = i * delta_theta;
         auto rot_bmin = bmin * cos(theta);
         auto rot_bmaj = bmaj * sin(theta);
@@ -534,10 +530,9 @@ bool Region::SetApproximateEllipsePoints(int nvertices) {
         CARTA::Point point;
         point.set_x(cx + x_offset);
         point.set_y(cy + y_offset);
-        _polygon_points.push_back(point);
+        polygon_points.push_back(point);
     }
-
-    return true;
+    return polygon_points;
 }
 
 double Region::GetPolygonLength(std::vector<CARTA::Point>& polygon_points) {
@@ -553,21 +548,21 @@ double Region::GetPolygonLength(std::vector<CARTA::Point>& polygon_points) {
     return total_length;
 }
 
-bool Region::ConvertPolygonToImage(
-    const casacore::CoordinateSystem& output_csys, casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y) {
+bool Region::ConvertPolygonToImage(const std::vector<CARTA::Point>& polygon_points, const casacore::CoordinateSystem& output_csys,
+    casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y) {
     // Convert _polygon_points to pixel coordinates in output coordinate system
     // Coordinates returned in x and y vectors for LCPolygon
     bool converted(true);
 
     try {
         // Convert each polygon pixel point to output csys pixel coords
-        size_t polygon_npoints(_polygon_points.size());
+        size_t polygon_npoints(polygon_points.size());
         x.resize(polygon_npoints);
         y.resize(polygon_npoints);
         for (auto i = 0; i < polygon_npoints; ++i) {
             // Convert pixel to world in reference csys
             std::vector<casacore::Quantity> world_point; // [x, y]
-            if (ConvertCartaPointToWorld(_polygon_points[i], world_point)) {
+            if (ConvertCartaPointToWorld(polygon_points[i], world_point)) {
                 // Convert reference world to output csys pixel
                 casacore::Vector<casacore::Double> pixel_point; // [x, y]
                 if (ConvertWorldToPixel(world_point, output_csys, pixel_point)) {
