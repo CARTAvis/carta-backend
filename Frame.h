@@ -140,6 +140,7 @@ public:
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
+    bool GetImageRegion(const ChannelRange& chan_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
@@ -154,6 +155,23 @@ public:
     bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
     bool GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+
+    // Get the full name of image file
+    std::string GetFileName() {
+        return _loader->GetFileName();
+    }
+    // Get image interface ptr
+    casacore::ImageInterface<float>* GetImage() {
+        return _loader->GetImage();
+    }
+    // Get spectral axis
+    int GetSpectralAxis() {
+        return _spectral_axis;
+    };
+    // Get stokes axis
+    int GetStokesAxis() {
+        return _stokes_axis;
+    }
 
 private:
     // Validate channel, stokes index values
