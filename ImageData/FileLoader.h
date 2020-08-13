@@ -127,9 +127,12 @@ public:
     using ImageRef = casacore::ImageInterface<float>*;
     using IPos = casacore::IPosition;
 
+    FileLoader(const std::string& filename);
     virtual ~FileLoader() = default;
 
     static FileLoader* GetLoader(const std::string& filename);
+    // Access an image from the memory, not from the disk
+    static FileLoader* GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image);
 
     // check for mirlib (MIRIAD) error; returns true for other image types
     virtual bool CanOpenFile(std::string& error);
@@ -169,7 +172,13 @@ public:
         const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results,
         float& progress);
 
+    // Get the full name of image file
+    virtual std::string GetFileName();
+
 protected:
+    // Full name of the image file
+    std::string _filename;
+
     // Dimension values used by stats functions
     size_t _num_channels, _num_stokes, _num_dims, _channel_size;
     int _spectral_axis, _stokes_axis;

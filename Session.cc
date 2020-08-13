@@ -53,7 +53,9 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string addre
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
       _animation_id(0),
-      _file_settings(this) {
+      _file_settings(this),
+      _file_converter(std::make_unique<carta::FileConverter>(_root_folder)),
+      _moment_controller(std::make_unique<carta::MomentController>()) {
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
@@ -116,6 +118,7 @@ void Session::SetInitExitTimeout(int secs) {
 
 void Session::DisconnectCalled() {
     _connected = false;
+    _moment_controller->DeleteMomentGenerator(); // call to stop all image moments calculations
     for (auto& frame : _frames) {
         frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
@@ -167,6 +170,21 @@ bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA
             message = "File " + filename + " does not exist.";
             ext_file_info_ok = false;
         }
+    } catch (casacore::AipsError& err) {
+        message = err.getMesg();
+        ext_file_info_ok = false;
+    }
+    return ext_file_info_ok;
+}
+
+bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
+    const std::string& filename, std::string& message) {
+    bool ext_file_info_ok(true);
+    try {
+        _loader.reset(carta::FileLoader::GetLoader(image));
+
+        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
+        ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
         ext_file_info_ok = false;
@@ -335,6 +353,57 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     return success;
 }
 
+bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::MomentResponse& moment_response, uint32_t request_id) {
+    // Set an image moment file id, name and its image interface
+    int file_id = collapse_result.file_id;
+    std::string name = collapse_result.name;
+    auto image = collapse_result.image;
+
+    // Response message for opening a file
+    auto open_file_ack = moment_response.add_open_file_acks();
+    open_file_ack->set_file_id(file_id);
+    string err_message;
+
+    CARTA::FileInfoExtended file_info_extended;
+    bool info_loaded = FillExtendedFileInfo(file_info_extended, image, name, err_message);
+    bool success(false);
+
+    if (info_loaded) {
+        // Create Frame for image
+        auto frame = std::make_unique<Frame>(_id, _loader.get(), "", _verbose_logging);
+        _loader.release();
+
+        if (frame->IsValid()) {
+            if (_frames.count(file_id) > 0) {
+                DeleteFrame(file_id);
+            }
+            std::unique_lock<std::mutex> lock(_frame_mutex); // open/close lock
+            _frames[file_id] = move(frame);
+            lock.unlock();
+
+            // Set file info, extended file info
+            CARTA::FileInfo response_file_info = CARTA::FileInfo();
+            response_file_info.set_name(name);
+            response_file_info.set_type(CARTA::FileType::CASA);
+            *open_file_ack->mutable_file_info() = response_file_info;
+            *open_file_ack->mutable_file_info_extended() = file_info_extended;
+            uint32_t feature_flags = CARTA::FileFeatureFlags::FILE_FEATURE_NONE;
+            open_file_ack->set_file_feature_flags(feature_flags);
+            success = true;
+        } else {
+            err_message = frame->GetErrorMessage();
+        }
+    }
+
+    open_file_ack->set_success(success);
+    open_file_ack->set_message(err_message);
+
+    if (success) {
+        UpdateRegionData(file_id, IMAGE_REGION_ID, false, false);
+    }
+    return success;
+}
+
 void Session::OnCloseFile(const CARTA::CloseFile& message) {
     CheckCancelAnimationOnFileClose(message.file_id());
     _file_settings.ClearSettings(message.file_id());
@@ -345,6 +414,7 @@ void Session::DeleteFrame(int file_id) {
     // call destructor and erase from map
     std::unique_lock<std::mutex> lock(_frame_mutex);
     if (file_id == ALL_FILES) {
+        _moment_controller->DeleteMomentGenerator(); // call to stop all image moments calculations
         for (auto& frame : _frames) {
             frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
             frame.second.reset();             // delete Frame
@@ -353,7 +423,8 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
-        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        _moment_controller->DeleteMomentGenerator(file_id); // call to stop the image moments calculation
+        _frames[file_id]->DisconnectCalled();               // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
@@ -366,6 +437,10 @@ void Session::DeleteFrame(int file_id) {
 
 void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data) {
     auto file_id = message.file_id();
+    if (!_frames.count(file_id)) {
+        return;
+    }
+
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
     auto animation_id = AnimationRunning() ? _animation_id : 0;
@@ -925,6 +1000,80 @@ void Session::OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32
     });
 }
 
+void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id) {
+    int file_id(moment_request.file_id());
+    int region_id(moment_request.region_id());
+
+    if (_frames.count(file_id)) {
+        auto& frame = _frames.at(file_id);
+        // Set moment progress callback function
+        auto progress_callback = [&](float progress) {
+            CARTA::MomentProgress moment_progress;
+            moment_progress.set_file_id(file_id);
+            moment_progress.set_progress(progress);
+            SendEvent(CARTA::EventType::MOMENT_PROGRESS, request_id, moment_progress);
+        };
+
+        casacore::ImageRegion image_region;
+        std::vector<carta::CollapseResult> collapse_results;
+        CARTA::MomentResponse moment_response;
+
+        // Get spectral channels range
+        int chan_min(moment_request.spectral_range().min());
+        int chan_max(moment_request.spectral_range().max());
+
+        // Calculate image moments
+        if (region_id > 0) {
+            // For a region
+            if (_region_handler->ApplyRegionToFile(
+                    region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
+                collapse_results =
+                    _moment_controller->CalculateMoments(file_id, frame, image_region, progress_callback, moment_request, moment_response);
+            }
+        } else {
+            // For the whole image plane
+            if (frame->GetImageRegion(ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
+                collapse_results =
+                    _moment_controller->CalculateMoments(file_id, frame, image_region, progress_callback, moment_request, moment_response);
+            }
+        }
+
+        // Open moment images from the cache, open files acknowledges will be sent to frontend
+        for (int i = 0; i < collapse_results.size(); ++i) {
+            auto& collapse_result = collapse_results[i];
+            OnOpenFile(collapse_result, moment_response, request_id);
+        }
+
+        // Send moment response message
+        SendEvent(CARTA::EventType::MOMENT_RESPONSE, request_id, moment_response);
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"Moments"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
+void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
+    int file_id(stop_moment_calc.file_id());
+    _moment_controller->StopCalculation(file_id);
+}
+
+void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
+    int file_id(save_file.file_id());
+    if (_frames.count(file_id)) {
+        std::string filename = _frames.at(file_id)->GetFileName();
+        casacore::ImageInterface<float>* image = _frames.at(file_id)->GetImage();
+
+        CARTA::SaveFileAck save_file_ack;
+        _file_converter->SaveFile(filename, image, save_file, save_file_ack);
+
+        // Send response message
+        SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
+    } else {
+        string error = fmt::format("File id {} not found", file_id);
+        SendLogEvent(error, {"Saving a file"}, CARTA::ErrorSeverity::DEBUG);
+    }
+}
+
 void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id) {
     CARTA::SpectralLineResponse spectral_line_response;
     carta::SpectralLineCrawler::SendRequest(
@@ -1406,7 +1555,7 @@ void Session::SendLogEvent(const std::string& message, std::vector<std::string> 
     *error_data.mutable_tags() = {tags.begin(), tags.end()};
     SendEvent(CARTA::EventType::ERROR_DATA, 0, error_data);
     if ((severity > CARTA::ErrorSeverity::DEBUG) || _verbose_logging) {
-        Log(_id, message);
+        carta::Log(_id, message);
     }
 }
 

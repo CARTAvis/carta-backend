@@ -2,6 +2,8 @@
 
 using namespace std;
 
+namespace carta {
+
 void Log(uint32_t id, const string& log_message) {
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string time_string = ctime(&time);
@@ -9,6 +11,8 @@ void Log(uint32_t id, const string& log_message) {
 
     fmt::print("Session {} ({}): {}\n", id, time_string, log_message);
 }
+
+} // namespace carta
 
 bool CheckRootBaseFolders(string& root, string& base) {
     if (root == "base" && base == "root") {

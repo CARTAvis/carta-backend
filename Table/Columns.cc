@@ -46,7 +46,12 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
     }
 
     column->id = field.attribute("ID").as_string();
-    column->description = field.attribute("description").as_string();
+    auto description_node = field.child("DESCRIPTION");
+    if (description_node) {
+        column->description = description_node.child_value();
+    } else {
+        column->description = field.attribute("description").as_string();
+    }
     column->unit = field.attribute("unit").as_string();
     column->ucd = field.attribute("ucd").as_string();
     return column;
@@ -83,7 +88,7 @@ std::unique_ptr<Column> ColumnFromFitsType(int type, const string& col_name) {
             return make_unique<DataColumn<uint16_t>>(col_name);
         case TSHORT:
             return make_unique<DataColumn<int16_t>>(col_name);
-        // TODO: What are the appropriate widths for TINT and TUINT?
+            // TODO: What are the appropriate widths for TINT and TUINT?
         case TULONG:
             return make_unique<DataColumn<uint32_t>>(col_name);
         case TLONG:
@@ -98,7 +103,7 @@ std::unique_ptr<Column> ColumnFromFitsType(int type, const string& col_name) {
             return make_unique<DataColumn<int64_t>>(col_name);
         case TDOUBLE:
             return make_unique<DataColumn<double>>(col_name);
-        // TODO: Consider supporting complex numbers through std::complex
+            // TODO: Consider supporting complex numbers through std::complex
         case TCOMPLEX:
         case TDBLCOMPLEX:
         default:

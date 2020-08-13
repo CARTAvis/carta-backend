@@ -51,6 +51,10 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
     file_info->set_file_size(fs::file_size(file_path));
     file_info->set_description(table.Description());
 
+    std::vector<CARTA::Coosys> coosys_list;
+    coosys_list.push_back(table.Coosys());
+    *file_info->mutable_coosys() = {coosys_list.begin(), coosys_list.end()};
+
     // Fill the number of rows
     size_t total_row_number = table.NumRows();
     if (num_preview_rows > total_row_number) {
@@ -250,7 +254,28 @@ void TableController::OnFileInfoRequest(
     file_info->set_name(file_path.filename().string());
     file_info->set_type(table.Type());
     file_info->set_file_size(fs::file_size(file_path));
-    file_info->set_description(table.Description());
+    string file_info_string = fmt::format("Name: {}\n", file_info->name());
+    if (table.Description().size()) {
+        file_info_string += fmt::format("Description: {}\n", table.Description());
+    }
+    file_info_string += fmt::format("Column Count: {}\n", table.NumColumns());
+    if (table.AvailableRows()) {
+        file_info_string += fmt::format("Row Count: {}\n", table.AvailableRows());
+    }
+
+    auto coosys = table.Coosys();
+    if (coosys.system().size()) {
+        file_info_string += fmt::format("Coordinate System: {}\n", coosys.system());
+    }
+    if (coosys.epoch().size()) {
+        file_info_string += fmt::format("Epoch: {}\n", coosys.epoch());
+    }
+    if (coosys.equinox().size()) {
+        file_info_string += fmt::format("Equinox: {}\n", coosys.equinox());
+    }
+
+    file_info_string += table.Parameters();
+    file_info->set_description(file_info_string);
 
     int num_columns = table.NumColumns();
     for (auto i = 0; i < num_columns; i++) {
