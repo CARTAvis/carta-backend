@@ -5,11 +5,12 @@ RUN \
   apt-get update && \
   apt-get -y upgrade && \
   apt-get install -y apt-utils autoconf bison build-essential byobu curl default-jre emacs \
-    fftw3-dev flex gdb g++-8 gcc-8 gfortran git git-lfs htop libblas-dev libpugixml-dev \
-    libcfitsio-dev libfmt-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
-    libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libxml2-dev \
-    libzstd-dev libgsl-dev man pkg-config python-pip python3-pip \
-    software-properties-common unzip vim wcslib-dev wget cmake
+    fftw3-dev flex gdb g++-8 gcc-8 gfortran git git-lfs htop libblas-dev libcurl4-gnutls-dev \
+    libpugixml-dev libcfitsio-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
+    libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool \
+    libxml2-dev libzstd-dev libgsl-dev man pkg-config python-pip python3-pip \
+    software-properties-common unzip vim wcslib-dev wget cmake && \
+  update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8
     
 # Get carta dependencies
 # casacore data from Kernsuite PPA
@@ -63,11 +64,8 @@ RUN \
 RUN \
   git clone https://github.com/CARTAvis/carta-backend.git && \
   cd carta-backend && \
-  git checkout angus/dev && \
   git submodule init && git submodule update && \
-  mkdir build && cd build && \
-  CXX=g++-8 CC=gcc-8 cmake .. -DCMAKE_CXX_FLAGS="-I/usr/include/casacode" && \
-  make
+  mkdir build && cd build && cmake .. && make
 
 # Forward port so that the webapp can properly access it
 # from outside of the container
