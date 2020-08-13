@@ -366,6 +366,10 @@ void Session::DeleteFrame(int file_id) {
 
 void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data) {
     auto file_id = message.file_id();
+    if (!_frames.count(file_id)) {
+        return;
+    }
+
     auto channel = _frames.at(file_id)->CurrentChannel();
     auto stokes = _frames.at(file_id)->CurrentStokes();
     auto animation_id = AnimationRunning() ? _animation_id : 0;
