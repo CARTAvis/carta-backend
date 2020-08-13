@@ -345,12 +345,12 @@ casacore::LCRegion* Region::GetImageRegion(
             // Convert reference WCRegion to LCRegion
             lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
         } else {
+            std::lock_guard<std::mutex> guard(_region_mutex);
             // Use polygon approximation of reference region to translate to another image
             lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
             // Cache converted polygon
             if (lc_region) {
-                std::lock_guard<std::mutex> guard(_region_mutex);
                 casacore::LCRegion* region_copy = lc_region->cloneRegion();
                 auto polygon_region = std::shared_ptr<casacore::LCRegion>(region_copy);
                 _polygon_regions[file_id] = std::move(polygon_region);
