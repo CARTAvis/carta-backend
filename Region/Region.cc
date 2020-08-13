@@ -336,6 +336,7 @@ bool Region::EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::
 
 casacore::LCRegion* Region::GetImageRegion(
     int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape) {
+    std::lock_guard<std::mutex> guard(_region_approx_mutex);
     // Apply region to non-reference image as converted polygon vertices
     // Will return nullptr if outside image
     casacore::LCRegion* lc_region = GetCachedLCRegion(file_id);
@@ -345,7 +346,6 @@ casacore::LCRegion* Region::GetImageRegion(
             // Convert reference WCRegion to LCRegion
             lc_region = GetConvertedLCRegion(file_id, output_csys, output_shape);
         } else {
-            std::lock_guard<std::mutex> guard(_region_mutex);
             // Use polygon approximation of reference region to translate to another image
             lc_region = GetAppliedPolygonRegion(file_id, output_csys, output_shape);
 
