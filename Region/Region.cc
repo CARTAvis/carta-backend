@@ -513,7 +513,31 @@ bool Region::SetApproximatePolygonPoints(int nvertices) {
 
 bool Region::SetApproximateEllipsePoints(int nvertices) {
     // Approximate ellipse region as polygon to set _polygon_points with nvertices
-    return false;
+    auto cx = _region_state.control_points[0].x();
+    auto cy = _region_state.control_points[0].y();
+    auto bmaj = _region_state.control_points[1].x();
+    auto bmin = _region_state.control_points[1].y();
+
+    auto delta_theta = 2.0 * M_PI / nvertices;
+    auto rotation = _region_state.rotation * M_PI / 180.0;
+    auto cos_rotation = cos(rotation);
+    auto sin_rotation = sin(rotation);
+
+    for (int i = 0; i < nvertices; ++i) {
+        auto theta = i * delta_theta;
+        auto rot_bmin = bmin * cos(theta);
+        auto rot_bmaj = bmaj * sin(theta);
+
+        auto x_offset = (cos_rotation * rot_bmin) - (sin_rotation * rot_bmaj);
+        auto y_offset = (sin_rotation * rot_bmin) + (cos_rotation * rot_bmaj);
+
+        CARTA::Point point;
+        point.set_x(cx + x_offset);
+        point.set_y(cy + y_offset);
+        _polygon_points.push_back(point);
+    }
+
+    return true;
 }
 
 double Region::GetPolygonLength(std::vector<CARTA::Point>& polygon_points) {
