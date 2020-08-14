@@ -3,9 +3,11 @@
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
+auto NO_PERMISSIONS = fs::perms::no_perms;
 #else
 #include <filesystem>
 namespace fs = std::filesystem;
+auto NO_PERMISSIONS = fs::perms::none;
 #endif
 
 using namespace carta;
@@ -26,7 +28,7 @@ void FileConverter::SaveFile(const std::string& in_file, casacore::ImageInterfac
 
     // Get the full resolved name of the output image
     std::string temp_path = _root_folder + "/" + directory;
-    std::string abs_path = fs::absolute(temp_path);
+    std::string abs_path = fs::absolute(fs::path(temp_path)).string();
     output_filename = abs_path + "/" + output_filename;
 
     if (output_filename == in_file) {
@@ -39,7 +41,7 @@ void FileConverter::SaveFile(const std::string& in_file, casacore::ImageInterfac
     // Check the writing permission
     fs::path tmp_dir = fs::path(output_filename).parent_path();
     fs::perms tmp_perm = fs::status(tmp_dir).permissions();
-    if (!fs::exists(tmp_dir) || ((tmp_perm & fs::perms::owner_write) == fs::perms::none)) {
+    if (!fs::exists(tmp_dir) || ((tmp_perm & fs::perms::owner_write) == NO_PERMISSIONS)) {
         message = "No write permission!";
         save_file_ack.set_success(success);
         save_file_ack.set_message(message);
