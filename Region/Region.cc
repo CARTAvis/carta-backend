@@ -607,10 +607,16 @@ casacore::ArrayLattice<casacore::Bool> Region::GetImageRegionMask(int file_id) {
 
     if (lcregion) {
         std::lock_guard<std::mutex> guard(_region_mutex);
-        auto extended_region = static_cast<casacore::LCExtension*>(lcregion);
+        // Region can either be an extension region or a fixed region, depending on whether image is matched or not
+        auto extended_region = dynamic_cast<casacore::LCExtension*>(lcregion);
         if (extended_region) {
             auto& fixed_region = static_cast<const casacore::LCRegionFixed&>(extended_region->region());
             mask = fixed_region.getMask();
+        } else {
+            auto fixed_region = dynamic_cast<casacore::LCRegionFixed*>(lcregion);
+            if (fixed_region) {
+                mask = fixed_region->getMask();
+            }
         }
     }
 
