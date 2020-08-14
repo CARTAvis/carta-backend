@@ -36,15 +36,6 @@ void FileConverter::SaveFile(const std::string& in_file, casacore::ImageInterfac
         return;
     }
 
-    // Check the writing permission
-    fs::path tmp_dir = fs::path(output_filename).parent_path();
-    if (!fs::exists(tmp_dir) || access(tmp_dir.string().c_str(), W_OK)) {
-        message = "No write permission!";
-        save_file_ack.set_success(success);
-        save_file_ack.set_message(message);
-        return;
-    }
-
     if (output_file_type == CARTA::FileType::CASA) {
         // Remove the old image file if it has a same file name
         if (fs::exists(output_filename)) {
@@ -59,20 +50,27 @@ void FileConverter::SaveFile(const std::string& in_file, casacore::ImageInterfac
         image->doGetSlice(temp_array, slice);
 
         // Construct a new CASA image
-        auto out_image = std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename);
-        out_image->setMiscInfo(image->miscInfo());
-        out_image->setImageInfo(image->imageInfo());
-        out_image->appendLog(image->logger());
-        out_image->setUnits(image->units());
-        out_image->putSlice(temp_array, start);
+        try {
+            auto out_image = std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename);
+            out_image->setMiscInfo(image->miscInfo());
+            out_image->setImageInfo(image->imageInfo());
+            out_image->appendLog(image->logger());
+            out_image->setUnits(image->units());
+            out_image->putSlice(temp_array, start);
 
-        // Copy the mask if the original image has
-        if (image->hasPixelMask()) {
-            casacore::Array<casacore::Bool> image_mask;
-            image->getMaskSlice(image_mask, slice);
-            out_image->makeMask("mask0", true, true);
-            casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
-            out_image_mask.putSlice(image_mask, start);
+            // Copy the mask if the original image has
+            if (image->hasPixelMask()) {
+                casacore::Array<casacore::Bool> image_mask;
+                image->getMaskSlice(image_mask, slice);
+                out_image->makeMask("mask0", true, true);
+                casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
+                out_image_mask.putSlice(image_mask, start);
+            }
+        } catch (casacore::AipsError error) {
+            message = error.getMesg();
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(message);
+            return;
         }
         success = true;
 
