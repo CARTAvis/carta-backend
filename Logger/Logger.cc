@@ -1,12 +1,10 @@
 #include "Logger.h"
 
-#include <casacore/casa/OS/Directory.h>
-
 #include <filesystem>
 
 namespace fs = std::filesystem;
 
-static std::size_t log_file_size = 1048576 * 5; // (Bytes)
+static std::size_t log_file_size = 1024 * 1024 * 5; // (Bytes)
 static std::size_t rotated_files = 0;
 static std::string log_default_dir = fs::path(getenv("HOME")).string() + "/CARTA/log/";
 static std::string icd_log_name("icd_msg.log");
@@ -21,9 +19,8 @@ void CreateLoggers(const std::string& log_dir) {
     if (!log_dir.empty()) {
         try {
             icd_log_full_name = log_dir + "/" + icd_log_name;
-            casacore::File tmp_file(icd_log_full_name);
-            casacore::Directory tmp_dir = tmp_file.path().dirName();
-            if (!tmp_dir.exists() || !tmp_dir.isWritable()) {
+            fs::path tmp_dir = fs::path(icd_log_full_name).parent_path();
+            if (!fs::exists(tmp_dir) || access(tmp_dir.string().c_str(), W_OK)) {
                 icd_log_full_name = log_default_dir + icd_log_name;
                 spdlog::warn("Can not create a log file! Use the default path name {0}", icd_log_full_name);
             } else {
