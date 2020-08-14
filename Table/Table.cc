@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 namespace carta {
 using namespace std;
 
-Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0) {
+Table::Table(const string& filename, bool header_only) : _valid(false), _filename(filename), _num_rows(0), _available_rows(0) {
     fs::path file_path(filename);
 
     if (!fs::exists(file_path)) {
@@ -75,13 +75,14 @@ bool Table::ConstructFromXML(bool header_only) {
             return false;
         }
     }
-
     auto votable = doc.child("VOTABLE");
 
     if (!votable) {
         _parse_error_message = "Missing XML element VOTABLE!";
         return false;
     }
+
+    PopulateCoosys(votable);
 
     auto resource = votable.child("RESOURCE");
     if (!resource) {
@@ -100,6 +101,8 @@ bool Table::ConstructFromXML(bool header_only) {
         _description = description.text().as_string();
     }
 
+    PopulateParams(table_node);
+
     if (!PopulateFields(table_node)) {
         _parse_error_message = "Cannot parse table headers!";
         return false;
@@ -107,12 +110,73 @@ bool Table::ConstructFromXML(bool header_only) {
 
     // Once fields are populated, stop parsing
     if (header_only) {
+        auto num_rows_attribute = table_node.attribute("nrows");
+        if (num_rows_attribute) {
+            _available_rows = num_rows_attribute.as_int();
+        }
         return true;
     }
 
     if (!PopulateRows(table_node)) {
         _parse_error_message = "Cannot parse table data!";
         return false;
+    }
+
+    return true;
+}
+
+bool Table::PopulateCoosys(const pugi::xml_node& votable) {
+    if (!votable) {
+        return false;
+    }
+
+    auto resource = votable.child("RESOURCE");
+    if (!resource) {
+        return false;
+    }
+
+    pugi::xml_node coosys_node;
+    if (votable.child("COOSYS")) {
+        coosys_node = votable.child("COOSYS");
+    } else if (votable.child("DEFINITIONS").child("COOSYS")) {
+        coosys_node = votable.child("DEFINITIONS").child("COOSYS");
+    } else {
+        coosys_node = resource.child("COOSYS");
+    }
+
+    if (coosys_node) {
+        auto epoch = coosys_node.attribute("epoch").value();
+        auto equinox = coosys_node.attribute("equinox").value();
+        auto system = coosys_node.attribute("system").value();
+        if (epoch) {
+            _coosys.set_epoch(epoch);
+        }
+        if (equinox) {
+            _coosys.set_equinox(equinox);
+        }
+        if (system) {
+            _coosys.set_system(system);
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Table::PopulateParams(const pugi::xml_node& table) {
+    if (!table) {
+        return false;
+    }
+
+    for (auto& field : table.children("PARAM")) {
+        string name = field.attribute("name").as_string();
+        string value = field.attribute("value").as_string();
+        auto description_node = field.child("DESCRIPTION");
+        string description;
+        if (description_node) {
+            description = description_node.child_value();
+        }
+        _params.emplace_back(carta::TableParam({name, description, value}));
     }
 
     return true;
@@ -203,7 +267,10 @@ bool Table::ConstructFromFITS(bool header_only) {
     fits_get_num_rowsll(file_ptr, &rows, &status);
     fits_get_num_cols(file_ptr, &num_cols, &status);
     fits_read_key(file_ptr, TINT, "NAXIS1", &total_width, nullptr, &status);
+    // Number of rows to allocate and read from the table. When reading the header, this will always be zero
     _num_rows = header_only ? 0 : rows;
+    // Number of rows in the table itself
+    _available_rows = rows;
 
     if (num_cols <= 0) {
         _parse_error_message = "Table is empty!";
@@ -285,6 +352,10 @@ size_t Table::NumRows() const {
     return _num_rows;
 }
 
+std::size_t Table::AvailableRows() const {
+    return _available_rows;
+}
+
 const std::string& Table::Description() const {
     return _description;
 }
@@ -296,8 +367,21 @@ TableView Table::View() const {
 CARTA::CatalogFileType Table::Type() const {
     return _file_type;
 }
+
 std::string Table::ParseError() const {
     return _parse_error_message;
+}
+
+const CARTA::Coosys& Table::Coosys() const {
+    return _coosys;
+}
+const std::string Table::Parameters() const {
+    string parameter_string;
+
+    for (auto& p : _params) {
+        parameter_string += fmt::format("{}: {}\n", p.name, p.value);
+    }
+    return parameter_string;
 }
 
 } // namespace carta

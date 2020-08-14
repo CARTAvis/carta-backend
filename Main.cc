@@ -87,7 +87,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
     }
     session->IncreaseRefCount();
     outgoing->setData(session);
-    Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
+    carta::Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -103,7 +103,7 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
         auto uuid = session->GetId();
         auto address = session->GetAddress();
         session->DisconnectCalled();
-        Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
+        carta::Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);
         }
@@ -399,6 +399,24 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
                         session->OnCatalogFilter(message, head.request_id);
                     } else {
                         fmt::print("Bad CLOSE_CATALOG_FILE message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::STOP_MOMENT_CALC: {
+                    CARTA::StopMomentCalc message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnStopMomentCalc(message);
+                    } else {
+                        fmt::print("Bad STOP_MOMENT_CALC message!\n");
+                    }
+                    break;
+                }
+                case CARTA::EventType::SAVE_FILE: {
+                    CARTA::SaveFile message;
+                    if (message.ParseFromArray(event_buf, event_length)) {
+                        session->OnSaveFile(message, head.request_id);
+                    } else {
+                        fmt::print("Bad SAVE_FILE message!\n");
                     }
                     break;
                 }

@@ -4,7 +4,7 @@
 #define CARTA_BACKEND__INTERFACECONSTANTS_H_
 
 // version
-#define VERSION_ID "1.3"
+#define VERSION_ID "1.4"
 
 // thread counts
 #define TBB_THREAD_COUNT 2
@@ -54,7 +54,16 @@
 #define CATALOG_FILTER_COMPLETE 1.0
 #define CATALOG_ROW_CHUNK 10000
 
+// image moments
+#define REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS 5000
+#define REPORT_PROGRESS_EVERY_FACTOR 0.1
+#define MOMENT_COMPLETE 1.0
+#define OUTPUT_ID_MULTIPLIER 1000
+
 // region style
 #define DASH_LENGTH 2
+
+// Shared region polygon approximation
+#define DEFAULT_VERTEX_COUNT 1000
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

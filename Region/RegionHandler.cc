@@ -695,7 +695,7 @@ bool RegionHandler::ApplyRegionToFile(
             // Remove xy axes from chan/stokes box
             casacore::IPosition remove_xy(2, 0, 1);
             chan_stokes_slicer =
-                casacore::Slicer(chan_stokes_slicer.start().removeAxes(remove_xy), chan_stokes_slicer.end().removeAxes(remove_xy));
+                casacore::Slicer(chan_stokes_slicer.start().removeAxes(remove_xy), chan_stokes_slicer.length().removeAxes(remove_xy));
             casacore::LCBox chan_stokes_box(chan_stokes_slicer, image_shape.removeAxes(remove_xy));
 
             casacore::IPosition extend_axes = casacore::IPosition::makeAxisPath(image_shape.size()).removeAxes(remove_xy);
@@ -1034,7 +1034,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     if (_frames.at(file_id)->UseLoaderSpectralData(lcregion->shape())) {
         // Use cursor spectral profile for point region
         if (initial_region_state.type == CARTA::RegionType::POINT) {
-            CARTA::Point point = initial_region_state.control_points[0];
+            casacore::IPosition origin = lcregion->boundingBox().start();
+            CARTA::Point point;
+            point.set_x(origin(0));
+            point.set_y(origin(1));
             std::vector<float> profile;
             bool ok = _frames.at(file_id)->GetLoaderPointSpectralData(profile, stokes_index, point);
             if (ok) {

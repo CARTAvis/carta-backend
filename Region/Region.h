@@ -9,6 +9,7 @@
 
 #include <casacore/coordinates/Coordinates/CoordinateSystem.h>
 #include <casacore/images/Regions/WCRegion.h>
+#include <casacore/lattices/LRegions/LCPolygon.h>
 #include <casacore/lattices/LRegions/LCRegion.h>
 #include <casacore/lattices/Lattices/ArrayLattice.h>
 #include <casacore/tables/Tables/TableRecord.h>
@@ -98,13 +99,13 @@ public:
     void IncreaseZProfileCount();
     void DecreaseZProfileCount();
 
+    // Converted region as approximate LCPolygon and its mask
+    casacore::LCRegion* GetImageRegion(int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
+    casacore::ArrayLattice<casacore::Bool> GetImageRegionMask(int file_id);
+
     // Converted region in Record for export
     casacore::TableRecord GetImageRegionRecord(
-        int file_id, casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
-
-    // Converted region as lcregion and mask
-    casacore::LCRegion* GetImageRegion(int file_id, casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
-    casacore::ArrayLattice<casacore::Bool> GetImageRegionMask(int file_id);
+        int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -113,22 +114,50 @@ private:
     bool CheckPoints(const std::vector<CARTA::Point>& points, CARTA::RegionType type);
     bool PointsFinite(const std::vector<CARTA::Point>& points);
 
-    // Apply region to reference image, set LCRegion _reference_region and wcs control points.  Reset when changed.
-    bool ReferenceRegionValid();
-    void SetReferenceRegion();
+    // Reset cache when region changes
     void ResetRegionCache();
-    bool CartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
+
+    // Check if reference region is set successfully
+    bool ReferenceRegionValid();
+
+    // Apply region to reference image, set WCRegion and wcs control points.
+    void SetReferenceRegion();
     bool RectanglePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
+    void RectanglePointsToCorners(std::vector<CARTA::Point>& pixel_points, float rotation, casacore::Vector<casacore::Double>& x,
+        casacore::Vector<casacore::Double>& y);
     bool EllipsePointsToWorld(std::vector<CARTA::Point>& pixel_points, std::vector<casacore::Quantity>& wcs_points);
 
-    // Apply region to any image (convert to output coord sys) and return in Record
+    // Reference region as approximate polygon converted to image coordinates; used for data streams
+    casacore::LCRegion* GetCachedPolygonRegion(int file_id);
+    casacore::LCRegion* GetAppliedPolygonRegion(
+        int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+    std::vector<CARTA::Point> GetRegionPolygonPoints(int num_vertices);
+    std::vector<CARTA::Point> GetApproximatePolygonPoints(int num_vertices);
+    std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
+    double GetPolygonLength(std::vector<CARTA::Point>& polygon_points);
+    bool ConvertPolygonToImage(const std::vector<CARTA::Point>& polygon_points, const casacore::CoordinateSystem& output_csys,
+        casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
+
+    // Region applied to any image; used for export
+    casacore::LCRegion* GetCachedLCRegion(int file_id);
+    casacore::LCRegion* GetConvertedLCRegion(
+        int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+
+    // Control points converted to pixel coords in output image, returned in LCRegion Record format for export
     casacore::TableRecord GetRegionPointsRecord(
-        int file_id, casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
-    casacore::TableRecord GetControlPointsRecord(int ndim); // use control points for reference image, no conversion
+        int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+    casacore::TableRecord GetControlPointsRecord(int ndim);
     casacore::TableRecord GetPointRecord(const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
     casacore::TableRecord GetPolygonRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetRotboxRecord(const casacore::CoordinateSystem& output_csys);
     casacore::TableRecord GetEllipseRecord(const casacore::CoordinateSystem& output_csys);
+
+    // Utilities to convert control points
+    // Input: CARTA::Point. Returns: point (x, y) in reference world coords
+    bool ConvertCartaPointToWorld(const CARTA::Point& point, std::vector<casacore::Quantity>& world_point);
+    // Input: point (x,y) in reference world coords. Returns: point (x,y) in output pixel coords
+    bool ConvertWorldToPixel(std::vector<casacore::Quantity>& world_point, const casacore::CoordinateSystem& output_csys,
+        casacore::Vector<casacore::Double>& pixel_point);
 
     // region parameters struct
     RegionState _region_state;
@@ -137,12 +166,18 @@ private:
     casacore::CoordinateSystem* _coord_sys;
 
     // Reference region cache
-    std::mutex _region_mutex;                              // creation of casacore regions is not threadsafe
+    std::mutex _region_mutex; // creation of casacore regions is not threadsafe
+    std::mutex _region_approx_mutex;
+
+    // Region cached as original type
     std::shared_ptr<casacore::WCRegion> _reference_region; // 2D region applied to reference image
-    std::vector<casacore::Quantity> _wcs_control_points;   // used for region export
+    std::vector<casacore::Quantity> _wcs_control_points;   // for manual region conversion
     float _ellipse_rotation;                               // (deg), may be adjusted from pixel rotation value
-    // Reference region applied to other images; key is file_id
+    // Reference region applied to image; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
+
+    // Polygon approximation region (LCPolygon or LCBox for point) converted to image; key is file_id
+    std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _polygon_regions;
 
     // region flags
     bool _valid;                // RegionState set properly
