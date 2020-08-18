@@ -40,7 +40,7 @@ The server build depends on the following libraries:
 * [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.([Recommended: v0.14.8](https://github.com/uNetworking/uWebSockets/releases/tag/v0.14.8))
 * [tbb](https://www.threadingbuildingblocks.org/download) Threading Building Blocks for task parallelization. Debian package `libtbb-dev`.
 * [libcurl](https://curl.haxx.se/libcurl/) curl library for fetching data. Debian package `libcurl4-openssl-dev`.
-* [gRPC](https://grpc.io/) for the scripting interface. Debian packages: `libprotobuf-dev protobuf-compiler libgrpc++-dev libgrpc-dev protobuf-compiler-grpc googletest`. On Ubuntu versions 16.04 and 18.04, use [a PPA](https://launchpad.net/~webispy/+archive/ubuntu/grpc).
+* [gRPC](https://grpc.io/) for the scripting interface. Debian packages: `libprotobuf-dev protobuf-compiler libgrpc++-dev libgrpc-dev protobuf-compiler-grpc googletest`. On Ubuntu 16.04 or 18.04, use [a PPA](https://launchpad.net/~webispy/+archive/ubuntu/grpc).
 * [pugixml](https://pugixml.org/) for parsing catalog data. Debian package: `libpugixml-dev`. On Ubuntu 16.04, build from source. On newer versions you can also build from source to save memory: use the `PUGIXML_COMPACT` and `PUGIXML_NO_XPATH` flags.
 
 [![Build Status](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend/badge/icon)](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend) 
