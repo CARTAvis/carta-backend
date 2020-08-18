@@ -20,7 +20,6 @@ public:
 
 private:
     std::unordered_map<int, std::unique_ptr<MomentGenerator>> _moment_generators; // <file_id, MomentGenerator>
-    std::unordered_map<int, std::mutex> _image_mutexes;                           // <file_id, mutex for MomentGenerator>
     std::mutex _moment_generator_mutex;
 };
 

@@ -30,9 +30,7 @@ std::vector<CollapseResult> MomentController::CalculateMoments(int file_id, cons
 
         moment_generators->IncreaseMomentsCalcCount(); // Increase the moments calculation count (don't forget to decrease it after the
                                                        // calculation is done)
-        _image_mutexes[file_id].lock();
         results = moment_generators->CalculateMoments(file_id, image_region, moment_request, moment_response); // Do calculations
-        _image_mutexes[file_id].unlock();
         moment_generators->DecreaseMomentsCalcCount(); // Decrease the moments calculation count
     }
 
@@ -50,7 +48,6 @@ void MomentController::DeleteMomentGenerator(int file_id) {
         std::unique_lock<std::mutex> lock(_moment_generator_mutex);
         _moment_generators.at(file_id)->DisconnectCalled();
         _moment_generators[file_id].reset();
-        _image_mutexes.erase(file_id);
     }
 }
 
@@ -62,6 +59,5 @@ void MomentController::DeleteMomentGenerator() {
             moment_generator.second.reset();
         }
         _moment_generators.clear();
-        _image_mutexes.clear();
     }
 }
