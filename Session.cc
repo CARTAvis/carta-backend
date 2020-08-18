@@ -1032,7 +1032,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             }
         } else {
             // For the whole image plane
-            if (frame->GetImageRegion(ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
+            if (frame->GetImageRegion(file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
                 collapse_results =
                     _moment_controller->CalculateMoments(file_id, frame, image_region, progress_callback, moment_request, moment_response);
             }
