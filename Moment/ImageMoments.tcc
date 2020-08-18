@@ -348,6 +348,10 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     if (_stop) {
+        // Reset shared ptrs for output moments images if calculation is cancelled
+        for (auto& output_image : output_images) {
+            output_image.reset();
+        }
         // Clear the output image ptrs vector if calculation is cancelled
         output_images.clear();
     } else {
