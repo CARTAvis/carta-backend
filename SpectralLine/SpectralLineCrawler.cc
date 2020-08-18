@@ -130,6 +130,7 @@ void SpectralLineCrawler::ParseQueryResult(const std::string& results, CARTA::Sp
         auto response_header = response_headers->Add();
         response_header->set_name(column_name);
         response_header->set_column_index(column_index);
+        response_header->set_data_type(CARTA::String);
 
         // columns
         auto carta_column = CARTA::ColumnData();
