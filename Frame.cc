@@ -862,8 +862,8 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 
         if (_verbose) {
             auto t_end_image_stats = std::chrono::high_resolution_clock::now();
-            auto dt_image_stats = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_image_stats - t_start_image_stats).count();
-            fmt::print("Fill image stats in {} ms\n", dt_image_stats);
+            auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
+            fmt::print("Fill image stats in {} ms\n", dt_image_stats * 1e-3);
         }
         return true;
     }
@@ -963,8 +963,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     if (_verbose) {
         auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
         auto dt_spatial_profile =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
-        fmt::print("Fill spatial profile in {} ms\n", dt_spatial_profile);
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
+        fmt::print("Fill spatial profile in {} ms\n", dt_spatial_profile * 1e-3);
     }
 
     return true;
@@ -1185,7 +1185,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
     if (_verbose) {
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
         fmt::print("Fill cursor spectral profile in {} ms\n", dt_spectral_profile);
     }
 
@@ -1348,8 +1348,8 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         if (_verbose) {
             auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
             auto dt_get_subimage_data =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
-            fmt::print("Get region subimage data in {} ms\n", dt_get_subimage_data);
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
+            fmt::print("Get region subimage data in {} ms\n", dt_get_subimage_data * 1e-3);
         }
         return true;
     } catch (casacore::AipsError& err) {

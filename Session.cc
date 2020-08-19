@@ -493,8 +493,8 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
             // Measure duration for get tile data
             auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_get_tile_data =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
-            fmt::print("Get tile data group in {} ms\n", dt_get_tile_data);
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
+            fmt::print("Get tile data group in {} ms\n", dt_get_tile_data * 1e-3);
         }
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
@@ -657,8 +657,8 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
             // Measure duration for get tile data
             auto t_end_import_region = std::chrono::high_resolution_clock::now();
             auto dt_import_region =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_import_region - t_start_import_region).count();
-            fmt::print("Import region in {} ms\n", dt_import_region);
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_import_region - t_start_import_region).count();
+            fmt::print("Import region in {} ms\n", dt_import_region * 1e-3);
         }
 
         // send any errors to log
@@ -949,8 +949,8 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     // Measure duration for resume
     if (_verbose_logging) {
         auto t_end_resume = std::chrono::high_resolution_clock::now();
-        auto dt_resume = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_resume - t_start_resume).count();
-        fmt::print("Resume in {} ms\n", dt_resume);
+        auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
+        fmt::print("Resume in {} ms\n", dt_resume * 1e-3);
     }
 
     // RESPONSE
@@ -1118,7 +1118,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
                 // check for progress update
                 auto t_end = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
+                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
                 if ((dt / 1e3) > 2.0) {
                     // send progress
                     float this_chan(chan);
@@ -1164,7 +1164,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     }
 
                     auto t_end = std::chrono::high_resolution_clock::now();
-                    auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
+                    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
                     if ((dt / 1e3) > 2.0) {
                         // Send progress update
                         float this_chan(chan);
