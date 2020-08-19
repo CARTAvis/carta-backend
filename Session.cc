@@ -1286,6 +1286,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
         // Region spectral profile
         CARTA::SpectralProfileData profile_data;
         std::unique_lock<std::mutex> ulock(_image_mutexes[file_id]);
+        _moment_controller->StopCalculation(file_id);
         data_sent = _region_handler->FillSpectralProfileData(
             [&](CARTA::SpectralProfileData profile_data) {
                 if (profile_data.profiles_size() > 0) {
@@ -1300,6 +1301,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
         if (_frames.count(file_id)) {
             CARTA::SpectralProfileData profile_data;
             std::unique_lock<std::mutex> ulock(_image_mutexes[file_id]);
+            _moment_controller->StopCalculation(file_id);
             data_sent = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
                     if (profile_data.profiles_size() > 0) {
