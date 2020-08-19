@@ -949,12 +949,6 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     // Measure duration for resume
     if (_verbose_logging) {
         auto t_end_resume = std::chrono::high_resolution_clock::now();
-        auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
-        fmt::print("Resume in {} ms\n", dt_resume * 1e-3);
-    }
-
-    if (_verbose_logging) {
-        auto t_end_resume = std::chrono::high_resolution_clock::now();
         auto dt_resume = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_resume - t_start_resume).count();
         fmt::print("Resume in {} ms\n", dt_resume);
     }
