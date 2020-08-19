@@ -1186,7 +1186,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill cursor spectral profile in {} ms\n", dt_spectral_profile);
+        fmt::print("Fill cursor spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
     }
 
     DecreaseZProfileCount();
