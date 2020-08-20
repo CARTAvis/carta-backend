@@ -57,7 +57,7 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
     return column;
 }
 
-std::unique_ptr<Column> Column::FromValues(const std::vector<string>& values, string name) {
+std::unique_ptr<Column> Column::FromValues(const std::valarray<string>& values, string name) {
     auto data_column_ptr = make_unique<DataColumn<string>>(name);
     data_column_ptr->Resize(values.size());
     if (data_column_ptr != nullptr) {
@@ -201,7 +201,7 @@ void DataColumn<string>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t
 // Specialisation for strings because they don't support std::isnan
 template <>
 void DataColumn<string>::SortIndices(IndexList& indices, bool ascending) const {
-    if (indices.empty() || entries.empty()) {
+    if (indices.empty() || !entries.size()) {
         return;
     }
 
@@ -233,7 +233,7 @@ void DataColumn<std::string>::FillColumnData(
     CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
     column_data.set_data_type(CARTA::String);
     auto values = GetColumnData(fill_subset, indices, start, end);
-    *column_data.mutable_string_data() = {values.begin(), values.end()};
+    *column_data.mutable_string_data() = {std::begin(values), std::end(values)};
 }
 
 } // namespace carta

@@ -30,6 +30,8 @@ public:
     std::string ParseError() const;
     const Column* GetColumnByName(const std::string& name) const;
     const Column* GetColumnById(const std::string& id) const;
+    template <class T>
+    DataColumn<T>* AddDataColumn(const std::string& name, const std::string& id = std::string());
     size_t NumColumns() const;
     size_t NumRows() const;
     size_t AvailableRows() const;
@@ -66,4 +68,6 @@ protected:
     static std::string GetHeader(const std::string& filename);
 };
 } // namespace carta
+#include "Table.tcc"
+
 #endif // VOTABLE_TEST__TABLE_H_

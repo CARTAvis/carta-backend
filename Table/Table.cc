@@ -383,5 +383,4 @@ const std::string Table::Parameters() const {
     }
     return parameter_string;
 }
-
 } // namespace carta

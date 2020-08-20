@@ -5,14 +5,77 @@
 
 #include <algorithm>
 
-namespace carta {
+#define DEFINE_UNARY_OPERATION(NAME, OPERATION) \
+template<class T> \
+bool DataColumn<T>::NAME(DataColumn <T>* output_column, const DataColumn <T>* a_column) { \
+    if (!a_column || !output_column) { \
+        return false; \
+    } \
+    \
+    auto N = a_column->NumEntries(); \
+    output_column->Resize(N); \
+    auto& a = a_column->entries; \
+    auto& output = output_column->entries; \
+    \
+    for (auto i = 0; i < N; i++) { output[i] = (OPERATION); } \
+    return true; \
+}                                               \
 
-template<class T>
-T clamp(T val, const T& min_val, const T& max_val) {
-    if (val < min_val) { val = min_val; }
-    if (val > max_val) { val = max_val; }
-    return val;
+#define DEFINE_UNARY_OPERATION_ONE_PARAMETER(NAME, OPERATION) \
+template<class T> \
+bool DataColumn<T>::NAME(DataColumn <T>* output_column, const DataColumn <T>* a_column, T b) { \
+    if (!a_column || !output_column) { \
+        return false; \
+    } \
+    \
+    auto N = a_column->NumEntries(); \
+    output_column->Resize(N); \
+    auto& a = a_column->entries; \
+    auto& output = output_column->entries; \
+    \
+    for (auto i = 0; i < N; i++) { output[i] = (OPERATION); } \
+    \
+    return true; \
 }
+
+#define DEFINE_UNARY_OPERATION_TWO_PARAMETERS(NAME, OPERATION) \
+template<class T> \
+bool DataColumn<T>::NAME(DataColumn <T>* output_column, const DataColumn <T>* a_column, T b, T c) { \
+    if (!a_column || !output_column) { \
+        return false; \
+    } \
+    \
+    auto N = a_column->NumEntries(); \
+    output_column->Resize(N); \
+    auto& a = a_column->entries; \
+    auto& output = output_column->entries; \
+    \
+    for (auto i = 0; i < N; i++) { output[i] = (OPERATION); } \
+    \
+    return true; \
+}
+
+#define DEFINE_BINARY_OPERATION(NAME, OPERATION) \
+template<class T> \
+bool DataColumn<T>::NAME(DataColumn <T>* output_column, const DataColumn <T>* a_column, const DataColumn <T>* b_column) { \
+    if (!a_column || !b_column || !output_column) { \
+        return false; \
+    } \
+   \
+    auto N = a_column->NumEntries(); \
+    if (N != b_column->NumEntries()) { \
+        return false; \
+    } \
+   \
+    output_column->Resize(N); \
+    auto& a = a_column->entries; \
+    auto& b = b_column->entries; \
+    auto& output = output_column->entries; \
+    for (auto i = 0; i < N; i++) { output[i] = (OPERATION); } \
+    return true; \
+}
+
+namespace carta {
 
 template<class T>
 DataColumn<T>::DataColumn(const std::string& name_chr): Column(name_chr) {
@@ -95,7 +158,6 @@ template<class T>
 void DataColumn<T>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) {
     // Shifts by the column's offset
     ptr += data_offset;
-    T* val_ptr = entries.data();
 
     if (!stride || !data_type_size || num_rows > entries.size()) {
         return;
@@ -120,7 +182,7 @@ void DataColumn<T>::FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stri
             temp_val = __builtin_bswap64(temp_val);
             entries[i] = *((T*) &temp_val);
         } else {
-            memcpy(val_ptr + i, ptr + stride * i, sizeof(T));
+            entries[i] = *(ptr + stride * i);
         }
     }
 }
@@ -137,7 +199,7 @@ size_t DataColumn<T>::NumEntries() const {
 
 template<class T>
 void DataColumn<T>::SortIndices(IndexList& indices, bool ascending) const {
-    if (indices.empty() || entries.empty()) {
+    if (indices.empty() || !entries.size()) {
         return;
     }
 
@@ -219,36 +281,74 @@ void DataColumn<T>::FilterIndices(IndexList& existing_indices, bool is_subset, C
 }
 
 template<class T>
-std::vector<T> DataColumn<T>::GetColumnData(bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
+std::valarray<T> DataColumn<T>::GetColumnData(bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
     if (fill_subset) {
         int64_t N = indices.size();
-        int64_t begin_index = clamp(start, (int64_t) 0, N);
+        int64_t begin_index = std::clamp(start, (int64_t) 0, N);
         if (end < 0) {
             end = indices.size();
         }
-        int64_t end_index = clamp(end, begin_index, N);
+        int64_t end_index = std::clamp(end, begin_index, N);
 
         auto begin_it = indices.begin() + begin_index;
         auto end_it = indices.begin() + end_index;
-        std::vector<T> values;
-        values.reserve(std::distance(begin_it, end_it));
+        std::valarray<T> values;
+        values.resize(std::distance(begin_it, end_it));
+
+        auto values_it = std::begin(values);
         for (auto it = begin_it; it != end_it; it++) {
-            values.push_back(entries[*it]);
+            (*values_it) = entries[*it];
+            values_it++;
         }
         return values;
     } else {
         int64_t N = entries.size();
-        int64_t begin_index = clamp(start, (int64_t) 0, N);
+        int64_t begin_index = std::clamp(start, (int64_t) 0, N);
         if (end < 0) {
             end = N;
         }
-        int64_t end_index = clamp(end, begin_index, N);
+        int64_t end_index = std::clamp(end, begin_index, N);
 
-        auto begin_it = entries.begin() + begin_index;
-        auto end_it = entries.begin() + end_index;
-        return std::vector<T>(begin_it, end_it);
+        auto begin_it = std::begin(entries) + begin_index;
+        auto end_it = std::end(entries) + end_index;
+        return entries[std::slice(begin_index, end_index, 0)];
     }
 }
+
+#pragma region Column Operations
+
+// Unary operations in the form output = operation(A)
+// For example DEFINE_UNARY_OPERATION(Sqrt, std::sqrt(a[i])) results in each element of the column being square-rooted
+DEFINE_UNARY_OPERATION(Sqrt, std::sqrt(a[i]))
+DEFINE_UNARY_OPERATION(Cos, std::cos(a[i]))
+DEFINE_UNARY_OPERATION(Sin, std::sin(a[i]))
+DEFINE_UNARY_OPERATION(Tan, std::tan(a[i]))
+DEFINE_UNARY_OPERATION(Log, std::log(a[i]))
+DEFINE_UNARY_OPERATION(Exp, std::exp(a[i]))
+DEFINE_UNARY_OPERATION(Ceil, std::ceil(a[i]))
+DEFINE_UNARY_OPERATION(Floor, std::floor(a[i]))
+DEFINE_UNARY_OPERATION(Round, std::round(a[i]))
+DEFINE_UNARY_OPERATION(Reverse, a[N - 1 - i])
+DEFINE_UNARY_OPERATION(First, a[0])
+DEFINE_UNARY_OPERATION(Last, a[N - 1])
+
+// Unary operations in the form output = operation(A, b) or output = operation(A, b, c), where b and c are constants
+// For example, DEFINE_UNARY_OPERATION_ONE_PARAMETER(Scale, a[i] * b) results in each element of column A being multiplied by b
+DEFINE_UNARY_OPERATION_ONE_PARAMETER(Scale, a[i] * b)
+DEFINE_UNARY_OPERATION_ONE_PARAMETER(Offset, a[i] + b)
+DEFINE_UNARY_OPERATION_ONE_PARAMETER(Pow, std::pow(a[i], b))
+DEFINE_UNARY_OPERATION_TWO_PARAMETERS(Clamp, std::clamp(a[i], b, c))
+
+// Binary operations in the form output = operation(A, B)
+// For example, DEFINE_BINARY_OPERATION(Add, a[i] + b[i]) results in element-wise addition between columns A and B
+DEFINE_BINARY_OPERATION(Add, a[i] + b[i])
+DEFINE_BINARY_OPERATION(Subtract, a[i] - b[i])
+DEFINE_BINARY_OPERATION(Multiply, a[i] * b[i])
+DEFINE_BINARY_OPERATION(Divide, a[i] / b[i])
+DEFINE_BINARY_OPERATION(Max, std::max(a[i], b[i]))
+DEFINE_BINARY_OPERATION(Min, std::min(a[i], b[i]))
+
+#pragma endregion
 
 template<class T>
 void DataColumn<T>::FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
@@ -257,7 +357,7 @@ void DataColumn<T>::FillColumnData(CARTA::ColumnData& column_data, bool fill_sub
 
     // Workaround to prevent issues with Safari's lack of BigInt support
     if (data_type == CARTA::Int64 || data_type == CARTA::Uint64) {
-        auto double_values = std::vector<double>(values.begin(), values.end());
+        auto double_values = std::vector<double>(std::begin(values), std::end(values));
         column_data.set_binary_data(double_values.data(), double_values.size() * sizeof(T));
     } else {
         column_data.set_binary_data(values.data(), values.size() * sizeof(T));
