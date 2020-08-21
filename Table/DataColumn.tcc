@@ -354,13 +354,16 @@ template<class T>
 void DataColumn<T>::FillColumnData(CARTA::ColumnData& column_data, bool fill_subset, const IndexList& indices, int64_t start, int64_t end) const {
     column_data.set_data_type(data_type);
     auto values = GetColumnData(fill_subset, indices, start, end);
+    if (!values.size()) {
+        return;
+    }
 
     // Workaround to prevent issues with Safari's lack of BigInt support
     if (data_type == CARTA::Int64 || data_type == CARTA::Uint64) {
         auto double_values = std::vector<double>(std::begin(values), std::end(values));
         column_data.set_binary_data(double_values.data(), double_values.size() * sizeof(T));
     } else {
-        column_data.set_binary_data(values.data(), values.size() * sizeof(T));
+        column_data.set_binary_data(&values[0], values.size() * sizeof(T));
     }
 }
 

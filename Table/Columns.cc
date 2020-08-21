@@ -57,8 +57,8 @@ std::unique_ptr<Column> Column::FromField(const pugi::xml_node& field) {
     return column;
 }
 
-std::unique_ptr<Column> Column::FromValues(const std::valarray<string>& values, string name) {
-    auto data_column_ptr = make_unique<DataColumn<string>>(name);
+std::unique_ptr<Column> Column::FromValues(const std::vector<string>& values, const string& column_name) {
+    auto data_column_ptr = make_unique<DataColumn<string>>(column_name);
     data_column_ptr->Resize(values.size());
     if (data_column_ptr != nullptr) {
         for (auto row_index = 0; row_index < values.size(); row_index++) {

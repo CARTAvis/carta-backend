@@ -82,7 +82,7 @@ size_t SpectralLineCrawler::WriteMemoryCallback(void* contents, size_t size, siz
 
 void SpectralLineCrawler::ParseQueryResult(const std::string& results, CARTA::SpectralLineResponse& spectral_line_response) {
     std::vector<std::string> headers;
-    std::vector<std::valarray<std::string>> data_columns;
+    std::vector<std::vector<std::string>> data_columns;
     int num_data_rows = 0;
     std::istringstream line_stream(results);
     std::string line, token;
@@ -92,7 +92,7 @@ void SpectralLineCrawler::ParseQueryResult(const std::string& results, CARTA::Sp
     std::istringstream header_token_stream(line);
     while (std::getline(header_token_stream, token, '\t')) {
         headers.push_back(token);
-        data_columns.push_back(std::valarray<std::string>());
+        data_columns.push_back(std::vector<std::string>());
     }
 
     // Parsing data part: parsing each line & fill in data columns
