@@ -46,9 +46,9 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     /* specify URL to get */
     // TODO: assemble parameters when frontend offers split settings
 #ifdef SPLATALOGUE_URL
-    std::string splatalogueUrl = SPLATALOGUE_URL;
+    std::string splatalog_url = SPLATALOGUE_URL;
 #else
-    std::string splatalogueUrl = "https://splatalogue.online";
+    std::string splatalog_url = "https://splatalogue.online";
 #endif
     std::string base = "/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
     std::string intensityLimit =
@@ -65,7 +65,7 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
         "&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab"
         "&offset=0&limit=100000&range=on";
     std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}", frequencyRange.min(), frequencyRange.max());
-    std::string URL = splatalogueUrl + base + intensityLimit + lineListParameters + lineStrengthParameters + energyLevelParameters +
+    std::string URL = splatalog_url + base + intensityLimit + lineListParameters + lineStrengthParameters + energyLevelParameters +
                       miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
