@@ -65,8 +65,8 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
         "&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab"
         "&offset=0&limit=100000&range=on";
     std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}", frequencyRange.min(), frequencyRange.max());
-    std::string URL = splatalogueUrl + base + intensityLimit + lineListParameters + lineStrengthParameters +
-                      energyLevelParameters + miscellaneousParameters + frequencyRangeStr;
+    std::string URL = splatalogueUrl + base + intensityLimit + lineListParameters + lineStrengthParameters + energyLevelParameters +
+                      miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
     /* fetch data & parse */
