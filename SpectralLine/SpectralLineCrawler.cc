@@ -15,14 +15,12 @@ using namespace carta;
 #define INTENSITY_LIMIT_WORKAROUND 0.000001
 #define NUM_HEADERS 18
 
-const std::string SpectralLineCrawler::SplatalogueURLBase =
-    "https://splatalogue.online/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
+const std::string SpectralLineCrawler::SplatalogueURLBase = "https://splatalogue.online/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
 
-const std::string SpectralLineCrawler::Headers[] =
-    {"Species", "Chemical Name", "Freq-MHz(rest frame,redshifted)", "Freq Err(rest frame,redshifted)", "Meas Freq-MHz(rest frame,redshifted)",
-    "Meas Freq Err(rest frame,redshifted)", "Resolved QNs", "Unresolved Quantum Numbers", "CDMS/JPL Intensity", "S<sub>ij</sub>&#956;<sup>2</sup> (D<sup>2</sup>)",
-    "S<sub>ij</sub>", "Log<sub>10</sub> (A<sub>ij</sub>)", "Lovas/AST Intensity", "E_L (cm^-1)", "E_L (K)",
-    "E_U (cm^-1)", "E_U (K)", "Linelist"};
+const std::string SpectralLineCrawler::Headers[] = {"Species", "Chemical Name", "Freq-MHz(rest frame,redshifted)",
+    "Freq Err(rest frame,redshifted)", "Meas Freq-MHz(rest frame,redshifted)", "Meas Freq Err(rest frame,redshifted)", "Resolved QNs",
+    "Unresolved Quantum Numbers", "CDMS/JPL Intensity", "S<sub>ij</sub>&#956;<sup>2</sup> (D<sup>2</sup>)", "S<sub>ij</sub>",
+    "Log<sub>10</sub> (A<sub>ij</sub>)", "Lovas/AST Intensity", "E_L (cm^-1)", "E_L (K)", "E_U (cm^-1)", "E_U (K)", "Linelist"};
 
 SpectralLineCrawler::SpectralLineCrawler() {}
 
