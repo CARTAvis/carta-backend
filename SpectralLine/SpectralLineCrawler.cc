@@ -15,8 +15,6 @@ using namespace carta;
 #define INTENSITY_LIMIT_WORKAROUND 0.000001
 #define NUM_HEADERS 18
 
-const std::string SpectralLineCrawler::SplatalogueURLBase = "https://splatalogue.online/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
-
 const std::string SpectralLineCrawler::Headers[] = {"Species", "Chemical Name", "Freq-MHz(rest frame,redshifted)",
     "Freq Err(rest frame,redshifted)", "Meas Freq-MHz(rest frame,redshifted)", "Meas Freq Err(rest frame,redshifted)", "Resolved QNs",
     "Unresolved Quantum Numbers", "CDMS/JPL Intensity", "S<sub>ij</sub>&#956;<sup>2</sup> (D<sup>2</sup>)", "S<sub>ij</sub>",
@@ -47,6 +45,12 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
 
     /* specify URL to get */
     // TODO: assemble parameters when frontend offers split settings
+#ifdef SPLATALOGUE_URL
+    std::string splatalogueUrl = SPLATALOGUE_URL;
+#else
+    std::string splatalogueUrl = "https://splatalogue.online";
+#endif
+    std::string base = "/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
     std::string intensityLimit =
         std::isnan(line_intensity_lower_limit)
             ? ""
@@ -61,7 +65,7 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
         "&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab"
         "&offset=0&limit=100000&range=on";
     std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}", frequencyRange.min(), frequencyRange.max());
-    std::string URL = SpectralLineCrawler::SplatalogueURLBase + intensityLimit + lineListParameters + lineStrengthParameters +
+    std::string URL = splatalogueUrl + base + intensityLimit + lineListParameters + lineStrengthParameters +
                       energyLevelParameters + miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 

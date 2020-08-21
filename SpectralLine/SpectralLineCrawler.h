@@ -13,7 +13,6 @@ public:
         CARTA::SpectralLineResponse& spectral_line_response);
 
 private:
-    static const std::string SplatalogueURLBase;
     static const std::string Headers[];
     static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp);
     static void ParseQueryResult(const std::string& results, CARTA::SpectralLineResponse& spectral_line_response);
