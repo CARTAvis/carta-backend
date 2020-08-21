@@ -308,10 +308,7 @@ std::valarray<T> DataColumn<T>::GetColumnData(bool fill_subset, const IndexList&
             end = N;
         }
         int64_t end_index = std::clamp(end, begin_index, N);
-
-        auto begin_it = std::begin(entries) + begin_index;
-        auto end_it = std::end(entries) + end_index;
-        return entries[std::slice(begin_index, end_index, 0)];
+        return entries[std::slice(begin_index, end_index, 1)];
     }
 }
 
@@ -361,9 +358,10 @@ void DataColumn<T>::FillColumnData(CARTA::ColumnData& column_data, bool fill_sub
     // Workaround to prevent issues with Safari's lack of BigInt support
     if (data_type == CARTA::Int64 || data_type == CARTA::Uint64) {
         auto double_values = std::vector<double>(std::begin(values), std::end(values));
-        column_data.set_binary_data(double_values.data(), double_values.size() * sizeof(T));
+        column_data.set_binary_data(double_values.data(), double_values.size() * sizeof(double));
     } else {
-        column_data.set_binary_data(&values[0], values.size() * sizeof(T));
+        const void* ptr = &values[0];
+        column_data.set_binary_data(ptr, values.size() * sizeof(T));
     }
 }
 
