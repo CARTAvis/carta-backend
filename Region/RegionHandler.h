@@ -36,7 +36,7 @@ namespace carta {
 
 class RegionHandler {
 public:
-    RegionHandler(bool verbose);
+    RegionHandler(bool perflog);
 
     // Regions
     bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);

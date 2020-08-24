@@ -39,5 +39,5 @@ void MakeKernel(std::vector<float>& kernel, double sigma);
 bool RunKernel(const std::vector<float>& kernel, const float* src_data, float* dest_data, int64_t src_width, int64_t src_height,
     int64_t dest_width, int64_t dest_height, bool vertical);
 bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
-    int smoothing_factor, bool verbose_logging = false);
+    int smoothing_factor, bool performance_logging = false);
 #endif // CARTA_BACKEND__SMOOTHING_H_
