@@ -232,6 +232,7 @@ private:
     std::string _root_folder;
     std::string _base_folder;
     bool _verbose_logging;
+    bool _performance_logging;
 
     // File browser
     FileListHandler* _file_list_handler;
