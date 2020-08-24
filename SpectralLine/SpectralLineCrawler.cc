@@ -155,8 +155,8 @@ void SpectralLineCrawler::ParseQueryResult(const std::string& results, CARTA::Sp
         response_header->set_name(column_name);
         response_header->set_column_index(column_index);
         auto iter = SpectralLineCrawler::HeaderTypeMap.find(column_name);
-        response_header->set_data_type(
-            iter != SpectralLineCrawler::HeaderTypeMap.end() && iter->second == "number" ? CARTA::Double : CARTA::String);
+        auto dataType = iter != SpectralLineCrawler::HeaderTypeMap.end() && iter->second == "number" ? CARTA::Double : CARTA::String;
+        response_header->set_data_type(dataType);
 
         // columns
         auto carta_column = CARTA::ColumnData();
