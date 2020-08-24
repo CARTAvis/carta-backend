@@ -1232,38 +1232,14 @@ bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stok
     if (!CheckChannel(chan_range.from) || !CheckChannel(chan_range.to) || !CheckStokes(stokes)) {
         return false;
     }
-
     // Get the image shape and coordinate system
     casacore::IPosition image_shape = ImageShape();
     casacore::CoordinateSystem* coord_sys = CoordinateSystem();
 
-    // Get direction axes
-    casacore::Vector<casacore::Int> direction_axis = coord_sys->directionAxesNumbers();
-    casacore::vector<casacore::Int> linear_axis = coord_sys->linearAxesNumbers().tovector();
-
     // Init corners map and vectors
     std::map<casacore::uInt, casacore::Vector<casacore::Double>> axis_corner_map; // axis index v.s. its range as a vector
-    casacore::Vector<casacore::Double> x_corners_ext(2, 0);
-    casacore::Vector<casacore::Double> y_corners_ext(2, 0);
     casacore::Vector<casacore::Double> stokes_corners_ext(2, 0);
     casacore::Vector<casacore::Double> channels_corners_ext(2, 0);
-
-    // Set directional axes ranges
-    if (coord_sys->hasDirectionCoordinate() || coord_sys->hasLinearCoordinate()) {
-        casacore::Vector<casacore::Int> tmp_direction_axis;
-        if (coord_sys->hasDirectionCoordinate()) {
-            tmp_direction_axis = coord_sys->directionAxesNumbers();
-        } else {
-            tmp_direction_axis = coord_sys->linearAxesNumbers();
-        }
-
-        casacore::Vector<casacore::Int> direction_shape(2);
-        direction_shape[0] = image_shape[tmp_direction_axis[0]];
-        direction_shape[1] = image_shape[tmp_direction_axis[1]];
-
-        x_corners_ext[1] = direction_shape[0] - 1;
-        y_corners_ext[1] = direction_shape[1] - 1;
-    }
 
     // Set channels range
     if (coord_sys->hasSpectralAxis()) {
@@ -1279,20 +1255,10 @@ bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stok
 
     // Set corners map
     for (casacore::uInt axis = 0; axis < coord_sys->nPixelAxes(); axis++) {
-        if ((direction_axis.size() > 1 && (casacore::Int)axis == direction_axis[0]) ||
-            (!coord_sys->hasDirectionCoordinate() && linear_axis.size() > 1 && (casacore::Int)axis == linear_axis[0])) {
-            axis_corner_map[axis] = x_corners_ext;
-
-        } else if ((direction_axis.size() > 1 && (casacore::Int)axis == direction_axis[1]) ||
-                   (!coord_sys->hasDirectionCoordinate() && linear_axis.size() > 1 && (casacore::Int)axis == linear_axis[1])) {
-            axis_corner_map[axis] = y_corners_ext;
-
-        } else if ((casacore::Int)axis == _spectral_axis) {
+        if ((casacore::Int)axis == _spectral_axis) {
             axis_corner_map[axis] = channels_corners_ext;
-
         } else if ((casacore::Int)axis == _stokes_axis) {
             axis_corner_map[axis] = stokes_corners_ext;
-
         } else {
             casacore::Vector<casacore::Double> range(2, 0);
             range[1] = image_shape[axis] - 1;
@@ -1311,7 +1277,6 @@ bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stok
     // Create an image region
     try {
         casacore::LCBox lc_box(blc, trc, image_shape);
-        casacore::WCBox wc_box(lc_box, *coord_sys);
         casacore::ImageRegion this_region(lc_box);
         image_region = this_region;
         delete coord_sys;
