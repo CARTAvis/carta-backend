@@ -881,7 +881,8 @@ bool RegionHandler::GetRegionHistogramData(
         auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
         auto dt_region_histogram =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-        fmt::print("Fill region histogram in {} ms at {} MPix/s\n", dt_region_histogram, (float)stats.num_pixels / dt_region_histogram);
+        fmt::print(
+            "Fill region histogram in {} ms at {} MPix/s\n", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
     }
 
     return true;
@@ -1122,8 +1123,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
             if (_verbose) {
                 auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
                 auto dt_spectral_profile =
-                    std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-                fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+                fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
             }
 
             _frames.at(file_id)->DecreaseZProfileCount();
@@ -1235,8 +1236,8 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     if (_verbose) {
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
     }
 
     _frames.at(file_id)->DecreaseZProfileCount();
@@ -1363,8 +1364,8 @@ bool RegionHandler::GetRegionStatsData(
 
         if (_verbose) {
             auto t_end_region_stats = std::chrono::high_resolution_clock::now();
-            auto dt_region_stats = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_region_stats - t_start_region_stats).count();
-            fmt::print("Fill region stats in {} ms\n", dt_region_stats);
+            auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
+            fmt::print("Fill region stats in {} ms\n", dt_region_stats * 1e-3);
         }
         return true;
     }
