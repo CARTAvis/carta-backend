@@ -308,7 +308,8 @@ std::valarray<T> DataColumn<T>::GetColumnData(bool fill_subset, const IndexList&
             end = N;
         }
         int64_t end_index = std::clamp(end, begin_index, N);
-        return entries[std::slice(begin_index, end_index, 1)];
+        auto size = end_index - begin_index;
+        return entries[std::slice(begin_index, size, 1)];
     }
 }
 
