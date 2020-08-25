@@ -185,8 +185,11 @@ void TableController::OnFileListRequest(
         return;
     }
 
-    auto relative_path = fs::relative(file_path, root_path);
-    file_list_response.set_directory(relative_path.string());
+    std::string directory = file_list_request.directory();
+    if (directory.find("./") == 0) {
+        directory.replace(0, 2, ""); // remove leading "./"
+    }
+    file_list_response.set_directory(file_list_request.directory());
 
     auto parent_path = fs::relative(file_path.parent_path(), root_path);
     file_list_response.set_parent(parent_path.string());
