@@ -34,7 +34,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            carta::Log(session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -45,7 +45,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = err.getMesg();
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            carta::Log(session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -56,7 +56,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            carta::Log(session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -87,7 +87,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            carta::Log(session_id, _open_image_error);
         }
     }
 }
@@ -191,7 +191,10 @@ bool Frame::ChannelsChanged(int channel, int stokes) {
 }
 
 void Frame::DisconnectCalled() {
-    _connected = false;            // file closed
+    _connected = false; // file closed
+    if (_moment_generator) { // stop moment calculation
+        _moment_generator->StopCalculation();
+    }
     while (_z_profile_count > 0) { // wait for spectral profiles to complete to avoid crash
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
@@ -247,7 +250,7 @@ bool Frame::FillImageCache() {
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetImageSlicer(ChannelRange(_channel_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
-        Log(_session_id, "Loading image cache failed.");
+        carta::Log(_session_id, "Loading image cache failed.");
         return false;
     }
 
@@ -1388,4 +1391,30 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Get spectral data from loader (add image mutex for swizzled data)
     return _loader->GetRegionSpectralData(region_id, stokes, mask, origin, _image_mutex, results, progress);
+}
+
+std::vector<CollapseResult> Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback,
+    const casacore::ImageRegion& image_region, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
+    std::vector<carta::CollapseResult> collapse_results;
+
+    // Create a moment generator
+    if (_moment_generator) {
+        _moment_generator.reset(new MomentGenerator(GetFileName(), GetImage(), GetSpectralAxis(), GetStokesAxis(), progress_callback));
+    } else {
+        _moment_generator =
+            std::make_unique<MomentGenerator>(GetFileName(), GetImage(), GetSpectralAxis(), GetStokesAxis(), progress_callback);
+    }
+
+    // Do calculations
+    std::unique_lock<std::mutex> ulock(_image_mutex);
+    collapse_results = _moment_generator->CalculateMoments(file_id, image_region, moment_request, moment_response);
+    ulock.unlock();
+
+    return collapse_results;
+}
+
+void Frame::StopMomentCalc() {
+    if (_moment_generator) {
+        _moment_generator->StopCalculation();
+    }
 }

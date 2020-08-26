@@ -46,7 +46,6 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
-#include "Moment/MomentController.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
@@ -254,12 +253,8 @@ private:
     // Image file converter
     std::unique_ptr<carta::FileConverter> _file_converter;
 
-    // Moments controller
-    std::unique_ptr<carta::MomentController> _moment_controller;
-
     // Manage image channel
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
-    std::unordered_map<int, std::mutex> _image_mutexes; // Todo: this mutex map will be removed after the refactoring of moments generator
     std::unordered_map<int, bool> _image_channel_task_active;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)

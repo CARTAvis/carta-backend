@@ -26,6 +26,7 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "InterfaceConstants.h"
+#include "Moment/MomentGenerator.h"
 #include "Region/Region.h"
 #include "RequirementsCache.h"
 
@@ -173,6 +174,13 @@ public:
         return _stokes_axis;
     }
 
+    // Calculate moments
+    std::vector<CollapseResult> CalculateMoments(int file_id, MomentProgressCallback progress_callback,
+        const casacore::ImageRegion& image_region, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+
+    // Stop moment calculation
+    void StopMomentCalc();
+
 private:
     // Validate channel, stokes index values
     bool CheckChannel(int channel);
@@ -258,6 +266,9 @@ private:
     std::unordered_map<int, std::vector<carta::HistogramResults>> _image_histograms, _cube_histograms;
     std::unordered_map<int, carta::BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
+
+    // Moment generator
+    std::unique_ptr<MomentGenerator> _moment_generator;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_
