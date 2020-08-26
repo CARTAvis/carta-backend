@@ -753,7 +753,8 @@ std::vector<CollapseResult> carta::RegionHandler::CalculateMoments(int file_id, 
 
 // ***** Fill histogram *****
 
-bool carta::RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
+bool carta::RegionHandler::FillRegionHistogramData(
+    std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
     // Fill histogram data for given region and file
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
