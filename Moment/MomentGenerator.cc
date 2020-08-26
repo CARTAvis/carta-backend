@@ -124,15 +124,14 @@ void MomentGenerator::SetMomentTypes(const CARTA::MomentRequest& moment_request)
     bool remove_median_coord(false);
     for (int i = 0; i < moments_size; ++i) {
         if (moment_request.moments(i) == CARTA::Moment::MEDIAN_COORDINATE) {
-            if ((_include_pix.size() == 2) && (_include_pix[0] * _include_pix[1] < 0)) {
+            if (((_include_pix.size() == 2) && (_include_pix[0] * _include_pix[1] < 0)) || (_include_pix.empty() && _exclude_pix.empty())) {
                 remove_median_coord = true;
-            } else if (_include_pix.empty() && _exclude_pix.empty()) {
-                remove_median_coord = true;
+                break;
             }
         }
     }
 
-    if (remove_median_coord) {
+    if (remove_median_coord && moments_size > 0) {
         _moments.resize(moments_size - 1);
     } else {
         _moments.resize(moments_size);
