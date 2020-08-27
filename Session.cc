@@ -1284,9 +1284,11 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region spectral profile
         CARTA::SpectralProfileData profile_data;
-        _moment_controller->StopCalculation(file_id); // Stop the moment calculations while spectral profile begins
         std::set<int> file_ids = _region_handler->GetFileIds(region_id);
-        std::for_each(file_ids.begin(), file_ids.end(), [&](int i) { _image_mutexes[i].lock(); });
+        std::for_each(file_ids.begin(), file_ids.end(), [&](int i) {
+            _moment_controller->StopCalculation(i); // Stop the moment calculations while spectral profile begins
+            _image_mutexes[i].lock();
+        });
         data_sent = _region_handler->FillSpectralProfileData(
             [&](CARTA::SpectralProfileData profile_data) {
                 if (profile_data.profiles_size() > 0) {
