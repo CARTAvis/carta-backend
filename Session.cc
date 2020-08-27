@@ -1285,7 +1285,8 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
         // Region spectral profile
         CARTA::SpectralProfileData profile_data;
         _moment_controller->StopCalculation(file_id); // Stop the moment calculations while spectral profile begins
-        std::unique_lock<std::mutex> ulock(_image_mutexes[file_id]);
+        std::set<int> file_ids = _region_handler->GetFileIds(region_id);
+        std::for_each(file_ids.begin(), file_ids.end(), [&](int i) { _image_mutexes[i].lock(); });
         data_sent = _region_handler->FillSpectralProfileData(
             [&](CARTA::SpectralProfileData profile_data) {
                 if (profile_data.profiles_size() > 0) {
@@ -1294,13 +1295,13 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
                 }
             },
             region_id, file_id, stokes_changed);
-        ulock.unlock();
+        std::for_each(file_ids.begin(), file_ids.end(), [&](int i) { _image_mutexes[i].unlock(); });
     } else if (region_id == CURSOR_REGION_ID) {
         // Cursor spectral profile
         if (_frames.count(file_id)) {
             CARTA::SpectralProfileData profile_data;
             _moment_controller->StopCalculation(file_id); // Stop the moments calculation while spectral profile begins
-            std::unique_lock<std::mutex> ulock(_image_mutexes[file_id]);
+            _image_mutexes[file_id].lock();
             data_sent = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
                     if (profile_data.profiles_size() > 0) {
@@ -1311,7 +1312,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
                     }
                 },
                 region_id, stokes_changed);
-            ulock.unlock();
+            _image_mutexes[file_id].unlock();
         }
     }
     return data_sent;

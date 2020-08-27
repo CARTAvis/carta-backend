@@ -68,6 +68,9 @@ public:
     // Get an image region with respect to the region id, file id, channels range and a stoke type
     bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
 
+    // Get file ids with respect to the region id
+    std::set<int> GetFileIds(int region_id);
+
 private:
     // Get unique region id (max id + 1)
     int GetNextRegionId();
