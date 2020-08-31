@@ -43,6 +43,7 @@ static string root_folder("/"), base_folder(".");
 // token to validate incoming WS connection header against
 static string auth_token = "";
 static bool verbose;
+static bool perflog;
 
 // Called on connection. Creates session objects and assigns UUID to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
@@ -78,7 +79,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         }
     }
 
-    Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose);
+    Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose, perflog);
 
     ws->setUserData(session);
     if (carta_grpc_service) {
@@ -506,6 +507,7 @@ int main(int argc, const char* argv[]) {
             casacore::Input inp;
             inp.version(VERSION_ID);
             inp.create("verbose", "False", "display verbose logging", "Bool");
+            inp.create("perflog", "False", "display performance logging", "Bool");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
@@ -517,6 +519,7 @@ int main(int argc, const char* argv[]) {
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
+            perflog = inp.getBool("perflog");
             port = inp.getInt("port");
             grpc_port = inp.getInt("grpc_port");
             thread_count = inp.getInt("threads");

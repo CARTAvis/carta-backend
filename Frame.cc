@@ -19,9 +19,10 @@
 
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel)
+Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog, int default_channel)
     : _session_id(session_id),
       _verbose(verbose),
+      _perflog(perflog),
       _valid(true),
       _loader(loader),
       _spectral_axis(-1),
@@ -251,7 +252,7 @@ bool Frame::FillImageCache() {
         return false;
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
         auto dt_set_image_cache =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
@@ -346,7 +347,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         }
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
         auto dt_raster_data_filter =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
@@ -409,15 +410,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
             // Measure duration for compress tile data
-            if (_verbose) {
-                auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
-                auto dt_compress_tile_data =
-                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
-                fmt::print("Compress {}x{} tile data in {} ms at {} MPix/s\n", tile_width, tile_height, dt_compress_tile_data * 1e-3,
-                    (float)(tile_width * tile_height) / dt_compress_tile_data);
-            }
-
-            if (_verbose) {
+            if (_perflog) {
                 auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
                 auto dt_compress_tile_data =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
@@ -475,7 +468,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
         TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, _contour_settings.levels, vertex_data,
-            index_data, _contour_settings.chunk_size, partial_contour_callback, _verbose);
+            index_data, _contour_settings.chunk_size, partial_contour_callback, _perflog);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
@@ -488,14 +481,14 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_height = _image_shape(1) - 2 * kernel_width;
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
         smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
-            _contour_settings.smoothing_factor, _verbose);
+            _contour_settings.smoothing_factor, _perflog);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
         if (smooth_successful) {
             // Perform contouring with an offset based on the Gaussian smoothing apron size
             offset = _contour_settings.smoothing_factor - 1;
             TraceContours(dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-                _contour_settings.chunk_size, partial_contour_callback, _verbose);
+                _contour_settings.chunk_size, partial_contour_callback, _perflog);
             return true;
         }
     } else {
@@ -515,7 +508,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             size_t dest_width = ceil(double(image_bounds.x_max()) / _contour_settings.smoothing_factor);
             size_t dest_height = ceil(double(image_bounds.y_max()) / _contour_settings.smoothing_factor);
             TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-                _contour_settings.chunk_size, partial_contour_callback, _verbose);
+                _contour_settings.chunk_size, partial_contour_callback, _perflog);
             return true;
         }
         fmt::print("Smoothing mode not implemented yet!\n");
@@ -609,7 +602,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 }
             }
 
-            if (_verbose && histogram_filled) {
+            if (_perflog && histogram_filled) {
                 auto t_end_image_histogram = std::chrono::high_resolution_clock::now();
                 auto dt_image_histogram =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_histogram - t_start_image_histogram).count();
@@ -868,10 +861,10 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         // cache results
         _image_stats[cache_key] = stats_map;
 
-        if (_verbose) {
+        if (_perflog) {
             auto t_end_image_stats = std::chrono::high_resolution_clock::now();
-            auto dt_image_stats = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_image_stats - t_start_image_stats).count();
-            fmt::print("Fill image stats in {} ms\n", dt_image_stats);
+            auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
+            fmt::print("Fill image stats in {} ms\n", dt_image_stats * 1e-3);
         }
         return true;
     }
@@ -968,11 +961,11 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         }
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
         auto dt_spatial_profile =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
-        fmt::print("Fill spatial profile in {} ms\n", dt_spatial_profile);
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
+        fmt::print("Fill spatial profile in {} ms\n", dt_spatial_profile * 1e-3);
     }
 
     return true;
@@ -1190,11 +1183,11 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill cursor spectral profile in {} ms\n", dt_spectral_profile);
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+        fmt::print("Fill cursor spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
     }
 
     DecreaseZProfileCount();
@@ -1353,11 +1346,11 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         sub_image.doGetSlice(tmp, slicer);
         ulock.unlock();
 
-        if (_verbose) {
+        if (_perflog) {
             auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
             auto dt_get_subimage_data =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
-            fmt::print("Get region subimage data in {} ms\n", dt_get_subimage_data);
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
+            fmt::print("Get region subimage data in {} ms\n", dt_get_subimage_data * 1e-3);
         }
         return true;
     } catch (casacore::AipsError& err) {
