@@ -22,6 +22,7 @@ Command-line arguments are in the format arg=value.  Available arguments include
 --help          List version and arguments
 debug           Debug level, default 0
 verbose         Verbose logging, default False
+perflog         Performance logging, default False
 port            Set server port, default 3002
 threads         Set thread pool count, default 4
 base            Set folder for data files, default current directory
