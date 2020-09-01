@@ -38,7 +38,7 @@ cmake ..
 make
 ```
 
-For more detailed sample commands for installing the dependencies and performing the build on specific Linux distributions, please refer to the provided Dockerfiles (for [Ubuntu 18.04](https://github.com/CARTAvis/carta-backend/blob/dev/Dockerfile) and [others](https://github.com/CARTAvis/carta-backend/tree/dev/Dockerfiles)).
+For more detailed example commands for installing the dependencies and performing the build on specific Linux distributions, please refer to the provided [Dockerfiles](https://github.com/CARTAvis/carta-backend/tree/dev/Dockerfiles).
 
 ## Running the server
 
