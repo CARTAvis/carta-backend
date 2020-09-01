@@ -47,6 +47,7 @@ Command-line arguments are in the format arg=value.  Available arguments include
 --help          List version and arguments
 debug           Debug level, default 0
 verbose         Verbose logging, default False
+perflog         Performance logging, default False
 port            Set server port, default 3002
 grpc_port       Set gRPC port for scripting
 threads         Set thread pool count, default 4
