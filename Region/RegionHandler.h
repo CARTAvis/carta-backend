@@ -36,7 +36,7 @@ namespace carta {
 
 class RegionHandler {
 public:
-    RegionHandler(bool verbose);
+    RegionHandler(bool perflog);
 
     // Regions
     bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
@@ -104,7 +104,7 @@ private:
         int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
 
     // Logging
-    bool _verbose;
+    bool _perflog;
 
     // Trigger job cancellation when true
     volatile bool _cancel_all_jobs = false;
