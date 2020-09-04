@@ -41,6 +41,7 @@ public:
 
     // Resulting message
     bool IsSuccess() const;
+    bool IsCancelled() const;
     casacore::String GetErrorMessage() const;
 
     // Methods from the "casa::ImageMomentsProgressMonitor" interface
@@ -78,6 +79,7 @@ private:
     casacore::Vector<float> _exclude_pix;
     casacore::String _error_msg;
     bool _success;
+    bool _cancel;
     std::unordered_map<CARTA::Moment, ImageMoments<casacore::Float>::MomentTypes> _moment_map;
     std::unordered_map<ImageMoments<casacore::Float>::MomentTypes, casacore::String> _moment_suffix_map;
 

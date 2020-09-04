@@ -348,6 +348,10 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     if (_stop) {
+        // Reset shared ptrs for output moments images if calculation is cancelled
+        for (auto& output_image : output_images) {
+            output_image.reset();
+        }
         // Clear the output image ptrs vector if calculation is cancelled
         output_images.clear();
     } else {
@@ -568,11 +572,11 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     static const casacore::Vector<casacore::Bool> no_mask; // False mask vector
 
     if (tell_progress) {
-        casacore::uInt n_expected_oters = in_shape.product() / chunk_shape_init.product();
-        tell_progress->init(n_expected_oters);
+        casacore::uInt total_slices = in_shape.product() / in_shape[collapse_axis];
+        tell_progress->init(total_slices);
     }
 
-    casacore::uInt n_done = 0; // Number of chunks have done
+    casacore::uInt n_done = 0; // Number of slices have done
 
     // Iterate through a cube image, chunk by chunk
     for (lat_iter.reset(); !lat_iter.atEnd(); ++lat_iter) {
@@ -618,6 +622,12 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
 
             done = True; // The scan of this chunk is complete
 
+            // Report the number of slices have done
+            if (tell_progress != 0) {
+                ++n_done;
+                tell_progress->nstepsDone(n_done);
+            }
+
             // Proceed to the next slice on the display axes
             for (casacore::uInt k = 0; k < n_display_axes; ++k) {
                 casacore::uInt dax = display_axes[k];
@@ -655,11 +665,6 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
                     mask_out.putSlice(result_array_masks[k], result_pos);
                 }
             }
-        }
-
-        if (tell_progress != 0) {
-            ++n_done;
-            tell_progress->nstepsDone(n_done); // Report the umber of chunks have done
         }
     }
 
