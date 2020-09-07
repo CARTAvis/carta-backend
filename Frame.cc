@@ -1270,16 +1270,16 @@ bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stok
         trc(axis) = axis_corner_map[axis][1];
     }
 
+    delete coord_sys;
+
     // Create an image region
     try {
         casacore::LCBox lc_box(blc, trc, image_shape);
         casacore::ImageRegion this_region(lc_box);
         image_region = this_region;
-        delete coord_sys;
         return true;
     } catch (casacore::AipsError error) {
         std::cerr << "Error converting full region to file " << file_id << ": " << error.getMesg() << std::endl;
-        delete coord_sys;
         return false;
     }
 }
@@ -1391,16 +1391,14 @@ std::vector<CollapseResult> Frame::CalculateMoments(int file_id, MomentProgressC
     std::vector<carta::CollapseResult> collapse_results;
 
     // Create a moment generator
-    if (_moment_generator) {
-        _moment_generator.reset(new MomentGenerator(GetFileName(), GetImage(), GetSpectralAxis(), GetStokesAxis(), progress_callback));
-    } else {
-        _moment_generator =
-            std::make_unique<MomentGenerator>(GetFileName(), GetImage(), GetSpectralAxis(), GetStokesAxis(), progress_callback);
+    if (!_moment_generator) {
+        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
     }
 
     // Do calculations
     std::unique_lock<std::mutex> ulock(_image_mutex);
-    collapse_results = _moment_generator->CalculateMoments(file_id, image_region, moment_request, moment_response);
+    collapse_results = _moment_generator->CalculateMoments(
+        file_id, image_region, GetSpectralAxis(), GetStokesAxis(), progress_callback, moment_request, moment_response);
     ulock.unlock();
 
     return collapse_results;
