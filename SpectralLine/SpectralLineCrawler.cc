@@ -72,7 +72,12 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     std::string miscellaneousParameters =
         "&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab"
         "&offset=0&limit=100000&range=on";
-    std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}", frequencyRange.min(), frequencyRange.max());
+    double freqMin = frequencyRange.min();
+    double freqMax = frequencyRange.max();
+    // workaround to fix splatalogue frequency range parameter bug
+    auto freqMinString = fmt::format(freqMin == std::floor(freqMin) ? "{:.0f}" : "{}", freqMin);
+    auto freqMaxString = fmt::format(freqMax == std::floor(freqMax) ? "{:.0f}" : "{}", freqMax);
+    std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}", freqMinString, freqMaxString);
     std::string URL = splatalog_url + base + intensityLimit + lineListParameters + lineStrengthParameters + energyLevelParameters +
                       miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());

@@ -1221,7 +1221,7 @@ casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Re
     return image_region;
 }
 
-bool Frame::GetImageRegion(const ChannelRange& chan_range, int stokes, casacore::ImageRegion& image_region) {
+bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stokes, casacore::ImageRegion& image_region) {
     if (!CheckChannel(chan_range.from) || !CheckChannel(chan_range.to) || !CheckStokes(stokes)) {
         return false;
     }
@@ -1302,13 +1302,18 @@ bool Frame::GetImageRegion(const ChannelRange& chan_range, int stokes, casacore:
     }
 
     // Create an image region
-    casacore::LCBox lc_box(blc, trc, image_shape);
-    casacore::WCBox wc_box(lc_box, *coord_sys);
-    casacore::ImageRegion this_region(wc_box);
-    image_region = this_region;
-
-    delete coord_sys;
-    return true;
+    try {
+        casacore::LCBox lc_box(blc, trc, image_shape);
+        casacore::WCBox wc_box(lc_box, *coord_sys);
+        casacore::ImageRegion this_region(lc_box);
+        image_region = this_region;
+        delete coord_sys;
+        return true;
+    } catch (casacore::AipsError error) {
+        std::cerr << "Error converting full region to file " << file_id << ": " << error.getMesg() << std::endl;
+        delete coord_sys;
+        return false;
+    }
 }
 
 casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& region) {

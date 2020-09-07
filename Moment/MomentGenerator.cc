@@ -13,6 +13,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
       _sub_image(nullptr),
       _image_moments(nullptr),
       _success(false),
+      _cancel(false),
       _progress_callback(progress_callback),
       _moments_calc_count(0) {
     SetMomentTypeMaps();
@@ -21,6 +22,7 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
 std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
     _success = false;
+    _cancel = false;
 
     // Collapse results
     std::vector<CollapseResult> collapse_results;
@@ -28,11 +30,11 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
     // Set moment axis
     SetMomentAxis(moment_request);
 
-    // Set moment types
-    SetMomentTypes(moment_request);
-
     // Set pixel range
     SetPixelRange(moment_request);
+
+    // Set moment types
+    SetMomentTypes(moment_request);
 
     // Reset an ImageMoments
     ResetImageMoments(image_region);
@@ -89,6 +91,9 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
     // Set is the moment calculation successful or not
     moment_response.set_success(IsSuccess());
 
+    // Set the moment calculation is cancelled or not
+    moment_response.set_cancel(IsCancelled());
+
     // Get error message if any
     moment_response.set_message(GetErrorMessage());
 
@@ -98,6 +103,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
 void MomentGenerator::StopCalculation() {
     if (_image_moments) {
         _image_moments->StopCalculation();
+        _cancel = true;
     }
 }
 
@@ -113,9 +119,29 @@ void MomentGenerator::SetMomentAxis(const CARTA::MomentRequest& moment_request) 
 
 void MomentGenerator::SetMomentTypes(const CARTA::MomentRequest& moment_request) {
     int moments_size(moment_request.moments_size());
-    _moments.resize(moments_size);
+
+    // Check whether to remove the median coordinate moment type
+    bool remove_median_coord(false);
     for (int i = 0; i < moments_size; ++i) {
-        _moments[i] = GetMomentMode(moment_request.moments(i));
+        if (moment_request.moments(i) == CARTA::Moment::MEDIAN_COORDINATE) {
+            if (((_include_pix.size() == 2) && (_include_pix[0] * _include_pix[1] < 0)) || (_include_pix.empty() && _exclude_pix.empty())) {
+                remove_median_coord = true;
+                break;
+            }
+        }
+    }
+
+    if (remove_median_coord && moments_size > 0) {
+        _moments.resize(moments_size - 1);
+    } else {
+        _moments.resize(moments_size);
+    }
+
+    // Fill moment types to calculate
+    for (int i = 0, j = 0; i < moments_size; ++i) {
+        if (moment_request.moments(i) != CARTA::Moment::MEDIAN_COORDINATE || !remove_median_coord) {
+            _moments[j++] = GetMomentMode(moment_request.moments(i));
+        }
     }
 }
 
@@ -196,6 +222,10 @@ casacore::String MomentGenerator::GetOutputFileName() {
 
 bool MomentGenerator::IsSuccess() const {
     return _success;
+}
+
+bool MomentGenerator::IsCancelled() const {
+    return _cancel;
 }
 
 casacore::String MomentGenerator::GetErrorMessage() const {
