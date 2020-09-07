@@ -552,7 +552,19 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     const casacore::IPosition chunk_slice_end_at_chunk_iter_begin = chunk_slice_end; // As an increment of a chunk for the lattice iterator
 
     // Get a chunk shape and used it to set the data iterator
+    
     casacore::IPosition chunk_shape_init = ChunkShape(collapse_axis, lattice_in);
+    
+    casacore::IPosition hdf5_chunk_shape(in_ndim, 1);
+    hdf5_chunk_shape[0] = 512;
+    hdf5_chunk_shape[1] = 512;
+    
+    auto nice_shape = lattice_in.niceCursorShape();
+    if (nice_shape == hdf5_chunk_shape) {
+        chunk_shape_init[0] = nice_shape[0];
+        chunk_shape_init[1] = nice_shape[1];
+    }
+        
     casacore::LatticeStepper my_stepper(in_shape, chunk_shape_init, LatticeStepper::RESIZE);
     casacore::RO_MaskedLatticeIterator<T> lat_iter(lattice_in, my_stepper);
 
