@@ -32,9 +32,9 @@ public:
     ~MomentGenerator(){};
 
     // Calculate moments
-    std::vector<CollapseResult> CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
-        const MomentProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request,
-        CARTA::MomentResponse& moment_response);
+    bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
+        const MomentProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+        std::vector<CollapseResult>& collapse_results);
 
     // Stop moments calculation
     void StopCalculation();

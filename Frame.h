@@ -176,8 +176,9 @@ public:
     }
 
     // Calculate moments
-    std::vector<CollapseResult> CalculateMoments(int file_id, MomentProgressCallback progress_callback,
-        const casacore::ImageRegion& image_region, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+    bool CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+        std::vector<carta::CollapseResult>& collapse_results);
 
     // Stop moment calculation
     void StopMomentCalc();

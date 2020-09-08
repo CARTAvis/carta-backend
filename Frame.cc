@@ -1386,22 +1386,21 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
     return _loader->GetRegionSpectralData(region_id, stokes, mask, origin, _image_mutex, results, progress);
 }
 
-std::vector<CollapseResult> Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback,
-    const casacore::ImageRegion& image_region, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
-    std::vector<carta::CollapseResult> collapse_results;
-
+bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<carta::CollapseResult>& collapse_results) {
     // Create a moment generator
     if (!_moment_generator) {
         _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
     }
 
     // Do calculations
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    collapse_results = _moment_generator->CalculateMoments(
-        file_id, image_region, GetSpectralAxis(), GetStokesAxis(), progress_callback, moment_request, moment_response);
+    std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
+    _moment_generator->CalculateMoments(
+        file_id, image_region, GetSpectralAxis(), GetStokesAxis(), progress_callback, moment_request, moment_response, collapse_results);
     ulock.unlock();
 
-    return collapse_results;
+    return !collapse_results.empty();
 }
 
 void Frame::StopMomentCalc() {

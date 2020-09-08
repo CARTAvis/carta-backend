@@ -9,17 +9,14 @@ MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::Ima
     SetMomentTypeMaps();
 }
 
-std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis,
-    int stokes_axis, const MomentProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request,
-    CARTA::MomentResponse& moment_response) {
+bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
+    const MomentProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<CollapseResult>& collapse_results) {
     _spectral_axis = spectral_axis;
     _stokes_axis = stokes_axis;
     _progress_callback = progress_callback;
     _success = false;
     _cancel = false;
-
-    // Collapse results
-    std::vector<CollapseResult> collapse_results;
 
     // Set moment axis
     SetMomentAxis(moment_request);
@@ -91,7 +88,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
     // Get error message if any
     moment_response.set_message(GetErrorMessage());
 
-    return collapse_results;
+    return !collapse_results.empty();
 }
 
 void MomentGenerator::StopCalculation() {

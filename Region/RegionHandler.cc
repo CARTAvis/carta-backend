@@ -727,12 +727,12 @@ bool carta::RegionHandler::CalculateMoments(int file_id, const std::shared_ptr<F
     if (region_id > 0) {
         _regions.at(region_id)->IncreaseZProfileCount(); // use z profile count to control the destruction time for the Region
         if (ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
-            collapse_results = frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response);
+            frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
         }
         _regions.at(region_id)->DecreaseZProfileCount();
     } else {
         if (frame->GetImageRegion(file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
-            collapse_results = frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response);
+            frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
         }
     }
     frame->DecreaseZProfileCount();
