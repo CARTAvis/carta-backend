@@ -997,7 +997,6 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
 
     if (_frames.count(file_id)) {
         auto& frame = _frames.at(file_id);
-
         // Set moment progress callback function
         auto progress_callback = [&](float progress) {
             CARTA::MomentProgress moment_progress;
@@ -1009,12 +1008,12 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         // Do calculations
         std::vector<carta::CollapseResult> collapse_results;
         CARTA::MomentResponse moment_response;
-        collapse_results = _region_handler->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response);
-
-        // Open moment images from the cache, open files acknowledges will be sent to frontend
-        for (int i = 0; i < collapse_results.size(); ++i) {
-            auto& collapse_result = collapse_results[i];
-            OnOpenFile(collapse_result, moment_response, request_id);
+        if (_region_handler->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response, collapse_results)) {
+            for (int i = 0; i < collapse_results.size(); ++i) {
+                auto& collapse_result = collapse_results[i];
+                // Open an moment image from the cache, open file acknowledgement will be sent to the frontend
+                OnOpenFile(collapse_result, moment_response, request_id);
+            }
         }
 
         // Send moment response message
@@ -1028,7 +1027,7 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
 void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
     int file_id(stop_moment_calc.file_id());
     if (_frames.count(file_id)) {
-        _frames[file_id]->StopMomentCalc();
+        _frames.at(file_id)->StopMomentCalc();
     }
 }
 

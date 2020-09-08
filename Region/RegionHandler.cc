@@ -713,10 +713,9 @@ bool carta::RegionHandler::ApplyRegionToFile(
     return false;
 }
 
-std::vector<CollapseResult> carta::RegionHandler::CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame,
-    MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
-    std::vector<carta::CollapseResult> collapse_results;
-
+bool carta::RegionHandler::CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<carta::CollapseResult>& collapse_results) {
     // To get an image region
     casacore::ImageRegion image_region;
     int region_id(moment_request.region_id());
@@ -724,9 +723,9 @@ std::vector<CollapseResult> carta::RegionHandler::CalculateMoments(int file_id, 
     int chan_max(moment_request.spectral_range().max());
 
     // Do calculations
-    frame->IncreaseZProfileCount();
+    frame->IncreaseZProfileCount(); // use z profile count to control the destruction time for the Frame
     if (region_id > 0) {
-        _regions.at(region_id)->IncreaseZProfileCount();
+        _regions.at(region_id)->IncreaseZProfileCount(); // use z profile count to control the destruction time for the Region
         if (ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
             collapse_results = frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response);
         }
@@ -738,7 +737,7 @@ std::vector<CollapseResult> carta::RegionHandler::CalculateMoments(int file_id, 
     }
     frame->DecreaseZProfileCount();
 
-    return collapse_results;
+    return !collapse_results.empty();
 }
 
 // ********************************************************************
