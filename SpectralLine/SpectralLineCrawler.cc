@@ -51,10 +51,16 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     std::string splatalog_url = "https://splatalogue.online";
 #endif
     std::string base = "/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
-    std::string intensityLimit =
-        std::isnan(line_intensity_lower_limit)
-            ? ""
-            : fmt::format("&lill_cdms_jpl={}", line_intensity_lower_limit == 0 ? INTENSITY_LIMIT_WORKAROUND : line_intensity_lower_limit);
+    std::string intensityLimit = "";
+    if (!std::isnan(line_intensity_lower_limit)) {
+        if (line_intensity_lower_limit == 0) { // workaround for 0
+            intensityLimit = fmt::format("&lill_cdms_jpl={}", INTENSITY_LIMIT_WORKAROUND);
+        } else { // workaround for splatalogue intensityLimit parameter cant be integer bug
+            intensityLimit = fmt::format(
+                line_intensity_lower_limit == std::floor(line_intensity_lower_limit) ? "&lill_cdms_jpl={:.1f}" : "&lill_cdms_jpl={}",
+                line_intensity_lower_limit);
+        }
+    }
     std::string lineListParameters =
         "&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas"
         "&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU"
