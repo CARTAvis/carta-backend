@@ -718,26 +718,29 @@ bool MyRegionHandler::ApplyRegionToFile(
 bool MyRegionHandler::CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<carta::CollapseResult>& collapse_results) {
-    // To get an image region
+    // Get an image region
     casacore::ImageRegion image_region;
     int region_id(moment_request.region_id());
     int chan_min(moment_request.spectral_range().min());
     int chan_max(moment_request.spectral_range().max());
+    bool image_region_ok(false);
+
+    frame->IncreaseZProfileCount(); // Use z profile count to control the destruction for the Frame
+
+    if (region_id > 0) {
+        _regions.at(region_id)->IncreaseZProfileCount(); // Use z profile count to control the destruction for the Region
+        image_region_ok = ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region);
+        _regions.at(region_id)->DecreaseZProfileCount(); // Decrease the z profile count for the Region
+    } else {
+        image_region_ok = frame->GetImageRegion(file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region);
+    }
 
     // Do calculations
-    frame->IncreaseZProfileCount(); // use z profile count to control the destruction time for the Frame
-    if (region_id > 0) {
-        _regions.at(region_id)->IncreaseZProfileCount(); // use z profile count to control the destruction time for the Region
-        if (ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
-            frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
-        }
-        _regions.at(region_id)->DecreaseZProfileCount();
-    } else {
-        if (frame->GetImageRegion(file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
-            frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
-        }
+    if (image_region_ok) {
+        frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
     }
-    frame->DecreaseZProfileCount();
+
+    frame->DecreaseZProfileCount(); // Decrease the z profile count for the Frame
 
     return !collapse_results.empty();
 }
