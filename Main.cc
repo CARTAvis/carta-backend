@@ -10,7 +10,7 @@
 #include <signal.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
-#include <uWS/uWS.h>
+#include <uWebSockets/App.h>
 
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/HostInfo.h>
@@ -32,7 +32,6 @@ int global_thread_count = 0;
 static FileListHandler* file_list_handler;
 
 static uint32_t session_number;
-static uWS::Hub websocket_hub(uWS::PERMESSAGE_DEFLATE);
 
 // grpc server for scripting client
 static std::unique_ptr<CartaGrpcService> carta_grpc_service;
@@ -45,59 +44,71 @@ static string auth_token = "";
 static bool verbose;
 static bool perflog;
 
-// Called on connection. Creates session objects and assigns UUID to it
-void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
+// Sessions map
+std::unordered_map<uint32_t, Session*> sessions;
+
+// Apply ws->getUserData and return one of these
+struct PerSocketData {
+    uint32_t session_id;
+    string address;
+};
+
+void OnUpgrade(uWS::HttpResponse<true>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context) {
     session_number++;
     // protect against overflow
     session_number = max(session_number, 1u);
 
-    uS::Async* outgoing = new uS::Async(websocket_hub.getLoop());
-
-    outgoing->start([](uS::Async* async) -> void {
-        Session* current_session = ((Session*)async->getData());
-        current_session->SendPendingMessages();
-    });
-
     string address;
-    auto ip_header = http_request.getHeader("x-forwarded-for");
-    if (ip_header) {
-        address = ip_header.toString();
+    auto ip_header = http_request->getHeader("x-forwarded-for");
+    if (!ip_header.empty()) {
+        address = ip_header;
     } else {
-        address = ws->getAddress().address;
+        address = http_response->getRemoteAddress();
     }
 
     // Check if there's a token
     if (!auth_token.empty()) {
-        auto token_header_entry = http_request.getHeader("carta-auth-token");
-        if (token_header_entry) {
-            string token_header_value = token_header_entry.toString();
+        auto token_header_entry = http_request->getHeader("carta-auth-token");
+        if (!token_header_entry.empty()) {
+            string token_header_value(token_header_entry);
             if (token_header_value != auth_token) {
-                ws->close(1000, "Header auth failed");
+                std::cerr << "Header auth failed!\n";
+                http_response->close();
             }
         } else {
-            ws->close(1000, "Header auth failed");
+            std::cerr << "Header auth failed!\n";
+            http_response->close();
         }
     }
 
-    Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose, perflog);
+    http_response->template upgrade<PerSocketData>({session_number, address}, http_request->getHeader("sec-websocket-key"),
+        http_request->getHeader("sec-websocket-protocol"), http_request->getHeader("sec-websocket-extensions"), context);
+}
 
-    ws->setUserData(session);
+// Called on connection. Creates session objects and assigns UUID to it
+void OnConnect(uWS::WebSocket<true, true>* ws) {
+    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
+    string address = static_cast<PerSocketData*>(ws->getUserData())->address;
+    sessions[session_id] = new Session(ws, session_number, address, root_folder, base_folder, file_list_handler, verbose, perflog);
+
     if (carta_grpc_service) {
-        carta_grpc_service->AddSession(session);
+        carta_grpc_service->AddSession(sessions[session_id]);
     }
-    session->IncreaseRefCount();
-    outgoing->setData(session);
+    sessions[session_id]->IncreaseRefCount();
+
     carta::Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
-void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size_t length) {
+void OnDisconnect(uWS::WebSocket<true, true>* ws, int code, std::string_view message) {
     // Skip server-forced disconnects
     if (code == 4003) {
         return;
     }
 
-    Session* session = (Session*)ws->getUserData();
+    // Get the Session object
+    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
+    Session* session = sessions[session_id];
 
     if (session) {
         auto uuid = session->GetId();
@@ -109,41 +120,28 @@ void OnDisconnect(uWS::WebSocket<uWS::SERVER>* ws, int code, char* message, size
         }
         if (!session->DecreaseRefCount()) {
             delete session;
-            ws->setUserData(nullptr);
+            ws->close();
         }
     } else {
         cerr << "Warning: OnDisconnect called with no Session object.\n";
     }
 }
 
-void OnError(void* user) {
-    switch ((long)user) {
-        case 3:
-            cerr << "Client emitted error on connection timeout (non-SSL)" << endl;
-            break;
-        case 5:
-            cerr << "Client emitted error on connection timeout (SSL)" << endl;
-            break;
-        default:
-            cerr << "FAILURE: " << user << " should not emit error!" << endl;
-    }
-}
-
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
-void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length, uWS::OpCode op_code) {
-    Session* session = (Session*)ws->getUserData();
+void OnMessage(uWS::WebSocket<true, true>* ws, std::string_view message, uWS::OpCode op_code) {
+    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
+    Session* session = sessions[session_id];
     if (!session) {
         fmt::print("Missing session!\n");
         return;
     }
 
     if (op_code == uWS::OpCode::BINARY) {
-        if (length >= sizeof(carta::EventHeader)) {
-            carta::EventHeader head = *reinterpret_cast<carta::EventHeader*>(raw_message);
-            char* event_buf = raw_message + sizeof(carta::EventHeader);
-            int event_length = length - sizeof(carta::EventHeader);
+        if (message.length() >= sizeof(carta::EventHeader)) {
+            carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
+            const char* event_buf = message.data() + sizeof(carta::EventHeader);
+            int event_length = message.length() - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
-
             switch (head.type) {
                 case CARTA::EventType::REGISTER_VIEWER: {
                     CARTA::RegisterViewer message;
@@ -438,7 +436,7 @@ void OnMessage(uWS::WebSocket<uWS::SERVER>* ws, char* raw_message, size_t length
             }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
-        if (strncmp(raw_message, "PING", 4) == 0) {
+        if (strncmp(message.data(), "PING", 4) == 0) {
             ws->send("PONG");
         }
     }
@@ -566,19 +564,40 @@ int main(int argc, const char* argv[]) {
 
         session_number = 0;
 
-        websocket_hub.onMessage(&OnMessage);
-        websocket_hub.onConnection(&OnConnect);
-        websocket_hub.onDisconnection(&OnDisconnect);
-        websocket_hub.onError(&OnError);
+        uWS::SSLApp({/* Set certificates in uWebSockets.js repo */
+                        .key_file_name = "",
+                        .cert_file_name = "",
+                        .passphrase = ""})
+            .ws<PerSocketData>("/*", {/* Settings */
+                                         .compression = uWS::SHARED_COMPRESSOR,
+                                         //.maxPayloadLength = 16 * 1024,
+                                         .idleTimeout = 10,
+                                         //.maxBackpressure = 1 * 1024 * 1024,
+                                         /* Handlers */
+                                         .upgrade = OnUpgrade,
+                                         .open = OnConnect,
+                                         .message = OnMessage,
+                                         .drain =
+                                             [](auto* ws) {
+                                                 /* Check ws->getBufferedAmount() here */
+                                             },
+                                         .ping =
+                                             [](auto* ws) {
+                                                 /* Not implemented yet */
+                                             },
+                                         .pong =
+                                             [](auto* ws) {
+                                                 /* Not implemented yet */
+                                             },
+                                         .close = OnDisconnect})
+            .listen(port,
+                [=](auto* token) {
+                    if (token) {
+                        std::cout << "Listening on port " << port << std::endl;
+                    }
+                })
+            .run();
 
-        if (websocket_hub.listen(port)) {
-            fmt::print("Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP threads\n",
-                port, root_folder, base_folder, thread_count, omp_thread_count);
-            websocket_hub.run();
-        } else {
-            fmt::print("Error listening on port {}\n", port);
-            return 1;
-        }
     } catch (exception& e) {
         fmt::print("Error: {}\n", e.what());
         return 1;

@@ -39,8 +39,8 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
-    uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose, bool perflog)
+Session::Session(uWS::WebSocket<true, true>* ws, uint32_t id, std::string address, std::string root, std::string base,
+    FileListHandler* file_list_handler, bool verbose, bool perflog)
     : _socket(ws),
       _id(id),
       _address(address),
@@ -51,7 +51,6 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string addre
       _performance_logging(perflog),
       _loader(nullptr),
       _region_handler(nullptr),
-      _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
       _animation_id(0),
       _file_settings(this),
@@ -85,7 +84,7 @@ void ExitNoSessions(int s) {
 }
 
 Session::~Session() {
-    _outgoing_async->close();
+    _socket->end();
 
     --_num_sessions;
     DEBUG(std::cout << this << " ~Session " << _num_sessions << std::endl;)
@@ -1507,6 +1506,7 @@ void Session::RegionDataStreams(int file_id, int region_id) {
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
+    _socket_mutex.lock(); // lock for websockets
     size_t message_length = message.ByteSizeLong();
     size_t required_size = message_length + sizeof(carta::EventHeader);
     std::pair<std::vector<char>, bool> msg_vs_compress;
@@ -1520,8 +1520,9 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
     // Skip compression on files smaller than 1 kB
     msg_vs_compress.second = compress && required_size > 1024;
-    _out_msgs.push(msg_vs_compress);
-    _outgoing_async->send();
+    std::string_view sv(msg_vs_compress.first.data(), msg_vs_compress.first.size());
+    _socket->send(sv, uWS::OpCode::BINARY, msg_vs_compress.second);
+    _socket_mutex.unlock(); // unlock for websockets
 }
 
 void Session::SendFileEvent(
@@ -1538,7 +1539,8 @@ void Session::SendPendingMessages() {
     std::pair<std::vector<char>, bool> msg;
     if (_connected) {
         while (_out_msgs.try_pop(msg)) {
-            _socket->send(msg.first.data(), msg.first.size(), uWS::BINARY, nullptr, nullptr, msg.second);
+            std::string_view sv(msg.first.data(), msg.first.size());
+            _socket->send(sv, uWS::OpCode::BINARY, msg.second);
         }
     }
 }

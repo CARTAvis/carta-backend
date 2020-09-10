@@ -99,6 +99,7 @@ set(LINK_LIBS
         ssl
         crypto
         z
+        uSockets
         zfp
         zstd
         tbb
