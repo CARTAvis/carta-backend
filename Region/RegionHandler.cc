@@ -1372,3 +1372,13 @@ bool RegionHandler::GetRegionStatsData(
 
     return false;
 }
+
+std::set<int> RegionHandler::GetFileIds(int region_id) {
+    std::set<int> results;
+    for (auto& req : _spectral_req) {
+        if (req.first.region_id == region_id && !req.second.configs.empty()) {
+            results.insert(req.first.file_id);
+        }
+    }
+    return results;
+}

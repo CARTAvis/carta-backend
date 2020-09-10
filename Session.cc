@@ -421,6 +421,7 @@ void Session::DeleteFrame(int file_id) {
         }
         _frames.clear();
         _image_channel_mutexes.clear();
+        _image_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
         _moment_controller->DeleteMomentGenerator(file_id); // call to stop the image moments calculation
@@ -428,6 +429,7 @@ void Session::DeleteFrame(int file_id) {
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
+        _image_mutexes.erase(file_id);
         _image_channel_task_active.erase(file_id);
     }
     if (_region_handler) {
@@ -1017,6 +1019,8 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         int chan_max(moment_request.spectral_range().max());
 
         // Calculate image moments
+        _moment_controller->StopCalculation(file_id); // Stop the old moments calculation while the new one begins
+        std::unique_lock<std::mutex> ulock(_image_mutexes[file_id]);
         if (region_id > 0) {
             // For a region
             if (_region_handler->ApplyRegionToFile(
@@ -1026,11 +1030,12 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             }
         } else {
             // For the whole image plane
-            if (frame->GetImageRegion(ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
+            if (frame->GetImageRegion(file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
                 collapse_results =
                     _moment_controller->CalculateMoments(file_id, frame, image_region, progress_callback, moment_request, moment_response);
             }
         }
+        ulock.unlock();
 
         // Open moment images from the cache, open files acknowledges will be sent to frontend
         for (int i = 0; i < collapse_results.size(); ++i) {
@@ -1273,6 +1278,11 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region spectral profile
         CARTA::SpectralProfileData profile_data;
+        std::set<int> file_ids = _region_handler->GetFileIds(region_id);
+        std::for_each(file_ids.begin(), file_ids.end(), [&](int i) {
+            _moment_controller->StopCalculation(i); // Stop the moment calculations while spectral profile begins
+            _image_mutexes[i].lock();
+        });
         data_sent = _region_handler->FillSpectralProfileData(
             [&](CARTA::SpectralProfileData profile_data) {
                 if (profile_data.profiles_size() > 0) {
@@ -1281,10 +1291,13 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
                 }
             },
             region_id, file_id, stokes_changed);
+        std::for_each(file_ids.begin(), file_ids.end(), [&](int i) { _image_mutexes[i].unlock(); });
     } else if (region_id == CURSOR_REGION_ID) {
         // Cursor spectral profile
         if (_frames.count(file_id)) {
             CARTA::SpectralProfileData profile_data;
+            _moment_controller->StopCalculation(file_id); // Stop the moments calculation while spectral profile begins
+            _image_mutexes[file_id].lock();
             data_sent = _frames.at(file_id)->FillSpectralProfileData(
                 [&](CARTA::SpectralProfileData profile_data) {
                     if (profile_data.profiles_size() > 0) {
@@ -1295,6 +1308,7 @@ bool Session::SendSpectralProfileData(int file_id, int region_id, bool stokes_ch
                     }
                 },
                 region_id, stokes_changed);
+            _image_mutexes[file_id].unlock();
         }
     }
     return data_sent;

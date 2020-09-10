@@ -48,6 +48,7 @@ void MomentController::DeleteMomentGenerator(int file_id) {
         std::unique_lock<std::mutex> lock(_moment_generator_mutex);
         _moment_generators.at(file_id)->DisconnectCalled();
         _moment_generators[file_id].reset();
+        _moment_generators.erase(file_id);
     }
 }
 

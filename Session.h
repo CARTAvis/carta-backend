@@ -260,6 +260,7 @@ private:
 
     // Manage image channel
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
+    std::unordered_map<int, std::mutex> _image_mutexes; // Todo: this mutex map will be removed after the refactoring of moments generator
     std::unordered_map<int, bool> _image_channel_task_active;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
