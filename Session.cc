@@ -823,8 +823,8 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
 
     if (_frames.count(file_id)) {
         std::vector<CARTA::StatsType> requirements;
-        for (size_t i = 0; i < message.stats_size(); ++i) {
-            requirements.push_back(message.stats(i));
+        for (size_t i = 0; i < message.stats_configs_size(); ++i) {
+            requirements.push_back(message.stats_configs(i).stats());
         }
 
         if (region_id > CURSOR_REGION_ID) {
@@ -839,7 +839,7 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
         }
 
         if (requirements_set) {
-            if ((message.stats_size() > 0) && !SendRegionStatsData(file_id, region_id)) {
+            if ((message.stats_configs_size() > 0) && !SendRegionStatsData(file_id, region_id)) {
                 std::string error = fmt::format("Statistics calculation for region {} failed", region_id);
                 SendLogEvent(error, {"stats"}, CARTA::ErrorSeverity::ERROR);
             }
