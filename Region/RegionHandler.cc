@@ -14,16 +14,14 @@
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
 
-using namespace carta;
+namespace carta {
 
-using MyRegionHandler = carta::RegionHandler; // To avoid the ambiguity for carta::RegionHandler and casacore::RegionHandler namespaces
-
-MyRegionHandler::RegionHandler(bool perflog) : _perflog(perflog), _z_profile_count(0) {}
+RegionHandler::RegionHandler(bool perflog) : _perflog(perflog), _z_profile_count(0) {}
 
 // ********************************************************************
 // Region handling
 
-int MyRegionHandler::GetNextRegionId() {
+int RegionHandler::GetNextRegionId() {
     // returns maximum id + 1; start at 1 if no regions set
     int max_id(0);
     if (!_regions.empty()) {
@@ -36,7 +34,7 @@ int MyRegionHandler::GetNextRegionId() {
     return max_id + 1;
 }
 
-bool MyRegionHandler::SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys) {
+bool RegionHandler::SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys) {
     // Set region params for region id; if id < 0, create new id
     bool valid_region(false);
     if (_regions.count(region_id)) {
@@ -59,14 +57,14 @@ bool MyRegionHandler::SetRegion(int& region_id, RegionState& region_state, casac
     return valid_region;
 }
 
-bool MyRegionHandler::RegionChanged(int region_id) {
+bool RegionHandler::RegionChanged(int region_id) {
     if (!_regions.count(region_id)) {
         return false;
     }
     return _regions.at(region_id)->RegionChanged();
 }
 
-void MyRegionHandler::RemoveRegion(int region_id) {
+void RegionHandler::RemoveRegion(int region_id) {
     // call destructor and erase from map
     if (!RegionSet(region_id)) {
         return;
@@ -84,7 +82,7 @@ void MyRegionHandler::RemoveRegion(int region_id) {
     RemoveRegionRequirementsCache(region_id);
 }
 
-bool MyRegionHandler::RegionSet(int region_id) {
+bool RegionHandler::RegionSet(int region_id) {
     // Check whether a particular region is set or any regions are set
     if (region_id == ALL_REGIONS) {
         return _regions.size();
@@ -93,7 +91,7 @@ bool MyRegionHandler::RegionSet(int region_id) {
     }
 }
 
-void MyRegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
+void RegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
     const std::string& region_file, bool file_is_filename, CARTA::ImportRegionAck& import_ack) {
     // Set regions from region file
 
@@ -165,7 +163,7 @@ void MyRegionHandler::ImportRegion(int file_id, std::shared_ptr<Frame> frame, CA
     }
 }
 
-void MyRegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
+void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type,
     CARTA::CoordinateType coord_type, std::map<int, CARTA::RegionStyle>& region_styles, std::string& filename,
     CARTA::ExportRegionAck& export_ack) {
     // Export regions to given filename, or return export file contents in ack
@@ -277,7 +275,7 @@ void MyRegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CA
 // ********************************************************************
 // Frame handling
 
-bool MyRegionHandler::FrameSet(int file_id) {
+bool RegionHandler::FrameSet(int file_id) {
     // Check whether a particular file is set or any files are set
     if (file_id == ALL_FILES) {
         return _frames.size();
@@ -286,7 +284,7 @@ bool MyRegionHandler::FrameSet(int file_id) {
     }
 }
 
-void MyRegionHandler::RemoveFrame(int file_id) {
+void RegionHandler::RemoveFrame(int file_id) {
     if (file_id == ALL_FILES) {
         _frames.clear();
         RemoveRegion(ALL_REGIONS); // removes all regions, requirements, and caches
@@ -299,7 +297,7 @@ void MyRegionHandler::RemoveFrame(int file_id) {
 // ********************************************************************
 // Region requirements handling
 
-bool MyRegionHandler::SetHistogramRequirements(
+bool RegionHandler::SetHistogramRequirements(
     int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs) {
     // Set histogram requirements for given region and file
     if (configs.empty() && !RegionSet(region_id)) {
@@ -327,7 +325,7 @@ bool MyRegionHandler::SetHistogramRequirements(
     return false;
 }
 
-bool MyRegionHandler::SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
+bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
     const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& spectral_profiles) {
     // Set spectral profile requirements for given region and file
     if (spectral_profiles.empty() && !RegionSet(region_id)) {
@@ -421,7 +419,7 @@ bool MyRegionHandler::SetSpectralRequirements(int region_id, int file_id, std::s
     return true;
 }
 
-bool MyRegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstokes) {
+bool RegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstokes) {
     // Check stokes coordinate is valid for image
     int axis_index, stokes_index;
     ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
@@ -432,7 +430,7 @@ bool MyRegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstok
     return valid;
 }
 
-bool MyRegionHandler::HasSpectralRequirements(
+bool RegionHandler::HasSpectralRequirements(
     int region_id, int file_id, std::string& coordinate, std::vector<CARTA::StatsType>& required_stats) {
     // Search _spectral_req for given file, region, and stokes; check if _any_ requested stats still valid.
     // Used to check for cancellation.
@@ -459,7 +457,7 @@ bool MyRegionHandler::HasSpectralRequirements(
     return has_stat;
 }
 
-void MyRegionHandler::UpdateNewSpectralRequirements(int region_id) {
+void RegionHandler::UpdateNewSpectralRequirements(int region_id) {
     // Set all requirements "new" when region changes
     std::lock_guard<std::mutex> guard(_spectral_mutex);
     for (auto& req : _spectral_req) {
@@ -471,7 +469,7 @@ void MyRegionHandler::UpdateNewSpectralRequirements(int region_id) {
     }
 }
 
-bool MyRegionHandler::SetStatsRequirements(
+bool RegionHandler::SetStatsRequirements(
     int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::StatsType>& stats_types) {
     // Set stats data requirements for given region and file
     if (stats_types.empty() && !RegionSet(region_id)) {
@@ -491,7 +489,7 @@ bool MyRegionHandler::SetStatsRequirements(
     return false;
 }
 
-void MyRegionHandler::RemoveRegionRequirementsCache(int region_id) {
+void RegionHandler::RemoveRegionRequirementsCache(int region_id) {
     // Clear requirements and cache for a specific region or for all regions when closed
     if (region_id == ALL_REGIONS) {
         _histogram_req.clear();
@@ -558,7 +556,7 @@ void MyRegionHandler::RemoveRegionRequirementsCache(int region_id) {
     }
 }
 
-void MyRegionHandler::RemoveFileRequirementsCache(int file_id) {
+void RegionHandler::RemoveFileRequirementsCache(int file_id) {
     // Clear requirements and cache for a specific file or for all files when closed
     if (file_id == ALL_FILES) {
         _histogram_req.clear();
@@ -625,7 +623,7 @@ void MyRegionHandler::RemoveFileRequirementsCache(int file_id) {
     }
 }
 
-void MyRegionHandler::ClearRegionCache(int region_id) {
+void RegionHandler::ClearRegionCache(int region_id) {
     // Remove cached data when region changes
     for (auto& hcache : _histogram_cache) {
         if (hcache.first.region_id == region_id) {
@@ -647,7 +645,7 @@ void MyRegionHandler::ClearRegionCache(int region_id) {
 // ********************************************************************
 // Region data stream helpers
 
-bool MyRegionHandler::RegionFileIdsValid(int region_id, int file_id) {
+bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     // Check error conditions and preconditions
     if (((region_id < 0) && (file_id < 0)) || (region_id == 0)) { // not allowed
         return false;
@@ -661,13 +659,13 @@ bool MyRegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     return true;
 }
 
-casacore::LCRegion* MyRegionHandler::ApplyRegionToFile(int region_id, int file_id) {
+casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id) {
     // Returns 2D region with no extension; nullptr if outside image
     // Go through Frame for image mutex
     return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id));
 }
 
-bool MyRegionHandler::ApplyRegionToFile(
+bool RegionHandler::ApplyRegionToFile(
     int region_id, int file_id, const ChannelRange& chan_range, int stokes, casacore::ImageRegion& region) {
     // Returns 3D or 4D image region for region applied to image and extended by channel range and stokes
     if (!RegionSet(region_id) || !FrameSet(file_id)) {
@@ -715,7 +713,7 @@ bool MyRegionHandler::ApplyRegionToFile(
     return false;
 }
 
-bool MyRegionHandler::CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
+bool RegionHandler::CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<carta::CollapseResult>& collapse_results) {
     // Get an image region
@@ -756,8 +754,7 @@ bool MyRegionHandler::CalculateMoments(int file_id, const std::shared_ptr<Frame>
 
 // ***** Fill histogram *****
 
-bool MyRegionHandler::FillRegionHistogramData(
-    std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
+bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id) {
     // Fill histogram data for given region and file
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
@@ -812,7 +809,7 @@ bool MyRegionHandler::FillRegionHistogramData(
     return message_filled;
 }
 
-bool MyRegionHandler::GetRegionHistogramData(
+bool RegionHandler::GetRegionHistogramData(
     int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message) {
     // Fill stats message for given region, file
     auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
@@ -923,7 +920,7 @@ bool MyRegionHandler::GetRegionHistogramData(
 
 // ***** Fill spectral profile *****
 
-bool MyRegionHandler::FillSpectralProfileData(
+bool RegionHandler::FillSpectralProfileData(
     std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed) {
     // Fill spectral profiles for given region and file ids.  This could be:
     // 1. a specific region and a specific file
@@ -1004,7 +1001,7 @@ bool MyRegionHandler::FillSpectralProfileData(
     return profile_ok;
 }
 
-bool MyRegionHandler::GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
+bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
     std::vector<CARTA::StatsType>& required_stats,
     const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback) {
     // Fill spectral profile message for given region, file, and requirement
@@ -1280,7 +1277,7 @@ bool MyRegionHandler::GetRegionSpectralData(int region_id, int file_id, std::str
 
 // ***** Fill stats data *****
 
-bool MyRegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id) {
+bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id) {
     // Fill stats data for given region and file
     if (!RegionFileIdsValid(region_id, file_id)) {
         return false;
@@ -1337,7 +1334,7 @@ bool MyRegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsD
     return message_filled;
 }
 
-bool MyRegionHandler::GetRegionStatsData(
+bool RegionHandler::GetRegionStatsData(
     int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
     // Fill stats message for given region, file
     auto t_start_region_stats = std::chrono::high_resolution_clock::now();
@@ -1405,3 +1402,5 @@ bool MyRegionHandler::GetRegionStatsData(
 
     return false;
 }
+
+} // namespace carta
