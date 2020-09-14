@@ -151,7 +151,6 @@ set(SOURCE_FILES
         Table/TableView.cc
         Table/TableController.cc
         Moment/MomentGenerator.cc
-        FileConverter.cc
         Timer/Timer.cc
         OnMessageTask.cc
         FileSettings.cc

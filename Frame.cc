@@ -17,6 +17,14 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Util.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 using namespace carta;
 
 Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog, int default_channel)
@@ -1392,8 +1400,8 @@ bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callba
     std::vector<carta::CollapseResult>& collapse_results) {
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
-        _moment_generator->CalculateMoments(file_id, image_region, GetSpectralAxis(), GetStokesAxis(), progress_callback, moment_request,
-            moment_response, collapse_results);
+        _moment_generator->CalculateMoments(
+            file_id, image_region, _spectral_axis, _stokes_axis, progress_callback, moment_request, moment_response, collapse_results);
         ulock.unlock();
     }
 
@@ -1404,4 +1412,95 @@ void Frame::StopMomentCalc() {
     if (_moment_generator) {
         _moment_generator->StopCalculation();
     }
+}
+
+void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack) {
+    // Input file info
+    std::string in_file = GetFileName();
+    casacore::ImageInterface<float>* image = GetImage();
+
+    // Output file info
+    std::string output_filename(save_file_msg.output_file_name());
+    std::string directory(save_file_msg.output_file_directory());
+    CARTA::FileType output_file_type(save_file_msg.output_file_type());
+
+    // Set response message
+    int file_id(save_file_msg.file_id());
+    save_file_ack.set_file_id(file_id);
+    bool success(false);
+    casacore::String message;
+
+    // Get the full resolved name of the output image
+    std::string temp_path = root_folder + "/" + directory;
+    std::string abs_path = fs::absolute(fs::path(temp_path)).string();
+    output_filename = abs_path + "/" + output_filename;
+
+    if (output_filename == in_file) {
+        message = "The source file can not be overwritten!";
+        save_file_ack.set_success(success);
+        save_file_ack.set_message(message);
+        return;
+    }
+
+    std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
+    if (output_file_type == CARTA::FileType::CASA) {
+        // Remove the old image file if it has a same file name
+        if (fs::exists(output_filename)) {
+            fs::remove_all(output_filename);
+        }
+
+        // Get a copy of the original pixel data
+        casacore::IPosition start(image->shape().size(), 0);
+        casacore::IPosition count(image->shape());
+        casacore::Slicer slice(start, count);
+        casacore::Array<casacore::Float> temp_array;
+        image->doGetSlice(temp_array, slice);
+
+        // Construct a new CASA image
+        try {
+            auto out_image = std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename);
+            out_image->setMiscInfo(image->miscInfo());
+            out_image->setImageInfo(image->imageInfo());
+            out_image->appendLog(image->logger());
+            out_image->setUnits(image->units());
+            out_image->putSlice(temp_array, start);
+
+            // Copy the mask if the original image has
+            if (image->hasPixelMask()) {
+                casacore::Array<casacore::Bool> image_mask;
+                image->getMaskSlice(image_mask, slice);
+                out_image->makeMask("mask0", true, true);
+                casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
+                out_image_mask.putSlice(image_mask, start);
+            }
+        } catch (casacore::AipsError error) {
+            message = error.getMesg();
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(message);
+            return;
+        }
+        success = true;
+    } else if (output_file_type == CARTA::FileType::FITS) {
+        // Remove the old image file if it has a same file name
+        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename, 64, casacore::True, casacore::True,
+            -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False, casacore::False,
+            casacore::String(), casacore::True);
+        if (ok) {
+            success = true;
+        }
+    } else {
+        message = "No saving file action!";
+    }
+    ulock.unlock(); // Unlock the image
+
+    // Remove the root folder from the ack message
+    if (!root_folder.empty()) {
+        std::size_t found = message.find(root_folder);
+        if (found != std::string::npos) {
+            message.replace(found, root_folder.size(), "");
+        }
+    }
+
+    save_file_ack.set_success(success);
+    save_file_ack.set_message(message);
 }

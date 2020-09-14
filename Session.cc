@@ -54,8 +54,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string addre
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
       _animation_id(0),
-      _file_settings(this),
-      _file_converter(std::make_unique<carta::FileConverter>(_root_folder)) {
+      _file_settings(this) {
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
@@ -1034,11 +1033,8 @@ void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
     int file_id(save_file.file_id());
     if (_frames.count(file_id)) {
-        std::string filename = _frames.at(file_id)->GetFileName();
-        casacore::ImageInterface<float>* image = _frames.at(file_id)->GetImage();
-
         CARTA::SaveFileAck save_file_ack;
-        _file_converter->SaveFile(filename, image, save_file, save_file_ack);
+        _frames.at(file_id)->SaveFile(_root_folder, save_file, save_file_ack);
 
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);

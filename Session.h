@@ -42,7 +42,6 @@
 
 #include "AnimationObject.h"
 #include "EventHeader.h"
-#include "FileConverter.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
@@ -250,9 +249,6 @@ private:
 
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
-
-    // Image file converter
-    std::unique_ptr<carta::FileConverter> _file_converter;
 
     // Manage image channel
     std::unordered_map<int, std::mutex> _image_channel_mutexes;

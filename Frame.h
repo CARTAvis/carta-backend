@@ -16,6 +16,7 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/save_file.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
@@ -158,23 +159,6 @@ public:
     bool GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
-    // Get the full name of image file
-    std::string GetFileName() {
-        return _loader->GetFileName();
-    }
-    // Get image interface ptr
-    casacore::ImageInterface<float>* GetImage() {
-        return _loader->GetImage();
-    }
-    // Get spectral axis
-    int GetSpectralAxis() {
-        return _spectral_axis;
-    };
-    // Get stokes axis
-    int GetStokesAxis() {
-        return _stokes_axis;
-    }
-
     // Calculate moments
     bool CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
@@ -182,6 +166,9 @@ public:
 
     // Stop moment calculation
     void StopMomentCalc();
+
+    // Save as a new file or convert it between CASA/FITS formats
+    void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
 
 private:
     // Validate channel, stokes index values
@@ -215,6 +202,15 @@ private:
     // For convenience, create int map key for storing cache by channel and stokes
     inline int CacheKey(int channel, int stokes) {
         return (channel * 10) + stokes;
+    }
+
+    // Get the full name of image file
+    std::string GetFileName() {
+        return _loader->GetFileName();
+    }
+    // Get image interface ptr
+    casacore::ImageInterface<float>* GetImage() {
+        return _loader->GetImage();
     }
 
     // Setup
