@@ -121,8 +121,8 @@ public:
     void CacheCubeHistogram(int stokes, carta::HistogramResults& results);
 
     // Stats: image
-    bool SetStatsRequirements(int region_id, const std::vector<CARTA::StatsType>& stats_types);
-    bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
+    bool SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
+    bool FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsData>& stats_data_vec);
 
     // Spatial: cursor
     bool SetSpatialRequirements(int region_id, const std::vector<std::string>& spatial_profiles);
@@ -250,7 +250,7 @@ private:
     // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;
     std::vector<HistogramConfig> _cube_histogram_configs;
-    std::vector<CARTA::StatsType> _image_required_stats;
+    std::vector<CARTA::SetStatsRequirements_StatsConfig> _image_required_stats;
     std::vector<std::string> _cursor_spatial_configs;
     std::vector<SpectralConfig> _cursor_spectral_configs;
     std::mutex _spectral_mutex;

@@ -57,7 +57,8 @@ public:
         const std::vector<CARTA::SetHistogramRequirements_HistogramConfig>& configs);
     bool SetSpectralRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
         const std::vector<CARTA::SetSpectralRequirements_SpectralConfig>& configs);
-    bool SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::StatsType>& stats_types);
+    bool SetStatsRequirements(int region_id, int file_id, std::shared_ptr<Frame> frame,
+        const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs);
 
     // Calculations
     bool FillRegionHistogramData(std::function<void(CARTA::RegionHistogramData histogram_data)> cb, int region_id, int file_id);
@@ -102,7 +103,7 @@ private:
         std::vector<CARTA::StatsType>& required_stats,
         const std::function<void(std::map<CARTA::StatsType, std::vector<double>>, float)>& partial_results_callback);
     bool GetRegionStatsData(
-        int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
+        int region_id, int file_id, int stokes, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
 
     // Logging
     bool _perflog;

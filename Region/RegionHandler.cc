@@ -470,9 +470,9 @@ void RegionHandler::UpdateNewSpectralRequirements(int region_id) {
 }
 
 bool RegionHandler::SetStatsRequirements(
-    int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::StatsType>& stats_types) {
+    int region_id, int file_id, std::shared_ptr<Frame> frame, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs) {
     // Set stats data requirements for given region and file
-    if (stats_types.empty() && !RegionSet(region_id)) {
+    if (stats_configs.empty() && !RegionSet(region_id)) {
         // frontend clears requirements after region removed, prevent error in log
         return true;
     }
@@ -483,7 +483,7 @@ bool RegionHandler::SetStatsRequirements(
 
         // Set requirements
         ConfigId config_id(file_id, region_id);
-        _stats_req[config_id].stats_types = stats_types;
+        _stats_req[config_id].stats_configs = stats_configs;
         return true;
     }
     return false;
@@ -1259,7 +1259,7 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
         std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> region_configs = _stats_req;
         for (auto& region_config : region_configs) {
             if ((region_config.first.region_id == region_id) && ((region_config.first.file_id == file_id) || (file_id == ALL_FILES))) {
-                if (region_config.second.stats_types.empty()) { // no requirements
+                if (region_config.second.stats_configs.empty()) { // no requirements
                     continue;
                 }
                 int config_file_id(region_config.first.file_id);
@@ -1268,23 +1268,34 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 }
 
                 // return stats for this requirement
-                CARTA::RegionStatsData stats_message;
-                if (GetRegionStatsData(region_id, config_file_id, region_config.second.stats_types, stats_message)) {
-                    cb(stats_message); // send data
-                    message_filled = true;
+                for (auto stats_config : region_config.second.stats_configs) {
+                    // Get stokes index
+                    std::string coordinate = stats_config.coordinate();
+                    int axis, stokes;
+                    ConvertCoordinateToAxes(coordinate, axis, stokes);
+
+                    // Set required stats types
+                    std::vector<CARTA::StatsType> required_stats;
+                    for (int i = 0; i < stats_config.stats_types_size(); ++i) {
+                        required_stats.push_back(stats_config.stats_types(i));
+                    }
+
+                    // Send stats results
+                    CARTA::RegionStatsData stats_message;
+                    if (GetRegionStatsData(region_id, config_file_id, stokes, required_stats, stats_message)) {
+                        cb(stats_message); // send data
+                        message_filled = true;
+                    }
                 }
             }
         }
     } else {
         // (region_id < 0) Fill stats data for all regions with specific file_id requirement
-        int channel(_frames.at(file_id)->CurrentChannel());
-        int stokes(_frames.at(file_id)->CurrentStokes());
-
         // Find requirements with file_id
         std::unordered_map<ConfigId, RegionStatsConfig, ConfigIdHash> region_configs = _stats_req;
         for (auto& region_config : region_configs) {
             if (region_config.first.file_id == file_id) {
-                if (region_config.second.stats_types.empty()) { // no requirements
+                if (region_config.second.stats_configs.empty()) { // no requirements
                     continue;
                 }
                 int config_region_id(region_config.first.region_id);
@@ -1293,10 +1304,24 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
                 }
 
                 // return stats for this requirement
-                CARTA::RegionStatsData stats_message;
-                if (GetRegionStatsData(config_region_id, file_id, region_config.second.stats_types, stats_message)) {
-                    cb(stats_message); // send data
-                    message_filled = true;
+                for (auto stats_config : region_config.second.stats_configs) {
+                    // Get stokes index
+                    std::string coordinate = stats_config.coordinate();
+                    int axis, stokes;
+                    ConvertCoordinateToAxes(coordinate, axis, stokes);
+
+                    // Set required stats types
+                    std::vector<CARTA::StatsType> required_stats;
+                    for (int i = 0; i < stats_config.stats_types_size(); ++i) {
+                        required_stats.push_back(stats_config.stats_types(i));
+                    }
+
+                    // Send stats results
+                    CARTA::RegionStatsData stats_message;
+                    if (GetRegionStatsData(config_region_id, file_id, stokes, required_stats, stats_message)) {
+                        cb(stats_message); // send data
+                        message_filled = true;
+                    }
                 }
             }
         }
@@ -1305,12 +1330,15 @@ bool RegionHandler::FillRegionStatsData(std::function<void(CARTA::RegionStatsDat
 }
 
 bool RegionHandler::GetRegionStatsData(
-    int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
+    int region_id, int file_id, int stokes, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message) {
     // Fill stats message for given region, file
     auto t_start_region_stats = std::chrono::high_resolution_clock::now();
 
     int channel(_frames.at(file_id)->CurrentChannel());
-    int stokes(_frames.at(file_id)->CurrentStokes());
+
+    if (stokes == -1) {
+        stokes = _frames.at(file_id)->CurrentStokes();
+    }
 
     // Start filling message
     stats_message.set_file_id(file_id);

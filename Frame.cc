@@ -804,17 +804,17 @@ void Frame::CacheCubeHistogram(int stokes, carta::HistogramResults& results) {
 // ****************************************************
 // Stats Requirements and Data
 
-bool Frame::SetStatsRequirements(int region_id, const std::vector<CARTA::StatsType>& stats_types) {
+bool Frame::SetStatsRequirements(int region_id, const std::vector<CARTA::SetStatsRequirements_StatsConfig>& stats_configs) {
     if (region_id != IMAGE_REGION_ID) {
         return false;
     }
 
-    _image_required_stats = stats_types;
+    _image_required_stats = stats_configs;
     return true;
 }
 
-bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data) {
-    // fill stats data message with requested statistics for the region with current channel and stokes
+bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsData>& stats_data_vec) {
+    // fill stats data message with requested statistics for the region with current channel
     if (region_id != IMAGE_REGION_ID) {
         return false;
     }
@@ -823,53 +823,80 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         return false; // not requested
     }
 
-    int channel(CurrentChannel()), stokes(CurrentStokes());
-    stats_data.set_channel(channel);
-    stats_data.set_stokes(stokes);
+    int channel(CurrentChannel());
+    bool message_filled(false);
 
-    // Use loader image stats
-    auto& image_stats = _loader->GetImageStats(stokes, channel);
-    if (image_stats.full) {
-        FillStatisticsValuesFromMap(stats_data, _image_required_stats, image_stats.basic_stats);
-        return true;
-    }
+    for (auto stats_config : _image_required_stats) {
+        // Get stokes index
+        std::string coordinate = stats_config.coordinate();
+        int axis, stokes;
+        ConvertCoordinateToAxes(coordinate, axis, stokes);
 
-    // Use cached stats
-    int cache_key(CacheKey(channel, stokes));
-    if (_image_stats.count(cache_key)) {
-        auto stats_map = _image_stats[cache_key];
-        FillStatisticsValuesFromMap(stats_data, _image_required_stats, stats_map);
-        return true;
-    }
-
-    auto t_start_image_stats = std::chrono::high_resolution_clock::now();
-
-    // Calculate stats map using slicer
-    casacore::Slicer slicer = GetImageSlicer(ChannelRange(channel), stokes);
-    bool per_channel(false);
-    std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
-    if (GetSlicerStats(slicer, _image_required_stats, per_channel, stats_vector_map)) {
-        // convert vector to single value in map
-        std::map<CARTA::StatsType, double> stats_map;
-        for (auto& value : stats_vector_map) {
-            stats_map[value.first] = value.second[0];
+        if (stokes == -1) {
+            stokes = CurrentStokes();
         }
 
-        // complete message
-        FillStatisticsValuesFromMap(stats_data, _image_required_stats, stats_map);
+        // Set response message
+        CARTA::RegionStatsData stats_data;
+        stats_data.set_channel(channel);
+        stats_data.set_stokes(stokes);
 
-        // cache results
-        _image_stats[cache_key] = stats_map;
-
-        if (_perflog) {
-            auto t_end_image_stats = std::chrono::high_resolution_clock::now();
-            auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
-            fmt::print("Fill image stats in {} ms\n", dt_image_stats * 1e-3);
+        // Set required stats types
+        std::vector<CARTA::StatsType> required_stats;
+        for (int i = 0; i < stats_config.stats_types_size(); ++i) {
+            required_stats.push_back(stats_config.stats_types(i));
         }
-        return true;
+
+        // Use loader image stats
+        auto& image_stats = _loader->GetImageStats(stokes, channel);
+        if (image_stats.full) {
+            FillStatisticsValuesFromMap(stats_data, required_stats, image_stats.basic_stats);
+            stats_data_vec.push_back(stats_data);
+            message_filled = true;
+            continue;
+        }
+
+        // Use cached stats
+        int cache_key(CacheKey(channel, stokes));
+        if (_image_stats.count(cache_key)) {
+            auto stats_map = _image_stats[cache_key];
+            FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
+            stats_data_vec.push_back(stats_data);
+            message_filled = true;
+            continue;
+        }
+
+        auto t_start_image_stats = std::chrono::high_resolution_clock::now();
+
+        // Calculate stats map using slicer
+        casacore::Slicer slicer = GetImageSlicer(ChannelRange(channel), stokes);
+        bool per_channel(false);
+        std::map<CARTA::StatsType, std::vector<double>> stats_vector_map;
+        if (GetSlicerStats(slicer, required_stats, per_channel, stats_vector_map)) {
+            // convert vector to single value in map
+            std::map<CARTA::StatsType, double> stats_map;
+            for (auto& value : stats_vector_map) {
+                stats_map[value.first] = value.second[0];
+            }
+
+            // complete message
+            FillStatisticsValuesFromMap(stats_data, required_stats, stats_map);
+            stats_data_vec.push_back(stats_data);
+
+            // cache results
+            _image_stats[cache_key] = stats_map;
+
+            if (_perflog) {
+                auto t_end_image_stats = std::chrono::high_resolution_clock::now();
+                auto dt_image_stats =
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
+                fmt::print("Fill image stats in {} ms\n", dt_image_stats * 1e-3);
+            }
+            message_filled = true;
+        }
     }
 
-    return false;
+    return message_filled;
 }
 
 // ****************************************************

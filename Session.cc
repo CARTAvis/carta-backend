@@ -822,9 +822,9 @@ void Session::OnSetStatsRequirements(const CARTA::SetStatsRequirements& message)
     bool requirements_set(false);
 
     if (_frames.count(file_id)) {
-        std::vector<CARTA::StatsType> requirements;
+        std::vector<CARTA::SetStatsRequirements_StatsConfig> requirements;
         for (size_t i = 0; i < message.stats_configs_size(); ++i) {
-            requirements.push_back(message.stats_configs(i).stats());
+            requirements.push_back(message.stats_configs(i));
         }
 
         if (region_id > CURSOR_REGION_ID) {
@@ -1375,11 +1375,13 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
     } else if (region_id == IMAGE_REGION_ID) {
         // Image stats
         if (_frames.count(file_id)) {
-            CARTA::RegionStatsData region_stats_data;
-            if (_frames.at(file_id)->FillRegionStatsData(region_id, region_stats_data)) {
-                region_stats_data.set_file_id(file_id);
-                region_stats_data.set_region_id(region_id);
-                SendFileEvent(file_id, CARTA::EventType::REGION_STATS_DATA, 0, region_stats_data);
+            std::vector<CARTA::RegionStatsData> region_stats_data_vec;
+            if (_frames.at(file_id)->FillRegionStatsData(region_id, region_stats_data_vec)) {
+                for (auto region_stats_data : region_stats_data_vec) {
+                    region_stats_data.set_file_id(file_id);
+                    region_stats_data.set_region_id(region_id);
+                    SendFileEvent(file_id, CARTA::EventType::REGION_STATS_DATA, 0, region_stats_data);
+                }
                 data_sent = true;
             }
         }
