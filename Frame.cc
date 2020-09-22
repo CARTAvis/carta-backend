@@ -535,6 +535,7 @@ bool Frame::SetHistogramRequirements(int region_id, const std::vector<CARTA::Set
 
     for (auto& histogram_config : histogram_configs) {
         HistogramConfig config;
+        config.coordinate = histogram_config.coordinate();
         config.channel = histogram_config.channel();
         config.num_bins = histogram_config.num_bins();
         if (region_id == IMAGE_REGION_ID) {
@@ -553,12 +554,8 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
         return false;
     }
 
-    // Use number of bins in requirements
-    int stokes(CurrentStokes());
-
     // fill common message fields
     histogram_data.set_region_id(region_id);
-    histogram_data.set_stokes(stokes);
     histogram_data.set_progress(1.0);
 
     std::vector<HistogramConfig> requirements;
@@ -577,11 +574,24 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
         if ((channel == CURRENT_CHANNEL) || (NumChannels() == 1)) {
             channel = CurrentChannel();
         }
+
+        // Use number of bins in requirements
         int num_bins = histogram_config.num_bins;
 
         // Histogram submessage for this config
         auto histogram = histogram_data.add_histograms();
         histogram->set_channel(channel);
+
+        // Get stokes index
+        std::string coordinate = histogram_config.coordinate;
+        int axis, stokes;
+        ConvertCoordinateToAxes(coordinate, axis, stokes);
+
+        if (stokes == CURRENT_STOKES) {
+            stokes = CurrentStokes();
+        }
+
+        histogram_data.set_stokes(stokes);
 
         // fill histogram submessage from cache (loader or local)
         bool histogram_filled = FillHistogramFromCache(channel, stokes, num_bins, histogram);
@@ -832,7 +842,7 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
         int axis, stokes;
         ConvertCoordinateToAxes(coordinate, axis, stokes);
 
-        if (stokes == -1) {
+        if (stokes == CURRENT_STOKES) {
             stokes = CurrentStokes();
         }
 

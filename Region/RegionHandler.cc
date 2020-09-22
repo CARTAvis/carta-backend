@@ -312,7 +312,7 @@ bool RegionHandler::SetHistogramRequirements(
         // Make HistogramConfig vector of requirements
         std::vector<HistogramConfig> input_configs;
         for (auto& config : configs) {
-            HistogramConfig hist_config(config.channel(), config.num_bins());
+            HistogramConfig hist_config(config.coordinate(), config.channel(), config.num_bins());
             input_configs.push_back(hist_config);
         }
 
@@ -784,43 +784,25 @@ bool RegionHandler::GetRegionHistogramData(
     // Fill stats message for given region, file
     auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
 
-    int stokes(_frames.at(file_id)->CurrentStokes());
-    int channel(_frames.at(file_id)->CurrentChannel());
-
     // Set histogram fields
     histogram_message.set_file_id(file_id);
     histogram_message.set_region_id(region_id);
-    histogram_message.set_stokes(stokes);
     histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
 
-    // Get image region
+    // Set channel range
+    int channel(_frames.at(file_id)->CurrentChannel());
     ChannelRange chan_range(channel);
-    casacore::ImageRegion region;
-    if (!ApplyRegionToFile(region_id, file_id, chan_range, stokes, region)) {
-        // region outside image, send default histogram
-        auto default_histogram = histogram_message.add_histograms();
-        default_histogram->set_channel(channel);
-        default_histogram->set_num_bins(1);
-        default_histogram->set_bin_width(0.0);
-        default_histogram->set_first_bin_center(0.0);
-        std::vector<float> histogram_bins(1, 0.0);
-        *default_histogram->mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
-        float float_nan = std::numeric_limits<float>::quiet_NaN();
-        default_histogram->set_mean(float_nan);
-        default_histogram->set_std_dev(float_nan);
-        return true;
-    }
 
     // Flags for calculations
     bool have_region_data(false);
     bool have_basic_stats(false);
 
+    // Reuse the image region for each histogram
+    casacore::ImageRegion region;
+
     // Reuse data and stats for each histogram; results depend on num_bins
     std::vector<float> data;
     BasicStats<float> stats;
-
-    // Key for cache
-    CacheId cache_id = CacheId(file_id, region_id, stokes, channel);
 
     // Calculate histogram for each requirement
     for (auto& hist_config : configs) {
@@ -829,12 +811,42 @@ bool RegionHandler::GetRegionHistogramData(
             return false;
         }
 
+        // Get stokes index
+        std::string coordinate = hist_config.coordinate;
+        int axis, stokes;
+        ConvertCoordinateToAxes(coordinate, axis, stokes);
+
+        if (stokes == CURRENT_STOKES) {
+            stokes = _frames.at(file_id)->CurrentStokes();
+        }
+
+        histogram_message.set_stokes(stokes);
+
+        // Get image region
+        if (!ApplyRegionToFile(region_id, file_id, chan_range, stokes, region)) {
+            // region outside image, send default histogram
+            auto default_histogram = histogram_message.add_histograms();
+            default_histogram->set_channel(channel);
+            default_histogram->set_num_bins(1);
+            default_histogram->set_bin_width(0.0);
+            default_histogram->set_first_bin_center(0.0);
+            std::vector<float> histogram_bins(1, 0.0);
+            *default_histogram->mutable_bins() = {histogram_bins.begin(), histogram_bins.end()};
+            float float_nan = std::numeric_limits<float>::quiet_NaN();
+            default_histogram->set_mean(float_nan);
+            default_histogram->set_std_dev(float_nan);
+            return true;
+        }
+
         // number of bins may be set or calculated
         int num_bins(hist_config.num_bins);
         if (num_bins == AUTO_BIN_SIZE) {
             casacore::IPosition region_shape = _frames.at(file_id)->GetRegionShape(region);
             num_bins = int(std::max(sqrt(region_shape(0) * region_shape(1)), 2.0));
         }
+
+        // Key for cache
+        CacheId cache_id = CacheId(file_id, region_id, stokes, channel);
 
         // check cache
         if (_histogram_cache.count(cache_id)) {
@@ -1336,7 +1348,7 @@ bool RegionHandler::GetRegionStatsData(
 
     int channel(_frames.at(file_id)->CurrentChannel());
 
-    if (stokes == -1) {
+    if (stokes == CURRENT_STOKES) {
         stokes = _frames.at(file_id)->CurrentStokes();
     }
 

@@ -52,11 +52,12 @@ struct CacheIdHash {
 // -------------------------------
 
 struct HistogramConfig {
+    std::string coordinate;
     int channel;
     int num_bins;
 
     HistogramConfig() {}
-    HistogramConfig(int chan, int bins) : channel(chan), num_bins(bins) {}
+    HistogramConfig(std::string coordinate, int chan, int bins) : coordinate(coordinate), channel(chan), num_bins(bins) {}
 };
 
 struct RegionHistogramConfig {

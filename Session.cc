@@ -1089,7 +1089,6 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
     bool calculated(false);
     if (_frames.count(file_id)) {
         try {
-            int stokes(_frames.at(file_id)->CurrentStokes());
             HistogramConfig cube_histogram_config;
             if (!_frames.at(file_id)->GetCubeHistogramConfig(cube_histogram_config)) {
                 return calculated; // no requirements
@@ -1099,6 +1098,15 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
             auto channel = cube_histogram_config.channel;
             auto num_bins = cube_histogram_config.num_bins;
+
+            // Get stokes index
+            std::string coordinate = cube_histogram_config.coordinate;
+            int axis, stokes;
+            ConvertCoordinateToAxes(coordinate, axis, stokes);
+
+            if (stokes == CURRENT_STOKES) {
+                stokes = _frames.at(file_id)->CurrentStokes();
+            }
 
             // To send periodic updates
             _histogram_progress = HISTOGRAM_START;
