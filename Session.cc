@@ -1332,7 +1332,6 @@ bool Session::SendRegionHistogramData(int file_id, int region_id) {
 
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region histogram
-        CARTA::RegionHistogramData histogram_data;
         data_sent = _region_handler->FillRegionHistogramData(
             [&](CARTA::RegionHistogramData histogram_data) {
                 if (histogram_data.histograms_size() > 0) {
@@ -1372,7 +1371,6 @@ bool Session::SendRegionStatsData(int file_id, int region_id) {
 
     if ((region_id > CURSOR_REGION_ID) || (region_id == ALL_REGIONS) || (file_id == ALL_FILES)) {
         // Region stats
-        CARTA::RegionStatsData stats_data;
         data_sent = _region_handler->FillRegionStatsData(
             [&](CARTA::RegionStatsData region_stats_data) {
                 if (region_stats_data.statistics_size() > 0) {
