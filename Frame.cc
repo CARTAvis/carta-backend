@@ -555,7 +555,6 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
     }
 
     // fill common message fields
-    histogram_data.set_region_id(region_id);
     histogram_data.set_progress(1.0);
 
     std::vector<HistogramConfig> requirements;
@@ -591,7 +590,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
             stokes = CurrentStokes();
         }
 
-        histogram_data.set_stokes(stokes);
+        histogram_data.set_stokes(stokes); // Todo: stokes info should not be unique one if there are multiple requirements
 
         // fill histogram submessage from cache (loader or local)
         bool histogram_filled = FillHistogramFromCache(channel, stokes, num_bins, histogram);
@@ -834,7 +833,7 @@ bool Frame::FillRegionStatsData(int region_id, std::vector<CARTA::RegionStatsDat
     }
 
     int channel(CurrentChannel());
-    bool message_filled(false);
+    bool message_filled(false); // At least one of the messages filled
 
     for (auto stats_config : _image_required_stats) {
         // Get stokes index

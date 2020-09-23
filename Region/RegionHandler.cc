@@ -745,10 +745,12 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
                 }
 
                 // return histograms for this requirement
-                CARTA::RegionHistogramData histogram_message;
+                std::vector<CARTA::RegionHistogramData> histogram_messages;
                 std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
-                if (GetRegionHistogramData(region_id, config_file_id, histogram_configs, histogram_message)) {
-                    cb(histogram_message); // send data
+                if (GetRegionHistogramData(region_id, config_file_id, histogram_configs, histogram_messages)) {
+                    for (const auto& histogram_message : histogram_messages) {
+                        cb(histogram_message); // send data
+                    }
                     message_filled = true;
                 }
             }
@@ -768,9 +770,11 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
 
                 // return histograms for this requirement
                 std::vector<HistogramConfig> histogram_configs = region_config.second.configs;
-                CARTA::RegionHistogramData histogram_message;
-                if (GetRegionHistogramData(config_region_id, file_id, histogram_configs, histogram_message)) {
-                    cb(histogram_message); // send data
+                std::vector<CARTA::RegionHistogramData> histogram_messages;
+                if (GetRegionHistogramData(config_region_id, file_id, histogram_configs, histogram_messages)) {
+                    for (const auto& histogram_message : histogram_messages) {
+                        cb(histogram_message); // send data
+                    }
                     message_filled = true;
                 }
             }
@@ -780,14 +784,9 @@ bool RegionHandler::FillRegionHistogramData(std::function<void(CARTA::RegionHist
 }
 
 bool RegionHandler::GetRegionHistogramData(
-    int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message) {
+    int region_id, int file_id, std::vector<HistogramConfig>& configs, std::vector<CARTA::RegionHistogramData>& histogram_messages) {
     // Fill stats message for given region, file
     auto t_start_region_histogram = std::chrono::high_resolution_clock::now();
-
-    // Set histogram fields
-    histogram_message.set_file_id(file_id);
-    histogram_message.set_region_id(region_id);
-    histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
 
     // Set channel range
     int channel(_frames.at(file_id)->CurrentChannel());
@@ -820,6 +819,11 @@ bool RegionHandler::GetRegionHistogramData(
             stokes = _frames.at(file_id)->CurrentStokes();
         }
 
+        // Set histogram fields
+        CARTA::RegionHistogramData histogram_message;
+        histogram_message.set_file_id(file_id);
+        histogram_message.set_region_id(region_id);
+        histogram_message.set_progress(HISTOGRAM_COMPLETE); // only cube histograms have partial results
         histogram_message.set_stokes(stokes);
 
         // Get image region
@@ -835,7 +839,7 @@ bool RegionHandler::GetRegionHistogramData(
             float float_nan = std::numeric_limits<float>::quiet_NaN();
             default_histogram->set_mean(float_nan);
             default_histogram->set_std_dev(float_nan);
-            return true;
+            continue;
         }
 
         // number of bins may be set or calculated
