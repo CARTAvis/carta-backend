@@ -95,11 +95,10 @@ set(LINK_LIBS
         carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
         fmt
-        uWS
+        uSockets
         ssl
         crypto
         z
-        uSockets
         zfp
         zstd
         tbb
