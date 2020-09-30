@@ -300,7 +300,7 @@ pipeline {
                 }
             }
         }
-        stage('ICD animator') {
+        stage('ICD tests: animator') {
             parallel {
                 stage('CentOS7') {
                     agent {
@@ -361,7 +361,7 @@ pipeline {
                }     
             }
         }
-        stage('ICD contour') {
+        stage('ICD tests: contour') {
             parallel {
                 stage('CentOS7') {
                     agent {
@@ -422,7 +422,7 @@ pipeline {
                 }
             }
         }
-        stage('ICD region statistics') {
+        stage('ICD tests: region statistics') {
             parallel {
                 stage('CentOS7') {
                     agent {
@@ -483,7 +483,7 @@ pipeline {
                 }
             }
         }
-        stage('ICD region manipulation') {
+        stage('ICD tests: region manipulation') {
             parallel {
                 stage('CentOS7') {
                     agent {
@@ -544,7 +544,7 @@ pipeline {
                 }
             }
         }
-        stage('ICD cube histogram') {
+        stage('ICD tests: cube histogram') {
             parallel {
                 stage('CentOS7') {
                     agent {
