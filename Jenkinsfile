@@ -84,9 +84,9 @@ pipeline {
                 }
             }
         }
-        stage('ICD tests') {
+        stage('Preparing ICD tests') {
             parallel {
-                stage('MacOS ICD') {
+                stage('CentOS7') {
                     agent {
                         label "centos7-1"
                     }
@@ -96,31 +96,27 @@ pipeline {
                             unstash "centos7-1_carta_backend"
                             sh "rm -rf carta-backend-ICD-test"
                             sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                            sh "./run.sh # run carta_backend in the background"
-                            sh "/usr/sbin/lsof -i :3002 # check backend is running"
                             dir ('carta-backend-ICD-test') {
                                 sh "git submodule init && git submodule update && npm install"
                                 dir ('protobuf') {
                                      sh "./build_proto.sh"
-                                     sh "pwd; ls"
                                 }
-                                sh "pwd; ls"
-                                sh "cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
-                                sh "sleep 30"
+                                sh "cp ../../../ws-config.json src/test/config.json"
                             }
+                        stash includes: "carta_backend", name: "centos7-1_carta_backend_icd"
                         }
                         echo "Finished !!"
                     }
                     post {
                         success {
-                            setBuildStatus("MacOS ICD tests succeeded", "SUCCESS");
+                            setBuildStatus("CentOS7 ICD prepared", "SUCCESS");
                         }
                         failure {
-                            setBuildStatus("MacOS ICD tests failed", "FAILURE");
+                            setBuildStatus("CentOS7 ICD prepare failed", "FAILURE");
                         }     
                     }
                  }
-                 stage('CentOS7 ICD') {
+                 stage('Ubuntu ICD') {
                      agent {
                          label "ubuntu-1"
                      }
@@ -130,30 +126,27 @@ pipeline {
                              unstash "ubuntu-1_carta_backend"
                              sh "rm -rf carta-backend-ICD-test"
                              sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                             sh "./run.sh # run carta_backend in the background"
                              dir ('carta-backend-ICD-test') {
                                  sh "git submodule init && git submodule update && npm install"
                                  dir ('protobuf') {
                                      sh "./build_proto.sh"
-                                     sh "pwd; ls"
                                  }
-                                 sh "pwd; ls"
-                                 sh "cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
-                                 sh "sleep 30"
+                                 sh "cp ../../../ws-config.json src/test/config.json"
                              }
+                         stash includes: "carta_backend", name: "ubuntu-1_carta_backend_icd"
                          }
                          echo "Finished !!"
                      }
                      post {
                          success {
-                             setBuildStatus("CentOS7 ICD tests succeeded", "SUCCESS");
+                             setBuildStatus("Ubuntu ICD prepared", "SUCCESS");
                          }
                          failure {
-                             setBuildStatus("CentOS7 ICD tests failed", "FAILURE");
+                             setBuildStatus("Ubuntu ICD prepare failed", "FAILURE");
                          }     
                      }
                   }
-                 stage('Ubuntu ICD') {
+                 stage('MacOS ICD') {
                      agent {
                          label "macos-1"
                      }
@@ -163,30 +156,455 @@ pipeline {
                              unstash "macos-1_carta_backend"
                              sh "rm -rf carta-backend-ICD-test"
                              sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                             sh "./run.sh # run carta_backend in the background"
                              dir ('carta-backend-ICD-test') {
                                  sh "git submodule init && git submodule update && npm install"
                                  dir ('protobuf') {
                                      sh "./build_proto.sh"
-                                     sh "pwd; ls"
                                  }
-                                 sh "pwd; ls"
-                                 sh "cp ../../../config.json src/test/ && cp ../../../run-jenkins.sh . && ./run-jenkins.sh # run the tests"
-                                 sh "sleep 30"
+                                 sh "cp ../../../ws-config.json src/test/config.json"
                              }
+                         stash includes: "carta_backend", name: "macos-1_carta_backend_icd"
                          }
                          echo "Finished !!"
                      }
                      post {
                          success {
-                             setBuildStatus("Ubuntu ICD tests succeeded", "SUCCESS");
+                             setBuildStatus("MacOS ICD prepared", "SUCCESS");
                          }
                          failure {
-                             setBuildStatus("Ubuntu ICD tests failed", "FAILURE");
-                         }
-                     }
-                  }
-              }
-          }
-     } 
+                             setBuildStatus("MacOS ICD prepare failed", "FAILURE");
+                        }
+                    }
+                }
+            }
+        }
+        stage('ICD tests: session') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-session.sh . && ./run-jenkins-session.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-session.sh . && ./run-jenkins-session.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-session.sh . && ./run-jenkins-session.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }    
+            }
+        }
+        stage('ICD tests: file-browser') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-file-browser.sh . && ./run-jenkins-file-browser.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-file-browser.sh . && ./run-jenkins-file-browser.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd" 
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-file-browser.sh . && ./run-jenkins-file-browser.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+            }
+        }
+        stage('ICD animator') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-animator.sh . && ./run-jenkins-animator.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-animator.sh . && ./run-jenkins-animator.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-animator.sh . && ./run-jenkins-animator.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                   }
+               }     
+            }
+        }
+        stage('ICD contour') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-contour.sh . && ./run-jenkins-contour.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-contour.sh . && ./run-jenkins-contour.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-contour.sh . && ./run-jenkins-contour.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+            }
+        }
+        stage('ICD region statistics') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-region-statistics.sh . && ./run-jenkins-region-statistics.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-region-statistics.sh . && ./run-jenkins-region-statistics.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-region-statistics.sh . && ./run-jenkins-region-statistics.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+            }
+        }
+        stage('ICD region manipulation') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-region-manipulation.sh . && ./run-jenkins-region-manipulation.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-region-manipulation.sh . && ./run-jenkins-region-manipulation.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-region-manipulation.sh . && ./run-jenkins-region-manipulation.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+            }
+        }
+        stage('ICD cube histogram') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-cube.sh . && ./run-jenkins-cube.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-cube.sh . && ./run-jenkins-cube.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-cube.sh . && ./run-jenkins-cube.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
+
