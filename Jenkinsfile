@@ -84,7 +84,7 @@ pipeline {
                 }
             }
         }
-        stage('Preparing ICD tests') {
+        stage('Prepare ICD tests') {
             parallel {
                 stage('CentOS7') {
                     agent {
