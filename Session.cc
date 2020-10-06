@@ -1125,7 +1125,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 // check for progress update
                 auto t_end = std::chrono::high_resolution_clock::now();
                 auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                if ((dt / 1e3) > 2.0) {
+                if ((dt / 1e6) > 1.0) {
                     // send progress
                     float this_chan(chan);
                     float progress = this_chan / total_channels;
@@ -1171,7 +1171,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
                     auto t_end = std::chrono::high_resolution_clock::now();
                     auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
-                    if ((dt / 1e3) > 2.0) {
+                    if ((dt / 1e6) > 1.0) {
                         // Send progress update
                         float this_chan(chan);
                         progress = 0.5 + (this_chan / total_channels);
