@@ -605,6 +605,67 @@ pipeline {
                 }
             }
         }
+        stage('ICD tests: spatial profiler') {
+            parallel {
+                stage('CentOS7') {
+                    agent {
+                        label "centos7-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "centos7-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-spatial-profiler.sh . && ./run-jenkins-spatial-profiler.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('Ubuntu') {
+                    agent {
+                        label "ubuntu-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "ubuntu-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-spatial-profiler.sh . && ./run-jenkins-spatial-profiler.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+                stage('MacOS') {
+                    agent {
+                        label "macos-1"
+                    }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
+                        sh "export PATH=/usr/local/bin:$PATH"
+                        dir ('build') {
+                            unstash "macos-1_carta_backend_icd"
+                            sh "./run.sh # run carta_backend in the background"
+                            dir ('carta-backend-ICD-test') {
+                                sh "cp ../../../run-jenkins-spatial-profiler.sh . && ./run-jenkins-spatial-profiler.sh # run the tests"
+                            }
+                        }
+                        echo "Finished !!"
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
