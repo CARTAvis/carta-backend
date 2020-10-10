@@ -1237,54 +1237,10 @@ bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stok
     if (!CheckChannel(chan_range.from) || !CheckChannel(chan_range.to) || !CheckStokes(stokes)) {
         return false;
     }
-    // Get the image shape and coordinate system
-    casacore::IPosition image_shape = ImageShape();
-    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
-
-    // Init corners map and vectors
-    std::map<casacore::uInt, casacore::Vector<casacore::Double>> axis_corner_map; // axis index v.s. its range as a vector
-    casacore::Vector<casacore::Double> stokes_corners_ext(2, 0);
-    casacore::Vector<casacore::Double> channels_corners_ext(2, 0);
-
-    // Set channels range
-    if (coord_sys->hasSpectralAxis()) {
-        channels_corners_ext[0] = (casacore::Double)chan_range.from;
-        channels_corners_ext[1] = (casacore::Double)chan_range.to;
-    }
-
-    // Set the stokes range
-    if (coord_sys->hasPolarizationCoordinate()) {
-        stokes_corners_ext[0] = (casacore::Double)stokes;
-        stokes_corners_ext[1] = (casacore::Double)stokes;
-    }
-
-    // Set corners map
-    for (casacore::uInt axis = 0; axis < coord_sys->nPixelAxes(); axis++) {
-        if ((casacore::Int)axis == _spectral_axis) {
-            axis_corner_map[axis] = channels_corners_ext;
-        } else if ((casacore::Int)axis == _stokes_axis) {
-            axis_corner_map[axis] = stokes_corners_ext;
-        } else {
-            casacore::Vector<casacore::Double> range(2, 0);
-            range[1] = image_shape[axis] - 1;
-            axis_corner_map[axis] = range;
-        }
-    }
-
-    // Set extend corners: blc and trc
-    casacore::Vector<casacore::Double> blc(image_shape.nelements(), 0);
-    casacore::Vector<casacore::Double> trc(image_shape.nelements(), 0);
-    for (casacore::uInt axis = 0; axis < coord_sys->nPixelAxes(); axis++) {
-        blc(axis) = axis_corner_map[axis][0];
-        trc(axis) = axis_corner_map[axis][1];
-    }
-
-    delete coord_sys;
-
-    // Create an image region
     try {
-        casacore::LCBox lc_box(blc, trc, image_shape);
-        casacore::ImageRegion this_region(lc_box);
+        casacore::Slicer slicer = GetImageSlicer(chan_range, stokes);
+        casacore::LCSlicer lcslicer(slicer);
+        casacore::ImageRegion this_region(lcslicer);
         image_region = this_region;
         return true;
     } catch (casacore::AipsError error) {
