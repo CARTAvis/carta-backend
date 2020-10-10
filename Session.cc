@@ -1007,12 +1007,25 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
         // Do calculations
         std::vector<carta::CollapseResult> collapse_results;
         CARTA::MomentResponse moment_response;
-        if (_region_handler->CalculateMoments(file_id, frame, progress_callback, moment_request, moment_response, collapse_results)) {
-            for (int i = 0; i < collapse_results.size(); ++i) {
-                auto& collapse_result = collapse_results[i];
-                // Open an moment image from the cache, open file acknowledgement will be sent to the frontend
-                OnOpenFile(collapse_result, moment_response, request_id);
+        if (region_id > 0) {
+            _region_handler->CalculateMoments(
+                file_id, region_id, frame, progress_callback, moment_request, moment_response, collapse_results);
+        } else {
+            casacore::ImageRegion image_region;
+            int chan_min(moment_request.spectral_range().min());
+            int chan_max(moment_request.spectral_range().max());
+
+            frame->IncreaseZProfileCount();
+            if (frame->GetImageRegion(file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
+                frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }
+            frame->DecreaseZProfileCount();
+        }
+
+        for (int i = 0; i < collapse_results.size(); ++i) {
+            auto& collapse_result = collapse_results[i];
+            // Open an moment image from the cache, open file acknowledgement will be sent to the frontend
+            OnOpenFile(collapse_result, moment_response, request_id);
         }
 
         // Send moment response message

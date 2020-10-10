@@ -66,7 +66,7 @@ public:
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
 
     // Calculate moments
-    bool CalculateMoments(int file_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
+    bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
         std::vector<carta::CollapseResult>& collapse_results);
 
