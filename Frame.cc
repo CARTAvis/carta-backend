@@ -40,7 +40,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _num_channels(1),
       _num_stokes(1),
       _z_profile_count(0),
-      _moment_generator(std::make_unique<MomentGenerator>(GetFileName(), GetImage())) {
+      _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
@@ -1398,6 +1398,9 @@ bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::Arr
 bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
     const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
     std::vector<carta::CollapseResult>& collapse_results) {
+    if (!_moment_generator) {
+        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
+    }
     if (_moment_generator) {
         std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
         _moment_generator->CalculateMoments(
