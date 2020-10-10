@@ -40,6 +40,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _num_channels(1),
       _num_stokes(1),
       _z_profile_count(0),
+      _moments_count(0),
       _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
@@ -205,7 +206,7 @@ void Frame::DisconnectCalled() {
     if (_moment_generator) { // stop moment calculation
         _moment_generator->StopCalculation();
     }
-    while (_z_profile_count > 0) { // wait for spectral profiles to complete to avoid crash
+    while (_z_profile_count > 0 || _moments_count > 0) { // wait for spectral profiles or moments calculation finished
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
@@ -220,6 +221,14 @@ void Frame::IncreaseZProfileCount() {
 
 void Frame::DecreaseZProfileCount() {
     _z_profile_count--;
+}
+
+void Frame::IncreaseMomentsCount() {
+    _moments_count++;
+}
+
+void Frame::DecreaseMomentsCount() {
+    _moments_count--;
 }
 
 // ********************************************************************

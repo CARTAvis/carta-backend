@@ -1015,11 +1015,11 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             int chan_min(moment_request.spectral_range().min());
             int chan_max(moment_request.spectral_range().max());
 
-            frame->IncreaseZProfileCount();
+            frame->IncreaseMomentsCount();
             if (frame->GetImageRegion(file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
                 frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }
-            frame->DecreaseZProfileCount();
+            frame->DecreaseMomentsCount();
         }
 
         for (int i = 0; i < collapse_results.size(); ++i) {

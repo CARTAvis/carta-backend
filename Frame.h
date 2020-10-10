@@ -159,13 +159,13 @@ public:
     bool GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
 
-    // Calculate moments
+    // Moments calculation
     bool CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
         const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
         std::vector<carta::CollapseResult>& collapse_results);
-
-    // Stop moment calculation
     void StopMomentCalc();
+    void IncreaseMomentsCount();
+    void DecreaseMomentsCount();
 
     // Save as a new file or convert it between CASA/FITS formats
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
@@ -251,6 +251,9 @@ private:
 
     // Spectral profile counter, so Frame is not destroyed until finished
     std::atomic<int> _z_profile_count;
+
+    // Moments counter, so Frame is not destroyed until finished
+    std::atomic<int> _moments_count;
 
     // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;

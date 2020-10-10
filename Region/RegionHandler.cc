@@ -722,9 +722,9 @@ bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shar
 
     // Do calculations
     if (ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
-        frame->IncreaseZProfileCount();
+        frame->IncreaseMomentsCount();
         frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
-        frame->DecreaseZProfileCount();
+        frame->DecreaseMomentsCount();
     }
     return !collapse_results.empty();
 }
