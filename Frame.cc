@@ -1388,7 +1388,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     casacore::ImageInterface<float>* image = GetImage();
 
     // Output file info
-    std::string output_filename(save_file_msg.output_file_name());
+    fs::path output_filename(save_file_msg.output_file_name());
     std::string directory(save_file_msg.output_file_directory());
     CARTA::FileType output_file_type(save_file_msg.output_file_type());
 
@@ -1401,7 +1401,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     // Get the full resolved name of the output image
     std::string temp_path = root_folder + "/" + directory;
     std::string abs_path = fs::absolute(fs::path(temp_path)).string();
-    output_filename = abs_path + "/" + output_filename;
+    output_filename = abs_path / output_filename;
 
     if (output_filename == in_file) {
         message = "The source file can not be overwritten!";
@@ -1426,7 +1426,8 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
         // Construct a new CASA image
         try {
-            auto out_image = std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename);
+            auto out_image =
+                std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename.string());
             out_image->setMiscInfo(image->miscInfo());
             out_image->setImageInfo(image->imageInfo());
             out_image->appendLog(image->logger());
@@ -1450,9 +1451,9 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         success = true;
     } else if (output_file_type == CARTA::FileType::FITS) {
         // Remove the old image file if it has a same file name
-        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename, 64, casacore::True, casacore::True,
-            -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False, casacore::False,
-            casacore::String(), casacore::True);
+        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename.string(), 64, casacore::True,
+            casacore::True, -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False,
+            casacore::False, casacore::String(), casacore::True);
         if (ok) {
             success = true;
         }
