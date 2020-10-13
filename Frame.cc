@@ -1389,7 +1389,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     // Output file info
     fs::path output_filename(save_file_msg.output_file_name());
-    std::string directory(save_file_msg.output_file_directory());
+    fs::path directory(save_file_msg.output_file_directory());
     CARTA::FileType output_file_type(save_file_msg.output_file_type());
 
     // Set response message
@@ -1399,8 +1399,8 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     casacore::String message;
 
     // Get the full resolved name of the output image
-    std::string temp_path = root_folder + "/" + directory;
-    std::string abs_path = fs::absolute(fs::path(temp_path)).string();
+    fs::path temp_path = fs::path(root_folder) / directory;
+    fs::path abs_path = fs::absolute(temp_path);
     output_filename = abs_path / output_filename;
 
     if (output_filename == in_file) {
