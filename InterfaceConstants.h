@@ -37,6 +37,7 @@
 #define HISTOGRAM_START 0.0
 #define HISTOGRAM_COMPLETE 1.0
 #define HISTOGRAM_CANCEL -1.0
+#define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 1.0
 
 // spectral profile calculation
 #define INIT_DELTA_CHANNEL 10
