@@ -1403,7 +1403,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     fs::path abs_path = fs::absolute(temp_path);
     output_filename = abs_path / output_filename;
 
-    if (output_filename == in_file) {
+    if (output_filename.string() == in_file) {
         message = "The source file can not be overwritten!";
         save_file_ack.set_success(success);
         save_file_ack.set_message(message);
