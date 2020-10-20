@@ -21,19 +21,20 @@ pipeline {
                         sh "export PATH=/usr/local/bin:$PATH"
                         sh "git submodule init && git submodule update"
                         dir ('build') {
-                        sh "cp ../../cmake-command.sh ."
-                        sh "./cmake-command.sh"
-                        sh "make"
-                        echo "Preparing for upcoming ICD tests"
-                        sh "rm -rf carta-backend-ICD-test"
-                        sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                        dir ('carta-backend-ICD-test') {
-                            sh "git submodule init && git submodule update && npm install"
-                            dir ('protobuf') {
-                            sh "./build_proto.sh"
-                        }
-                        sh "cp ../../../ws-config.json src/test/config.json"
-                        stash includes: "carta_backend", name: "centos7-1_carta_backend_icd"
+                           sh "cp ../../cmake-command.sh ."
+                           sh "./cmake-command.sh"
+                           sh "make"
+                           echo "Preparing for upcoming ICD tests"
+                           sh "rm -rf carta-backend-ICD-test"
+                           sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                           dir ('carta-backend-ICD-test') {
+                              sh "git submodule init && git submodule update && npm install"
+                              dir ('protobuf') {
+                                 sh "./build_proto.sh"
+                              }
+                              sh "cp ../../../ws-config.json src/test/config.json"
+                           }
+                           stash includes: "carta_backend", name: "centos7-1_carta_backend_icd"
                         }
                     }
                     post {
@@ -53,19 +54,20 @@ pipeline {
                         sh "export PATH=/usr/local/bin:$PATH"
                         sh "git submodule init && git submodule update"
                         dir ('build') {
-                        sh "cp ../../cmake-command.sh ."
-                        sh "./cmake-command.sh"
-                        sh "make"
-                        echo "Preparing for upcoming ICD tests"
-                        sh "rm -rf carta-backend-ICD-test"
-                        sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                        dir ('carta-backend-ICD-test') {
-                            sh "git submodule init && git submodule update && npm install"
-                            dir ('protobuf') {
-                            sh "./build_proto.sh"
-                        }
-                        sh "cp ../../../ws-config.json src/test/config.json"
-                        stash includes: "carta_backend", name: "macos-1_carta_backend_icd"
+                           sh "cp ../../cmake-command.sh ."
+                           sh "./cmake-command.sh"
+                           sh "make"
+                           echo "Preparing for upcoming ICD tests"
+                           sh "rm -rf carta-backend-ICD-test"
+                           sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                           dir ('carta-backend-ICD-test') {
+                              sh "git submodule init && git submodule update && npm install"
+                              dir ('protobuf') {
+                                 sh "./build_proto.sh"
+                              }
+                              sh "cp ../../../ws-config.json src/test/config.json"
+                           }
+                           stash includes: "carta_backend", name: "macos-1_carta_backend_icd"
                         }
                     }
                     post {
@@ -85,19 +87,20 @@ pipeline {
                         sh "export PATH=/usr/local/bin:$PATH"
                         sh "git submodule init && git submodule update"
                         dir ('build') {
-                        sh "cp ../../cmake-command.sh ."
-                        sh "./cmake-command.sh"
-                        sh "make"
-                        echo "Preparing for upcoming ICD tests"
-                        sh "rm -rf carta-backend-ICD-test"
-                        sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                        dir ('carta-backend-ICD-test') {
-                            sh "git submodule init && git submodule update && npm install"
-                            dir ('protobuf') {
-                            sh "./build_proto.sh"
-                        }
-                        sh "cp ../../../ws-config.json src/test/config.json"
-                        stash includes: "carta_backend", name: "ubuntu-1_carta_backend_icd"
+                           sh "cp ../../cmake-command.sh ."
+                           sh "./cmake-command.sh"
+                           sh "make"
+                           echo "Preparing for upcoming ICD tests"
+                           sh "rm -rf carta-backend-ICD-test"
+                           sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                           dir ('carta-backend-ICD-test') {
+                              sh "git submodule init && git submodule update && npm install"
+                              dir ('protobuf') {
+                                 sh "./build_proto.sh"
+                              }
+                              sh "cp ../../../ws-config.json src/test/config.json"
+                         }
+                         stash includes: "carta_backend", name: "ubuntu-1_carta_backend_icd"
                         }
                     }
                     post {
