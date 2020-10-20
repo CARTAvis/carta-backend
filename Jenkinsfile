@@ -24,7 +24,16 @@ pipeline {
                         sh "cp ../../cmake-command.sh ."
                         sh "./cmake-command.sh"
                         sh "make"
-                        stash includes: "carta_backend", name: "centos7-1_carta_backend"
+                        echo "Preparing for upcoming ICD tests"
+                        sh "rm -rf carta-backend-ICD-test"
+                        sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                        dir ('carta-backend-ICD-test') {
+                            sh "git submodule init && git submodule update && npm install"
+                            dir ('protobuf') {
+                            sh "./build_proto.sh"
+                        }
+                        sh "cp ../../../ws-config.json src/test/config.json"
+                        stash includes: "carta_backend", name: "centos7-1_carta_backend_icd"
                         }
                     }
                     post {
@@ -47,7 +56,17 @@ pipeline {
                         sh "cp ../../cmake-command.sh ."
                         sh "./cmake-command.sh"
                         sh "make"
-                        stash includes: "carta_backend", name: "macos-1_carta_backend"
+                        echo "Preparing for upcoming ICD tests"
+                        sh "rm -rf carta-backend-ICD-test"
+                        sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                        dir ('carta-backend-ICD-test') {
+                            sh "git submodule init && git submodule update && npm install"
+                            dir ('protobuf') {
+                            sh "./build_proto.sh"
+                        }
+                        sh "cp ../../../ws-config.json src/test/config.json"
+
+                        stash includes: "carta_backend", name: "macos-1_carta_backend_icd"
                         }
                     }
                     post {
@@ -70,7 +89,17 @@ pipeline {
                         sh "cp ../../cmake-command.sh ."
                         sh "./cmake-command.sh"
                         sh "make"
-                        stash includes: "carta_backend", name: "ubuntu-1_carta_backend"
+                        echo "Preparing for upcoming ICD tests"
+                        sh "rm -rf carta-backend-ICD-test"
+                        sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
+                        dir ('carta-backend-ICD-test') {
+                            sh "git submodule init && git submodule update && npm install"
+                            dir ('protobuf') {
+                            sh "./build_proto.sh"
+                        }
+                        sh "cp ../../../ws-config.json src/test/config.json"
+
+                        stash includes: "carta_backend", name: "ubuntu-1_carta_backend_icd"
                         }
                     }
                     post {
@@ -79,100 +108,6 @@ pipeline {
                         }
                         failure {
                             setBuildStatus("MacOS build failed", "FAILURE");
-                        }
-                    }
-                }
-            }
-        }
-        stage('Prepare ICD tests') {
-            parallel {
-                stage('CentOS7') {
-                    agent {
-                        label "centos7-1"
-                    }
-                    steps {
-                        sh "export PATH=/usr/local/bin:$PATH"
-                        dir ('build') {
-                            unstash "centos7-1_carta_backend"
-                            sh "rm -rf carta-backend-ICD-test"
-                            sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                            dir ('carta-backend-ICD-test') {
-                                sh "git submodule init && git submodule update && npm install"
-                                dir ('protobuf') {
-                                     sh "./build_proto.sh"
-                                }
-                                sh "cp ../../../ws-config.json src/test/config.json"
-                            }
-                        stash includes: "carta_backend", name: "centos7-1_carta_backend_icd"
-                        }
-                        echo "Finished !!"
-                    }
-                    post {
-                        success {
-                            setBuildStatus("CentOS7 ICD prepared", "SUCCESS");
-                        }
-                        failure {
-                            setBuildStatus("CentOS7 ICD prepare failed", "FAILURE");
-                        }     
-                    }
-                 }
-                 stage('Ubuntu ICD') {
-                     agent {
-                         label "ubuntu-1"
-                     }
-                     steps {
-                         sh "export PATH=/usr/local/bin:$PATH"
-                         dir ('build') {
-                             unstash "ubuntu-1_carta_backend"
-                             sh "rm -rf carta-backend-ICD-test"
-                             sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                             dir ('carta-backend-ICD-test') {
-                                 sh "git submodule init && git submodule update && npm install"
-                                 dir ('protobuf') {
-                                     sh "./build_proto.sh"
-                                 }
-                                 sh "cp ../../../ws-config.json src/test/config.json"
-                             }
-                         stash includes: "carta_backend", name: "ubuntu-1_carta_backend_icd"
-                         }
-                         echo "Finished !!"
-                     }
-                     post {
-                         success {
-                             setBuildStatus("Ubuntu ICD prepared", "SUCCESS");
-                         }
-                         failure {
-                             setBuildStatus("Ubuntu ICD prepare failed", "FAILURE");
-                         }     
-                     }
-                  }
-                 stage('MacOS ICD') {
-                     agent {
-                         label "macos-1"
-                     }
-                     steps {
-                         sh "export PATH=/usr/local/bin:$PATH"
-                         dir ('build') {
-                             unstash "macos-1_carta_backend"
-                             sh "rm -rf carta-backend-ICD-test"
-                             sh "git clone https://github.com/CARTAvis/carta-backend-ICD-test.git && cp ../../run.sh ."
-                             dir ('carta-backend-ICD-test') {
-                                 sh "git submodule init && git submodule update && npm install"
-                                 dir ('protobuf') {
-                                     sh "./build_proto.sh"
-                                 }
-                                 sh "cp ../../../ws-config.json src/test/config.json"
-                             }
-                         stash includes: "carta_backend", name: "macos-1_carta_backend_icd"
-                         }
-                         echo "Finished !!"
-                     }
-                     post {
-                         success {
-                             setBuildStatus("MacOS ICD prepared", "SUCCESS");
-                         }
-                         failure {
-                             setBuildStatus("MacOS ICD prepare failed", "FAILURE");
                         }
                     }
                 }
