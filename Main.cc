@@ -44,6 +44,7 @@ static string root_folder("/"), base_folder(".");
 static string auth_token = "";
 static bool verbose;
 static bool perflog;
+static int grpc_port(-1);
 
 // Called on connection. Creates session objects and assigns UUID to it
 void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
@@ -79,7 +80,7 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         }
     }
 
-    Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose, perflog);
+    Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose, perflog, grpc_port);
 
     ws->setUserData(session);
     if (carta_grpc_service) {
@@ -502,7 +503,6 @@ int main(int argc, const char* argv[]) {
         int port(3002);
         int thread_count = TBB_THREAD_COUNT;
         int omp_thread_count = OMP_THREAD_COUNT;
-        int grpc_port(-1);
         { // get values then let Input go out of scope
             casacore::Input inp;
             inp.version(VERSION_ID);

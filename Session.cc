@@ -40,7 +40,7 @@ bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
-    uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose, bool perflog)
+    uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose, bool perflog, int grpc_port)
     : _socket(ws),
       _id(id),
       _address(address),
@@ -49,6 +49,7 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string addre
       _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
       _verbose_logging(verbose),
       _performance_logging(perflog),
+      _grpc_port(grpc_port),
       _loader(nullptr),
       _region_handler(nullptr),
       _outgoing_async(outgoing_async),
@@ -226,6 +227,10 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_session_type(type);
 
     uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+    if (_grpc_port >= 0) {
+        feature_flags |= CARTA::ServerFeatureFlags::GRPC_SCRIPTING;
+        ack_message.set_grpc_port(_grpc_port);
+    }
     ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 }
