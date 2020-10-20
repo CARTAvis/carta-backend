@@ -11,7 +11,7 @@ void setBuildStatus(String message, String state) {
 pipeline {
     agent none
     stages {
-        stage('build backend') {
+        stage('Build') {
             parallel {
                 stage('CentOS7 build') {
                     agent {
@@ -65,7 +65,6 @@ pipeline {
                             sh "./build_proto.sh"
                         }
                         sh "cp ../../../ws-config.json src/test/config.json"
-
                         stash includes: "carta_backend", name: "macos-1_carta_backend_icd"
                         }
                     }
@@ -98,7 +97,6 @@ pipeline {
                             sh "./build_proto.sh"
                         }
                         sh "cp ../../../ws-config.json src/test/config.json"
-
                         stash includes: "carta_backend", name: "ubuntu-1_carta_backend_icd"
                         }
                     }
