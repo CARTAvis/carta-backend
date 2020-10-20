@@ -80,7 +80,8 @@ void OnConnect(uWS::WebSocket<uWS::SERVER>* ws, uWS::HttpRequest http_request) {
         }
     }
 
-    Session* session = new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose, perflog, grpc_port);
+    Session* session =
+        new Session(ws, session_number, address, root_folder, base_folder, outgoing, file_list_handler, verbose, perflog, grpc_port);
 
     ws->setUserData(session);
     if (carta_grpc_service) {
