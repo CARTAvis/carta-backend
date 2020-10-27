@@ -6,8 +6,7 @@ set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
 # Enable OpenMP if package is found
 find_package(OpenMP)
-if (OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+if (OPENMP_CXX_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 else ()
     message(WARNING "OpenMP not found!")
@@ -30,9 +29,6 @@ else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
 endif ()
 
-# use -DAuthServer:BOOL=ON to link mongodb and jsonccpp
-option(AuthServer "AuthServer" OFF)
-
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -54,19 +50,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
     LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
-if (AuthServer)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
-    INCLUDE_DIRECTORIES(/usr/include/libbson-1.0/)
-    INCLUDE_DIRECTORIES(/usr/include/libmongoc-1.0/)
-    set(LINK_LIBS
-            jsoncpp
-            mongoc-1.0
-            bson-1.0
-            json-c)
-    set(SOURCE_FILES
-            DBConnect.cc)
-endif (AuthServer)
 
 FIND_PACKAGE(gRPC QUIET)
 if (gRPC_FOUND)
@@ -95,11 +78,16 @@ if (DisableContourCompression)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DISABLE_CONTOUR_COMPRESSION_")
 endif (DisableContourCompression)
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    set(LINK_LIBS
-            ${LINK_LIBS}
-            stdc++fs)
-endif()
+option(UseBoostFilesystem "UseBoostFilesystem" OFF)
+
+if (UseBoostFilesystem)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_BOOST_FILESYSTEM_")
+    find_package(Boost 1.56 REQUIRED COMPONENTS filesystem)
+    set(LINK_LIBS ${LINK_LIBS} Boost::filesystem)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(LINK_LIBS ${LINK_LIBS} stdc++fs)
+endif ()
+
 
 set(LINK_LIBS
         ${LINK_LIBS}
@@ -116,6 +104,7 @@ set(LINK_LIBS
         tbb
         cfitsio
         pugixml
+        curl
         casa_casa
         casa_coordinates
         casa_tables
@@ -156,10 +145,14 @@ set(SOURCE_FILES
         Region/Region.cc
         ImageStats/StatsCalculator.cc
         ImageStats/Histogram.cc
+        SpectralLine/SpectralLineCrawler.cc
         Table/Columns.cc
         Table/Table.cc
         Table/TableView.cc
         Table/TableController.cc
+        Moment/MomentController.cc
+        Moment/MomentGenerator.cc
+        FileConverter.cc
         Timer/Timer.cc
         OnMessageTask.cc
         FileSettings.cc

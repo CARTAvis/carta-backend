@@ -42,9 +42,9 @@ if (testTable)
     enable_testing()
     find_package(GTest)
     include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} src)
-
     add_executable(test_votable
             TestVOTable.cc
+            ../Util.cc
             ../Timer/Timer.cc
             ../Table/Columns.cc
             ../Table/Table.cc
@@ -54,6 +54,7 @@ if (testTable)
 
     add_executable(test_fits
             TestFITS.cc
+            ../Util.cc
             ../Timer/Timer.cc
             ../Table/Columns.cc
             ../Table/Table.cc

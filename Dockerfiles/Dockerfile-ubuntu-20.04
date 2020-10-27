@@ -6,60 +6,47 @@ RUN \
   apt-get -y upgrade && \
   DEBIAN_FRONTEND=noninteractive \
   apt-get install -y apt-utils autoconf bison build-essential cmake curl fftw3-dev flex gcc g++ \
-    gdb gfortran git git-lfs googletest libblas-dev libcfitsio-dev libfmt-dev libgrpc-dev libgrpc++-dev \
-    libgsl-dev libgtest-dev libhdf5-dev libjsoncpp-dev liblapack-dev libncurses-dev libprotobuf-dev \
-    libreadline-dev libssl-dev libstarlink-ast-dev libtool libtbb-dev libxml2-dev libxslt1-dev libzstd-dev \
-    pkg-config protobuf-compiler-grpc software-properties-common unzip wcslib-dev wget
+    gdb gfortran git git-lfs googletest libblas-dev libcfitsio-dev libcurl4-gnutls-dev libfmt-dev \
+    libgrpc-dev libgrpc++-dev libgsl-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
+    libprotobuf-dev libpugixml-dev libreadline-dev libssl-dev libstarlink-ast-dev libtool libtbb-dev \
+    libxml2-dev libxslt1-dev libzstd-dev pkg-config protobuf-compiler-grpc software-properties-common \
+    unzip wcslib-dev wget
 
-# Get the casacore data
+# Get carta dependencies
+# casacore data from Kernsuite PPA
 RUN \
-  git-lfs install && \
-  mkdir -p /usr/local/share/casacore && cd /usr/local/share/casacore && \
-  git clone --no-checkout https://open-bitbucket.nrao.edu/scm/casa/casa-data.git data && \
-  cd data && git show HEAD:distro | bash
+  apt-add-repository -y -s ppa:kernsuite/kern-7 && \
+  apt-get update && \
+  apt-get -y install casacore-data
 
-# Install carta-casacore (with fixed CASAROOT)
+# carta-casacore from cartavis PPA
 RUN \
-  cd /root && \
-  git clone -q --recursive https://open-bitbucket.nrao.edu/scm/casa/carta-casacore.git && \
-  mkdir -p carta-casacore/build && cd carta-casacore/build && \
-  cmake .. -DUSE_FFTW3=ON \
-           -DUSE_HDF5=ON \
-           -DUSE_THREADS=ON \
-           -DUSE_OPENMP=ON \
-           -DCMAKE_BUILD_TYPE=Release \
-           -DDATA_DIR=/usr/local/share/casacore/data \
-           -DBUILD_TESTING=OFF \
-           -DBoost_NO_BOOST_CMAKE=1 \
-           -DBUILD_PYTHON=OFF \
-           -DUseCcache=1 \
-           -DHAS_CXX11=1 && \
-  make -j2 && make install && \
-  cd /root && rm -rf carta-casacore
+  add-apt-repository -y ppa:cartavis/carta-casacore && \
+  apt-get update && \
+  apt-get install carta-casacore
 
-# Install zfp
+# uWS from cartavis PPA
 RUN \
-  cd /root && \
-  git clone https://github.com/LLNL/zfp.git && \
-  mkdir -p zfp/build && cd zfp/build && \
-  cmake  -DCMAKE_BUILD_TYPE=RELEASE .. && make all install && \
-  cd /root && rm -rf zfp
+  add-apt-repository -y ppa:cartavis/uws && \
+  apt-get update && \
+  apt-get install uws
 
-# Install uWS
+# zfp from cartavis PPA
 RUN \
-  cd /root && \
-  git clone https://github.com/uNetworking/uWebSockets.git && \
-  cd uWebSockets && git checkout v0.14 && cd .. && \
-  make default install -C uWebSockets && \
-  rm -rf uWebSockets
+  add-apt-repository -y ppa:cartavis/zfp && \
+  apt-get update && \
+  apt-get install zfp
 
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
+# Do the same with the gRPC service port
+EXPOSE 50051
 
 ENV HOME /root
+
 # Required for running the backend 
 ENV LD_LIBRARY_PATH "/usr/lib64:/usr/local/lib:$LD_LIBRARY_PATH"
-ENV CASAPATH "/usr/local/share/casacore linux local `hostname`"
+ENV CASAPATH "/usr/share/casacore linux local `hostname`"
 
 WORKDIR /root
 

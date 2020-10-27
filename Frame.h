@@ -66,7 +66,8 @@ struct ContourSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog,
+        int default_channel = DEFAULT_CHANNEL);
     ~Frame(){};
 
     bool IsValid();
@@ -141,9 +142,8 @@ public:
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
+    bool GetImageRegion(int file_id, const ChannelRange& chan_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
-    // Returns mask array
-    bool GetRegionMask(const casacore::LattRegionHolder& region, casacore::Array<casacore::Bool>& mask);
     // Returns data vector
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
     bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
@@ -152,10 +152,28 @@ public:
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    // Whether to use loader for spectral profiles
+    // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
+    bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
     bool GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+
+    // Get the full name of image file
+    std::string GetFileName() {
+        return _loader->GetFileName();
+    }
+    // Get image interface ptr
+    casacore::ImageInterface<float>* GetImage() {
+        return _loader->GetImage();
+    }
+    // Get spectral axis
+    int GetSpectralAxis() {
+        return _spectral_axis;
+    };
+    // Get stokes axis
+    int GetStokesAxis() {
+        return _stokes_axis;
+    }
 
 private:
     // Validate channel, stokes index values
@@ -194,6 +212,7 @@ private:
     // Setup
     uint32_t _session_id;
     bool _verbose;
+    bool _perflog;
 
     // Image opened
     bool _valid;

@@ -41,6 +41,8 @@ public:
     static std::unique_ptr<Column> FromField(const pugi::xml_node& field);
     // Factory for constructing a column from a FITS fle pointer and a given column index. Increments the data_offset value
     static std::unique_ptr<Column> FromFitsPtr(fitsfile* fits_ptr, int column_index, size_t& data_offset);
+    // Factory for constructing a column from a data(string) vector
+    static std::unique_ptr<Column> FromValues(const std::vector<std::string>& values, const std::string name);
 
     CARTA::ColumnType data_type;
     std::string name;
@@ -59,6 +61,7 @@ public:
     DataColumn(const std::string& name_chr);
     virtual ~DataColumn() = default;
     void SetFromText(const pugi::xml_text& text, size_t index) override;
+    void SetFromValue(T value, size_t index);
     void SetEmpty(size_t index) override;
     void FillFromBuffer(const uint8_t* ptr, int num_rows, size_t stride) override;
     void Resize(size_t capacity) override;

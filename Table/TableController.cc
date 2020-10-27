@@ -1,10 +1,13 @@
 #include "TableController.h"
 
-#include <filesystem>
-
 #include <fmt/format.h>
+#include <sys/stat.h>
 
 #include "../Util.h"
+
+#if defined(__APPLE__)
+#define st_mtim st_mtimespec
+#endif
 
 using namespace carta;
 using namespace std;
@@ -19,9 +22,8 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
     }
 
     open_file_response.set_file_id(file_id);
-
-    filesystem::path file_path = GetPath(open_file_request.directory(), open_file_request.name());
-    if (!filesystem::exists(file_path) || !filesystem::is_regular_file(file_path)) {
+    auto file_path = GetPath(open_file_request.directory(), open_file_request.name());
+    if (!fs::exists(file_path) || !fs::is_regular_file(file_path)) {
         open_file_response.set_message(fmt::format("Cannot find path {}", file_path.string()));
         open_file_response.set_success(false);
         return;
@@ -32,7 +34,7 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
         _tables.erase(file_id);
         _view_cache.erase(file_id);
     }
-    _tables.emplace(file_id, file_path);
+    _tables.emplace(file_id, file_path.string());
     Table& table = _tables.at(file_id);
 
     if (!table.IsValid()) {
@@ -46,8 +48,12 @@ void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_
     auto file_info = open_file_response.mutable_file_info();
     file_info->set_name(open_file_request.name());
     file_info->set_type(table.Type());
-    file_info->set_file_size(filesystem::file_size(file_path));
+    file_info->set_file_size(fs::file_size(file_path));
     file_info->set_description(table.Description());
+
+    std::vector<CARTA::Coosys> coosys_list;
+    coosys_list.push_back(table.Coosys());
+    *file_info->mutable_coosys() = {coosys_list.begin(), coosys_list.end()};
 
     // Fill the number of rows
     size_t total_row_number = table.NumRows();
@@ -170,57 +176,76 @@ void TableController::OnFilterRequest(
 
 void TableController::OnFileListRequest(
     const CARTA::CatalogListRequest& file_list_request, CARTA::CatalogListResponse& file_list_response) {
-    filesystem::path root_path(_root_folder);
-    filesystem::path file_path = GetPath(file_list_request.directory());
+    fs::path root_path(_root_folder);
+    fs::path file_path = GetPath(file_list_request.directory());
 
-    if (!filesystem::exists(file_path) || !filesystem::is_directory(file_path)) {
+    if (!fs::exists(file_path) || !fs::is_directory(file_path)) {
         file_list_response.set_success(false);
         file_list_response.set_message("Incorrect file path");
         return;
     }
 
-    auto relative_path = filesystem::relative(file_path, root_path);
-    file_list_response.set_directory(relative_path);
-
-    auto parent_path = filesystem::relative(file_path.parent_path(), root_path);
-    file_list_response.set_parent(parent_path);
-
-    for (const auto& entry : filesystem::directory_iterator(file_path)) {
-        if (entry.is_directory()) {
-            file_list_response.add_subdirectories(entry.path().filename());
-        } else if (entry.is_regular_file() && entry.exists()) {
-            uint32_t file_magic_number = GetMagicNumber(entry.path());
-            CARTA::CatalogFileType file_type;
-            if (file_magic_number == XML_MAGIC_NUMBER) {
-                file_type = CARTA::VOTable;
-            } else if (file_magic_number == FITS_MAGIC_NUMBER) {
-                file_type = CARTA::FITSTable;
-            } else {
-                continue;
-            }
-
-            // Fill the file info
-            auto file_info = file_list_response.add_files();
-            file_info->set_name(entry.path().filename());
-            file_info->set_type(file_type);
-            file_info->set_file_size(entry.file_size());
-        }
+    std::string directory = file_list_request.directory();
+    if (directory.find("./") == 0) {
+        directory.replace(0, 2, ""); // remove leading "./"
     }
+    file_list_response.set_directory(file_list_request.directory());
 
-    file_list_response.set_success(true);
+    auto parent_path = fs::relative(file_path.parent_path(), root_path);
+    file_list_response.set_parent(parent_path.string());
+
+    try {
+        for (const auto& entry : fs::directory_iterator(file_path)) {
+            if (fs::is_directory(entry)) {
+                try {
+                    // Try to construct a directory iterator. If it fails, the directory is inaccessible
+                    auto test_directory_iterator = fs::directory_iterator(entry);
+                    file_list_response.add_subdirectories(entry.path().filename().string());
+                } catch (fs::filesystem_error) {
+                    // Skip inaccessible folders
+                    continue;
+                }
+            } else if (fs::is_regular_file(entry) && fs::exists(entry)) {
+                uint32_t file_magic_number = GetMagicNumber(entry.path().string());
+                CARTA::CatalogFileType file_type;
+                if (file_magic_number == XML_MAGIC_NUMBER) {
+                    file_type = CARTA::VOTable;
+                } else if (file_magic_number == FITS_MAGIC_NUMBER) {
+                    file_type = CARTA::FITSTable;
+                } else {
+                    continue;
+                }
+
+                // Fill the file info
+                auto file_info = file_list_response.add_files();
+                file_info->set_name(entry.path().filename().string());
+                file_info->set_type(file_type);
+                file_info->set_file_size(fs::file_size(entry));
+
+                // Fill in file time
+                struct stat file_stats;
+                stat(entry.path().c_str(), &file_stats);
+                file_info->set_date(file_stats.st_mtim.tv_sec);
+            }
+        }
+        file_list_response.set_success(true);
+    } catch (fs::filesystem_error) {
+        file_list_response.set_success(false);
+        file_list_response.set_message("Cannot list directory contents");
+    }
 }
 
 void TableController::OnFileInfoRequest(
     const CARTA::CatalogFileInfoRequest& file_info_request, CARTA::CatalogFileInfoResponse& file_info_response) {
-    filesystem::path file_path = GetPath(file_info_request.directory(), file_info_request.name());
+    fs::path file_path = GetPath(file_info_request.directory(), file_info_request.name());
 
-    if (!filesystem::exists(file_path) || !filesystem::is_regular_file(file_path)) {
+    if (!fs::exists(file_path) || !fs::is_regular_file(file_path)) {
         file_info_response.set_success(false);
         file_info_response.set_message("Incorrect file path");
         return;
     }
 
-    Table table(file_path, true);
+    Table table(file_path.string(), true);
 
     if (!table.IsValid()) {
         file_info_response.set_success(false);
@@ -229,10 +254,31 @@ void TableController::OnFileInfoRequest(
     }
 
     auto file_info = file_info_response.mutable_file_info();
-    file_info->set_name(file_path.filename());
+    file_info->set_name(file_path.filename().string());
     file_info->set_type(table.Type());
-    file_info->set_file_size(filesystem::file_size(file_path));
-    file_info->set_description(table.Description());
+    file_info->set_file_size(fs::file_size(file_path));
+    string file_info_string = fmt::format("Name: {}\n", file_info->name());
+    if (table.Description().size()) {
+        file_info_string += fmt::format("Description: {}\n", table.Description());
+    }
+    file_info_string += fmt::format("Column Count: {}\n", table.NumColumns());
+    if (table.AvailableRows()) {
+        file_info_string += fmt::format("Row Count: {}\n", table.AvailableRows());
+    }
+
+    auto coosys = table.Coosys();
+    if (coosys.system().size()) {
+        file_info_string += fmt::format("Coordinate System: {}\n", coosys.system());
+    }
+    if (coosys.epoch().size()) {
+        file_info_string += fmt::format("Epoch: {}\n", coosys.epoch());
+    }
+    if (coosys.equinox().size()) {
+        file_info_string += fmt::format("Equinox: {}\n", coosys.equinox());
+    }
+
+    file_info_string += table.Parameters();
+    file_info->set_description(file_info_string);
 
     int num_columns = table.NumColumns();
     for (auto i = 0; i < num_columns; i++) {
@@ -307,8 +353,8 @@ bool TableController::FilterParamsChanged(const std::vector<CARTA::FilterConfig>
 
     return false;
 }
-std::filesystem::path TableController::GetPath(std::string directory, std::string name) {
-    filesystem::path file_path(_root_folder);
+fs::path TableController::GetPath(std::string directory, std::string name) {
+    fs::path file_path(_root_folder);
     if (directory == "$BASE") {
         // Replace $BASE macro with the base folder
         file_path /= _base_folder;

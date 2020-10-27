@@ -21,8 +21,8 @@ RegionImportExport::RegionImportExport(casacore::CoordinateSystem* image_coord_s
 
 // Public accessors
 
-std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& error) {
-    // Parse the file in the constructor to create RegionStates with given reference file_id; return any errors in error
+std::vector<RegionProperties> RegionImportExport::GetImportedRegions(std::string& error) {
+    // Parse the file in the constructor to create RegionProperties vector; return any errors in error
     error = _import_errors;
 
     if ((_import_regions.size() == 0) && error.empty()) {
@@ -33,7 +33,7 @@ std::vector<RegionState> RegionImportExport::GetImportedRegions(std::string& err
 }
 
 bool RegionImportExport::AddExportRegion(
-    const RegionState& region_state, const casacore::RecordInterface& region_record, bool pixel_coord) {
+    const RegionState& region_state, const RegionStyle& region_style, const casacore::RecordInterface& region_record, bool pixel_coord) {
     // Convert Record to Quantities for region type then set region
     // Record is in pixel coords; convert to world coords if needed
     if (pixel_coord) {
@@ -62,7 +62,7 @@ bool RegionImportExport::AddExportRegion(
     }
 
     if (converted) {
-        return AddExportRegion(region_state.name, region_state.type, control_points, rotation); // add to CRTF or DS9 export
+        return AddExportRegion(region_state, region_style, control_points, rotation); // add to CRTF or DS9 export
     }
 
     return converted;
@@ -106,31 +106,63 @@ std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& f
 void RegionImportExport::ParseRegionParameters(
     std::string& region_definition, std::vector<std::string>& parameters, std::unordered_map<std::string, std::string>& properties) {
     // Parse the input string by space, comma, parentheses to get region parameters and properties (keyword=value)
-    size_t next(0), current(0);
-    while (next != string::npos) {
+    size_t next(0), current(0), end(region_definition.size());
+    while (current < end) {
         next = region_definition.find_first_of(_parser_delim, current);
-        if ((next != std::string::npos) && ((next - current) > 0)) {
+        if (next == std::string::npos) {
+            next = end;
+        }
+        if ((next - current) > 0) {
             std::string param = region_definition.substr(current, next - current);
             if (param.find("=") == std::string::npos) {
                 parameters.push_back(param);
             } else {
                 std::vector<std::string> kvpair;
                 SplitString(param, '=', kvpair);
+                std::string key = kvpair[0];
                 if (kvpair.size() == 2) {
-                    properties[kvpair[0]] = kvpair[1];
-                } else {
-                    // value is in [], look for next space
-                    current = next + 1;
-                    std::string key = kvpair[0];
-                    next = region_definition.find_first_of(" ", current);
-                    if (next - current > 0) {
-                        std::string value = region_definition.substr(current, next - current);
+                    std::string value = kvpair[1];
+                    if (key == "dashlist") {
+                        // values separated by space e.g. "dashlist=8 3"
+                        current = next + 1;
+                        next = region_definition.find_first_of(" ", current);
+                        param = region_definition.substr(current, next - current);
+                        properties[key] = value + " " + param;
+                    } else if (key == "label") {
+                        // remove quotes
+                        if ((value[0] == '\'') || (value[0] == '\"')) {
+                            value = value.substr(1, value.size() - 2);
+                        }
                         properties[key] = value;
+                    } else {
+                        properties[key] = value;
+                    }
+                } else {
+                    // Handle delimiters in values
+                    current = next + 1;
+                    if (key == "corr") {
+                        // crtf value is in [], look for ending ]
+                        next = region_definition.find_first_of("]", current);
+                        if (next != std::string::npos) {
+                            std::string value = region_definition.substr(current, next - current);
+                            properties[key] = value;
+                        }
+                    } else { // e.g. "color=#29A634", # is delim
+                        // look for next space
+                        next = region_definition.find_first_of(" ", current);
+                        if ((next != std::string::npos) && (next - current > 0)) {
+                            std::string value = region_definition.substr(current, next - current);
+                            properties[key] = value;
+                        }
                     }
                 }
             }
         }
-        current = next + 1;
+        if (next < end) {
+            current = next + 1;
+        } else {
+            current = next;
+        }
     }
 }
 
@@ -201,6 +233,24 @@ double RegionImportExport::WorldToPixelLength(casacore::Quantity world_length, u
     // Find pixel length
     casacore::Vector<casacore::Double> increments(_coord_sys->increment());
     return fabs(world_length.getValue() / increments[pixel_axis]);
+}
+
+std::string RegionImportExport::FormatColor(const std::string& color) {
+    // Capitalize and add prefix if hex; else return same string
+    std::string hex_color(color);
+    if (color[0] == '#') {
+        // Do conversion without prefix
+        hex_color = color.substr(1);
+    }
+
+    // Check if can convert entire string to hex number
+    char* endptr(nullptr);
+    if (std::strtoul(hex_color.c_str(), &endptr, 16) && (*endptr == '\0')) {
+        std::transform(hex_color.begin(), hex_color.end(), hex_color.begin(), ::toupper);
+        hex_color = "#" + hex_color;
+    }
+
+    return hex_color;
 }
 
 bool RegionImportExport::ConvertRecordToPoint(
@@ -339,7 +389,7 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
     }
 
     casacore::Vector<casacore::Double> pixel_coords(_image_shape.size());
-    pixel_coords == 0.0;
+    pixel_coords = 0.0;
     pixel_coords(0) = center(0);
     pixel_coords(1) = center(1);
 

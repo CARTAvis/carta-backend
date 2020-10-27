@@ -78,6 +78,11 @@ void DataColumn<T>::SetFromText(const pugi::xml_text& text, size_t index) {
 }
 
 template<class T>
+void DataColumn<T>::SetFromValue(const T value, size_t index) {
+    entries[index] = value;
+}
+
+template<class T>
 void DataColumn<T>::SetEmpty(size_t index) {
     if constexpr(std::numeric_limits<T>::has_quiet_NaN) {
         entries[index] = std::numeric_limits<T>::quiet_NaN();

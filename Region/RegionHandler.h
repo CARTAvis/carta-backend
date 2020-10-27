@@ -5,8 +5,6 @@
 
 #include <vector>
 
-#include <tbb/atomic.h>
-
 #include <carta-protobuf/export_region.pb.h>
 #include <carta-protobuf/import_region.pb.h>
 #include <carta-protobuf/region_requirements.pb.h>
@@ -15,15 +13,33 @@
 #include "../RequirementsCache.h"
 #include "Region.h"
 
+struct RegionStyle {
+    std::string name;
+    std::string color;
+    int line_width;
+    std::vector<int> dash_list;
+
+    RegionStyle() {}
+    RegionStyle(const std::string& name_, const std::string& color_, int line_width_, const std::vector<int> dash_list_)
+        : name(name_), color(color_), line_width(line_width_), dash_list(dash_list_) {}
+};
+
+struct RegionProperties {
+    RegionProperties() {}
+    RegionProperties(RegionState& region_state, RegionStyle& region_style) : state(region_state), style(region_style) {}
+
+    RegionState state;
+    RegionStyle style;
+};
+
 namespace carta {
 
 class RegionHandler {
 public:
-    RegionHandler(bool verbose);
+    RegionHandler(bool perflog);
 
     // Regions
-    bool SetRegion(int& region_id, int file_id, const std::string& name, CARTA::RegionType type, const std::vector<CARTA::Point>& points,
-        float rotation, casacore::CoordinateSystem* csys);
+    bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
 
@@ -31,7 +47,7 @@ public:
     void ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, const std::string& region_file,
         bool file_is_filename, CARTA::ImportRegionAck& import_ack);
     void ExportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, CARTA::CoordinateType coord_type,
-        std::vector<int>& region_ids, std::string& filename, CARTA::ExportRegionAck& export_ack);
+        std::map<int, CARTA::RegionStyle>& region_styles, std::string& filename, CARTA::ExportRegionAck& export_ack);
 
     // Frames
     void RemoveFrame(int file_id);
@@ -48,6 +64,12 @@ public:
     bool FillSpectralProfileData(
         std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
+
+    // Get an image region with respect to the region id, file id, channels range and a stoke type
+    bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
+
+    // Get file ids with respect to the region id
+    std::set<int> GetFileIds(int region_id);
 
 private:
     // Get unique region id (max id + 1)
@@ -74,7 +96,6 @@ private:
     // Fill data stream messages
     bool RegionFileIdsValid(int region_id, int file_id);
     casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
-    bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
     bool GetRegionHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
     bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
@@ -84,13 +105,13 @@ private:
         int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
 
     // Logging
-    bool _verbose;
+    bool _perflog;
 
     // Trigger job cancellation when true
     volatile bool _cancel_all_jobs = false;
 
     // Track ongoing calculations
-    tbb::atomic<int> _z_profile_count;
+    std::atomic<int> _z_profile_count;
 
     // Regions: key is region_id
     std::unordered_map<int, std::shared_ptr<Region>> _regions;

@@ -7,9 +7,9 @@ RUN \
   dnf -y install 'dnf-command(config-manager)' && \
   dnf -y config-manager --set-enabled PowerTools epel-testing elrepo-testing && \
   dnf -y update && \
-  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel flex fmt-devel gcc \
-         gcc-c++ git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel \
-         libzstd-devel make openssl-devel tbb-devel wcslib-devel wcslib-devel wget zlib-devel
+  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel curl-devel flex fmt-devel gcc \
+         gcc-c++ git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel make \
+         openssl-devel pugixml-devel spdlog-devel subversion tbb-devel wcslib-devel wcslib-devel wget zlib-devel
 
 # gRPC will need cmake >3.13 but CentOS8 only provides cmake 3.11.
 RUN \
@@ -31,12 +31,15 @@ RUN \
   source /etc/bashrc && \
   cp /usr/include/cfitsio/* /usr/include/
 
-# Get the casacore data
+# Get only the geodetic and ephemerides casa-data
 RUN \
-  git-lfs install && \
-  mkdir -p /usr/local/share/casacore && cd /usr/local/share/casacore && \
-  git clone --no-checkout https://open-bitbucket.nrao.edu/scm/casa/casa-data.git data && \
-  cd data && git show HEAD:distro | bash
+  source /etc/bashrc && \
+  mkdir -p /usr/local/share/casacore/data/ephemerides && \
+  mkdir -p /usr/local/share/casacore/data/geodetic && \
+  svn co https://svn.cv.nrao.edu/svn/casa-data/distro/ephemerides/ /usr/local/share/casacore/data/ephemerides && \
+  svn co https://svn.cv.nrao.edu/svn/casa-data/distro/geodetic/ /usr/local/share/casacore/data/geodetic && \
+  rm -r /usr/local/share/casacore/data/ephemerides/splatalogue.db && \
+  rm -r /usr/local/share/casacore/data/ephemerides/SplatDefault.tbl
 
 # Get libsofa.a for casacore
 RUN \
@@ -45,22 +48,26 @@ RUN \
   cd sofa/20180130/f77/src && make && cp libsofa.a /usr/lib/libsofa.a && \
   cd /root && rm -rf sofa
 
-# Install carta-casacore
+# Install carta-casacore from CARTAvis repo with fixed DATA-DIR. 
 RUN \
+  source /etc/bashrc && \
   cd /root && \
-  git clone -q --recursive https://open-bitbucket.nrao.edu/scm/casa/carta-casacore.git && \
-  mkdir -p carta-casacore/build && cd carta-casacore/build && \
+  git clone https://github.com/CARTAvis/carta-casacore.git && \
+  cd carta-casacore && \
+  git submodule init && git submodule update && \
+  cd casa6 && \
+  git submodule init && git submodule update && \
+  cd ../ && mkdir -p build && cd build && \
   cmake .. -DUSE_FFTW3=ON \
            -DUSE_HDF5=ON \
            -DUSE_THREADS=ON \
            -DUSE_OPENMP=ON \
            -DCMAKE_BUILD_TYPE=Release \
-           -DDATA_DIR=/usr/local/share/casacore/data \
            -DBUILD_TESTING=OFF \
-           -DBoost_NO_BOOST_CMAKE=1 \
            -DBUILD_PYTHON=OFF \
            -DUseCcache=1 \
-           -DHAS_CXX11=1 && \
+           -DHAS_CXX11=1 \
+           -DDATA_DIR=/usr/local/share/casacore/data && \
   make -j2 && make install && \
   cd /root && rm -rf carta-casacore
 
@@ -94,6 +101,8 @@ RUN \
 # Forward port so that the webapp can properly access it
 # from outside of the container
 EXPOSE 3002
+# Do the same with the gRPC service port
+EXPOSE 50051
 
 ENV HOME /root
 
