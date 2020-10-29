@@ -957,11 +957,6 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     if (region_id != CURSOR_REGION_ID) {
         return false;
     }
-
-    // No spatial profile requirements
-    if (_cursor_spatial_configs.empty()) {
-        return false;
-    }
     
     // TODO: create _width and _height attributes and use them consistently in the whole class
     ssize_t width(_image_shape(0)), height(_image_shape(1));
