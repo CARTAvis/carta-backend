@@ -65,11 +65,10 @@ public:
         std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
 
-    // Get an image region with respect to the region id, file id, channels range and a stoke type
-    bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
-
-    // Get file ids with respect to the region id
-    std::set<int> GetFileIds(int region_id);
+    // Calculate moments
+    bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+        std::vector<carta::CollapseResult>& collapse_results);
 
 private:
     // Get unique region id (max id + 1)
@@ -96,6 +95,7 @@ private:
     // Fill data stream messages
     bool RegionFileIdsValid(int region_id, int file_id);
     casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
+    bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
     bool GetRegionHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
     bool GetRegionSpectralData(int region_id, int file_id, std::string& coordinate, int stokes_index,
