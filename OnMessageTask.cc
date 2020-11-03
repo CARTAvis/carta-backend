@@ -29,12 +29,12 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
-        case CARTA::EventType::CATALOG_FILTER_REQUEST: {
-            CARTA::CatalogFilterRequest message;
+        case CARTA::EventType::MOMENT_REQUEST: {
+            CARTA::MomentRequest message;
             if (message.ParseFromArray(_event_buffer, _event_length)) {
-                _session->OnCatalogFilter(message, _header.request_id);
+                _session->OnMomentRequest(message, _header.request_id);
             } else {
-                fmt::print("Bad CATALOG_FILTER_REQUEST message!\n");
+                fmt::print("Bad MOMENT_REQUEST message!\n");
             }
             break;
         }
@@ -111,5 +111,10 @@ tbb::task* RegionDataStreamsTask::execute() {
 
 tbb::task* SpectralProfileTask::execute() {
     _session->SendSpectralProfileData(_file_id, _region_id);
+    return nullptr;
+}
+
+tbb::task* OnSpectralLineRequestTask::execute() {
+    _session->OnSpectralLineRequest(_message, _request_id);
     return nullptr;
 }

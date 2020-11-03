@@ -9,8 +9,8 @@
 #include <carta-protobuf/set_image_channels.pb.h>
 
 namespace CARTA {
-const int AnimationFlowWindowConstant = 5;
-const int AnimationFlowWindowScaler = 2;
+const int InitialAnimationWaitsPerSecond = 3;
+const int InitialWindowScale = 1;
 } // namespace CARTA
 
 class AnimationObject {
@@ -24,7 +24,10 @@ class AnimationObject {
     CARTA::AnimationFrame _current_frame;
     CARTA::AnimationFrame _next_frame;
     CARTA::AnimationFrame _last_flow_frame;
+    std::unordered_map<int32_t, std::vector<float>> _matched_frames;
     int _frame_rate;
+    int _waits_per_second;
+    int _window_scale;
     std::chrono::microseconds _frame_interval;
     std::chrono::time_point<std::chrono::high_resolution_clock> _t_start;
     std::chrono::time_point<std::chrono::high_resolution_clock> _t_last;
@@ -40,7 +43,8 @@ class AnimationObject {
 
 public:
     AnimationObject(int file_id, CARTA::AnimationFrame& start_frame, CARTA::AnimationFrame& first_frame, CARTA::AnimationFrame& last_frame,
-        CARTA::AnimationFrame& delta_frame, int frame_rate, bool looping, bool reverse_at_end, bool always_wait)
+        CARTA::AnimationFrame& delta_frame, const google::protobuf::Map<google::protobuf::int32, CARTA::MatchedFrameList>& matched_frames,
+        int frame_rate, bool looping, bool reverse_at_end, bool always_wait)
         : _file_id(file_id),
           _start_frame(start_frame),
           _first_frame(first_frame),
@@ -51,6 +55,14 @@ public:
           _always_wait(always_wait) {
         _current_frame = start_frame;
         _next_frame = start_frame;
+
+        if (!matched_frames.empty()) {
+            for (auto const& entry : matched_frames) {
+                _matched_frames[entry.first] = {entry.second.frame_numbers().begin(), entry.second.frame_numbers().end()};
+            }
+            // Empty array for the active file_id, since its channel will be set automatically
+            _matched_frames[file_id] = {};
+        }
 
         // handle negative deltas
         if (delta_frame.channel() < 0 || delta_frame.stokes() < 0) {
@@ -69,9 +81,11 @@ public:
         _file_open = true;
         _waiting_flow_event = false;
         _last_flow_frame = start_frame;
+        _waits_per_second = CARTA::InitialAnimationWaitsPerSecond;
+        _window_scale = CARTA::InitialWindowScale;
     }
     int CurrentFlowWindowSize() {
-        return (CARTA::AnimationFlowWindowConstant * CARTA::AnimationFlowWindowScaler * _frame_rate);
+        return (_frame_rate / _waits_per_second) * _window_scale;
     }
     void CancelExecution() {
         _tbb_context.cancel_group_execution();
