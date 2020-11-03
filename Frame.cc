@@ -1022,69 +1022,58 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         
         if (_loader->UseTileCache()) { // Tile cache
             // TODO this will change when we support approximate and partial profiles
-            // TODO possibly eliminate GetMultiple entirely
-            std::vector<TileCache::Key> keys;
-            
             if (coordinate == "x") {
                 int tile_y = (y / TILE_SIZE) * TILE_SIZE;
-                for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
-                    keys.push_back(TileCache::Key(tile_x, tile_y));
-                }
-
-                auto interrupt = [&](TileCache::Key chunk_key) {
-                    return !this->IsConnected() || ((int)(this->_cursor.y) / CHUNK_SIZE) * CHUNK_SIZE != chunk_key.y;
-                };
                 bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
-                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt, ignore_interrupt);
+                profile.resize(width);
 
-                if (!tiles.empty()) {
-                    profile.resize(width);
-
-                    for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
-                        auto& tile = tiles[TileCache::Key(tile_x, tile_y)];
-                        auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
-                        auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
-
-                        // copy contiguous row
-                        auto source_start = tile->begin() + tile_height * (y - tile_y);
-                        auto source_end = source_start + tile_width;
-                        auto destination_start = profile.begin() + tile_x;
-                        std::copy(source_start, source_end, destination_start);
+#pragma omg parallel for
+                for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
+                    auto key = TileCache::Key(tile_x, tile_y);
+                    // The cursor has moved outside this chunk row
+                    if (!ignore_interrupt &&
+                        ((int)(_cursor_xy.y) / CHUNK_SIZE) * CHUNK_SIZE != TileCache::ChunkKey(key).y) {
+                        return profile_ok;
                     }
-                    
-                    end = width;
-                    have_profile = true;
+                    auto tile = _tile_cache.Get(key, _loader, _image_mutex);
+                    auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
+                    auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
+
+                    // copy contiguous row
+                    auto start = tile->begin() + tile_height * (y - tile_y);
+                    auto end = start + tile_width;
+                    auto destination_start = profile.begin() + tile_x;
+                    std::copy(start, end, destination_start);
                 }
                 
+                end = width;
+                have_profile = true;
+            
             } else if (coordinate == "y") {
                 int tile_x = (x / TILE_SIZE) * TILE_SIZE;
-                for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
-                    keys.push_back(TileCache::Key(tile_x, tile_y));
-                }
-
-                auto interrupt = [&](TileCache::Key chunk_key) {
-                    return !this->IsConnected() || ((int)(this->_cursor.x) / CHUNK_SIZE) * CHUNK_SIZE != chunk_key.x;
-                };
                 bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
-                auto tiles = _tile_cache.GetMultiple(keys, _loader, _image_mutex, interrupt, ignore_interrupt);
+                profile.resize(height);
 
-                if (!tiles.empty()) {
-                    profile.resize(height);
-
-                    for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
-                        auto& tile = tiles[TileCache::Key(tile_x, tile_y)];
-                        auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
-                        auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
-
-                        // copy non-contiguous column
-                        for (int j = 0; j < tile_height; j++) {
-                            profile[tile_y + j] = (*tile)[(j * tile_width) + (x - tile_x)];
-                        }
+#pragma omg parallel for
+                for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
+                    auto key = TileCache::Key(tile_x, tile_y);
+                    // The cursor has moved outside this chunk column
+                    if (!ignore_interrupt &&
+                        ((int)(_cursor_xy.x) / CHUNK_SIZE) * CHUNK_SIZE != TileCache::ChunkKey(key).x) {
+                        return profile_ok;
                     }
-                    
-                    end = height;
-                    have_profile = true;
+                    auto tile = _tile_cache.Get(key, _loader, _image_mutex);
+                    auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
+                    auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
+
+                    // copy non-contiguous column
+                    for (int j = 0; j < tile_height; j++) {
+                        profile[tile_y + j] = (*tile)[(j * tile_width) + (x - tile_x)];
+                    }
                 }
+                
+                end = height;
+                have_profile = true;
             }
         } else { // Image cache
             if (coordinate == "x") {
