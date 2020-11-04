@@ -60,7 +60,8 @@ public:
     void OnFileListRequest(const CARTA::FileListRequest& request, uint32_t request_id);
     void OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id);
     bool OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bool silent = false);
-    bool OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::MomentResponse& moment_response, uint32_t request_id);
+    bool OnOpenFile(int file_id, const std::string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
+        CARTA::OpenFileAck* open_file_ack);
     void OnCloseFile(const CARTA::CloseFile& message);
     void OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool skip_data = false);
     void OnSetImageChannels(const CARTA::SetImageChannels& message);

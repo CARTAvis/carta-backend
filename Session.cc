@@ -356,14 +356,11 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     return success;
 }
 
-bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::MomentResponse& moment_response, uint32_t request_id) {
+bool Session::OnOpenFile(int file_id, const std::string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
+    CARTA::OpenFileAck* open_file_ack) {
     // Set an image moment file id, name and its image interface
-    int file_id = collapse_result.file_id;
-    std::string name = collapse_result.name;
-    auto image = collapse_result.image;
 
     // Response message for opening a file
-    auto open_file_ack = moment_response.add_open_file_acks();
     open_file_ack->set_file_id(file_id);
     string err_message;
 
@@ -1027,10 +1024,11 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             frame->DecreaseMomentsCount();
         }
 
+        // Open moments images from the cache, open files acknowledgements will be sent to the frontend
         for (int i = 0; i < collapse_results.size(); ++i) {
             auto& collapse_result = collapse_results[i];
-            // Open an moment image from the cache, open file acknowledgement will be sent to the frontend
-            OnOpenFile(collapse_result, moment_response, request_id);
+            auto* open_file_ack = moment_response.add_open_file_acks();
+            OnOpenFile(collapse_result.file_id, collapse_result.name, collapse_result.image, open_file_ack);
         }
 
         // Send moment response message
