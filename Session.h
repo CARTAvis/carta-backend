@@ -45,6 +45,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
+#include "ImageData/ConcatStokesFiles.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
@@ -84,10 +85,10 @@ public:
     void OnCloseCatalogFile(CARTA::CloseCatalogFile close_file_request);
     void OnCatalogFilter(CARTA::CatalogFilterRequest filter_request, uint32_t request_id);
     void OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_request, uint32_t request_id);
-
     void OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id);
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
     void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);
+    void OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id);
 
     void SendPendingMessages();
 

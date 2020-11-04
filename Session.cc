@@ -1067,6 +1067,24 @@ void Session::OnSpectralLineRequest(CARTA::SpectralLineRequest spectral_line_req
     SendEvent(CARTA::EventType::SPECTRAL_LINE_RESPONSE, request_id, spectral_line_response);
 }
 
+void Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id) {
+    CARTA::ConcatStokesFilesAck response;
+    carta::ConcatStokesFiles concat(_root_folder);
+    std::shared_ptr<casacore::ImageConcat<float>> concat_image;
+    std::string file_name;
+
+    if (concat.DoConcat(message, response, concat_image, file_name)) {
+        // Open the concatenate image
+        auto* open_file_ack = response.mutable_open_file_ack();
+        OnOpenFile(message.file_id(), file_name, concat_image, open_file_ack);
+    } else {
+        cerr << "Concatenate stokes files failed!\n";
+    }
+
+    // Send response message
+    SendEvent(CARTA::EventType::CONCAT_STOKES_FILES_ACK, request_id, response);
+}
+
 // ******** SEND DATA STREAMS *********
 
 bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cube_histogram_message) {
