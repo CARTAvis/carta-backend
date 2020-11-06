@@ -988,20 +988,32 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     }
 
     auto t_start_spatial_profile = std::chrono::high_resolution_clock::now();
+    
+    // The starting index of the tile which contains this index.
+    // A custom tile size can be specified so that this can be reused to calculate a chunk index.
+    auto tile_index = [](int index, int size=TILE_SIZE) {
+        return (index / size) * size;
+    };
+    
+    // The real size of the tile with this starting index, given the full size of this dimension
+    auto tile_size = [](int tile_index, int total_size) {
+        return std::min(TILE_SIZE, total_size - tile_index);
+    };
 
     int x, y;
     _cursor.ToIndex(x, y); // convert float to index into image array
     float cursor_value(0.0);
+    
     if (_image_cache_valid) {
         bool write_lock(false);
         tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
         cursor_value = _image_cache[(y * width) + x];
         cache_lock.release();
     } else if (_loader->UseTileCache()) {
-        int tile_x = (x / TILE_SIZE) * TILE_SIZE;
-        int tile_y = (y / TILE_SIZE) * TILE_SIZE;
+        int tile_x = tile_index(x);
+        int tile_y = tile_index(y);
         auto tile = _tile_cache.Get(TileCache::Key(tile_x, tile_y), _loader, _image_mutex);
-        auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
+        auto tile_width = tile_size(tile_x, width);
         cursor_value = (*tile)[((y - tile_y) * tile_width) + (x - tile_x)];
     }
 
@@ -1013,62 +1025,73 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     spatial_data.set_value(cursor_value);
 
     // add profiles
-    int end(0);
     std::vector<float> profile;
     bool write_lock(false);
-    for (auto& coordinate : _cursor_spatial_configs) { // string coordinate
+    
+    for (auto& config : _cursor_spatial_configs) {
+        int start(0);
+        int end(0)
         bool have_profile(false);
+        
         // can no longer select stokes, so can use image cache or tile cache
         
-        if (_loader->UseTileCache()) { // Tile cache
-            // TODO this will change when we support approximate and partial profiles
-            if (coordinate == "x") {
-                int tile_y = (y / TILE_SIZE) * TILE_SIZE;
+        if (_loader->UseTileCache() && config.mip <= 1) { // Tile cache
+            if (config.coordinate == "x") {
+                start = config.start;
+                end = config.end || width;
+                
+                int tile_y = tile_index(y);
                 bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
-                profile.resize(width);
+                profile.resize(end - start);
 
 #pragma omg parallel for
-                for (int tile_x = 0; tile_x < width; tile_x += TILE_SIZE) {
+                for (int tile_x = tile_index(start); tile_x <= tile_index(end - 1); tile_x += TILE_SIZE) {
                     auto key = TileCache::Key(tile_x, tile_y);
                     // The cursor has moved outside this chunk row
                     if (!ignore_interrupt &&
-                        ((int)(_cursor_xy.y) / CHUNK_SIZE) * CHUNK_SIZE != TileCache::ChunkKey(key).y) {
+                        (tile_index(_cursor_xy.y, CHUNK_SIZE) != TileCache::ChunkKey(key).y) {
                         return profile_ok;
                     }
                     auto tile = _tile_cache.Get(key, _loader, _image_mutex);
-                    auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
-                    auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
+                    auto tile_width = tile_size(tile_x, width);
+                    auto tile_height = tile_size(tile_y, height);
 
                     // copy contiguous row
-                    auto start = tile->begin() + tile_height * (y - tile_y);
-                    auto end = start + tile_width;
+                    auto start_offset = max(start, tile_x) - tile_x;
+                    auto end_offset = tile_x - min(end - tile_width, tile_x);
+                    auto tile_start = tile->begin() + tile_height * (y - tile_y) + start_offset;
+                    auto tile_end = tile_start + tile_width - start_offset - end_offset;
                     auto destination_start = profile.begin() + tile_x;
-                    std::copy(start, end, destination_start);
+                    std::copy(tile_start, tile_end, destination_start);
                 }
                 
-                end = width;
                 have_profile = true;
             
-            } else if (coordinate == "y") {
-                int tile_x = (x / TILE_SIZE) * TILE_SIZE;
+            } else if (config.coordinate == "y") {
+                start = config.start;
+                end = config.end || height;
+                
+                int tile_x = tile_index(x);
                 bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
-                profile.resize(height);
+                profile.resize(end - start);
 
 #pragma omg parallel for
-                for (int tile_y = 0; tile_y < height; tile_y += TILE_SIZE) {
+                for (int tile_y = tile_index(start); tile_y <= tile_index(end - 1); tile_y += TILE_SIZE) {
                     auto key = TileCache::Key(tile_x, tile_y);
                     // The cursor has moved outside this chunk column
                     if (!ignore_interrupt &&
-                        ((int)(_cursor_xy.x) / CHUNK_SIZE) * CHUNK_SIZE != TileCache::ChunkKey(key).x) {
+                        (tile_index(_cursor_xy.x, CHUNK_SIZE) != TileCache::ChunkKey(key).x) {
                         return profile_ok;
                     }
                     auto tile = _tile_cache.Get(key, _loader, _image_mutex);
-                    auto tile_width = std::min(TILE_SIZE, (int)width - tile_x);
-                    auto tile_height = std::min(TILE_SIZE, (int)height - tile_y);
+                    auto tile_width = tile_size(tile_x, width);
+                    auto tile_height = tile_size(tile_y, height);
 
                     // copy non-contiguous column
-                    for (int j = 0; j < tile_height; j++) {
-                        profile[tile_y + j] = (*tile)[(j * tile_width) + (x - tile_x)];
+                    auto start_offset = max(start, tile_y) - tile_y;
+                    auto end_offset = tile_y - min(end - tile_height, tile_y);
+                    for (int j = start_offset; j < tile_height - end_offset; j++) {
+                        profile[tile_y + j - start_offset] = (*tile)[(j * tile_width) + (x - tile_x)];
                     }
                 }
                 
@@ -1076,7 +1099,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 have_profile = true;
             }
         } else { // Image cache
-            if (coordinate == "x") {
+            // TODO TODO TODO mips in a separate block; handle mip and range
+            if (config.coordinate == "x") {
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                 auto x_start = y * width;
                 profile.clear();
@@ -1088,7 +1112,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 cache_lock.release();
                 end = width;
                 have_profile = true;
-            } else if (coordinate == "y") {
+            } else if (config.coordinate == "y") {
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                 profile.clear();
                 profile.reserve(height);
@@ -1105,7 +1129,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         if (have_profile) {
             // add SpatialProfile to message
             auto spatial_profile = spatial_data.add_profiles();
-            spatial_profile->set_coordinate(coordinate);
+            spatial_profile->set_coordinate(config.coordinate);
             spatial_profile->set_start(0);
             spatial_profile->set_end(end);
             spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));

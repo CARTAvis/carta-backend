@@ -722,7 +722,7 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
             SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
         } else {
             if (_frames.at(file_id)->SetSpatialRequirements(
-                    region_id, std::vector<std::string>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
+                    region_id, std::vector<CARTA::SpatialConfig>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
                 SendSpatialProfileData(file_id, region_id);
             } else {
                 string error = fmt::format("Spatial profiles not valid for region id {}", region_id);

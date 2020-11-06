@@ -265,7 +265,7 @@ private:
     std::vector<HistogramConfig> _image_histogram_configs;
     std::vector<HistogramConfig> _cube_histogram_configs;
     std::vector<CARTA::StatsType> _image_required_stats;
-    std::vector<std::string> _cursor_spatial_configs;
+    std::vector<CARTA::SpatialConfig> _cursor_spatial_configs;
     std::vector<SpectralConfig> _cursor_spectral_configs;
     std::mutex _spectral_mutex;
 
