@@ -356,8 +356,8 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     return success;
 }
 
-bool Session::OnOpenFile(int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
-    CARTA::OpenFileAck* open_file_ack) {
+bool Session::OnOpenFile(
+    int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image, CARTA::OpenFileAck* open_file_ack) {
     // Set an image moment file id, name and its image interface
 
     // Response message for opening a file
