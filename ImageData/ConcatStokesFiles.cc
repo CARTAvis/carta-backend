@@ -158,7 +158,7 @@ bool ConcatStokesFiles::OpenStokesFiles(const CARTA::ConcatStokesFiles& message,
                 return false;
             }
         } else {
-            err = "File name is empty!\n";
+            err = "File name is empty or does not exist!\n";
             return false;
         }
 
@@ -198,9 +198,26 @@ bool ConcatStokesFiles::StokesFilesValid(std::string& err) {
 
         if (ref_index == 0) {
             loader.second->FindCoordinateAxes(ref_shape, ref_spectral_axis, ref_stokes_axis, err);
+            if (ref_spectral_axis < 0) {
+                err += "Spectral axis does not exist!\n";
+                return false;
+            }
+            if (ref_stokes_axis > 0) {
+                err += "Stokes axis already exist!\n";
+                return false;
+            }
         } else {
             loader.second->FindCoordinateAxes(shape, spectral_axis, stokes_axis, err);
-            if ((ref_shape != shape) || (ref_spectral_axis != spectral_axis) || (ref_stokes_axis != stokes_axis)) {
+            if (spectral_axis < 0) {
+                err += "Spectral axis does not exist!\n";
+                return false;
+            }
+            if (stokes_axis > 0) {
+                err += "Stokes axis already exist!\n";
+                return false;
+            }
+            if ((ref_shape.nelements() != shape.nelements()) || (ref_shape != shape) || (ref_spectral_axis != spectral_axis) ||
+                (ref_stokes_axis != stokes_axis)) {
                 err += "Images shapes or axes are not consistent!\n";
                 return false;
             }

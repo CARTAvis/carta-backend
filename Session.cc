@@ -356,7 +356,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     return success;
 }
 
-bool Session::OnOpenFile(int file_id, const std::string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
+bool Session::OnOpenFile(int file_id, const string& name, std::shared_ptr<casacore::ImageInterface<casacore::Float>> image,
     CARTA::OpenFileAck* open_file_ack) {
     // Set an image moment file id, name and its image interface
 
@@ -1071,7 +1071,7 @@ void Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
     CARTA::ConcatStokesFilesAck response;
     carta::ConcatStokesFiles concat(_root_folder);
     std::shared_ptr<casacore::ImageConcat<float>> concat_image;
-    std::string file_name;
+    string file_name;
 
     if (concat.DoConcat(message, response, concat_image, file_name)) {
         // Open the concatenate image
