@@ -41,7 +41,7 @@ bool Session::_exit_when_all_sessions_closed = false;
 
 // Default constructor. Associates a websocket with a UUID and sets the root folder for all files
 Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
-    uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose)
+    uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose, bool perflog, int grpc_port)
     : _socket(ws),
       _id(id),
       _address(address),
@@ -49,14 +49,14 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string addre
       _base_folder(base),
       _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
       _verbose_logging(verbose),
+      _performance_logging(perflog),
+      _grpc_port(grpc_port),
       _loader(nullptr),
       _region_handler(nullptr),
       _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
       _animation_id(0),
-      _file_settings(this),
-      _file_converter(std::make_unique<carta::FileConverter>(_root_folder)),
-      _moment_controller(std::make_unique<carta::MomentController>()) {
+      _file_settings(this) {
     _histogram_progress = HISTOGRAM_COMPLETE;
     _ref_count = 0;
     _animation_object = nullptr;
@@ -119,7 +119,6 @@ void Session::SetInitExitTimeout(int secs) {
 
 void Session::DisconnectCalled() {
     _connected = false;
-    _moment_controller->DeleteMomentGenerator(); // call to stop all image moments calculations
     for (auto& frame : _frames) {
         frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
@@ -226,6 +225,10 @@ void Session::OnRegisterViewer(const CARTA::RegisterViewer& message, uint16_t ic
     ack_message.set_session_type(type);
 
     uint32_t feature_flags = CARTA::ServerFeatureFlags::REGION_WRITE_ACCESS;
+    if (_grpc_port >= 0) {
+        feature_flags |= CARTA::ServerFeatureFlags::GRPC_SCRIPTING;
+        ack_message.set_grpc_port(_grpc_port);
+    }
     ack_message.set_server_feature_flags(feature_flags);
     SendEvent(CARTA::EventType::REGISTER_VIEWER_ACK, request_id, ack_message);
 }
@@ -303,7 +306,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
         }
 
         // create Frame for image
-        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _verbose_logging));
+        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _verbose_logging, _performance_logging));
         _loader.release();
 
         if (frame->IsValid()) {
@@ -371,7 +374,7 @@ bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::Mo
 
     if (info_loaded) {
         // Create Frame for image
-        auto frame = std::make_unique<Frame>(_id, _loader.get(), "", _verbose_logging);
+        auto frame = std::make_unique<Frame>(_id, _loader.get(), "", _verbose_logging, _performance_logging);
         _loader.release();
 
         if (frame->IsValid()) {
@@ -415,7 +418,6 @@ void Session::DeleteFrame(int file_id) {
     // call destructor and erase from map
     std::unique_lock<std::mutex> lock(_frame_mutex);
     if (file_id == ALL_FILES) {
-        _moment_controller->DeleteMomentGenerator(); // call to stop all image moments calculations
         for (auto& frame : _frames) {
             frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
             frame.second.reset();             // delete Frame
@@ -424,8 +426,7 @@ void Session::DeleteFrame(int file_id) {
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
-        _moment_controller->DeleteMomentGenerator(file_id); // call to stop the image moments calculation
-        _frames[file_id]->DisconnectCalled();               // call to stop Frame's jobs and wait for jobs finished
+        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
@@ -490,12 +491,12 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
             lambda(j);
         }
 
-        if (_verbose_logging) {
+        if (_performance_logging) {
             // Measure duration for get tile data
             auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_get_tile_data =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
-            fmt::print("Get tile data group in {} ms\n", dt_get_tile_data);
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
+            fmt::print("Get tile data group in {} ms\n", dt_get_tile_data * 1e-3);
         }
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
@@ -571,7 +572,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         casacore::CoordinateSystem* csys = _frames.at(file_id)->CoordinateSystem();
 
         if (!_region_handler) { // created on demand only
-            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_verbose_logging));
+            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_performance_logging));
         }
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
@@ -650,16 +651,16 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         auto t_start_import_region = std::chrono::high_resolution_clock::now();
 
         if (!_region_handler) { // created on demand only
-            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_verbose_logging));
+            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_performance_logging));
         }
 
         _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
-        if (_verbose_logging) {
+        if (_performance_logging) {
             // Measure duration for get tile data
             auto t_end_import_region = std::chrono::high_resolution_clock::now();
             auto dt_import_region =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_import_region - t_start_import_region).count();
-            fmt::print("Import region in {} ms\n", dt_import_region);
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_import_region - t_start_import_region).count();
+            fmt::print("Import region in {} ms\n", dt_import_region * 1e-3);
         }
 
         // send any errors to log
@@ -948,16 +949,10 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     }
 
     // Measure duration for resume
-    if (_verbose_logging) {
+    if (_performance_logging) {
         auto t_end_resume = std::chrono::high_resolution_clock::now();
         auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
         fmt::print("Resume in {} ms\n", dt_resume * 1e-3);
-    }
-
-    if (_verbose_logging) {
-        auto t_end_resume = std::chrono::high_resolution_clock::now();
-        auto dt_resume = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_resume - t_start_resume).count();
-        fmt::print("Resume in {} ms\n", dt_resume);
     }
 
     // RESPONSE
@@ -1015,33 +1010,27 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
             SendEvent(CARTA::EventType::MOMENT_PROGRESS, request_id, moment_progress);
         };
 
-        casacore::ImageRegion image_region;
+        // Do calculations
         std::vector<carta::CollapseResult> collapse_results;
         CARTA::MomentResponse moment_response;
-
-        // Get spectral channels range
-        int chan_min(moment_request.spectral_range().min());
-        int chan_max(moment_request.spectral_range().max());
-
-        // Calculate image moments
         if (region_id > 0) {
-            // For a region
-            if (_region_handler->ApplyRegionToFile(
-                    region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
-                collapse_results =
-                    _moment_controller->CalculateMoments(file_id, frame, image_region, progress_callback, moment_request, moment_response);
-            }
+            _region_handler->CalculateMoments(
+                file_id, region_id, frame, progress_callback, moment_request, moment_response, collapse_results);
         } else {
-            // For the whole image plane
-            if (frame->GetImageRegion(ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
-                collapse_results =
-                    _moment_controller->CalculateMoments(file_id, frame, image_region, progress_callback, moment_request, moment_response);
+            casacore::ImageRegion image_region;
+            int chan_min(moment_request.spectral_range().min());
+            int chan_max(moment_request.spectral_range().max());
+
+            frame->IncreaseMomentsCount();
+            if (frame->GetImageRegion(file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
+                frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
             }
+            frame->DecreaseMomentsCount();
         }
 
-        // Open moment images from the cache, open files acknowledges will be sent to frontend
         for (int i = 0; i < collapse_results.size(); ++i) {
             auto& collapse_result = collapse_results[i];
+            // Open an moment image from the cache, open file acknowledgement will be sent to the frontend
             OnOpenFile(collapse_result, moment_response, request_id);
         }
 
@@ -1055,17 +1044,16 @@ void Session::OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32
 
 void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
     int file_id(stop_moment_calc.file_id());
-    _moment_controller->StopCalculation(file_id);
+    if (_frames.count(file_id)) {
+        _frames.at(file_id)->StopMomentCalc();
+    }
 }
 
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
     int file_id(save_file.file_id());
     if (_frames.count(file_id)) {
-        std::string filename = _frames.at(file_id)->GetFileName();
-        casacore::ImageInterface<float>* image = _frames.at(file_id)->GetImage();
-
         CARTA::SaveFileAck save_file_ack;
-        _file_converter->SaveFile(filename, image, save_file, save_file_ack);
+        _frames.at(file_id)->SaveFile(_root_folder, save_file, save_file_ack);
 
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
@@ -1125,8 +1113,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
                 // check for progress update
                 auto t_end = std::chrono::high_resolution_clock::now();
-                auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-                if ((dt / 1e3) > 2.0) {
+                auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+                if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
                     // send progress
                     float this_chan(chan);
                     float progress = this_chan / total_channels;
@@ -1171,8 +1159,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     }
 
                     auto t_end = std::chrono::high_resolution_clock::now();
-                    auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count();
-                    if ((dt / 1e3) > 2.0) {
+                    auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
+                    if ((dt / 1e6) > UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS) {
                         // Send progress update
                         float this_chan(chan);
                         progress = 0.5 + (this_chan / total_channels);
@@ -1216,7 +1204,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_results.histogram_bins = {cube_bins.begin(), cube_bins.end()};
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_results);
 
-                    if (_verbose_logging) {
+                    if (_performance_logging) {
                         auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
                         auto dt_cube_histogram =
                             std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
@@ -1701,7 +1689,7 @@ void Session::ExecuteAnimationFrameInner() {
             }
 
             // Measure duration for frame changing as animating
-            if (_verbose_logging) {
+            if (_performance_logging) {
                 auto t_end_change_frame = std::chrono::high_resolution_clock::now();
                 auto dt_change_frame =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();

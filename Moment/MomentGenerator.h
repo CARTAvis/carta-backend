@@ -11,7 +11,7 @@
 #include "../InterfaceConstants.h"
 #include "ImageMoments.h"
 
-using MomentProgressCallback = const std::function<void(float)>;
+using MomentProgressCallback = std::function<void(float)>;
 
 namespace carta {
 
@@ -28,30 +28,26 @@ struct CollapseResult {
 
 class MomentGenerator : public casa::ImageMomentsProgressMonitor {
 public:
-    MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, int spectral_axis, int stokes_axis,
-        MomentProgressCallback progress_callback);
+    MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image);
     ~MomentGenerator(){};
 
     // Calculate moments
-    std::vector<CollapseResult> CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
-        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response);
+    bool CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
+        const MomentProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+        std::vector<CollapseResult>& collapse_results);
 
     // Stop moments calculation
     void StopCalculation();
 
     // Resulting message
     bool IsSuccess() const;
+    bool IsCancelled() const;
     casacore::String GetErrorMessage() const;
 
     // Methods from the "casa::ImageMomentsProgressMonitor" interface
     void setStepCount(int count);
     void setStepsCompleted(int count);
     void done();
-
-    // Destruction control
-    void IncreaseMomentsCalcCount();
-    void DecreaseMomentsCalcCount();
-    void DisconnectCalled();
 
 private:
     void SetMomentAxis(const CARTA::MomentRequest& moment_request);
@@ -78,6 +74,7 @@ private:
     casacore::Vector<float> _exclude_pix;
     casacore::String _error_msg;
     bool _success;
+    bool _cancel;
     std::unordered_map<CARTA::Moment, ImageMoments<casacore::Float>::MomentTypes> _moment_map;
     std::unordered_map<ImageMoments<casacore::Float>::MomentTypes, casacore::String> _moment_suffix_map;
 
@@ -88,9 +85,6 @@ private:
     MomentProgressCallback _progress_callback;
     std::chrono::high_resolution_clock::time_point _start_time;
     bool _first_report;
-
-    // Moments calculation counter, so MomentGenerator is not destroyed until finished
-    std::atomic<int> _moments_calc_count;
 };
 
 } // namespace carta

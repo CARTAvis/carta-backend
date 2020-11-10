@@ -348,6 +348,10 @@ std::vector<std::shared_ptr<casacore::MaskedLattice<T>>> ImageMoments<T>::create
     }
 
     if (_stop) {
+        // Reset shared ptrs for output moments images if calculation is cancelled
+        for (auto& output_image : output_images) {
+            output_image.reset();
+        }
         // Clear the output image ptrs vector if calculation is cancelled
         output_images.clear();
     } else {
@@ -548,7 +552,19 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     const casacore::IPosition chunk_slice_end_at_chunk_iter_begin = chunk_slice_end; // As an increment of a chunk for the lattice iterator
 
     // Get a chunk shape and used it to set the data iterator
+    
     casacore::IPosition chunk_shape_init = ChunkShape(collapse_axis, lattice_in);
+    
+    casacore::IPosition hdf5_chunk_shape(in_ndim, 1);
+    hdf5_chunk_shape[0] = 512;
+    hdf5_chunk_shape[1] = 512;
+    
+    auto nice_shape = lattice_in.niceCursorShape();
+    if (nice_shape == hdf5_chunk_shape) {
+        chunk_shape_init[0] = nice_shape[0];
+        chunk_shape_init[1] = nice_shape[1];
+    }
+        
     casacore::LatticeStepper my_stepper(in_shape, chunk_shape_init, LatticeStepper::RESIZE);
     casacore::RO_MaskedLatticeIterator<T> lat_iter(lattice_in, my_stepper);
 
@@ -556,11 +572,11 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
     static const casacore::Vector<casacore::Bool> no_mask; // False mask vector
 
     if (tell_progress) {
-        casacore::uInt n_expected_oters = in_shape.product() / chunk_shape_init.product();
-        tell_progress->init(n_expected_oters);
+        casacore::uInt total_slices = in_shape.product() / in_shape[collapse_axis];
+        tell_progress->init(total_slices);
     }
 
-    casacore::uInt n_done = 0; // Number of chunks have done
+    casacore::uInt n_done = 0; // Number of slices have done
 
     // Iterate through a cube image, chunk by chunk
     for (lat_iter.reset(); !lat_iter.atEnd(); ++lat_iter) {
@@ -606,6 +622,12 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
 
             done = True; // The scan of this chunk is complete
 
+            // Report the number of slices have done
+            if (tell_progress != 0) {
+                ++n_done;
+                tell_progress->nstepsDone(n_done);
+            }
+
             // Proceed to the next slice on the display axes
             for (casacore::uInt k = 0; k < n_display_axes; ++k) {
                 casacore::uInt dax = display_axes[k];
@@ -643,11 +665,6 @@ void ImageMoments<T>::LineMultiApply(casacore::PtrBlock<casacore::MaskedLattice<
                     mask_out.putSlice(result_array_masks[k], result_pos);
                 }
             }
-        }
-
-        if (tell_progress != 0) {
-            ++n_done;
-            tell_progress->nstepsDone(n_done); // Report the umber of chunks have done
         }
     }
 
