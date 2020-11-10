@@ -79,6 +79,12 @@ std::vector<std::string> RegionImportExport::ReadRegionFile(const std::string& f
         while (!region_file.eof()) {
             std::string single_line;
             getline(region_file, single_line);
+
+            if (single_line.back() == '\r') {
+                // Remove carriage return from DOS file
+                single_line.pop_back();
+            }
+
             file_lines.push_back(single_line);
         }
         region_file.close();
