@@ -4,28 +4,19 @@ using namespace carta;
 
 using IM = ImageMoments<casacore::Float>;
 
-MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image, int spectral_axis,
-    int stokes_axis, MomentProgressCallback progress_callback)
-    : _filename(filename),
-      _image(image),
-      _spectral_axis(spectral_axis),
-      _stokes_axis(stokes_axis),
-      _sub_image(nullptr),
-      _image_moments(nullptr),
-      _success(false),
-      _cancel(false),
-      _progress_callback(progress_callback),
-      _moments_calc_count(0) {
+MomentGenerator::MomentGenerator(const casacore::String& filename, casacore::ImageInterface<float>* image)
+    : _filename(filename), _image(image), _sub_image(nullptr), _image_moments(nullptr), _success(false), _cancel(false) {
     SetMomentTypeMaps();
 }
 
-std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region,
-    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response) {
+bool MomentGenerator::CalculateMoments(int file_id, const casacore::ImageRegion& image_region, int spectral_axis, int stokes_axis,
+    const MomentProgressCallback& progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<CollapseResult>& collapse_results) {
+    _spectral_axis = spectral_axis;
+    _stokes_axis = stokes_axis;
+    _progress_callback = progress_callback;
     _success = false;
     _cancel = false;
-
-    // Collapse results
-    std::vector<CollapseResult> collapse_results;
 
     // Set moment axis
     SetMomentAxis(moment_request);
@@ -97,7 +88,7 @@ std::vector<CollapseResult> MomentGenerator::CalculateMoments(int file_id, const
     // Get error message if any
     moment_response.set_message(GetErrorMessage());
 
-    return collapse_results;
+    return !collapse_results.empty();
 }
 
 void MomentGenerator::StopCalculation() {
@@ -265,21 +256,6 @@ void MomentGenerator::setStepsCompleted(int count) {
 }
 
 void MomentGenerator::done() {}
-
-void MomentGenerator::IncreaseMomentsCalcCount() {
-    _moments_calc_count++;
-}
-
-void MomentGenerator::DecreaseMomentsCalcCount() {
-    _moments_calc_count--;
-}
-
-void MomentGenerator::DisconnectCalled() {
-    StopCalculation();                // Call to stop the moments calculation
-    while (_moments_calc_count > 0) { // Wait the moments calculation finished
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-}
 
 inline void MomentGenerator::SetMomentTypeMaps() {
     _moment_map[CARTA::Moment::MEAN_OF_THE_SPECTRUM] = IM::AVERAGE;

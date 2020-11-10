@@ -20,8 +20,12 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     if (!cc_file.exists()) {
         return false;
     }
-    std::string filename_only = cc_file.path().baseName();
-    file_info.set_name(filename_only);
+
+    if (file_info.name().empty()) {
+        // set resolved filename; if symlink, set in calling function
+        std::string filename_only = cc_file.path().baseName();
+        file_info.set_name(filename_only);
+    }
 
     // fill FileInfo submessage
     int64_t file_size(cc_file.size());
