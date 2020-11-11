@@ -43,6 +43,7 @@ static string root_folder("/"), base_folder(".");
 static string auth_token = "";
 static bool verbose;
 static bool perflog;
+static int grpc_port(-1);
 
 // Sessions map
 std::unordered_map<uint32_t, Session*> sessions;
@@ -89,7 +90,8 @@ void OnUpgrade(uWS::HttpResponse<true>* http_response, uWS::HttpRequest* http_re
 void OnConnect(uWS::WebSocket<true, true>* ws) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     string address = static_cast<PerSocketData*>(ws->getUserData())->address;
-    sessions[session_id] = new Session(ws, session_number, address, root_folder, base_folder, file_list_handler, verbose, perflog);
+    sessions[session_id] =
+        new Session(ws, session_number, address, root_folder, base_folder, file_list_handler, verbose, perflog, grpc_port);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
@@ -500,7 +502,6 @@ int main(int argc, const char* argv[]) {
         int port(3002);
         int thread_count = TBB_THREAD_COUNT;
         int omp_thread_count = OMP_THREAD_COUNT;
-        int grpc_port(-1);
         { // get values then let Input go out of scope
             casacore::Input inp;
             inp.version(VERSION_ID);

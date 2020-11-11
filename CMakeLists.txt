@@ -150,9 +150,7 @@ set(SOURCE_FILES
         Table/Table.cc
         Table/TableView.cc
         Table/TableController.cc
-        Moment/MomentController.cc
         Moment/MomentGenerator.cc
-        FileConverter.cc
         Timer/Timer.cc
         OnMessageTask.cc
         FileSettings.cc

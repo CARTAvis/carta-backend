@@ -14,7 +14,7 @@
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
 
-using namespace carta;
+namespace carta {
 
 RegionHandler::RegionHandler(bool perflog) : _perflog(perflog), _z_profile_count(0) {}
 
@@ -713,6 +713,22 @@ bool RegionHandler::ApplyRegionToFile(
     return false;
 }
 
+bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame,
+    MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<carta::CollapseResult>& collapse_results) {
+    casacore::ImageRegion image_region;
+    int chan_min(moment_request.spectral_range().min());
+    int chan_max(moment_request.spectral_range().max());
+
+    // Do calculations
+    if (ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
+        frame->IncreaseMomentsCount();
+        frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
+        frame->DecreaseMomentsCount();
+    }
+    return !collapse_results.empty();
+}
+
 // ********************************************************************
 // Fill data stream messages:
 // These always use a callback since there may be multiple region/file requirements
@@ -1373,12 +1389,4 @@ bool RegionHandler::GetRegionStatsData(
     return false;
 }
 
-std::set<int> RegionHandler::GetFileIds(int region_id) {
-    std::set<int> results;
-    for (auto& req : _spectral_req) {
-        if (req.first.region_id == region_id && !req.second.configs.empty()) {
-            results.insert(req.first.file_id);
-        }
-    }
-    return results;
-}
+} // namespace carta
