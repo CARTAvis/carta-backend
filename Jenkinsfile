@@ -799,7 +799,7 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-resume.sh . && ./run-jenkins-resume.sh # run the tests"
+                                sh "cp ../../../run-jenkins-resume.sh . && ./run-jenkins-resume.sh # run the tests"
                             }
                         }
                         echo "Finished !!"
@@ -818,7 +818,7 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-resume.sh . && ./run-jenkins-resume.sh # run the tests"
+                                sh "cp ../../../run-jenkins-resume.sh . && ./run-jenkins-resume.sh # run the tests"
                             }
                         }
                         echo "Finished !!"
@@ -837,7 +837,7 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-resume.sh . && ./run-jenkins-resume.sh # run the tests"
+                                sh "cp ../../../run-jenkins-resume.sh . && ./run-jenkins-resume.sh # run the tests"
                             }
                         }
                         echo "Finished !!"
