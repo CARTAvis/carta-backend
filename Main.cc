@@ -571,9 +571,9 @@ int main(int argc, const char* argv[]) {
                         .passphrase = ""})
             .ws<PerSocketData>("/*", {/* Settings */
                                          .compression = uWS::SHARED_COMPRESSOR,
-                                         //.maxPayloadLength = 16 * 1024,
-                                         .idleTimeout = 10,
-                                         //.maxBackpressure = 1 * 1024 * 1024,
+                                         .maxPayloadLength = 1600 * 1024,
+                                         .idleTimeout = 300,
+                                         .maxBackpressure = 100 * 1024 * 1024,
                                          /* Handlers */
                                          .upgrade = OnUpgrade,
                                          .open = OnConnect,

@@ -1498,7 +1498,6 @@ void Session::RegionDataStreams(int file_id, int region_id) {
 
 // Sends an event to the client with a given event name (padded/concatenated to 32 characters) and a given ProtoBuf message
 void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const google::protobuf::MessageLite& message, bool compress) {
-    _socket_mutex.lock(); // lock for websockets
     size_t message_length = message.ByteSizeLong();
     size_t required_size = message_length + sizeof(carta::EventHeader);
     std::pair<std::vector<char>, bool> msg_vs_compress;
@@ -1512,9 +1511,8 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     message.SerializeToArray(msg.data() + sizeof(carta::EventHeader), message_length);
     // Skip compression on files smaller than 1 kB
     msg_vs_compress.second = compress && required_size > 1024;
-    std::string_view sv(msg_vs_compress.first.data(), msg_vs_compress.first.size());
-    _socket->send(sv, uWS::OpCode::BINARY, msg_vs_compress.second);
-    _socket_mutex.unlock(); // unlock for websockets
+    _out_msgs.push(msg_vs_compress);
+    SendPendingMessages(); // Apply an unique lock here!
 }
 
 void Session::SendFileEvent(
@@ -1528,6 +1526,7 @@ void Session::SendFileEvent(
 void Session::SendPendingMessages() {
     // Do not parallelize: this must be done serially
     // due to the constraints of uWS.
+    std::unique_lock<std::mutex> lock(_socket_mutex);
     std::pair<std::vector<char>, bool> msg;
     if (_connected) {
         while (_out_msgs.try_pop(msg)) {
