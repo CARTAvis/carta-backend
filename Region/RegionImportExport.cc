@@ -126,40 +126,51 @@ void RegionImportExport::ParseRegionParameters(
                 std::vector<std::string> kvpair;
                 SplitString(param, '=', kvpair);
                 std::string key = kvpair[0];
-                if (kvpair.size() == 2) {
-                    std::string value = kvpair[1];
-                    if (key == "dashlist") {
-                        // values separated by space e.g. "dashlist=8 3"
-                        current = next + 1;
+
+                if (kvpair.size() == 1) {
+                    // value starts with delim
+                    current = next + 1;
+                    if (region_definition[next] == '[') { // e.g. corr=[I, Q]
+                        next = region_definition.find_first_of("]", current);
+                    } else { // e.g. color=#00ffff
                         next = region_definition.find_first_of(" ", current);
-                        param = region_definition.substr(current, next - current);
-                        properties[key] = value + " " + param;
-                    } else if (key == "label") {
-                        // remove quotes
-                        if ((value[0] == '\'') || (value[0] == '\"')) {
-                            value = value.substr(1, value.size() - 2);
-                        }
-                        properties[key] = value;
-                    } else {
+                    }
+                    if ((next != std::string::npos) && (next - current > 0)) {
+                        std::string value = region_definition.substr(current, next - current);
                         properties[key] = value;
                     }
-                } else {
-                    // Handle delimiters in values
-                    current = next + 1;
-                    if (key == "corr") {
-                        // crtf value is in [], look for ending ]
-                        next = region_definition.find_first_of("]", current);
-                        if (next != std::string::npos) {
-                            std::string value = region_definition.substr(current, next - current);
-                            properties[key] = value;
-                        }
-                    } else { // e.g. "color=#29A634", # is delim
-                        // look for next space
+                } else if (kvpair.size() == 2) {
+                    // check if value is delimited by ' ', " ", [ ], or { }
+                    std::string value = kvpair[1];
+                    if (key == "dashlist") {
+                        // values separated by space e.g. "dashlist=8 3"; find next space
+                        current = next + 1;
                         next = region_definition.find_first_of(" ", current);
-                        if ((next != std::string::npos) && (next - current > 0)) {
-                            std::string value = region_definition.substr(current, next - current);
+                        string value_end = region_definition.substr(current, next - current);
+                        properties[key] = value + " " + value_end;
+                    } else if (value.find_first_of("'\"[{(", 0) == 0) {
+                        // value delimited by special chars; find end and strip delimiters
+                        char start_delim = value.front();
+                        std::unordered_map<char, char> delim_map = {{'\'', '\''}, {'"', '"'}, {'[', ']'}, {'{', '}'}, {'(', ')'}};
+                        char end_delim = delim_map[start_delim];
+
+                        value.erase(0, 1); // erase start delim
+                        if (value.back() == end_delim) {
+                            value.pop_back();
                             properties[key] = value;
+                        } else {
+                            // value has parser delim in it (e.g. sp); add it and advance
+                            value.append(1, region_definition[next]);
+                            current = next + 1;
+
+                            // Find ending delim for rest of value, append to value
+                            next = region_definition.find_first_of(end_delim, current);
+                            string value_end = region_definition.substr(current, next - current);
+                            properties[key] = value.append(value_end);
+                            next++; // Advance past end delim
                         }
+                    } else {
+                        properties[key] = value;
                     }
                 }
             }
