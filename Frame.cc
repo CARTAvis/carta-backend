@@ -513,7 +513,7 @@ bool Frame::GetRasterTileData(std::shared_ptr<std::vector<float>>& tile_data_ptr
         }
     }
 
-    // Fall back to using the full image cache. The cache will be populated by this function.
+    // Fall back to using the full image cache.
     if (!loaded_data) {
         loaded_data = GetRasterData(tile_data, bounds, mip, true);
     }
@@ -1029,20 +1029,27 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     bool write_lock(false);
     
     for (auto& config : _cursor_spatial_configs) {
-        int start(0);
-        int end(0)
+        int start(config.start);
+        int end(0);
+        int mip(config.mip);
+        
+        if (config.coordinate == "x") {
+            end = config.end || width;
+        } else if (config.coordinate == "y") {
+            end = config.end || height;
+        }
+        
+        profile.clear();
         bool have_profile(false);
         
         // can no longer select stokes, so can use image cache or tile cache
         
-        if (_loader->UseTileCache() && config.mip <= 1) { // Tile cache
+        if (_loader->UseTileCache() && mip <= 1) { // Use tile cache to return full resolution data
+            profile.resize(end - start);
+        
             if (config.coordinate == "x") {
-                start = config.start;
-                end = config.end || width;
-                
                 int tile_y = tile_index(y);
                 bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
-                profile.resize(end - start);
 
 #pragma omg parallel for
                 for (int tile_x = tile_index(start); tile_x <= tile_index(end - 1); tile_x += TILE_SIZE) {
@@ -1068,12 +1075,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 have_profile = true;
             
             } else if (config.coordinate == "y") {
-                start = config.start;
-                end = config.end || height;
-                
                 int tile_x = tile_index(x);
                 bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
-                profile.resize(end - start);
 
 #pragma omg parallel for
                 for (int tile_y = tile_index(start); tile_y <= tile_index(end - 1); tile_y += TILE_SIZE) {
@@ -1098,30 +1101,48 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 end = height;
                 have_profile = true;
             }
-        } else { // Image cache
-            // TODO TODO TODO mips in a separate block; handle mip and range
+        } else (if mip > 1 && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
+            while (!_loader->HasMip(mip)) {
+                mip *= 2;
+            }
+            
+            CARTA::ImageBounds bounds;
+            
             if (config.coordinate == "x") {
-                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                bounds.set_x_min(start);
+                bounds.set_x_max(end);
+                bounds.set_y_min(y);
+                bounds.set_y_max(y + 1);
+            } else if (config.coordinate == "y") {
+                bounds.set_x_min(x);
+                bounds.set_x_max(x + 1);
+                bounds.set_y_min(start);
+                bounds.set_y_max(end);
+            }
+            
+            if(_loader->GetDownsampledRasterData(profile, _channel_index, _stokes_index, bounds, mip, _image_mutex)) {
+                have_profile = true;
+            }
+        } else { // Use image cache to return full resolution data; ignore the mip
+            profile.resize(end - start);
+            mip = 0;
+            
+            if (config.coordinate == "x") {
                 auto x_start = y * width;
-                profile.clear();
-                profile.reserve(width);
-                for (unsigned int j = 0; j < width; ++j) {
+                tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
+                for (unsigned int j = start; j < end; ++j) {
                     auto idx = x_start + j;
                     profile.push_back(_image_cache[idx]);
                 }
                 cache_lock.release();
-                end = width;
                 have_profile = true;
             } else if (config.coordinate == "y") {
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                profile.clear();
-                profile.reserve(height);
-                for (unsigned int j = 0; j < height; ++j) {
+                for (unsigned int j = start; j < end; ++j) {
                     auto idx = (j * width) + x;
                     profile.push_back(_image_cache[idx]);
                 }
                 cache_lock.release();
-                end = height;
                 have_profile = true;
             }
         }
@@ -1130,9 +1151,10 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
             // add SpatialProfile to message
             auto spatial_profile = spatial_data.add_profiles();
             spatial_profile->set_coordinate(config.coordinate);
-            spatial_profile->set_start(0);
+            spatial_profile->set_start(start);
             spatial_profile->set_end(end);
             spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
+            spatial_profile->set_mip(mip)
         }
     }
 
