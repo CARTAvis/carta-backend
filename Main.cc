@@ -98,7 +98,7 @@ void OnConnect(uWS::WebSocket<true, true>* ws) {
     }
     sessions[session_id]->IncreaseRefCount();
 
-    carta::Log(session_number, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
+    carta::Log(session_id, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -122,11 +122,16 @@ void OnDisconnect(uWS::WebSocket<true, true>* ws, int code, std::string_view mes
         }
         if (!session->DecreaseRefCount()) {
             delete session;
-            ws->close();
+            sessions.erase(session_id);
+        } else {
+            cerr << "Session reference count: " << session->DecreaseRefCount() << " is not 0 while on disconnection!" << endl;
         }
     } else {
         cerr << "Warning: OnDisconnect called with no Session object.\n";
     }
+
+    // Close the websockets
+    ws->close();
 }
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
@@ -571,9 +576,9 @@ int main(int argc, const char* argv[]) {
                         .passphrase = ""})
             .ws<PerSocketData>("/*", {/* Settings */
                                          .compression = uWS::SHARED_COMPRESSOR,
-                                         .maxPayloadLength = 1600 * 1024,
+                                         .maxPayloadLength = 1024 * 1024 * 1024,
                                          .idleTimeout = 300,
-                                         .maxBackpressure = 100 * 1024 * 1024,
+                                         .maxBackpressure = 1024 * 1024 * 1024,
                                          /* Handlers */
                                          .upgrade = OnUpgrade,
                                          .open = OnConnect,

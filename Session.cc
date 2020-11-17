@@ -82,8 +82,6 @@ void ExitNoSessions(int s) {
 }
 
 Session::~Session() {
-    _socket->end();
-
     --_num_sessions;
     DEBUG(std::cout << this << " ~Session " << _num_sessions << std::endl;)
     if (!_num_sessions) {
