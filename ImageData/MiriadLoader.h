@@ -1,8 +1,7 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
 
-#include <casacore/images/Images/MIRIADImage.h>
-
+#include "CartaMiriadImage.h"
 #include "FileLoader.h"
 
 namespace carta {
@@ -10,21 +9,18 @@ namespace carta {
 class MiriadLoader : public FileLoader {
 public:
     MiriadLoader(const std::string& file);
+
     bool CanOpenFile(std::string& error) override;
     void OpenFile(const std::string& hdu) override;
-    bool HasData(FileInfo::Data ds) const override;
-    ImageRef LoadData(FileInfo::Data ds) override;
-    bool GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) override;
 
-protected:
-    bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) override;
+    bool HasData(FileInfo::Data ds) const override;
+    ImageRef GetImage() override;
 
 private:
-    std::string _filename;
     std::unique_ptr<casacore::MIRIADImage> _image;
 };
 
-MiriadLoader::MiriadLoader(const std::string& filename) : _filename(filename) {}
+MiriadLoader::MiriadLoader(const std::string& filename) : FileLoader(filename) {}
 
 bool MiriadLoader::CanOpenFile(std::string& error) {
     // Some MIRIAD images throw an error in the miriad libs which cannot be caught in casacore::MIRIADImage, which crashes the backend.
@@ -55,7 +51,10 @@ bool MiriadLoader::CanOpenFile(std::string& error) {
 
 void MiriadLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
-        _image.reset(new casacore::MIRIADImage(_filename));
+        _image.reset(new CartaMiriadImage(_filename));
+        if (!_image) {
+            throw(casacore::AipsError("Error opening image"));
+        }
         _num_dims = _image->shape().size();
     }
 }
@@ -78,28 +77,8 @@ bool MiriadLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename MiriadLoader::ImageRef MiriadLoader::LoadData(FileInfo::Data ds) {
-    if (ds != FileInfo::Data::Image) {
-        return nullptr;
-    }
+typename MiriadLoader::ImageRef MiriadLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
-}
-
-bool MiriadLoader::GetPixelMaskSlice(casacore::Array<bool>& mask, const casacore::Slicer& slicer) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        return _image->getMaskSlice(mask, slicer);
-    }
-}
-
-bool MiriadLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
-    if (_image == nullptr) {
-        return false;
-    } else {
-        coord_sys = _image->coordinates();
-        return true;
-    }
 }
 
 } // namespace carta

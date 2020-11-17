@@ -1,0 +1,153 @@
+FROM centos:7
+
+# The carta-backend will use GCC 8 functions, so install and activate devtoolset-8 
+RUN \
+  yum -y install centos-release-scl && \
+  yum install -y centos-release-scl && yum install -y devtoolset-8-gcc devtoolset-8-gcc-c++ devtoolset-8-gcc-gfortran && \
+  echo "source scl_source enable devtoolset-8" >> /etc/bashrc
+
+# Install the required packages
+RUN \
+  yum -y install epel-release && \
+  yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel curl-devel flex \
+    git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
+    make openssl-devel pugixml-devel subversion systemd-devel wcslib-devel wget zlib-devel
+
+# gRPC will need cmake >3.13
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  git clone https://github.com/Kitware/CMake.git && \
+  cd CMake && git checkout v3.17.0 && ./configure && \
+  make -j 2 && make install && \
+  cd /root && rm -rf CMake
+
+# Install newer fmt
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  git clone https://github.com/fmtlib/fmt && \
+  mkdir -p fmt/build && cd fmt/build && \
+  cmake .. && make && make install && \
+  cd /root && rm -rf fmt
+
+# CASA needs wcslib 4.7 but CentOS6 and CentOS7 provide 4.3, so install newer wcslib from source
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  wget ftp://ftp.atnf.csiro.au/pub/software/wcslib/wcslib.tar.bz2 && \
+  tar -xvf wcslib.tar.bz2 && cd wcslib* && \
+  ./configure && make && make install && \
+  cd .. && rm -rf wcslib*
+
+# CARTA needs proto3, CentOS6 and CentOS7 only provide proto2
+RUN \
+  source /etc/bashrc && \
+  cd /root && git clone https://github.com/protocolbuffers/protobuf.git && cd protobuf && \
+  ./autogen.sh && ./configure && make && make install && \
+# not all the .h files in stubs are copied over/installed for some reason
+  yes | cp -rf /root/protobuf/src/google/protobuf/stubs /usr/local/include/google/protobuf/ && \
+  cd .. && rm -rf protobuf
+
+# CARTA will have a problem finding the .h files in /usr/include/cfitsio/
+RUN \
+  source /etc/bashrc && \
+  cp /usr/include/cfitsio/* /usr/include/
+
+# Get geodetic and ephemerides casa-data
+RUN \
+  source /etc/bashrc && \
+  mkdir -p /usr/local/share/casacore/data/ephemerides && \
+  mkdir -p /usr/local/share/casacore/data/geodetic && \
+  svn co https://svn.cv.nrao.edu/svn/casa-data/distro/ephemerides/ /usr/local/share/casacore/data/ephemerides && \
+  svn co https://svn.cv.nrao.edu/svn/casa-data/distro/geodetic/ /usr/local/share/casacore/data/geodetic && \
+  rm -r /usr/local/share/casacore/data/ephemerides/splatalogue.db && \
+  rm -r /usr/local/share/casacore/data/ephemerides/SplatDefault.tbl
+
+# Get libsofa.a for casacore
+RUN \
+  source /etc/bashrc && \
+  wget http://www.iausofa.org/2018_0130_F/sofa_f-20180130.tar.gz && \
+  tar xzf sofa_f-20180130.tar.gz && rm sofa_f-20180130.tar.gz && \
+  cd sofa/20180130/f77/src && make && cp libsofa.a /usr/lib/libsofa.a && \
+  cd /root && rm -rf sofa
+
+# Install carta-casacore from CARTAvis repo (with fixed CASAROOT)
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  git clone https://github.com/CARTAvis/carta-casacore.git && \
+  cd carta-casacore && \
+  git submodule init && git submodule update && \
+  cd casa6 && \
+  git submodule init && git submodule update && \
+  cd ../ && mkdir -p build && cd build && \
+  cmake .. -DUSE_FFTW3=ON \
+           -DUSE_HDF5=ON \
+           -DUSE_THREADS=ON \
+           -DUSE_OPENMP=ON \
+           -DCMAKE_BUILD_TYPE=Release \
+           -DBUILD_TESTING=OFF \
+           -DBUILD_PYTHON=OFF \
+           -DUseCcache=1 \
+           -DHAS_CXX11=1 \
+           -DDATA_DIR=/usr/local/share/casacore/data && \
+  make -j2 && make install && \
+  cd /root && rm -rf carta-casacore
+
+# Install gRPC for the scripting interface 
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  git clone --recurse-submodules https://github.com/grpc/grpc && \
+  mkdir -p grpc/cmake/build && cd grpc/cmake/build && \
+  export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH && \
+  cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_SSL_PROVIDER=package ../.. && \
+  make -j 2 && make install && \
+  cd /root && rm -rf grpc
+
+# Install uWS
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  git clone https://github.com/uNetworking/uWebSockets.git && \
+  cd uWebSockets && git checkout v0.14 && cd .. && \
+  make default install -C uWebSockets && \
+  rm -rf uWebSockets
+
+# Install zfp
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  git clone https://github.com/LLNL/zfp.git && \
+  mkdir -p zfp/build && cd zfp/build && \
+  cmake .. && make all install && \
+  cd /root && rm -rf zfp
+
+# CARTA has a problem with CentOS7 tbb 4.1, so get a newer version:
+RUN \
+  source /etc/bashrc && \
+  cd /root && \
+  wget https://github.com/01org/tbb/releases/download/2017_U2/tbb2017_20161004oss_lin.tgz && \
+  tar -xvf tbb2017_20161004oss_lin.tgz && \
+  cp -r /root/tbb2017_20161004oss/lib/intel64/gcc4.7/* /usr/lib64/ && \
+  cp -r /root/tbb2017_20161004oss/include/tbb /usr/include && \
+  cd /root && rm -rf tbb2017_20161004oss*
+
+# Forward port so that the webapp can properly access it
+# from outside of the container
+EXPOSE 3002
+# Do the same with the gRPC service port
+EXPOSE 50051
+
+ENV HOME /root
+
+# Required for running the backend
+ENV LD_LIBRARY_PATH "/usr/local/lib64:/usr/local/lib"
+ENV CASAPATH "/usr/local/share/casacore linux local `hostname`"
+
+WORKDIR /root
+
+# overwrite this with 'CMD []' in a dependent Dockerfile
+CMD ["bash"]
+

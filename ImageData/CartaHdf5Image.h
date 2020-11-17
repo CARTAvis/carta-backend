@@ -45,6 +45,8 @@ public:
     const casacore::LatticeRegion* getRegionPtr() const override;
     casacore::ImageInterface<float>* cloneII() const override;
     void resize(const casacore::TiledShape& newShape) override;
+    casacore::uInt advisedMaxPixels() const override;
+    casacore::IPosition doNiceCursorShape(casacore::uInt maxPixels) const override;
 
     // implement functions in other casacore Image classes
     casacore::Bool isMasked() const override;
@@ -57,7 +59,7 @@ private:
     // Function to return the internal HDF5File object to the RegionHandlerHDF5
     inline static const casacore::CountedPtr<casacore::HDF5File>& GetHdf5File(void* image) {
         CartaHdf5Image* im = static_cast<CartaHdf5Image*>(image);
-        return im->Lattice().file();
+        return im->_lattice.file();
     }
 
     bool SetUpImage();

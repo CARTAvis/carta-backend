@@ -1,9 +1,13 @@
 #include "FileLoader.h"
 
+#include <casacore/images/Images/SubImage.h>
+#include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
+
 #include "../Util.h"
 #include "CasaLoader.h"
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
+#include "ImagePtrLoader.h"
 #include "MiriadLoader.h"
 
 using namespace carta;
@@ -36,11 +40,40 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
     return nullptr;
 }
 
+FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float>> image) {
+    if (image) {
+        return new ImagePtrLoader(image);
+    } else {
+        std::cerr << "Fail to assign an image pointer!" << std::endl;
+        return nullptr;
+    }
+}
+
+FileLoader::FileLoader(const std::string& filename) : _filename(filename) {}
+
 bool FileLoader::CanOpenFile(std::string& /*error*/) {
     return true;
 }
 
-bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
+bool FileLoader::GetShape(IPos& shape) {
+    ImageRef image = GetImage();
+    if (image) {
+        shape = image->shape();
+        return true;
+    }
+    return false;
+}
+
+bool FileLoader::GetCoordinateSystem(casacore::CoordinateSystem& coord_sys) {
+    ImageRef image = GetImage();
+    if (image) {
+        coord_sys = image->coordinates();
+        return true;
+    }
+    return false;
+}
+
+bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message) {
     // Return image shape, spectral axis, and stokes axis from image data, coordinate system, and extended file info.
 
     // set defaults: undefined
@@ -51,7 +84,10 @@ bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, st
         return false;
     }
 
-    shape = LoadData(FileInfo::Data::Image)->shape();
+    if (!GetShape(shape)) {
+        return false;
+    }
+
     _num_dims = shape.size();
 
     if (_num_dims < 2 || _num_dims > 4) {
@@ -85,6 +121,8 @@ bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, st
     if (_num_dims == 2) {
         _num_channels = 1;
         _num_stokes = 1;
+        _spectral_axis = spectral_axis;
+        _stokes_axis = stokes_axis;
         return true;
     }
 
@@ -93,14 +131,12 @@ bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, st
         spectral_axis = (spectral_axis < 0 ? 2 : spectral_axis);
         _num_channels = shape(spectral_axis);
         _num_stokes = 1;
+        _spectral_axis = spectral_axis;
+        _stokes_axis = stokes_axis;
         return true;
     }
 
     // 4D image
-    if ((spectral_axis < 0) || (stokes_axis < 0)) {
-        // workaround when header incomplete or invalid values for creating proper coordinate system
-        FindCoordinates(spectral_axis, stokes_axis);
-    }
     if ((spectral_axis < 0) || (stokes_axis < 0)) {
         if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
             spectral_axis = (stokes_axis == 3 ? 2 : 3);
@@ -123,55 +159,86 @@ bool FileLoader::FindShape(IPos& shape, int& spectral_axis, int& stokes_axis, st
     }
     _num_channels = (spectral_axis == -1 ? 1 : shape(spectral_axis));
     _num_stokes = (stokes_axis == -1 ? 1 : shape(stokes_axis));
+    _spectral_axis = spectral_axis;
+    _stokes_axis = stokes_axis;
 
     return true;
 }
 
-void FileLoader::FindCoordinates(int& spectral_axis, int& stokes_axis) {
-    // TODO
-    // read ctypes from file info header entries to determine spectral and stokes axes
-    casacore::String ctype1, ctype2, ctype3, ctype4;
-    /*
-    for (int i = 0; i < info->header_entries_size(); ++i) {
-        CARTA::HeaderEntry entry = info->header_entries(i);
-        if (entry.name() == "CTYPE1") {
-            ctype1 = casacore::String(entry.value());
-            ctype1.upcase();
-        } else if (entry.name() == "CTYPE2") {
-            ctype2 = casacore::String(entry.value());
-            ctype2.upcase();
-        } else if (entry.name() == "CTYPE3") {
-            ctype3 = casacore::String(entry.value());
-            ctype3.upcase();
-        } else if (entry.name() == "CTYPE4") {
-            ctype4 = casacore::String(entry.value());
-            ctype4.upcase();
-        }
+bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
     }
-    */
 
-    // find axes from ctypes
-    size_t ntypes(4);
-    const casacore::String ctypes[] = {ctype1, ctype2, ctype3, ctype4};
-    const casacore::String spectral_types[] = {"FELO", "FREQ", "VELO", "VOPT", "VRAD", "WAVE", "AWAV"};
-    const casacore::String stokes_type = "STOKES";
-    for (size_t i = 0; i < ntypes; ++i) {
-        for (auto& spectral_type : spectral_types) {
-            if (ctypes[i].contains(spectral_type)) {
-                spectral_axis = i;
-            }
-        }
-        if (ctypes[i] == stokes_type) {
-            stokes_axis = i;
+    if (data.shape() != slicer.length()) {
+        try {
+            data.resize(slicer.length());
+        } catch (casacore::AipsError& err) {
+            return false;
         }
     }
+
+    // Get data slice with mask applied.
+    // Apply slicer to image first to get appropriate cursor, and use read-only iterator
+    casacore::SubImage<float> subimage(*image, slicer);
+    casacore::RO_MaskedLatticeIterator<float> lattice_iter(subimage);
+    for (lattice_iter.reset(); !lattice_iter.atEnd(); ++lattice_iter) {
+        casacore::Array<float> cursor_data = lattice_iter.cursor();
+
+        if (image->isMasked()) {
+            casacore::Array<float> masked_data(cursor_data); // reference the same storage
+            const casacore::Array<bool> cursor_mask = lattice_iter.getMask();
+            // Apply cursor mask to cursor data: set masked values to NaN.
+            // booleans are used to delete copy of data if necessary
+            bool del_mask_ptr;
+            const bool* pCursorMask = cursor_mask.getStorage(del_mask_ptr);
+            bool del_data_ptr;
+            float* pMaskedData = masked_data.getStorage(del_data_ptr);
+            for (size_t i = 0; i < cursor_data.nelements(); ++i) {
+                if (!pCursorMask[i]) {
+                    pMaskedData[i] = std::numeric_limits<float>::quiet_NaN();
+                }
+            }
+
+            // free storage for cursor arrays
+            cursor_mask.freeStorage(pCursorMask, del_mask_ptr);
+            masked_data.putStorage(pMaskedData, del_data_ptr);
+        }
+
+        casacore::IPosition cursor_shape(lattice_iter.cursorShape());
+        casacore::IPosition cursor_position(lattice_iter.position());
+        casacore::Slicer cursor_slicer(cursor_position, cursor_shape); // where to put the data
+        data(cursor_slicer) = cursor_data;
+    }
+    return true;
+}
+
+bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
+    }
+
+    sub_image = casacore::SubImage<float>(*image, slicer);
+    return true;
+}
+
+bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
+    }
+
+    sub_image = casacore::SubImage<float>(*image, region);
+    return true;
 }
 
 bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams) {
     // Obtains beam table from ImageInfo
     bool success(false);
     try {
-        casacore::ImageInfo image_info = LoadData(FileInfo::Data::Image)->imageInfo();
+        casacore::ImageInfo image_info = GetImage()->imageInfo();
         if (!image_info.hasBeam()) {
             return success;
         }
@@ -487,6 +554,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                 LoadStats2DPercent();
             }
 
+            double beam_area = CalculateBeamArea();
+            bool has_flux = !std::isnan(beam_area);
+
             // If we loaded all the 2D stats successfully, assume all channel stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
                 for (size_t c = 0; c < _num_channels; c++) {
@@ -500,6 +570,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                         stats[CARTA::StatsType::Mean] = sum / num_pixels;
                         stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                         stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                        if (has_flux) {
+                            stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
+                        }
 
                         _channel_stats[s][c].full = true;
                     }
@@ -523,6 +596,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                 LoadStats3DPercent();
             }
 
+            double beam_area = CalculateBeamArea();
+            bool has_flux = !std::isnan(beam_area);
+
             // If we loaded all the 3D stats successfully, assume all cube stats are valid
             for (size_t s = 0; s < _num_stokes; s++) {
                 auto& stats = _cube_stats[s].basic_stats;
@@ -535,6 +611,9 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                     stats[CARTA::StatsType::Mean] = sum / num_pixels;
                     stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                     stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                    if (has_flux) {
+                        stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
+                    }
 
                     _cube_stats[s].full = true;
                 }
@@ -554,18 +633,29 @@ bool FileLoader::GetCursorSpectralData(
     return false;
 }
 
-bool FileLoader::UseRegionSpectralData(const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, std::mutex& image_mutex) {
+bool FileLoader::UseRegionSpectralData(const casacore::IPosition& region_shape, std::mutex& image_mutex) {
+    // Must be implemented in subclasses; should call before GetRegionSpectralData
+    return false;
+}
+
+bool FileLoader::GetRegionSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
+    const casacore::IPosition& origin, std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Must be implemented in subclasses
     return false;
 }
 
-bool FileLoader::GetRegionSpectralData(int region_id, int config_stokes, int profile_stokes,
-    const std::shared_ptr<casacore::ArrayLattice<casacore::Bool>> mask, IPos origin, std::mutex& image_mutex,
-    const std::function<void(std::map<CARTA::StatsType, std::vector<double>>*, float)>& partial_results_callback) {
-    // Must be implemented in subclasses
-    return false;
+std::string FileLoader::GetFileName() {
+    return _filename;
 }
 
-void FileLoader::SetFramePtr(Frame* frame) {
-    // Must be implemented in subclasses
+double FileLoader::CalculateBeamArea() {
+    ImageRef image = GetImage();
+    auto& info = image->imageInfo();
+    auto& coord = image->coordinates();
+
+    if (!info.hasSingleBeam() || !coord.hasDirectionCoordinate()) {
+        return NAN;
+    }
+
+    return info.getBeamAreaInPixels(-1, -1, coord.directionCoordinate());
 }

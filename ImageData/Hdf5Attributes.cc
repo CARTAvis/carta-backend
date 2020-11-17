@@ -66,7 +66,10 @@ std::string Hdf5Attributes::ReadScalar(hid_t attr_id, hid_t data_type_id, const 
             casacore::Double value;
             casacore::HDF5DataType data_type((casacore::Double*)0);
             H5Aread(attr_id, data_type.getHidMem(), &value);
-            std::string key_value = fmt::format("{:<8}= {}", name, std::to_string(value));
+            std::ostringstream ostream;
+            ostream.precision(13);
+            ostream << value;
+            std::string key_value = fmt::format("{:<8}= {}", name, ostream.str());
             return fmt::format("{:<80}", key_value);
         } break;
         case H5T_STRING: {
