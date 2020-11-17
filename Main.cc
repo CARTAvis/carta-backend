@@ -124,7 +124,7 @@ void OnDisconnect(uWS::WebSocket<true, true>* ws, int code, std::string_view mes
             delete session;
             sessions.erase(session_id);
         } else {
-            cerr << "Session reference count: " << session->DecreaseRefCount() << " is not 0 while on disconnection!" << endl;
+            cerr << "Warning:  Session reference count: " << session->DecreaseRefCount() << " is not 0 while on disconnection!" << endl;
         }
     } else {
         cerr << "Warning: OnDisconnect called with no Session object.\n";

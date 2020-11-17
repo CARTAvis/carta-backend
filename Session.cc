@@ -120,6 +120,9 @@ void Session::DisconnectCalled() {
     _base_context.cancel_group_execution();
     _histogram_context.cancel_group_execution();
     if (_animation_object) {
+        if (!_animation_object->_stop_called) {
+            _animation_object->_stop_called = true; // stop the animation
+        }
         _animation_object->CancelExecution();
     }
 }
