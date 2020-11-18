@@ -551,8 +551,9 @@ void Session::OnSetCursor(const CARTA::SetCursor& message, uint32_t request_id) 
     if (_frames.count(file_id)) { // reference Frame for Region exists
         if (message.has_spatial_requirements()) {
             auto requirements = message.spatial_requirements();
-            _frames.at(file_id)->SetSpatialRequirements(requirements.region_id(),
-                std::vector<std::string>(requirements.spatial_profiles().begin(), requirements.spatial_profiles().end()));
+            std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+                requirements.spatial_profiles().begin(), requirements.spatial_profiles().end()};
+            _frames.at(file_id)->SetSpatialRequirements(requirements.region_id(), profiles);
         }
         if (_frames.at(file_id)->SetCursor(message.point().x(), message.point().y())) { // cursor changed
             SendSpatialProfileData(file_id, CURSOR_REGION_ID);
@@ -721,8 +722,9 @@ void Session::OnSetSpatialRequirements(const CARTA::SetSpatialRequirements& mess
             string error = fmt::format("Spatial requirements not valid for non-cursor region ", region_id);
             SendLogEvent(error, {"spatial"}, CARTA::ErrorSeverity::ERROR);
         } else {
-            if (_frames.at(file_id)->SetSpatialRequirements(
-                    region_id, std::vector<CARTA::SpatialConfig>(message.spatial_profiles().begin(), message.spatial_profiles().end()))) {
+            std::vector<CARTA::SetSpatialRequirements_SpatialConfig> profiles = {
+                message.spatial_profiles().begin(), message.spatial_profiles().end()};
+            if (_frames.at(file_id)->SetSpatialRequirements(region_id, profiles)) {
                 SendSpatialProfileData(file_id, region_id);
             } else {
                 string error = fmt::format("Spatial profiles not valid for region id {}", region_id);

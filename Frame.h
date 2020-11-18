@@ -128,7 +128,7 @@ public:
     bool FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_data);
 
     // Spatial: cursor
-    bool SetSpatialRequirements(int region_id, const std::vector<std::string>& spatial_profiles);
+    bool SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles);
     bool FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spatial_data);
 
     // Spectral: cursor
@@ -265,7 +265,7 @@ private:
     std::vector<HistogramConfig> _image_histogram_configs;
     std::vector<HistogramConfig> _cube_histogram_configs;
     std::vector<CARTA::StatsType> _image_required_stats;
-    std::vector<CARTA::SpatialConfig> _cursor_spatial_configs;
+    std::vector<CARTA::SetSpatialRequirements_SpatialConfig> _cursor_spatial_configs;
     std::vector<SpectralConfig> _cursor_spectral_configs;
     std::mutex _spectral_mutex;
 

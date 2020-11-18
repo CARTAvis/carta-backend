@@ -960,7 +960,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
 // ****************************************************
 // Spatial Requirements and Data
 
-bool Frame::SetSpatialRequirements(int region_id, const std::vector<std::string>& spatial_profiles) {
+bool Frame::SetSpatialRequirements(int region_id, const std::vector<CARTA::SetSpatialRequirements_SpatialConfig>& spatial_profiles) {
     if (region_id != CURSOR_REGION_ID) {
         return false;
     }
@@ -978,7 +978,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     if (region_id != CURSOR_REGION_ID) {
         return false;
     }
-    
+
     // TODO: create _width and _height attributes and use them consistently in the whole class
     ssize_t width(_image_shape(0)), height(_image_shape(1));
 
@@ -988,22 +988,18 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     }
 
     auto t_start_spatial_profile = std::chrono::high_resolution_clock::now();
-    
+
     // The starting index of the tile which contains this index.
     // A custom tile size can be specified so that this can be reused to calculate a chunk index.
-    auto tile_index = [](int index, int size=TILE_SIZE) {
-        return (index / size) * size;
-    };
-    
+    auto tile_index = [](int index, int size = TILE_SIZE) { return (index / size) * size; };
+
     // The real size of the tile with this starting index, given the full size of this dimension
-    auto tile_size = [](int tile_index, int total_size) {
-        return std::min(TILE_SIZE, total_size - tile_index);
-    };
+    auto tile_size = [](int tile_index, int total_size) { return std::min(TILE_SIZE, total_size - tile_index); };
 
     int x, y;
     _cursor.ToIndex(x, y); // convert float to index into image array
     float cursor_value(0.0);
-    
+
     if (_image_cache_valid) {
         bool write_lock(false);
         tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
@@ -1027,27 +1023,27 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     // add profiles
     std::vector<float> profile;
     bool write_lock(false);
-    
+
     for (auto& config : _cursor_spatial_configs) {
-        int start(config.start);
+        int start(config.start());
         int end(0);
-        int mip(config.mip);
-        
-        if (config.coordinate == "x") {
-            end = config.end || width;
-        } else if (config.coordinate == "y") {
-            end = config.end || height;
+        int mip(config.mip());
+
+        if (config.coordinate() == "x") {
+            end = config.end() || width;
+        } else if (config.coordinate() == "y") {
+            end = config.end() || height;
         }
-        
+
         profile.clear();
         bool have_profile(false);
-        
+
         // can no longer select stokes, so can use image cache or tile cache
-        
+
         if (_loader->UseTileCache() && mip <= 1) { // Use tile cache to return full resolution data
             profile.resize(end - start);
-        
-            if (config.coordinate == "x") {
+
+            if (config.coordinate() == "x") {
                 int tile_y = tile_index(y);
                 bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
 
@@ -1055,9 +1051,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 for (int tile_x = tile_index(start); tile_x <= tile_index(end - 1); tile_x += TILE_SIZE) {
                     auto key = TileCache::Key(tile_x, tile_y);
                     // The cursor has moved outside this chunk row
-                    if (!ignore_interrupt &&
-                        (tile_index(_cursor_xy.y, CHUNK_SIZE) != TileCache::ChunkKey(key).y) {
-                        return profile_ok;
+                    if (!ignore_interrupt && (tile_index(_cursor.y, CHUNK_SIZE) != TileCache::ChunkKey(key).y)) {
+                        return have_profile;
                     }
                     auto tile = _tile_cache.Get(key, _loader, _image_mutex);
                     auto tile_width = tile_size(tile_x, width);
@@ -1071,10 +1066,10 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                     auto destination_start = profile.begin() + tile_x;
                     std::copy(tile_start, tile_end, destination_start);
                 }
-                
+
                 have_profile = true;
-            
-            } else if (config.coordinate == "y") {
+
+            } else if (config.coordinate() == "y") {
                 int tile_x = tile_index(x);
                 bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
 
@@ -1082,9 +1077,8 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 for (int tile_y = tile_index(start); tile_y <= tile_index(end - 1); tile_y += TILE_SIZE) {
                     auto key = TileCache::Key(tile_x, tile_y);
                     // The cursor has moved outside this chunk column
-                    if (!ignore_interrupt &&
-                        (tile_index(_cursor_xy.x, CHUNK_SIZE) != TileCache::ChunkKey(key).x) {
-                        return profile_ok;
+                    if (!ignore_interrupt && (tile_index(_cursor.x, CHUNK_SIZE) != TileCache::ChunkKey(key).x)) {
+                        return have_profile;
                     }
                     auto tile = _tile_cache.Get(key, _loader, _image_mutex);
                     auto tile_width = tile_size(tile_x, width);
@@ -1097,37 +1091,37 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                         profile[tile_y + j - start_offset] = (*tile)[(j * tile_width) + (x - tile_x)];
                     }
                 }
-                
+
                 end = height;
                 have_profile = true;
             }
-        } else (if mip > 1 && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
+        } else if (mip > 1 && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
             while (!_loader->HasMip(mip)) {
                 mip *= 2;
             }
-            
+
             CARTA::ImageBounds bounds;
-            
-            if (config.coordinate == "x") {
+
+            if (config.coordinate() == "x") {
                 bounds.set_x_min(start);
                 bounds.set_x_max(end);
                 bounds.set_y_min(y);
                 bounds.set_y_max(y + 1);
-            } else if (config.coordinate == "y") {
+            } else if (config.coordinate() == "y") {
                 bounds.set_x_min(x);
                 bounds.set_x_max(x + 1);
                 bounds.set_y_min(start);
                 bounds.set_y_max(end);
             }
-            
-            if(_loader->GetDownsampledRasterData(profile, _channel_index, _stokes_index, bounds, mip, _image_mutex)) {
+
+            if (_loader->GetDownsampledRasterData(profile, _channel_index, _stokes_index, bounds, mip, _image_mutex)) {
                 have_profile = true;
             }
         } else { // Use image cache to return full resolution data; ignore the mip
             profile.resize(end - start);
             mip = 0;
-            
-            if (config.coordinate == "x") {
+
+            if (config.coordinate() == "x") {
                 auto x_start = y * width;
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                 for (unsigned int j = start; j < end; ++j) {
@@ -1136,7 +1130,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 }
                 cache_lock.release();
                 have_profile = true;
-            } else if (config.coordinate == "y") {
+            } else if (config.coordinate() == "y") {
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
                 for (unsigned int j = start; j < end; ++j) {
                     auto idx = (j * width) + x;
@@ -1150,11 +1144,11 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         if (have_profile) {
             // add SpatialProfile to message
             auto spatial_profile = spatial_data.add_profiles();
-            spatial_profile->set_coordinate(config.coordinate);
+            spatial_profile->set_coordinate(config.coordinate());
             spatial_profile->set_start(start);
             spatial_profile->set_end(end);
             spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
-            spatial_profile->set_mip(mip)
+            spatial_profile->set_mip(mip);
         }
     }
 
