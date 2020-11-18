@@ -50,22 +50,12 @@ public:
 };
 
 class SetImageChannelsTask : public OnMessageTask {
+    int fileId;
     tbb::task* execute() override;
 
 public:
-    SetImageChannelsTask(Session* session) : OnMessageTask(session) {}
+    SetImageChannelsTask(Session* session, int fileId) : OnMessageTask(session), fileId(fileId) {}
     ~SetImageChannelsTask() = default;
-};
-
-class SetImageViewTask : public OnMessageTask {
-    int _file_id;
-    tbb::task* execute() override;
-
-public:
-    SetImageViewTask(Session* session, int file_id) : OnMessageTask(session) {
-        _file_id = file_id;
-    }
-    ~SetImageViewTask() = default;
 };
 
 class SetCursorTask : public OnMessageTask {
@@ -124,6 +114,43 @@ public:
         _message = message;
     }
     ~OnSetContourParametersTask() = default;
+};
+
+class RegionDataStreamsTask : public OnMessageTask {
+    tbb::task* execute() override;
+    int _file_id, _region_id;
+
+public:
+    RegionDataStreamsTask(Session* session, int file_id, int region_id) : OnMessageTask(session) {
+        _file_id = file_id;
+        _region_id = region_id;
+    }
+    ~RegionDataStreamsTask() = default;
+};
+
+class SpectralProfileTask : public OnMessageTask {
+    tbb::task* execute() override;
+    int _file_id, _region_id;
+
+public:
+    SpectralProfileTask(Session* session, int file_id, int region_id) : OnMessageTask(session) {
+        _file_id = file_id;
+        _region_id = region_id;
+    }
+    ~SpectralProfileTask() = default;
+};
+
+class OnSpectralLineRequestTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::SpectralLineRequest _message;
+    uint32_t _request_id;
+
+public:
+    OnSpectralLineRequestTask(Session* session, CARTA::SpectralLineRequest message, uint32_t request_id) : OnMessageTask(session) {
+        _message = message;
+        _request_id = request_id;
+    }
+    ~OnSpectralLineRequestTask() = default;
 };
 
 #endif // CARTA_BACKEND__ONMESSAGETASK_H_

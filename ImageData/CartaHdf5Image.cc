@@ -21,8 +21,8 @@ CartaHdf5Image::CartaHdf5Image(
     : casacore::ImageInterface<float>(casacore::RegionHandlerHDF5(GetHdf5File, this)),
       _valid(false),
       _pixel_mask(nullptr),
-      _mask_spec(mask_spec) {
-    _lattice = casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(filename)), array_name, hdu);
+      _mask_spec(mask_spec),
+      _lattice(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(filename)), array_name, hdu) {
     _shape = _lattice.shape();
     _pixel_mask = new casacore::ArrayLattice<bool>();
     _valid = SetUpImage();
@@ -239,4 +239,12 @@ casacore::Vector<casacore::String> CartaHdf5Image::Hdf5ToFITSHeaderStrings() {
     // Convert specified Hdf5 attributes to FITS-format strings.
     casacore::CountedPtr<casacore::HDF5Group> hdf5_group(_lattice.group());
     return Hdf5Attributes::ReadAttributes(hdf5_group.get()->getHid());
+}
+
+casacore::uInt CartaHdf5Image::advisedMaxPixels() const {
+    return _lattice.advisedMaxPixels();
+}
+
+casacore::IPosition CartaHdf5Image::doNiceCursorShape(casacore::uInt maxPixels) const {
+    return _lattice.niceCursorShape(maxPixels);
 }

@@ -13,15 +13,19 @@ FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename
     _type = GetCartaFileType(filename);
 }
 
-bool FileInfoLoader::FillFileInfo(CARTA::FileInfo* file_info) {
+bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     // Fill FileInfo submessage with type, size, hdus
     bool success(false);
     casacore::File cc_file(_filename);
     if (!cc_file.exists()) {
         return success;
     }
-    std::string filename_only = cc_file.path().baseName();
-    file_info->set_name(filename_only);
+
+    if (file_info.name().empty()) {
+        // set resolved filename; if symlink, set in calling function
+        std::string filename_only = cc_file.path().baseName();
+        file_info.set_name(filename_only);
+    }
 
     // fill FileInfo submessage
     int64_t file_size(cc_file.size());
@@ -34,28 +38,31 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo* file_info) {
         file_size = linked_file.size();
     }
 
-    file_info->set_size(file_size);
-    file_info->set_type(_type);
+    file_info.set_date(cc_file.modifyTime());
+    file_info.set_size(file_size);
+    file_info.set_type(_type);
+
     // add hdu for HDF5
     if (_type == CARTA::FileType::HDF5) {
         casacore::String abs_file_name(cc_file.path().absoluteName());
         success = GetHdf5HduList(file_info, abs_file_name);
     } else {
-        file_info->add_hdu_list("");
+        file_info.add_hdu_list("");
         success = true;
     }
+
     return success;
 }
 
-bool FileInfoLoader::GetHdf5HduList(CARTA::FileInfo* file_info, const std::string& filename) {
+bool FileInfoLoader::GetHdf5HduList(CARTA::FileInfo& file_info, const std::string& filename) {
     // fill FileInfo hdu list for Hdf5
     casacore::HDF5File hdf_file(filename);
     std::vector<casacore::String> hdus(casacore::HDF5Group::linkNames(hdf_file));
     if (hdus.empty()) {
-        file_info->add_hdu_list("");
+        file_info.add_hdu_list("");
     } else {
         for (auto group_name : hdus) {
-            file_info->add_hdu_list(group_name);
+            file_info.add_hdu_list(group_name);
         }
     }
     return true;

@@ -2,6 +2,8 @@
 
 using namespace std;
 
+namespace carta {
+
 void Log(uint32_t id, const string& log_message) {
     time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
     string time_string = ctime(&time);
@@ -10,30 +12,7 @@ void Log(uint32_t id, const string& log_message) {
     fmt::print("Session {} ({}): {}\n", id, time_string, log_message);
 }
 
-void ReadPermissions(const string& filename, unordered_map<string, vector<string>>& permissions_map) {
-    ifstream permissions_file(filename);
-    if (permissions_file.good()) {
-        fmt::print("Reading permissions file\n");
-        string line;
-        regex comment_regex("\\s*#.*");
-        regex folder_regex("\\s*(\\S+):\\s*");
-        regex key_regex("\\s*(\\S{4,}|\\*)\\s*");
-        string current_folder;
-        while (getline(permissions_file, line)) {
-            smatch matches;
-            if (regex_match(line, comment_regex)) {
-                continue;
-            } else if (regex_match(line, matches, folder_regex) && matches.size() == 2) {
-                current_folder = matches[1].str();
-            } else if (current_folder.length() && regex_match(line, matches, key_regex) && matches.size() == 2) {
-                string key = matches[1].str();
-                permissions_map[current_folder].push_back(key);
-            }
-        }
-    } else {
-        fmt::print("Missing permissions file\n");
-    }
-}
+} // namespace carta
 
 bool CheckRootBaseFolders(string& root, string& base) {
     if (root == "base" && base == "root") {
@@ -108,6 +87,17 @@ bool CheckRootBaseFolders(string& root, string& base) {
     return true;
 }
 
+uint32_t GetMagicNumber(const string& filename) {
+    uint32_t magic_number = 0;
+
+    ifstream input_file(filename);
+    if (input_file) {
+        input_file.read((char*)&magic_number, sizeof(magic_number));
+        input_file.close();
+    }
+    return magic_number;
+}
+
 void SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
     // util to split input string into parts by delimiter
     parts.clear();
@@ -157,5 +147,85 @@ CARTA::FileType GetCartaFileType(const std::string& filename) {
         case casacore::ImageOpener::COMPLISTIMAGE:
         default:
             return CARTA::FileType::UNKNOWN;
+    }
+}
+
+void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results) {
+    if (histogram == nullptr) {
+        return;
+    }
+
+    histogram->set_num_bins(results.num_bins);
+    histogram->set_bin_width(results.bin_width);
+    histogram->set_first_bin_center(results.bin_center);
+    *histogram->mutable_bins() = {results.histogram_bins.begin(), results.histogram_bins.end()};
+    histogram->set_mean(stats.mean);
+    histogram->set_std_dev(stats.stdDev);
+}
+
+void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
+    std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
+    for (auto stats_type : required_stats) {
+        // one SpectralProfile per stats type
+        auto new_profile = profile_message.add_profiles();
+        new_profile->set_coordinate(coordinate);
+        new_profile->set_stats_type(stats_type);
+
+        if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
+            double nan_value = std::numeric_limits<double>::quiet_NaN();
+            new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
+        } else {
+            new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
+        }
+    }
+}
+
+void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, std::vector<CARTA::StatsType>& required_stats,
+    std::map<CARTA::StatsType, double>& stats_value_map) {
+    // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
+    for (auto type : required_stats) {
+        double value(0.0); // default
+        auto carta_stats_type = static_cast<CARTA::StatsType>(type);
+        if (stats_value_map.find(carta_stats_type) != stats_value_map.end()) { // stat found
+            value = stats_value_map[carta_stats_type];
+        } else { // stat not provided
+            if (carta_stats_type != CARTA::StatsType::NumPixels) {
+                value = std::numeric_limits<double>::quiet_NaN();
+            }
+        }
+
+        // add StatisticsValue to message
+        auto stats_value = stats_data.add_statistics();
+        stats_value->set_stats_type(carta_stats_type);
+        stats_value->set_value(value);
+    }
+}
+
+void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index) {
+    // converts profile string into axis, stokes index into image shape
+    // axis
+    char axis_char(coordinate.back());
+    if (axis_char == 'x') {
+        axis_index = 0;
+    } else if (axis_char == 'y') {
+        axis_index = 1;
+    } else if (axis_char == 'z') {
+        axis_index = -1; // not used
+    }
+
+    // stokes
+    if (coordinate.size() == 2) {
+        char stokes_char(coordinate.front());
+        if (stokes_char == 'I') {
+            stokes_index = 0;
+        } else if (stokes_char == 'Q') {
+            stokes_index = 1;
+        } else if (stokes_char == 'U') {
+            stokes_index = 2;
+        } else if (stokes_char == 'V') {
+            stokes_index = 3;
+        }
+    } else {
+        stokes_index = -1;
     }
 }
