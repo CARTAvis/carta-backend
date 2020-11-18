@@ -510,6 +510,9 @@ int main(int argc, const char* argv[]) {
         int port(3002);
         int thread_count = TBB_THREAD_COUNT;
         int omp_thread_count = OMP_THREAD_COUNT;
+        int max_payload_length = MAX_PAYLOAD_LENGTH;
+        int idle_timeout = IDLE_TIMEOUT;
+        int max_backpressure = MAX_BACKPRESSURE;
         { // get values then let Input go out of scope
             casacore::Input inp;
             inp.version(VERSION_ID);
@@ -523,6 +526,9 @@ int main(int argc, const char* argv[]) {
             inp.create("root", root_folder, "set top-level folder for data files", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
+            inp.create("max_payload_length", to_string(max_payload_length), "set uWebSockets max payload length", "Int");
+            inp.create("idle_timeout", to_string(idle_timeout), "set uWebSockets idle timeout", "Int");
+            inp.create("max_backpressure", to_string(max_backpressure), "set uWebSockets max backpressure", "Int");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
@@ -533,6 +539,9 @@ int main(int argc, const char* argv[]) {
             omp_thread_count = inp.getInt("omp_threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
+            max_payload_length = inp.getInt("max_payload_length");
+            idle_timeout = inp.getInt("idle_timeout");
+            max_backpressure = inp.getInt("max_backpressure");
 
             if (!inp.getString("exit_after").empty()) {
                 int wait_time = inp.getInt("exit_after");
@@ -579,9 +588,9 @@ int main(int argc, const char* argv[]) {
                         .passphrase = ""})
             .ws<PerSocketData>("/*", {/* Settings */
                                          .compression = uWS::SHARED_COMPRESSOR,
-                                         .maxPayloadLength = 1024 * 1024 * 1024,
-                                         .idleTimeout = 300,
-                                         .maxBackpressure = 1024 * 1024 * 1024,
+                                         .maxPayloadLength = max_payload_length,
+                                         .idleTimeout = idle_timeout,
+                                         .maxBackpressure = max_backpressure,
                                          /* Handlers */
                                          .upgrade = OnUpgrade,
                                          .open = OnConnect,

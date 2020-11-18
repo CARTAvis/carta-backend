@@ -67,4 +67,9 @@
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
 
+// uWebSockets default settings
+#define MAX_PAYLOAD_LENGTH 1024 * 1024
+#define IDLE_TIMEOUT 300
+#define MAX_BACKPRESSURE 1024 * 1024
+
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_
