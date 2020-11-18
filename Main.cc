@@ -82,8 +82,11 @@ void OnUpgrade(uWS::HttpResponse<true>* http_response, uWS::HttpRequest* http_re
         }
     }
 
-    http_response->template upgrade<PerSocketData>({session_number, address}, http_request->getHeader("sec-websocket-key"),
-        http_request->getHeader("sec-websocket-protocol"), http_request->getHeader("sec-websocket-extensions"), context);
+    http_response->template upgrade<PerSocketData>({session_number, address}, //
+        http_request->getHeader("sec-websocket-key"),                         //
+        http_request->getHeader("sec-websocket-protocol"),                    //
+        http_request->getHeader("sec-websocket-extensions"),                  //
+        context);
 }
 
 // Called on connection. Creates session objects and assigns UUID to it
@@ -124,7 +127,7 @@ void OnDisconnect(uWS::WebSocket<true, true>* ws, int code, std::string_view mes
             delete session;
             sessions.erase(session_id);
         } else {
-            cerr << "Warning:  Session reference count: " << session->DecreaseRefCount() << " is not 0 while on disconnection!" << endl;
+            cerr << "Warning: Session reference count (" << session->DecreaseRefCount() << ") is not 0 while on disconnection!" << endl;
         }
     } else {
         cerr << "Warning: OnDisconnect called with no Session object.\n";
@@ -599,11 +602,15 @@ int main(int argc, const char* argv[]) {
             .listen(port,
                 [=](auto* token) {
                     if (token) {
-                        std::cout << "Listening on port " << port << std::endl;
+                        fmt::print(
+                            "Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP "
+                            "threads\n",
+                            port, root_folder, base_folder, thread_count, omp_thread_count);
+                    } else {
+                        fmt::print("Error listening on port {}\n", port);
                     }
                 })
             .run();
-
     } catch (exception& e) {
         fmt::print("Error: {}\n", e.what());
         return 1;
