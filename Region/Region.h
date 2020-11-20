@@ -13,6 +13,7 @@
 #include <casacore/lattices/LRegions/LCRegion.h>
 #include <casacore/lattices/Lattices/ArrayLattice.h>
 #include <casacore/tables/Tables/TableRecord.h>
+#include <imageanalysis/Annotations/AnnotationBase.h>
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
@@ -83,14 +84,22 @@ public:
     inline RegionState GetRegionState() {
         return _region_state;
     }
+
     inline int GetReferenceFileId() {
         return _region_state.reference_file_id;
     }
+
     inline bool IsRotbox() {
         return ((_region_state.type == CARTA::RegionType::RECTANGLE) && (_region_state.rotation != 0.0));
     }
+
     inline bool RegionChanged() { // reference image, type, points, or rotation changed
         return _region_changed;
+    }
+
+    inline bool IsAnnotation() {
+        CARTA::RegionType type = _region_state.type;
+        return ((type == CARTA::RegionType::LINE) || (type == CARTA::RegionType::POLYLINE));
     }
 
     // Communication
@@ -106,6 +115,10 @@ public:
     // Converted region in Record for export
     casacore::TableRecord GetImageRegionRecord(
         int file_id, const casacore::CoordinateSystem& output_csys, const casacore::IPosition& output_shape);
+
+    // Annotation region
+    casa::AnnotationBase* GetAnnotationRegion(
+        int file_id, const casacore::CoordinateSystem& image_csys, const casacore::IPosition& image_shape);
 
 private:
     bool SetPoints(const std::vector<CARTA::Point>& points);
@@ -135,7 +148,7 @@ private:
     std::vector<CARTA::Point> GetApproximatePolygonPoints(int num_vertices);
     std::vector<CARTA::Point> GetApproximateEllipsePoints(int num_vertices);
     double GetPolygonLength(std::vector<CARTA::Point>& polygon_points);
-    bool ConvertPolygonToImage(const std::vector<CARTA::Point>& polygon_points, const casacore::CoordinateSystem& output_csys,
+    bool ConvertPointsToImagePixels(const std::vector<CARTA::Point>& points, const casacore::CoordinateSystem& output_csys,
         casacore::Vector<casacore::Double>& x, casacore::Vector<casacore::Double>& y);
 
     // Region applied to any image; used for export
@@ -173,6 +186,7 @@ private:
     std::shared_ptr<casacore::WCRegion> _reference_region; // 2D region applied to reference image
     std::vector<casacore::Quantity> _wcs_control_points;   // for manual region conversion
     float _ellipse_rotation;                               // (deg), may be adjusted from pixel rotation value
+
     // Reference region applied to image; key is file_id
     std::unordered_map<int, std::shared_ptr<casacore::LCRegion>> _applied_regions;
 
