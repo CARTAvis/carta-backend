@@ -144,7 +144,7 @@ public:
     virtual ImageRef GetImage() = 0;
 
     // read beam subtable
-    bool GetBeams(std::vector<CARTA::Beam>& beams);
+    bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
     bool GetShape(IPos& shape);

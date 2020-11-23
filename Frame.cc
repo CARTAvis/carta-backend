@@ -152,7 +152,12 @@ int Frame::StokesAxis() {
 }
 
 bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
-    return _loader->GetBeams(beams);
+    std::string error;
+    bool beams_ok = _loader->GetBeams(beams, error);
+    if (!beams_ok) {
+        carta::Log(_session_id, error);
+    }
+    return beams_ok;
 }
 
 casacore::Slicer Frame::GetImageSlicer(const ChannelRange& chan_range, int stokes) {

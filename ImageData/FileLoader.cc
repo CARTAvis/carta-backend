@@ -234,12 +234,13 @@ bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore:
     return true;
 }
 
-bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams) {
+bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
     // Obtains beam table from ImageInfo
     bool success(false);
     try {
         casacore::ImageInfo image_info = GetImage()->imageInfo();
         if (!image_info.hasBeam()) {
+            error = "Image has no beam information.";
             return success;
         }
 
@@ -270,7 +271,7 @@ bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams) {
         }
         success = true;
     } catch (casacore::AipsError& err) {
-        // beams failed somehow
+        error = "Image beam error: " + err.getMesg();
     }
     return success;
 }
