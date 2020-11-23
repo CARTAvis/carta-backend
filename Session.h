@@ -51,7 +51,7 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<true, true>* ws, uint32_t id, std::string address, std::string root, std::string base,
+    Session(uWS::WebSocket<true, true>* ws, Async* outgoing_async, uint32_t id, std::string address, std::string root, std::string base,
         FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
     ~Session();
 
@@ -258,6 +258,9 @@ private:
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
 
+    // Outgoing messages:
+    // Notification mechanism when messages are ready
+    Async* _outgoing_async;
     // message queue <msg, compress>
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
