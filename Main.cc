@@ -602,20 +602,20 @@ int main(int argc, const char* argv[]) {
                         .key_file_name = "",
                         .cert_file_name = "",
                         .passphrase = ""})
-            .ws<PerSocketData>(
-                "/*", {/* Settings */
-                          .compression = uWS::SHARED_COMPRESSOR,
-                          .maxPayloadLength = max_payload_length,
-                          .idleTimeout = idle_timeout,
-                          .maxBackpressure = max_backpressure,
-                          /* Handlers */
-                          .upgrade = OnUpgrade,
-                          .open = OnConnect,
-                          .message = OnMessage,
-                          .drain = [](auto* ws) { fmt::print("uWebSockets on drain: buffer amount {}\n", ws->getBufferedAmount()); },
-                          .ping = [](auto* ws) { fmt::print("uWebSockets on ping\n"); },
-                          .pong = [](auto* ws) { fmt::print("uWebSockets on pong\n"); },
-                          .close = OnDisconnect})
+            .ws<PerSocketData>("/*",
+                {/* Settings */
+                    .compression = uWS::SHARED_COMPRESSOR,
+                    .maxPayloadLength = max_payload_length,
+                    .idleTimeout = idle_timeout,
+                    .maxBackpressure = max_backpressure,
+                    /* Handlers */
+                    .upgrade = OnUpgrade,
+                    .open = OnConnect,
+                    .message = OnMessage,
+                    .drain = [](auto* ws) { fmt::print("uWebSockets on drain: buffer amount {}\n", ws->getBufferedAmount()); },
+                    .ping = [](auto* ws) { fmt::print("uWebSockets on ping\n"); },
+                    .pong = [](auto* ws) { fmt::print("uWebSockets on pong\n"); },
+                    .close = OnDisconnect})
             .listen(port,
                 [=](auto* token) {
                     if (token) {
