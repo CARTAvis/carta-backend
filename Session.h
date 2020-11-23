@@ -282,9 +282,6 @@ private:
     // Scripting responses from the client
     std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
     std::mutex _scripting_mutex;
-
-    // Websockets mutex
-    std::mutex _socket_mutex;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_
