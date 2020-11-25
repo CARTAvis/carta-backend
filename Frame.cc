@@ -1026,13 +1026,11 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
 
     for (auto& config : _cursor_spatial_configs) {
         int start(config.start());
-        int end(0);
+        int end(config.end());
         int mip(config.mip());
 
-        if (config.coordinate() == "x") {
-            end = config.end() || width;
-        } else if (config.coordinate() == "y") {
-            end = config.end() || height;
+        if (!end) {
+            end = config.coordinate() == "x" ? width : height;
         }
 
         profile.clear();
