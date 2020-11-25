@@ -1092,7 +1092,6 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                     }
                 }
 
-                end = height;
                 have_profile = true;
             }
         } else if (mip > 1 && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
