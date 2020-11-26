@@ -29,7 +29,6 @@ public:
         std::mutex& image_mutex, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) override;
 
 private:
-    std::string _filename;
     std::string _hdu;
     std::unique_ptr<CartaHdf5Image> _image;
     std::unique_ptr<casacore::HDF5Lattice<float>> _swizzled_image;

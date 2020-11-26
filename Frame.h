@@ -16,6 +16,7 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/save_file.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
@@ -26,6 +27,7 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 #include "InterfaceConstants.h"
+#include "Moment/MomentGenerator.h"
 #include "Region/Region.h"
 #include "RequirementsCache.h"
 
@@ -65,7 +67,8 @@ struct ContourSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog,
+        int default_channel = DEFAULT_CHANNEL);
     ~Frame(){};
 
     bool IsValid();
@@ -140,9 +143,8 @@ public:
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
+    bool GetImageRegion(int file_id, const ChannelRange& chan_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
-    // Returns mask array
-    bool GetRegionMask(const casacore::LattRegionHolder& region, casacore::Array<casacore::Bool>& mask);
     // Returns data vector
     bool GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data);
     bool GetSlicerData(const casacore::Slicer& slicer, std::vector<float>& data);
@@ -151,10 +153,22 @@ public:
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
     bool GetSlicerStats(const casacore::Slicer& slicer, std::vector<CARTA::StatsType>& required_stats, bool per_channel,
         std::map<CARTA::StatsType, std::vector<double>>& stats_values);
-    // Whether to use loader for spectral profiles
+    // Spectral profiles from loader
     bool UseLoaderSpectralData(const casacore::IPosition& region_shape);
+    bool GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point);
     bool GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
         const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress);
+
+    // Moments calculation
+    bool CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+        std::vector<carta::CollapseResult>& collapse_results);
+    void StopMomentCalc();
+    void IncreaseMomentsCount();
+    void DecreaseMomentsCount();
+
+    // Save as a new file or convert it between CASA/FITS formats
+    void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
 
 private:
     // Validate channel, stokes index values
@@ -190,9 +204,19 @@ private:
         return (channel * 10) + stokes;
     }
 
+    // Get the full name of image file
+    std::string GetFileName() {
+        return _loader->GetFileName();
+    }
+    // Get image interface ptr
+    casacore::ImageInterface<float>* GetImage() {
+        return _loader->GetImage();
+    }
+
     // Setup
     uint32_t _session_id;
     bool _verbose;
+    bool _perflog;
 
     // Image opened
     bool _valid;
@@ -228,6 +252,9 @@ private:
     // Spectral profile counter, so Frame is not destroyed until finished
     std::atomic<int> _z_profile_count;
 
+    // Moments counter, so Frame is not destroyed until finished
+    std::atomic<int> _moments_count;
+
     // Requirements
     std::vector<HistogramConfig> _image_histogram_configs;
     std::vector<HistogramConfig> _cube_histogram_configs;
@@ -241,6 +268,9 @@ private:
     std::unordered_map<int, std::vector<carta::HistogramResults>> _image_histograms, _cube_histograms;
     std::unordered_map<int, carta::BasicStats<float>> _image_basic_stats, _cube_basic_stats;
     std::unordered_map<int, std::map<CARTA::StatsType, double>> _image_stats;
+
+    // Moment generator
+    std::unique_ptr<MomentGenerator> _moment_generator;
 };
 
 #endif // CARTA_BACKEND__FRAME_H_

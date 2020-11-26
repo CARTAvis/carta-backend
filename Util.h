@@ -26,6 +26,8 @@
 
 // ************ Logging *************
 
+namespace carta { // Add a name space to avoid the ambiguity with casacore Log() function
+
 void Log(uint32_t id, const std::string& log_message);
 
 template <typename... Args>
@@ -38,9 +40,10 @@ inline void Log(uint32_t id, const std::string& template_string, Args... args) {
     Log(id, fmt::format(template_string, args...));
 }
 
+} // namespace carta
+
 // ************ Utilities *************
 
-void ReadPermissions(const std::string& filename, std::unordered_map<std::string, std::vector<std::string>>& permissions_map);
 bool CheckRootBaseFolders(std::string& root, std::string& base);
 uint32_t GetMagicNumber(const std::string& filename);
 

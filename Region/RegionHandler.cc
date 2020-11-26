@@ -14,9 +14,9 @@
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
 
-using namespace carta;
+namespace carta {
 
-RegionHandler::RegionHandler(bool verbose) : _verbose(verbose), _z_profile_count(0) {}
+RegionHandler::RegionHandler(bool perflog) : _perflog(perflog), _z_profile_count(0) {}
 
 // ********************************************************************
 // Region handling
@@ -695,7 +695,7 @@ bool RegionHandler::ApplyRegionToFile(
             // Remove xy axes from chan/stokes box
             casacore::IPosition remove_xy(2, 0, 1);
             chan_stokes_slicer =
-                casacore::Slicer(chan_stokes_slicer.start().removeAxes(remove_xy), chan_stokes_slicer.end().removeAxes(remove_xy));
+                casacore::Slicer(chan_stokes_slicer.start().removeAxes(remove_xy), chan_stokes_slicer.length().removeAxes(remove_xy));
             casacore::LCBox chan_stokes_box(chan_stokes_slicer, image_shape.removeAxes(remove_xy));
 
             casacore::IPosition extend_axes = casacore::IPosition::makeAxisPath(image_shape.size()).removeAxes(remove_xy);
@@ -711,6 +711,22 @@ bool RegionHandler::ApplyRegionToFile(
     }
 
     return false;
+}
+
+bool RegionHandler::CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame,
+    MomentProgressCallback progress_callback, const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<carta::CollapseResult>& collapse_results) {
+    casacore::ImageRegion image_region;
+    int chan_min(moment_request.spectral_range().min());
+    int chan_max(moment_request.spectral_range().max());
+
+    // Do calculations
+    if (ApplyRegionToFile(region_id, file_id, ChannelRange(chan_min, chan_max), frame->CurrentStokes(), image_region)) {
+        frame->IncreaseMomentsCount();
+        frame->CalculateMoments(file_id, progress_callback, image_region, moment_request, moment_response, collapse_results);
+        frame->DecreaseMomentsCount();
+    }
+    return !collapse_results.empty();
 }
 
 // ********************************************************************
@@ -877,11 +893,12 @@ bool RegionHandler::GetRegionHistogramData(
         FillHistogramFromResults(histogram, stats, results);
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
         auto dt_region_histogram =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-        fmt::print("Fill region histogram in {} ms at {} MPix/s\n", dt_region_histogram, (float)stats.num_pixels / dt_region_histogram);
+        fmt::print(
+            "Fill region histogram in {} ms at {} MPix/s\n", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
     }
 
     return true;
@@ -1032,6 +1049,27 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
 
     // Use loader swizzled data for efficiency
     if (_frames.at(file_id)->UseLoaderSpectralData(lcregion->shape())) {
+        // Use cursor spectral profile for point region
+        if (initial_region_state.type == CARTA::RegionType::POINT) {
+            casacore::IPosition origin = lcregion->boundingBox().start();
+            CARTA::Point point;
+            point.set_x(origin(0));
+            point.set_y(origin(1));
+            std::vector<float> profile;
+            bool ok = _frames.at(file_id)->GetLoaderPointSpectralData(profile, stokes_index, point);
+            if (ok) {
+                // Set results; there is only one required stat for point
+                std::vector<double> data(profile.begin(), profile.end());
+                results[required_stats[0]] = data;
+                progress = PROFILE_COMPLETE;
+                partial_results_callback(results, progress);
+            }
+
+            _frames.at(file_id)->DecreaseZProfileCount();
+            _regions.at(region_id)->DecreaseZProfileCount();
+            return ok;
+        }
+
         // Get 2D origin and 2D mask for Hdf5Loader
         casacore::IPosition origin = lcregion->boundingBox().start();
         casacore::IPosition xy_origin = origin.keepAxes(casacore::IPosition(2, 0, 1)); // keep first two axes only
@@ -1098,11 +1136,11 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
             }
 
-            if (_verbose) {
+            if (_perflog) {
                 auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
                 auto dt_spectral_profile =
-                    std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-                fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
+                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+                fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
             }
 
             _frames.at(file_id)->DecreaseZProfileCount();
@@ -1211,11 +1249,11 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile);
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
     }
 
     _frames.at(file_id)->DecreaseZProfileCount();
@@ -1340,13 +1378,15 @@ bool RegionHandler::GetRegionStatsData(
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 
-        if (_verbose) {
+        if (_perflog) {
             auto t_end_region_stats = std::chrono::high_resolution_clock::now();
-            auto dt_region_stats = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_region_stats - t_start_region_stats).count();
-            fmt::print("Fill region stats in {} ms\n", dt_region_stats);
+            auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
+            fmt::print("Fill region stats in {} ms\n", dt_region_stats * 1e-3);
         }
         return true;
     }
 
     return false;
 }
+
+} // namespace carta

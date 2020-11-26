@@ -36,7 +36,7 @@ namespace carta {
 
 class RegionHandler {
 public:
-    RegionHandler(bool verbose);
+    RegionHandler(bool perflog);
 
     // Regions
     bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
@@ -64,6 +64,11 @@ public:
     bool FillSpectralProfileData(
         std::function<void(CARTA::SpectralProfileData profile_data)> cb, int region_id, int file_id, bool stokes_changed);
     bool FillRegionStatsData(std::function<void(CARTA::RegionStatsData stats_data)> cb, int region_id, int file_id);
+
+    // Calculate moments
+    bool CalculateMoments(int file_id, int region_id, const std::shared_ptr<Frame>& frame, MomentProgressCallback progress_callback,
+        const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+        std::vector<carta::CollapseResult>& collapse_results);
 
 private:
     // Get unique region id (max id + 1)
@@ -100,7 +105,7 @@ private:
         int region_id, int file_id, std::vector<CARTA::StatsType>& required_stats, CARTA::RegionStatsData& stats_message);
 
     // Logging
-    bool _verbose;
+    bool _perflog;
 
     // Trigger job cancellation when true
     volatile bool _cancel_all_jobs = false;

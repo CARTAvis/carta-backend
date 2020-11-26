@@ -2,7 +2,7 @@
 
 namespace carta {
 
-Hdf5Loader::Hdf5Loader(const std::string& filename) : _filename(filename), _hdu("0") {}
+Hdf5Loader::Hdf5Loader(const std::string& filename) : FileLoader(filename), _hdu("0") {}
 
 void Hdf5Loader::OpenFile(const std::string& hdu) {
     // Open hdf5 image with specified hdu
@@ -265,8 +265,8 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     // Set initial values of stats, or those set to NAN in previous iterations
     for (size_t z = 0; z < num_z; z++) {
         if ((x_start == 0) || (num_pixels[z] == 0)) {
-            min[z] = FLT_MAX;
-            max[z] = FLT_MIN;
+            min[z] = std::numeric_limits<float>::max();
+            max[z] = std::numeric_limits<float>::lowest();
             num_pixels[z] = 0;
             nan_count[z] = 0;
             sum[z] = 0;

@@ -12,9 +12,13 @@
 using namespace carta;
 
 #define REST_FREQUENCY_COLUMN_INDEX 2
+#define INTENSITY_LIMIT_WORKAROUND 0.000001
+#define NUM_HEADERS 18
 
-const std::string SpectralLineCrawler::SplatalogueURLBase =
-    "https://www.cv.nrao.edu/php/splat/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
+const std::string SpectralLineCrawler::Headers[] = {"Species", "Chemical Name", "Freq-MHz(rest frame,redshifted)",
+    "Freq Err(rest frame,redshifted)", "Meas Freq-MHz(rest frame,redshifted)", "Meas Freq Err(rest frame,redshifted)", "Resolved QNs",
+    "Unresolved Quantum Numbers", "CDMS/JPL Intensity", "S<sub>ij</sub>&#956;<sup>2</sup> (D<sup>2</sup>)", "S<sub>ij</sub>",
+    "Log<sub>10</sub> (A<sub>ij</sub>)", "Lovas/AST Intensity", "E_L (cm^-1)", "E_L (K)", "E_U (cm^-1)", "E_U (K)", "Linelist"};
 
 SpectralLineCrawler::SpectralLineCrawler() {}
 
@@ -25,7 +29,8 @@ SpectralLineCrawler::~SpectralLineCrawler() {}
     1. curl example https://curl.haxx.se/libcurl/c/getinmemory.html
     2. c++ example https://gist.github.com/alghanmi/c5d7b761b2c9ab199157
 */
-void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange, CARTA::SpectralLineResponse& spectral_line_response) {
+void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange, const double line_intensity_lower_limit,
+    CARTA::SpectralLineResponse& spectral_line_response) {
     /* init the curl session */
     CURL* curl_handle = curl_easy_init();
     if (curl_handle == nullptr) {
@@ -40,6 +45,16 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
 
     /* specify URL to get */
     // TODO: assemble parameters when frontend offers split settings
+#ifdef SPLATALOGUE_URL
+    std::string splatalog_url = SPLATALOGUE_URL;
+#else
+    std::string splatalog_url = "https://splatalogue.online";
+#endif
+    std::string base = "/c_export.php?&sid%5B%5D=&data_version=v3.0&lill=on";
+    std::string intensityLimit =
+        std::isnan(line_intensity_lower_limit)
+            ? ""
+            : fmt::format("&lill_cdms_jpl={}", line_intensity_lower_limit == 0 ? INTENSITY_LIMIT_WORKAROUND : line_intensity_lower_limit);
     std::string lineListParameters =
         "&displayJPL=displayJPL&displayCDMS=displayCDMS&displayLovas=displayLovas"
         "&displaySLAIM=displaySLAIM&displayToyaMA=displayToyaMA&displayOSU=displayOSU"
@@ -49,9 +64,13 @@ void SpectralLineCrawler::SendRequest(const CARTA::DoubleBounds& frequencyRange,
     std::string miscellaneousParameters =
         "&show_unres_qn=show_unres_qn&submit=Export&export_type=current&export_delimiter=tab"
         "&offset=0&limit=100000&range=on";
-    std::string frequencyRangeStr =
-        fmt::format("&frequency_units=MHz&from={}&to={}", std::to_string(frequencyRange.min()), std::to_string(frequencyRange.max()));
-    std::string URL = SpectralLineCrawler::SplatalogueURLBase + lineListParameters + lineStrengthParameters + energyLevelParameters +
+    double freqMin = frequencyRange.min();
+    double freqMax = frequencyRange.max();
+    // workaround to fix splatalogue frequency range parameter bug
+    auto freqMinString = fmt::format(freqMin == std::floor(freqMin) ? "{:.0f}" : "{}", freqMin);
+    auto freqMaxString = fmt::format(freqMax == std::floor(freqMax) ? "{:.0f}" : "{}", freqMax);
+    std::string frequencyRangeStr = fmt::format("&frequency_units=MHz&from={}&to={}", freqMinString, freqMaxString);
+    std::string URL = splatalog_url + base + intensityLimit + lineListParameters + lineStrengthParameters + energyLevelParameters +
                       miscellaneousParameters + frequencyRangeStr;
     curl_easy_setopt(curl_handle, CURLOPT_URL, URL.c_str());
 
@@ -82,12 +101,19 @@ void SpectralLineCrawler::ParseQueryResult(const std::string& results, CARTA::Sp
     std::istringstream line_stream(results);
     std::string line, token;
 
-    // Parsing header part: fill in [Species, Chemical Name, ...] & create empty data columns
+    // Extracting header part: fill in [Species, Chemical Name, ...] & create empty data columns
     std::getline(line_stream, line, '\n');
     std::istringstream header_token_stream(line);
     while (std::getline(header_token_stream, token, '\t')) {
         headers.push_back(token);
         data_columns.push_back(std::vector<std::string>());
+    }
+
+    // Checking extracted header numbers & common headers, [0] = "Species", [1] = "Chemical Name"
+    if (headers.size() != NUM_HEADERS || headers[0] != SpectralLineCrawler::Headers[0] || headers[1] != SpectralLineCrawler::Headers[1]) {
+        spectral_line_response.set_success(false);
+        spectral_line_response.set_message("Received incorrect headers from splatalogue.");
+        return;
     }
 
     // Parsing data part: parsing each line & fill in data columns

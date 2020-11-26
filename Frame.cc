@@ -6,6 +6,7 @@
 #include <thread>
 #include "fmt/format.h"
 
+#include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/WCRegion.h>
 #include <casacore/lattices/LRegions/LCSlicer.h>
 #include <casacore/tables/DataMan/TiledFileAccess.h>
@@ -16,11 +17,20 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Util.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, int default_channel)
+Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog, int default_channel)
     : _session_id(session_id),
       _verbose(verbose),
+      _perflog(perflog),
       _valid(true),
       _loader(loader),
       _spectral_axis(-1),
@@ -29,11 +39,13 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _stokes_index(-1),
       _num_channels(1),
       _num_stokes(1),
-      _z_profile_count(0) {
+      _z_profile_count(0),
+      _moments_count(0),
+      _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            carta::Log(session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -44,7 +56,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = err.getMesg();
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            carta::Log(session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -55,7 +67,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            carta::Log(session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -86,7 +98,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
         if (_verbose) {
-            Log(session_id, _open_image_error);
+            carta::Log(session_id, _open_image_error);
         }
     }
 }
@@ -190,8 +202,11 @@ bool Frame::ChannelsChanged(int channel, int stokes) {
 }
 
 void Frame::DisconnectCalled() {
-    _connected = false;            // file closed
-    while (_z_profile_count > 0) { // wait for spectral profiles to complete to avoid crash
+    _connected = false;      // file closed
+    if (_moment_generator) { // stop moment calculation
+        _moment_generator->StopCalculation();
+    }
+    while (_z_profile_count > 0 || _moments_count > 0) { // wait for spectral profiles or moments calculation finished
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
@@ -206,6 +221,14 @@ void Frame::IncreaseZProfileCount() {
 
 void Frame::DecreaseZProfileCount() {
     _z_profile_count--;
+}
+
+void Frame::IncreaseMomentsCount() {
+    _moments_count++;
+}
+
+void Frame::DecreaseMomentsCount() {
+    _moments_count--;
 }
 
 // ********************************************************************
@@ -246,11 +269,11 @@ bool Frame::FillImageCache() {
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetImageSlicer(ChannelRange(_channel_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
-        Log(_session_id, "Loading image cache failed.");
+        carta::Log(_session_id, "Loading image cache failed.");
         return false;
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
         auto dt_set_image_cache =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
@@ -345,7 +368,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         }
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
         auto dt_raster_data_filter =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
@@ -408,15 +431,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
             // Measure duration for compress tile data
-            if (_verbose) {
-                auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
-                auto dt_compress_tile_data =
-                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
-                fmt::print("Compress {}x{} tile data in {} ms at {} MPix/s\n", tile_width, tile_height, dt_compress_tile_data * 1e-3,
-                    (float)(tile_width * tile_height) / dt_compress_tile_data);
-            }
-
-            if (_verbose) {
+            if (_perflog) {
                 auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
                 auto dt_compress_tile_data =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
@@ -474,7 +489,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
         TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, _contour_settings.levels, vertex_data,
-            index_data, _contour_settings.chunk_size, partial_contour_callback, _verbose);
+            index_data, _contour_settings.chunk_size, partial_contour_callback, _perflog);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
@@ -487,14 +502,14 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_height = _image_shape(1) - 2 * kernel_width;
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
         smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
-            _contour_settings.smoothing_factor, _verbose);
+            _contour_settings.smoothing_factor, _perflog);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
         if (smooth_successful) {
             // Perform contouring with an offset based on the Gaussian smoothing apron size
             offset = _contour_settings.smoothing_factor - 1;
             TraceContours(dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-                _contour_settings.chunk_size, partial_contour_callback, _verbose);
+                _contour_settings.chunk_size, partial_contour_callback, _perflog);
             return true;
         }
     } else {
@@ -514,7 +529,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             size_t dest_width = ceil(double(image_bounds.x_max()) / _contour_settings.smoothing_factor);
             size_t dest_height = ceil(double(image_bounds.y_max()) / _contour_settings.smoothing_factor);
             TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-                _contour_settings.chunk_size, partial_contour_callback, _verbose);
+                _contour_settings.chunk_size, partial_contour_callback, _perflog);
             return true;
         }
         fmt::print("Smoothing mode not implemented yet!\n");
@@ -608,7 +623,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 }
             }
 
-            if (_verbose && histogram_filled) {
+            if (_perflog && histogram_filled) {
                 auto t_end_image_histogram = std::chrono::high_resolution_clock::now();
                 auto dt_image_histogram =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_histogram - t_start_image_histogram).count();
@@ -867,10 +882,10 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         // cache results
         _image_stats[cache_key] = stats_map;
 
-        if (_verbose) {
+        if (_perflog) {
             auto t_end_image_stats = std::chrono::high_resolution_clock::now();
-            auto dt_image_stats = std::chrono::duration_cast<std::chrono::milliseconds>(t_end_image_stats - t_start_image_stats).count();
-            fmt::print("Fill image stats in {} ms\n", dt_image_stats);
+            auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
+            fmt::print("Fill image stats in {} ms\n", dt_image_stats * 1e-3);
         }
         return true;
     }
@@ -967,11 +982,11 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         }
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
         auto dt_spatial_profile =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
-        fmt::print("Fill spatial profile in {} ms\n", dt_spatial_profile);
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
+        fmt::print("Fill spatial profile in {} ms\n", dt_spatial_profile * 1e-3);
     }
 
     return true;
@@ -1189,11 +1204,11 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
     }
 
-    if (_verbose) {
+    if (_perflog) {
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill cursor spectral profile in {} ms\n", dt_spectral_profile);
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+        fmt::print("Fill cursor spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
     }
 
     DecreaseZProfileCount();
@@ -1227,55 +1242,28 @@ casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Re
     return image_region;
 }
 
+bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stokes, casacore::ImageRegion& image_region) {
+    if (!CheckChannel(chan_range.from) || !CheckChannel(chan_range.to) || !CheckStokes(stokes)) {
+        return false;
+    }
+    try {
+        casacore::Slicer slicer = GetImageSlicer(chan_range, stokes);
+        casacore::LCSlicer lcslicer(slicer);
+        casacore::ImageRegion this_region(lcslicer);
+        image_region = this_region;
+        return true;
+    } catch (casacore::AipsError error) {
+        std::cerr << "Error converting full region to file " << file_id << ": " << error.getMesg() << std::endl;
+        return false;
+    }
+}
+
 casacore::IPosition Frame::GetRegionShape(const casacore::LattRegionHolder& region) {
     // Returns image shape with a region applied
     casacore::CoordinateSystem* coord_sys = CoordinateSystem();
     casacore::LatticeRegion lattice_region = region.toLatticeRegion(*coord_sys, ImageShape());
     delete coord_sys;
     return lattice_region.shape();
-}
-
-bool Frame::GetRegionMask(const casacore::LattRegionHolder& region, casacore::Array<casacore::Bool>& mask) {
-    // Return mask slice for applied region
-
-    // Get SubImage image with the region applied
-    auto t_start_get_subimage_mask = std::chrono::high_resolution_clock::now();
-    casacore::SubImage<float> sub_image;
-    std::unique_lock<std::mutex> ulock(_image_mutex);
-    bool subimage_ok = _loader->GetSubImage(region, sub_image);
-    ulock.unlock();
-
-    if (!subimage_ok) {
-        return false;
-    }
-
-    casacore::IPosition subimage_shape = sub_image.shape();
-    if (subimage_shape.empty()) {
-        return false;
-    }
-
-    mask.resize(subimage_shape); // must size correctly before sharing
-    casacore::Array<casacore::Bool> tmp(subimage_shape, mask.data(), casacore::StorageInitPolicy::SHARE);
-    try {
-        casacore::IPosition start(subimage_shape.size(), 0);
-        casacore::IPosition count(subimage_shape);
-        casacore::Slicer slicer(start, count); // entire subimage
-        std::unique_lock<std::mutex> ulock(_image_mutex);
-        sub_image.doGetMaskSlice(tmp, slicer);
-        ulock.unlock();
-
-        if (_verbose) {
-            auto t_end_get_subimage_mask = std::chrono::high_resolution_clock::now();
-            auto dt_get_subimage_mask =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_get_subimage_mask - t_start_get_subimage_mask).count();
-            fmt::print("Get region subimage mask in {} ms\n", dt_get_subimage_mask);
-        }
-        return true;
-    } catch (casacore::AipsError& err) {
-        mask.resize();
-    }
-
-    return false;
 }
 
 bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<float>& data) {
@@ -1305,11 +1293,11 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         sub_image.doGetSlice(tmp, slicer);
         ulock.unlock();
 
-        if (_verbose) {
+        if (_perflog) {
             auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
             auto dt_get_subimage_data =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
-            fmt::print("Get region subimage data in {} ms\n", dt_get_subimage_data);
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
+            fmt::print("Get region subimage data in {} ms\n", dt_get_subimage_data * 1e-3);
         }
         return true;
     } catch (casacore::AipsError& err) {
@@ -1362,8 +1350,126 @@ bool Frame::UseLoaderSpectralData(const casacore::IPosition& region_shape) {
     return _loader->UseRegionSpectralData(region_shape, _image_mutex);
 }
 
+bool Frame::GetLoaderPointSpectralData(std::vector<float>& profile, int stokes, CARTA::Point& point) {
+    return _loader->GetCursorSpectralData(profile, stokes, point.x(), 1, point.y(), 1, _image_mutex);
+}
+
 bool Frame::GetLoaderSpectralData(int region_id, int stokes, const casacore::ArrayLattice<casacore::Bool>& mask,
     const casacore::IPosition& origin, std::map<CARTA::StatsType, std::vector<double>>& results, float& progress) {
     // Get spectral data from loader (add image mutex for swizzled data)
     return _loader->GetRegionSpectralData(region_id, stokes, mask, origin, _image_mutex, results, progress);
+}
+
+bool Frame::CalculateMoments(int file_id, MomentProgressCallback progress_callback, const casacore::ImageRegion& image_region,
+    const CARTA::MomentRequest& moment_request, CARTA::MomentResponse& moment_response,
+    std::vector<carta::CollapseResult>& collapse_results) {
+    if (!_moment_generator) {
+        _moment_generator = std::make_unique<MomentGenerator>(GetFileName(), GetImage());
+    }
+    if (_moment_generator) {
+        std::unique_lock<std::mutex> ulock(_image_mutex); // Must lock the image while doing moment calculations
+        _moment_generator->CalculateMoments(
+            file_id, image_region, _spectral_axis, _stokes_axis, progress_callback, moment_request, moment_response, collapse_results);
+        ulock.unlock();
+    }
+
+    return !collapse_results.empty();
+}
+
+void Frame::StopMomentCalc() {
+    if (_moment_generator) {
+        _moment_generator->StopCalculation();
+    }
+}
+
+void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack) {
+    // Input file info
+    std::string in_file = GetFileName();
+    casacore::ImageInterface<float>* image = GetImage();
+
+    // Output file info
+    fs::path output_filename(save_file_msg.output_file_name());
+    fs::path directory(save_file_msg.output_file_directory());
+    CARTA::FileType output_file_type(save_file_msg.output_file_type());
+
+    // Set response message
+    int file_id(save_file_msg.file_id());
+    save_file_ack.set_file_id(file_id);
+    bool success(false);
+    casacore::String message;
+
+    // Get the full resolved name of the output image
+    fs::path temp_path = fs::path(root_folder) / directory;
+    fs::path abs_path = fs::absolute(temp_path);
+    output_filename = abs_path / output_filename;
+
+    if (output_filename.string() == in_file) {
+        message = "The source file can not be overwritten!";
+        save_file_ack.set_success(success);
+        save_file_ack.set_message(message);
+        return;
+    }
+
+    std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
+    if (output_file_type == CARTA::FileType::CASA) {
+        // Remove the old image file if it has a same file name
+        if (fs::exists(output_filename)) {
+            fs::remove_all(output_filename);
+        }
+
+        // Get a copy of the original pixel data
+        casacore::IPosition start(image->shape().size(), 0);
+        casacore::IPosition count(image->shape());
+        casacore::Slicer slice(start, count);
+        casacore::Array<casacore::Float> temp_array;
+        image->doGetSlice(temp_array, slice);
+
+        // Construct a new CASA image
+        try {
+            auto out_image =
+                std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename.string());
+            out_image->setMiscInfo(image->miscInfo());
+            out_image->setImageInfo(image->imageInfo());
+            out_image->appendLog(image->logger());
+            out_image->setUnits(image->units());
+            out_image->putSlice(temp_array, start);
+
+            // Copy the mask if the original image has
+            if (image->hasPixelMask()) {
+                casacore::Array<casacore::Bool> image_mask;
+                image->getMaskSlice(image_mask, slice);
+                out_image->makeMask("mask0", true, true);
+                casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
+                out_image_mask.putSlice(image_mask, start);
+            }
+        } catch (casacore::AipsError error) {
+            message = error.getMesg();
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(message);
+            return;
+        }
+        success = true;
+    } else if (output_file_type == CARTA::FileType::FITS) {
+        // Remove the old image file if it has a same file name
+        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename.string(), 64, casacore::True,
+            casacore::True, -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False,
+            casacore::False, casacore::String(), casacore::True);
+        if (ok) {
+            success = true;
+        }
+    } else {
+        message = "No saving file action!";
+    }
+    ulock.unlock(); // Unlock the image
+
+    // Remove the root folder from the ack message
+    if (!root_folder.empty()) {
+        std::size_t found = message.find(root_folder);
+        if (found != std::string::npos) {
+            message.replace(found, root_folder.size(), "");
+        }
+    }
+
+    save_file_ack.set_success(success);
+    save_file_ack.set_message(message);
 }

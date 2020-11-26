@@ -29,9 +29,6 @@ else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4")
 endif ()
 
-# use -DAuthServer:BOOL=ON to link mongodb and jsonccpp
-option(AuthServer "AuthServer" OFF)
-
 # Needed by clang-tidy and other clang tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -53,19 +50,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
     LINK_DIRECTORIES(/usr/local/lib /usr/local/opt)
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-
-if (AuthServer)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_AUTH_SERVER_")
-    INCLUDE_DIRECTORIES(/usr/include/libbson-1.0/)
-    INCLUDE_DIRECTORIES(/usr/include/libmongoc-1.0/)
-    set(LINK_LIBS
-            jsoncpp
-            mongoc-1.0
-            bson-1.0
-            json-c)
-    set(SOURCE_FILES
-            DBConnect.cc)
-endif (AuthServer)
 
 FIND_PACKAGE(gRPC QUIET)
 if (gRPC_FOUND)
@@ -166,6 +150,7 @@ set(SOURCE_FILES
         Table/Table.cc
         Table/TableView.cc
         Table/TableController.cc
+        Moment/MomentGenerator.cc
         Timer/Timer.cc
         OnMessageTask.cc
         FileSettings.cc
