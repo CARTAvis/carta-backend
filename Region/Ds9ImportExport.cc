@@ -718,9 +718,7 @@ RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::strin
 
     // name
     if (properties.count("text")) {
-        std::string text(properties["text"]);
-        // Remove { }
-        style.name = text.substr(1, text.size() - 2);
+        style.name = properties["text"];
     }
 
     // color
