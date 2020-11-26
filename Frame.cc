@@ -1057,12 +1057,11 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                     auto tile_height = tile_size(tile_y, height);
 
                     // copy contiguous row
-                    auto start_offset = max(start, tile_x) - tile_x;
-                    auto end_offset = tile_x - min(end - tile_width, tile_x);
-                    auto tile_start = tile->begin() + tile_width * (y - tile_y) + start_offset;
-                    auto tile_end = tile_start + tile_width - start_offset - end_offset;
-                    auto destination_start = profile.begin() + max(tile_x - start, 0);
-                    std::copy(tile_start, tile_end, destination_start);
+                    auto y_offset = tile->begin() + tile_width * (y - tile_y);
+                    auto tile_start = y_offset + max(start - tile_x, 0);
+                    auto tile_end = y_offset + min(end - tile_x, tile_width);
+                    auto profile_start = profile.begin() + max(tile_x - start, 0);
+                    std::copy(tile_start, tile_end, profile_start);
                 }
 
                 have_profile = true;
@@ -1083,10 +1082,13 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                     auto tile_height = tile_size(tile_y, height);
 
                     // copy non-contiguous column
-                    auto start_offset = max(start, tile_y) - tile_y;
-                    auto end_offset = tile_y - min(end - tile_height, tile_y);
-                    for (int j = start_offset; j < tile_height - end_offset; j++) {
-                        profile[tile_y + j - start_offset] = (*tile)[(j * tile_width) + (x - tile_x)];
+
+                    auto tile_start = max(start - tile_y, 0);
+                    auto tile_end = min(end - tile_y, tile_height);
+                    auto profile_start = max(tile_y - start, 0);
+
+                    for (int j = tile_start; j < tile_end; j++) {
+                        profile[profile_start + j - tile_start] = (*tile)[(j * tile_width) + (x - tile_x)];
                     }
                 }
 
