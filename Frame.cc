@@ -1061,7 +1061,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                     auto end_offset = tile_x - min(end - tile_width, tile_x);
                     auto tile_start = tile->begin() + tile_width * (y - tile_y) + start_offset;
                     auto tile_end = tile_start + tile_width - start_offset - end_offset;
-                    auto destination_start = profile.begin() + tile_x;
+                    auto destination_start = profile.begin() + max(tile_x - start, 0);
                     std::copy(tile_start, tile_end, destination_start);
                 }
 
