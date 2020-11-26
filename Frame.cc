@@ -1115,7 +1115,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 have_profile = true;
             }
         } else { // Use image cache to return full resolution data; ignore the mip
-            profile.resize(end - start);
+            profile.reserve(end - start);
             mip = 0;
 
             if (config.coordinate() == "x") {
