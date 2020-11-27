@@ -27,8 +27,8 @@ ConcatLoader::ConcatLoader(const std::string& filename) : FileLoader(filename) {
 
 void ConcatLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
-        casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile(_filename + "/imageconcat.json");
-        _image.reset(new casacore::ImageConcat<float>(_jmap, _filename));
+        casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile(this->GetFileName() + "/imageconcat.json");
+        _image.reset(new casacore::ImageConcat<float>(_jmap, this->GetFileName()));
         _num_dims = _image->shape().size();
     }
 }
