@@ -300,8 +300,8 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {
-                }
+                default:
+                    break;
             }
 
             delete data;
