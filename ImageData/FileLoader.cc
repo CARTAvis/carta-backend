@@ -5,12 +5,13 @@
 
 #include "../Util.h"
 #include "CasaLoader.h"
+#include "CompListLoader.h"
+#include "ConcatLoader.h"
+#include "ExprLoader.h"
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
 #include "ImagePtrLoader.h"
 #include "MiriadLoader.h"
-#include "ConcatLoader.h"
-#include "ExprLoader.h"
 
 using namespace carta;
 
@@ -35,7 +36,7 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
         case casacore::ImageOpener::IMAGEEXPR:
             return new ExprLoader(filename);
         case casacore::ImageOpener::COMPLISTIMAGE:
-            break;
+            return new CompListLoader(filename);
         default:
             break;
     }
@@ -299,7 +300,8 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {}
+                default: {
+                }
             }
 
             delete data;
@@ -418,7 +420,8 @@ void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {}
+                default: {
+                }
             }
 
             delete data;

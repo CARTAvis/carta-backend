@@ -1,11 +1,11 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_EXPRLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_EXPRLOADER_H_
 
+#include <casacore/casa/Json/JsonKVMap.h>
+#include <casacore/casa/Json/JsonParser.h>
 #include <casacore/images/Images/ImageExpr.h>
 #include <casacore/images/Images/ImageExprParse.h>
 #include <casacore/lattices/LEL/LatticeExprNode.h>
-#include <casacore/casa/Json/JsonKVMap.h>
-#include <casacore/casa/Json/JsonParser.h>
 
 #include "FileLoader.h"
 
@@ -25,7 +25,7 @@ private:
     std::unique_ptr<casacore::ImageExpr<float>> _image;
 };
 
-ExprLoader::ExprLoader(const std::string& filename) : _filename(filename) {}
+ExprLoader::ExprLoader(const std::string& filename) : FileLoader(filename) {}
 
 void ExprLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
