@@ -1116,28 +1116,50 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
             if (_loader->GetDownsampledRasterData(profile, _channel_index, _stokes_index, bounds, mip, _image_mutex)) {
                 have_profile = true;
             }
-        } else { // Use image cache to return full resolution data; ignore the mip
-            profile.reserve(end - start);
-            mip = 0;
+        } else { // Use image cache
+            int round_start(start);
+            int round_end(end);
+            if (mip < 2) { // Full resolution; use exact endpoints
+                mip = 0;
+            } else { // Round the endpoints before downsampling
+                round_start = std::ceil((float) start / (mip * 2)) * mip * 2;
+                round_end = std::ceil((float) end / (mip * 2)) * mip * 2;
+            }
+            
+            profile.reserve(round_end - round_start);
 
             if (config.coordinate() == "x") {
                 auto x_start = y * width;
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                for (unsigned int j = start; j < end; ++j) {
+                for (unsigned int j = round_start; j < round_end; ++j) {
                     auto idx = x_start + j;
                     profile.push_back(_image_cache[idx]);
                 }
                 cache_lock.release();
-                have_profile = true;
             } else if (config.coordinate() == "y") {
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                for (unsigned int j = start; j < end; ++j) {
+                for (unsigned int j = round_start; j < round_end; ++j) {
                     auto idx = (j * width) + x;
                     profile.push_back(_image_cache[idx]);
                 }
                 cache_lock.release();
-                have_profile = true;
             }
+            
+            if (mip >= 2) { // decimate the profile in-place, attempting to preserve order
+                for (size_t i = 0; i < profile.size(); i += mip * 2) {
+                    auto [it_min, it_max] = std::minmax_element(profile.begin() + i, profile.begin() + i + mip * 2);
+                    if (std::distance(it_min, it_max) > 0) {
+                        profile[i / mip] = *it_min;
+                        profile[i / mip + 1] = *it_max;
+                    } else {
+                        profile[i / mip] = *it_max;
+                        profile[i / mip + 1] = *it_min;
+                    }
+                }
+                profile.resize(profile.size() / mip); // shrink the profile to the downsampled size
+            }
+            
+            have_profile = true;
         }
 
         if (have_profile) {
