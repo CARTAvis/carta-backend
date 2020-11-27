@@ -1033,12 +1033,22 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
             end = config.coordinate() == "x" ? width : height;
         }
 
+        int requested_start(start);
+        int requested_end(end);
+
+        // Round the endpoints if we're going to decimate
+        if (mip >= 2 && !_loader->HasMip(2)) {
+            start = std::ceil((float)start / (mip * 2)) * mip * 2;
+            end = std::ceil((float)end / (mip * 2)) * mip * 2;
+        }
+
         profile.clear();
         bool have_profile(false);
 
         // can no longer select stokes, so can use image cache or tile cache
 
-        if (_loader->UseTileCache() && mip <= 1) { // Use tile cache to return full resolution data
+        if (_loader->UseTileCache() &&
+            (mip < 2 || !_loader->HasMip(2))) { // Use tile cache to return full resolution data or prepare data for decimation
             profile.resize(end - start);
 
             if (config.coordinate() == "x") {
@@ -1094,7 +1104,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
 
                 have_profile = true;
             }
-        } else if (mip > 1 && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
+        } else if (mip >= 2 && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
             while (!_loader->HasMip(mip)) {
                 mip *= 2;
             }
@@ -1116,58 +1126,51 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
             if (_loader->GetDownsampledRasterData(profile, _channel_index, _stokes_index, bounds, mip, _image_mutex)) {
                 have_profile = true;
             }
-        } else { // Use image cache
-            int round_start(start);
-            int round_end(end);
-            if (mip < 2) { // Full resolution; use exact endpoints
-                mip = 0;
-            } else { // Round the endpoints before downsampling
-                round_start = std::ceil((float) start / (mip * 2)) * mip * 2;
-                round_end = std::ceil((float) end / (mip * 2)) * mip * 2;
-            }
-            
-            profile.reserve(round_end - round_start);
+        } else { // Use image cache to return full resolution data or prepare data for decimation
+            profile.reserve(end - start);
 
             if (config.coordinate() == "x") {
                 auto x_start = y * width;
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                for (unsigned int j = round_start; j < round_end; ++j) {
+                for (unsigned int j = start; j < end; ++j) {
                     auto idx = x_start + j;
                     profile.push_back(_image_cache[idx]);
                 }
                 cache_lock.release();
             } else if (config.coordinate() == "y") {
                 tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-                for (unsigned int j = round_start; j < round_end; ++j) {
+                for (unsigned int j = start; j < end; ++j) {
                     auto idx = (j * width) + x;
                     profile.push_back(_image_cache[idx]);
                 }
                 cache_lock.release();
             }
-            
-            if (mip >= 2) { // decimate the profile in-place, attempting to preserve order
-                for (size_t i = 0; i < profile.size(); i += mip * 2) {
-                    auto [it_min, it_max] = std::minmax_element(profile.begin() + i, profile.begin() + i + mip * 2);
-                    if (std::distance(it_min, it_max) > 0) {
-                        profile[i / mip] = *it_min;
-                        profile[i / mip + 1] = *it_max;
-                    } else {
-                        profile[i / mip] = *it_max;
-                        profile[i / mip + 1] = *it_min;
-                    }
-                }
-                profile.resize(profile.size() / mip); // shrink the profile to the downsampled size
-            }
-            
+
             have_profile = true;
+        }
+
+        // decimate the profile in-place, attempting to preserve order
+        if (have_profile && mip >= 2 && !_loader->HasMip(2)) {
+            for (size_t i = 0; i < profile.size(); i += mip * 2) {
+                auto [it_min, it_max] = std::minmax_element(profile.begin() + i, profile.begin() + i + mip * 2);
+                if (std::distance(it_min, it_max) > 0) {
+                    profile[i / mip] = *it_min;
+                    profile[i / mip + 1] = *it_max;
+                } else {
+                    profile[i / mip] = *it_max;
+                    profile[i / mip + 1] = *it_min;
+                }
+            }
+            profile.resize(profile.size() / mip); // shrink the profile to the downsampled size
         }
 
         if (have_profile) {
             // add SpatialProfile to message
             auto spatial_profile = spatial_data.add_profiles();
             spatial_profile->set_coordinate(config.coordinate());
-            spatial_profile->set_start(start);
-            spatial_profile->set_end(end);
+            // Should these be set to the rounded endpoints if the data is downsampled or decimated?
+            spatial_profile->set_start(requested_start);
+            spatial_profile->set_end(requested_end);
             spatial_profile->set_raw_values_fp32(profile.data(), profile.size() * sizeof(float));
             spatial_profile->set_mip(mip);
         }
