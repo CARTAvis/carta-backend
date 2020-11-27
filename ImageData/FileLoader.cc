@@ -420,8 +420,8 @@ void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {
-                }
+                default:
+                    break;
             }
 
             delete data;
