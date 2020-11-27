@@ -129,6 +129,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 case casacore::ImageOpener::AIPSPP:
                                 case casacore::ImageOpener::MIRIAD:
                                 case casacore::ImageOpener::IMAGECONCAT:
+                                case casacore::ImageOpener::IMAGEEXPR:
+                                case casacore::ImageOpener::COMPLISTIMAGE:
                                     add_image = true;
                                     break;
                                 case casacore::ImageOpener::UNKNOWN: {
