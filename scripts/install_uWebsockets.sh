@@ -5,13 +5,15 @@ if [ -d $DIR ]; then
     rm -rf $DIR
 fi
 
-git clone https://github.com/markccchiang/uWebSockets.git
+git clone https://github.com/uNetworking/uWebSockets.git
 
 cd uWebsockets
 
+git checkout 72e9951
+
 git submodule init && git submodule update
 
-WITH_LIBUV=1 make
+make
 
 ## install the uWebSockets
 sudo make install

@@ -95,27 +95,15 @@ void OnConnect(uWS::WebSocket<true, true>* ws) {
     string address = static_cast<PerSocketData*>(ws->getUserData())->address;
 
     // get the uWebsockets loop
-    struct us_loop_t* loop = (struct us_loop_t*)uWS::Loop::get();
-
-    // create an async object
-    Async* outgoing = new Async(get_uv_loop(loop));
-
-    // set a weak up callback function
-    outgoing->start([](Async* async) -> void {
-        Session* current_session = ((Session*)async->getData());
-        current_session->SendPendingMessages();
-    });
+    auto* loop = uWS::Loop::get();
 
     sessions[session_id] =
-        new Session(ws, outgoing, session_number, address, root_folder, base_folder, file_list_handler, verbose, perflog, grpc_port);
+        new Session(ws, loop, session_number, address, root_folder, base_folder, file_list_handler, verbose, perflog, grpc_port);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
     }
     sessions[session_id]->IncreaseRefCount();
-
-    // set the async object data
-    outgoing->setData(sessions[session_id]);
 
     carta::Log(session_id, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
 }

@@ -11,8 +11,6 @@
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
-#include <uv.h>
-
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/File.h>
 #include <casacore/images/Images/ImageOpener.h>
@@ -131,34 +129,6 @@ struct PointXy {
         bool x_in_image = (x_index >= 0) && (x_index < xrange);
         bool y_in_image = (y_index >= 0) && (y_index < yrange);
         return (x_in_image && y_in_image);
-    }
-};
-
-struct Async {
-    uv_async_t uv_async;
-
-    Async(uv_loop_t* loop) {
-        uv_async.loop = loop;
-    }
-
-    void start(void (*cb)(Async*)) {
-        uv_async_init(uv_async.loop, &uv_async, (uv_async_cb)cb);
-    }
-
-    void send() {
-        uv_async_send(&uv_async);
-    }
-
-    void close() {
-        uv_close((uv_handle_t*)&uv_async, [](uv_handle_t* a) { delete (Async*)a; });
-    }
-
-    void setData(void* data) {
-        uv_async.data = data;
-    }
-
-    void* getData() {
-        return uv_async.data;
     }
 };
 

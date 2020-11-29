@@ -51,7 +51,7 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<true, true>* ws, Async* outgoing_async, uint32_t id, std::string address, std::string root, std::string base,
+    Session(uWS::WebSocket<true, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
         FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
     ~Session();
 
@@ -87,8 +87,6 @@ public:
     void OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id);
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
     void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);
-
-    void SendPendingMessages();
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -258,9 +256,9 @@ private:
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
 
-    // Outgoing messages:
-    // Notification mechanism when messages are ready
-    Async* _outgoing_async;
+    // uWebSockets loop
+    uWS::Loop* _loop;
+
     // message queue <msg, compress>
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
