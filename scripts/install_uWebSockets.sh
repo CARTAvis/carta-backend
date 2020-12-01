@@ -7,7 +7,7 @@ fi
 
 git clone https://github.com/uNetworking/uWebSockets.git
 
-cd uWebsockets
+cd uWebSockets
 
 git checkout 72e9951
 
