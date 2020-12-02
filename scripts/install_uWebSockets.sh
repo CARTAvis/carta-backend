@@ -7,11 +7,14 @@ fi
 
 git clone https://github.com/uNetworking/uWebSockets.git
 
-cd uWebSockets
-
+cd $DIR
 git checkout 72e9951
-
 git submodule init && git submodule update
+
+## remove the -flto flag while compiling the uSockets
+cd uSockets
+sed 's/-flto//g' Makefile > Makefile.new && mv Makefile.new Makefile
+cd ..
 
 make
 
