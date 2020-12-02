@@ -97,15 +97,17 @@ void OnConnect(uWS::WebSocket<true, true>* ws) {
     // get the uWebsockets loop
     auto* loop = uWS::Loop::get();
 
+    // create a Session
     sessions[session_id] =
-        new Session(ws, loop, session_number, address, root_folder, base_folder, file_list_handler, verbose, perflog, grpc_port);
+        new Session(ws, loop, session_id, address, root_folder, base_folder, file_list_handler, verbose, perflog, grpc_port);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
     }
+
     sessions[session_id]->IncreaseRefCount();
 
-    carta::Log(session_id, "Client {} [{}] Connected. Num sessions: {}", session_number, address, Session::NumberOfSessions());
+    carta::Log(session_id, "Client {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)

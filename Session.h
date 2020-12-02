@@ -222,7 +222,10 @@ private:
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
+    // uWebSockets
     uWS::WebSocket<true, true>* _socket;
+    uWS::Loop* _loop;
+
     uint32_t _id;
     std::string _address;
     std::string _root_folder;
@@ -255,9 +258,6 @@ private:
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
-
-    // uWebSockets loop
-    uWS::Loop* _loop;
 
     // message queue <msg, compress>
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
