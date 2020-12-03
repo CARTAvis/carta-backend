@@ -73,11 +73,11 @@ void OnUpgrade(uWS::HttpResponse<true>* http_response, uWS::HttpRequest* http_re
         if (!token_header_entry.empty()) {
             string token_header_value(token_header_entry);
             if (token_header_value != auth_token) {
-                std::cerr << "Header auth failed!\n";
+                fmt::print("Header auth failed!\n");
                 http_response->close();
             }
         } else {
-            std::cerr << "Header auth failed!\n";
+            fmt::print("Header auth failed!\n");
             http_response->close();
         }
     }
@@ -133,10 +133,10 @@ void OnDisconnect(uWS::WebSocket<true, true>* ws, int code, std::string_view mes
             delete session;
             sessions.erase(session_id);
         } else {
-            cerr << "Warning: Session reference count (" << session->DecreaseRefCount() << ") is not 0 while on disconnection!" << endl;
+            fmt::print("Warning: Session reference count ({}) is not 0 while on disconnection!\n", session->DecreaseRefCount());
         }
     } else {
-        cerr << "Warning: OnDisconnect called with no Session object.\n";
+        fmt::print("Warning: OnDisconnect called with no Session object!\n");
     }
 
     // Close the websockets
