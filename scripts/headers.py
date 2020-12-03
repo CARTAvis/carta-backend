@@ -5,16 +5,18 @@ import os
 import re
 import argparse
 
-HEADER = """// This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-// Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
-// Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
-// SPDX-License-Identifier: GPL-3.0-or-later
+HEADER = """/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
 """
 
-FUZZY_HEADER_MATCH = """// This file is part of (.*)
-// Copyright (.*)
-(// (.*)
-)*// SPDX-License-Identifier: (.*)
+FUZZY_HEADER_MATCH = """/\* This file (.*)
+   Copyright (.*)
+(   (.*)
+)*   SPDX-License-Identifier: (.*)
+\*/
 """
 
 def cpp_files(directory):
@@ -50,6 +52,7 @@ if __name__ == "__main__":
                 out("Bad header found in", filename)
                 
                 if args.command == "fix":
+                    out("Fixing...")
                     data = re.sub(FUZZY_HEADER_MATCH, HEADER, data)
                     with open(filename, "w") as f:
                         f.write(data)
@@ -59,6 +62,7 @@ if __name__ == "__main__":
                 out("No header found in", filename)
                 
                 if args.command == "fix":
+                    out("Fixing...")
                     with open(filename, "w") as f:
                         f.write(HEADER)
                         f.write("\n")
