@@ -590,9 +590,6 @@ int main(int argc, const char* argv[]) {
                     .upgrade = OnUpgrade,
                     .open = OnConnect,
                     .message = OnMessage,
-                    .drain = [](auto* ws) { fmt::print("uWebSockets on drain: buffer amount {}\n", ws->getBufferedAmount()); },
-                    .ping = [](auto* ws) { fmt::print("uWebSockets on ping\n"); },
-                    .pong = [](auto* ws) { fmt::print("uWebSockets on pong\n"); },
                     .close = OnDisconnect})
             .listen(port,
                 [=](auto* token) {
