@@ -580,12 +580,11 @@ int main(int argc, const char* argv[]) {
         session_number = 0;
 
         uWS::App()
-            .ws<PerSocketData>("/*", {
-                .compression = uWS::SHARED_COMPRESSOR,
-                .upgrade = OnUpgrade,
-                .open = OnConnect,
-                .message = OnMessage,
-                .close = OnDisconnect})
+            .ws<PerSocketData>("/*", {.compression = uWS::SHARED_COMPRESSOR,
+                                         .upgrade = OnUpgrade,
+                                         .open = OnConnect,
+                                         .message = OnMessage,
+                                         .close = OnDisconnect})
             .listen(port,
                 [=](auto* token) {
                     if (token) {
