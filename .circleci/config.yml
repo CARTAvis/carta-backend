@@ -61,7 +61,12 @@ jobs:
           name: "checking the formatting of the carta_backend code"
           command: |
             ./scripts/checkformat.sh
-            echo "Finished !!!"
+            echo "Finished"
+      - run:
+          name: "checking the copyright and licence headers in the carta_backend code"
+          command: |
+            python3 scripts/headers.py check
+            echo "Finished"
 workflows:
   version: 2
   build:
