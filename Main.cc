@@ -452,7 +452,7 @@ void OnMessage(uWS::WebSocket<true, true>* ws, std::string_view message, uWS::Op
             }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
-        if (strncmp(message.data(), "PING", 4) == 0) {
+        if (message == "PING") {
             ws->send("PONG");
         }
     }
