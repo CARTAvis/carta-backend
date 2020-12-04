@@ -144,7 +144,7 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
 }
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
-void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view message, uWS::OpCode op_code) {
+void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session = sessions[session_id];
     if (!session) {
@@ -153,10 +153,10 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view message, uWS::O
     }
 
     if (op_code == uWS::OpCode::BINARY) {
-        if (message.length() >= sizeof(carta::EventHeader)) {
-            carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(message.data());
-            const char* event_buf = message.data() + sizeof(carta::EventHeader);
-            int event_length = message.length() - sizeof(carta::EventHeader);
+        if (sv_message.length() >= sizeof(carta::EventHeader)) {
+            carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
+            const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
+            int event_length = sv_message.length() - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
             switch (head.type) {
                 case CARTA::EventType::REGISTER_VIEWER: {
@@ -452,7 +452,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view message, uWS::O
             }
         }
     } else if (op_code == uWS::OpCode::TEXT) {
-        if (message == "PING") {
+        if (sv_message == "PING") {
             ws->send("PONG");
         }
     }
