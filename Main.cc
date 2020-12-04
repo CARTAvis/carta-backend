@@ -54,7 +54,7 @@ struct PerSocketData {
     string address;
 };
 
-void OnUpgrade(uWS::HttpResponse<true>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context) {
+void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context) {
     session_number++;
     // protect against overflow
     session_number = max(session_number, 1u);
@@ -90,7 +90,7 @@ void OnUpgrade(uWS::HttpResponse<true>* http_response, uWS::HttpRequest* http_re
 }
 
 // Called on connection. Creates session objects and assigns UUID to it
-void OnConnect(uWS::WebSocket<true, true>* ws) {
+void OnConnect(uWS::WebSocket<false, true>* ws) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     string address = static_cast<PerSocketData*>(ws->getUserData())->address;
 
@@ -111,7 +111,7 @@ void OnConnect(uWS::WebSocket<true, true>* ws) {
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
-void OnDisconnect(uWS::WebSocket<true, true>* ws, int code, std::string_view message) {
+void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view message) {
     // Skip server-forced disconnects
     if (code == 4003) {
         return;
@@ -144,7 +144,7 @@ void OnDisconnect(uWS::WebSocket<true, true>* ws, int code, std::string_view mes
 }
 
 // Forward message requests to session callbacks after parsing message into relevant ProtoBuf message
-void OnMessage(uWS::WebSocket<true, true>* ws, std::string_view message, uWS::OpCode op_code) {
+void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view message, uWS::OpCode op_code) {
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session = sessions[session_id];
     if (!session) {
@@ -579,18 +579,13 @@ int main(int argc, const char* argv[]) {
 
         session_number = 0;
 
-        uWS::SSLApp({/* Set certificates in uWebSockets.js repo */
-                        .key_file_name = "",
-                        .cert_file_name = "",
-                        .passphrase = ""})
-            .ws<PerSocketData>("/*",
-                {/* Settings */
-                    .compression = uWS::SHARED_COMPRESSOR,
-                    /* Handlers */
-                    .upgrade = OnUpgrade,
-                    .open = OnConnect,
-                    .message = OnMessage,
-                    .close = OnDisconnect})
+        uWS::App()
+            .ws<PerSocketData>("/*", {
+                .compression = uWS::SHARED_COMPRESSOR,
+                .upgrade = OnUpgrade,
+                .open = OnConnect,
+                .message = OnMessage,
+                .close = OnDisconnect})
             .listen(port,
                 [=](auto* token) {
                     if (token) {

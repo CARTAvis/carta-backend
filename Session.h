@@ -51,7 +51,7 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<true, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
+    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
         FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
     ~Session();
 
@@ -223,7 +223,7 @@ private:
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
     // uWebSockets
-    uWS::WebSocket<true, true>* _socket;
+    uWS::WebSocket<false, true>* _socket;
     uWS::Loop* _loop;
 
     uint32_t _id;
