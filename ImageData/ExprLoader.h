@@ -34,6 +34,9 @@ void ExprLoader::OpenFile(const std::string& /*hdu*/) {
         casacore::PtrBlock<const casacore::ImageRegion*> _regions;
         casacore::LatticeExprNode _node = casacore::ImageExprParse::command(_expr, casacore::Block<casacore::LatticeExprNode>(), _regions);
         _image.reset(new casacore::ImageExpr<float>(_node, _expr, _filename, _jmap));
+        if (!_image) {
+            throw(casacore::AipsError("Error opening image"));
+        }
         _num_dims = _image->shape().size();
     }
 }

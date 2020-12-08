@@ -28,6 +28,9 @@ CompListLoader::CompListLoader(const std::string& filename) : FileLoader(filenam
 void CompListLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
         _image.reset(new casa::ComponentListImage(_filename));
+        if (!_image) {
+            throw(casacore::AipsError("Error opening image"));
+        }
         _num_dims = _image->shape().size();
     }
 }
