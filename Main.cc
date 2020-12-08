@@ -581,9 +581,15 @@ int main(int argc, const char* argv[]) {
 
         uWS::App()
             .ws<PerSocketData>("/*", {.compression = uWS::SHARED_COMPRESSOR,
+                                         .maxPayloadLength = 16 * 1024, // use default setting
+                                         .idleTimeout = 120, // use default setting
+                                         .maxBackpressure = 1 * 1024 * 1024, // use default setting
                                          .upgrade = OnUpgrade,
                                          .open = OnConnect,
                                          .message = OnMessage,
+                                         .drain = nullptr,
+                                         .ping = nullptr,
+                                         .pong = nullptr,
                                          .close = OnDisconnect})
             .listen(port,
                 [=](auto* token) {
