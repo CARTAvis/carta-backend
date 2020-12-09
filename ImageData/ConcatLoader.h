@@ -4,18 +4,20 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
-#define CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#ifndef CARTA_BACKEND_IMAGEDATA_CONCATLOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_CONCATLOADER_H_
 
-#include <casacore/images/Images/PagedImage.h>
+#include <casacore/casa/Json/JsonKVMap.h>
+#include <casacore/casa/Json/JsonParser.h>
+#include <casacore/images/Images/ImageConcat.h>
 
 #include "FileLoader.h"
 
 namespace carta {
 
-class CasaLoader : public FileLoader {
+class ConcatLoader : public FileLoader {
 public:
-    CasaLoader(const std::string& filename);
+    ConcatLoader(const std::string& filename);
 
     void OpenFile(const std::string& hdu) override;
 
@@ -23,14 +25,16 @@ public:
     ImageRef GetImage() override;
 
 private:
-    std::unique_ptr<casacore::PagedImage<float>> _image;
+    std::string _filename;
+    std::unique_ptr<casacore::ImageConcat<float>> _image;
 };
 
-CasaLoader::CasaLoader(const std::string& filename) : FileLoader(filename) {}
+ConcatLoader::ConcatLoader(const std::string& filename) : FileLoader(filename) {}
 
-void CasaLoader::OpenFile(const std::string& /*hdu*/) {
+void ConcatLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
-        _image.reset(new casacore::PagedImage<float>(_filename));
+        casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile(this->GetFileName() + "/imageconcat.json");
+        _image.reset(new casacore::ImageConcat<float>(_jmap, this->GetFileName()));
         if (!_image) {
             throw(casacore::AipsError("Error opening image"));
         }
@@ -38,7 +42,7 @@ void CasaLoader::OpenFile(const std::string& /*hdu*/) {
     }
 }
 
-bool CasaLoader::HasData(FileInfo::Data dl) const {
+bool ConcatLoader::HasData(FileInfo::Data dl) const {
     switch (dl) {
         case FileInfo::Data::Image:
             return true;
@@ -56,10 +60,10 @@ bool CasaLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename CasaLoader::ImageRef CasaLoader::GetImage() {
+typename ConcatLoader::ImageRef ConcatLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
 }
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#endif // CARTA_BACKEND_IMAGEDATA_CONCATLOADER_H_

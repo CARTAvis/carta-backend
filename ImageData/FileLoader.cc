@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #include "FileLoader.h"
 
 #include <casacore/images/Images/SubImage.h>
@@ -5,6 +11,9 @@
 
 #include "../Util.h"
 #include "CasaLoader.h"
+#include "CompListLoader.h"
+#include "ConcatLoader.h"
+#include "ExprLoader.h"
 #include "FitsLoader.h"
 #include "Hdf5Loader.h"
 #include "ImagePtrLoader.h"
@@ -29,11 +38,11 @@ FileLoader* FileLoader::GetLoader(const std::string& filename) {
         case casacore::ImageOpener::HDF5:
             return new Hdf5Loader(filename);
         case casacore::ImageOpener::IMAGECONCAT:
-            break;
+            return new ConcatLoader(filename);
         case casacore::ImageOpener::IMAGEEXPR:
-            break;
+            return new ExprLoader(filename);
         case casacore::ImageOpener::COMPLISTIMAGE:
-            break;
+            return new CompListLoader(filename);
         default:
             break;
     }
@@ -339,7 +348,8 @@ void FileLoader::LoadStats2DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {}
+                default:
+                    break;
             }
 
             delete data;
@@ -458,7 +468,8 @@ void FileLoader::LoadStats3DBasic(FileInfo::Data ds) {
                     }
                     break;
                 }
-                default: {}
+                default:
+                    break;
             }
 
             delete data;
