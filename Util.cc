@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #include "Util.h"
 
 using namespace std;
@@ -105,6 +111,9 @@ void SplitString(std::string& input, char delim, std::vector<std::string>& parts
     std::string item;
     while (std::getline(ss, item, delim)) {
         if (!item.empty()) {
+            if (item.back() == '\r') {
+                item.pop_back();
+            }
             parts.push_back(item);
         }
     }
@@ -132,6 +141,9 @@ CARTA::FileType GetCartaFileType(const std::string& filename) {
     // get casacore image type then convert to carta file type
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
+        case casacore::ImageOpener::IMAGECONCAT:
+        case casacore::ImageOpener::IMAGEEXPR:
+        case casacore::ImageOpener::COMPLISTIMAGE:
             return CARTA::FileType::CASA;
         case casacore::ImageOpener::FITS:
             return CARTA::FileType::FITS;
@@ -142,9 +154,6 @@ CARTA::FileType GetCartaFileType(const std::string& filename) {
         case casacore::ImageOpener::GIPSY:
         case casacore::ImageOpener::CAIPS:
         case casacore::ImageOpener::NEWSTAR:
-        case casacore::ImageOpener::IMAGECONCAT:
-        case casacore::ImageOpener::IMAGEEXPR:
-        case casacore::ImageOpener::COMPLISTIMAGE:
         default:
             return CARTA::FileType::UNKNOWN;
     }
