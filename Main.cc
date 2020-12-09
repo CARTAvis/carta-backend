@@ -580,7 +580,7 @@ int main(int argc, const char* argv[]) {
         session_number = 0;
 
         uWS::App()
-            .ws<PerSocketData>("/*", (uWS::TemplatedApp<false>::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
+            .ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
                                          .upgrade = OnUpgrade,
                                          .open = OnConnect,
                                          .message = OnMessage,
