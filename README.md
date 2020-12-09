@@ -22,7 +22,7 @@ The server build depends on the following libraries:
 * [fmt](https://github.com/fmtlib/fmt) for python-style (and safe printf-style) string formatting and printing. Debian package `libfmt-dev`. On Ubuntu 16.04, build from source.
 * [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu). The Debian package `protobuf-compiler` may also be required.
 * [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support. Debian packages `libhdf5-dev` and `libhdf5-cpp-100`. By default, the serial version of the HDF5 library is targeted.
-* [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.([Recommended: v0.14.8](https://github.com/uNetworking/uWebSockets/releases/tag/v0.14.8))
+* [µWS](https://github.com/uNetworking/uWebSockets) for socket communication with client. Build and install from git repo.([Recommended: v18.17.0](https://github.com/uNetworking/uWebSockets/releases/tag/v18.17.0))
 * [tbb](https://www.threadingbuildingblocks.org/download) Threading Building Blocks for task parallelization. Debian package `libtbb-dev`.
 * [libcurl](https://curl.haxx.se/libcurl/) curl library for fetching data. Debian package `libcurl4-openssl-dev`.
 * [gRPC](https://grpc.io/) for the scripting interface. Debian packages: `libprotobuf-dev protobuf-compiler libgrpc++-dev libgrpc-dev protobuf-compiler-grpc googletest`. On Ubuntu 16.04 or 18.04, use [a PPA](https://launchpad.net/~webispy/+archive/ubuntu/grpc).
