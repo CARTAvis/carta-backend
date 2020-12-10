@@ -10,7 +10,7 @@
 #include <signal.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
-#include <uWebSockets/App.h>
+#include <App.h>
 
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/HostInfo.h>

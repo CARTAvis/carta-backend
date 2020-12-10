@@ -16,7 +16,7 @@
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
-#include <uWebSockets/App.h>
+#include <App.h>
 
 #include <casacore/casa/aips.h>
 

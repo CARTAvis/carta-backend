@@ -4,6 +4,10 @@ project(carta_backend)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/install)
+
+include(uWebSockets)
+
 # Enable OpenMP if package is found
 find_package(OpenMP)
 if (OPENMP_CXX_FOUND)
@@ -88,6 +92,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set(LINK_LIBS ${LINK_LIBS} stdc++fs)
 endif ()
 
+# Include uWebSockets headers and build the uSockets lib
+install_uWebSockets()
 
 set(LINK_LIBS
         ${LINK_LIBS}
