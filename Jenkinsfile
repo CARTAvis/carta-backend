@@ -19,7 +19,7 @@ pipeline {
                     }
                     steps {
                         sh "export PATH=/usr/local/bin:$PATH"
-                        sh "git submodule init && git submodule update"
+                        sh "git submodule update --init --recursive"
                         dir ('build') {
                            sh "cp ../../cmake-command.sh ."
                            sh "./cmake-command.sh"
@@ -52,7 +52,7 @@ pipeline {
                     }
                     steps {
                         sh "export PATH=/usr/local/bin:$PATH"
-                        sh "git submodule init && git submodule update"
+                        sh "git submodule update --init --recursive"
                         dir ('build') {
                            sh "cp ../../cmake-command.sh ."
                            sh "./cmake-command.sh"
@@ -85,7 +85,7 @@ pipeline {
                     }
                     steps {
                         sh "export PATH=/usr/local/bin:$PATH"
-                        sh "git submodule init && git submodule update"
+                        sh "git submodule update --init --recursive"
                         dir ('build') {
                            sh "cp ../../cmake-command.sh ."
                            sh "./cmake-command.sh"
