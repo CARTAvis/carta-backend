@@ -2,10 +2,6 @@ macro(install_uWebSockets)
 
     set(CMAKE_C_FLAGS "-O3 -DLIBUS_NO_SSL")
 
-    include_directories(/usr/local/include)
-    link_directories(/usr/local/lib)
-    link_directories(/usr/local/opt/openssl/lib)
-
     include_directories(${CMAKE_SOURCE_DIR}/uWebSockets/uSockets/src)
     include_directories(${CMAKE_SOURCE_DIR}/uWebSockets/src)
 
