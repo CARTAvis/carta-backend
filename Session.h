@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 //# Session.h: representation of a client connected to a server; processes requests from frontend
 
 #ifndef CARTA_BACKEND__SESSION_H_
@@ -42,11 +48,9 @@
 
 #include "AnimationObject.h"
 #include "EventHeader.h"
-#include "FileConverter.h"
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "Frame.h"
-#include "Moment/MomentController.h"
 #include "Region/RegionHandler.h"
 #include "Table/TableController.h"
 #include "Util.h"
@@ -54,7 +58,7 @@
 class Session {
 public:
     Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
-        uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose = false, bool perflog = false);
+        uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
     ~Session();
 
     // CARTA ICD
@@ -233,6 +237,7 @@ private:
     std::string _base_folder;
     bool _verbose_logging;
     bool _performance_logging;
+    int _grpc_port;
 
     // File browser
     FileListHandler* _file_list_handler;
@@ -252,15 +257,8 @@ private:
     // State for animation functions.
     std::unique_ptr<AnimationObject> _animation_object;
 
-    // Image file converter
-    std::unique_ptr<carta::FileConverter> _file_converter;
-
-    // Moments controller
-    std::unique_ptr<carta::MomentController> _moment_controller;
-
     // Manage image channel
     std::unordered_map<int, std::mutex> _image_channel_mutexes;
-    std::unordered_map<int, std::mutex> _image_mutexes; // Todo: this mutex map will be removed after the refactoring of moments generator
     std::unordered_map<int, bool> _image_channel_task_active;
 
     // Cube histogram progress: 0.0 to 1.0 (complete)
