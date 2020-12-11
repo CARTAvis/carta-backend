@@ -268,9 +268,9 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
     // get the start of X
     size_t x_start = _region_stats[region_stats_id].latest_x;
-    
+
     std::vector<float> slice_data;
-    
+
     std::function<void(size_t)> accumulate;
 
     auto lazy_accumulate = [&](size_t y) {
@@ -290,7 +290,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
             }
         }
     };
-    
+
     auto first_accumulate = [&](size_t y) {
         for (size_t z = 0; z < num_z; z++) {
             double v = slice_data[y * num_z + z];
@@ -340,9 +340,9 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
             }
         }
     };
-    
+
     accumulate = first_accumulate;
-    
+
     // Set initial values of stats, or those set to NAN in previous iterations
     for (size_t z = 0; z < num_z; z++) {
         if ((x_start == 0) || (num_pixels[z] == 0)) {
@@ -372,7 +372,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
                 continue;
             }
 
-            // This will use a lazy min/max evaluation for every pixel after the first. 
+            // This will use a lazy min/max evaluation for every pixel after the first.
             accumulate(y);
         }
     }
