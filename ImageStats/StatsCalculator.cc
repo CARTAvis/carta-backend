@@ -87,6 +87,7 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
                 lattice_stats_type = casacore::LatticeStatsBase::SUMSQ;
                 break;
             case CARTA::StatsType::Min:
+            case CARTA::StatsType::Extrema:
                 lattice_stats_type = casacore::LatticeStatsBase::MIN;
                 break;
             case CARTA::StatsType::Max:
@@ -118,10 +119,12 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
             default:
                 break;
         }
+
         if (lattice_stats_type < casacore::LatticeStatsBase::NSTATS) {
             casacore::Array<casacore::Double> result;
             try {
-                if (image_stats.getStatistic(result, lattice_stats_type)) { // return result Array for stats type
+                if (image_stats.getStatistic(result, lattice_stats_type)) {
+                    // return result Array for stats type
                     if (anyEQ(result, 0.0)) {
                         // Convert 0 result to NaN if number of points is zero
                         if (num_points.empty()) {
@@ -135,7 +138,20 @@ bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_valu
                             }
                         }
                     }
-                    result.tovector(dbl_result);
+
+                    if (carta_stats_type == CARTA::StatsType::Extrema) {
+                        std::vector<double> min_result;
+                        result.tovector(min_result);
+
+                        if (image_stats.getStatistic(result, casacore::LatticeStatsBase::MAX)) {
+                            std::vector<double> max_result;
+                            result.tovector(max_result);
+                            std::transform(min_result.begin(), min_result.end(), max_result.begin(), std::back_inserter(dbl_result),
+                                [](double min, double max) { return (abs(min) > abs(max) ? min : max); });
+                        }
+                    } else {
+                        result.tovector(dbl_result);
+                    }
                 }
             } catch (const casacore::AipsError& err) {
                 // Catch exception for calculated stat, e.g. flux density; set result to NaN
