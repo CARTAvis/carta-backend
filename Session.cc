@@ -204,14 +204,6 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
                 SplitString(hdu, ':', hdunum_extname);
                 std::string hdunum = hdunum_extname[0];
 
-                // set computed entry: extension name
-                if (hdunum_extname.size() > 1) {
-                    auto extname_entry = file_info_ext.add_computed_entries();
-                    extname_entry->set_name("Extension name");
-                    extname_entry->set_value(hdunum_extname[1]);
-                    extname_entry->set_entry_type(CARTA::EntryType::STRING);
-                }
-
                 // Add info to map
                 if (ext_info_loader.FillFileExtInfo(file_info_ext, filename, hdunum, message)) {
                     hdu_info_map[hdunum] = file_info_ext;
