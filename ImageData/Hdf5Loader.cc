@@ -268,18 +268,43 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
     // get the start of X
     size_t x_start = _region_stats[region_stats_id].latest_x;
+    
+    std::vector<float> slice_data;
+    
+    std::function<void(size_t)> accumulate;
 
-    // Set initial values of stats, or those set to NAN in previous iterations
-    for (size_t z = 0; z < num_z; z++) {
-        if ((x_start == 0) || (num_pixels[z] == 0)) {
-            min[z] = std::numeric_limits<float>::max();
-            max[z] = std::numeric_limits<float>::lowest();
-            num_pixels[z] = 0;
-            nan_count[z] = 0;
-            sum[z] = 0;
-            sum_sq[z] = 0;
+    auto lazy_accumulate = [&](size_t y) {
+        for (size_t z = 0; z < num_z; z++) {
+            double v = slice_data[y * num_z + z];
+
+            if (std::isfinite(v)) {
+                num_pixels[z] += 1;
+                sum[z] += v;
+                sum_sq[z] += v * v;
+
+                if (v < min[z]) {
+                    min[z] = v;
+                } else if (v > max[z]) {
+                    max[z] = v;
+                }
+            }
         }
-    }
+    };
+    
+    auto first_accumulate = [&](size_t y) {
+        for (size_t z = 0; z < num_z; z++) {
+            double v = slice_data[y * num_z + z];
+
+            if (std::isfinite(v)) {
+                num_pixels[z] += 1;
+                sum[z] += v;
+                sum_sq[z] += v * v;
+                min[z] = v;
+                max[z] = v;
+            }
+        }
+        accumulate = lazy_accumulate;
+    };
 
     // Lambda to calculate additional stats
     auto calculate_stats = [&]() {
@@ -315,13 +340,26 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
             }
         }
     };
+    
+    accumulate = first_accumulate;
+    
+    // Set initial values of stats, or those set to NAN in previous iterations
+    for (size_t z = 0; z < num_z; z++) {
+        if ((x_start == 0) || (num_pixels[z] == 0)) {
+            min[z] = std::numeric_limits<float>::max();
+            max[z] = std::numeric_limits<float>::lowest();
+            num_pixels[z] = 0;
+            nan_count[z] = 0;
+            sum[z] = 0;
+            sum_sq[z] = 0;
+        }
+    }
 
     size_t delta_x = INIT_DELTA_CHANNEL; // since data is swizzled, third axis is x not channel
     size_t max_x = x_start + delta_x;
     if (max_x > num_x) {
         max_x = num_x;
     }
-    std::vector<float> slice_data;
 
     for (size_t x = x_start; x < max_x; ++x) {
         if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y, image_mutex)) {
@@ -334,22 +372,8 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
                 continue;
             }
 
-            for (size_t z = 0; z < num_z; z++) {
-                double v = slice_data[y * num_z + z];
-
-                // skip all NaN pixels
-                if (std::isfinite(v)) {
-                    num_pixels[z] += 1;
-                    sum[z] += v;
-                    sum_sq[z] += v * v;
-
-                    if (v < min[z]) {
-                        min[z] = v;
-                    } else if (v > max[z]) {
-                        max[z] = v;
-                    }
-                }
-            }
+            // This will use a lazy min/max evaluation for every pixel after the first. 
+            accumulate(y);
         }
     }
 
