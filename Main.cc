@@ -64,7 +64,7 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
     if (!ip_header.empty()) {
         address = ip_header;
     } else {
-        address = http_response->getRemoteAddress();
+        address = http_response->getRemoteAddressAsText();
     }
 
     // Check if there's a token
