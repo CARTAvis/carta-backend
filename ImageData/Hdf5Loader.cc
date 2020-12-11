@@ -274,7 +274,6 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         if ((x_start == 0) || (num_pixels[z] == 0)) {
             min[z] = std::numeric_limits<float>::max();
             max[z] = std::numeric_limits<float>::lowest();
-            extrema[z] = NAN;
             num_pixels[z] = 0;
             nan_count[z] = 0;
             sum[z] = 0;

@@ -505,7 +505,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
     // Remove this check when we drop support for the old schema.
     // We assume that checking for only one of these datasets is sufficient.
     bool full(HasData(FileInfo::Data::STATS_2D_SUM));
-    double sum, sum_sq;
+    double sum, sum_sq, min, max;
     uint64_t num_pixels;
 
     if (HasData(FileInfo::Data::STATS)) {
@@ -535,11 +535,14 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                         num_pixels = _channel_size - stats[CARTA::StatsType::NanCount];
                         sum = stats[CARTA::StatsType::Sum];
                         sum_sq = stats[CARTA::StatsType::SumSq];
+                        min = stats[CARTA::StatsType::Min];
+                        max = stats[CARTA::StatsType::Max];
 
                         stats[CARTA::StatsType::NumPixels] = num_pixels;
                         stats[CARTA::StatsType::Mean] = sum / num_pixels;
                         stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                         stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                        stats[CARTA::StatsType::Extrema] = (abs(min) > abs(max) ? min : max);
                         if (has_flux) {
                             stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
                         }
@@ -576,11 +579,14 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                     num_pixels = (_channel_size * _num_channels) - stats[CARTA::StatsType::NanCount];
                     sum = stats[CARTA::StatsType::Sum];
                     sum_sq = stats[CARTA::StatsType::SumSq];
+                    min = stats[CARTA::StatsType::Min];
+                    max = stats[CARTA::StatsType::Max];
 
                     stats[CARTA::StatsType::NumPixels] = num_pixels;
                     stats[CARTA::StatsType::Mean] = sum / num_pixels;
                     stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                     stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                    stats[CARTA::StatsType::Extrema] = (abs(min) > abs(max) ? min : max);
                     if (has_flux) {
                         stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
                     }
