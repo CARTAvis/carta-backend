@@ -71,6 +71,8 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
 void FillStatisticsValuesFromMap(
     CARTA::RegionStatsData& stats_data, std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
 
+void ShortenIPAddress(std::string& address);
+
 // ************ structs *************
 //
 // Usage of the ChannelRange:

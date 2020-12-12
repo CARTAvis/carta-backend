@@ -229,3 +229,17 @@ void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int
         stokes_index = -1;
     }
 }
+
+void ShortenIPAddress(std::string& address) {
+    int length = address.length();
+    int it = 0;
+    while (it < length) {
+        if (address.substr(it, 4) == "0000") {
+            address.replace(it, 4, "");
+            ++it;
+            length -= 4;
+        } else {
+            it += 5;
+        }
+    }
+}
