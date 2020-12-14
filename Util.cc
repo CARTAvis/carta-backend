@@ -242,7 +242,24 @@ void ShortenIPAddress(std::string& address) {
             it += 5;
         }
     }
-    if ((address.length() > 4) && (address.substr(0, 4) == "::::")) {
+    if ((length > 10) && (address.substr(0, 4) == "::::")) { // Convert IPv6 to IPv4 format
         address.replace(0, 4, "");
+        length -= 4;
+        if ((length > 10) && (address.substr(length - 10, 1) == ":") && (address.substr(length - 5, 1) == ":")) {
+            string hex = address.substr(length - 9, 4) + address.substr(length - 4, 4);
+            string dec(HexadecimalToDecimal(hex.c_str()));
+            address.replace(length - 9, 9, dec);
+            address = ":" + address;
+        }
     }
+}
+
+char* HexadecimalToDecimal(const char* in) {
+    char* out = (char*)malloc(sizeof(char) * 16);
+    unsigned int p, q, r, s;
+    if (sscanf(in, "%2x%2x%2x%2x", &p, &q, &r, &s) != 4) {
+        return out;
+    }
+    sprintf(out, "%u.%u.%u.%u", p, q, r, s);
+    return out;
 }

@@ -73,6 +73,8 @@ void FillStatisticsValuesFromMap(
 
 void ShortenIPAddress(std::string& address);
 
+char* HexadecimalToDecimal(const char* in);
+
 // ************ structs *************
 //
 // Usage of the ChannelRange:
