@@ -242,4 +242,7 @@ void ShortenIPAddress(std::string& address) {
             it += 5;
         }
     }
+    if ((address.length() > 4) && (address.substr(0, 4) == "::::")) {
+        address.replace(0, 4, "");
+    }
 }
