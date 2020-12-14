@@ -275,11 +275,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 if (!hdu.empty()) {
                     auto entry = extended_info.add_computed_entries();
                     entry->set_name("HDU");
-                    if (hdu == "0") {
-                        entry->set_value("Primary");
-                    } else {
-                        entry->set_value(hdu);
-                    }
+                    entry->set_value(hdu);
                     entry->set_entry_type(CARTA::EntryType::STRING);
                 }
                 if (!extname.empty()) {
