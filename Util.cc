@@ -230,36 +230,21 @@ void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int
     }
 }
 
-void ShortenIPAddress(std::string& address) {
-    int length = address.length();
-    int it = 0;
-    while (it < length) {
-        if (address.substr(it, 4) == "0000") {
-            address.replace(it, 4, "");
-            ++it;
-            length -= 4;
-        } else {
-            it += 5;
-        }
-    }
-    if ((length > 10) && (address.substr(0, 4) == "::::")) { // Convert IPv6 to IPv4 format
-        address.replace(0, 4, "");
-        length -= 4;
-        if ((length > 10) && (address.substr(length - 10, 1) == ":") && (address.substr(length - 5, 1) == ":")) {
-            string hex = address.substr(length - 9, 4) + address.substr(length - 4, 4);
-            string dec(HexadecimalToDecimal(hex.c_str()));
-            address.replace(length - 9, 9, dec);
-            address = ":" + address;
-        }
-    }
-}
+std::string IPAsText(std::string_view binary) {
+    static thread_local char buf[64];
+    std::string result;
 
-char* HexadecimalToDecimal(const char* in) {
-    char* out = (char*)malloc(sizeof(char) * 16);
-    unsigned int p, q, r, s;
-    if (sscanf(in, "%2x%2x%2x%2x", &p, &q, &r, &s) != 4) {
-        return out;
+    if (!binary.length()) {
+        return result;
     }
-    sprintf(out, "%u.%u.%u.%u", p, q, r, s);
-    return out;
+
+    unsigned char* b = (unsigned char*)binary.data();
+
+    if (binary.length() == 4) {
+        result = fmt::format("{0:d}.{1:d}.{2:d}.{3:d}", b[0], b[1], b[2], b[3]);
+    } else {
+        result = fmt::format("::{0:x}{1:x}:{2:d}.{3:d}.{4:d}.{5:d}", b[10], b[11], b[12], b[13], b[14], b[15]);
+    }
+
+    return result;
 }
