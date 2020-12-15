@@ -5,10 +5,9 @@ Server for simple web-based interface for viewing radio astronomy images in CASA
 
 ### Submodules
 
-The protocol buffer definitions for communication between the server and client, and for communication between the scripting interface and the server, reside in two git submodules that must be initialised as follows:
+The protocol buffer definitions for communication between the server and client, and for communication between the scripting interface and the server. The [µWebSockets](https://github.com/uNetworking/uWebSockets), which builds on [µSockets](https://github.com/uNetworking/uSockets), is used to communicate the frontend. In order to get the right version of µWebSockets and its dependency µSockets, together with the other two submodules, a git initialized command must be applied as follows:
 ```
-git submodule init
-git submodule update
+git submodule update --init --recursive
 ```
 
 If you use `git pull` to update an existing checkout of this repository, make sure that you also use `git submodule update` to fetch the appropriate versions of the submodule code.
