@@ -231,15 +231,13 @@ void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int
 }
 
 std::string IPAsText(std::string_view binary) {
-    static thread_local char buf[64];
     std::string result;
-
+    
     if (!binary.length()) {
         return result;
     }
 
     unsigned char* b = (unsigned char*)binary.data();
-
     if (binary.length() == 4) {
         result = fmt::format("{0:d}.{1:d}.{2:d}.{3:d}", b[0], b[1], b[2], b[3]);
     } else {
