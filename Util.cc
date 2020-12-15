@@ -232,7 +232,6 @@ void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int
 
 std::string IPAsText(std::string_view binary) {
     std::string result;
-    
     if (!binary.length()) {
         return result;
     }
