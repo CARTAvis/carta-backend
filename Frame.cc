@@ -12,6 +12,7 @@
 #include <thread>
 #include "fmt/format.h"
 
+#include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/WCRegion.h>
 #include <casacore/lattices/LRegions/LCSlicer.h>
@@ -1448,6 +1449,130 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
                 out_image_mask.putSlice(image_mask, start);
             }
+        } catch (casacore::AipsError error) {
+            message = error.getMesg();
+            save_file_ack.set_success(false);
+            save_file_ack.set_message(message);
+            return;
+        }
+        success = true;
+    } else if (output_file_type == CARTA::FileType::FITS) {
+        // Remove the old image file if it has a same file name
+        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename.string(), 64, casacore::True,
+            casacore::True, -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False,
+            casacore::False, casacore::String(), casacore::True);
+        if (ok) {
+            success = true;
+        }
+    } else {
+        message = "No saving file action!";
+    }
+    ulock.unlock(); // Unlock the image
+
+    // Remove the root folder from the ack message
+    if (!root_folder.empty()) {
+        std::size_t found = message.find(root_folder);
+        if (found != std::string::npos) {
+            message.replace(found, root_folder.size(), "");
+        }
+    }
+
+    save_file_ack.set_success(success);
+    save_file_ack.set_message(message);
+}
+
+void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
+    casacore::LCRegion* image_region) {
+    // Input file info
+    std::string in_file = GetFileName();
+
+    // Output file info
+    fs::path output_filename(save_file_msg.output_file_name());
+    fs::path directory(save_file_msg.output_file_directory());
+    CARTA::FileType output_file_type(save_file_msg.output_file_type());
+
+    // Set response message
+    int file_id(save_file_msg.file_id());
+    save_file_ack.set_file_id(file_id);
+    bool success(false);
+    casacore::String message;
+
+    // Get the full resolved name of the output image
+    fs::path temp_path = fs::path(root_folder) / directory;
+    fs::path abs_path = fs::absolute(temp_path);
+    output_filename = abs_path / output_filename;
+
+    if (output_filename.string() == in_file) {
+        message = "The source file can not be overwritten!";
+        save_file_ack.set_success(success);
+        save_file_ack.set_message(message);
+        return;
+    }
+
+    auto image = GetImage();
+    auto image_shape = image->shape();
+    auto channels_start = save_file_msg.channels().size() ? save_file_msg.channels(0) : 0;
+    auto channels_end = save_file_msg.channels().size() ? save_file_msg.channels(1) : image_shape[2];
+    auto channels_stride = save_file_msg.channels().size() ? save_file_msg.channels(2) : 1;
+    auto stokes_start = save_file_msg.stokes().size() ? save_file_msg.stokes(0) : 0;
+    auto stokes_end = save_file_msg.stokes().size() ? save_file_msg.stokes(1) : image_shape[3];
+    auto stokes_stride = save_file_msg.stokes().size() ? save_file_msg.stokes(2) : 1;
+    casacore::IPosition start;
+    casacore::IPosition end;
+    casacore::IPosition stride;
+    casacore::IPosition shape;
+    if (image_shape.size() == 3) {
+        start = casacore::IPosition(3, 0, 0, channels_start);
+        end = casacore::IPosition(3, image_shape[0], image_shape[1], channels_end);
+        stride = casacore::IPosition(3, 1, 1, channels_stride);
+        shape = casacore::IPosition(3, image_shape[0], image_shape[1], channels_end - channels_start / channels_stride);
+    } else if (image_shape.size() == 4) {
+        start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
+        end = casacore::IPosition(4, image_shape[0], image_shape[1], channels_end, stokes_end);
+        stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
+        shape = casacore::IPosition(
+            3, image_shape[0], image_shape[1], channels_end - channels_start / channels_stride, stokes_end - stokes_start / stokes_stride);
+    } else {
+        return;
+    }
+
+    auto slice = casacore::Slicer(start, end, stride);
+    casacore::SubImage<float> sub_image;
+
+    _loader->GetSubImage(slice, LattRegionHolder(image_region), sub_image);
+    image = sub_image.cloneII();
+
+    std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
+    if (output_file_type == CARTA::FileType::CASA) {
+        // Remove the old image file if it has a same file name
+        if (fs::exists(output_filename)) {
+            fs::remove_all(output_filename);
+        }
+
+        // Get a copy of all pixel data
+        casacore::IPosition start(image->shape().size(), 0);
+        casacore::IPosition count(image->shape());
+        casacore::Slicer slice(start, count);
+        casacore::Array<casacore::Float> temp_array;
+        image->doGetSlice(temp_array, slice);
+
+        // Construct a new CASA image
+        try {
+            auto out_image =
+                std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename.string());
+            out_image->setMiscInfo(image->miscInfo());
+            out_image->setImageInfo(image->imageInfo());
+            out_image->appendLog(image->logger());
+            out_image->setUnits(image->units());
+            out_image->putSlice(temp_array, start);
+
+            // Change the mask for region
+            // casacore::Array<casacore::Bool> image_mask;
+            // image->getMaskSlice(image_mask, slice);
+            // out_image->makeMask("mask0", true, true);
+            // casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
+            // out_image_mask.putSlice(image_mask, start);
+
         } catch (casacore::AipsError error) {
             message = error.getMesg();
             save_file_ack.set_success(false);

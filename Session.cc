@@ -1056,9 +1056,15 @@ void Session::OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc) {
 
 void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) {
     int file_id(save_file.file_id());
+    int region_id(save_file.region_id());
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
-        _frames.at(file_id)->SaveFile(_root_folder, save_file, save_file_ack);
+        if (region_id && _frames.at(file_id)->ImageShape().size() > 2) {
+            _frames.at(file_id)->SaveFile(
+                _root_folder, save_file, save_file_ack, _region_handler->GetImageRegion(_frames.at(file_id), file_id, region_id));
+        } else {
+            _frames.at(file_id)->SaveFile(_root_folder, save_file, save_file_ack);
+        }
 
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);

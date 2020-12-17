@@ -88,6 +88,10 @@ void RegionHandler::RemoveRegion(int region_id) {
     RemoveRegionRequirementsCache(region_id);
 }
 
+casacore::LCRegion* RegionHandler::GetImageRegion(std::shared_ptr<Frame> frame, int file_id, int region_id) {
+    return ApplyRegionToFile(frame, region_id, file_id);
+}
+
 bool RegionHandler::RegionSet(int region_id) {
     // Check whether a particular region is set or any regions are set
     if (region_id == ALL_REGIONS) {
@@ -665,10 +669,10 @@ bool RegionHandler::RegionFileIdsValid(int region_id, int file_id) {
     return true;
 }
 
-casacore::LCRegion* RegionHandler::ApplyRegionToFile(int region_id, int file_id) {
+casacore::LCRegion* RegionHandler::ApplyRegionToFile(std::shared_ptr<Frame> frame, int region_id, int file_id) {
     // Returns 2D region with no extension; nullptr if outside image
     // Go through Frame for image mutex
-    return _frames.at(file_id)->GetImageRegion(file_id, _regions.at(region_id));
+    return frame->GetImageRegion(file_id, _regions.at(region_id));
 }
 
 bool RegionHandler::ApplyRegionToFile(
@@ -679,7 +683,7 @@ bool RegionHandler::ApplyRegionToFile(
     }
 
     try {
-        casacore::LCRegion* applied_region = ApplyRegionToFile(region_id, file_id);
+        casacore::LCRegion* applied_region = ApplyRegionToFile(_frames.at(file_id), region_id, file_id);
         casacore::IPosition image_shape(_frames.at(file_id)->ImageShape());
         if (applied_region == nullptr) {
             return false;
@@ -1041,7 +1045,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
     }
 
     // Get region to check if inside image
-    casacore::LCRegion* lcregion = ApplyRegionToFile(region_id, file_id);
+    casacore::LCRegion* lcregion = ApplyRegionToFile(_frames.at(file_id), region_id, file_id);
     if (!lcregion) {
         progress = PROFILE_COMPLETE;
         partial_results_callback(results, progress); // region outside image, send NaNs

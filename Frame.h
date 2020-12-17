@@ -175,6 +175,8 @@ public:
 
     // Save as a new file or convert it between CASA/FITS formats
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
+    void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
+        casacore::LCRegion* image_region);
 
 private:
     // Validate channel, stokes index values

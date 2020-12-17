@@ -243,6 +243,18 @@ bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore:
     return true;
 }
 
+bool FileLoader::GetSubImage(
+    const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
+    }
+
+    auto temp_image = casacore::SubImage<float>(*image, slicer);
+    sub_image = casacore::SubImage<float>(temp_image, region);
+    return true;
+}
+
 const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }
