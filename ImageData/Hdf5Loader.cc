@@ -269,6 +269,18 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     // get the start of X
     size_t x_start = _region_stats[region_stats_id].latest_x;
 
+    // Set initial values of stats, or those set to NAN in previous iterations
+    for (size_t z = 0; z < num_z; z++) {
+        if ((x_start == 0) || (num_pixels[z] == 0)) {
+            min[z] = std::numeric_limits<float>::max();
+            max[z] = std::numeric_limits<float>::lowest();
+            num_pixels[z] = 0;
+            nan_count[z] = 0;
+            sum[z] = 0;
+            sum_sq[z] = 0;
+        }
+    }
+
     // Lambda to calculate additional stats
     auto calculate_stats = [&]() {
         double sum_z, sum_sq_z;
@@ -304,18 +316,6 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         }
     };
 
-    // Set initial values of stats, or those set to NAN in previous iterations
-    for (size_t z = 0; z < num_z; z++) {
-        if ((x_start == 0) || (num_pixels[z] == 0)) {
-            min[z] = std::numeric_limits<float>::max();
-            max[z] = std::numeric_limits<float>::lowest();
-            num_pixels[z] = 0;
-            nan_count[z] = 0;
-            sum[z] = 0;
-            sum_sq[z] = 0;
-        }
-    }
-
     size_t delta_x = INIT_DELTA_CHANNEL; // since data is swizzled, third axis is x not channel
     size_t max_x = x_start + delta_x;
     if (max_x > num_x) {
@@ -337,6 +337,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
             for (size_t z = 0; z < num_z; z++) {
                 double v = slice_data[y * num_z + z];
 
+                // skip all NaN pixels
                 if (std::isfinite(v)) {
                     num_pixels[z] += 1;
                     sum[z] += v;
