@@ -269,43 +269,6 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     // get the start of X
     size_t x_start = _region_stats[region_stats_id].latest_x;
 
-    std::vector<float> slice_data;
-
-    std::function<void(size_t)> accumulate;
-
-    auto lazy_accumulate = [&](size_t y) {
-        for (size_t z = 0; z < num_z; z++) {
-            double v = slice_data[y * num_z + z];
-
-            if (std::isfinite(v)) {
-                num_pixels[z] += 1;
-                sum[z] += v;
-                sum_sq[z] += v * v;
-
-                if (v < min[z]) {
-                    min[z] = v;
-                } else if (v > max[z]) {
-                    max[z] = v;
-                }
-            }
-        }
-    };
-
-    auto first_accumulate = [&](size_t y) {
-        for (size_t z = 0; z < num_z; z++) {
-            double v = slice_data[y * num_z + z];
-
-            if (std::isfinite(v)) {
-                num_pixels[z] += 1;
-                sum[z] += v;
-                sum_sq[z] += v * v;
-                min[z] = v;
-                max[z] = v;
-            }
-        }
-        accumulate = lazy_accumulate;
-    };
-
     // Lambda to calculate additional stats
     auto calculate_stats = [&]() {
         double sum_z, sum_sq_z;
@@ -341,8 +304,6 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         }
     };
 
-    accumulate = first_accumulate;
-
     // Set initial values of stats, or those set to NAN in previous iterations
     for (size_t z = 0; z < num_z; z++) {
         if ((x_start == 0) || (num_pixels[z] == 0)) {
@@ -360,6 +321,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     if (max_x > num_x) {
         max_x = num_x;
     }
+    std::vector<float> slice_data;
 
     for (size_t x = x_start; x < max_x; ++x) {
         if (!GetCursorSpectralData(slice_data, stokes, x + x_min, 1, y_min, num_y, image_mutex)) {
@@ -372,8 +334,17 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
                 continue;
             }
 
-            // This will use a lazy min/max evaluation for every pixel after the first.
-            accumulate(y);
+            for (size_t z = 0; z < num_z; z++) {
+                double v = slice_data[y * num_z + z];
+
+                if (std::isfinite(v)) {
+                    num_pixels[z] += 1;
+                    sum[z] += v;
+                    sum_sq[z] += v * v;
+                    min[z] = std::min(min[z], v);
+                    max[z] = std::max(max[z], v);
+                }
+            }
         }
     }
 
