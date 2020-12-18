@@ -250,8 +250,8 @@ bool FileLoader::GetSubImage(
         return false;
     }
 
-    auto temp_image = casacore::SubImage<float>(*image, slicer);
-    sub_image = casacore::SubImage<float>(temp_image, region);
+    auto temp_image = casacore::SubImage<float>(*image, region);
+    sub_image = casacore::SubImage<float>(temp_image, slicer);
     return true;
 }
 

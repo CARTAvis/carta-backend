@@ -16,6 +16,7 @@
 #include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/WCRegion.h>
 #include <casacore/lattices/LRegions/LCSlicer.h>
+#include <casacore/lattices/LRegions/LattRegionHolder.h>
 #include <casacore/tables/DataMan/TiledFileAccess.h>
 
 #include "DataStream/Compression.h"
@@ -1249,6 +1250,15 @@ casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Re
     return image_region;
 }
 
+casacore::LCRegion* Frame::GetImageRegion(int file_id, std::shared_ptr<carta::Region> region, casacore::IPosition shape) {
+    // Return LCRegion formed by applying region params to image.
+    // Returns nullptr if region outside image
+    casacore::CoordinateSystem* coord_sys = CoordinateSystem();
+    casacore::LCRegion* image_region = region->GetImageRegion(file_id, *coord_sys, shape);
+    delete coord_sys;
+    return image_region;
+}
+
 bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stokes, casacore::ImageRegion& image_region) {
     if (!CheckChannel(chan_range.from) || !CheckChannel(chan_range.to) || !CheckStokes(stokes)) {
         return false;
@@ -1482,7 +1492,8 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 }
 
 void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
-    casacore::LCRegion* image_region) {
+    std::shared_ptr<Region> region) {
+        
     // Input file info
     std::string in_file = GetFileName();
 
@@ -1510,6 +1521,8 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     }
 
     auto image = GetImage();
+    auto image_region = GetImageRegion(file_id, region);
+
     auto image_shape = image->shape();
     auto channels_start = save_file_msg.channels().size() ? save_file_msg.channels(0) : 0;
     auto channels_end = save_file_msg.channels().size() ? save_file_msg.channels(1) : image_shape[2];
@@ -1523,22 +1536,22 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     casacore::IPosition shape;
     if (image_shape.size() == 3) {
         start = casacore::IPosition(3, 0, 0, channels_start);
-        end = casacore::IPosition(3, image_shape[0], image_shape[1], channels_end);
+        end = casacore::IPosition(3, image_region->shape()[0], image_region->shape()[1], channels_end);
         stride = casacore::IPosition(3, 1, 1, channels_stride);
-        shape = casacore::IPosition(3, image_shape[0], image_shape[1], channels_end - channels_start / channels_stride);
+        shape = casacore::IPosition(3, image_region->shape()[0], image_region->shape()[1], channels_end / channels_stride);
     } else if (image_shape.size() == 4) {
         start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
-        end = casacore::IPosition(4, image_shape[0], image_shape[1], channels_end, stokes_end);
+        end = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], channels_end, stokes_end);
         stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
         shape = casacore::IPosition(
-            3, image_shape[0], image_shape[1], channels_end - channels_start / channels_stride, stokes_end - stokes_start / stokes_stride);
+            4, image_region->shape()[0], image_region->shape()[1], channels_end / channels_stride, stokes_end - stokes_start / stokes_stride);
     } else {
         return;
     }
 
     auto slice = casacore::Slicer(start, end, stride);
     casacore::SubImage<float> sub_image;
-
+    
     _loader->GetSubImage(slice, LattRegionHolder(image_region), sub_image);
     image = sub_image.cloneII();
 
@@ -1559,19 +1572,21 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         // Construct a new CASA image
         try {
             auto out_image =
-                std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename.string());
+                std::make_unique<casacore::PagedImage<casacore::Float>>(shape, image->coordinates(), output_filename.string());
             out_image->setMiscInfo(image->miscInfo());
             out_image->setImageInfo(image->imageInfo());
             out_image->appendLog(image->logger());
             out_image->setUnits(image->units());
             out_image->putSlice(temp_array, start);
 
-            // Change the mask for region
-            // casacore::Array<casacore::Bool> image_mask;
-            // image->getMaskSlice(image_mask, slice);
-            // out_image->makeMask("mask0", true, true);
-            // casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
-            // out_image_mask.putSlice(image_mask, start);
+            // Create the mask for region
+            if (image->hasPixelMask()) {
+                casacore::Array<casacore::Bool> image_mask;
+                image->getMaskSlice(image_mask, slice);
+                out_image->makeMask("mask0", true, true);
+                casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
+                out_image_mask.putSlice(image_mask, start);
+            }
 
         } catch (casacore::AipsError error) {
             message = error.getMesg();

@@ -1061,7 +1061,7 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
         CARTA::SaveFileAck save_file_ack;
         if (region_id && _frames.at(file_id)->ImageShape().size() > 2) {
             _frames.at(file_id)->SaveFile(
-                _root_folder, save_file, save_file_ack, _region_handler->GetImageRegion(_frames.at(file_id), file_id, region_id));
+                _root_folder, save_file, save_file_ack, _region_handler->GetRegion(_frames.at(file_id), file_id, region_id));
         } else {
             _frames.at(file_id)->SaveFile(_root_folder, save_file, save_file_ack);
         }

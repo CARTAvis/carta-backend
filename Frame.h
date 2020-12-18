@@ -149,6 +149,7 @@ public:
 
     // Apply Region/Slicer to image (Frame manages image mutex) and get shape, data, or stats
     casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region);
+    casacore::LCRegion* GetImageRegion(int file_id, std::shared_ptr<carta::Region> region, casacore::IPosition shape);
     bool GetImageRegion(int file_id, const ChannelRange& chan_range, int stokes, casacore::ImageRegion& image_region);
     casacore::IPosition GetRegionShape(const casacore::LattRegionHolder& region);
     // Returns data vector
@@ -176,7 +177,7 @@ public:
     // Save as a new file or convert it between CASA/FITS formats
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack);
     void SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
-        casacore::LCRegion* image_region);
+        std::shared_ptr<Region> image_region);
 
 private:
     // Validate channel, stokes index values

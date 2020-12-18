@@ -48,7 +48,7 @@ public:
     bool SetRegion(int& region_id, RegionState& region_state, casacore::CoordinateSystem* csys);
     bool RegionChanged(int region_id);
     void RemoveRegion(int region_id);
-    casacore::LCRegion* GetImageRegion(std::shared_ptr<Frame> frame, int file_id, int region_id);
+    std::shared_ptr<Region> GetRegion(std::shared_ptr<Frame> frame, int file_id, int region_id);
 
     // Region Import/Export
     void ImportRegion(int file_id, std::shared_ptr<Frame> frame, CARTA::FileType region_file_type, const std::string& region_file,
@@ -101,7 +101,7 @@ private:
 
     // Fill data stream messages
     bool RegionFileIdsValid(int region_id, int file_id);
-    casacore::LCRegion* ApplyRegionToFile(std::shared_ptr<Frame> frame, int region_id, int file_id);
+    casacore::LCRegion* ApplyRegionToFile(int region_id, int file_id);
     bool ApplyRegionToFile(int region_id, int file_id, const ChannelRange& channel, int stokes, casacore::ImageRegion& region);
     bool GetRegionHistogramData(
         int region_id, int file_id, std::vector<HistogramConfig>& configs, CARTA::RegionHistogramData& histogram_message);
