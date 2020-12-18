@@ -1493,7 +1493,6 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
 void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save_file_msg, CARTA::SaveFileAck& save_file_ack,
     std::shared_ptr<Region> region) {
-        
     // Input file info
     std::string in_file = GetFileName();
 
@@ -1543,15 +1542,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
         end = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], channels_end, stokes_end);
         stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
-        shape = casacore::IPosition(
-            4, image_region->shape()[0], image_region->shape()[1], channels_end / channels_stride, stokes_end - stokes_start / stokes_stride);
+        shape = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], channels_end / channels_stride,
+            stokes_end - stokes_start / stokes_stride);
     } else {
         return;
     }
 
     auto slice = casacore::Slicer(start, end, stride);
     casacore::SubImage<float> sub_image;
-    
+
     _loader->GetSubImage(slice, LattRegionHolder(image_region), sub_image);
     image = sub_image.cloneII();
 
@@ -1571,8 +1570,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
         // Construct a new CASA image
         try {
-            auto out_image =
-                std::make_unique<casacore::PagedImage<casacore::Float>>(shape, image->coordinates(), output_filename.string());
+            auto out_image = std::make_unique<casacore::PagedImage<casacore::Float>>(shape, image->coordinates(), output_filename.string());
             out_image->setMiscInfo(image->miscInfo());
             out_image->setImageInfo(image->imageInfo());
             out_image->appendLog(image->logger());
