@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #include "Hdf5Loader.h"
 
 namespace carta {
@@ -257,6 +263,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
     auto& sum_sq = stats[CARTA::StatsType::SumSq];
     auto& min = stats[CARTA::StatsType::Min];
     auto& max = stats[CARTA::StatsType::Max];
+    auto& extrema = stats[CARTA::StatsType::Extrema];
     double* flux = has_flux ? stats[CARTA::StatsType::FluxDensity].data() : nullptr;
 
     // get the start of X
@@ -267,6 +274,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         if ((x_start == 0) || (num_pixels[z] == 0)) {
             min[z] = std::numeric_limits<float>::max();
             max[z] = std::numeric_limits<float>::lowest();
+            extrema[z] = NAN;
             num_pixels[z] = 0;
             nan_count[z] = 0;
             sum[z] = 0;
@@ -288,6 +296,8 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
                 mean[z] = sum_z / num_pixels_z;
                 rms[z] = sqrt(sum_sq_z / num_pixels_z);
                 sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
+                extrema[z] = (abs(min[z]) > abs(max[z]) ? min[z] : max[z]);
+
                 if (has_flux) {
                     flux[z] = sum_z / beam_area;
                 }

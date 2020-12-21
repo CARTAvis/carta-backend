@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 //# Session.h: representation of a client connected to a server; processes requests from frontend
 
 #ifndef CARTA_BACKEND__SESSION_H_
@@ -12,11 +18,11 @@
 #include <utility>
 #include <vector>
 
+#include <App.h>
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
-#include <uWS/uWS.h>
 
 #include <casacore/casa/aips.h>
 
@@ -52,8 +58,8 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
-        uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
+    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
+        FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
     ~Session();
 
     // CARTA ICD
@@ -89,8 +95,6 @@ public:
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
     void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);
     void OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint32_t request_id);
-
-    void SendPendingMessages();
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -226,7 +230,10 @@ private:
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
-    uWS::WebSocket<uWS::SERVER>* _socket;
+    // uWebSockets
+    uWS::WebSocket<false, true>* _socket;
+    uWS::Loop* _loop;
+
     uint32_t _id;
     std::string _address;
     std::string _root_folder;
@@ -260,9 +267,6 @@ private:
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
 
-    // Outgoing messages:
-    // Notification mechanism when messages are ready
-    uS::Async* _outgoing_async;
     // message queue <msg, compress>
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 
