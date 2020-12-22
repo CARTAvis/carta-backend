@@ -11,6 +11,9 @@
 
 #include "FileInfoLoader.h"
 
+#define FITS_MAGIC_NUMBER 0x504D4953
+#define HDF5_MAGIC_NUMBER 0x46444889
+
 // Default constructor
 FileListHandler::FileListHandler(const std::string& root, const std::string& base)
     : _root_folder(root), _base_folder(base), _filelist_folder("nofolder") {}
@@ -129,8 +132,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                     }
                     if (!is_region) {
                         bool add_image(false);
-                        auto image_type = casacore::ImageOpener::imageType(full_path);
                         if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
+                            auto image_type = casacore::ImageOpener::imageType(full_path);
                             switch (image_type) {
                                 case casacore::ImageOpener::AIPSPP:
                                 case casacore::ImageOpener::MIRIAD:
@@ -153,7 +156,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 }
                             }
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                            if ((image_type == casacore::ImageOpener::FITS) || (image_type == casacore::ImageOpener::HDF5)) {
+                            auto magic_number = GetMagicNumber(full_path);
+                            if ((magic_number == FITS_MAGIC_NUMBER) || (magic_number == HDF5_MAGIC_NUMBER)) {
                                 add_image = true;
                             } else if (region_list) { // list unknown files: name, type, size
                                 add_image = true;
