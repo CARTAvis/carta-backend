@@ -16,6 +16,7 @@
 class FileInfoLoader {
 public:
     FileInfoLoader(const std::string& filename);
+    FileInfoLoader(const std::string& filename, const CARTA::FileType& type);
 
     bool FillFileInfo(CARTA::FileInfo& file_info);
     bool FillFileExtInfo(CARTA::FileInfoExtended& extended_info, std::string& hdu, std::string& message);

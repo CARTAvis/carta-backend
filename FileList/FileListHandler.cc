@@ -132,15 +132,20 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                     }
                     if (!is_region) {
                         bool add_image(false);
+                        CARTA::FileType file_type;
                         if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
                             auto image_type = casacore::ImageOpener::imageType(full_path);
                             switch (image_type) {
                                 case casacore::ImageOpener::AIPSPP:
-                                case casacore::ImageOpener::MIRIAD:
                                 case casacore::ImageOpener::IMAGECONCAT:
                                 case casacore::ImageOpener::IMAGEEXPR:
                                 case casacore::ImageOpener::COMPLISTIMAGE:
                                     add_image = true;
+                                    file_type = CARTA::FileType::CASA;
+                                    break;
+                                case casacore::ImageOpener::MIRIAD:
+                                    add_image = true;
+                                    file_type = CARTA::FileType::MIRIAD;
                                     break;
                                 case casacore::ImageOpener::UNKNOWN: {
                                     // Check if it is a directory and the user has permission to access it
@@ -157,17 +162,22 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                             }
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
                             auto magic_number = GetMagicNumber(full_path);
-                            if ((magic_number == FITS_MAGIC_NUMBER) || (magic_number == HDF5_MAGIC_NUMBER)) {
+                            if (magic_number == FITS_MAGIC_NUMBER) {
                                 add_image = true;
+                                file_type = CARTA::FileType::FITS;
+                            } else if (magic_number == HDF5_MAGIC_NUMBER) {
+                                add_image = true;
+                                file_type = CARTA::FileType::HDF5;
                             } else if (region_list) { // list unknown files: name, type, size
                                 add_image = true;
+                                file_type = CARTA::FileType::UNKNOWN;
                             }
                         }
 
                         if (add_image) { // add image to file list
                             auto& file_info = *file_list.add_files();
                             file_info.set_name(name);
-                            FillFileInfo(file_info, full_path);
+                            FillFileInfo(file_info, full_path, file_type);
                         }
                     }
                 } catch (casacore::AipsError& err) { // RegularFileIO error
@@ -213,9 +223,9 @@ std::string FileListHandler::GetCasacoreTypeString(casacore::ImageOpener::ImageT
     return type_str;
 }
 
-bool FileListHandler::FillFileInfo(CARTA::FileInfo& file_info, const string& filename) {
+bool FileListHandler::FillFileInfo(CARTA::FileInfo& file_info, const string& filename, const CARTA::FileType& file_type) {
     // fill FileInfo submessage
-    FileInfoLoader info_loader = FileInfoLoader(filename);
+    FileInfoLoader info_loader = FileInfoLoader(filename, file_type);
     return info_loader.FillFileInfo(file_info);
 }
 
