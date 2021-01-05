@@ -1448,8 +1448,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
         length = casacore::IPosition(4, image_shape[0], image_shape[1], channels_length, stokes_length);
         stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
-        shape = casacore::IPosition(
-            4, image_shape[0], image_shape[1], channels_length / channels_stride, stokes_length / stokes_stride);
+        shape = casacore::IPosition(4, image_shape[0], image_shape[1], channels_length / channels_stride, stokes_length / stokes_stride);
     } else {
         return;
     }
