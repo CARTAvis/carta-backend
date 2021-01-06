@@ -1059,9 +1059,15 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
     int region_id(save_file.region_id());
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
-        if (region_id && _frames.at(file_id)->ImageShape().size() > 2) {
-            _frames.at(file_id)->SaveFile(
-                _root_folder, save_file, save_file_ack, _region_handler->GetRegion(_frames.at(file_id), file_id, region_id));
+        auto active_frame = _frames.at(file_id);
+        if (region_id && active_frame->ImageShape().size() > 2) {
+            std::shared_ptr<Region> _region = _region_handler->GetRegion(region_id);
+            if (active_frame->GetImageRegion(file_id, _region)) {
+                active_frame->SaveFile(_root_folder, save_file, save_file_ack, _region);
+            } else {
+                save_file_ack.set_success(false);
+                save_file_ack.set_message("Region is entire ourside image.");
+            }
         } else {
             _frames.at(file_id)->SaveFile(_root_folder, save_file, save_file_ack);
         }

@@ -88,7 +88,7 @@ void RegionHandler::RemoveRegion(int region_id) {
     RemoveRegionRequirementsCache(region_id);
 }
 
-std::shared_ptr<Region> RegionHandler::GetRegion(std::shared_ptr<Frame> frame, int file_id, int region_id) {
+std::shared_ptr<Region> RegionHandler::GetRegion(int region_id) {
     return _regions.at(region_id);
 }
 
