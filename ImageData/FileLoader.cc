@@ -103,8 +103,11 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
         message = "Image must be 2D, 3D, or 4D.";
         return false;
     }
+
+    // Used for HDF5 stats only:
     _channel_size = shape(0) * shape(1);
 
+    // Coordinate system checks
     casacore::CoordinateSystem coord_sys;
     if (!GetCoordinateSystem(coord_sys)) {
         message = "Image does not have valid coordinate system.";
@@ -147,11 +150,6 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
 
     // 4D image
     if ((spectral_axis < 0) || (stokes_axis < 0)) {
-        if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
-            spectral_axis = (stokes_axis == 3 ? 2 : 3);
-        } else if ((spectral_axis >= 0) && (stokes_axis < 0)) { // spectral is known
-            stokes_axis = (spectral_axis == 3 ? 2 : 3);
-        }
         if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, guess by shape (max 4 stokes)
             if (shape(2) > 4) {
                 spectral_axis = 2;
@@ -160,12 +158,17 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
                 spectral_axis = 3;
                 stokes_axis = 2;
             }
-        }
-        if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, give up
-            message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
-            return false;
+            if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, assume [x, y, spectral, stokes]
+                spectral_axis = 2;
+                stokes_axis = 3;
+            }
+        } else if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
+            spectral_axis = (stokes_axis == 3 ? 2 : 3);
+        } else if ((spectral_axis >= 0) && (stokes_axis < 0)) { // spectral is known
+            stokes_axis = (spectral_axis == 3 ? 2 : 3);
         }
     }
+
     _num_channels = (spectral_axis == -1 ? 1 : shape(spectral_axis));
     _num_stokes = (stokes_axis == -1 ? 1 : shape(stokes_axis));
     _spectral_axis = spectral_axis;
