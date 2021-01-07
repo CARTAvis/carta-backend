@@ -4,6 +4,10 @@ project(carta_backend)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/install)
+
+include(uWebSockets)
+
 # Enable OpenMP if package is found
 find_package(OpenMP)
 if (OPENMP_CXX_FOUND)
@@ -45,6 +49,10 @@ INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
 INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    SET(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    SET(CMAKE_C_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+    SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
     INCLUDE_DIRECTORIES(/usr/local/include)
     INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
     INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
@@ -88,6 +96,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set(LINK_LIBS ${LINK_LIBS} stdc++fs)
 endif ()
 
+# Include uWebSockets headers and build the uSockets lib
+install_uWebSockets()
 
 set(LINK_LIBS
         ${LINK_LIBS}
@@ -95,7 +105,7 @@ set(LINK_LIBS
         carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
         fmt
-        uWS
+        uSockets
         ssl
         crypto
         z

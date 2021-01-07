@@ -4,18 +4,20 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
-#define CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#ifndef CARTA_BACKEND_IMAGEDATA_COMPLISTLOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_COMPLISTLOADER_H_
 
-#include <casacore/images/Images/PagedImage.h>
+#include <casacore/casa/Json/JsonKVMap.h>
+#include <casacore/casa/Json/JsonParser.h>
+#include <imageanalysis/Images/ComponentListImage.h>
 
 #include "FileLoader.h"
 
 namespace carta {
 
-class CasaLoader : public FileLoader {
+class CompListLoader : public FileLoader {
 public:
-    CasaLoader(const std::string& filename);
+    CompListLoader(const std::string& filename);
 
     void OpenFile(const std::string& hdu) override;
 
@@ -23,14 +25,15 @@ public:
     ImageRef GetImage() override;
 
 private:
-    std::unique_ptr<casacore::PagedImage<float>> _image;
+    std::string _filename;
+    std::unique_ptr<casacore::ImageInterface<casacore::Float> > _image;
 };
 
-CasaLoader::CasaLoader(const std::string& filename) : FileLoader(filename) {}
+CompListLoader::CompListLoader(const std::string& filename) : FileLoader(filename) {}
 
-void CasaLoader::OpenFile(const std::string& /*hdu*/) {
+void CompListLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
-        _image.reset(new casacore::PagedImage<float>(_filename));
+        _image.reset(new casa::ComponentListImage(_filename));
         if (!_image) {
             throw(casacore::AipsError("Error opening image"));
         }
@@ -38,7 +41,7 @@ void CasaLoader::OpenFile(const std::string& /*hdu*/) {
     }
 }
 
-bool CasaLoader::HasData(FileInfo::Data dl) const {
+bool CompListLoader::HasData(FileInfo::Data dl) const {
     switch (dl) {
         case FileInfo::Data::Image:
             return true;
@@ -56,10 +59,10 @@ bool CasaLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename CasaLoader::ImageRef CasaLoader::GetImage() {
+typename CompListLoader::ImageRef CompListLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
 }
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#endif // CARTA_BACKEND_IMAGEDATA_COMPLISTLOADER_H_

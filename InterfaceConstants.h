@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 //# InterfaceConstants.h: definitions used in the Interface Control Document
 //* Others added for implementation
 #ifndef CARTA_BACKEND__INTERFACECONSTANTS_H_
@@ -37,7 +43,7 @@
 #define HISTOGRAM_START 0.0
 #define HISTOGRAM_COMPLETE 1.0
 #define HISTOGRAM_CANCEL -1.0
-#define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 1.0
+#define UPDATE_HISTOGRAM_PROGRESS_PER_SECONDS 2.0
 
 // spectral profile calculation
 #define INIT_DELTA_CHANNEL 10
