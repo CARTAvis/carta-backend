@@ -81,14 +81,6 @@ RUN \
   cmake  -DCMAKE_BUILD_TYPE=RELEASE .. && make all install && \
   cd /root && rm -rf zfp
 
-# Install uWS
-RUN \
-  cd /root && \
-  git clone https://github.com/uNetworking/uWebSockets.git && \
-  cd uWebSockets && git checkout v0.14 && cd .. && \
-  make default install -C uWebSockets && \
-  rm -rf uWebSockets
-
 # Forward port so that the webapp can properly access it from outside of the container
 EXPOSE 3002
 # For gRPC scripting interface

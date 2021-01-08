@@ -79,10 +79,10 @@ class SetHistogramRequirementsTask : public OnMessageTask {
     tbb::task* execute();
     carta::EventHeader _header;
     int _event_length;
-    char* _event_buffer;
+    const char* _event_buffer;
 
 public:
-    SetHistogramRequirementsTask(Session* session, carta::EventHeader& head, int len, char* buf) : OnMessageTask(session) {
+    SetHistogramRequirementsTask(Session* session, carta::EventHeader& head, int len, const char* buf) : OnMessageTask(session) {
         _header = head;
         _event_length = len;
         _event_buffer = buf;
