@@ -148,8 +148,8 @@ void Session::ConnectCalled() {
 // File browser info
 
 bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
-    const std::string& folder, const std::string& filename, const std::string& hdu, std::string& message) {
-    // Fill CARTA::FileInfo and CARTA::FileInfoExtended map for all hdus if no hdu supplied and FITS image
+    const std::string& folder, const std::string& filename, const std::string& hdu_name, std::string& message) {
+    // Fill CARTA::FileInfo and CARTA::FileInfoExtended map for all hdus if no hdu_name supplied and FITS image
     bool file_info_ok(false);
 
     try {
@@ -168,9 +168,9 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
             return file_info_ok;
         }
 
-        // Extended file info in response is map<hdu, FileInfoExtended>
+        // Extended file info in response is map<hdu_name, FileInfoExtended>
         std::vector<std::string> hdu_list;
-        if (hdu.empty()) {
+        if (hdu_name.empty()) {
             if (file_info.type() == CARTA::FileType::FITS) {
                 // Get list of HDUs; FITS hdus moved to file info response
                 FitsHduList fits_hdu_list = FitsHduList(full_name);
@@ -178,18 +178,20 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
                 if (hdu_list.empty()) { // FitsHduList failed
                     message = fmt::format("Failed to determine HDU info for {}.", filename);
                     return file_info_ok;
+                } else {
+                    hdu_list.push_back(hdu_list[0]);
                 }
             } else if (file_info.hdu_list_size() > 0) {
                 hdu_list.push_back(file_info.hdu_list(0)); // use first
             }
         } else {
-            hdu_list.push_back(hdu);
+            hdu_list.push_back(hdu_name);
         }
 
         _loader.reset(carta::FileLoader::GetLoader(full_name));
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
 
-        // FileExtendedInfo for each hdu
+        // FileExtendedInfo for each hdu_name
         for (auto& hdu : hdu_list) {
             CARTA::FileInfoExtended file_info_ext;
 
@@ -199,7 +201,7 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
                     file_info_ok = true;
                 }
             } else {
-                // split hdu number and ext name (if any)
+                // split hdu_name number and ext name (if any)
                 std::vector<std::string> hdunum_extname;
                 SplitString(hdu, ':', hdunum_extname);
                 std::string hdunum = hdunum_extname[0];
@@ -219,13 +221,13 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
-    const std::string& filename, const std::string& hdu, std::string& message) {
-    // Fill FileInfoExtended for given file and hdu
+    const std::string& filename, const std::string& hdu_name, std::string& message) {
+    // Fill FileInfoExtended for given file and hdu_name
     bool file_info_ok(false);
     std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
 
-    if (FillExtendedFileInfo(extended_info_map, file_info, folder, filename, hdu, message)) {
-        extended_info = extended_info_map[hdu];
+    if (FillExtendedFileInfo(extended_info_map, file_info, folder, filename, hdu_name, message) && extended_info_map.size()) {
+        extended_info = extended_info_map.begin()->second;
         file_info_ok = true;
     }
 
