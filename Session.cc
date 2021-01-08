@@ -45,10 +45,10 @@ int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
-// Default constructor. Associates a websocket with a UUID and sets the root folder for all files
-Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
-    uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose, bool perflog, int grpc_port)
+Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
+    FileListHandler* file_list_handler, bool verbose, bool perflog, int grpc_port)
     : _socket(ws),
+      _loop(loop),
       _id(id),
       _address(address),
       _root_folder(root),
@@ -59,7 +59,6 @@ Session::Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string addre
       _grpc_port(grpc_port),
       _loader(nullptr),
       _region_handler(nullptr),
-      _outgoing_async(outgoing_async),
       _file_list_handler(file_list_handler),
       _animation_id(0),
       _file_settings(this) {
@@ -91,8 +90,6 @@ void ExitNoSessions(int s) {
 }
 
 Session::~Session() {
-    _outgoing_async->close();
-
     --_num_sessions;
     DEBUG(std::cout << this << " ~Session " << _num_sessions << std::endl;)
     if (!_num_sessions) {
@@ -131,6 +128,9 @@ void Session::DisconnectCalled() {
     _base_context.cancel_group_execution();
     _histogram_context.cancel_group_execution();
     if (_animation_object) {
+        if (!_animation_object->_stop_called) {
+            _animation_object->_stop_called = true; // stop the animation
+        }
         _animation_object->CancelExecution();
     }
 }
@@ -385,7 +385,10 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
             }
             ack.set_file_feature_flags(feature_flags);
-
+            std::vector<CARTA::Beam> beams;
+            if (_frames.at(file_id)->GetBeams(beams)) {
+                *ack.mutable_beam_table() = {beams.begin(), beams.end()};
+            }
             success = true;
         } else {
             err_message = frame->GetErrorMessage();
@@ -1566,7 +1569,18 @@ void Session::SendEvent(CARTA::EventType event_type, uint32_t event_id, const go
     // Skip compression on files smaller than 1 kB
     msg_vs_compress.second = compress && required_size > 1024;
     _out_msgs.push(msg_vs_compress);
-    _outgoing_async->send();
+
+    // uWS::Loop::defer(function) is the only thread-safe function, use it to defer the calling of a function to the thread that runs the
+    // Loop.
+    _loop->defer([&]() {
+        std::pair<std::vector<char>, bool> msg;
+        if (_connected) {
+            while (_out_msgs.try_pop(msg)) {
+                std::string_view sv(msg.first.data(), msg.first.size());
+                _socket->send(sv, uWS::OpCode::BINARY, msg.second);
+            }
+        }
+    });
 }
 
 void Session::SendFileEvent(
@@ -1574,17 +1588,6 @@ void Session::SendFileEvent(
     // do not send if file is closed
     if (_frames.count(file_id)) {
         SendEvent(event_type, event_id, message, compress);
-    }
-}
-
-void Session::SendPendingMessages() {
-    // Do not parallelize: this must be done serially
-    // due to the constraints of uWS.
-    std::pair<std::vector<char>, bool> msg;
-    if (_connected) {
-        while (_out_msgs.try_pop(msg)) {
-            _socket->send(msg.first.data(), msg.first.size(), uWS::BINARY, nullptr, nullptr, msg.second);
-        }
     }
 }
 
