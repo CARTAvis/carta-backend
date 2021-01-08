@@ -339,7 +339,10 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
                 feature_flags |= CARTA::FileFeatureFlags::CHANNEL_HISTOGRAMS;
             }
             ack.set_file_feature_flags(feature_flags);
-
+            std::vector<CARTA::Beam> beams;
+            if (_frames.at(file_id)->GetBeams(beams)) {
+                *ack.mutable_beam_table() = {beams.begin(), beams.end()};
+            }
             success = true;
         } else {
             err_message = frame->GetErrorMessage();

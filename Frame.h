@@ -90,6 +90,7 @@ public:
     int CurrentChannel();
     int CurrentStokes();
     int StokesAxis();
+    bool GetBeams(std::vector<CARTA::Beam>& beams);
 
     // Slicer to set channel and stokes ranges with full xy plane
     casacore::Slicer GetImageSlicer(const ChannelRange& chan_range, int stokes);
