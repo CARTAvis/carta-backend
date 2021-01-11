@@ -14,7 +14,6 @@
 #include <casacore/casa/OS/File.h>
 
 #include "../Util.h"
-#include "FitsHduList.h"
 
 FileInfoLoader::FileInfoLoader(const std::string& filename) : _filename(filename) {
     _type = GetCartaFileType(filename);
@@ -24,9 +23,10 @@ FileInfoLoader::FileInfoLoader(const std::string& filename, const CARTA::FileTyp
 
 bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     // Fill FileInfo submessage with type, size, hdus
+    bool success(false);
     casacore::File cc_file(_filename);
     if (!cc_file.exists()) {
-        return false;
+        return success;
     }
 
     if (file_info.name().empty()) {
@@ -49,22 +49,17 @@ bool FileInfoLoader::FillFileInfo(CARTA::FileInfo& file_info) {
     file_info.set_date(cc_file.modifyTime());
     file_info.set_size(file_size);
     file_info.set_type(_type);
-    // add hdu for FITS, HDF5
-    if (_type == CARTA::FileType::FITS) {
+
+    // add hdu for HDF5
+    if (_type == CARTA::FileType::HDF5) {
         casacore::String abs_file_name(cc_file.path().absoluteName());
-        return GetFitsHduList(file_info, abs_file_name);
-    } else if (_type == CARTA::FileType::HDF5) {
-        casacore::String abs_file_name(cc_file.path().absoluteName());
-        return GetHdf5HduList(file_info, abs_file_name);
+        success = GetHdf5HduList(file_info, abs_file_name);
     } else {
         file_info.add_hdu_list("");
-        return true;
+        success = true;
     }
-}
 
-bool FileInfoLoader::GetFitsHduList(CARTA::FileInfo& file_info, const std::string& filename) {
-    FitsHduList fits_hdu_list = FitsHduList(filename);
-    return fits_hdu_list.GetHduList(file_info);
+    return success;
 }
 
 bool FileInfoLoader::GetHdf5HduList(CARTA::FileInfo& file_info, const std::string& filename) {
