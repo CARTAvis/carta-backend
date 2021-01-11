@@ -21,7 +21,7 @@ FUZZY_HEADER_MATCH = """/\* This file (.*)
 
 def cpp_files(directory):
     for root, dirs, files in os.walk(directory):
-        dirs[:] = [d for d in dirs if d != "build"]
+        dirs[:] = [d for d in dirs if d != "build" and d != "uWebSockets"]
         for basename in files:
             if re.search("\.(cc|h)$", basename):
                 filename = os.path.join(root, basename)

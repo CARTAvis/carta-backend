@@ -7,4 +7,4 @@
 
 cformat=${1:-clang-format}
 
-find . -regex ".*\.\(cc\|h\)" -not -path "./*/carta-protobuf/*" -not -path "./*/carta-scripting-grpc/*" | xargs $cformat -i
+find . -regex ".*\.\(cc\|h\)" -not -path "./build/*" -not -path './uWebSockets/*' | xargs $cformat -i
