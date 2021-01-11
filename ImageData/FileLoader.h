@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #ifndef CARTA_BACKEND_IMAGEDATA_FILELOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_FILELOADER_H_
 
@@ -7,6 +13,7 @@
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/SubImage.h>
 
+#include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
 #include "../Util.h"
@@ -55,7 +62,7 @@ struct RegionSpectralStats {
         : origin(origin), shape(shape) {
         std::vector<CARTA::StatsType> supported_stats = {CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
             CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min,
-            CARTA::StatsType::Max};
+            CARTA::StatsType::Max, CARTA::StatsType::Extrema};
 
         if (has_flux) {
             supported_stats.push_back(CARTA::StatsType::FluxDensity);
@@ -141,6 +148,9 @@ public:
 
     // Return the opened casacore image
     virtual ImageRef GetImage() = 0;
+
+    // read beam subtable
+    bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
     bool GetShape(IPos& shape);

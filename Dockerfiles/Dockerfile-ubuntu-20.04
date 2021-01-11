@@ -25,12 +25,6 @@ RUN \
   apt-get update && \
   apt-get install carta-casacore
 
-# uWS from cartavis PPA
-RUN \
-  add-apt-repository -y ppa:cartavis/uws && \
-  apt-get update && \
-  apt-get install uws
-
 # zfp from cartavis PPA
 RUN \
   add-apt-repository -y ppa:cartavis/zfp && \

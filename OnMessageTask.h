@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 //# OnMessageTask.h: dequeues messages and calls appropriate Session handlers
 
 #ifndef CARTA_BACKEND__ONMESSAGETASK_H_
@@ -73,10 +79,10 @@ class SetHistogramRequirementsTask : public OnMessageTask {
     tbb::task* execute();
     carta::EventHeader _header;
     int _event_length;
-    char* _event_buffer;
+    const char* _event_buffer;
 
 public:
-    SetHistogramRequirementsTask(Session* session, carta::EventHeader& head, int len, char* buf) : OnMessageTask(session) {
+    SetHistogramRequirementsTask(Session* session, carta::EventHeader& head, int len, const char* buf) : OnMessageTask(session) {
         _header = head;
         _event_length = len;
         _event_buffer = buf;

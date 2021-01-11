@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #ifndef CARTA_BACKEND_FILELIST_FITSHDULIST_H_
 #define CARTA_BACKEND_FILELIST_FITSHDULIST_H_
 
@@ -14,7 +20,7 @@ inline void FitsInfoErrHandler(const char* err_message, casacore::FITSError::Err
 class FitsHduList {
 public:
     FitsHduList(const std::string& filename);
-    bool GetHduList(CARTA::FileInfo& file_info);
+    void GetHduList(std::vector<std::string>& hdu_list);
 
 private:
     bool IsImageHdu(casacore::FITS::HDUType hdu_type);

@@ -1,3 +1,9 @@
+/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
+   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 //# FileExtInfoLoader.cc: fill FileInfoExtended for all supported file types
 
 #include "FileExtInfoLoader.h"
@@ -139,7 +145,7 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                 // axis or coord number to append to name
                 int naxis(0), ntype(1), nval(1), ndelt(1), npix(1);
 
-                casacore::String radesys; // for computed entry
+                casacore::String extname, radesys; // for computed entries
 
                 // Create header entry for each FitsKeyword
                 fhi.kw.first(); // go to first card
@@ -231,8 +237,11 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                                     casacore::String header_string = fkw->asString();
                                     header_string.trim();
 
+                                    // save for computed_entries
                                     if (name == "RADESYS") {
-                                        radesys = header_string; // save for computed_entries
+                                        radesys = header_string;
+                                    } else if (name == "EXTNAME") {
+                                        extname = header_string;
                                     }
 
                                     if (name.contains("CTYPE") && header_string.contains("FREQ")) {
@@ -260,6 +269,20 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
                         }
                     }
                     fkw = fhi.kw.next(); // get next keyword
+                }
+
+                // Add hdu number and extension name entries if set
+                if (!hdu.empty()) {
+                    auto entry = extended_info.add_computed_entries();
+                    entry->set_name("HDU");
+                    entry->set_value(hdu);
+                    entry->set_entry_type(CARTA::EntryType::STRING);
+                }
+                if (!extname.empty()) {
+                    auto entry = extended_info.add_computed_entries();
+                    entry->set_name("Extension name");
+                    entry->set_value(extname);
+                    entry->set_entry_type(CARTA::EntryType::STRING);
                 }
 
                 int spectral_axis, stokes_axis;

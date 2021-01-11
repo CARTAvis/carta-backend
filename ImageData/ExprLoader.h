@@ -4,18 +4,22 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
-#define CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#ifndef CARTA_BACKEND_IMAGEDATA_EXPRLOADER_H_
+#define CARTA_BACKEND_IMAGEDATA_EXPRLOADER_H_
 
-#include <casacore/images/Images/PagedImage.h>
+#include <casacore/casa/Json/JsonKVMap.h>
+#include <casacore/casa/Json/JsonParser.h>
+#include <casacore/images/Images/ImageExpr.h>
+#include <casacore/images/Images/ImageExprParse.h>
+#include <casacore/lattices/LEL/LatticeExprNode.h>
 
 #include "FileLoader.h"
 
 namespace carta {
 
-class CasaLoader : public FileLoader {
+class ExprLoader : public FileLoader {
 public:
-    CasaLoader(const std::string& filename);
+    ExprLoader(const std::string& filename);
 
     void OpenFile(const std::string& hdu) override;
 
@@ -23,14 +27,19 @@ public:
     ImageRef GetImage() override;
 
 private:
-    std::unique_ptr<casacore::PagedImage<float>> _image;
+    std::string _filename;
+    std::unique_ptr<casacore::ImageExpr<float>> _image;
 };
 
-CasaLoader::CasaLoader(const std::string& filename) : FileLoader(filename) {}
+ExprLoader::ExprLoader(const std::string& filename) : FileLoader(filename) {}
 
-void CasaLoader::OpenFile(const std::string& /*hdu*/) {
+void ExprLoader::OpenFile(const std::string& /*hdu*/) {
     if (!_image) {
-        _image.reset(new casacore::PagedImage<float>(_filename));
+        casacore::JsonKVMap _jmap = casacore::JsonParser::parseFile(_filename + "/imageexpr.json");
+        casacore::String _expr = _jmap.get("ImageExpr").getString();
+        casacore::PtrBlock<const casacore::ImageRegion*> _regions;
+        casacore::LatticeExprNode _node = casacore::ImageExprParse::command(_expr, casacore::Block<casacore::LatticeExprNode>(), _regions);
+        _image.reset(new casacore::ImageExpr<float>(_node, _expr, _filename, _jmap));
         if (!_image) {
             throw(casacore::AipsError("Error opening image"));
         }
@@ -38,7 +47,7 @@ void CasaLoader::OpenFile(const std::string& /*hdu*/) {
     }
 }
 
-bool CasaLoader::HasData(FileInfo::Data dl) const {
+bool ExprLoader::HasData(FileInfo::Data dl) const {
     switch (dl) {
         case FileInfo::Data::Image:
             return true;
@@ -56,10 +65,10 @@ bool CasaLoader::HasData(FileInfo::Data dl) const {
     return false;
 }
 
-typename CasaLoader::ImageRef CasaLoader::GetImage() {
+typename ExprLoader::ImageRef ExprLoader::GetImage() {
     return _image.get(); // nullptr if image not opened
 }
 
 } // namespace carta
 
-#endif // CARTA_BACKEND_IMAGEDATA_CASALOADER_H_
+#endif // CARTA_BACKEND_IMAGEDATA_EXPRLOADER_H_
