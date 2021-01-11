@@ -32,6 +32,7 @@
 #include "EventHeader.h"
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
+#include "FileList/FitsHduList.h"
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
@@ -144,57 +145,107 @@ void Session::ConnectCalled() {
 }
 
 // ********************************************************************************
-// File browser
+// File browser info
 
-bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const string& folder,
-    const string& filename, string hdu, string& message) {
-    // fill CARTA::FileInfoResponse submessages CARTA::FileInfo and CARTA::FileInfoExtended
-    bool ext_file_info_ok(true);
+bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
+    const std::string& folder, const std::string& filename, const std::string& hdu_name, std::string& message) {
+    // Fill CARTA::FileInfo and CARTA::FileInfoExtended map for all hdus if no hdu_name supplied and FITS image
+    bool file_info_ok(false);
+
     try {
         file_info.set_name(filename);
         casacore::String full_name(GetResolvedFilename(_root_folder, folder, filename));
-        if (!full_name.empty()) {
-            try {
-                FileInfoLoader info_loader = FileInfoLoader(full_name);
-                if (!info_loader.FillFileInfo(file_info)) {
-                    return false;
-                }
-                if (hdu.empty()) { // use first when required
-                    hdu = file_info.hdu_list(0);
-                }
 
-                _loader.reset(carta::FileLoader::GetLoader(full_name));
+        if (full_name.empty()) {
+            message = fmt::format("File {} does not exist.", filename);
+            return file_info_ok;
+        }
 
-                FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
-                ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, hdu, message);
-            } catch (casacore::AipsError& ex) {
-                message = ex.getMesg();
-                ext_file_info_ok = false;
+        // FileInfo
+        FileInfoLoader info_loader = FileInfoLoader(full_name);
+        if (!info_loader.FillFileInfo(file_info)) {
+            message = fmt::format("File info for {} failed.", filename);
+            return file_info_ok;
+        }
+
+        // Extended file info in response is map<hdu_name, FileInfoExtended>
+        std::vector<std::string> hdu_list;
+        if (hdu_name.empty()) {
+            if (file_info.type() == CARTA::FileType::FITS) {
+                // Get list of HDUs; FITS hdus moved to file info response
+                FitsHduList fits_hdu_list = FitsHduList(full_name);
+                fits_hdu_list.GetHduList(hdu_list);
+                if (hdu_list.empty()) { // FitsHduList failed
+                    message = fmt::format("Failed to determine HDU info for {}.", filename);
+                    return file_info_ok;
+                } else {
+                    hdu_list.push_back(hdu_list[0]);
+                }
+            } else if (file_info.hdu_list_size() > 0) {
+                hdu_list.push_back(file_info.hdu_list(0)); // use first
             }
         } else {
-            message = "File " + filename + " does not exist.";
-            ext_file_info_ok = false;
+            hdu_list.push_back(hdu_name);
+        }
+
+        _loader.reset(carta::FileLoader::GetLoader(full_name));
+        FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
+
+        // FileExtendedInfo for each hdu_name
+        for (auto& hdu : hdu_list) {
+            CARTA::FileInfoExtended file_info_ext;
+
+            if (hdu.empty()) {
+                if (ext_info_loader.FillFileExtInfo(file_info_ext, filename, hdu, message)) {
+                    hdu_info_map[hdu] = file_info_ext;
+                    file_info_ok = true;
+                }
+            } else {
+                // split hdu_name number and ext name (if any)
+                std::vector<std::string> hdunum_extname;
+                SplitString(hdu, ':', hdunum_extname);
+                std::string hdunum = hdunum_extname[0];
+
+                // Add info to map
+                if (ext_info_loader.FillFileExtInfo(file_info_ext, filename, hdunum, message)) {
+                    hdu_info_map[hdunum] = file_info_ext;
+                    file_info_ok = true;
+                }
+            }
         }
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
-        ext_file_info_ok = false;
     }
-    return ext_file_info_ok;
+
+    return file_info_ok;
+}
+
+bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
+    const std::string& filename, const std::string& hdu_name, std::string& message) {
+    // Fill FileInfoExtended for given file and hdu_name
+    bool file_info_ok(false);
+    std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
+
+    if (FillExtendedFileInfo(extended_info_map, file_info, folder, filename, hdu_name, message) && extended_info_map.size()) {
+        extended_info = extended_info_map.begin()->second;
+        file_info_ok = true;
+    }
+
+    return file_info_ok;
 }
 
 bool Session::FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
     const std::string& filename, std::string& message) {
-    bool ext_file_info_ok(true);
+    // Fill FileInfoExtended for given image
+    bool file_info_ok(false);
     try {
         _loader.reset(carta::FileLoader::GetLoader(image));
-
         FileExtInfoLoader ext_info_loader = FileExtInfoLoader(_loader.get());
-        ext_file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
+        file_info_ok = ext_info_loader.FillFileExtInfo(extended_info, filename, "", message);
     } catch (casacore::AipsError& err) {
         message = err.getMesg();
-        ext_file_info_ok = false;
     }
-    return ext_file_info_ok;
+    return file_info_ok;
 }
 
 // *********************************************************************************
@@ -251,12 +302,14 @@ void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t 
 void Session::OnFileInfoRequest(const CARTA::FileInfoRequest& request, uint32_t request_id) {
     CARTA::FileInfoResponse response;
     auto& file_info = *response.mutable_file_info();
-    auto& file_info_extended = *response.mutable_file_info_extended();
+    std::map<std::string, CARTA::FileInfoExtended> extended_info_map;
     string message;
+    bool success = FillExtendedFileInfo(extended_info_map, file_info, request.directory(), request.file(), request.hdu(), message);
 
-    casacore::String hdu(request.hdu());
-    hdu = hdu.before(" "); // strip FITS extension name
-    bool success = FillExtendedFileInfo(file_info_extended, file_info, request.directory(), request.file(), hdu, message);
+    if (success) {
+        // add extended info map to message
+        *response.mutable_file_info_extended() = {extended_info_map.begin(), extended_info_map.end()};
+    }
 
     // complete response message
     response.set_success(success);
@@ -288,29 +341,22 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
     // Create Frame and send response message
     const auto& directory(message.directory());
     const auto& filename(message.file());
+    const auto& hdu(message.hdu());
     auto file_id(message.file_id());
-    casacore::String hdu(message.hdu());
-    hdu = hdu.before(" "); // strip FITS extension name
 
     // response message:
     CARTA::OpenFileAck ack;
     ack.set_file_id(file_id);
     string err_message;
-
-    CARTA::FileInfo file_info;
-    CARTA::FileInfoExtended file_info_extended;
-
-    bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message);
-
     bool success(false);
 
-    if (info_loaded) {
-        // Set hdu if empty
-        if (hdu.empty()) { // use first
-            hdu = file_info.hdu_list(0);
-        }
+    // Set _loader and get file info
+    CARTA::FileInfo file_info;
+    CARTA::FileInfoExtended file_info_extended;
+    bool info_loaded = FillExtendedFileInfo(file_info_extended, file_info, directory, filename, hdu, err_message);
 
-        // create Frame for image
+    if (info_loaded) {
+        // create Frame for image; Frame owns loader
         auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _verbose_logging, _performance_logging));
         _loader.release();
 
