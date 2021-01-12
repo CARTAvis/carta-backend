@@ -159,9 +159,17 @@ int Frame::StokesAxis() {
     return _stokes_axis;
 }
 
+bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
+    std::string error;
+    bool beams_ok = _loader->GetBeams(beams, error);
+    if (!beams_ok) {
+        carta::Log(_session_id, error);
+    }
+    return beams_ok;
+}
+
 casacore::Slicer Frame::GetImageSlicer(const ChannelRange& chan_range, int stokes) {
     // Slicer to apply channel range and stokes to image shape
-
     // Normalize channel and stokes constants
     int start_chan(chan_range.from), end_chan(chan_range.to);
     if (start_chan == ALL_CHANNELS) {
@@ -169,11 +177,13 @@ casacore::Slicer Frame::GetImageSlicer(const ChannelRange& chan_range, int stoke
     } else if (start_chan == CURRENT_CHANNEL) {
         start_chan = CurrentChannel();
     }
+
     if (end_chan == ALL_CHANNELS) {
         end_chan = NumChannels();
     } else if (end_chan == CURRENT_CHANNEL) {
         end_chan = CurrentChannel();
     }
+
     stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
 
     // Start with entire image

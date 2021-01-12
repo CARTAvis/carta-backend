@@ -13,6 +13,7 @@
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/SubImage.h>
 
+#include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
 #include "../Util.h"
@@ -147,6 +148,9 @@ public:
 
     // Return the opened casacore image
     virtual ImageRef GetImage() = 0;
+
+    // read beam subtable
+    bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
     bool GetShape(IPos& shape);

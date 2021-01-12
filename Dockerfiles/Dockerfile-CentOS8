@@ -82,14 +82,6 @@ RUN \
   make -j 2 && make install && \
   cd /root && rm -rf grpc
 
-# Install uWS
-RUN \
-  cd /root && \
-  git clone https://github.com/uNetworking/uWebSockets.git && \
-  cd uWebSockets && git checkout v0.14 && cd .. && \
-  make default install -C uWebSockets && \
-  rm -rf uWebSockets
-
 # Install zfp
 RUN \
   cd /root && \
