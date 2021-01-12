@@ -4,7 +4,6 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-
 #ifndef CARTA_BACKEND_IMAGEDATA_HDF5LOADER_TCC_
 #define CARTA_BACKEND_IMAGEDATA_HDF5LOADER_TCC_
 
