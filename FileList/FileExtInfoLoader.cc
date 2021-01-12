@@ -409,24 +409,41 @@ void FileExtInfoLoader::AddComputedEntries(
             entry->set_entry_type(CARTA::EntryType::STRING);
         }
 
-        if (!axis_names.empty() && !reference_values.empty() && !axis_units.empty()) {
-            auto entry = extended_info.add_computed_entries();
-            entry->set_name("Image reference coords");
-            std::string format_coord1 = MakeAngleString(axis_names(0), reference_values(0), axis_units(0));
-            std::string format_coord2 = MakeAngleString(axis_names(1), reference_values(1), axis_units(1));
-            std::string format_coords = fmt::format("[{}, {}]", format_coord1, format_coord2);
-            entry->set_value(format_coords);
-            entry->set_entry_type(CARTA::EntryType::STRING);
-        }
-
         if (!reference_values.empty() && !axis_units.empty()) {
-            auto entry = extended_info.add_computed_entries();
-            entry->set_name("Image ref coords (deg)");
+            // Computed entries for reference coordinates
             casacore::Quantity coord0(reference_values(0), axis_units(0));
             casacore::Quantity coord1(reference_values(1), axis_units(1));
-            std::string ref_coords = fmt::format("[{}, {}]", coord0.get("deg"), coord1.get("deg"));
-            entry->set_value(ref_coords);
-            entry->set_entry_type(CARTA::EntryType::STRING);
+            bool coord0IsDir(coord0.isConform("deg")), coord1IsDir(coord1.isConform("deg"));
+
+            if (coord0IsDir || coord1IsDir) {
+                if (!axis_names.empty()) {
+                    // Direction coord(s) converted to angle string (e.g. RA and Dec)
+                    // Returns Quantity string if not angle type
+                    std::string coord1angle = MakeAngleString(axis_names(0), reference_values(0), axis_units(0));
+                    std::string coord2angle = MakeAngleString(axis_names(1), reference_values(1), axis_units(1));
+                    std::string format_coords = fmt::format("[{}, {}]", coord1angle, coord2angle);
+
+                    auto entry = extended_info.add_computed_entries();
+                    entry->set_name("Image reference coords");
+                    entry->set_value(format_coords);
+                    entry->set_entry_type(CARTA::EntryType::STRING);
+                }
+
+                // Direction coord(s) converted to deg
+                casacore::Quantity coord0deg(coord0), coord1deg(coord1);
+                if (coord0IsDir) {
+                    coord0deg = coord0.get("deg");
+                }
+                if (coord1IsDir) {
+                    coord1deg = coord1.get("deg");
+                }
+                std::string ref_coords = fmt::format("[{}, {}]", coord0deg, coord1deg);
+                // Set converted coords entry
+                auto entry = extended_info.add_computed_entries();
+                entry->set_name("Image ref coords (deg)");
+                entry->set_value(ref_coords);
+                entry->set_entry_type(CARTA::EntryType::STRING);
+            }
         }
 
         if (!increment.empty() && !axis_units.empty()) {
@@ -754,6 +771,7 @@ std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double v
     if (unit.empty()) {
         return fmt::format("{}", val);
     }
+    casacore::Quantity quant1(val, unit);
 
     casacore::MVAngle::formatTypes format;
     if (type == "Right Ascension") {
@@ -761,10 +779,9 @@ std::string FileExtInfoLoader::MakeAngleString(const std::string& type, double v
     } else if ((type == "Declination") || (type.find("Longitude") != std::string::npos) || (type.find("Latitude") != std::string::npos)) {
         format = casacore::MVAngle::ANGLE;
     } else {
-        return fmt::format("{} {}", val, unit);
+        return fmt::format("{}", quant1);
     }
 
-    casacore::Quantity quant1(val, unit);
     casacore::MVAngle mva(quant1);
     return mva.string(format, 10);
 }
