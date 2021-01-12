@@ -1439,35 +1439,38 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     auto image = GetImage();
 
     auto image_shape = image->shape();
-    auto channels_start = save_file_msg.channels().size() ? save_file_msg.channels(0) : 0;
-    auto channels_length = save_file_msg.channels().size() ? save_file_msg.channels(1) : image_shape[_spectral_axis];
-    auto channels_stride = save_file_msg.channels().size() ? save_file_msg.channels(2) : 1;
-    auto stokes_start = save_file_msg.stokes().size() ? save_file_msg.stokes(0) : 0;
-    auto stokes_length = save_file_msg.stokes().size() ? save_file_msg.stokes(1) : image_shape[_stokes_axis];
-    auto stokes_stride = save_file_msg.stokes().size() ? save_file_msg.stokes(2) : 1;
-    casacore::IPosition start;
-    casacore::IPosition length;
-    casacore::IPosition stride;
-    casacore::IPosition shape;
-    if (image_shape.size() == 3) {
-        start = casacore::IPosition(3, 0, 0, channels_start);
-        length = casacore::IPosition(3, image_shape[0], image_shape[1], channels_length);
-        stride = casacore::IPosition(3, 1, 1, channels_stride);
-        shape = casacore::IPosition(3, image_shape[0], image_shape[1], channels_length / channels_stride);
-    } else if (image_shape.size() == 4) {
-        start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
-        length = casacore::IPosition(4, image_shape[0], image_shape[1], channels_length, stokes_length);
-        stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
-        shape = casacore::IPosition(4, image_shape[0], image_shape[1], channels_length / channels_stride, stokes_length / stokes_stride);
-    } else {
-        return;
+    if (image_shape.size() > 2) {
+        auto channels_start = save_file_msg.channels().size() ? save_file_msg.channels(0) : 0;
+        auto channels_length = save_file_msg.channels().size() ? save_file_msg.channels(1) : image_shape[_spectral_axis];
+        auto channels_stride = save_file_msg.channels().size() ? save_file_msg.channels(2) : 1;
+        auto stokes_start = save_file_msg.stokes().size() ? save_file_msg.stokes(0) : 0;
+        auto stokes_length = save_file_msg.stokes().size() ? save_file_msg.stokes(1) : image_shape[_stokes_axis];
+        auto stokes_stride = save_file_msg.stokes().size() ? save_file_msg.stokes(2) : 1;
+        casacore::IPosition start;
+        casacore::IPosition length;
+        casacore::IPosition stride;
+        casacore::IPosition shape;
+        if (image_shape.size() == 3) {
+            start = casacore::IPosition(3, 0, 0, channels_start);
+            length = casacore::IPosition(3, image_shape[0], image_shape[1], channels_length);
+            stride = casacore::IPosition(3, 1, 1, channels_stride);
+            shape = casacore::IPosition(3, image_shape[0], image_shape[1], channels_length / channels_stride);
+        } else if (image_shape.size() == 4) {
+            start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
+            length = casacore::IPosition(4, image_shape[0], image_shape[1], channels_length, stokes_length);
+            stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
+            shape =
+                casacore::IPosition(4, image_shape[0], image_shape[1], channels_length / channels_stride, stokes_length / stokes_stride);
+        } else {
+            return;
+        }
+
+        auto slice_sub_image = casacore::Slicer(start, length, stride);
+        casacore::SubImage<float> sub_image;
+
+        _loader->GetSubImage(slice_sub_image, sub_image);
+        image = sub_image.cloneII();
     }
-
-    auto slice_sub_image = casacore::Slicer(start, length, stride);
-    casacore::SubImage<float> sub_image;
-
-    _loader->GetSubImage(slice_sub_image, sub_image);
-    image = sub_image.cloneII();
 
     std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
     if (output_file_type == CARTA::FileType::CASA) {
@@ -1575,26 +1578,31 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     casacore::IPosition length;
     casacore::IPosition stride;
     casacore::IPosition shape;
-    if (image_shape.size() == 3) {
-        start = casacore::IPosition(3, 0, 0, channels_start);
-        length = casacore::IPosition(3, image_region->shape()[0], image_region->shape()[1], channels_length);
-        stride = casacore::IPosition(3, 1, 1, channels_stride);
-        shape = casacore::IPosition(3, image_region->shape()[0], image_region->shape()[1], channels_length / channels_stride);
-    } else if (image_shape.size() == 4) {
-        start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
-        length = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], channels_length, stokes_length);
-        stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
-        shape = casacore::IPosition(
-            4, image_region->shape()[0], image_region->shape()[1], channels_length / channels_stride, stokes_length / stokes_stride);
-    } else {
-        return;
-    }
-
-    auto slice_sub_image = casacore::Slicer(start, length, stride);
     casacore::SubImage<float> sub_image;
+    if (image_shape.size() == 2) {
+        _loader->GetSubImage(LattRegionHolder(image_region), sub_image);
+        image = sub_image.cloneII();
+    } else {
+        if (image_shape.size() == 3) {
+            start = casacore::IPosition(3, 0, 0, channels_start);
+            length = casacore::IPosition(3, image_region->shape()[0], image_region->shape()[1], channels_length);
+            stride = casacore::IPosition(3, 1, 1, channels_stride);
+            shape = casacore::IPosition(3, image_region->shape()[0], image_region->shape()[1], channels_length / channels_stride);
+        } else if (image_shape.size() == 4) {
+            start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
+            length = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], channels_length, stokes_length);
+            stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
+            shape = casacore::IPosition(
+                4, image_region->shape()[0], image_region->shape()[1], channels_length / channels_stride, stokes_length / stokes_stride);
+        } else {
+            return;
+        }
 
-    _loader->GetSubImage(slice_sub_image, LattRegionHolder(image_region), sub_image);
-    image = sub_image.cloneII();
+        auto slice_sub_image = casacore::Slicer(start, length, stride);
+
+        _loader->GetSubImage(slice_sub_image, LattRegionHolder(image_region), sub_image);
+        image = sub_image.cloneII();
+    }
 
     std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
     if (output_file_type == CARTA::FileType::CASA) {
