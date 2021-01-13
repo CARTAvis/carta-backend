@@ -135,7 +135,8 @@ const Hdf5Loader::IPos Hdf5Loader::GetStatsDataShape(FileInfo::Data ds) {
         case casacore::TpDouble: {
             return GetStatsDataShapeTyped<casacore::Double>(ds);
         }
-        default: { throw casacore::HDF5Error("Dataset " + DataSetToString(ds) + " has an unsupported datatype."); }
+        default:
+            throw casacore::HDF5Error("Dataset " + DataSetToString(ds) + " has an unsupported datatype.");
     }
 }
 
@@ -158,7 +159,8 @@ casacore::ArrayBase* Hdf5Loader::GetStatsData(FileInfo::Data ds) {
         case casacore::TpDouble: {
             return GetStatsDataTyped<casacore::Double, casacore::Float>(ds);
         }
-        default: { throw casacore::HDF5Error("Dataset " + DataSetToString(ds) + " has an unsupported datatype."); }
+        default:
+            throw casacore::HDF5Error("Dataset " + DataSetToString(ds) + " has an unsupported datatype.");
     }
 }
 
@@ -274,7 +276,6 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
         if ((x_start == 0) || (num_pixels[z] == 0)) {
             min[z] = std::numeric_limits<float>::max();
             max[z] = std::numeric_limits<float>::lowest();
-            extrema[z] = NAN;
             num_pixels[z] = 0;
             nan_count[z] = 0;
             sum[z] = 0;
@@ -343,12 +344,8 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
                     num_pixels[z] += 1;
                     sum[z] += v;
                     sum_sq[z] += v * v;
-
-                    if (v < min[z]) {
-                        min[z] = v;
-                    } else if (v > max[z]) {
-                        max[z] = v;
-                    }
+                    min[z] = std::min(min[z], v);
+                    max[z] = std::max(max[z], v);
                 }
             }
         }
