@@ -30,10 +30,6 @@
 #include "Session.h"
 #include "Util.h"
 
-#include "../uWebSockets/examples/helpers/AsyncFileReader.h"
-#include "../uWebSockets/examples/helpers/AsyncFileStreamer.h"
-#include "../uWebSockets/examples/helpers/Middleware.h"
-
 using namespace std;
 
 namespace CARTA {
@@ -600,13 +596,39 @@ int main(int argc, const char* argv[]) {
         curl_global_init(CURL_GLOBAL_ALL);
 
         session_number = 0;
-
+        std::string http_root("/home/angus/.nvm/versions/node/v12.18.3/lib/node_modules/carta-frontend/build");
         AsyncFileStreamer async_file_streamer("/home/angus/.nvm/versions/node/v12.18.3/lib/node_modules/carta-frontend/build");
 
         uWS::App()
-            .get("/*", [&async_file_streamer](auto *res, auto *req) {
-                serveFile(res, req);
-                async_file_streamer.streamFile(res, req->getUrl());
+            .get("/*", [&async_file_streamer, http_root](auto *res, auto *req) {
+                string_view url = req->getUrl();
+                string path_string = http_root;
+                if (url.empty() || url == "/") {
+                    path_string.append("/index.html");
+                } else {
+                    path_string.append(url);
+                }
+                fmt::print("Req URL: {} -> {}\n", url, path_string);
+
+                filesystem::path path(path_string);
+                if (filesystem::exists(path) && filesystem::is_regular_file(path)) {
+                    std::ifstream file(path, std::ios::binary | std::ios::ate);
+                    std::streamsize size = file.tellg();
+                    file.seekg(0, std::ios::beg);
+
+                    std::vector<char> buffer(size);
+                    if (file.read(buffer.data(), size))
+                    {
+                        res->writeStatus(uWS::HTTP_200_OK);
+                        string_view sv(buffer.data(), buffer.size());
+                        res->write(sv);
+                    } else {
+                        res->writeStatus("500 Internal Server Error");
+                    }
+                } else {
+                    res->writeStatus("404 Not Found");
+                }
+                res->end();
             })
             .ws<PerSocketData>("/token/:token", (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
                                          .upgrade = OnUpgrade,
