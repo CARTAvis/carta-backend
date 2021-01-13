@@ -108,8 +108,7 @@ set(LINK_LIBS
         ${PROTOBUF_LIBRARY}
         fmt
         uSockets
-        ssl
-        crypto
+        uuid
         z
         zfp
         zstd

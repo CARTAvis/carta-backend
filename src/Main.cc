@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
+#include <uuid/uuid.h>
 
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/HostInfo.h>
@@ -28,6 +29,10 @@
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "Util.h"
+
+#include "../uWebSockets/examples/helpers/AsyncFileReader.h"
+#include "../uWebSockets/examples/helpers/AsyncFileStreamer.h"
+#include "../uWebSockets/examples/helpers/Middleware.h"
 
 using namespace std;
 
@@ -73,11 +78,15 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
         address = IPAsText(http_response->getRemoteAddress());
     }
 
-    // Check if there's a token
+    // Check if there's a token to be matched
     if (!auth_token.empty()) {
-        auto token_header_entry = http_request->getHeader("carta-auth-token");
-        if (!token_header_entry.empty()) {
-            string token_header_value(token_header_entry);
+        // First try the URL parameter
+        auto req_token = http_request->getParameter(0);
+        if (req_token.empty()) {
+            req_token = http_request->getHeader("carta-auth-token");
+        }
+        if (!req_token.empty()) {
+            string token_header_value(req_token);
             if (token_header_value != auth_token) {
                 fmt::print("Header auth failed!\n");
                 http_response->close();
@@ -559,13 +568,20 @@ int main(int argc, const char* argv[]) {
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
             return 1;
         }
-
         auto env_entry = getenv("CARTA_AUTH_TOKEN");
         if (env_entry) {
             auth_token = env_entry;
-        }
+        } else {
+            uuid_t token, token2;
+            char token_string[37];
+            uuid_generate_random(token);
+            uuid_generate_random(token2);
+            auto match = uuid_compare(token, token2);
+            uuid_unparse(token, token_string);
+            auth_token =token_string;
 
-        tbb::task_scheduler_init task_scheduler(thread_count);
+            fmt::print("Please use token {} when connecting to the backend\n", auth_token);
+        }
         omp_set_num_threads(omp_thread_count);
         CARTA::global_thread_count = omp_thread_count;
 
@@ -585,8 +601,14 @@ int main(int argc, const char* argv[]) {
 
         session_number = 0;
 
+        AsyncFileStreamer async_file_streamer("/home/angus/.nvm/versions/node/v12.18.3/lib/node_modules/carta-frontend/build");
+
         uWS::App()
-            .ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
+            .get("/*", [&async_file_streamer](auto *res, auto *req) {
+                serveFile(res, req);
+                async_file_streamer.streamFile(res, req->getUrl());
+            })
+            .ws<PerSocketData>("/token/:token", (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
                                          .upgrade = OnUpgrade,
                                          .open = OnConnect,
                                          .message = OnMessage,
