@@ -12,6 +12,7 @@
 #include <atomic>
 #include <cstdint>
 #include <cstdio>
+#include <map>
 #include <mutex>
 #include <tuple>
 #include <unordered_map>
@@ -203,9 +204,13 @@ public:
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
 private:
-    // File info
+    // File info for file list (extended info for each hdu_name)
+    bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
+        const std::string& folder, const std::string& filename, const std::string& hdu_name, std::string& message);
+    // File info for open file
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
-        const std::string& filename, std::string hdu, std::string& message);
+        const std::string& filename, const std::string& hdu_name, std::string& message);
+    // File info for open moments image (not disk image)
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
         const std::string& filename, std::string& message);
 
