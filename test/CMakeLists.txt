@@ -32,7 +32,7 @@ if (testTimer)
 
     add_executable(testTimer
             TestTimer.cc
-            ../Timer/Timer.cc)
+            ../src/Timer/Timer.cc)
     target_link_libraries(testTimer gtest gtest_main Threads::Threads fmt)
 
     add_test(NAME TestTimer COMMAND testTimer)
@@ -44,22 +44,22 @@ if (testTable)
     include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} src)
     add_executable(test_votable
             TestVOTable.cc
-            ../Util.cc
-            ../Timer/Timer.cc
-            ../Table/Columns.cc
-            ../Table/Table.cc
-            ../Table/TableView.cc
-            ../Table/TableController.cc)
+            ../src/Util.cc
+            ../src/Timer/Timer.cc
+            ../src/Table/Columns.cc
+            ../src/Table/Table.cc
+            ../src/Table/TableView.cc
+            ../src/Table/TableController.cc)
     target_link_libraries(test_votable ${LINK_LIBS} gtest gtest_main)
 
     add_executable(test_fits
             TestFITS.cc
-            ../Util.cc
-            ../Timer/Timer.cc
-            ../Table/Columns.cc
-            ../Table/Table.cc
-            ../Table/TableView.cc
-            ../Table/TableController.cc)
+            ../src/Util.cc
+            ../src/Timer/Timer.cc
+            ../src/Table/Columns.cc
+            ../src/Table/Table.cc
+            ../src/Table/TableView.cc
+            ../src/Table/TableController.cc)
     target_link_libraries(test_fits ${LINK_LIBS} gtest gtest_main)
 
     add_test(NAME TestVOTable COMMAND test_votable)
