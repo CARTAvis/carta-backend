@@ -246,6 +246,48 @@ bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore:
     return true;
 }
 
+bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {
+    // Obtains beam table from ImageInfo
+    bool success(false);
+    try {
+        casacore::ImageInfo image_info = GetImage()->imageInfo();
+        if (!image_info.hasBeam()) {
+            error = "Image has no beam information.";
+            return success;
+        }
+
+        if (image_info.hasSingleBeam()) {
+            casacore::GaussianBeam gaussian_beam = image_info.restoringBeam();
+            CARTA::Beam carta_beam;
+            carta_beam.set_channel(-1);
+            carta_beam.set_stokes(-1);
+            carta_beam.set_major_axis(gaussian_beam.getMajor("arcsec"));
+            carta_beam.set_minor_axis(gaussian_beam.getMinor("arcsec"));
+            carta_beam.set_pa(gaussian_beam.getPA("deg").getValue());
+            beams.push_back(carta_beam);
+        } else {
+            casacore::ImageBeamSet beam_set = image_info.getBeamSet();
+            casacore::GaussianBeam gaussian_beam;
+            for (unsigned int stokes = 0; stokes < beam_set.nstokes(); ++stokes) {
+                for (unsigned int chan = 0; chan < beam_set.nchan(); ++chan) {
+                    gaussian_beam = beam_set.getBeam(chan, stokes);
+                    CARTA::Beam carta_beam;
+                    carta_beam.set_channel(chan);
+                    carta_beam.set_stokes(stokes);
+                    carta_beam.set_major_axis(gaussian_beam.getMajor("arcsec"));
+                    carta_beam.set_minor_axis(gaussian_beam.getMinor("arcsec"));
+                    carta_beam.set_pa(gaussian_beam.getPA("deg").getValue());
+                    beams.push_back(carta_beam);
+                }
+            }
+        }
+        success = true;
+    } catch (casacore::AipsError& err) {
+        error = "Image beam error: " + err.getMesg();
+    }
+    return success;
+}
+
 const FileLoader::IPos FileLoader::GetStatsDataShape(FileInfo::Data ds) {
     throw casacore::AipsError("getStatsDataShape not implemented in this loader");
 }
@@ -508,7 +550,7 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
     // Remove this check when we drop support for the old schema.
     // We assume that checking for only one of these datasets is sufficient.
     bool full(HasData(FileInfo::Data::STATS_2D_SUM));
-    double sum, sum_sq;
+    double sum, sum_sq, min, max;
     uint64_t num_pixels;
 
     if (HasData(FileInfo::Data::STATS)) {
@@ -538,11 +580,14 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                         num_pixels = _channel_size - stats[CARTA::StatsType::NanCount];
                         sum = stats[CARTA::StatsType::Sum];
                         sum_sq = stats[CARTA::StatsType::SumSq];
+                        min = stats[CARTA::StatsType::Min];
+                        max = stats[CARTA::StatsType::Max];
 
                         stats[CARTA::StatsType::NumPixels] = num_pixels;
                         stats[CARTA::StatsType::Mean] = sum / num_pixels;
                         stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                         stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                        stats[CARTA::StatsType::Extrema] = (abs(min) > abs(max) ? min : max);
                         if (has_flux) {
                             stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
                         }
@@ -579,11 +624,14 @@ void FileLoader::LoadImageStats(bool load_percentiles) {
                     num_pixels = (_channel_size * _num_channels) - stats[CARTA::StatsType::NanCount];
                     sum = stats[CARTA::StatsType::Sum];
                     sum_sq = stats[CARTA::StatsType::SumSq];
+                    min = stats[CARTA::StatsType::Min];
+                    max = stats[CARTA::StatsType::Max];
 
                     stats[CARTA::StatsType::NumPixels] = num_pixels;
                     stats[CARTA::StatsType::Mean] = sum / num_pixels;
                     stats[CARTA::StatsType::Sigma] = sqrt((sum_sq - (sum * sum / num_pixels)) / (num_pixels - 1));
                     stats[CARTA::StatsType::RMS] = sqrt(sum_sq / num_pixels);
+                    stats[CARTA::StatsType::Extrema] = (abs(min) > abs(max) ? min : max);
                     if (has_flux) {
                         stats[CARTA::StatsType::FluxDensity] = sum / beam_area;
                     }
