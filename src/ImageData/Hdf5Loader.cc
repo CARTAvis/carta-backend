@@ -11,14 +11,17 @@ namespace carta {
 Hdf5Loader::Hdf5Loader(const std::string& filename) : FileLoader(filename), _hdu("0") {}
 
 void Hdf5Loader::OpenFile(const std::string& hdu) {
+    // Explicitly handle empty HDU as the default 0
+    std::string selected_hdu = hdu.empty() ? "0" : hdu;
+
     // Open hdf5 image with specified hdu
-    if (!_image || (hdu != _hdu)) {
-        _image.reset(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), hdu));
+    if (!_image || (selected_hdu != _hdu)) {
+        _image.reset(new CartaHdf5Image(_filename, DataSetToString(FileInfo::Data::Image), selected_hdu));
         if (!_image) {
             throw(casacore::AipsError("Error opening image"));
         }
 
-        _hdu = hdu;
+        _hdu = selected_hdu;
 
         // We need this immediately because dataSetToString uses it to find the name of the swizzled dataset
         _num_dims = _image->shape().size();
@@ -27,7 +30,7 @@ void Hdf5Loader::OpenFile(const std::string& hdu) {
         if (HasData(FileInfo::Data::SWIZZLED)) {
             _swizzled_image = std::unique_ptr<casacore::HDF5Lattice<float>>(
                 new casacore::HDF5Lattice<float>(casacore::CountedPtr<casacore::HDF5File>(new casacore::HDF5File(_filename)),
-                    DataSetToString(FileInfo::Data::SWIZZLED), hdu));
+                    DataSetToString(FileInfo::Data::SWIZZLED), selected_hdu));
         }
     }
 }
