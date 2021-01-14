@@ -626,7 +626,7 @@ int main(int argc, const char* argv[]) {
 
                 string frontend_url = fmt::format("http://localhost:{}", port);
                 if (!auth_token.empty()) {
-                    frontend_url += fmt::format("?socketUrl=ws://localhost:{}/token/{}", port, auth_token);
+                    frontend_url += fmt::format("?token={}", auth_token);
                 }
                 if (!no_browser) {
 #if defined(__APPLE__)
