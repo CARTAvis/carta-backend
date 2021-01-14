@@ -45,6 +45,9 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _stokes_index(-1),
       _num_channels(1),
       _num_stokes(1),
+      _xaxis(0),
+      _yaxis(1),
+      _spectral_is_display(false),
       _z_profile_count(0),
       _moments_count(0),
       _moment_generator(nullptr) {
@@ -78,12 +81,22 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _valid = false;
         return;
     }
+
     _num_channels = (_spectral_axis >= 0 ? _image_shape(_spectral_axis) : 1);
     _num_stokes = (_stokes_axis >= 0 ? _image_shape(_stokes_axis) : 1);
 
-    // set current channel, stokes, imageCache
+    // set channel, stokes, imageCache
     _channel_index = default_channel;
     _stokes_index = DEFAULT_STOKES;
+
+    // Determine whether chan axis is displayed so we don't slice it!
+    std::vector<int> display_axes = _loader->GetDisplayAxes();
+    _xaxis = display_axes[0];
+    _yaxis = display_axes[1];
+    if ((_spectral_axis == _xaxis) || (_spectral_axis == _yaxis)) {
+        _spectral_is_display = true;
+    }
+
     if (!FillImageCache()) {
         _valid = false;
         return;
@@ -168,34 +181,35 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
 
 casacore::Slicer Frame::GetImageSlicer(const ChannelRange& chan_range, int stokes) {
     // Slicer to apply channel range and stokes to image shape
-    // Normalize channel and stokes constants
-    int start_chan(chan_range.from), end_chan(chan_range.to);
-    if (start_chan == ALL_CHANNELS) {
-        start_chan = 0;
-    } else if (start_chan == CURRENT_CHANNEL) {
-        start_chan = CurrentChannel();
-    }
-
-    if (end_chan == ALL_CHANNELS) {
-        end_chan = NumChannels();
-    } else if (end_chan == CURRENT_CHANNEL) {
-        end_chan = CurrentChannel();
-    }
-
-    stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
-
     // Start with entire image
     casacore::IPosition start(_image_shape.size());
     start = 0;
     casacore::IPosition end(_image_shape);
     end -= 1; // last position, not length
 
-    // Set channel and stokes axis ranges
-    if (_spectral_axis >= 0) {
+    // Slice channel axis
+    if (!_spectral_is_display && (_spectral_axis >= 0)) {
+        int start_chan(chan_range.from), end_chan(chan_range.to);
+        // Normalize channel constants
+        if (start_chan == ALL_CHANNELS) {
+            start_chan = 0;
+        } else if (start_chan == CURRENT_CHANNEL) {
+            start_chan = CurrentChannel();
+        }
+
+        if (end_chan == ALL_CHANNELS) {
+            end_chan = NumChannels() - 1;
+        } else if (end_chan == CURRENT_CHANNEL) {
+            end_chan = CurrentChannel();
+        }
         start(_spectral_axis) = start_chan;
         end(_spectral_axis) = end_chan;
     }
+
+    // Normalize stokes constant and slice stokes axis
+    stokes = (stokes == CURRENT_STOKES ? CurrentStokes() : stokes);
     if (_stokes_axis >= 0) {
+        // Slice stokes axis
         start(_stokes_axis) = stokes;
         end(_stokes_axis) = stokes;
     }
@@ -293,8 +307,8 @@ bool Frame::FillImageCache() {
         auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
         auto dt_set_image_cache =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-        fmt::print("Load {}x{} image to cache in {} ms at {} MPix/s\n", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
-            (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
+        fmt::print("Load {}x{} image to cache in {} ms at {} MPix/s\n", _image_shape(_xaxis), _image_shape(_yaxis), dt_set_image_cache * 1e-3,
+            (float)(_image_shape(_xaxis) * _image_shape(_yaxis)) / dt_set_image_cache);
     }
 
     return true;
@@ -324,7 +338,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     if ((req_height < 0) || (req_width < 0)) {
         return false;
     }
-    if (_image_shape(1) < y + req_height || _image_shape(0) < x + req_width) {
+    if (_image_shape(_yaxis) < y + req_height || _image_shape(_xaxis) < x + req_width) {
         return false;
     }
     // check mip; cannot divide by zero
@@ -336,7 +350,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     size_t num_rows_region = std::ceil((float)req_height / mip);
     size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
-    int num_image_columns = _image_shape(0);
+    int num_image_columns = _image_shape(_xaxis);
 
     // read lock imageCache
     bool write_lock(false);
@@ -352,12 +366,12 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
                 int pixel_count = 0;
                 size_t image_row = y + (j * mip);
                 for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-                    if (image_row >= _image_shape(1)) {
+                    if (image_row >= _image_shape(_yaxis)) {
                         continue;
                     }
                     size_t image_col = x + (i * mip);
                     for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-                        if (image_col >= _image_shape(0)) {
+                        if (image_col >= _image_shape(_xaxis)) {
                             continue;
                         }
                         float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
@@ -464,14 +478,15 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
 
 bool Frame::GetRasterTileData(std::vector<float>& tile_data, const Tile& tile, int& width, int& height) {
     int tile_size = 256;
-    int mip = Tile::LayerToMip(tile.layer, _image_shape(0), _image_shape(1), tile_size, tile_size);
+    int mip = Tile::LayerToMip(tile.layer, _image_shape(_xaxis), _image_shape(_yaxis), tile_size, tile_size);
     int tile_size_original = tile_size * mip;
-    CARTA::ImageBounds bounds;
+
     // crop to image size
+    CARTA::ImageBounds bounds;
     bounds.set_x_min(std::max(0, tile.x * tile_size_original));
-    bounds.set_x_max(std::min((int)_image_shape(0), (tile.x + 1) * tile_size_original));
+    bounds.set_x_max(std::min((int)_image_shape(_xaxis), (tile.x + 1) * tile_size_original));
     bounds.set_y_min(std::max(0, tile.y * tile_size_original));
-    bounds.set_y_max(std::min((int)_image_shape(1), (tile.y + 1) * tile_size_original));
+    bounds.set_y_max(std::min((int)_image_shape(_yaxis), (tile.y + 1) * tile_size_original));
 
     const int req_height = bounds.y_max() - bounds.y_min();
     const int req_width = bounds.x_max() - bounds.x_min();
@@ -504,7 +519,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
     tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, false);
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
-        TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, _contour_settings.levels, vertex_data,
+        TraceContours(_image_cache.data(), _image_shape(_xaxis), _image_shape(_yaxis), scale, offset, _contour_settings.levels, vertex_data,
             index_data, _contour_settings.chunk_size, partial_contour_callback, _perflog);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
@@ -512,10 +527,10 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int mask_size = (_contour_settings.smoothing_factor - 1) * 2 + 1;
         int64_t kernel_width = (mask_size - 1) / 2;
 
-        int64_t source_width = _image_shape(0);
-        int64_t source_height = _image_shape(1);
-        int64_t dest_width = _image_shape(0) - 2 * kernel_width;
-        int64_t dest_height = _image_shape(1) - 2 * kernel_width;
+        int64_t source_width = _image_shape(_xaxis);
+        int64_t source_height = _image_shape(_yaxis);
+        int64_t dest_width = _image_shape(_xaxis) - 2 * kernel_width;
+        int64_t dest_height = _image_shape(_yaxis) - 2 * kernel_width;
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
         smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
             _contour_settings.smoothing_factor, _perflog);
@@ -533,8 +548,9 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         CARTA::ImageBounds image_bounds;
         image_bounds.set_x_min(0);
         image_bounds.set_y_min(0);
-        image_bounds.set_x_max(_image_shape(0));
-        image_bounds.set_y_max(_image_shape(1));
+        image_bounds.set_x_max(_image_shape(_xaxis));
+        image_bounds.set_y_max(_image_shape(_yaxis));
+
         std::vector<float> dest_vector;
         smooth_successful = GetRasterData(dest_vector, image_bounds, _contour_settings.smoothing_factor, true);
         cache_lock.release();
@@ -654,7 +670,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
 }
 
 int Frame::AutoBinSize() {
-    return int(std::max(sqrt(_image_shape(0) * _image_shape(1)), 2.0));
+    return int(std::max(sqrt(_image_shape(_xaxis) * _image_shape(_yaxis)), 2.0));
 }
 
 bool Frame::FillHistogramFromCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram) {
@@ -932,13 +948,13 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
     }
 
     // frontend does not set cursor outside of image, but just in case:
-    if (!_cursor.InImage(_image_shape(0), _image_shape(1))) {
+    if (!_cursor.InImage(_image_shape(_xaxis), _image_shape(_yaxis))) {
         return false;
     }
 
     auto t_start_spatial_profile = std::chrono::high_resolution_clock::now();
 
-    ssize_t num_image_cols(_image_shape(0)), num_image_rows(_image_shape(1));
+    ssize_t num_image_cols(_image_shape(_xaxis)), num_image_rows(_image_shape(_yaxis));
     int x, y;
     _cursor.ToIndex(x, y); // convert float to index into image array
     float cursor_value(0.0);
@@ -967,24 +983,24 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
             tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
             auto x_start = y * num_image_cols;
             profile.clear();
-            profile.reserve(_image_shape(0));
-            for (unsigned int j = 0; j < _image_shape(0); ++j) {
+            profile.reserve(_image_shape(_xaxis));
+            for (unsigned int j = 0; j < _image_shape(_xaxis); ++j) {
                 auto idx = x_start + j;
                 profile.push_back(_image_cache[idx]);
             }
             cache_lock.release();
-            end = _image_shape(0);
+            end = _image_shape(_xaxis);
             have_profile = true;
         } else if (coordinate == "y") {
             tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
             profile.clear();
-            profile.reserve(_image_shape(1));
-            for (unsigned int j = 0; j < _image_shape(1); ++j) {
+            profile.reserve(_image_shape(_yaxis));
+            for (unsigned int j = 0; j < _image_shape(_yaxis); ++j) {
                 auto idx = (j * num_image_cols) + x;
                 profile.push_back(_image_cache[idx]);
             }
             cache_lock.release();
-            end = _image_shape(1);
+            end = _image_shape(_yaxis);
             have_profile = true;
         }
 
@@ -1106,7 +1122,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         spectral_profile->set_stats_type(config.all_stats[0]);
 
         // Send NaN if cursor outside image
-        if (!start_cursor.InImage(_image_shape(0), _image_shape(1))) {
+        if (!start_cursor.InImage(_image_shape(_xaxis), _image_shape(_yaxis))) {
             double nan_value = std::numeric_limits<double>::quiet_NaN();
             spectral_profile->set_raw_values_fp64(&nan_value, sizeof(double));
             cb(profile_message);

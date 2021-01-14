@@ -122,6 +122,7 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
 
     // 2D image
     if (_num_dims == 2) {
+        // Save values and return
         _num_channels = 1;
         _num_stokes = 1;
         _spectral_axis = spectral_axis;
@@ -131,7 +132,10 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
 
     // 3D image
     if (_num_dims == 3) {
+        // If not defined in csys, assume last axis
         spectral_axis = (spectral_axis < 0 ? 2 : spectral_axis);
+
+        // Save values and return
         _num_channels = shape(spectral_axis);
         _num_stokes = 1;
         _spectral_axis = spectral_axis;
@@ -155,17 +159,74 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
                 stokes_axis = 2;
             }
         }
-        if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, give up
-            message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
-            return false;
+
+        if ((spectral_axis < 0) && (stokes_axis < 0)) {
+            // neither is known, set default [x, y, chan, stokes]
+            spectral_axis = 3;
+            stokes_axis = 4;
         }
     }
+
+    // Save values and return
     _num_channels = (spectral_axis == -1 ? 1 : shape(spectral_axis));
     _num_stokes = (stokes_axis == -1 ? 1 : shape(stokes_axis));
     _spectral_axis = spectral_axis;
     _stokes_axis = stokes_axis;
 
     return true;
+}
+
+std::vector<int> FileLoader::GetDisplayAxes() {
+    // Determine which axes will be displayed.
+    std::vector<int> disp_axes;
+
+    if (!_display_axes.empty()) {
+        disp_axes = _display_axes;
+    } else {
+        casacore::CoordinateSystem coord_system;
+        if (GetCoordinateSystem(coord_system)) {
+            // Use Direction/Linear axes
+            casacore::Vector<casacore::Int> coord_axes;
+            if (coord_system.hasDirectionCoordinate()) {
+                coord_axes = coord_system.directionAxesNumbers();
+            } else if (coord_system.hasLinearCoordinate()) {
+                coord_axes = coord_system.linearAxesNumbers();
+            }
+
+            // Assign valid axis numbers to display axes
+            if (!coord_axes.empty()) {
+                for (auto axis_num : coord_axes) {
+                    if (axis_num >= 0) {
+                        disp_axes.push_back(axis_num);
+                    }
+                }
+            }
+
+            if (disp_axes.size() < 2) {
+                // Likely one dir/lin axis, e.g. pv image; add spectral axis
+                int spectral_axis = coord_system.spectralAxisNumber();
+                if (spectral_axis >= 0) {
+                    disp_axes.push_back(spectral_axis);
+                } else {
+                    // No spectral axis, add stokes axis
+                    int stokes_axis = coord_system.polarizationAxisNumber();
+                    if (stokes_axis >= 0) {
+                        disp_axes.push_back(stokes_axis);
+                    }
+                }
+            }
+        }
+
+        if (disp_axes.size() < 2) {
+            // Coord sys not determined from header, use default first two axes
+            disp_axes = {0, 1};
+        }
+
+        // Save for next time
+        _display_axes = disp_axes;
+    } 
+
+    return disp_axes;
 }
 
 bool FileLoader::GetSlice(casacore::Array<float>& data, const casacore::Slicer& slicer) {

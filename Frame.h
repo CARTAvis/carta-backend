@@ -236,11 +236,16 @@ private:
     std::unique_ptr<carta::FileLoader> _loader;
 
     // Shape, channel, and stokes
+	// For PV, use spectral axis, channel index, and num channels for "depth"
     casacore::IPosition _image_shape;  // (width, height, depth, stokes)
     int _spectral_axis, _stokes_axis;  // axis index for each in 4D image
-    int _channel_index, _stokes_index; // current channel, stokes for image
+    int _channel_index, _stokes_index;
     size_t _num_channels;
     size_t _num_stokes;
+
+    // For PV image, may display spectral axis
+    int _xaxis, _yaxis;
+    bool _spectral_is_display;
 
     // Image settings
     CARTA::AddRequiredTiles _required_animation_tiles;
