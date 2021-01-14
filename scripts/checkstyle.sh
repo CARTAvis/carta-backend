@@ -5,4 +5,4 @@
 # It should be run from the root directory of the repository.
 # The clang-tidy configuration is found in .clang-tidy
 
-find . -regex ".*\.\(cc\|h\)" -not -path "./build/*" -not -path './uWebSockets/*' | xargs run-clang-tidy -p build
+find src -regex ".*\.\(cc\|h\|tcc\)" | xargs run-clang-tidy -p build
