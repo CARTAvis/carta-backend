@@ -12,40 +12,32 @@ FitsHduList::FitsHduList(const std::string& filename) {
     _filename = filename;
 }
 
-bool FitsHduList::GetHduList(CARTA::FileInfo& file_info) {
-    bool hdu_ok(false);
+void FitsHduList::GetHduList(std::vector<std::string>& hdu_list) {
     casacore::FitsInput fits_input(_filename.c_str(), casacore::FITS::Disk, 10, FitsInfoErrHandler);
     if (fits_input.err() == casacore::FitsIO::OK) { // check for cfitsio error
-        int num_hdu(fits_input.getnumhdu());
-        hdu_ok = (num_hdu > 0);
-        if (hdu_ok) {
-            // iterate through each header data unit
-            for (int hdu = 0; hdu < num_hdu; ++hdu) {
-                if (fits_input.rectype() == casacore::FITS::HDURecord) {
-                    casacore::FITS::HDUType hdu_type = fits_input.hdutype();
-                    if (IsImageHdu(hdu_type)) {
-                        // add hdu to file info
-                        std::string hdu_name = std::to_string(hdu);
-                        int ndim(0);
-                        std::string ext_name;
-                        GetFitsHduInfo(fits_input, ndim, ext_name);
-                        if (ndim > 0) {
-                            if (!ext_name.empty()) {
-                                hdu_name += " ExtName: " + ext_name;
-                            }
-                            file_info.add_hdu_list(hdu_name);
+        // iterate through each header data unit
+        for (int hdu = 0; hdu < fits_input.getnumhdu(); ++hdu) {
+            if (fits_input.rectype() == casacore::FITS::HDURecord) {
+                casacore::FITS::HDUType hdu_type = fits_input.hdutype();
+                if (IsImageHdu(hdu_type)) {
+                    // add hdu to list
+                    std::string hdu_name = std::to_string(hdu);
+                    int ndim(0);
+                    std::string ext_name;
+                    GetFitsHduInfo(fits_input, ndim, ext_name);
+                    if (ndim > 0) {
+                        if (!ext_name.empty()) {
+                            hdu_name += ":" + ext_name; // delimiter :
                         }
-                        fits_input.skip_all(hdu_type); // skip data to next hdu
-                    } else {
-                        fits_input.skip_hdu();
+                        hdu_list.push_back(hdu_name);
                     }
+                    fits_input.skip_all(hdu_type); // skip data to next hdu
+                } else {
+                    fits_input.skip_hdu();
                 }
             }
         }
-    } else {
-        std::cerr << "FitsInput error for " << _filename << std::endl;
     }
-    return hdu_ok;
 }
 
 bool FitsHduList::IsImageHdu(casacore::FITS::HDUType hdu_type) {

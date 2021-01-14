@@ -13,6 +13,7 @@
 #include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/SubImage.h>
 
+#include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
 #include "../Util.h"
@@ -61,7 +62,7 @@ struct RegionSpectralStats {
         : origin(origin), shape(shape) {
         std::vector<CARTA::StatsType> supported_stats = {CARTA::StatsType::NumPixels, CARTA::StatsType::NanCount, CARTA::StatsType::Sum,
             CARTA::StatsType::Mean, CARTA::StatsType::RMS, CARTA::StatsType::Sigma, CARTA::StatsType::SumSq, CARTA::StatsType::Min,
-            CARTA::StatsType::Max};
+            CARTA::StatsType::Max, CARTA::StatsType::Extrema};
 
         if (has_flux) {
             supported_stats.push_back(CARTA::StatsType::FluxDensity);
@@ -147,6 +148,9 @@ public:
 
     // Return the opened casacore image
     virtual ImageRef GetImage() = 0;
+
+    // read beam subtable
+    bool GetBeams(std::vector<CARTA::Beam>& beams, std::string& error);
 
     // Image shape and coordinate system axes
     bool GetShape(IPos& shape);

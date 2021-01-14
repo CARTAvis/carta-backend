@@ -12,17 +12,18 @@
 #include <atomic>
 #include <cstdint>
 #include <cstdio>
+#include <map>
 #include <mutex>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include <App.h>
 #include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
-#include <uWS/uWS.h>
 
 #include <casacore/casa/aips.h>
 
@@ -57,8 +58,8 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<uWS::SERVER>* ws, uint32_t id, std::string address, std::string root, std::string base,
-        uS::Async* outgoing_async, FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
+    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
+        FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
     ~Session();
 
     // CARTA ICD
@@ -93,8 +94,6 @@ public:
     void OnMomentRequest(const CARTA::MomentRequest& moment_request, uint32_t request_id);
     void OnStopMomentCalc(const CARTA::StopMomentCalc& stop_moment_calc);
     void OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id);
-
-    void SendPendingMessages();
 
     void AddToSetChannelQueue(CARTA::SetImageChannels message, uint32_t request_id) {
         std::pair<CARTA::SetImageChannels, uint32_t> rp;
@@ -203,9 +202,13 @@ public:
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
 private:
-    // File info
+    // File info for file list (extended info for each hdu_name)
+    bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
+        const std::string& folder, const std::string& filename, const std::string& hdu_name, std::string& message);
+    // File info for open file
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, CARTA::FileInfo& file_info, const std::string& folder,
-        const std::string& filename, std::string hdu, std::string& message);
+        const std::string& filename, const std::string& hdu_name, std::string& message);
+    // File info for open moments image (not disk image)
     bool FillExtendedFileInfo(CARTA::FileInfoExtended& extended_info, std::shared_ptr<casacore::ImageInterface<float>> image,
         const std::string& filename, std::string& message);
 
@@ -230,7 +233,10 @@ private:
         int file_id, CARTA::EventType event_type, u_int32_t event_id, google::protobuf::MessageLite& message, bool compress = true);
     void SendLogEvent(const std::string& message, std::vector<std::string> tags, CARTA::ErrorSeverity severity);
 
-    uWS::WebSocket<uWS::SERVER>* _socket;
+    // uWebSockets
+    uWS::WebSocket<false, true>* _socket;
+    uWS::Loop* _loop;
+
     uint32_t _id;
     std::string _address;
     std::string _root_folder;
@@ -264,9 +270,6 @@ private:
     // Cube histogram progress: 0.0 to 1.0 (complete)
     float _histogram_progress;
 
-    // Outgoing messages:
-    // Notification mechanism when messages are ready
-    uS::Async* _outgoing_async;
     // message queue <msg, compress>
     tbb::concurrent_queue<std::pair<std::vector<char>, bool>> _out_msgs;
 

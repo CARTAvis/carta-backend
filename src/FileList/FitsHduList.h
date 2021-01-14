@@ -20,7 +20,7 @@ inline void FitsInfoErrHandler(const char* err_message, casacore::FITSError::Err
 class FitsHduList {
 public:
     FitsHduList(const std::string& filename);
-    bool GetHduList(CARTA::FileInfo& file_info);
+    void GetHduList(std::vector<std::string>& hdu_list);
 
 private:
     bool IsImageHdu(casacore::FITS::HDUType hdu_type);
