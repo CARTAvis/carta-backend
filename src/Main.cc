@@ -643,11 +643,18 @@ int main(int argc, const char* argv[]) {
             }
         }
 
-        app.ws<PerSocketData>("/token/:token", (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
-                                                   .upgrade = OnUpgrade,
-                                                   .open = OnConnect,
-                                                   .message = OnMessage,
-                                                   .close = OnDisconnect})
+        string ws_pattern;
+        if (no_token) {
+            ws_pattern = "/*";
+        } else {
+            ws_pattern = "/token/:token";
+        }
+
+        app.ws<PerSocketData>(ws_pattern, (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
+                                              .upgrade = OnUpgrade,
+                                              .open = OnConnect,
+                                              .message = OnMessage,
+                                              .close = OnDisconnect})
             .listen(port,
                 [=](auto* token) {
                     if (token) {
