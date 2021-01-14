@@ -630,7 +630,7 @@ int main(int argc, const char* argv[]) {
                 }
                 if (!no_browser) {
 #if defined(__APPLE__)
-                    string open_command = "open"
+                    string open_command = "open";
 #else
                     string open_command = "xdg-open";
 #endif
