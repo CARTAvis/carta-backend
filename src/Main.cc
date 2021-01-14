@@ -629,11 +629,12 @@ int main(int argc, const char* argv[]) {
                     frontend_url += fmt::format("?socketUrl=ws://localhost:{}/token/{}", port, auth_token);
                 }
                 if (!no_browser) {
-                    auto open_result = system(fmt::format("xdg-open {}", frontend_url).c_str());
-                    if (open_result) {
-                        // Try the "open" command instead
-                        open_result = system(fmt::format("open {}", frontend_url).c_str());
-                    }
+#if defined(__APPLE__)
+                    string open_command = "open"
+#else
+                    string open_command = "xdg-open";
+#endif
+                        auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
                     if (open_result) {
                         fmt::print("Failed to open the default browser automatically.\n");
                     }
