@@ -533,7 +533,7 @@ int main(int argc, const char* argv[]) {
         int omp_thread_count = OMP_THREAD_COUNT;
         string http_root_folder;
         bool no_http = false;
-        bool no_token = false;
+        bool debug_no_auth = false;
         bool no_browser = false;
 
         { // get values then let Input go out of scope
@@ -542,7 +542,7 @@ int main(int argc, const char* argv[]) {
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("perflog", "False", "display performance logging", "Bool");
             inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
-            inp.create("no_token", "False", "disable token validation on connection", "Bool");
+            inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, reserved for development and debugging", "Bool");
             inp.create("no_browser", "False", "prevent the frontend from automatically opening in the default browser on startup", "Bool");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
@@ -559,7 +559,7 @@ int main(int argc, const char* argv[]) {
             verbose = inp.getBool("verbose");
             perflog = inp.getBool("perflog");
             no_http = inp.getBool("no_http");
-            no_token = inp.getBool("no_token");
+            debug_no_auth = inp.getBool("debug_no_auth");
             no_browser = inp.getBool("no_browser");
             port = inp.getInt("port");
             grpc_port = inp.getInt("grpc_port");
@@ -582,7 +582,7 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-        if (!no_token) {
+        if (!debug_no_auth) {
             auto env_entry = getenv("CARTA_AUTH_TOKEN");
             if (env_entry) {
                 auth_token = env_entry;
@@ -644,7 +644,7 @@ int main(int argc, const char* argv[]) {
         }
 
         string ws_pattern;
-        if (no_token) {
+        if (debug_no_auth) {
             ws_pattern = "/*";
         } else {
             ws_pattern = "/token/:token";
