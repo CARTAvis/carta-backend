@@ -307,8 +307,8 @@ bool Frame::FillImageCache() {
         auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
         auto dt_set_image_cache =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-        fmt::print("Load {}x{} image to cache in {} ms at {} MPix/s\n", _image_shape(_xaxis), _image_shape(_yaxis), dt_set_image_cache * 1e-3,
-            (float)(_image_shape(_xaxis) * _image_shape(_yaxis)) / dt_set_image_cache);
+        fmt::print("Load {}x{} image to cache in {} ms at {} MPix/s\n", _image_shape(_xaxis), _image_shape(_yaxis),
+            dt_set_image_cache * 1e-3, (float)(_image_shape(_xaxis) * _image_shape(_yaxis)) / dt_set_image_cache);
     }
 
     return true;

@@ -311,8 +311,8 @@ bool FileExtInfoLoader::FillFileInfoFromImage(CARTA::FileInfoExtended& extended_
 
 // ***** Computed entries *****
 
-void FileExtInfoLoader::AddShapeEntries(
-    CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis, int stokes_axis, const std::vector<int>& display_axes) {
+void FileExtInfoLoader::AddShapeEntries(CARTA::FileInfoExtended& extended_info, const casacore::IPosition& shape, int chan_axis,
+    int stokes_axis, const std::vector<int>& display_axes) {
     // Set fields/header entries for shape: dimensions, width, height, depth, stokes
     int num_dims(shape.size());
 
@@ -411,7 +411,8 @@ void FileExtInfoLoader::AddComputedEntries(CARTA::FileInfoExtended& extended_inf
         if (!reference_pixels.empty()) {
             auto entry = extended_info.add_computed_entries();
             entry->set_name("Reference pixels");
-            std::string ref_pix = fmt::format("[{:.6g}, {:.6g}]", reference_pixels(display_axis0) + 1.0, reference_pixels(display_axis1) + 1.0);
+            std::string ref_pix =
+                fmt::format("[{:.6g}, {:.6g}]", reference_pixels(display_axis0) + 1.0, reference_pixels(display_axis1) + 1.0);
             entry->set_value(ref_pix);
             entry->set_entry_type(CARTA::EntryType::STRING);
         }
@@ -521,7 +522,7 @@ void FileExtInfoLoader::AddComputedEntriesFromHeaders(
     CARTA::FileInfoExtended& extended_info, const std::vector<int>& display_axes, std::string& radesys) {
     // Convert display axis1 and axis2 header_entries into computed_entries;
     // For images with missing headers or headers which casacore/wcslib cannot process
-    casacore::String suffix1(std::to_string(display_axes[0]+ 1));
+    casacore::String suffix1(std::to_string(display_axes[0] + 1));
     casacore::String suffix2(std::to_string(display_axes[1] + 1));
 
     casacore::String ctype1, ctype2, cunit1, cunit2, frame;

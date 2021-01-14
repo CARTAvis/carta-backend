@@ -224,7 +224,7 @@ std::vector<int> FileLoader::GetDisplayAxes() {
 
         // Save for next time
         _display_axes = disp_axes;
-    } 
+    }
 
     return disp_axes;
 }
