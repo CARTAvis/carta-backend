@@ -165,7 +165,8 @@ set(SOURCE_FILES
         src/Timer/Timer.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
-        src/Util.cc)
+        src/Util.cc
+        src/SimpleFrontendServer/SimpleFrontendServer.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})

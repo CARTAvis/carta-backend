@@ -28,6 +28,7 @@
 #include "GrpcServer/CartaGrpcService.h"
 #include "OnMessageTask.h"
 #include "Session.h"
+#include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "Util.h"
 
 using namespace std;
@@ -37,6 +38,7 @@ int global_thread_count = 0;
 }
 // file list handler for the file browser
 static FileListHandler* file_list_handler;
+SimpleFrontendServer* http_server;
 
 static uint32_t session_number;
 
@@ -62,10 +64,6 @@ struct PerSocketData {
 };
 
 void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context) {
-    session_number++;
-    // protect against overflow
-    session_number = max(session_number, 1u);
-
     string address;
     auto ip_header = http_request->getHeader("x-forwarded-for");
     if (!ip_header.empty()) {
@@ -86,12 +84,18 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
             if (token_header_value != auth_token) {
                 fmt::print("Header auth failed!\n");
                 http_response->close();
+                return;
             }
         } else {
             fmt::print("Header auth failed!\n");
             http_response->close();
+            return;
         }
     }
+
+    session_number++;
+    // protect against overflow
+    session_number = max(session_number, 1u);
 
     http_response->template upgrade<PerSocketData>({session_number, address}, //
         http_request->getHeader("sec-websocket-key"),                         //
@@ -527,23 +531,36 @@ int main(int argc, const char* argv[]) {
         int port(3002);
         int thread_count = TBB_THREAD_COUNT;
         int omp_thread_count = OMP_THREAD_COUNT;
+        string http_root_folder;
+        bool no_http = false;
+        bool no_token = false;
+        bool no_browser = false;
+
         { // get values then let Input go out of scope
             casacore::Input inp;
             inp.version(VERSION_ID);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("perflog", "False", "display performance logging", "Bool");
+            inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
+            inp.create("no_token", "False", "disable token validation on connection", "Bool");
+            inp.create("no_browser", "False", "prevent the frontend from automatically opening in the default browser on startup", "Bool");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
+            inp.create("http_root", http_root_folder, "set folder to serve frontend file from", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
+
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
             perflog = inp.getBool("perflog");
+            no_http = inp.getBool("no_http");
+            no_token = inp.getBool("no_token");
+            no_browser = inp.getBool("no_browser");
             port = inp.getInt("port");
             grpc_port = inp.getInt("grpc_port");
             thread_count = inp.getInt("threads");
@@ -564,20 +581,20 @@ int main(int argc, const char* argv[]) {
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
             return 1;
         }
-        auto env_entry = getenv("CARTA_AUTH_TOKEN");
-        if (env_entry) {
-            auth_token = env_entry;
-        } else {
-            uuid_t token, token2;
-            char token_string[37];
-            uuid_generate_random(token);
-            uuid_generate_random(token2);
-            auto match = uuid_compare(token, token2);
-            uuid_unparse(token, token_string);
-            auth_token =token_string;
 
-            fmt::print("Please use token {} when connecting to the backend\n", auth_token);
+        if (!no_token) {
+            auto env_entry = getenv("CARTA_AUTH_TOKEN");
+            if (env_entry) {
+                auth_token = env_entry;
+            } else {
+                uuid_t token;
+                char token_string[37];
+                uuid_generate_random(token);
+                uuid_unparse(token, token_string);
+                auth_token += token_string;
+            }
         }
+
         omp_set_num_threads(omp_thread_count);
         CARTA::global_thread_count = omp_thread_count;
 
@@ -596,45 +613,40 @@ int main(int argc, const char* argv[]) {
         curl_global_init(CURL_GLOBAL_ALL);
 
         session_number = 0;
-        std::string http_root("/home/angus/.nvm/versions/node/v12.18.3/lib/node_modules/carta-frontend/build");
-        AsyncFileStreamer async_file_streamer("/home/angus/.nvm/versions/node/v12.18.3/lib/node_modules/carta-frontend/build");
+        auto app = uWS::App();
 
-        uWS::App()
-            .get("/*", [&async_file_streamer, http_root](auto *res, auto *req) {
-                string_view url = req->getUrl();
-                string path_string = http_root;
-                if (url.empty() || url == "/") {
-                    path_string.append("/index.html");
-                } else {
-                    path_string.append(url);
-                }
-                fmt::print("Req URL: {} -> {}\n", url, path_string);
-
-                filesystem::path path(path_string);
-                if (filesystem::exists(path) && filesystem::is_regular_file(path)) {
-                    std::ifstream file(path, std::ios::binary | std::ios::ate);
-                    std::streamsize size = file.tellg();
-                    file.seekg(0, std::ios::beg);
-
-                    std::vector<char> buffer(size);
-                    if (file.read(buffer.data(), size))
-                    {
-                        res->writeStatus(uWS::HTTP_200_OK);
-                        string_view sv(buffer.data(), buffer.size());
-                        res->write(sv);
-                    } else {
-                        res->writeStatus("500 Internal Server Error");
+        if (!no_http) {
+            http_server = new SimpleFrontendServer(http_root_folder);
+            if (http_server->CanServeFrontend()) {
+                app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
+                    if (http_server && http_server->CanServeFrontend()) {
+                        http_server->HandleRequest(res, req);
                     }
-                } else {
-                    res->writeStatus("404 Not Found");
+                });
+
+                string frontend_url = fmt::format("http://localhost:{}", port);
+                if (!auth_token.empty()) {
+                    frontend_url += fmt::format("?socketUrl=ws://localhost:{}/token/{}", port, auth_token);
                 }
-                res->end();
-            })
-            .ws<PerSocketData>("/token/:token", (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
-                                         .upgrade = OnUpgrade,
-                                         .open = OnConnect,
-                                         .message = OnMessage,
-                                         .close = OnDisconnect})
+                if (!no_browser) {
+                    auto open_result = system(fmt::format("xdg-open {}", frontend_url).c_str());
+                    if (open_result) {
+                        // Try the "open" command instead
+                        open_result = system(fmt::format("open {}", frontend_url).c_str());
+                    }
+                    if (open_result) {
+                        fmt::print("Failed to open the default browser automatically.\n");
+                    }
+                }
+                fmt::print("CARTA is accessible at {}\n", frontend_url);
+            }
+        }
+
+        app.ws<PerSocketData>("/token/:token", (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
+                                                   .upgrade = OnUpgrade,
+                                                   .open = OnConnect,
+                                                   .message = OnMessage,
+                                                   .close = OnDisconnect})
             .listen(port,
                 [=](auto* token) {
                     if (token) {
