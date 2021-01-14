@@ -12,8 +12,11 @@
 
 #include <fmt/format.h>
 
+#include "MimeTypes.h"
+
 using namespace std;
 
+namespace carta {
 SimpleFrontendServer::SimpleFrontendServer(string root_folder) {
     // If no folder is provided, check if /usr/local/share/carta/frontend exists.
     // If this does not exist, try /usr/share/carta/frontend.
@@ -56,6 +59,14 @@ void SimpleFrontendServer::HandleRequest(uWS::HttpResponse<false>* res, uWS::Htt
         vector<char> buffer(size);
         if (size && file.read(buffer.data(), size)) {
             res->writeStatus(HTTP_200);
+
+            auto extension = path.extension();
+            auto it = MimeTypes.find(extension);
+            if (it != MimeTypes.end()) {
+                auto val = it->second;
+                res->writeHeader("Content-Type", it->second);
+            }
+
             string_view sv(buffer.data(), buffer.size());
             res->write(sv);
         } else {
@@ -74,7 +85,7 @@ bool SimpleFrontendServer::IsValidFrontendFolder(std::string folder) {
         return false;
     }
     // Check that index.html exists
-    path/= "index.html";
+    path /= "index.html";
     if (!filesystem::exists(path) || !filesystem::is_regular_file(path)) {
         return false;
     }
@@ -82,3 +93,5 @@ bool SimpleFrontendServer::IsValidFrontendFolder(std::string folder) {
     ifstream index_file(path);
     return index_file.good();
 }
+
+} // namespace carta

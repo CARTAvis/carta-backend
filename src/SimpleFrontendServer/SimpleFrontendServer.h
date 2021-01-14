@@ -11,11 +11,10 @@
 
 #include <App.h>
 
+namespace carta {
 #define HTTP_200 "200 OK"
 #define HTTP_404 "404 Not Found"
 #define HTTP_500 "500 Internal Server Error"
-
-// TODO: Mime types!
 
 class SimpleFrontendServer {
 public:
@@ -31,4 +30,5 @@ private:
     bool _frontend_found;
 };
 
+} // namespace carta
 #endif // CARTA_BACKEND_SRC_HTTPSERVER_SIMPLEFRONTENDSERVER_H_
