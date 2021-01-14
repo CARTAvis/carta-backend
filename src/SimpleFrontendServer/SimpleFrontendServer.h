@@ -15,6 +15,8 @@
 #define HTTP_404 "404 Not Found"
 #define HTTP_500 "500 Internal Server Error"
 
+// TODO: Mime types!
+
 class SimpleFrontendServer {
 public:
     SimpleFrontendServer(std::string root_folder = "");
@@ -24,6 +26,7 @@ public:
     void HandleRequest(uWS::HttpResponse<false>* res, uWS::HttpRequest* req);
 
 private:
+    static bool IsValidFrontendFolder(std::string folder);
     std::string _http_root_folder;
     bool _frontend_found;
 };

@@ -542,7 +542,7 @@ int main(int argc, const char* argv[]) {
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("perflog", "False", "display performance logging", "Bool");
             inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
-            inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, reserved for development and debugging", "Bool");
+            inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, use with caution!)", "Bool");
             inp.create("no_browser", "False", "prevent the frontend from automatically opening in the default browser on startup", "Bool");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
@@ -634,12 +634,16 @@ int main(int argc, const char* argv[]) {
 #else
                     string open_command = "xdg-open";
 #endif
-                        auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
+                    auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
                     if (open_result) {
                         fmt::print("Failed to open the default browser automatically.\n");
                     }
                 }
                 fmt::print("CARTA is accessible at {}\n", frontend_url);
+            } else {
+                fmt::print(
+                    "Failed to host the CARTA frontend. Please install the frontend files in the default location "
+                    "(/usr/local/share/carta/frontend) or specify a custom location using the http_root_folder argument\n");
             }
         }
 
