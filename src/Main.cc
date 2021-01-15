@@ -552,7 +552,7 @@ int main(int argc, const char* argv[]) {
             inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
-            inp.create("frontend_folder", frontend_folder, "set folder to serve frontend file from", "String");
+            inp.create("frontend_folder", frontend_folder, "set folder to serve frontend files from", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
 
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
