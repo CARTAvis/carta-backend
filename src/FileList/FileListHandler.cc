@@ -170,6 +170,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 default: {
                                     add_image = true;
                                     file_type = CARTA::FileType::UNKNOWN;
+                                    break;
                                 }
                             }
                         }
