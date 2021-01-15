@@ -637,7 +637,17 @@ int main(int argc, const char* argv[]) {
                     }
                 });
 
-                string frontend_url = fmt::format("http://{}:{}", host.empty() ? "localhost" : host, port);
+                string default_host_string = host;
+                if (host.empty()) {
+                    auto server_ip_entry = getenv("SERVER_IP");
+                    if (server_ip_entry) {
+                        default_host_string = server_ip_entry;
+                    } else {
+                        default_host_string = "localhost";
+                    }
+                }
+
+                string frontend_url = fmt::format("http://{}:{}", default_host_string, port);
                 if (!auth_token.empty()) {
                     frontend_url += fmt::format("?token={}", auth_token);
                 }
