@@ -171,6 +171,7 @@ set(SOURCE_FILES
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    list(REMOVE_ITEM LINK_LIBS uuid)
     target_link_libraries(carta_backend uv ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
