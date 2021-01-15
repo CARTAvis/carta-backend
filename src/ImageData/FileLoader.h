@@ -156,6 +156,8 @@ public:
     bool GetShape(IPos& shape);
     bool GetCoordinateSystem(casacore::CoordinateSystem& coord_sys);
     bool FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes_axis, std::string& message);
+
+    // May not be [0,1] for pVimages; used by FileExtInfoLoader, Frame, RegionHandler (via Frame)
     std::vector<int> GetDisplayAxes();
 
     // Image Data

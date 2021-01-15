@@ -89,7 +89,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     _channel_index = default_channel;
     _stokes_index = DEFAULT_STOKES;
 
-    // Determine whether chan axis is displayed so we don't slice it!
+    // Determine which axes are rendered, e.g. for pV images
     std::vector<int> display_axes = _loader->GetDisplayAxes();
     _xaxis = display_axes[0];
     _yaxis = display_axes[1];

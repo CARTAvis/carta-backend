@@ -116,7 +116,6 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
     }
 
     // use CoordinateSystem to find coordinate axes
-    casacore::Vector<casacore::Int> linear_axes = coord_sys.linearAxesNumbers();
     spectral_axis = coord_sys.spectralAxisNumber();
     stokes_axis = coord_sys.polarizationAxisNumber();
 
@@ -162,8 +161,8 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
 
         if ((spectral_axis < 0) && (stokes_axis < 0)) {
             // neither is known, set default [x, y, chan, stokes]
-            spectral_axis = 3;
-            stokes_axis = 4;
+            spectral_axis = 2;
+            stokes_axis = 3;
         }
     }
 
@@ -178,54 +177,39 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
 
 std::vector<int> FileLoader::GetDisplayAxes() {
     // Determine which axes will be displayed.
-    std::vector<int> disp_axes;
+    std::vector<int> disp_axes{0, 1}; // default
 
-    if (!_display_axes.empty()) {
-        disp_axes = _display_axes;
-    } else {
+    casacore::IPosition shape;
+    if (GetShape(shape) && shape.size() > 2) {
+        // Check for PV image: Linear, Spectral axes
         casacore::CoordinateSystem coord_system;
-        if (GetCoordinateSystem(coord_system)) {
-            // Use Direction/Linear axes
-            casacore::Vector<casacore::Int> coord_axes;
-            if (coord_system.hasDirectionCoordinate()) {
-                coord_axes = coord_system.directionAxesNumbers();
-            } else if (coord_system.hasLinearCoordinate()) {
-                coord_axes = coord_system.linearAxesNumbers();
-            }
-
-            // Assign valid axis numbers to display axes
-            if (!coord_axes.empty()) {
-                for (auto axis_num : coord_axes) {
-                    if (axis_num >= 0) {
-                        disp_axes.push_back(axis_num);
+        if (GetCoordinateSystem(coord_system) && !coord_system.hasDirectionCoordinate()) {
+            if (coord_system.hasLinearCoordinate()) {
+                // Find valid linear axes
+                casacore::Vector<casacore::Int> lin_axes = coord_system.linearAxesNumbers();
+                std::vector<int> valid_axes;
+                if (!lin_axes.empty()) {
+                    for (auto axis_num : lin_axes) {
+                        if (axis_num >= 0) {
+                            valid_axes.push_back(axis_num);
+                        }
                     }
                 }
-            }
 
-            if (disp_axes.size() < 2) {
-                // Likely one dir/lin axis, e.g. pv image; add spectral axis
-                int spectral_axis = coord_system.spectralAxisNumber();
-                if (spectral_axis >= 0) {
-                    disp_axes.push_back(spectral_axis);
-                } else {
-                    // No spectral axis, add stokes axis
-                    int stokes_axis = coord_system.polarizationAxisNumber();
-                    if (stokes_axis >= 0) {
-                        disp_axes.push_back(stokes_axis);
+                // One linear axis + spectral axis = pV image
+                if (valid_axes.size() == 1) {
+                    // Returns -1 if no spectral axis
+                    int spectral_axis = coord_system.spectralAxisNumber();
+                    if (spectral_axis >= 0) {
+                        valid_axes.push_back(spectral_axis);
+                        disp_axes = valid_axes;
                     }
                 }
             }
         }
-
-        if (disp_axes.size() < 2) {
-            // Coord sys not determined from header, use default first two axes
-            disp_axes = {0, 1};
-        }
-
-        // Save for next time
-        _display_axes = disp_axes;
     }
 
+    _display_axes = disp_axes;
     return disp_axes;
 }
 
