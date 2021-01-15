@@ -249,7 +249,7 @@ bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<
         return false;
     }
 
-    sub_image = casacore::SubImage<float>(*image, slicer, new casacore::AxesSpecifier(keep_degenerate));
+    sub_image = casacore::SubImage<float>(*image, slicer, casacore::AxesSpecifier(keep_degenerate));
     return true;
 }
 
@@ -261,7 +261,7 @@ bool FileLoader::GetSubImage(
     }
 
     auto temp_image = casacore::SubImage<float>(*image, region);
-    sub_image = casacore::SubImage<float>(temp_image, slicer, new casacore::AxesSpecifier(keep_degenerate));
+    sub_image = casacore::SubImage<float>(temp_image, slicer, casacore::AxesSpecifier(keep_degenerate));
     return true;
 }
 
