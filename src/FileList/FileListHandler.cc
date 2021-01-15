@@ -11,9 +11,6 @@
 
 #include "FileInfoLoader.h"
 
-#define FITS_MAGIC_NUMBER 0x504D4953
-#define HDF5_MAGIC_NUMBER 0x46444889
-
 // Default constructor
 FileListHandler::FileListHandler(const std::string& root, const std::string& base)
     : _root_folder(root), _base_folder(base), _filelist_folder("nofolder") {}
@@ -133,8 +130,8 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                     if (!is_region) {
                         bool add_image(false);
                         CARTA::FileType file_type;
+                        auto image_type = casacore::ImageOpener::imageType(full_path);
                         if (cc_file.isDirectory(true) && cc_file.isExecutable()) {
-                            auto image_type = casacore::ImageOpener::imageType(full_path);
                             switch (image_type) {
                                 case casacore::ImageOpener::AIPSPP:
                                 case casacore::ImageOpener::IMAGECONCAT:
@@ -161,16 +158,19 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                 }
                             }
                         } else if (cc_file.isRegular(true) && cc_file.isReadable()) {
-                            auto magic_number = GetMagicNumber(full_path);
-                            if (magic_number == FITS_MAGIC_NUMBER) {
-                                add_image = true;
-                                file_type = CARTA::FileType::FITS;
-                            } else if (magic_number == HDF5_MAGIC_NUMBER) {
-                                add_image = true;
-                                file_type = CARTA::FileType::HDF5;
-                            } else if (region_list) { // list unknown files: name, type, size
-                                add_image = true;
-                                file_type = CARTA::FileType::UNKNOWN;
+                            switch (image_type) {
+                                case casacore::ImageOpener::FITS:
+                                    add_image = true;
+                                    file_type = CARTA::FileType::FITS;
+                                    break;
+                                case casacore::ImageOpener::HDF5:
+                                    add_image = true;
+                                    file_type = CARTA::FileType::HDF5;
+                                    break;
+                                default: {
+                                    add_image = true;
+                                    file_type = CARTA::FileType::UNKNOWN;
+                                }
                             }
                         }
 
