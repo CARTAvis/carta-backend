@@ -243,15 +243,25 @@ bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore:
     return true;
 }
 
+bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image, bool keep_degenerate) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
+    }
+
+    sub_image = casacore::SubImage<float>(*image, slicer, new casacore::AxesSpecifier(keep_degenerate));
+    return true;
+}
+
 bool FileLoader::GetSubImage(
-    const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image) {
+    const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image, bool keep_degenerate) {
     ImageRef image = GetImage();
     if (!image) {
         return false;
     }
 
     auto temp_image = casacore::SubImage<float>(*image, region);
-    sub_image = casacore::SubImage<float>(temp_image, slicer);
+    sub_image = casacore::SubImage<float>(temp_image, slicer, new casacore::AxesSpecifier(keep_degenerate));
     return true;
 }
 

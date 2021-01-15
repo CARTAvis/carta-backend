@@ -166,7 +166,8 @@ public:
     // SubImage
     bool GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image);
     bool GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
-    bool GetSubImage(const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image);
+    bool GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image, bool keep_degenerate);
+    bool GetSubImage(const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image, bool keep_degenerate);
 
     // Image Statistics
     // Load image statistics, if they exist, from the file

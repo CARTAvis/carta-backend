@@ -1456,19 +1456,31 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             stride = casacore::IPosition(3, 1, 1, channels_stride);
             shape = casacore::IPosition(3, image_shape[0], image_shape[1], channels_length / channels_stride);
         } else if (image_shape.size() == 4) {
-            start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
-            length = casacore::IPosition(4, image_shape[0], image_shape[1], channels_length, stokes_length);
-            stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
-            shape =
-                casacore::IPosition(4, image_shape[0], image_shape[1], channels_length / channels_stride, stokes_length / stokes_stride);
+            if (_spectral_axis == 3) {
+                start = casacore::IPosition(4, 0, 0, stokes_start, channels_start);
+                length = casacore::IPosition(4, image_shape[0], image_shape[1], stokes_length, channels_length);
+                stride = casacore::IPosition(4, 1, 1, stokes_stride, channels_stride);
+                shape = casacore::IPosition(
+                    4, image_shape[0], image_shape[1], stokes_length / stokes_stride, channels_length / channels_stride);
+            } else {
+                start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
+                length = casacore::IPosition(4, image_shape[0], image_shape[1], channels_length, stokes_length);
+                stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
+                shape = casacore::IPosition(
+                    4, image_shape[0], image_shape[1], channels_length / channels_stride, stokes_length / stokes_stride);
+            }
         } else {
             return;
         }
 
         auto slice_sub_image = casacore::Slicer(start, length, stride);
+        bool is_keep_degenerate = false;
+        if (save_file_msg.keep_degenerate()) {
+            is_keep_degenerate = true;
+        }
         casacore::SubImage<float> sub_image;
 
-        _loader->GetSubImage(slice_sub_image, sub_image);
+        _loader->GetSubImage(slice_sub_image, sub_image, is_keep_degenerate);
         image = sub_image.cloneII();
     }
 
@@ -1589,18 +1601,30 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             stride = casacore::IPosition(3, 1, 1, channels_stride);
             shape = casacore::IPosition(3, image_region->shape()[0], image_region->shape()[1], channels_length / channels_stride);
         } else if (image_shape.size() == 4) {
-            start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
-            length = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], channels_length, stokes_length);
-            stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
-            shape = casacore::IPosition(
-                4, image_region->shape()[0], image_region->shape()[1], channels_length / channels_stride, stokes_length / stokes_stride);
+            if (_spectral_axis == 3) {
+                start = casacore::IPosition(4, 0, 0, stokes_start, channels_start);
+                length = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], stokes_length, channels_length);
+                stride = casacore::IPosition(4, 1, 1, stokes_stride, channels_stride);
+                shape = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], stokes_length / stokes_stride,
+                    channels_length / channels_stride);
+            } else {
+                start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
+                length = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], channels_length, stokes_length);
+                stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
+                shape = casacore::IPosition(4, image_region->shape()[0], image_region->shape()[1], channels_length / channels_stride,
+                    stokes_length / stokes_stride);
+            }
         } else {
             return;
         }
 
         auto slice_sub_image = casacore::Slicer(start, length, stride);
+        bool is_keep_degenerate = false;
+        if (save_file_msg.keep_degenerate()) {
+            is_keep_degenerate = true;
+        }
 
-        _loader->GetSubImage(slice_sub_image, LattRegionHolder(image_region), sub_image);
+        _loader->GetSubImage(slice_sub_image, LattRegionHolder(image_region), sub_image, is_keep_degenerate);
         image = sub_image.cloneII();
     }
 
