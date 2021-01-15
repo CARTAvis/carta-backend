@@ -17,40 +17,42 @@
 using namespace std;
 
 namespace carta {
-SimpleFrontendServer::SimpleFrontendServer(string root_folder) {
-    // If no folder is provided, check if /usr/local/share/carta/frontend exists.
-    // If this does not exist, try /usr/share/carta/frontend.
-    if (root_folder.empty()) {
-        _http_root_folder = "/usr/local/share/carta/frontend";
-        if (!IsValidFrontendFolder(_http_root_folder)) {
-            _http_root_folder = "/usr/local/carta/frontend";
-            _frontend_found = IsValidFrontendFolder(_http_root_folder);
-        } else {
-            _frontend_found = true;
-        }
-    } else {
-        _http_root_folder = root_folder;
-        _frontend_found = IsValidFrontendFolder(root_folder);
-    }
+SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
+    _http_root_folder = root_folder;
+    _frontend_found = IsValidFrontendFolder(root_folder);
 
     if (_frontend_found) {
-        fmt::print("Serving CARTA frontend from {}\n", _http_root_folder);
+        fmt::print("Serving CARTA frontend from {}\n", fs::canonical(_http_root_folder).string());
     } else {
-        fmt::print("Could not find CARTA frontend files.\n");
+        fmt::print("Could not find CARTA frontend files in directory {}.\n", _http_root_folder.string());
     }
 }
 
 void SimpleFrontendServer::HandleRequest(uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
     string_view url = req->getUrl();
-    string path_string = _http_root_folder;
+    fs::path path = _http_root_folder;
     if (url.empty() || url == "/") {
-        path_string.append("/index.html");
+        path /= "index.html";
     } else {
-        path_string.append(url);
+        // Trim leading '/'
+        if (url[0] == '/') {
+            url = url.substr(1);
+        }
+        path /= string(url);
     }
 
-    filesystem::path path(path_string);
-    if (filesystem::exists(path) && filesystem::is_regular_file(path)) {
+    // Check if we can serve a gzip-compressed alternative
+    auto req_encoding_header = req->getHeader("accept-encoding");
+    bool accepts_gzip = req_encoding_header.find("gzip") != string_view::npos;
+    bool gzip_compressed = false;
+    auto gzip_path = path;
+    gzip_path += ".gz";
+    if (accepts_gzip && fs::exists(gzip_path) && fs::is_regular_file(gzip_path)) {
+        gzip_compressed = true;
+        path = gzip_path;
+    }
+
+    if (fs::exists(path) && fs::is_regular_file(path)) {
         // Check file size
         ifstream file(path, ios::binary | ios::ate);
         streamsize size = file.tellg();
@@ -60,8 +62,11 @@ void SimpleFrontendServer::HandleRequest(uWS::HttpResponse<false>* res, uWS::Htt
         if (size && file.read(buffer.data(), size)) {
             res->writeStatus(HTTP_200);
 
+            if (gzip_compressed) {
+                res->writeHeader("Content-Encoding", "gzip");
+            }
             auto extension = path.extension();
-            auto it = MimeTypes.find(extension);
+            auto it = MimeTypes.find(extension.string());
             if (it != MimeTypes.end()) {
                 auto val = it->second;
                 res->writeHeader("Content-Type", it->second);
@@ -78,19 +83,18 @@ void SimpleFrontendServer::HandleRequest(uWS::HttpResponse<false>* res, uWS::Htt
     res->end();
 }
 
-bool SimpleFrontendServer::IsValidFrontendFolder(std::string folder) {
-    filesystem::path path(folder);
+bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
     // Check that the folder exists
-    if (!filesystem::exists(path) || !filesystem::is_directory(path)) {
+    if (!fs::exists(folder) || !fs::is_directory(folder)) {
         return false;
     }
     // Check that index.html exists
-    path /= "index.html";
-    if (!filesystem::exists(path) || !filesystem::is_regular_file(path)) {
+    folder /= "index.html";
+    if (!fs::exists(folder) || !fs::is_regular_file(folder)) {
         return false;
     }
     // Check that index.html can be read
-    ifstream index_file(path);
+    ifstream index_file(folder);
     return index_file.good();
 }
 

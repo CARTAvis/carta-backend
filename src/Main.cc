@@ -87,7 +87,7 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
                 return;
             }
         } else {
-            fmt::print("Header auth failed!\n");
+            fmt::print("Incorrect auth token supplied! Closing WebSocket connection\n");
             http_response->close();
             return;
         }
@@ -531,7 +531,8 @@ int main(int argc, const char* argv[]) {
         int port(3002);
         int thread_count = TBB_THREAD_COUNT;
         int omp_thread_count = OMP_THREAD_COUNT;
-        string http_root_folder;
+        string frontend_folder;
+        string host;
         bool no_http = false;
         bool debug_no_auth = false;
         bool no_browser = false;
@@ -544,13 +545,14 @@ int main(int argc, const char* argv[]) {
             inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
             inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, use with caution!)", "Bool");
             inp.create("no_browser", "False", "prevent the frontend from automatically opening in the default browser on startup", "Bool");
+            inp.create("host", "", "only listen on the specified interface");
             inp.create("port", to_string(port), "set server port", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
-            inp.create("http_root", http_root_folder, "set folder to serve frontend file from", "String");
+            inp.create("frontend_folder", frontend_folder, "set folder to serve frontend file from", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
 
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
@@ -562,11 +564,13 @@ int main(int argc, const char* argv[]) {
             debug_no_auth = inp.getBool("debug_no_auth");
             no_browser = inp.getBool("no_browser");
             port = inp.getInt("port");
+            host = inp.getString("host");
             grpc_port = inp.getInt("grpc_port");
             thread_count = inp.getInt("threads");
             omp_thread_count = inp.getInt("omp_threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
+            frontend_folder = inp.getString("frontend_folder");
 
             if (!inp.getString("exit_after").empty()) {
                 int wait_time = inp.getInt("exit_after");
@@ -616,7 +620,16 @@ int main(int argc, const char* argv[]) {
         auto app = uWS::App();
 
         if (!no_http) {
-            http_server = new SimpleFrontendServer(http_root_folder);
+            fs::path frontend_path;
+
+            if (frontend_folder.empty()) {
+                fs::path executable_path = fs::path(argv[0]).parent_path();
+                frontend_path = executable_path / "../share/carta/frontend";
+            } else {
+                frontend_path = frontend_folder;
+            }
+
+            http_server = new SimpleFrontendServer(frontend_path);
             if (http_server->CanServeFrontend()) {
                 app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
                     if (http_server && http_server->CanServeFrontend()) {
@@ -624,7 +637,7 @@ int main(int argc, const char* argv[]) {
                     }
                 });
 
-                string frontend_url = fmt::format("http://localhost:{}", port);
+                string frontend_url = fmt::format("http://{}:{}", host.empty() ? "localhost" : host, port);
                 if (!auth_token.empty()) {
                     frontend_url += fmt::format("?token={}", auth_token);
                 }
@@ -641,9 +654,7 @@ int main(int argc, const char* argv[]) {
                 }
                 fmt::print("CARTA is accessible at {}\n", frontend_url);
             } else {
-                fmt::print(
-                    "Failed to host the CARTA frontend. Please install the frontend files in the default location "
-                    "(/usr/local/share/carta/frontend) or specify a custom location using the http_root_folder argument\n");
+                fmt::print("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument\n");
             }
         }
 
@@ -654,12 +665,12 @@ int main(int argc, const char* argv[]) {
             ws_pattern = "/token/:token";
         }
 
-        app.ws<PerSocketData>(ws_pattern, (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
+        app.ws<PerSocketData>(ws_pattern, (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR,
                                               .upgrade = OnUpgrade,
                                               .open = OnConnect,
                                               .message = OnMessage,
                                               .close = OnDisconnect})
-            .listen(port,
+            .listen(host.empty() ? "0.0.0.0" : host, port,
                 [=](auto* token) {
                     if (token) {
                         fmt::print(

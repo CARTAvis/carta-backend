@@ -11,6 +11,14 @@
 
 #include <App.h>
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 namespace carta {
 #define HTTP_200 "200 OK"
 #define HTTP_404 "404 Not Found"
@@ -18,15 +26,15 @@ namespace carta {
 
 class SimpleFrontendServer {
 public:
-    SimpleFrontendServer(std::string root_folder = "");
+    SimpleFrontendServer(fs::path root_folder);
     bool CanServeFrontend() {
         return _frontend_found;
     }
     void HandleRequest(uWS::HttpResponse<false>* res, uWS::HttpRequest* req);
 
 private:
-    static bool IsValidFrontendFolder(std::string folder);
-    std::string _http_root_folder;
+    static bool IsValidFrontendFolder(fs::path folder);
+    fs::path _http_root_folder;
     bool _frontend_found;
 };
 
