@@ -13,7 +13,6 @@
 #include <casacore/lattices/Lattices/MaskedLattice.h>
 #include <casacore/scimath/Functionals/Gaussian1D.h>
 #include <imageanalysis/ImageAnalysis/CasaImageBeamSet.h>
-#include <imageanalysis/ImageAnalysis/Image2DConvolver.h>
 #include <imageanalysis/ImageAnalysis/ImageHistograms.h>
 #include <imageanalysis/ImageAnalysis/ImageMomentsProgress.h>
 #include <imageanalysis/ImageAnalysis/MomentClip.h>
@@ -21,6 +20,8 @@
 #include <imageanalysis/ImageAnalysis/MomentWindow.h>
 #include <imageanalysis/ImageAnalysis/MomentsBase.h>
 #include <imageanalysis/ImageAnalysis/SepImageConvolver.h>
+
+#include "Image2DConvolver.h"
 
 namespace carta {
 
