@@ -591,7 +591,7 @@ int main(int argc, const char* argv[]) {
                                          .open = OnConnect,
                                          .message = OnMessage,
                                          .close = OnDisconnect})
-            .listen(port,
+            .listen(port, LIBUS_LISTEN_EXCLUSIVE_PORT,
                 [=](auto* token) {
                     if (token) {
                         fmt::print(
