@@ -82,12 +82,12 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
         if (!req_token.empty()) {
             string token_header_value(req_token);
             if (token_header_value != auth_token) {
-                fmt::print("Header auth failed!\n");
+                fmt::print("Incorrect auth token supplied! Closing WebSocket connection\n");
                 http_response->close();
                 return;
             }
         } else {
-            fmt::print("Incorrect auth token supplied! Closing WebSocket connection\n");
+            fmt::print("No auth token supplied! Closing WebSocket connection\n");
             http_response->close();
             return;
         }
