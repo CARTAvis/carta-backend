@@ -6,7 +6,7 @@ import re
 import argparse
 
 HEADER = """/* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -21,9 +21,9 @@ FUZZY_HEADER_MATCH = """/\* This file (.*)
 
 def cpp_files(directory):
     for root, dirs, files in os.walk(directory):
-        dirs[:] = [d for d in dirs if d != "build"]
+        dirs[:] = [d for d in dirs]
         for basename in files:
-            if re.search("\.(cc|h)$", basename):
+            if re.search("\.(cc|h|tcc)$", basename):
                 filename = os.path.join(root, basename)
                 yield filename
                 
@@ -33,7 +33,7 @@ def noprint(*args):
 if __name__ == "__main__":    
     parser = argparse.ArgumentParser(description="Check or fix copyright and licence headers.")
     parser.add_argument('command', help="Command (check or fix).", choices=("check", "fix"))
-    parser.add_argument('-d', '--directory', help="Location of the root directory (default is the current directory).", default=".")
+    parser.add_argument('-d', '--directory', help="Location of the root directory (default is the src subdirectory in the current directory).", default="./src")
     parser.add_argument('-q', '--quiet', help="Suppress output", action='store_true')
 
     args = parser.parse_args()
