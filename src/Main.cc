@@ -74,14 +74,22 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
 
     // Check if there's a token to be matched
     if (!auth_token.empty()) {
-        // First try the URL parameter
-        auto req_token = http_request->getParameter(0);
+        string req_token;
+        // First try the cookie auth token
+        auto cookie_header = http_request->getHeader("cookie");
+        if (!cookie_header.empty()) {
+            auto cookie_auth_value = GetAuthTokenFromCookie(string(cookie_header));
+            if (!cookie_auth_value.empty()) {
+                req_token = cookie_auth_value;
+            }
+        }
+        // Then try the auth header
         if (req_token.empty()) {
             req_token = http_request->getHeader("carta-auth-token");
         }
+
         if (!req_token.empty()) {
-            string token_header_value(req_token);
-            if (token_header_value != auth_token) {
+            if (req_token != auth_token) {
                 fmt::print("Incorrect auth token supplied! Closing WebSocket connection\n");
                 http_response->close();
                 return;
@@ -668,18 +676,11 @@ int main(int argc, const char* argv[]) {
             }
         }
 
-        string ws_pattern;
-        if (debug_no_auth) {
-            ws_pattern = "/*";
-        } else {
-            ws_pattern = "/token/:token";
-        }
-
-        app.ws<PerSocketData>(ws_pattern, (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR,
-                                              .upgrade = OnUpgrade,
-                                              .open = OnConnect,
-                                              .message = OnMessage,
-                                              .close = OnDisconnect})
+        app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR,
+                                        .upgrade = OnUpgrade,
+                                        .open = OnConnect,
+                                        .message = OnMessage,
+                                        .close = OnDisconnect})
             .listen(host.empty() ? "0.0.0.0" : host, port,
                 [=](auto* token) {
                     if (token) {

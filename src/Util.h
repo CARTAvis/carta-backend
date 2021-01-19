@@ -79,6 +79,8 @@ void FillStatisticsValuesFromMap(
 
 std::string IPAsText(std::string_view binary);
 
+std::string GetAuthTokenFromCookie(const std::string& header);
+
 // ************ structs *************
 //
 // Usage of the ChannelRange:
