@@ -176,3 +176,129 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
     }
     return true;
 }
+
+bool BlockSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
+    int64_t x_offset, int64_t y_offset, int smoothing_factor) {
+#ifdef __AVX__
+    // AVX version, only for 8x down-sampling and above
+    if (smoothing_factor % 8 == 0) {
+        int num_blocks_horizontal = smoothing_factor / 8;
+        int64_t row_jump = (src_width - 8 * num_blocks_horizontal);
+#pragma omp parallel for
+        for (int64_t j = 0; j < dest_height; ++j) {
+            for (auto i = 0; i < dest_width; i++) {
+                float pixel_sum = 0;
+                float pixel_count = 0;
+                int64_t image_row = y_offset + (j * smoothing_factor);
+                int64_t image_col = x_offset + (i * smoothing_factor);
+                const float* ptr = src_data + (image_row * src_width) + image_col;
+
+                __m256 v0 = _mm256_setzero_ps();
+                __m256 v1 = _mm256_set1_ps(1.0f);
+
+                __m256 count = v0, total = v0;
+
+                for (auto row_index = 0; row_index < smoothing_factor; row_index++) {
+                    for (auto col_index = 0; col_index < num_blocks_horizontal; col_index++) {
+                        __m256 row = _mm256_loadu_ps(ptr);
+                        __m256 mask = _mm256_andnot_ps(IsInfinity(row), _mm256_cmp_ps(row, row, _CMP_EQ_UQ));
+                        row = _mm256_and_ps(row, mask);
+                        count = _mm256_add_ps(count, _mm256_and_ps(v1, mask));
+                        total = _mm256_add_ps(total, row);
+                        ptr += 8;
+                    }
+                    ptr += row_jump;
+                }
+
+                // reduce
+                pixel_sum = _mm256_reduce_add_ps(total);
+                pixel_count = _mm256_reduce_add_ps(count);
+                dest_data[j * dest_width + i] = pixel_sum / pixel_count;
+            }
+        }
+        return true;
+    }
+#endif
+    // SSE2 version
+    if (smoothing_factor % 4 == 0) {
+        int num_blocks_horizontal = smoothing_factor / 4;
+        int64_t row_jump = (src_width - 4 * num_blocks_horizontal);
+#pragma omp parallel for
+        for (int64_t j = 0; j < dest_height; ++j) {
+            for (auto i = 0; i < dest_width; i++) {
+                float pixel_sum = 0;
+                float pixel_count = 0;
+                size_t image_row = y_offset + (j * smoothing_factor);
+                size_t image_col = x_offset + (i * smoothing_factor);
+                __m128 v0 = _mm_setzero_ps();
+                __m128 v1 = _mm_set_ps1(1.0f);
+                __m128 count = v0, total = v0;
+                const float* ptr = src_data + (image_row * src_width) + image_col;
+
+                for (auto row_index = 0; row_index < smoothing_factor; row_index++) {
+                    for (auto col_index = 0; col_index < num_blocks_horizontal; col_index++) {
+                        __m128 row = _mm_loadu_ps(ptr);
+                        __m128 mask = _mm_andnot_ps(IsInfinity(row), _mm_cmpeq_ps(row, row));
+                        row = _mm_and_ps(row, mask);
+                        count = _mm_add_ps(count, _mm_and_ps(v1, mask));
+                        total = _mm_add_ps(total, row);
+                        ptr += 4;
+                    }
+                    ptr += row_jump;
+                }
+
+                // reduce
+                total = _mm_hadd_ps(total, total);
+                total = _mm_hadd_ps(total, total);
+                _mm_store_ss(&pixel_sum, total);
+
+                count = _mm_hadd_ps(count, count);
+                count = _mm_hadd_ps(count, count);
+                _mm_store_ss(&pixel_count, count);
+                dest_data[j * dest_width + i] = pixel_sum / pixel_count; // -1.48977e-06
+            }
+        }
+    } else {
+        // Non-SIMD version. This could still be optimised to use SIMD in future
+#pragma omp parallel for
+        for (int64_t j = 0; j < dest_height; ++j) {
+            for (int64_t i = 0; i != dest_width; ++i) {
+                float pixel_sum = 0;
+                int pixel_count = 0;
+                int64_t image_row = y_offset + (j * smoothing_factor);
+                for (int64_t pixel_y = 0; pixel_y < smoothing_factor; pixel_y++) {
+                    if (image_row >= src_height) {
+                        continue;
+                    }
+                    int64_t image_col = x_offset + (i * smoothing_factor);
+                    for (int64_t pixel_x = 0; pixel_x < smoothing_factor; pixel_x++) {
+                        if (image_col >= src_width) {
+                            continue;
+                        }
+                        float pix_val = src_data[(image_row * src_width) + image_col];
+                        if (std::isfinite(pix_val)) {
+                            pixel_count++;
+                            pixel_sum += pix_val;
+                        }
+                        image_col++;
+                    }
+                    image_row++;
+                }
+                dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : NAN;
+            }
+        }
+    }
+    return true;
+}
+
+void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width, int64_t dest_width, int64_t dest_height, int64_t x_offset,
+    int64_t y_offset, int smoothing_factor) {
+#pragma omp parallel for
+    for (size_t j = 0; j < dest_height; ++j) {
+        for (auto i = 0; i < dest_width; i++) {
+            auto image_row = y_offset + j * smoothing_factor;
+            auto image_col = x_offset + i * smoothing_factor;
+            dest_data[j * dest_width + i] = src_data[(image_row * src_width) + image_col];
+        }
+    }
+}
