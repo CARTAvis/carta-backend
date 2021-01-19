@@ -40,7 +40,7 @@ For more detailed example commands for installing the dependencies and performin
 
 ## Running the backend process
 
-Command-line arguments are in the format `arg=value` or `-arg value`. Run `carta_backend --help` for a list of option. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `frontend_folder` argument. Hosting of the frontend can be disabled with the `no_http` argument.
+Command-line arguments are in the format `arg=value` or `-arg value`. Run `carta_backend --help` for a list of option. By default, the backend will attempt to host frontend files from `../share/carta/frontend` (relative to the executable path). This can be changed with the `frontend_folder` argument. Hosting of the frontend can be disabled with the `no_http` argument. Token-based authentication can be disabled for debugging or development purposes with the `debug_no_auth` argument.
 
 [![Build Status](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend/badge/icon)](http://acdc0.asiaa.sinica.edu.tw:47565/job/carta-backend) 
 
