@@ -104,12 +104,12 @@ uint32_t GetMagicNumber(const string& filename) {
     return magic_number;
 }
 
-void SplitString(std::string& input, char delim, std::vector<std::string>& parts) {
+void SplitString(string& input, char delim, vector<string>& parts) {
     // util to split input string into parts by delimiter
     parts.clear();
-    std::stringstream ss(input);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
+    stringstream ss(input);
+    string item;
+    while (getline(ss, item, delim)) {
         if (!item.empty()) {
             if (item.back() == '\r') {
                 item.pop_back();
@@ -119,7 +119,7 @@ void SplitString(std::string& input, char delim, std::vector<std::string>& parts
     }
 }
 
-casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file) {
+casacore::String GetResolvedFilename(const string& root_dir, const string& directory, const string& file) {
     // Given directory (relative to root folder) and file, return resolved path and filename
     // (absolute pathname with symlinks resolved)
     casacore::String resolved_filename;
@@ -137,7 +137,7 @@ casacore::String GetResolvedFilename(const std::string& root_dir, const std::str
     return resolved_filename;
 }
 
-CARTA::FileType GetCartaFileType(const std::string& filename) {
+CARTA::FileType GetCartaFileType(const string& filename) {
     // get casacore image type then convert to carta file type
     switch (CasacoreImageType(filename)) {
         case casacore::ImageOpener::AIPSPP:
@@ -172,8 +172,8 @@ void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<flo
     histogram->set_std_dev(stats.stdDev);
 }
 
-void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
-    std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data) {
+void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, string& coordinate,
+    vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, vector<double>>& spectral_data) {
     for (auto stats_type : required_stats) {
         // one SpectralProfile per stats type
         auto new_profile = profile_message.add_profiles();
@@ -181,7 +181,7 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
         new_profile->set_stats_type(stats_type);
 
         if (spectral_data.find(stats_type) == spectral_data.end()) { // stat not provided
-            double nan_value = std::numeric_limits<double>::quiet_NaN();
+            double nan_value = numeric_limits<double>::quiet_NaN();
             new_profile->set_raw_values_fp64(&nan_value, sizeof(double));
         } else {
             new_profile->set_raw_values_fp64(spectral_data[stats_type].data(), spectral_data[stats_type].size() * sizeof(double));
@@ -189,8 +189,8 @@ void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message,
     }
 }
 
-void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, std::vector<CARTA::StatsType>& required_stats,
-    std::map<CARTA::StatsType, double>& stats_value_map) {
+void FillStatisticsValuesFromMap(
+    CARTA::RegionStatsData& stats_data, vector<CARTA::StatsType>& required_stats, map<CARTA::StatsType, double>& stats_value_map) {
     // inserts values from map into message StatisticsValue field; needed by Frame and RegionDataHandler
     for (auto type : required_stats) {
         double value(0.0); // default
@@ -199,7 +199,7 @@ void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, std::vector
             value = stats_value_map[carta_stats_type];
         } else { // stat not provided
             if (carta_stats_type != CARTA::StatsType::NumPixels) {
-                value = std::numeric_limits<double>::quiet_NaN();
+                value = numeric_limits<double>::quiet_NaN();
             }
         }
 
@@ -210,7 +210,7 @@ void FillStatisticsValuesFromMap(CARTA::RegionStatsData& stats_data, std::vector
     }
 }
 
-void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index) {
+void ConvertCoordinateToAxes(const string& coordinate, int& axis_index, int& stokes_index) {
     // converts profile string into axis, stokes index into image shape
     // axis
     char axis_char(coordinate.back());
@@ -239,8 +239,8 @@ void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int
     }
 }
 
-std::string IPAsText(std::string_view binary) {
-    std::string result;
+string IPAsText(string_view binary) {
+    string result;
     if (!binary.length()) {
         return result;
     }
@@ -253,4 +253,12 @@ std::string IPAsText(std::string_view binary) {
     }
 
     return result;
+}
+string GetAuthTokenFromCookie(const string& header) {
+    regex header_regex("carta-auth-token=(.+?)(?:;|$)");
+    smatch sm;
+    if (regex_search(header, sm, header_regex) && sm.size() == 2) {
+        return sm[1];
+    }
+    return string();
 }
