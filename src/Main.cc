@@ -690,14 +690,14 @@ int main(int argc, const char* argv[]) {
                                          .close = OnDisconnect})
             .listen(port, LIBUS_LISTEN_EXCLUSIVE_PORT,
                 [=](auto* token) {
-                    if (token) {
-                        fmt::print(
-                            "Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP "
-                            "threads\n",
-                            port, root_folder, base_folder, thread_count, omp_thread_count);
-                    } else {
-                        fmt::print("Error listening on port {}\n", port);
-                    }
+            if (token) {
+                fmt::print(
+                    "Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP "
+                    "threads\n",
+                    port, root_folder, base_folder, thread_count, omp_thread_count);
+            } else {
+                fmt::print("Error listening on port {}\n", port);
+            }
                 })
             .run();
     } catch (exception& e) {
