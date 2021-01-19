@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -681,7 +681,14 @@ int main(int argc, const char* argv[]) {
                                         .open = OnConnect,
                                         .message = OnMessage,
                                         .close = OnDisconnect})
-            .listen(host.empty() ? "0.0.0.0" : host, port,
+            .listen(host.empty() ? "0.0.0.0" : host, port, LIBUS_LISTEN_EXCLUSIVE_PORT,
+        uWS::App()
+            .ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::SHARED_COMPRESSOR,
+                                         .upgrade = OnUpgrade,
+                                         .open = OnConnect,
+                                         .message = OnMessage,
+                                         .close = OnDisconnect})
+            .listen(port, LIBUS_LISTEN_EXCLUSIVE_PORT,
                 [=](auto* token) {
                     if (token) {
                         fmt::print(
