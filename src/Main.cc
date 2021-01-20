@@ -686,7 +686,7 @@ int main(int argc, const char* argv[]) {
             }
             app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
                 if (!token) {
-                    port += 1;
+                    ++port;
                     ++ntry;
                 } else {
                     port_ok = true;
