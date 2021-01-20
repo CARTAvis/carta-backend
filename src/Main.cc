@@ -536,7 +536,7 @@ int main(int argc, const char* argv[]) {
         sigaction(SIGINT, &sig_handler, nullptr);
 
         // define and get input arguments
-        int port(3002);
+        int port(-1);
         int thread_count = TBB_THREAD_COUNT;
         int omp_thread_count = OMP_THREAD_COUNT;
         string frontend_folder;
@@ -677,11 +677,12 @@ int main(int argc, const char* argv[]) {
         }
 
         host = host.empty() ? "0.0.0.0" : host;
+        port = port < 0 ? DEFAULT_SOCKET_PORT : port;
         bool port_ok(false);
         int num_listen_retries(0);
         while (!port_ok) {
-            if (num_listen_retries > 100) {
-                fmt::print("Unable to listen on the port range {}-{}!\n", port - 101, port - 1);
+            if (num_listen_retries > MAX_SOCKET_PORT_TRIALS) {
+                fmt::print("Unable to listen on the port range {}-{}!\n", port - MAX_SOCKET_PORT_TRIALS - 1, port - 1);
                 return -1;
             }
             app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
