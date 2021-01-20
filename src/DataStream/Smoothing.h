@@ -56,6 +56,15 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
     int smoothing_factor, bool performance_logging = false);
 bool BlockSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
     int64_t x_offset, int64_t y_offset, int smoothing_factor);
+bool BlockSmoothScalar(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width,
+    int64_t dest_height, int64_t x_offset, int64_t y_offset, int smoothing_factor);
+bool BlockSmoothSSE(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
+    int64_t x_offset, int64_t y_offset, int smoothing_factor);
+#ifdef __AVX__
+bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
+    int64_t x_offset, int64_t y_offset, int smoothing_factor);
+#endif
+
 void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width, int64_t dest_width, int64_t dest_height, int64_t x_offset,
     int64_t y_offset, int smoothing_factor);
 #endif // CARTA_BACKEND__SMOOTHING_H_
