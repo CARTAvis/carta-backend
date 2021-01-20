@@ -11,7 +11,8 @@ RUN \
   source /etc/bashrc && \
   yum -y install epel-release && \
   yum -y install autoconf automake bison blas-devel cfitsio-devel curl-devel flex git \
-    gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel subversion wget
+    gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel subversion wget \
+    libuuid-devel
 
 # gRPC needs a newer openSSL
 RUN \
