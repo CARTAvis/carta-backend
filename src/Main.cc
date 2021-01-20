@@ -678,16 +678,17 @@ int main(int argc, const char* argv[]) {
 
         host = host.empty() ? "0.0.0.0" : host;
         bool port_ok(false);
-        int ntry = 0;
+        int num_listen_retries(0);
         while (!port_ok) {
-            if (ntry > 100) {
-                fmt::print("Error listening on port {}\n", port);
+            if (num_listen_retries > 100) {
+                fmt::print("Unable to listen on the port range {}-{}!\n", port - 101, port - 1);
                 return -1;
             }
             app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
                 if (!token) {
+                    fmt::print("Could not listen on port {}, try next one..", port);
                     ++port;
-                    ++ntry;
+                    ++num_listen_retries;
                 } else {
                     port_ok = true;
                     fmt::print(
