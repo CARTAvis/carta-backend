@@ -1450,14 +1450,14 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         casacore::IPosition length;
         casacore::IPosition stride;
         if (image_shape.size() == 3) {
-            if (_spectral_axis == 3) {
-                start = casacore::IPosition(3, 0, 0, stokes_start);
-                length = casacore::IPosition(3, image_shape[0], image_shape[1], stokes_length);
-                stride = casacore::IPosition(3, 1, 1, stokes_stride);
-            } else {
+            if (_spectral_axis == 2) {
                 start = casacore::IPosition(3, 0, 0, channels_start);
                 length = casacore::IPosition(3, image_shape[0], image_shape[1], channels_length);
                 stride = casacore::IPosition(3, 1, 1, channels_stride);
+            } else {
+                start = casacore::IPosition(3, 0, 0, stokes_start);
+                length = casacore::IPosition(3, image_shape[0], image_shape[1], stokes_length);
+                stride = casacore::IPosition(3, 1, 1, stokes_stride);
             }
         } else if (image_shape.size() == 4) {
             if (_spectral_axis == 3) {
@@ -1595,14 +1595,14 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         image = sub_image.cloneII();
     } else {
         if (image_shape.size() == 3) {
-            if (_spectral_axis == 3) {
+            if (_spectral_axis == 2) {
+                start = casacore::IPosition(3, 0, 0, channels_start);
+                length = casacore::IPosition(3, image_shape[0], image_shape[1], channels_length);
+                stride = casacore::IPosition(3, 1, 1, channels_stride);
+            } else {
                 start = casacore::IPosition(3, 0, 0, stokes_start);
                 length = casacore::IPosition(3, image_shape[0], image_shape[1], stokes_length);
                 stride = casacore::IPosition(3, 1, 1, stokes_stride);
-            } else {
-                start = casacore::IPosition(3, 0, 0, channels_start);
-                length = casacore::IPosition(3, image_region->shape()[0], image_region->shape()[1], channels_length);
-                stride = casacore::IPosition(3, 1, 1, channels_stride);
             }
         } else if (image_shape.size() == 4) {
             if (_spectral_axis == 3) {
