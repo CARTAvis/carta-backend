@@ -676,13 +676,20 @@ int main(int argc, const char* argv[]) {
             }
         }
 
-        app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR,
-                                        .upgrade = OnUpgrade,
-                                        .open = OnConnect,
-                                        .message = OnMessage,
-                                        .close = OnDisconnect})
-            .listen(host.empty() ? "0.0.0.0" : host, port, LIBUS_LISTEN_EXCLUSIVE_PORT,
-                [=](auto* token) {
+        host = host.empty() ? "0.0.0.0" : host;
+        bool port_ok(false);
+        int ntry = 0;
+        while (!port_ok) {
+            if (ntry > 100) {
+                fmt::print("Error listening on port {}\n", port);
+                return -1;
+            }
+            app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
+                if (!token) {
+                    port += 1;
+                    ++ntry;
+                } else {
+                    port_ok = true;
                     if (token) {
                         fmt::print(
                             "Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP "
@@ -691,7 +698,15 @@ int main(int argc, const char* argv[]) {
                     } else {
                         fmt::print("Error listening on port {}\n", port);
                     }
-                })
+                }
+            });
+        }
+
+        app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR,
+                                        .upgrade = OnUpgrade,
+                                        .open = OnConnect,
+                                        .message = OnMessage,
+                                        .close = OnDisconnect})
             .run();
     } catch (exception& e) {
         fmt::print("Error: {}\n", e.what());
