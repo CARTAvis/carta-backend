@@ -244,7 +244,7 @@ bool BlockSmoothSSE(const float* src_data, float* dest_data, int64_t src_width, 
                 }
             }
 
-            dest_data[j * dest_width + i] = pixel_sum / pixel_count;
+            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : NAN;
         }
     }
     return true;
@@ -298,7 +298,7 @@ bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, 
                     }
                 }
             }
-            dest_data[j * dest_width + i] = pixel_sum / pixel_count;
+            dest_data[j * dest_width + i] = pixel_count ? pixel_sum / pixel_count : NAN;
         }
     }
     return true;
