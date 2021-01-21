@@ -10,8 +10,6 @@
 #include <cmath>
 
 #include <omp.h>
-#include <tbb/parallel_for.h>
-#include <tbb/parallel_reduce.h>
 
 using namespace carta;
 
@@ -37,13 +35,11 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
 }
 
 void Histogram::join(Histogram& h) { // NOLINT
-    auto range = tbb::blocked_range<size_t>(0, _hist.size());
-    auto loop = [this, &h](const tbb::blocked_range<size_t>& r) {
-        size_t beg = r.begin();
-        size_t end = r.end();
-        std::transform(&h._hist[beg], &h._hist[end], &_hist[beg], &_hist[beg], std::plus<int>());
-    };
-    tbb::parallel_for(range, loop);
+    auto num_bins = h._hist.size();
+#pragma omp parallel for
+    for (int i = 0; i < num_bins; i++) {
+        h._hist[i] += _hist[i];
+    }
 }
 
 void Histogram::setup_bins() {
