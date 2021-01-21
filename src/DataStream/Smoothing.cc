@@ -274,7 +274,7 @@ bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, 
                 const float* ptr = src_data + ((image_row + row_index) * src_width) + image_col;
                 for (auto col_index = 0; col_index < blocks_left; col_index++) {
                     __m256 row = _mm256_loadu_ps(ptr);
-                    __m256 mask = _mm256_andnot_ps(IsInfinity(row), _mm256_cmp_ps(row, row, _CMP_EQ_UQ));
+                    __m256 mask = _mm256_andnot_ps(IsInfinity(row), _mm256_cmp_ps(row, row, _CMP_EQ_OQ));
                     row = _mm256_and_ps(row, mask);
                     count = _mm256_add_ps(count, _mm256_and_ps(v1, mask));
                     total = _mm256_add_ps(total, row);

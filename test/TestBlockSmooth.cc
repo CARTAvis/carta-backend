@@ -20,9 +20,10 @@
 
 // Minimum speedup of 10% expected
 #define MINIMUM_SPEEDUP 1.1
+
 #define NUM_ITERS 100
 #define MAX_DOWNSAMPLE_FACTOR 256
-
+#define NAN_FRACTION 0.001f
 typedef casacore::Matrix<float> Matrix2F;
 
 using namespace std;
@@ -40,6 +41,9 @@ Matrix2F RandomMatrix(size_t rows, size_t columns) {
     for (auto i = 0; i < m.nrow(); i++) {
         for (auto j = 0; j < m.ncolumn(); j++) {
             m(i, j) = float_random(mt);
+            if (float_random(mt) < NAN_FRACTION) {
+                m(i, j) = NAN;
+            }
         }
     }
     return std::move(m);
@@ -77,12 +81,12 @@ TEST(BlockSmoothing, TestControl) {
         for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             auto smoothed_scalar = DownsampleTileScalar(m1, j);
             auto smoothed_sse = DownsampleTileSSE(m1, j);
-            Matrix2F res = abs(smoothed_scalar - smoothed_sse);
-            auto s_delta = sum(res);
-            auto m_delta = max(res);
+            Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
+            auto sum_error = sum(abs_diff);
+            auto max_error = max(abs_diff);
 
-            EXPECT_GE(s_delta, 0.0);
-            EXPECT_GE(m_delta, 0.0);
+            EXPECT_GE(sum_error, 0.0);
+            EXPECT_GE(max_error, 0.0);
         }
     }
 }
@@ -93,12 +97,12 @@ TEST(BlockSmoothing, TestSSEAccuracy) {
         for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             auto smoothed_scalar = DownsampleTileScalar(m1, j);
             auto smoothed_sse = DownsampleTileSSE(m1, j);
-            Matrix2F res = abs(smoothed_scalar - smoothed_sse);
-            auto s_delta = sum(res);
-            auto m_delta = max(res);
+            Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
+            auto sum_error = sum(abs_diff);
+            auto max_error = max(abs_diff);
 
-            EXPECT_LE(s_delta, MAX_SUM_ERROR);
-            EXPECT_LE(m_delta, MAX_ABS_ERROR);
+            EXPECT_LE(sum_error, MAX_SUM_ERROR);
+            EXPECT_LE(max_error, MAX_ABS_ERROR);
         }
     }
 }
@@ -131,12 +135,12 @@ TEST(BlockSmoothing, TestAVXAccuracy) {
         for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             auto smoothed_scalar = DownsampleTileScalar(m1, j);
             auto smoothed_avx = DownsampleTileAVX(m1, j);
-            Matrix2F res = abs(smoothed_scalar - smoothed_avx);
-            auto s_delta = sum(res);
-            auto m_delta = max(res);
+            Matrix2F abs_diff = abs(smoothed_scalar - smoothed_avx);
+            auto sum_error = sum(abs_diff);
+            auto max_error = max(abs_diff);
 
-            EXPECT_LE(s_delta, MAX_SUM_ERROR);
-            EXPECT_LE(m_delta, MAX_ABS_ERROR);
+            EXPECT_LE(sum_error, MAX_SUM_ERROR);
+            EXPECT_LE(max_error, MAX_ABS_ERROR);
         }
     }
 }
