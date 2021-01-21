@@ -19,22 +19,27 @@
 #define MAX_SUM_ERROR 1.0e-1f
 
 // Minimum speedup of 10% expected
-#define MINIMUM_SPEEDUP 1.1f
+#define MINIMUM_SPEEDUP 1.1
+#define NUM_ITERS 100
+#define MAX_DOWNSAMPLE_FACTOR 256
+
+typedef casacore::Matrix<float> Matrix2F;
 
 using namespace std;
 
 random_device rd;
 mt19937 mt(rd());
 uniform_real_distribution<float> float_random(0, 1.0f);
+// Random image widths and heights in range [512, 1024]
+uniform_int_distribution<int> size_random(512, 1024);
 
-typedef casacore::Matrix<float> Matrix2F;
 
-Matrix2F RandomMatrix(size_t rows, size_t columns, float max_value) {
+Matrix2F RandomMatrix(size_t rows, size_t columns) {
     Matrix2F m(rows, columns);
 
     for (auto i = 0; i < m.nrow(); i++) {
         for (auto j = 0; j < m.ncolumn(); j++) {
-            m(i, j) = float_random(mt) * max_value;
+            m(i, j) = float_random(mt);
         }
     }
     return std::move(m);
@@ -66,10 +71,26 @@ Matrix2F DownsampleTileAVX(const Matrix2F& m, int downsample_factor) {
 }
 #endif
 
+TEST(BlockSmoothing, TestControl) {
+    for (auto i = 0; i < NUM_ITERS; i++) {
+        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
+        for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
+            auto smoothed_scalar = DownsampleTileScalar(m1, j);
+            auto smoothed_sse = DownsampleTileSSE(m1, j);
+            Matrix2F res = abs(smoothed_scalar - smoothed_sse);
+            auto s_delta = sum(res);
+            auto m_delta = max(res);
+
+            EXPECT_GE(s_delta, 0.0);
+            EXPECT_GE(m_delta, 0.0);
+        }
+    }
+}
+
 TEST(BlockSmoothing, TestSSEAccuracy) {
-    for (auto i = 0; i < 100; i++) {
-        auto m1 = RandomMatrix(1024, 1024, 1.0f);
-        for (auto j = 4; j < 256; j *= 2) {
+    for (auto i = 0; i < NUM_ITERS; i++) {
+        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
+        for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             auto smoothed_scalar = DownsampleTileScalar(m1, j);
             auto smoothed_sse = DownsampleTileSSE(m1, j);
             Matrix2F res = abs(smoothed_scalar - smoothed_sse);
@@ -84,9 +105,9 @@ TEST(BlockSmoothing, TestSSEAccuracy) {
 
 TEST(BlockSmoothing, TestSSEPerformance) {
     Timer t;
-    for (auto i = 0; i < 100; i++) {
-        auto m1 = RandomMatrix(1024, 1024, 1.0f);
-        for (auto j = 4; j < 256; j *= 2) {
+    for (auto i = 0; i < NUM_ITERS; i++) {
+        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
+        for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             t.Start("scalar");
             auto smoothed_scalar = DownsampleTileScalar(m1, j);
             t.End("scalar");
@@ -105,9 +126,9 @@ TEST(BlockSmoothing, TestSSEPerformance) {
 #ifdef __AVX__
 
 TEST(BlockSmoothing, TestAVXAccuracy) {
-    for (auto i = 0; i < 100; i++) {
-        auto m1 = RandomMatrix(1024, 1024, 1.0f);
-        for (auto j = 8; j < 256; j *= 2) {
+    for (auto i = 0; i < NUM_ITERS; i++) {
+        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
+        for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             auto smoothed_scalar = DownsampleTileScalar(m1, j);
             auto smoothed_avx = DownsampleTileAVX(m1, j);
             Matrix2F res = abs(smoothed_scalar - smoothed_avx);
@@ -122,9 +143,9 @@ TEST(BlockSmoothing, TestAVXAccuracy) {
 
 TEST(BlockSmoothing, TestAVXPerformance) {
     Timer t;
-    for (auto i = 0; i < 100; i++) {
-        auto m1 = RandomMatrix(1024, 1024, 1.0f);
-        for (auto j = 8; j < 256; j *= 2) {
+    for (auto i = 0; i < NUM_ITERS; i++) {
+        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
+        for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             t.Start("scalar");
             auto smoothed_scalar = DownsampleTileScalar(m1, j);
             t.End("scalar");
