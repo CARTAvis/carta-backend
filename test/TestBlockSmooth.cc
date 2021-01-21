@@ -23,11 +23,10 @@
 
 #define NUM_ITERS 100
 #define MAX_DOWNSAMPLE_FACTOR 256
-#define NAN_FRACTION 0.05f
-#define INF_FRACTION 0.05f
 
 typedef casacore::Matrix<float> Matrix2F;
 
+std::vector<float> nan_fractions = {0.0f, 0.05f, 0.1f, 0.5f, 0.95f, 1.0f};
 using namespace std;
 
 random_device rd;
@@ -36,14 +35,14 @@ uniform_real_distribution<float> float_random(0, 1.0f);
 // Random image widths and heights in range [512, 1024]
 uniform_int_distribution<int> size_random(512, 1024);
 
-Matrix2F RandomMatrix(size_t rows, size_t columns) {
+Matrix2F RandomMatrix(size_t rows, size_t columns, float nan_fraction) {
     Matrix2F m(rows, columns);
 
     for (auto i = 0; i < m.nrow(); i++) {
         for (auto j = 0; j < m.ncolumn(); j++) {
-            if (float_random(mt) < NAN_FRACTION) {
+            if (float_random(mt) < nan_fraction) {
                 m(i, j) = NAN;
-            } else if (float_random(mt) < INF_FRACTION) {
+            } else if (float_random(mt) < nan_fraction) {
                 m(i, j) = INFINITY;
             } else {
                 m(i, j) = float_random(mt) - 0.5f;
@@ -131,52 +130,41 @@ Matrix2F DownsampleTileAVX(const Matrix2F& m, int downsample_factor) {
 }
 #endif
 
-TEST(BlockSmoothing, TestAllNANSSE) {
-    for (auto i = 0; i < NUM_ITERS; i++) {
-        auto m1 = Matrix2F (size_random(mt), size_random(mt));
-        m1 = NAN;
-        for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
-            auto smoothed_scalar = DownsampleTileScalar(m1, j);
-            auto smoothed_sse = DownsampleTileSSE(m1, j);
-            auto is_nan = IsNAN(smoothed_scalar);
-            EXPECT_EQ(is_nan, true);
-            auto is_nan_sse = IsNAN(smoothed_sse);
-            EXPECT_EQ(is_nan_sse, true);
-        }
-    }
-}
-
 TEST(BlockSmoothing, TestControl) {
-    for (auto i = 0; i < NUM_ITERS; i++) {
-        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
-        for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
-            auto smoothed_scalar = DownsampleTileScalar(m1, j);
-            auto smoothed_sse = DownsampleTileSSE(m1, j);
-            Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
-            auto sum_error = nansum(abs_diff);
-            auto max_error = nanmax(abs_diff);
-            EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
-            if (isfinite(sum_error)) {
-                EXPECT_GE(sum_error, 0);
-                EXPECT_GE(max_error, 0);
+    for (auto nan_fraction: nan_fractions) {
+        for (auto i = 0; i < NUM_ITERS; i++) {
+            auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
+            for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
+                auto smoothed_scalar = DownsampleTileScalar(m1, j);
+                auto smoothed_sse = DownsampleTileSSE(m1, j);
+                Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
+                auto sum_error = nansum(abs_diff);
+                auto max_error = nanmax(abs_diff);
+                EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
+                if (isfinite(sum_error)) {
+                    EXPECT_GE(sum_error, 0);
+                    EXPECT_GE(max_error, 0);
+                }
             }
         }
     }
 }
 
 TEST(BlockSmoothing, TestSSEAccuracy) {
-    for (auto i = 0; i < NUM_ITERS; i++) {
-        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
-        for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
-            auto smoothed_scalar = DownsampleTileScalar(m1, j);
-            auto smoothed_sse = DownsampleTileSSE(m1, j);
-            Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
-            auto sum_error = nansum(abs_diff);
-            auto max_error = nanmax(abs_diff);
-            EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
-            if (isfinite(sum_error)) {
-                EXPECT_LE(sum_error, MAX_SUM_ERROR);
-                EXPECT_LE(max_error, MAX_ABS_ERROR);
+    for (auto nan_fraction: nan_fractions) {
+        for (auto i = 0; i < NUM_ITERS; i++) {
+            auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
+            for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
+                auto smoothed_scalar = DownsampleTileScalar(m1, j);
+                auto smoothed_sse = DownsampleTileSSE(m1, j);
+                Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
+                auto sum_error = nansum(abs_diff);
+                auto max_error = nanmax(abs_diff);
+                EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
+                if (isfinite(sum_error)) {
+                    EXPECT_LE(sum_error, MAX_SUM_ERROR);
+                    EXPECT_LE(max_error, MAX_ABS_ERROR);
+                }
             }
         }
     }
@@ -185,7 +173,7 @@ TEST(BlockSmoothing, TestSSEAccuracy) {
 TEST(BlockSmoothing, TestSSEPerformance) {
     Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
-        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
+        auto m1 = RandomMatrix(size_random(mt), size_random(mt), 0);
         for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             t.Start("scalar");
             auto smoothed_scalar = DownsampleTileScalar(m1, j);
@@ -203,35 +191,22 @@ TEST(BlockSmoothing, TestSSEPerformance) {
 
 #ifdef __AVX__
 
-TEST(BlockSmoothing, TestAllNANAVX) {
-    for (auto i = 0; i < NUM_ITERS; i++) {
-        auto m1 = Matrix2F (size_random(mt), size_random(mt));
-        m1 = NAN;
-        for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
-            auto smoothed_scalar = DownsampleTileScalar(m1, j);
-            auto smoothed_avx = DownsampleTileAVX(m1, j);
-            auto is_nan = IsNAN(smoothed_scalar);
-            EXPECT_EQ(is_nan, true);
-            auto is_nan_sse = IsNAN(smoothed_avx);
-            EXPECT_EQ(is_nan_sse, true);
-        }
-    }
-}
-
 TEST(BlockSmoothing, TestAVXAccuracy) {
-    for (auto i = 0; i < NUM_ITERS; i++) {
-        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
-        for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
-            auto smoothed_scalar = DownsampleTileScalar(m1, j);
-            auto smoothed_avx = DownsampleTileAVX(m1, j);
-            Matrix2F abs_diff = abs(smoothed_scalar - smoothed_avx);
-            auto sum_error = nansum(abs_diff);
-            auto max_error = nanmax(abs_diff);
+    for (auto nan_fraction: nan_fractions) {
+        for (auto i = 0; i < NUM_ITERS; i++) {
+            auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
+            for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
+                auto smoothed_scalar = DownsampleTileScalar(m1, j);
+                auto smoothed_avx = DownsampleTileAVX(m1, j);
+                Matrix2F abs_diff = abs(smoothed_scalar - smoothed_avx);
+                auto sum_error = nansum(abs_diff);
+                auto max_error = nanmax(abs_diff);
 
-            EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_avx), true);
-            if (isfinite(sum_error)) {
-                EXPECT_LE(sum_error, MAX_SUM_ERROR);
-                EXPECT_LE(max_error, MAX_ABS_ERROR);
+                EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_avx), true);
+                if (isfinite(sum_error)) {
+                    EXPECT_LE(sum_error, MAX_SUM_ERROR);
+                    EXPECT_LE(max_error, MAX_ABS_ERROR);
+                }
             }
         }
     }
@@ -240,7 +215,7 @@ TEST(BlockSmoothing, TestAVXAccuracy) {
 TEST(BlockSmoothing, TestAVXPerformance) {
     Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
-        auto m1 = RandomMatrix(size_random(mt), size_random(mt));
+        auto m1 = RandomMatrix(size_random(mt), size_random(mt), 0);
         for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             t.Start("sse");
             auto smoothed_sse = DownsampleTileSSE(m1, j);
