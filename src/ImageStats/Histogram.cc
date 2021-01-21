@@ -50,15 +50,12 @@ void Histogram::setup_bins() {
         auto num_threads = omp_get_num_threads();
         auto thread_index = omp_get_thread_num();
 #pragma omp single
-        {
-            temp_bins.resize(_num_bins * num_threads);
-        }
+        { temp_bins.resize(_num_bins * num_threads); }
 #pragma omp for
-        for (int64_t i = 0; i < num_elements; i++)
-        {
+        for (int64_t i = 0; i < num_elements; i++) {
             auto val = _data[i];
             if (std::isfinite(val)) {
-                int bin_number = std::clamp((int) ((val - _min_val) / _bin_width), 0, _num_bins - 1);
+                int bin_number = std::clamp((int)((val - _min_val) / _bin_width), 0, _num_bins - 1);
                 temp_bins[thread_index * _num_bins + bin_number]++;
             }
         }
