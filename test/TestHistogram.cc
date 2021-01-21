@@ -32,7 +32,7 @@ bool CompareResults(const carta::HistogramResults& a, const carta::HistogramResu
     return true;
 }
 
-TEST(Histogram, TestBins) {
+TEST(Histogram, TestMultithreading) {
     std::vector<float> data(1024 * 1024);
     for (auto& v: data) {
         v = float_random(mt);
