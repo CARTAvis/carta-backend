@@ -684,39 +684,36 @@ int main(int argc, const char* argv[]) {
             int num_listen_retries(0);
             while (!port_ok) {
                 if (num_listen_retries > MAX_SOCKET_PORT_TRIALS) {
-                    fmt::print("Unable to listen on the port range {}-{}!\n", port - MAX_SOCKET_PORT_TRIALS - 1, port - 1);
-                    return -1;
+                    fmt::print("Unable to listen on the port range {}-{}!\n", DEFAULT_SOCKET_PORT, port - 1);
+                    break;
                 }
                 app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
-                    if (!token) {
+                    if (token) {
+                        port_ok = true;
+                    } else {
                         fmt::print("Could not listen on port {}, try next one..\n", port);
                         ++port;
                         ++num_listen_retries;
-                    } else {
-                        port_ok = true;
-                        fmt::print(
-                            "Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP "
-                            "threads\n",
-                            port, root_folder, base_folder, thread_count, omp_thread_count);
                     }
                 });
             }
         } else {
             // If the user specifies a port, we should not try other ports
             app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
-                if (!token) {
-                    fmt::print("Could not listen on port {}!\n", port);
-                } else {
+                if (token) {
                     port_ok = true;
-                    fmt::print(
-                        "Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP "
-                        "threads\n",
-                        port, root_folder, base_folder, thread_count, omp_thread_count);
+                } else {
+                    fmt::print("Could not listen on port {}!\n", port);
                 }
             });
         }
 
         if (port_ok) {
+            fmt::print(
+                "Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP "
+                "threads\n",
+                port, root_folder, base_folder, thread_count, omp_thread_count);
+
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR,
                                             .upgrade = OnUpgrade,
                                             .open = OnConnect,
