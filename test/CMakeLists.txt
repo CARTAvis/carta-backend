@@ -14,6 +14,7 @@ option(testTileEncoding "Build testTileEncoding." OFF)
 option(testTable "Build testTable." ON)
 option(testTimer "Build testTimer." ON)
 option(testBlockSmooth "Build testBlockSmooth." ON)
+option(testHistogram "Build testHistogram." ON)
 
 if (testTileEncoding)
     enable_testing()
@@ -53,6 +54,19 @@ if (testBlockSmooth)
     target_link_libraries(testBlockSmooth casa_casa gtest gtest_main Threads::Threads fmt)
 
     add_test(NAME TestBlockSmooth COMMAND testBlockSmooth)
+endif ()
+
+if (testHistogram)
+    enable_testing()
+    find_package(GTest)
+    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+
+    add_executable(testHistogram
+            TestHistogram.cc
+            ../src/ImageStats/Histogram.cc)
+    target_link_libraries(testHistogram casa_casa gtest gtest_main tbb Threads::Threads fmt)
+
+    add_test(NAME TestHistogram COMMAND testHistogram)
 endif ()
 
 if (testTable)
