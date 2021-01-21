@@ -32,6 +32,25 @@ bool CompareResults(const carta::HistogramResults& a, const carta::HistogramResu
     return true;
 }
 
+TEST(Histogram, TestSingleThreading) {
+    std::vector<float> data(1024 * 1024);
+    for (auto& v: data) {
+        v = float_random(mt);
+    }
+
+    omp_set_num_threads(1);
+    carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
+    hist_st.setup_bins();
+    auto results_st = hist_st.GetHistogram();
+
+    for (auto i = 2; i < 24; i++) {
+        carta::Histogram hist_mt(1024, 0.0f, 1.0f, data);
+        hist_mt.setup_bins();
+        auto results_mt = hist_mt.GetHistogram();
+        EXPECT_TRUE(CompareResults(results_st, results_mt));
+    }
+}
+
 TEST(Histogram, TestMultithreading) {
     std::vector<float> data(1024 * 1024);
     for (auto& v: data) {
