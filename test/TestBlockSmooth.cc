@@ -23,8 +23,8 @@
 
 #define NUM_ITERS 100
 #define MAX_DOWNSAMPLE_FACTOR 256
-#define NAN_FRACTION 0.01f
-#define INF_FRACTION 0.01f
+#define NAN_FRACTION 0.05f
+#define INF_FRACTION 0.05f
 
 typedef casacore::Matrix<float> Matrix2F;
 
@@ -41,11 +41,12 @@ Matrix2F RandomMatrix(size_t rows, size_t columns) {
 
     for (auto i = 0; i < m.nrow(); i++) {
         for (auto j = 0; j < m.ncolumn(); j++) {
-            m(i, j) = float_random(mt) - 0.5f;
             if (float_random(mt) < NAN_FRACTION) {
                 m(i, j) = NAN;
             } else if (float_random(mt) < INF_FRACTION) {
                 m(i, j) = INFINITY;
+            } else {
+                m(i, j) = float_random(mt) - 0.5f;
             }
         }
     }
@@ -87,6 +88,21 @@ float nansum(const Matrix2F& m) {
         }
     }
     return has_vals ? sum : NAN;
+}
+
+float nanmax(const Matrix2F& m) {
+    float max_val = std::numeric_limits<float>::lowest();
+    bool has_vals = false;
+    for (auto i = 0; i < m.nrow(); i++) {
+        for (auto j = 0; j < m.ncolumn(); j++) {
+            auto val = m(i, j);
+            if (isfinite(val)) {
+                has_vals = true;
+                max_val = max(max_val, val);
+            }
+        }
+    }
+    return has_vals ? max_val : NAN;
 }
 
 Matrix2F DownsampleTileScalar(const Matrix2F& m, int downsample_factor) {
@@ -138,7 +154,7 @@ TEST(BlockSmoothing, TestControl) {
             auto smoothed_sse = DownsampleTileSSE(m1, j);
             Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
             auto sum_error = nansum(abs_diff);
-            auto max_error = max(abs_diff);
+            auto max_error = nanmax(abs_diff);
             EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
             if (isfinite(sum_error)) {
                 EXPECT_GE(sum_error, 0);
@@ -156,7 +172,7 @@ TEST(BlockSmoothing, TestSSEAccuracy) {
             auto smoothed_sse = DownsampleTileSSE(m1, j);
             Matrix2F abs_diff = abs(smoothed_scalar - smoothed_sse);
             auto sum_error = nansum(abs_diff);
-            auto max_error = max(abs_diff);
+            auto max_error = nanmax(abs_diff);
             EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_sse), true);
             if (isfinite(sum_error)) {
                 EXPECT_LE(sum_error, MAX_SUM_ERROR);
@@ -210,7 +226,7 @@ TEST(BlockSmoothing, TestAVXAccuracy) {
             auto smoothed_avx = DownsampleTileAVX(m1, j);
             Matrix2F abs_diff = abs(smoothed_scalar - smoothed_avx);
             auto sum_error = nansum(abs_diff);
-            auto max_error = max(abs_diff);
+            auto max_error = nanmax(abs_diff);
 
             EXPECT_EQ(MatchingNANs(smoothed_scalar, smoothed_avx), true);
             if (isfinite(sum_error)) {
