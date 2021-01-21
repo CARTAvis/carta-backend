@@ -63,6 +63,7 @@ if (testHistogram)
 
     add_executable(testHistogram
             TestHistogram.cc
+            ../src/Timer/Timer.cc
             ../src/ImageStats/Histogram.cc)
     target_link_libraries(testHistogram casa_casa gtest gtest_main tbb Threads::Threads fmt)
 
