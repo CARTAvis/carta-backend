@@ -20,7 +20,9 @@ if (testTileEncoding)
     find_package(GTest)
     include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
 
-    add_executable(testTileEncoding TestTileEncoding.cc)
+    add_executable(testTileEncoding
+            TestTileEncoding.cc.cc
+            ../src/DataStream/Tile.cc)
     target_link_libraries(testTileEncoding gtest gtest_main Threads::Threads fmt)
 
     add_test(NAME TestTileEncoding COMMAND testTileEncoding)
