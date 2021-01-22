@@ -783,7 +783,7 @@ RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::stri
     }
 
     // color
-    std::string import_color;
+    std::string import_color("green"); // CRTF default
     if (properties.count("color")) {
         import_color = FormatColor(properties["color"]);
     } else if (_global_properties.count(casa::AnnotationBase::COLOR)) {
@@ -800,6 +800,8 @@ RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::stri
         style.line_width = std::stoi(properties["linewidth"]);
     } else if (_global_properties.count(casa::AnnotationBase::LINEWIDTH)) {
         style.line_width = std::stoi(_global_properties[casa::AnnotationBase::LINEWIDTH]);
+    } else {
+        style.line_width = 1; // CRTF default
     }
 
     // linestyle
