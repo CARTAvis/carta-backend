@@ -13,7 +13,6 @@
 #define VERSION_ID "2.0.0-dev.21.01.22"
 
 // thread counts
-#define TBB_THREAD_COUNT 2
 #define OMP_THREAD_COUNT 4
 
 // file ids

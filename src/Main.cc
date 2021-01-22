@@ -537,7 +537,6 @@ int main(int argc, const char* argv[]) {
 
         // define and get input arguments
         int port(-1);
-        int thread_count = TBB_THREAD_COUNT;
         int omp_thread_count = OMP_THREAD_COUNT;
         string frontend_folder;
         string host;
@@ -556,7 +555,6 @@ int main(int argc, const char* argv[]) {
             inp.create("host", host, "only listen on the specified interface (IP address or hostname)", "String");
             inp.create("port", to_string(port), "set port on which to host frontend files and accept WebSocket connections", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
-            inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
@@ -574,7 +572,6 @@ int main(int argc, const char* argv[]) {
             port = inp.getInt("port");
             host = inp.getString("host");
             grpc_port = inp.getInt("grpc_port");
-            thread_count = inp.getInt("threads");
             omp_thread_count = inp.getInt("omp_threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
@@ -710,9 +707,8 @@ int main(int argc, const char* argv[]) {
 
         if (port_ok) {
             fmt::print(
-                "Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP "
-                "threads\n",
-                port, root_folder, base_folder, thread_count, omp_thread_count);
+                "Listening on port {} with root folder {}, base folder {}, and {} OMP threads\n",
+                port, root_folder, base_folder, omp_thread_count);
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .upgrade = OnUpgrade,
