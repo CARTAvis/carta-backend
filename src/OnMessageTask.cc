@@ -44,6 +44,24 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
+        case CARTA::EventType::FILE_LIST_REQUEST: {
+            CARTA::FileListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnFileListRequest(message, _header.request_id);
+            } else {
+                fmt::print("Bad FILE_LIST_REQUEST message!\n");
+            }
+            break;
+        }
+        case CARTA::EventType::REGION_LIST_REQUEST: {
+            CARTA::RegionListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnRegionListRequest(message, _header.request_id);
+            } else {
+                fmt::print("Bad REGION_LIST_REQUEST message!\n");
+            }
+            break;
+        }
         default: {
             fmt::print("Bad event type in MultiMessageType:execute : ({})\n", _header.type);
             break;

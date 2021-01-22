@@ -287,15 +287,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     }
                     break;
                 }
-                case CARTA::EventType::FILE_LIST_REQUEST: {
-                    CARTA::FileListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnFileListRequest(message, head.request_id);
-                    } else {
-                        fmt::print("Bad FILE_LIST_REQUEST message!\n");
-                    }
-                    break;
-                }
                 case CARTA::EventType::OPEN_FILE: {
                     CARTA::OpenFile message;
                     if (message.ParseFromArray(event_buf, event_length)) {
@@ -309,15 +300,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     CARTA::AddRequiredTiles message;
                     message.ParseFromArray(event_buf, event_length);
                     tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
-                    break;
-                }
-                case CARTA::EventType::REGION_LIST_REQUEST: {
-                    CARTA::RegionListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnRegionListRequest(message, head.request_id);
-                    } else {
-                        fmt::print("Bad REGION_LIST_REQUEST message!\n");
-                    }
                     break;
                 }
                 case CARTA::EventType::REGION_FILE_INFO_REQUEST: {

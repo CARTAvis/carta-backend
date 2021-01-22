@@ -107,7 +107,12 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         // Iterate through directory to generate file list
         casacore::Directory start_dir(folder_path);
         casacore::DirectoryIterator dir_iter(start_dir);
+        _stop_getting_file_list = false;
         while (!dir_iter.pastEnd()) {
+            if (_stop_getting_file_list) {
+                break;
+            }
+
             casacore::File cc_file(dir_iter.file());          // directory is also a File
             casacore::String name(cc_file.path().baseName()); // to keep link name before resolve
 

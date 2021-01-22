@@ -39,6 +39,10 @@ public:
     void OnRegionFileInfoRequest(
         const CARTA::RegionFileInfoRequest& request, CARTA::RegionFileInfoResponse& response, ResultMsg& result_msg);
 
+    void StopGettingFileList() {
+        _stop_getting_file_list = true;
+    }
+
 private:
     // ICD: File/Region list response
     void GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, bool region_list = false);
@@ -60,6 +64,8 @@ private:
     bool _verbose_logging;
     bool _performance_logging;
     std::string _root_folder, _base_folder;
+
+    volatile bool _stop_getting_file_list;
 };
 
 #endif // CARTA_BACKEND__FILELISTHANDLER_H_
