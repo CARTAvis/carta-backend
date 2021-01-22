@@ -707,8 +707,8 @@ int main(int argc, const char* argv[]) {
 
         if (port_ok) {
             fmt::print(
-                "Listening on port {} with root folder {}, base folder {}, and {} OMP threads\n",
-                port, root_folder, base_folder, omp_thread_count);
+                "Listening on port {} with root folder {}, base folder {}, and {} OMP threads\n", port, root_folder, base_folder,
+                omp_thread_count);
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .upgrade = OnUpgrade,
