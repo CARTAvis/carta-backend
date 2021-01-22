@@ -445,12 +445,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     break;
                 }
                 case CARTA::EventType::STOP_FILE_LIST: {
-                    CARTA::RegionListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->StopFileList();
-                    } else {
-                        fmt::print("Bad STOP_FILE_LIST message!\n");
-                    }
+                    session->StopFileList();
                     break;
                 }
                 default: {
