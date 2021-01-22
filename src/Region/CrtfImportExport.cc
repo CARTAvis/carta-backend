@@ -552,7 +552,7 @@ RegionStyle CrtfImportExport::ImportStyleParameters(casacore::CountedPtr<const c
     if (annotation_region->getLineStyle() == casa::AnnotationBase::SOLID) {
         style.dash_list = {0, 0};
     } else {
-        style.dash_list = {DASH_LENGTH, DASH_LENGTH};
+        style.dash_list = {STYLE_DASH_LENGTH, STYLE_DASH_LENGTH};
     }
     return style;
 }
@@ -811,7 +811,7 @@ RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::stri
     if (linestyle == "-") { // solid line
         style.dash_list = {0, 0};
     } else {
-        style.dash_list = {DASH_LENGTH, DASH_LENGTH};
+        style.dash_list = {STYLE_DASH_LENGTH, STYLE_DASH_LENGTH};
     }
 
     return style;

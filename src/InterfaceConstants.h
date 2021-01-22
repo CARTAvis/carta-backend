@@ -67,8 +67,10 @@
 #define MOMENT_COMPLETE 1.0
 #define OUTPUT_ID_MULTIPLIER 1000
 
-// region style
-#define DASH_LENGTH 2
+// CARTA default region style
+#define STYLE_COLOR "#2EE6D6"
+#define STYLE_DASH_LENGTH 2
+#define STYLE_LINE_WIDTH 2
 
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
