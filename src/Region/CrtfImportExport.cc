@@ -789,7 +789,7 @@ RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::stri
     } else if (_global_properties.count(casa::AnnotationBase::COLOR)) {
         import_color = FormatColor(_global_properties[casa::AnnotationBase::COLOR]);
     }
-    if (!import_color.empty() && std::strtoul(import_color.c_str(), nullptr, 16)) {
+    if (std::strtoul(import_color.c_str(), nullptr, 16)) {
         // add prefix if hex
         import_color = "#" + import_color;
     }
