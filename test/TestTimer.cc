@@ -7,10 +7,9 @@
 #include <chrono>
 #include <thread>
 
-#include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include "../Timer/Timer.h"
+#include "../src/Timer/Timer.h"
 
 using namespace std;
 
