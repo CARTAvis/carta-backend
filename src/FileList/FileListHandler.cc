@@ -173,7 +173,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                                     file_type = CARTA::FileType::HDF5;
                                     break;
                                 default: {
-                                    add_image = true;
                                     file_type = CARTA::FileType::UNKNOWN;
                                     break;
                                 }
