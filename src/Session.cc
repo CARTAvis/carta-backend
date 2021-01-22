@@ -1934,3 +1934,9 @@ bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script:
         return true;
     }
 }
+
+void Session::StopFileList() {
+    if (_file_list_handler) {
+        _file_list_handler->StopGettingFileList();
+    }
+}

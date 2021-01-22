@@ -201,6 +201,8 @@ public:
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
+    void StopFileList();
+
 private:
     // File info for file list (extended info for each hdu_name)
     bool FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended>& hdu_info_map, CARTA::FileInfo& file_info,
