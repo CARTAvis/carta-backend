@@ -688,7 +688,7 @@ int main(int argc, const char* argv[]) {
                     if (token) {
                         port_ok = true;
                     } else {
-                        fmt::print("Could not listen on port {}, try next one..\n", port);
+                        fmt::print("Port {} is already in use. Trying next port.\n", port);
                         ++port;
                         ++num_listen_retries;
                     }
