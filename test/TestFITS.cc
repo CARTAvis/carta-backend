@@ -7,7 +7,7 @@
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include "../Table/Table.h"
+#include "../src/Table/Table.h"
 
 using namespace std;
 using namespace carta;

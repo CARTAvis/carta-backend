@@ -36,6 +36,7 @@
 #include "InterfaceConstants.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
+#include "Timer/Timer.h"
 #include "Util.h"
 
 #define DEBUG(_DB_TEXT_) \
