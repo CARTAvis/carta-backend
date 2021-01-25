@@ -732,6 +732,8 @@ RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::strin
         style.color = FormatColor(properties["color"]);
     } else if (_global_properties.count("color")) {
         style.color = FormatColor(_global_properties["color"]);
+    } else {
+        style.color = REGION_COLOR;
     }
 
     // width
@@ -739,6 +741,8 @@ RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::strin
         style.line_width = std::stoi(properties["width"]);
     } else if (_global_properties.count("width")) {
         style.line_width = std::stoi(_global_properties["width"]);
+    } else {
+        style.line_width = REGION_LINE_WIDTH;
     }
 
     // dash
