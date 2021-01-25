@@ -1440,12 +1440,26 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     auto image_shape = image->shape();
     if (image_shape.size() > 2) {
-        auto channels_start = save_file_msg.channels().size() ? save_file_msg.channels(0) : 0;
-        auto channels_length = save_file_msg.channels().size() ? save_file_msg.channels(1) : image_shape[_spectral_axis];
-        auto channels_stride = save_file_msg.channels().size() ? save_file_msg.channels(2) : 1;
-        auto stokes_start = save_file_msg.stokes().size() ? save_file_msg.stokes(0) : 0;
-        auto stokes_length = save_file_msg.stokes().size() ? save_file_msg.stokes(1) : image_shape[_stokes_axis];
-        auto stokes_stride = save_file_msg.stokes().size() ? save_file_msg.stokes(2) : 1;
+        // Validate channels & stokes
+        ssize_t channels_max = image_shape[_spectral_axis];
+        ssize_t channels_start = 0;
+        ssize_t channels_stride = 1;
+        ssize_t channels_length = channels_max;
+        if (save_file_msg.channels().size() > 0) {
+            channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max);
+            channels_length = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), 0), channels_max - channels_start);
+        }
+        ssize_t stokes_max = image_shape[_stokes_axis];
+        ssize_t stokes_start = 0;
+        ssize_t stokes_stride = 1;
+        ssize_t stokes_length = stokes_max;
+        if (save_file_msg.stokes().size() > 0) {
+            stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max);
+            stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
+            stokes_length =
+                std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), 0), std::ceil((stokes_max - stokes_start) / stokes_stride));
+        }
+
         casacore::IPosition start;
         casacore::IPosition length;
         casacore::IPosition stride;
@@ -1580,12 +1594,26 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     auto image_region = GetImageRegion(file_id, region);
 
     auto image_shape = image->shape();
-    auto channels_start = save_file_msg.channels().size() ? save_file_msg.channels(0) : 0;
-    auto channels_length = save_file_msg.channels().size() ? save_file_msg.channels(1) : image_shape[_spectral_axis];
-    auto channels_stride = save_file_msg.channels().size() ? save_file_msg.channels(2) : 1;
-    auto stokes_start = save_file_msg.stokes().size() ? save_file_msg.stokes(0) : 0;
-    auto stokes_length = save_file_msg.stokes().size() ? save_file_msg.stokes(1) : image_shape[_stokes_axis];
-    auto stokes_stride = save_file_msg.stokes().size() ? save_file_msg.stokes(2) : 1;
+    // Validate channels & stokes
+    ssize_t channels_max = image_shape[_spectral_axis];
+    ssize_t channels_start = 0;
+    ssize_t channels_stride = 1;
+    ssize_t channels_length = channels_max;
+    if (save_file_msg.channels().size() > 0) {
+        channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max);
+        channels_length = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), 0), channels_max - channels_start);
+    }
+    ssize_t stokes_max = image_shape[_stokes_axis];
+    ssize_t stokes_start = 0;
+    ssize_t stokes_stride = 1;
+    ssize_t stokes_length = stokes_max;
+    if (save_file_msg.stokes().size() > 0) {
+        stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max);
+        stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
+        stokes_length =
+            std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), 0), std::ceil((stokes_max - stokes_start) / stokes_stride));
+    }
+
     casacore::IPosition start;
     casacore::IPosition length;
     casacore::IPosition stride;
