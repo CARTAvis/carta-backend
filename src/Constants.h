@@ -13,7 +13,6 @@
 #define VERSION_ID "2.0.0-dev.21.01.22"
 
 // thread counts
-#define TBB_THREAD_COUNT 2
 #define OMP_THREAD_COUNT 4
 
 // file ids
@@ -74,5 +73,9 @@
 
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
+
+// socket port
+#define DEFAULT_SOCKET_PORT 3002
+#define MAX_SOCKET_PORT_TRIALS 100
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

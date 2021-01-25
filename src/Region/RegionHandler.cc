@@ -14,8 +14,8 @@
 #include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCIntersection.h>
 
+#include "../Constants.h"
 #include "../ImageStats/StatsCalculator.h"
-#include "../InterfaceConstants.h"
 #include "../Util.h"
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"

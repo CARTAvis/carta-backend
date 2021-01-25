@@ -14,7 +14,7 @@
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/scripting.pb.h>
 
-#include "../InterfaceConstants.h"
+#include "../Constants.h"
 #include "../Util.h"
 
 uint32_t CartaGrpcService::_scripting_request_id = 0;

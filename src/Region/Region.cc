@@ -22,7 +22,7 @@
 #include <casacore/lattices/LRegions/LCPolygon.h>
 #include <casacore/measures/Measures/MCDirection.h>
 
-#include "../InterfaceConstants.h"
+#include "../Constants.h"
 
 using namespace carta;
 

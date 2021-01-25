@@ -536,8 +536,7 @@ int main(int argc, const char* argv[]) {
         sigaction(SIGINT, &sig_handler, nullptr);
 
         // define and get input arguments
-        int port(3002);
-        int thread_count = TBB_THREAD_COUNT;
+        int port(-1);
         int omp_thread_count = OMP_THREAD_COUNT;
         string frontend_folder;
         string host;
@@ -556,7 +555,6 @@ int main(int argc, const char* argv[]) {
             inp.create("host", host, "only listen on the specified interface (IP address or hostname)", "String");
             inp.create("port", to_string(port), "set port on which to host frontend files and accept WebSocket connections", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
-            inp.create("threads", to_string(thread_count), "set thread pool count", "Int");
             inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
@@ -574,7 +572,6 @@ int main(int argc, const char* argv[]) {
             port = inp.getInt("port");
             host = inp.getString("host");
             grpc_port = inp.getInt("grpc_port");
-            thread_count = inp.getInt("threads");
             omp_thread_count = inp.getInt("omp_threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
@@ -676,23 +673,49 @@ int main(int argc, const char* argv[]) {
             }
         }
 
-        app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
-                                        .upgrade = OnUpgrade,
-                                        .open = OnConnect,
-                                        .message = OnMessage,
-                                        .close = OnDisconnect})
-            .listen(host.empty() ? "0.0.0.0" : host, port, LIBUS_LISTEN_EXCLUSIVE_PORT,
-                [=](auto* token) {
+        host = host.empty() ? "0.0.0.0" : host;
+        port = (port < 0) ? DEFAULT_SOCKET_PORT : port;
+        bool port_ok(false);
+
+        if (port == DEFAULT_SOCKET_PORT) {
+            int num_listen_retries(0);
+            while (!port_ok) {
+                if (num_listen_retries > MAX_SOCKET_PORT_TRIALS) {
+                    fmt::print("Unable to listen on the port range {}-{}!\n", DEFAULT_SOCKET_PORT, port - 1);
+                    break;
+                }
+                app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
                     if (token) {
-                        fmt::print(
-                            "Listening on port {} with root folder {}, base folder {}, {} threads in worker thread pool and {} OMP "
-                            "threads\n",
-                            port, root_folder, base_folder, thread_count, omp_thread_count);
+                        port_ok = true;
                     } else {
-                        fmt::print("Error listening on port {}\n", port);
+                        fmt::print("Port {} is already in use. Trying next port.\n", port);
+                        ++port;
+                        ++num_listen_retries;
                     }
-                })
-            .run();
+                });
+            }
+        } else {
+            // If the user specifies a port, we should not try other ports
+            app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
+                if (token) {
+                    port_ok = true;
+                } else {
+                    fmt::print("Could not listen on port {}!\n", port);
+                }
+            });
+        }
+
+        if (port_ok) {
+            fmt::print("Listening on port {} with root folder {}, base folder {}, and {} OMP threads\n", port, root_folder, base_folder,
+                omp_thread_count);
+
+            app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
+                                            .upgrade = OnUpgrade,
+                                            .open = OnConnect,
+                                            .message = OnMessage,
+                                            .close = OnDisconnect})
+                .run();
+        }
     } catch (exception& e) {
         fmt::print("Error: {}\n", e.what());
         return 1;
