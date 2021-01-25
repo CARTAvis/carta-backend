@@ -13,13 +13,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(testTileEncoding "Build testTileEncoding." OFF)
 option(testTable "Build testTable." ON)
 option(testTimer "Build testTimer." ON)
+option(testBlockSmooth "Build testBlockSmooth." ON)
+option(testHistogram "Build testHistogram." ON)
 
 if (testTileEncoding)
     enable_testing()
     find_package(GTest)
     include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
 
-    add_executable(testTileEncoding TestTileEncoding.cc)
+    add_executable(testTileEncoding
+            TestTileEncoding.cc.cc
+            ../src/DataStream/Tile.cc)
     target_link_libraries(testTileEncoding gtest gtest_main Threads::Threads fmt)
 
     add_test(NAME TestTileEncoding COMMAND testTileEncoding)
@@ -36,6 +40,34 @@ if (testTimer)
     target_link_libraries(testTimer gtest gtest_main Threads::Threads fmt)
 
     add_test(NAME TestTimer COMMAND testTimer)
+endif ()
+
+if (testBlockSmooth)
+    enable_testing()
+    find_package(GTest)
+    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+
+    add_executable(testBlockSmooth
+            TestBlockSmooth.cc
+            ../src/Timer/Timer.cc
+            ../src/DataStream/Smoothing.cc)
+    target_link_libraries(testBlockSmooth casa_casa gtest gtest_main Threads::Threads fmt)
+
+    add_test(NAME TestBlockSmooth COMMAND testBlockSmooth)
+endif ()
+
+if (testHistogram)
+    enable_testing()
+    find_package(GTest)
+    include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
+
+    add_executable(testHistogram
+            TestHistogram.cc
+            ../src/Timer/Timer.cc
+            ../src/ImageStats/Histogram.cc)
+    target_link_libraries(testHistogram casa_casa gtest gtest_main tbb Threads::Threads fmt)
+
+    add_test(NAME TestHistogram COMMAND testHistogram)
 endif ()
 
 if (testTable)

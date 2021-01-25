@@ -339,6 +339,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = _image_shape(0);
+    int num_image_rows = _image_shape(1);
 
     // read lock imageCache
     bool write_lock(false);
@@ -347,43 +348,11 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     auto t_start_raster_data_filter = std::chrono::high_resolution_clock::now();
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-#pragma omp parallel for
-        for (size_t j = 0; j < num_rows_region; ++j) {
-            for (size_t i = 0; i != row_length_region; ++i) {
-                float pixel_sum = 0;
-                int pixel_count = 0;
-                size_t image_row = y + (j * mip);
-                for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-                    if (image_row >= _image_shape(1)) {
-                        continue;
-                    }
-                    size_t image_col = x + (i * mip);
-                    for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-                        if (image_col >= _image_shape(0)) {
-                            continue;
-                        }
-                        float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
-                        if (std::isfinite(pix_val)) {
-                            pixel_count++;
-                            pixel_sum += pix_val;
-                        }
-                        image_col++;
-                    }
-                    image_row++;
-                }
-                image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
-            }
-        }
+        BlockSmooth(
+            _image_cache.data(), image_data.data(), num_image_columns, num_image_rows, row_length_region, num_rows_region, x, y, mip);
     } else {
         // Nearest neighbour filtering
-#pragma omp parallel for
-        for (size_t j = 0; j < num_rows_region; ++j) {
-            for (auto i = 0; i < row_length_region; i++) {
-                auto image_row = y + j * mip;
-                auto image_col = x + i * mip;
-                image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
-            }
-        }
+        NearestNeighbor(_image_cache.data(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
     }
 
     if (_perflog) {
