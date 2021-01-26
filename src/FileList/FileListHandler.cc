@@ -107,7 +107,15 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
         // Iterate through directory to generate file list
         casacore::Directory start_dir(folder_path);
         casacore::DirectoryIterator dir_iter(start_dir);
+
+        // initialize variables for the progress report and the interruption option
         _stop_getting_file_list = false;
+        _first_report = false;
+        auto total_files = start_dir.nEntries();
+        int num_of_files_done(0);
+        float progress(0);
+        auto start_time = std::chrono::high_resolution_clock::now();
+
         while (!dir_iter.pastEnd()) {
             if (_stop_getting_file_list) {
                 break;
@@ -190,6 +198,20 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                 }
             }
             dir_iter++;
+
+            // report the progress
+            ++num_of_files_done;
+            progress = (float)num_of_files_done / (float)total_files;
+            auto current_time = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration<double>(current_time - start_time).count();
+            if (!_first_report && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
+                _progress_callback(progress);
+                start_time = current_time;
+                _first_report = true;
+            } else if (_first_report && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
+                _progress_callback(progress);
+                start_time = current_time;
+            }
         }
     } catch (casacore::AipsError& err) {
         result_msg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};

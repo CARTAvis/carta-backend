@@ -73,4 +73,8 @@
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
 
+// file list
+#define REPORT_FIRST_PROGRESS_AFTER_SECS 5
+#define UPDATE_FILE_LIST_PROGRESS_PER_SECS 2
+
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_
