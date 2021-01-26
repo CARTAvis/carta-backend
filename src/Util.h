@@ -26,9 +26,9 @@
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
+#include "Constants.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
-#include "InterfaceConstants.h"
 
 // ************ Logging *************
 
