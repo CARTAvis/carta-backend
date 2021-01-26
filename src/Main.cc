@@ -555,6 +555,7 @@ int main(int argc, const char* argv[]) {
             inp.create("host", host, "only listen on the specified interface (IP address or hostname)", "String");
             inp.create("port", to_string(port), "set port on which to host frontend files and accept WebSocket connections", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
+            inp.create("threads", "", "Deprecated. Please use omp_threads to set the number of threads used in compute tasks", "Int");
             inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
