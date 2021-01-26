@@ -8,7 +8,7 @@ RUN \
     gdb gfortran git htop libblas-dev libcfitsio-dev libcurl4-gnutls-dev libgsl-dev \
     libgtest-dev libhdf5-dev liblapack-dev libncurses-dev libreadline-dev \
     libssl-dev libstarlink-ast-dev libtool libtbb-dev libxml2-dev libxslt1-dev \
-    libx11-dev libzstd-dev pkg-config software-properties-common unzip wcslib-dev wget
+    libx11-dev libzstd-dev pkg-config software-properties-common unzip wcslib-dev wget uuid-dev
 
 # grpc from webispy ppa
 RUN \

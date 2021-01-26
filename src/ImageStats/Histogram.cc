@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -10,8 +10,6 @@
 #include <cmath>
 
 #include <omp.h>
-#include <tbb/parallel_for.h>
-#include <tbb/parallel_reduce.h>
 
 using namespace carta;
 
@@ -37,62 +35,36 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
 }
 
 void Histogram::join(Histogram& h) { // NOLINT
-    auto range = tbb::blocked_range<size_t>(0, _hist.size());
-    auto loop = [this, &h](const tbb::blocked_range<size_t>& r) {
-        size_t beg = r.begin();
-        size_t end = r.end();
-        std::transform(&h._hist[beg], &h._hist[end], &_hist[beg], &_hist[beg], std::plus<int>());
-    };
-    tbb::parallel_for(range, loop);
+    auto num_bins = h._hist.size();
+#pragma omp parallel for
+    for (int i = 0; i < num_bins; i++) {
+        h._hist[i] += _hist[i];
+    }
 }
 
 void Histogram::setup_bins() {
-    int64_t omp_index, stride, buckets;
-    int** bins_bin;
-
-    auto calc_lambda = [&](size_t start, size_t lstride) {
-        int* lbins = new int[_hist.size()];
-        size_t end = std::min((size_t)(start + lstride), _data.size());
-        memset(lbins, 0, _hist.size() * sizeof(int));
-        for (size_t i = start; i < end; i++) {
-            auto v = _data[i];
-            if (std::isfinite(v)) {
-                size_t bin_number = std::max<size_t>(std::min<size_t>((size_t)((v - _min_val) / _bin_width), (size_t)_hist.size() - 1), 0);
-                ++lbins[bin_number];
-            }
-        }
-        return lbins;
-    };
+    std::vector<int64_t> temp_bins;
+    auto num_elements = _data.size();
 #pragma omp parallel
-#pragma omp single
-    { buckets = omp_get_num_threads(); }
-#pragma omp single
     {
-        stride = _data.size() / buckets + 1;
-        bins_bin = new int*[buckets + 1];
-    }
-#pragma omp parallel for
-    for (omp_index = 0; omp_index < buckets; omp_index++) {
-        bins_bin[omp_index] = calc_lambda(omp_index * stride, stride);
-    }
-    stride = 1;
-    do {
+        auto num_threads = omp_get_num_threads();
+        auto thread_index = omp_get_thread_num();
 #pragma omp single
-        {
-            for (omp_index = 0; omp_index <= (buckets - stride * 2); omp_index += stride * 2) {
-#pragma omp task
-                std::transform((bins_bin[omp_index + stride]), &(bins_bin[omp_index + stride][_hist.size()]), (bins_bin[omp_index]),
-                    (bins_bin[omp_index]), std::plus<int>());
+        { temp_bins.resize(_num_bins * num_threads); }
+#pragma omp for
+        for (int64_t i = 0; i < num_elements; i++) {
+            auto val = _data[i];
+            if (std::isfinite(val)) {
+                int bin_number = std::clamp((int)((val - _min_val) / _bin_width), 0, _num_bins - 1);
+                temp_bins[thread_index * _num_bins + bin_number]++;
             }
-            stride *= 2;
         }
-#pragma omp taskwait
-    } while (stride <= buckets / 2);
-    for (omp_index = 0; omp_index < _hist.size(); omp_index++) {
-        _hist[omp_index] = bins_bin[0][omp_index];
-    }
-    for (omp_index = 0; omp_index < buckets; omp_index++) {
-        delete[] bins_bin[omp_index];
+#pragma omp for
+        for (int64_t i = 0; i < _num_bins; i++) {
+            for (int t = 0; t < num_threads; t++) {
+                _hist[i] += temp_bins[_num_bins * t + i];
+            }
+        }
     }
 }
 

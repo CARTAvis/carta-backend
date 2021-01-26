@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -10,10 +10,9 @@
 #define CARTA_BACKEND__INTERFACECONSTANTS_H_
 
 // version
-#define VERSION_ID "1.4"
+#define VERSION_ID "2.0.0-dev.21.01.22"
 
 // thread counts
-#define TBB_THREAD_COUNT 2
 #define OMP_THREAD_COUNT 4
 
 // file ids
@@ -67,10 +66,16 @@
 #define MOMENT_COMPLETE 1.0
 #define OUTPUT_ID_MULTIPLIER 1000
 
-// region style
-#define DASH_LENGTH 2
+// CARTA default region style
+#define REGION_COLOR "#2EE6D6"
+#define REGION_DASH_LENGTH 2
+#define REGION_LINE_WIDTH 2
 
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
+
+// socket port
+#define DEFAULT_SOCKET_PORT 3002
+#define MAX_SOCKET_PORT_TRIALS 100
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

@@ -9,7 +9,7 @@ RUN \
     libpugixml-dev libcfitsio-dev libgtest-dev libhdf5-dev liblapack-dev libncurses-dev \
     libreadline-dev libssl-dev libstarlink-ast-dev libtbb-dev libtool libfmt-dev \
     libxml2-dev libzstd-dev libgsl-dev man pkg-config python-pip python3-pip \
-    software-properties-common unzip vim wcslib-dev wget cmake && \
+    software-properties-common unzip vim wcslib-dev wget cmake uuid-dev && \
   update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 --slave /usr/bin/gcov gcov /usr/bin/gcov-8
     
 # Get carta dependencies

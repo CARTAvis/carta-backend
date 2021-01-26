@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -14,7 +14,7 @@
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/scripting.pb.h>
 
-#include "../InterfaceConstants.h"
+#include "../Constants.h"
 #include "../Util.h"
 
 uint32_t CartaGrpcService::_scripting_request_id = 0;

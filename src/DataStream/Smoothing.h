@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -28,8 +28,17 @@ static inline __m256 IsInfinity(__m256 x) {
     x = _mm256_cmp_ps(x, inf, _CMP_EQ_OQ);
     return x;
 }
+
+static inline float _mm256_reduce_add_ps(__m256 x) {
+    __m256 t1 = _mm256_hadd_ps(x, x);
+    __m256 t2 = _mm256_hadd_ps(t1, t1);
+    __m128 t3 = _mm256_extractf128_ps(t2, 1);
+    __m128 t4 = _mm_add_ss(_mm256_castps256_ps128(t2), t3);
+    return _mm_cvtss_f32(t4);
+}
 #else
 #define SIMD_WIDTH 4
+#endif
 
 static inline __m128 IsInfinity(__m128 x) {
     const __m128 sign_mask = _mm_set_ps1(-0.0f);
@@ -39,11 +48,23 @@ static inline __m128 IsInfinity(__m128 x) {
     x = _mm_cmpeq_ps(x, inf);
     return x;
 }
-#endif
 
 void MakeKernel(std::vector<float>& kernel, double sigma);
 bool RunKernel(const std::vector<float>& kernel, const float* src_data, float* dest_data, int64_t src_width, int64_t src_height,
     int64_t dest_width, int64_t dest_height, bool vertical);
 bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
     int smoothing_factor, bool performance_logging = false);
+bool BlockSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
+    int64_t x_offset, int64_t y_offset, int smoothing_factor);
+bool BlockSmoothScalar(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width,
+    int64_t dest_height, int64_t x_offset, int64_t y_offset, int smoothing_factor);
+bool BlockSmoothSSE(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
+    int64_t x_offset, int64_t y_offset, int smoothing_factor);
+#ifdef __AVX__
+bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
+    int64_t x_offset, int64_t y_offset, int smoothing_factor);
+#endif
+
+void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width, int64_t dest_width, int64_t dest_height, int64_t x_offset,
+    int64_t y_offset, int smoothing_factor);
 #endif // CARTA_BACKEND__SMOOTHING_H_
