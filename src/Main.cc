@@ -538,6 +538,7 @@ int main(int argc, const char* argv[]) {
         // define and get input arguments
         int port(-1);
         int omp_thread_count = OMP_THREAD_COUNT;
+        int thread_count = THREAD_COUNT;
         string frontend_folder;
         string host;
         bool no_http = false;
@@ -555,7 +556,7 @@ int main(int argc, const char* argv[]) {
             inp.create("host", host, "only listen on the specified interface (IP address or hostname)", "String");
             inp.create("port", to_string(port), "set port on which to host frontend files and accept WebSocket connections", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
-            inp.create("threads", "", "Deprecated. Please use omp_threads to set the number of threads used in compute tasks", "Int");
+            inp.create("threads", to_string(thread_count), "set thread count for handling incoming messages", "Int");
             inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
@@ -573,7 +574,8 @@ int main(int argc, const char* argv[]) {
             port = inp.getInt("port");
             host = inp.getString("host");
             grpc_port = inp.getInt("grpc_port");
-            omp_thread_count = inp.getInt("omp_threads");
+            omp_thread_count = inp.getInt("threads");
+            thread_count = inp.getInt("omp_threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
             frontend_folder = inp.getString("frontend_folder");
@@ -605,6 +607,7 @@ int main(int argc, const char* argv[]) {
             }
         }
 
+        tbb::task_scheduler_init task_scheduler(thread_count);
         omp_set_num_threads(omp_thread_count);
         CARTA::global_thread_count = omp_thread_count;
 
@@ -642,33 +645,6 @@ int main(int argc, const char* argv[]) {
                         http_server->HandleRequest(res, req);
                     }
                 });
-
-                string default_host_string = host;
-                if (host.empty()) {
-                    auto server_ip_entry = getenv("SERVER_IP");
-                    if (server_ip_entry) {
-                        default_host_string = server_ip_entry;
-                    } else {
-                        default_host_string = "localhost";
-                    }
-                }
-
-                string frontend_url = fmt::format("http://{}:{}", default_host_string, port);
-                if (!auth_token.empty()) {
-                    frontend_url += fmt::format("?token={}", auth_token);
-                }
-                if (!no_browser) {
-#if defined(__APPLE__)
-                    string open_command = "open";
-#else
-                    string open_command = "xdg-open";
-#endif
-                    auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
-                    if (open_result) {
-                        fmt::print("Failed to open the default browser automatically.\n");
-                    }
-                }
-                fmt::print("CARTA is accessible at {}\n", frontend_url);
             } else {
                 fmt::print("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument\n");
             }
@@ -708,7 +684,35 @@ int main(int argc, const char* argv[]) {
 
         if (port_ok) {
             fmt::print("Listening on port {} with root folder {}, base folder {}, and {} OMP threads\n", port, root_folder, base_folder,
-                omp_thread_count);
+                       omp_thread_count);
+
+            if (http_server && http_server->CanServeFrontend()) {
+                string default_host_string = host;
+                if (host.empty() || host == "0.0.0.0") {
+                    auto server_ip_entry = getenv("SERVER_IP");
+                    if (server_ip_entry) {
+                        default_host_string = server_ip_entry;
+                    } else {
+                        default_host_string = "localhost";
+                    }
+                }
+                string frontend_url = fmt::format("http://{}:{}", default_host_string, port);
+                if (!auth_token.empty()) {
+                    frontend_url += fmt::format("/?token={}", auth_token);
+                }
+                if (!no_browser) {
+#if defined(__APPLE__)
+                    string open_command = "open";
+#else
+                    string open_command = "xdg-open";
+#endif
+                    auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
+                    if (open_result) {
+                        fmt::print("Failed to open the default browser automatically.\n");
+                    }
+                }
+                fmt::print("CARTA is accessible at {}\n", frontend_url);
+            }
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .upgrade = OnUpgrade,
