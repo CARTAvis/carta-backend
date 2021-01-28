@@ -42,7 +42,7 @@ public:
     void StopGettingFileList() {
         _stop_getting_file_list = true;
     }
-    void SetProgressCallBack(const std::function<void(float)>& progress_callback) {
+    void SetProgressCallBack(const std::function<void(CARTA::Progress)>& progress_callback) {
         _progress_callback = progress_callback;
     }
 
@@ -70,7 +70,7 @@ private:
 
     volatile bool _stop_getting_file_list;
     volatile bool _first_report;
-    std::function<void(float)> _progress_callback;
+    std::function<void(CARTA::Progress)> _progress_callback;
 };
 
 #endif // CARTA_BACKEND__FILELISTHANDLER_H_
