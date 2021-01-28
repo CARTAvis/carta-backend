@@ -62,6 +62,15 @@ tbb::task* MultiMessageTask::execute() {
             }
             break;
         }
+        case CARTA::EventType::CATALOG_LIST_REQUEST: {
+            CARTA::CatalogListRequest message;
+            if (message.ParseFromArray(_event_buffer, _event_length)) {
+                _session->OnCatalogFileList(message, _header.request_id);
+            } else {
+                fmt::print("Bad CATALOG_LIST_REQUEST message!\n");
+            }
+            break;
+        }
         default: {
             fmt::print("Bad event type in MultiMessageType:execute : ({})\n", _header.type);
             break;

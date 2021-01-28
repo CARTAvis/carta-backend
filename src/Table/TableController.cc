@@ -201,7 +201,23 @@ void TableController::OnFileListRequest(
     file_list_response.set_parent(parent_path.string());
 
     try {
+        // get total number of files in the directory
+        using std::filesystem::directory_iterator;
+        using func_ptr = bool (*)(const std::filesystem::path&);
+        auto total_files = std::count_if(directory_iterator(file_path), directory_iterator{}, (func_ptr)std::filesystem::is_regular_file);
+
+        // initialize variables for the progress report and the interruption option
+        int num_of_files_done(0);
+        float percentage(0);
+        _stop_getting_file_list = false;
+        _first_report = false;
+        auto start_time = std::chrono::high_resolution_clock::now();
+
         for (const auto& entry : fs::directory_iterator(file_path)) {
+            if (_stop_getting_file_list) {
+                break;
+            }
+
             if (fs::is_directory(entry)) {
                 try {
                     // Try to construct a directory iterator. If it fails, the directory is inaccessible
@@ -232,6 +248,28 @@ void TableController::OnFileListRequest(
                 struct stat file_stats;
                 stat(entry.path().c_str(), &file_stats);
                 file_info->set_date(file_stats.st_mtim.tv_sec);
+            }
+
+            // report the progress if conditions
+            ++num_of_files_done;
+            percentage = (float)num_of_files_done / (float)total_files;
+            auto current_time = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration<double>(current_time - start_time).count();
+            if (!_first_report && dt > REPORT_FIRST_PROGRESS_AFTER_SECS) {
+                CARTA::Progress progress;
+                progress.set_percentage(percentage);
+                progress.set_checked_count(num_of_files_done);
+                progress.set_total_count(total_files);
+                _progress_callback(progress);
+                start_time = current_time;
+                _first_report = true;
+            } else if (_first_report && dt > UPDATE_FILE_LIST_PROGRESS_PER_SECS) {
+                CARTA::Progress progress;
+                progress.set_percentage(percentage);
+                progress.set_checked_count(num_of_files_done);
+                progress.set_total_count(total_files);
+                _progress_callback(progress);
+                start_time = current_time;
             }
         }
         file_list_response.set_success(true);

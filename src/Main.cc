@@ -371,15 +371,6 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     }
                     break;
                 }
-                case CARTA::EventType::CATALOG_LIST_REQUEST: {
-                    CARTA::CatalogListRequest message;
-                    if (message.ParseFromArray(event_buf, event_length)) {
-                        session->OnCatalogFileList(message, head.request_id);
-                    } else {
-                        fmt::print("Bad CATALOG_LIST_REQUEST message!\n");
-                    }
-                    break;
-                }
                 case CARTA::EventType::CATALOG_FILE_INFO_REQUEST: {
                     CARTA::CatalogFileInfoRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
@@ -446,6 +437,10 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                 }
                 case CARTA::EventType::STOP_FILE_LIST: {
                     session->StopFileList();
+                    break;
+                }
+                case CARTA::EventType::STOP_CATALOG_LIST: {
+                    session->StopCatalogList();
                     break;
                 }
                 default: {

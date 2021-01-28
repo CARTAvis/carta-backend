@@ -202,6 +202,7 @@ public:
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
     void StopFileList();
+    void StopCatalogList();
 
 private:
     // File info for file list (extended info for each hdu_name)

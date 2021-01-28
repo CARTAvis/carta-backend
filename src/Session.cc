@@ -1025,6 +1025,8 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
 }
 
 void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uint32_t request_id) {
+    auto progress_callback = [&](CARTA::Progress progress) { SendEvent(CARTA::EventType::CATALOG_LIST_PROGRESS, request_id, progress); };
+    _table_controller->SetProgressCallBack(progress_callback);
     CARTA::CatalogListResponse file_list_response;
     _table_controller->OnFileListRequest(file_list_request, file_list_response);
     SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
@@ -1943,5 +1945,11 @@ bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script:
 void Session::StopFileList() {
     if (_file_list_handler) {
         _file_list_handler->StopGettingFileList();
+    }
+}
+
+void Session::StopCatalogList() {
+    if (_table_controller) {
+        _table_controller->StopGettingFileList();
     }
 }
