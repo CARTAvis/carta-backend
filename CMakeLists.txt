@@ -1,8 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(carta_backend)
 
+include_directories(src)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
+
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/install)
+
+include(uWebSockets)
 
 # Enable OpenMP if package is found
 find_package(OpenMP)
@@ -45,6 +51,10 @@ INCLUDE_DIRECTORIES(/usr/include/casacore /usr/include/casacode)
 INCLUDE_DIRECTORIES(/usr/local/include/casacore /usr/local/include/casacode)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    SET(CMAKE_C_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    SET(CMAKE_CXX_ARCHIVE_CREATE "<CMAKE_AR> Scr <TARGET> <LINK_FLAGS> <OBJECTS>")
+    SET(CMAKE_C_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
+    SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
     INCLUDE_DIRECTORIES(/usr/local/include)
     INCLUDE_DIRECTORIES(/usr/local/opt/openssl/include)
     INCLUDE_DIRECTORIES(/usr/local/opt/libomp/include)
@@ -88,6 +98,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     set(LINK_LIBS ${LINK_LIBS} stdc++fs)
 endif ()
 
+# Include uWebSockets headers and build the uSockets lib
+install_uWebSockets()
 
 set(LINK_LIBS
         ${LINK_LIBS}
@@ -95,9 +107,8 @@ set(LINK_LIBS
         carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
         fmt
-        uWS
-        ssl
-        crypto
+        uSockets
+        uuid
         z
         zfp
         zstd
@@ -121,46 +132,46 @@ set(LINK_LIBS
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
-        Main.cc
-        Session.cc
-        Frame.cc
-        DataStream/Compression.cc
-        DataStream/Contouring.cc
-        DataStream/Smoothing.cc
-        DataStream/Tile.cc
-        FileList/FileExtInfoLoader.cc
-        FileList/FileInfoLoader.cc
-        FileList/FileListHandler.cc
-        FileList/FitsHduList.cc
-        GrpcServer/CartaGrpcService.cc
-        ImageData/Hdf5Attributes.cc
-        ImageData/FileLoader.cc
-        ImageData/Hdf5Loader.cc
-        ImageData/CartaHdf5Image.cc
-        ImageData/CartaMiriadImage.cc
-        Region/RegionHandler.cc
-        Region/RegionImportExport.cc
-        Region/CrtfImportExport.cc
-        Region/Ds9ImportExport.cc
-        Region/Region.cc
-        ImageStats/StatsCalculator.cc
-        ImageStats/Histogram.cc
-        SpectralLine/SpectralLineCrawler.cc
-        Table/Columns.cc
-        Table/Table.cc
-        Table/TableView.cc
-        Table/TableController.cc
-        Moment/MomentController.cc
-        Moment/MomentGenerator.cc
-        FileConverter.cc
-        Timer/Timer.cc
-        OnMessageTask.cc
-        FileSettings.cc
-        Util.cc)
+        src/Main.cc
+        src/Session.cc
+        src/Frame.cc
+        src/DataStream/Compression.cc
+        src/DataStream/Contouring.cc
+        src/DataStream/Smoothing.cc
+        src/DataStream/Tile.cc
+        src/FileList/FileExtInfoLoader.cc
+        src/FileList/FileInfoLoader.cc
+        src/FileList/FileListHandler.cc
+        src/FileList/FitsHduList.cc
+        src/GrpcServer/CartaGrpcService.cc
+        src/ImageData/Hdf5Attributes.cc
+        src/ImageData/FileLoader.cc
+        src/ImageData/Hdf5Loader.cc
+        src/ImageData/CartaHdf5Image.cc
+        src/ImageData/CartaMiriadImage.cc
+        src/Region/RegionHandler.cc
+        src/Region/RegionImportExport.cc
+        src/Region/CrtfImportExport.cc
+        src/Region/Ds9ImportExport.cc
+        src/Region/Region.cc
+        src/ImageStats/StatsCalculator.cc
+        src/ImageStats/Histogram.cc
+        src/SpectralLine/SpectralLineCrawler.cc
+        src/Table/Columns.cc
+        src/Table/Table.cc
+        src/Table/TableView.cc
+        src/Table/TableController.cc
+        src/Moment/MomentGenerator.cc
+        src/Timer/Timer.cc
+        src/OnMessageTask.cc
+        src/FileSettings.cc
+        src/Util.cc
+        src/SimpleFrontendServer/SimpleFrontendServer.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    list(REMOVE_ITEM LINK_LIBS uuid)
     target_link_libraries(carta_backend uv ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
