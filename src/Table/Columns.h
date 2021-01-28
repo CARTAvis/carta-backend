@@ -22,10 +22,10 @@
 #include <carta-protobuf/enums.pb.h>
 
 #define DECLARE_UNARY_OPERATION(NAME) static bool NAME(DataColumn<T>* output_column, const DataColumn<T>* a_column);
-#define DECLARE_UNARY_OPERATION_ONE_PARAMETER(NAME) static bool NAME(DataColumn<T>* output_column, const DataColumn<T>* a_column, T b);
-#define DECLARE_UNARY_OPERATION_TWO_PARAMETERS(NAME) \
+#define DECLARE_SCALAR_OPERATION_ONE_PARAMETER(NAME) static bool NAME(DataColumn<T>* output_column, const DataColumn<T>* a_column, T b);
+#define DECLARE_SCALAR_OPERATION_TWO_PARAMETERS(NAME) \
     static bool NAME(DataColumn<T>* output_column, const DataColumn<T>* a_column, T b, T c);
-#define DECLARE_BINARY_OPERATION(NAME) \
+#define DECLARE_VECTOR_OPERATION_(NAME) \
     static bool NAME(DataColumn<T>* output_column, const DataColumn<T>* a_column, const DataColumn<T>* b_column);
 
 namespace carta {
@@ -102,18 +102,18 @@ public:
     DECLARE_UNARY_OPERATION(First);
     DECLARE_UNARY_OPERATION(Last);
     // output = operation(A, b)
-    DECLARE_UNARY_OPERATION_ONE_PARAMETER(Scale);
-    DECLARE_UNARY_OPERATION_ONE_PARAMETER(Offset);
-    DECLARE_UNARY_OPERATION_ONE_PARAMETER(Pow);
+    DECLARE_SCALAR_OPERATION_ONE_PARAMETER(Scale);
+    DECLARE_SCALAR_OPERATION_ONE_PARAMETER(Offset);
+    DECLARE_SCALAR_OPERATION_ONE_PARAMETER(Pow);
     // output = operation(A, b, c)
-    DECLARE_UNARY_OPERATION_TWO_PARAMETERS(Clamp);
+    DECLARE_SCALAR_OPERATION_TWO_PARAMETERS(Clamp);
     // output = operation(A, B)
-    DECLARE_BINARY_OPERATION(Add);
-    DECLARE_BINARY_OPERATION(Subtract);
-    DECLARE_BINARY_OPERATION(Multiply);
-    DECLARE_BINARY_OPERATION(Divide);
-    DECLARE_BINARY_OPERATION(Max);
-    DECLARE_BINARY_OPERATION(Min);
+    DECLARE_VECTOR_OPERATION_(Add);
+    DECLARE_VECTOR_OPERATION_(Subtract);
+    DECLARE_VECTOR_OPERATION_(Multiply);
+    DECLARE_VECTOR_OPERATION_(Divide);
+    DECLARE_VECTOR_OPERATION_(Max);
+    DECLARE_VECTOR_OPERATION_(Min);
 
     static const DataColumn<T>* TryCast(const Column* column) {
         if (!column || column->data_type == CARTA::UnsupportedType) {

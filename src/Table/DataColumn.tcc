@@ -29,7 +29,7 @@
         return true;                                                                        \
     }
 
-#define DEFINE_UNARY_OPERATION_ONE_PARAMETER(NAME, OPERATION)                                    \
+#define DEFINE_SCALAR_OPERATION_ONE_PARAMETER(NAME, OPERATION)                                    \
     template <class T>                                                                           \
     bool DataColumn<T>::NAME(DataColumn<T>* output_column, const DataColumn<T>* a_column, T b) { \
         if (!a_column || !output_column) {                                                       \
@@ -48,7 +48,7 @@
         return true;                                                                             \
     }
 
-#define DEFINE_UNARY_OPERATION_TWO_PARAMETERS(NAME, OPERATION)                                        \
+#define DEFINE_SCALAR_OPERATION_TWO_PARAMETERS(NAME, OPERATION)                                        \
     template <class T>                                                                                \
     bool DataColumn<T>::NAME(DataColumn<T>* output_column, const DataColumn<T>* a_column, T b, T c) { \
         if (!a_column || !output_column) {                                                            \
@@ -67,7 +67,7 @@
         return true;                                                                                  \
     }
 
-#define DEFINE_BINARY_OPERATION(NAME, OPERATION)                                                                           \
+#define DEFINE_VECTOR_OPERATION_(NAME, OPERATION)                                                                           \
     template <class T>                                                                                                     \
     bool DataColumn<T>::NAME(DataColumn<T>* output_column, const DataColumn<T>* a_column, const DataColumn<T>* b_column) { \
         if (!a_column || !b_column || !output_column) {                                                                    \
@@ -346,20 +346,20 @@ DEFINE_UNARY_OPERATION(First, a[0])
 DEFINE_UNARY_OPERATION(Last, a[N - 1])
 
 // Unary operations in the form output = operation(A, b) or output = operation(A, b, c), where b and c are constants
-// For example, DEFINE_UNARY_OPERATION_ONE_PARAMETER(Scale, a[i] * b) results in each element of column A being multiplied by b
-DEFINE_UNARY_OPERATION_ONE_PARAMETER(Scale, a[i] * b)
-DEFINE_UNARY_OPERATION_ONE_PARAMETER(Offset, a[i] + b)
-DEFINE_UNARY_OPERATION_ONE_PARAMETER(Pow, std::pow(a[i], b))
-DEFINE_UNARY_OPERATION_TWO_PARAMETERS(Clamp, std::clamp(a[i], b, c))
+// For example, DEFINE_SCALAR_OPERATION_ONE_PARAMETER(Scale, a[i] * b) results in each element of column A being multiplied by b
+DEFINE_SCALAR_OPERATION_ONE_PARAMETER(Scale, a[i] * b)
+DEFINE_SCALAR_OPERATION_ONE_PARAMETER(Offset, a[i] + b)
+DEFINE_SCALAR_OPERATION_ONE_PARAMETER(Pow, std::pow(a[i], b))
+DEFINE_SCALAR_OPERATION_TWO_PARAMETERS(Clamp, std::clamp(a[i], b, c))
 
 // Binary operations in the form output = operation(A, B)
-// For example, DEFINE_BINARY_OPERATION(Add, a[i] + b[i]) results in element-wise addition between columns A and B
-DEFINE_BINARY_OPERATION(Add, a[i] + b[i])
-DEFINE_BINARY_OPERATION(Subtract, a[i] - b[i])
-DEFINE_BINARY_OPERATION(Multiply, a[i] * b[i])
-DEFINE_BINARY_OPERATION(Divide, a[i] / b[i])
-DEFINE_BINARY_OPERATION(Max, std::max(a[i], b[i]))
-DEFINE_BINARY_OPERATION(Min, std::min(a[i], b[i]))
+// For example, DEFINE_VECTOR_OPERATION_(Add, a[i] + b[i]) results in element-wise addition between columns A and B
+DEFINE_VECTOR_OPERATION_(Add, a[i] + b[i])
+DEFINE_VECTOR_OPERATION_(Subtract, a[i] - b[i])
+DEFINE_VECTOR_OPERATION_(Multiply, a[i] * b[i])
+DEFINE_VECTOR_OPERATION_(Divide, a[i] / b[i])
+DEFINE_VECTOR_OPERATION_(Max, std::max(a[i], b[i]))
+DEFINE_VECTOR_OPERATION_(Min, std::min(a[i], b[i]))
 
 #pragma endregion
 
