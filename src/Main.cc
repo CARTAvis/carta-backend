@@ -574,8 +574,8 @@ int main(int argc, const char* argv[]) {
             port = inp.getInt("port");
             host = inp.getString("host");
             grpc_port = inp.getInt("grpc_port");
-            omp_thread_count = inp.getInt("threads");
-            thread_count = inp.getInt("omp_threads");
+            omp_thread_count = inp.getInt("omp_threads");
+            thread_count = inp.getInt("threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
             frontend_folder = inp.getString("frontend_folder");
