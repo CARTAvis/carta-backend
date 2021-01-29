@@ -221,6 +221,9 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                 start_time = current_time;
             }
         }
+        if (_stop_getting_file_list) {
+            file_list.set_cancel(true);
+        }
     } catch (casacore::AipsError& err) {
         result_msg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};
         file_list.set_success(false);
@@ -300,6 +303,7 @@ void FileListHandler::OnRegionListRequest(
     region_response.set_parent(file_response.parent());
     *region_response.mutable_files() = {file_response.files().begin(), file_response.files().end()};
     *region_response.mutable_subdirectories() = {file_response.subdirectories().begin(), file_response.subdirectories().end()};
+    region_response.set_cancel(file_response.cancel());
 
     _regionlist_folder = "nofolder"; // ready for next file list request
 }

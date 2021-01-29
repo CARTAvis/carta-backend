@@ -296,7 +296,9 @@ void Session::OnFileListRequest(const CARTA::FileListRequest& request, uint32_t 
     CARTA::FileListResponse response;
     FileListHandler::ResultMsg result_msg;
     _file_list_handler->OnFileListRequest(request, response, result_msg);
-    SendEvent(CARTA::EventType::FILE_LIST_RESPONSE, request_id, response);
+    if (!response.cancel()) {
+        SendEvent(CARTA::EventType::FILE_LIST_RESPONSE, request_id, response);
+    }
     if (!result_msg.message.empty()) {
         SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
     }
@@ -326,7 +328,9 @@ void Session::OnRegionListRequest(const CARTA::RegionListRequest& request, uint3
     CARTA::RegionListResponse response;
     FileListHandler::ResultMsg result_msg;
     _file_list_handler->OnRegionListRequest(request, response, result_msg);
-    SendEvent(CARTA::EventType::REGION_LIST_RESPONSE, request_id, response);
+    if (!response.cancel()) {
+        SendEvent(CARTA::EventType::REGION_LIST_RESPONSE, request_id, response);
+    }
     if (!result_msg.message.empty()) {
         SendLogEvent(result_msg.message, result_msg.tags, result_msg.severity);
     }
@@ -1029,7 +1033,9 @@ void Session::OnCatalogFileList(CARTA::CatalogListRequest file_list_request, uin
     _table_controller->SetProgressCallBack(progress_callback);
     CARTA::CatalogListResponse file_list_response;
     _table_controller->OnFileListRequest(file_list_request, file_list_response);
-    SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
+    if (!file_list_response.cancel()) {
+        SendEvent(CARTA::EventType::CATALOG_LIST_RESPONSE, request_id, file_list_response);
+    }
 }
 
 void Session::OnCatalogFileInfo(CARTA::CatalogFileInfoRequest file_info_request, uint32_t request_id) {

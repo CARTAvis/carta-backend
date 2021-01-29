@@ -272,6 +272,9 @@ void TableController::OnFileListRequest(
                 start_time = current_time;
             }
         }
+        if (_stop_getting_file_list) {
+            file_list_response.set_cancel(true);
+        }
         file_list_response.set_success(true);
     } catch (fs::filesystem_error) {
         file_list_response.set_success(false);
