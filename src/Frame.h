@@ -27,12 +27,12 @@
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
+#include "Constants.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
-#include "InterfaceConstants.h"
 #include "Moment/MomentGenerator.h"
 #include "Region/Region.h"
 #include "RequirementsCache.h"
