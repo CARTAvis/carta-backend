@@ -12,10 +12,10 @@
 namespace carta {
 
 template <class T>
-std::vector<T> TableView::Values(const Column* column, int64_t start, int64_t end) const {
+std::valarray<T> TableView::Values(const Column* column, int64_t start, int64_t end) const {
     auto data_column = DataColumn<T>::TryCast(column);
-    if (!data_column || data_column->entries.empty()) {
-        return std::vector<T>();
+    if (!data_column || data_column->entries.size() == 0) {
+        return std::valarray<T>();
     }
     return data_column->GetColumnData(_is_subset, _subset_indices, start, end);
 }

@@ -38,7 +38,7 @@ public:
         return _table;
     }
     template <class T>
-    std::vector<T> Values(const Column* column, int64_t start = -1, int64_t end = -1) const;
+    std::valarray<T> Values(const Column* column, int64_t start = -1, int64_t end = -1) const;
     bool FillValues(const Column* column, CARTA::ColumnData& column_data, int64_t start = -1, int64_t end = -1) const;
 
 protected:

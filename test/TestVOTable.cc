@@ -218,13 +218,13 @@ TEST(Filtering, FailFilterExtractMistypedValues) {
 
     auto view = table.View();
     auto double_vals = view.Values<double>(table["col1"]);
-    EXPECT_TRUE(double_vals.empty());
+    EXPECT_EQ(double_vals.size(), 0);
     auto string_vals = view.Values<string>(table["col1"]);
-    EXPECT_TRUE(string_vals.empty());
+    EXPECT_EQ(string_vals.size(), 0);
 
     view.StringFilter(table["col3"], "N 6744");
     auto float_vals = view.Values<float>(table["col3"]);
-    EXPECT_TRUE(float_vals.empty());
+    EXPECT_EQ(float_vals.size(), 0);
 }
 
 TEST(Filtering, FilterExtractValues) {
