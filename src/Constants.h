@@ -14,6 +14,7 @@
 
 // thread counts
 #define OMP_THREAD_COUNT 4
+#define THREAD_COUNT 3
 
 // file ids
 #define ALL_FILES -1
