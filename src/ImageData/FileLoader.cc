@@ -243,13 +243,23 @@ bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore:
     return true;
 }
 
+bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image, bool keep_degenerate) {
+    ImageRef image = GetImage();
+    if (!image) {
+        return false;
+    }
+
+    sub_image = casacore::SubImage<float>(*image, region, casacore::AxesSpecifier(keep_degenerate), true);
+    return true;
+}
+
 bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image, bool keep_degenerate) {
     ImageRef image = GetImage();
     if (!image) {
         return false;
     }
 
-    sub_image = casacore::SubImage<float>(*image, slicer, casacore::AxesSpecifier(keep_degenerate));
+    sub_image = casacore::SubImage<float>(*image, slicer, casacore::AxesSpecifier(keep_degenerate), true);
     return true;
 }
 
@@ -260,8 +270,10 @@ bool FileLoader::GetSubImage(
         return false;
     }
 
+    fmt::print("region dim: {} \n", region.ndim());
+    fmt::print("slicer dim: {} \n", slicer.ndim());
     auto temp_image = casacore::SubImage<float>(*image, region);
-    sub_image = casacore::SubImage<float>(temp_image, slicer, casacore::AxesSpecifier(keep_degenerate));
+    sub_image = casacore::SubImage<float>(temp_image, slicer, casacore::AxesSpecifier(keep_degenerate), true);
     return true;
 }
 
