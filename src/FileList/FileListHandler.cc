@@ -118,6 +118,7 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
 
         while (!dir_iter.pastEnd()) {
             if (_stop_getting_file_list) {
+                file_list.set_cancel(true);
                 break;
             }
 
@@ -220,9 +221,6 @@ void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::strin
                 _progress_callback(progress);
                 start_time = current_time;
             }
-        }
-        if (_stop_getting_file_list) {
-            file_list.set_cancel(true);
         }
     } catch (casacore::AipsError& err) {
         result_msg = {err.getMesg(), {"file-list"}, CARTA::ErrorSeverity::ERROR};

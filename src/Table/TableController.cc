@@ -215,6 +215,7 @@ void TableController::OnFileListRequest(
 
         for (const auto& entry : fs::directory_iterator(file_path)) {
             if (_stop_getting_file_list) {
+                file_list_response.set_cancel(true);
                 break;
             }
 
@@ -271,9 +272,6 @@ void TableController::OnFileListRequest(
                 _progress_callback(progress);
                 start_time = current_time;
             }
-        }
-        if (_stop_getting_file_list) {
-            file_list_response.set_cancel(true);
         }
         file_list_response.set_success(true);
     } catch (fs::filesystem_error) {
