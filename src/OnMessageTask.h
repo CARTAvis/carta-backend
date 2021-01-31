@@ -146,6 +146,19 @@ public:
     ~SpectralProfileTask() = default;
 };
 
+class OnSplataloguePingTask : public OnMessageTask {
+    tbb::task* execute() override;
+    CARTA::SplataloguePing _message;
+    uint32_t _request_id;
+
+public:
+    OnSplataloguePingTask(Session* session, CARTA::SplataloguePing message, uint32_t request_id) : OnMessageTask(session) {
+        _message = message;
+        _request_id = request_id;
+    }
+    ~OnSplataloguePingTask() = default;
+};
+
 class OnSpectralLineRequestTask : public OnMessageTask {
     tbb::task* execute() override;
     CARTA::SpectralLineRequest _message;

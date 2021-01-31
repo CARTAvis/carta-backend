@@ -120,6 +120,11 @@ tbb::task* SpectralProfileTask::execute() {
     return nullptr;
 }
 
+tbb::task* OnSplataloguePingTask::execute() {
+    _session->OnSplataloguePing(_message, _request_id);
+    return nullptr;
+}
+
 tbb::task* OnSpectralLineRequestTask::execute() {
     _session->OnSpectralLineRequest(_message, _request_id);
     return nullptr;

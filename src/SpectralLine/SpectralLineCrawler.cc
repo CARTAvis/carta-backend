@@ -30,6 +30,13 @@ SpectralLineCrawler::SpectralLineCrawler() {}
 
 SpectralLineCrawler::~SpectralLineCrawler() {}
 
+void SpectralLineCrawler::Ping(CARTA::SplataloguePong& splatalogue_pong) {
+    // TODO: perform curl -I splatalog_url
+    splatalogue_pong.set_success(true);
+    splatalogue_pong.set_message("Success.");
+    return;
+}
+
 /*
     References:
     1. curl example https://curl.haxx.se/libcurl/c/getinmemory.html

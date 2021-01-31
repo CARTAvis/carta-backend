@@ -15,6 +15,7 @@ class SpectralLineCrawler {
 public:
     SpectralLineCrawler();
     ~SpectralLineCrawler();
+    static void Ping(CARTA::SplataloguePong& splatalogue_pong);
     static void SendRequest(const CARTA::DoubleBounds& frequencyRange, const double line_intensity_lower_limit,
         CARTA::SpectralLineResponse& spectral_line_response);
 
