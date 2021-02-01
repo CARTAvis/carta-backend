@@ -55,7 +55,8 @@ void SpectralLineCrawler::Ping(CARTA::SplataloguePong& splatalogue_pong) {
         splatalogue_pong.set_success(true);
     } else {
         splatalogue_pong.set_success(false);
-        splatalogue_pong.set_message(fmt::format("Check Splatalogue({}) failed: {}, HTTP status code: {}", SPLATALOGUE_URL, curl_easy_strerror(res), http_code));
+        splatalogue_pong.set_message(
+            fmt::format("Check Splatalogue({}) failed: {}, HTTP status code: {}", SPLATALOGUE_URL, curl_easy_strerror(res), http_code));
     }
 
     /* cleanup curl stuff */

@@ -455,8 +455,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                 case CARTA::EventType::SPLATALOGUE_PING: {
                     CARTA::SplataloguePing message;
                     if (message.ParseFromArray(event_buf, event_length)) {
-                        tsk =
-                            new (tbb::task::allocate_root(session->Context())) OnSplataloguePingTask(session, message, head.request_id);
+                        tsk = new (tbb::task::allocate_root(session->Context())) OnSplataloguePingTask(session, message, head.request_id);
                     } else {
                         fmt::print("Bad SPLATALOGUE_PING message!\n");
                     }
