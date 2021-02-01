@@ -31,9 +31,36 @@ SpectralLineCrawler::SpectralLineCrawler() {}
 SpectralLineCrawler::~SpectralLineCrawler() {}
 
 void SpectralLineCrawler::Ping(CARTA::SplataloguePong& splatalogue_pong) {
-    // TODO: perform curl -I splatalog_url
-    splatalogue_pong.set_success(true);
-    splatalogue_pong.set_message("Success.");
+#ifdef SPLATALOGUE_URL
+    std::string splatalog_url = SPLATALOGUE_URL;
+#else
+    std::string splatalog_url = "https://splatalogue.online";
+#endif
+
+    /* init the curl session */
+    CURL* curl_handle = curl_easy_init();
+    if (curl_handle == nullptr) {
+        splatalogue_pong.set_success(false);
+        splatalogue_pong.set_message("Init curl failed.");
+        return;
+    }
+    curl_easy_setopt(curl_handle, CURLOPT_URL, splatalog_url.c_str());
+    curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1L); // return header only
+    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+    /* check splatalogue, success if get HTTP 200 OK */
+    CURLcode res = curl_easy_perform(curl_handle);
+    long http_code = 0;
+    curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
+    if (res == CURLE_OK && http_code == 200) {
+        splatalogue_pong.set_success(true);
+    } else {
+        splatalogue_pong.set_success(false);
+        splatalogue_pong.set_message(fmt::format("Check Splatalogue({}) failed: {}, HTTP status code: {}", splatalog_url, curl_easy_strerror(res), http_code));
+    }
+
+    /* cleanup curl stuff */
+    curl_easy_cleanup(curl_handle);
     return;
 }
 
