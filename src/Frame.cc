@@ -39,7 +39,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _perflog(perflog),
       _valid(true),
       _loader(loader),
-      _tile_cache(TILE_CACHE_CAPACITY),
+      _tile_cache(0),
       _spectral_axis(-1),
       _stokes_axis(-1),
       _channel_index(-1),
