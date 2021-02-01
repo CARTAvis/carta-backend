@@ -25,6 +25,7 @@ class Histogram {
     int _num_bins;
     float _bin_width;
     float _min_val;
+    float _max_val;
     std::vector<int> _hist;
     const std::vector<float>& _data;
 
