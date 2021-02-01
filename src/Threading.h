@@ -17,6 +17,8 @@ static int global_thread_count;
 static void ApplyThreadLimit() {
     if (global_thread_count > 0) {
         omp_set_num_threads(carta::global_thread_count);
+    } else {
+        omp_set_num_threads(omp_get_num_procs());
     }
 }
 
