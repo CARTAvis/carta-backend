@@ -11,6 +11,8 @@
 
 #include <omp.h>
 
+#include "Threading.h"
+
 using namespace carta;
 
 Histogram::Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data)
@@ -36,6 +38,7 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
 
 void Histogram::join(Histogram& h) { // NOLINT
     auto num_bins = h._hist.size();
+    carta::ApplyThreadLimit();
 #pragma omp parallel for
     for (int i = 0; i < num_bins; i++) {
         h._hist[i] += _hist[i];
@@ -45,6 +48,7 @@ void Histogram::join(Histogram& h) { // NOLINT
 void Histogram::setup_bins() {
     std::vector<int64_t> temp_bins;
     auto num_elements = _data.size();
+    carta::ApplyThreadLimit();
 #pragma omp parallel
     {
         auto num_threads = omp_get_num_threads();

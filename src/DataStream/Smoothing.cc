@@ -13,6 +13,8 @@
 
 #include <fmt/ostream.h>
 
+#include "Threading.h"
+
 using namespace std;
 
 double NormPdf(double x, double sigma) {
@@ -43,6 +45,7 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
     const int64_t x_offset = vertical ? 0 : kernel_radius;
     const int64_t y_offset = vertical ? kernel_radius : 0;
 
+    carta::ApplyThreadLimit();
 #pragma omp parallel for
     for (int64_t dest_y = 0; dest_y < dest_height; dest_y++) {
         int64_t src_y = dest_y + y_offset;
@@ -156,6 +159,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
     }
 
     // Fill in original NaNs
+    carta::ApplyThreadLimit();
 #pragma omp parallel for
     for (int64_t j = 0; j < dest_height; j++) {
         for (int64_t i = 0; i < dest_width; i++) {
@@ -195,6 +199,7 @@ bool BlockSmooth(const float* src_data, float* dest_data, int64_t src_width, int
 
 bool BlockSmoothSSE(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
     int64_t x_offset, int64_t y_offset, int smoothing_factor) {
+    carta::ApplyThreadLimit();
 #pragma omp parallel for
     for (int64_t j = 0; j < dest_height; ++j) {
         for (auto i = 0; i < dest_width; i++) {
@@ -253,6 +258,7 @@ bool BlockSmoothSSE(const float* src_data, float* dest_data, int64_t src_width, 
 #ifdef __AVX__
 bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
     int64_t x_offset, int64_t y_offset, int smoothing_factor) {
+    carta::ApplyThreadLimit();
 #pragma omp parallel for
     for (int64_t j = 0; j < dest_height; ++j) {
         for (auto i = 0; i < dest_width; i++) {
@@ -307,6 +313,7 @@ bool BlockSmoothAVX(const float* src_data, float* dest_data, int64_t src_width, 
 
 bool BlockSmoothScalar(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width,
     int64_t dest_height, int64_t x_offset, int64_t y_offset, int smoothing_factor) {
+    carta::ApplyThreadLimit();
     // Non-SIMD version. This could still be optimised to use SIMD in future
 #pragma omp parallel for
     for (int64_t j = 0; j < dest_height; ++j) {
@@ -336,6 +343,7 @@ bool BlockSmoothScalar(const float* src_data, float* dest_data, int64_t src_widt
 
 void NearestNeighbor(const float* src_data, float* dest_data, int64_t src_width, int64_t dest_width, int64_t dest_height, int64_t x_offset,
     int64_t y_offset, int smoothing_factor) {
+    carta::ApplyThreadLimit();
 #pragma omp parallel for
     for (size_t j = 0; j < dest_height; ++j) {
         for (auto i = 0; i < dest_width; i++) {
