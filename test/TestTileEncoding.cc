@@ -10,7 +10,7 @@
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include "../Tile.h"
+#include "../src/DataStream/Tile.h"
 
 using namespace std;
 

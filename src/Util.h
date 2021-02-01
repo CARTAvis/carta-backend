@@ -26,9 +26,9 @@
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
+#include "Constants.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
-#include "InterfaceConstants.h"
 
 // ************ Logging *************
 
@@ -78,6 +78,8 @@ void FillStatisticsValuesFromMap(
     CARTA::RegionStatsData& stats_data, std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, double>& stats_value_map);
 
 std::string IPAsText(std::string_view binary);
+
+std::string GetAuthTokenFromCookie(const std::string& header);
 
 // ************ structs *************
 //
