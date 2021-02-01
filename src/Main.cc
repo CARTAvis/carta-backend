@@ -9,8 +9,6 @@
 #include <tuple>
 #include <vector>
 
-#include <omp.h>
-
 #include <App.h>
 #include <curl/curl.h>
 #include <fmt/format.h>

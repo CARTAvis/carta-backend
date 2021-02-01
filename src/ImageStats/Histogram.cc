@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <cmath>
 
-#include <omp.h>
-
 #include "Threading.h"
 
 using namespace carta;
