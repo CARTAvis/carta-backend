@@ -35,6 +35,47 @@ bool CompareResults(const carta::HistogramResults& a, const carta::HistogramResu
     return true;
 }
 
+TEST(Histogram, TestHistogramBehaviour) {
+    std::vector<float> data;
+ 
+    // test underflow and overflow
+    data.push_back(-1);
+    data.push_back(11);
+    carta::Histogram hist(10, 0.0f, 10.0f, data);
+    hist.setup_bins();
+    auto results = hist.GetHistogram();
+    auto counts = accumulate(results.histogram_bins.begin(), results.histogram_bins.end(), 0);
+    EXPECT_TRUE(counts == 0);
+
+    // test histogram filling
+    data.clear();
+    data.push_back(0.0); // should go to bin at pos. 0
+    data.push_back(0.5); // should go to bin at pos. 0
+    data.push_back(1.0); // should go to bin at pos. 1
+    data.push_back(4.0); // should go to bin at pos. 4
+    data.push_back(4.5); // should go to bin at pos. 4
+    data.push_back(4.7); // should go to bin at pos. 4
+    data.push_back(4.9); // should go to bin at pos. 4
+    data.push_back(5.0); // should go to bin at pos. 5
+    data.push_back(5.0); // should go to bin at pos. 5
+    data.push_back(5.0); // should go to bin at pos. 5
+    data.push_back(9.1); // should go to bin at pos. 9
+    // values that will fall in the overflow and underflow range
+    data.push_back(-0.000001); // should not appear
+    data.push_back(10.0); // should not appear
+    data.push_back(11.0); // should not appear
+    carta::Histogram hist2(10, 0.0f, 10.0f, data);
+    hist2.setup_bins();
+    results = hist2.GetHistogram();
+    counts = accumulate(results.histogram_bins.begin(), results.histogram_bins.end(), 0);
+    EXPECT_TRUE(counts == 11);
+    EXPECT_TRUE(results.histogram_bins[0] == 2);
+    EXPECT_TRUE(results.histogram_bins[1] == 1);
+    EXPECT_TRUE(results.histogram_bins[4] == 4);
+    EXPECT_TRUE(results.histogram_bins[5] == 3);
+    EXPECT_TRUE(results.histogram_bins[9] == 1);
+}
+
 TEST(Histogram, TestSingleThreading) {
     std::vector<float> data(1024 * 1024);
     for (auto& v : data) {
