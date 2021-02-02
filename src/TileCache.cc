@@ -18,23 +18,6 @@ std::ostream& operator<<(std::ostream& os, const TileCacheKey& key) {
 
 void TilePool::Grow(int size) {
     _capacity += size;
-
-    if (size <= 0) {
-        return;
-    }
-
-    std::vector<TilePtr> tiles;
-    tiles.resize(size);
-
-#pragma omp parallel for
-    for (size_t i = 0; i < size; i++) {
-        tiles[i] = Create();
-    }
-
-    std::unique_lock<std::mutex> guard(_tile_pool_mutex);
-    for (size_t i = 0; i < size; i++) {
-        _stack.push(tiles[i]);
-    }
 }
 
 TilePtr TilePool::Pull() {
