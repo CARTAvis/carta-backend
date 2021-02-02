@@ -38,4 +38,8 @@ void CreateLoggers(bool no_log_file, bool debug_log) {
     } else {
         spdlog::critical("Duplicate registration of the logger: {}!", STDOUT_TAG);
     }
+
+    // Show the carta_backend executor version
+    std::string current_path = fs::current_path();
+    stdout_logger->info("{}/carta_backend: Version {}", current_path, VERSION_ID);
 }

@@ -550,7 +550,6 @@ int main(int argc, const char* argv[]) {
 
         { // get values then let Input go out of scope
             casacore::Input inp;
-            inp.version(VERSION_ID);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("no_log", "False", "Do not output to a log file", "Bool");
             inp.create("debug_log", "False", "Print debug messages", "Bool");
