@@ -16,17 +16,18 @@
 
 namespace fs = std::filesystem;
 
-enum class LogType { INFO, WARN, ERROR };
+enum class LogType { DEBUG, INFO, WARN, ERROR };
 
-void CreateLogger(const bool& no_log_file);
+void CreateLogger(const bool& no_log_file, const bool& debug_log);
 
 template <typename S, typename... Args>
 void SpdLog(const LogType& log_type, bool flush_now, const S& format, Args&&... args) {
     std::shared_ptr<spdlog::logger> logger = spdlog::get(LOG_TAG);
-    if (!logger) {
-        spdlog::critical("Fail to get the logger: {}!", LOG_TAG);
-    } else {
+    if (logger) {
         switch (log_type) {
+            case LogType::DEBUG:
+                logger->debug(fmt::format(format, args...));
+                break;
             case LogType::INFO:
                 logger->info(fmt::format(format, args...));
                 break;
@@ -41,7 +42,14 @@ void SpdLog(const LogType& log_type, bool flush_now, const S& format, Args&&... 
         if (flush_now) {
             logger->flush();
         }
+    } else {
+        spdlog::critical("Fail to get the logger: {}!", LOG_TAG);
     }
+}
+
+template <typename S, typename... Args>
+void DEBUG(const S& format, Args&&... args) {
+    SpdLog(LogType::DEBUG, true, format, args...);
 }
 
 template <typename S, typename... Args>

@@ -546,12 +546,14 @@ int main(int argc, const char* argv[]) {
         bool debug_no_auth = false;
         bool no_browser = false;
         bool no_log = false;
+        bool debug_log = false;
 
         { // get values then let Input go out of scope
             casacore::Input inp;
             inp.version(VERSION_ID);
             inp.create("verbose", "False", "display verbose logging", "Bool");
             inp.create("no_log", "False", "Do not output to a log file", "Bool");
+            inp.create("debug_log", "False", "Print debug messages", "Bool");
             inp.create("perflog", "False", "display performance logging", "Bool");
             inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
             inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, use with caution!)", "Bool");
@@ -571,6 +573,7 @@ int main(int argc, const char* argv[]) {
 
             verbose = inp.getBool("verbose");
             no_log = inp.getBool("no_log");
+            debug_log = inp.getBool("debug_log");
             perflog = inp.getBool("perflog");
             no_http = inp.getBool("no_http");
             debug_no_auth = inp.getBool("debug_no_auth");
@@ -593,7 +596,7 @@ int main(int argc, const char* argv[]) {
                 Session::SetInitExitTimeout(init_wait_time);
             }
 
-            CreateLogger(no_log);
+            CreateLogger(no_log, debug_log);
         }
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {

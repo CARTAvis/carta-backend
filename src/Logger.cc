@@ -4,7 +4,7 @@
 
 namespace fs = std::filesystem;
 
-void CreateLogger(const bool& no_log_file) {
+void CreateLogger(const bool& no_log_file, const bool& debug_log) {
     std::string log_fullname = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
 
     // Set a console
@@ -22,5 +22,8 @@ void CreateLogger(const bool& no_log_file) {
 
     // Create a logger
     auto stdout_logger = std::make_shared<spdlog::logger>(LOG_TAG, std::begin(stdout_sinks), std::end(stdout_sinks));
+    if (debug_log) { // show log messages from the "debug" level, otherwise only show default messages from the "info" level
+        stdout_logger->set_level(spdlog::level::debug);
+    }
     spdlog::register_logger(stdout_logger);
 }

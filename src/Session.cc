@@ -40,9 +40,6 @@
 #include "Timer/Timer.h"
 #include "Util.h"
 
-#define DEBUG(_DB_TEXT_) \
-    {}
-
 int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
@@ -69,7 +66,7 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
     _animation_object = nullptr;
     _connected = true;
     ++_num_sessions;
-    DEBUG(fprintf(stderr, "%p ::Session (%d)\n", this, _num_sessions));
+    DEBUG("{} ::Session ({})", fmt::ptr(this), _num_sessions);
 }
 
 static int __exit_backend_timer = 0;
@@ -93,7 +90,7 @@ void ExitNoSessions(int s) {
 
 Session::~Session() {
     --_num_sessions;
-    DEBUG(std::cout << this << " ~Session " << _num_sessions << std::endl;)
+    DEBUG("{} ~Session {}", fmt::ptr(this), _num_sessions);
     if (!_num_sessions) {
         INFO("No remaining sessions.");
         if (_exit_when_all_sessions_closed) {
