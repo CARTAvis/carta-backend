@@ -1287,7 +1287,19 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         casacore::Slicer slicer(start, count); // entire subimage
         std::unique_lock<std::mutex> ulock(_image_mutex);
         sub_image.doGetSlice(tmp, slicer);
+
+        // Get mask that defines region in subimage bounding box
+        casacore::Array<bool> tmpmask;
+        sub_image.doGetMaskSlice(tmpmask, slicer);
         ulock.unlock();
+
+        // Apply mask to data
+        std::vector<bool> datamask = tmpmask.tovector();
+        for (size_t i = 0; i < data.size(); ++i) {
+            if (!datamask[i]) {
+                data[i] = NAN;
+            }
+        }
 
         if (_perflog) {
             auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
