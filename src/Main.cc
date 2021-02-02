@@ -131,7 +131,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
 
     sessions[session_id]->IncreaseRefCount();
 
-    carta::Log(session_id, "Client {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
+    INFO("Client {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -149,7 +149,7 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
         auto uuid = session->GetId();
         auto address = session->GetAddress();
         session->DisconnectCalled();
-        carta::Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
+        INFO("Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);
         }

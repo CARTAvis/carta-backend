@@ -34,6 +34,7 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
+#include "Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
 #include "Timer/Timer.h"
@@ -83,7 +84,7 @@ void ExitNoSessions(int s) {
     } else {
         --__exit_backend_timer;
         if (!__exit_backend_timer) {
-            std::cout << "No sessions timeout." << std::endl;
+            INFO("No sessions timeout.");
             exit(0);
         }
         alarm(1);
@@ -94,10 +95,10 @@ Session::~Session() {
     --_num_sessions;
     DEBUG(std::cout << this << " ~Session " << _num_sessions << std::endl;)
     if (!_num_sessions) {
-        std::cout << "No remaining sessions." << std::endl;
+        INFO("No remaining sessions.");
         if (_exit_when_all_sessions_closed) {
             if (_exit_after_num_seconds == 0) {
-                std::cout << "Exiting due to no sessions remaining" << std::endl;
+                INFO("Exiting due to no sessions remaining");
                 exit(0);
             }
             __exit_backend_timer = _exit_after_num_seconds;
@@ -1599,7 +1600,7 @@ void Session::SendLogEvent(const std::string& message, std::vector<std::string> 
     *error_data.mutable_tags() = {tags.begin(), tags.end()};
     SendEvent(CARTA::EventType::ERROR_DATA, 0, error_data);
     if ((severity > CARTA::ErrorSeverity::DEBUG) || _verbose_logging) {
-        carta::Log(_id, message);
+        INFO("Session {}: {}", _id, message);
     }
 }
 

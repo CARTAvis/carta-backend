@@ -8,18 +8,6 @@
 
 using namespace std;
 
-namespace carta {
-
-void Log(uint32_t id, const string& log_message) {
-    time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    string time_string = ctime(&time);
-    time_string = time_string.substr(0, time_string.length() - 1);
-
-    fmt::print("Session {} ({}): {}\n", id, time_string, log_message);
-}
-
-} // namespace carta
-
 bool CheckRootBaseFolders(string& root, string& base) {
     if (root == "base" && base == "root") {
         fmt::print("ERROR: Must set root or base directory.\n");

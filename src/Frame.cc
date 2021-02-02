@@ -21,6 +21,7 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Smoothing.h"
 #include "ImageStats/StatsCalculator.h"
+#include "Logger.h"
 #include "Util.h"
 
 #ifdef _BOOST_FILESYSTEM_
@@ -51,7 +52,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
-            carta::Log(session_id, _open_image_error);
+            ERROR("Session {}: {}", session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -62,7 +63,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = err.getMesg();
         if (_verbose) {
-            carta::Log(session_id, _open_image_error);
+            ERROR("Session {}: {}", session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -73,7 +74,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
         if (_verbose) {
-            carta::Log(session_id, _open_image_error);
+            ERROR("Session {}: {}", session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -104,7 +105,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
         if (_verbose) {
-            carta::Log(session_id, _open_image_error);
+            ERROR("Session {}: {}", session_id, _open_image_error);
         }
     }
 }
@@ -161,7 +162,7 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
     std::string error;
     bool beams_ok = _loader->GetBeams(beams, error);
     if (!beams_ok) {
-        carta::Log(_session_id, error);
+        ERROR("Session {}: {}", _session_id, error);
     }
     return beams_ok;
 }
@@ -285,7 +286,7 @@ bool Frame::FillImageCache() {
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetImageSlicer(ChannelRange(_channel_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
-        carta::Log(_session_id, "Loading image cache failed.");
+        ERROR("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
 

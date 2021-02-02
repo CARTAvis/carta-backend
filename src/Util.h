@@ -30,24 +30,6 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
-// ************ Logging *************
-
-namespace carta { // Add a name space to avoid the ambiguity with casacore Log() function
-
-void Log(uint32_t id, const std::string& log_message);
-
-template <typename... Args>
-inline void Log(uint32_t id, const char* template_string, Args... args) {
-    Log(id, fmt::format(template_string, args...));
-}
-
-template <typename... Args>
-inline void Log(uint32_t id, const std::string& template_string, Args... args) {
-    Log(id, fmt::format(template_string, args...));
-}
-
-} // namespace carta
-
 // ************ Utilities *************
 
 bool CheckRootBaseFolders(std::string& root, std::string& base);
