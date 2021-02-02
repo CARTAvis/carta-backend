@@ -1614,21 +1614,21 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         if (image_shape.size() == 3) {
             if (_spectral_axis == 2) {
                 start = casacore::IPosition(3, 0, 0, channels_start);
-                end = casacore::IPosition(3, region_shape[0]-1, region_shape[1]-1, channels_end);
+                end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, channels_end);
                 stride = casacore::IPosition(3, 1, 1, channels_stride);
             } else {
                 start = casacore::IPosition(3, 0, 0, stokes_start);
-                end = casacore::IPosition(3, region_shape[0]-1, region_shape[1]-1, stokes_end);
+                end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, stokes_end);
                 stride = casacore::IPosition(3, 1, 1, stokes_stride);
             }
         } else if (image_shape.size() == 4) {
             if (_spectral_axis == 2) {
                 start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
-                end = casacore::IPosition(4, region_shape[0]-1, region_shape[1]-1, channels_end, stokes_end);
+                end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, channels_end, stokes_end);
                 stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
             } else {
                 start = casacore::IPosition(4, 0, 0, stokes_start, channels_start);
-                end = casacore::IPosition(4, region_shape[0]-1, region_shape[1]-1, stokes_end, channels_end);
+                end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, stokes_end, channels_end);
                 stride = casacore::IPosition(4, 1, 1, stokes_stride, channels_stride);
             }
         } else {
