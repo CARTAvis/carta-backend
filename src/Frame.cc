@@ -1413,43 +1413,42 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         ssize_t channels_max = image_shape[_spectral_axis];
         ssize_t channels_start = 0;
         ssize_t channels_stride = 1;
-        ssize_t channels_length = channels_max;
+        ssize_t channels_end = channels_max - 1;
         if (save_file_msg.channels().size() > 0) {
-            channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max);
-            channels_length = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), 1), channels_max - channels_start);
+            channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max - 1);
+            channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), 0), channels_max - 1);
         }
         ssize_t stokes_max = image_shape[_stokes_axis];
         ssize_t stokes_start = 0;
         ssize_t stokes_stride = 1;
-        ssize_t stokes_length = stokes_max;
+        ssize_t stokes_end = stokes_max - 1;
         if (save_file_msg.stokes().size() > 0) {
-            stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max);
+            stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max - 1);
             stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
-            stokes_length =
-                std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), 1), std::ceil((stokes_max - stokes_start) / stokes_stride));
+            stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), 0), stokes_start);
         }
 
         casacore::IPosition start;
-        casacore::IPosition length;
+        casacore::IPosition end;
         casacore::IPosition stride;
         if (image_shape.size() == 3) {
             if (_spectral_axis == 2) {
                 start = casacore::IPosition(3, 0, 0, channels_start);
-                length = casacore::IPosition(3, image_shape[0], image_shape[1], channels_length);
+                end = casacore::IPosition(3, image_shape[0] - 1, image_shape[1] - 1, channels_end);
                 stride = casacore::IPosition(3, 1, 1, channels_stride);
             } else {
                 start = casacore::IPosition(3, 0, 0, stokes_start);
-                length = casacore::IPosition(3, image_shape[0], image_shape[1], stokes_length);
+                end = casacore::IPosition(3, image_shape[0] - 1, image_shape[1] - 1, stokes_end);
                 stride = casacore::IPosition(3, 1, 1, stokes_stride);
             }
         } else if (image_shape.size() == 4) {
             if (_spectral_axis == 2) {
                 start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
-                length = casacore::IPosition(4, image_shape[0], image_shape[1], channels_length, stokes_length);
+                end = casacore::IPosition(4, image_shape[0] - 1, image_shape[1] - 1, channels_end, stokes_end);
                 stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
             } else {
                 start = casacore::IPosition(4, 0, 0, stokes_start, channels_start);
-                length = casacore::IPosition(4, image_shape[0], image_shape[1], stokes_length, channels_length);
+                end = casacore::IPosition(4, image_shape[0] - 1, image_shape[1] - 1, stokes_end, channels_end);
                 stride = casacore::IPosition(4, 1, 1, stokes_stride, channels_stride);
             }
         } else {
@@ -1460,7 +1459,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         if (save_file_msg.keep_degenerate()) {
             is_keep_degenerate = true;
         }
-        auto slice_sub_image = casacore::Slicer(start, length, stride);
+        auto slice_sub_image = casacore::Slicer(start, end, stride, casacore::Slicer::endIsLast);
         casacore::SubImage<float> sub_image;
 
         try {
@@ -1573,24 +1572,23 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     ssize_t channels_max = image_shape[_spectral_axis];
     ssize_t channels_start = 0;
     ssize_t channels_stride = 1;
-    ssize_t channels_length = channels_max;
+    ssize_t channels_end = channels_max - 1;
     if (save_file_msg.channels().size() > 0) {
-        channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max);
-        channels_length = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), 1), channels_max - channels_start);
+        channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max - 1);
+        channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), 0), channels_max - 1);
     }
     ssize_t stokes_max = image_shape[_stokes_axis];
     ssize_t stokes_start = 0;
     ssize_t stokes_stride = 1;
-    ssize_t stokes_length = stokes_max;
+    ssize_t stokes_end = stokes_max - 1;
     if (save_file_msg.stokes().size() > 0) {
-        stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max);
+        stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max - 1);
         stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
-        stokes_length =
-            std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), 1), std::ceil((stokes_max - stokes_start) / stokes_stride));
+        stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), 0), stokes_start);
     }
 
     casacore::IPosition start;
-    casacore::IPosition length;
+    casacore::IPosition end;
     casacore::IPosition stride;
     casacore::SubImage<float> sub_image;
     casacore::LCRegion* image_region = GetImageRegion(file_id, region);
@@ -1604,28 +1602,28 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         if (image_shape.size() == 3) {
             if (_spectral_axis == 2) {
                 start = casacore::IPosition(3, 0, 0, channels_start);
-                length = casacore::IPosition(3, region_shape[0], region_shape[1], channels_length);
+                end = casacore::IPosition(3, region_shape[0]-1, region_shape[1]-1, channels_end);
                 stride = casacore::IPosition(3, 1, 1, channels_stride);
             } else {
                 start = casacore::IPosition(3, 0, 0, stokes_start);
-                length = casacore::IPosition(3, region_shape[0], region_shape[1], stokes_length);
+                end = casacore::IPosition(3, region_shape[0]-1, region_shape[1]-1, stokes_end);
                 stride = casacore::IPosition(3, 1, 1, stokes_stride);
             }
         } else if (image_shape.size() == 4) {
             if (_spectral_axis == 2) {
                 start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
-                length = casacore::IPosition(4, region_shape[0], region_shape[1], channels_length, stokes_length);
+                end = casacore::IPosition(4, region_shape[0]-1, region_shape[1]-1, channels_end, stokes_end);
                 stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
             } else {
                 start = casacore::IPosition(4, 0, 0, stokes_start, channels_start);
-                length = casacore::IPosition(4, region_shape[0], region_shape[1], stokes_length, channels_length);
+                end = casacore::IPosition(4, region_shape[0]-1, region_shape[1]-1, stokes_end, channels_end);
                 stride = casacore::IPosition(4, 1, 1, stokes_stride, channels_stride);
             }
         } else {
             return;
         }
 
-        auto slice_sub_image = casacore::Slicer(start, length, stride);
+        auto slice_sub_image = casacore::Slicer(start, end, stride, casacore::Slicer::endIsLast);
 
         bool is_keep_degenerate = false;
         if (save_file_msg.keep_degenerate()) {
