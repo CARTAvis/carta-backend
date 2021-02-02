@@ -1428,7 +1428,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         ssize_t channels_end = channels_max - 1;
         if (save_file_msg.channels().size() > 0) {
             channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max - 1);
-            channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), 0), channels_max - 1);
+            channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), channels_start), channels_max - 1);
         }
         ssize_t stokes_max = image_shape[_stokes_axis];
         ssize_t stokes_start = 0;
@@ -1437,7 +1437,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         if (save_file_msg.stokes().size() > 0) {
             stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max - 1);
             stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
-            stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), 0), stokes_start);
+            stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), stokes_start), stokes_max - 1);
         }
 
         casacore::IPosition start;
@@ -1587,7 +1587,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     ssize_t channels_end = channels_max - 1;
     if (save_file_msg.channels().size() > 0) {
         channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max - 1);
-        channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), 0), channels_max - 1);
+        channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), channels_start), channels_max - 1);
     }
     ssize_t stokes_max = image_shape[_stokes_axis];
     ssize_t stokes_start = 0;
@@ -1596,7 +1596,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     if (save_file_msg.stokes().size() > 0) {
         stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max - 1);
         stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
-        stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), 0), stokes_start);
+        stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), stokes_start), stokes_max - 1);
     }
 
     casacore::IPosition start;
