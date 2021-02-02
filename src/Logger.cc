@@ -5,7 +5,7 @@
 namespace fs = std::filesystem;
 
 void CreateLogger(const bool& no_log_file) {
-    std::string log_fullname = fs::path(getenv("HOME")).string() + "/CARTA/log/tmp/carta.log";
+    std::string log_fullname = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
 
     // Set a console
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
