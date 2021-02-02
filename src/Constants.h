@@ -79,4 +79,10 @@
 #define DEFAULT_SOCKET_PORT 3002
 #define MAX_SOCKET_PORT_TRIALS 100
 
+// logger
+#define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
+#define ROTATED_LOG_FILES 5
+#define LOG_TAG "stdout"
+#define LOG_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
+
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

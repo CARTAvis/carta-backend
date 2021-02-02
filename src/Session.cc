@@ -534,7 +534,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
                     SendFileEvent(
                         file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
                 } else {
-                    fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+                    ERROR("Problem getting tile layer={}, x={}, y={}", tile.layer, tile.x, tile.y);
                 }
             }
         };

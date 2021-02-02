@@ -26,6 +26,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "GrpcServer/CartaGrpcService.h"
+#include "Logger.h"
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
@@ -544,11 +545,13 @@ int main(int argc, const char* argv[]) {
         bool no_http = false;
         bool debug_no_auth = false;
         bool no_browser = false;
+        bool no_log = false;
 
         { // get values then let Input go out of scope
             casacore::Input inp;
             inp.version(VERSION_ID);
             inp.create("verbose", "False", "display verbose logging", "Bool");
+            inp.create("no_log", "False", "Do not output to a log file", "Bool");
             inp.create("perflog", "False", "display performance logging", "Bool");
             inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
             inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, use with caution!)", "Bool");
@@ -567,6 +570,7 @@ int main(int argc, const char* argv[]) {
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
+            no_log = inp.getBool("no_log");
             perflog = inp.getBool("perflog");
             no_http = inp.getBool("no_http");
             debug_no_auth = inp.getBool("debug_no_auth");
@@ -588,6 +592,8 @@ int main(int argc, const char* argv[]) {
                 int init_wait_time = inp.getInt("init_exit_after");
                 Session::SetInitExitTimeout(init_wait_time);
             }
+
+            CreateLogger(no_log);
         }
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
@@ -683,7 +689,7 @@ int main(int argc, const char* argv[]) {
         }
 
         if (port_ok) {
-            fmt::print("Listening on port {} with root folder {}, base folder {}, and {} OMP threads\n", port, root_folder, base_folder,
+            INFO("Listening on port {} with root folder {}, base folder {}, and {} OMP threads", port, root_folder, base_folder,
                 omp_thread_count);
 
             if (http_server && http_server->CanServeFrontend()) {
@@ -722,10 +728,10 @@ int main(int argc, const char* argv[]) {
                 .run();
         }
     } catch (exception& e) {
-        fmt::print("Error: {}\n", e.what());
+        ERROR("Error: {}", e.what());
         return 1;
     } catch (...) {
-        fmt::print("Unknown error\n");
+        ERROR("Unknown error");
         return 1;
     }
 
