@@ -41,9 +41,8 @@ public:
     int GetNbins() const { return _histogram.num_bins; }
     float GetBinWidth() const { return _histogram.bin_width; }
     float GetBinCenter()  const { return _histogram.bin_center; }
-    std::vector<int> GetHistogramBins() const { return _histogram.histogram_bins; }
+    const std::vector<int>& GetHistogramBins() const { return _histogram.histogram_bins; }
     const std::vector<float>& GetData() const { return _data; }
-
 };
 
 } // namespace carta
