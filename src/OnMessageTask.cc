@@ -13,6 +13,7 @@
 #include <fmt/ostream.h>
 
 #include "EventHeader.h"
+#include "Logger.h"
 #include "Util.h"
 
 tbb::task* MultiMessageTask::execute() {
@@ -22,7 +23,7 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetSpatialRequirements(message);
             } else {
-                fmt::print("Bad SET_SPATIAL_REQUIREMENTS message!\n");
+                ERROR("Bad SET_SPATIAL_REQUIREMENTS message!");
             }
             break;
         }
@@ -31,7 +32,7 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetStatsRequirements(message);
             } else {
-                fmt::print("Bad SET_STATS_REQUIREMENTS message!\n");
+                ERROR("Bad SET_STATS_REQUIREMENTS message!");
             }
             break;
         }
@@ -40,12 +41,12 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnMomentRequest(message, _header.request_id);
             } else {
-                fmt::print("Bad MOMENT_REQUEST message!\n");
+                ERROR("Bad MOMENT_REQUEST message!");
             }
             break;
         }
         default: {
-            fmt::print("Bad event type in MultiMessageType:execute : ({})\n", _header.type);
+            ERROR("Bad event type in MultiMessageType:execute : ({})", _header.type);
             break;
         }
     }

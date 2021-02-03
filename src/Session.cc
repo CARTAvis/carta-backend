@@ -1672,7 +1672,7 @@ void Session::ExecuteAnimationFrameInner() {
                         auto& frame = _frames.at(file_id);
                         // Skip out of bounds frames
                         if (!is_active_frame && offset >= frame_numbers.size()) {
-                            fmt::print("Animator: Missing entries in matched frame list for file {}\n", file_id);
+                            ERROR("Animator: Missing entries in matched frame list for file {}", file_id);
                             continue;
                         }
                         float channel_val = is_active_frame ? active_frame_channel : frame_numbers[offset];
@@ -1696,7 +1696,7 @@ void Session::ExecuteAnimationFrameInner() {
                             }
                         }
                     } else {
-                        fmt::print("Animator: Missing matched frame list for file {}\n", file_id);
+                        ERROR("Animator: Missing matched frame list for file {}", file_id);
                     }
                 }
                 // Calculate and send images, contours and profiles

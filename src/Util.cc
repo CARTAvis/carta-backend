@@ -5,13 +5,14 @@
 */
 
 #include "Util.h"
+#include "Logger.h"
 
 using namespace std;
 
 bool CheckRootBaseFolders(string& root, string& base) {
     if (root == "base" && base == "root") {
-        fmt::print("ERROR: Must set root or base directory.\n");
-        fmt::print("Exiting carta.\n");
+        ERROR("Must set root or base directory.");
+        INFO("Exiting carta.");
         return false;
     }
     if (root == "base")
@@ -22,8 +23,8 @@ bool CheckRootBaseFolders(string& root, string& base) {
     // check root
     casacore::File root_folder(root);
     if (!(root_folder.exists() && root_folder.isDirectory(true) && root_folder.isReadable() && root_folder.isExecutable())) {
-        fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
+        ERROR("Invalid root directory, does not exist or is not a readable directory.");
+        INFO("Exiting carta.");
         return false;
     }
     // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
@@ -33,7 +34,7 @@ bool CheckRootBaseFolders(string& root, string& base) {
         try {
             root = root_folder.path().absoluteName();
         } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
+            ERROR(err.getMesg());
         }
         if (root.empty())
             root = "/";
@@ -41,8 +42,8 @@ bool CheckRootBaseFolders(string& root, string& base) {
     // check base
     casacore::File base_folder(base);
     if (!(base_folder.exists() && base_folder.isDirectory(true) && base_folder.isReadable() && base_folder.isExecutable())) {
-        fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
+        ERROR("Invalid base directory, does not exist or is not a readable directory.");
+        INFO("Exiting carta.");
         return false;
     }
     // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
@@ -52,7 +53,7 @@ bool CheckRootBaseFolders(string& root, string& base) {
         try {
             base = base_folder.path().absoluteName();
         } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
+            ERROR(err.getMesg());
         }
         if (base.empty())
             base = "/";
@@ -74,7 +75,7 @@ bool CheckRootBaseFolders(string& root, string& base) {
             }
         }
         if (!is_subdirectory) {
-            fmt::print("ERROR: Base {} must be a subdirectory of root {}. Exiting carta.\n", base, root);
+            ERROR("Base {} must be a subdirectory of root {}. Exiting carta.", base, root);
             return false;
         }
     }

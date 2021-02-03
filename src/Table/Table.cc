@@ -11,6 +11,7 @@
 
 #include <iostream>
 
+#include "../Logger.h"
 #include "../Util.h"
 #include "DataColumn.tcc"
 
@@ -71,13 +72,13 @@ bool Table::ConstructFromXML(bool header_only) {
         string header_string = GetHeader(_filename);
         auto result = doc.load_string(header_string.c_str(), pugi::parse_default | pugi::parse_fragment);
         if (!result && result.status != pugi::status_end_element_mismatch) {
-            fmt::print("{}\n", result.description());
+            ERROR(result.description());
             return false;
         }
     } else {
         auto result = doc.load_file(_filename.c_str(), pugi::parse_default | pugi::parse_embed_pcdata);
         if (!result) {
-            fmt::print("{}\n", result.description());
+            ERROR(result.description());
             return false;
         }
     }

@@ -509,7 +509,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
                 _contour_settings.chunk_size, partial_contour_callback, _perflog);
             return true;
         }
-        fmt::print("Smoothing mode not implemented yet!\n");
+        ERROR("Smoothing mode not implemented yet!");
         return false;
     }
 

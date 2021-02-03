@@ -12,6 +12,7 @@
 
 #include <fmt/format.h>
 
+#include "../Logger.h"
 #include "MimeTypes.h"
 
 using namespace std;
@@ -22,9 +23,9 @@ SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
     _frontend_found = IsValidFrontendFolder(root_folder);
 
     if (_frontend_found) {
-        fmt::print("Serving CARTA frontend from {}\n", fs::canonical(_http_root_folder).string());
+        INFO("Serving CARTA frontend from {}", fs::canonical(_http_root_folder).string());
     } else {
-        fmt::print("Could not find CARTA frontend files in directory {}.\n", _http_root_folder.string());
+        ERROR("Could not find CARTA frontend files in directory {}.", _http_root_folder.string());
     }
 }
 
