@@ -988,7 +988,7 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
         int axis, stokes;
         ConvertCoordinateToAxes(coordinate, axis, stokes);
         if (stokes >= nstokes) {
-            std::cerr << "Spectral requirement " << coordinate << " failed: invalid stokes axis for image." << std::endl;
+            ERROR("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
             continue;
         }
 
@@ -1229,7 +1229,7 @@ bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stok
         image_region = this_region;
         return true;
     } catch (casacore::AipsError error) {
-        std::cerr << "Error converting full region to file " << file_id << ": " << error.getMesg() << std::endl;
+        ERROR("Error converting full region to file {}: {}", file_id, error.getMesg());
         return false;
     }
 }

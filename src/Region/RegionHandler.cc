@@ -7,7 +7,6 @@
 // RegionDataHandler.cc: handle requirements and data streams for regions
 
 #include "RegionHandler.h"
-#include "../Logger.h"
 
 #include <chrono>
 
@@ -17,6 +16,7 @@
 
 #include "../Constants.h"
 #include "../ImageStats/StatsCalculator.h"
+#include "../Logger.h"
 #include "../Util.h"
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
@@ -245,7 +245,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                         region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
-                    std::cerr << "Export region record failed: " << err.getMesg() << std::endl;
+                    ERROR("Export region record failed: {}", err.getMesg());
                 }
             }
 
@@ -341,7 +341,7 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     }
 
     if (!_regions.count(region_id)) {
-        std::cerr << "Spectral requirements failed: no region with id " << region_id << std::endl;
+        ERROR("Spectral requirements failed: no region with id {}", region_id);
         return false;
     }
 
@@ -432,7 +432,7 @@ bool RegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstokes
     ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
     bool valid(stokes_index < nstokes);
     if (!valid) {
-        std::cerr << "Spectral requirement " << coordinate << " failed: invalid stokes axis for image." << std::endl;
+        ERROR("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
     }
     return valid;
 }
@@ -712,9 +712,9 @@ bool RegionHandler::ApplyRegionToFile(
 
         return true;
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Error applying region " << region_id << " to file " << file_id << ": " << err.getMesg() << std::endl;
+        ERROR("Error applying region {} to file {}: {}", region_id, file_id, err.getMesg());
     } catch (std::out_of_range& range_error) {
-        std::cerr << "Cannot apply region " << region_id << " to closed file " << file_id << std::endl;
+        ERROR("Cannot apply region {} to closed file {}", region_id, file_id);
     }
 
     return false;

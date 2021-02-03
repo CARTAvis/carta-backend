@@ -5,12 +5,13 @@
 */
 
 #include "Contouring.h"
-#include "../Logger.h"
 
 #include <chrono>
 #include <cmath>
 #include <limits>
 #include <vector>
+
+#include "../Logger.h"
 
 using namespace std;
 

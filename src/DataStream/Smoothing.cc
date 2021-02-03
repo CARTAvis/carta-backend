@@ -5,12 +5,13 @@
 */
 
 #include "Smoothing.h"
-#include "../Logger.h"
 
 #include <chrono>
 #include <cmath>
 #include <iostream>
 #include <vector>
+
+#include "../Logger.h"
 
 using namespace std;
 
