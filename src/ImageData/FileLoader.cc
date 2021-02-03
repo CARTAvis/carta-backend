@@ -264,37 +264,35 @@ bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore:
 }
 
 bool FileLoader::GetSubImage(const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image, bool keep_degenerate) {
+    auto result = false;
     ImageRef image = GetImage();
-    if (!image) {
-        return false;
+    if (image) {
+        sub_image = casacore::SubImage<float>(*image, region, casacore::AxesSpecifier(keep_degenerate), true);
+        result = true;
     }
-
-    sub_image = casacore::SubImage<float>(*image, region, casacore::AxesSpecifier(keep_degenerate), true);
-    return true;
+    return result;
 }
 
 bool FileLoader::GetSubImage(const casacore::Slicer& slicer, casacore::SubImage<float>& sub_image, bool keep_degenerate) {
+    auto result = false;
     ImageRef image = GetImage();
-    if (!image) {
-        return false;
+    if (image) {
+        sub_image = casacore::SubImage<float>(*image, slicer, casacore::AxesSpecifier(keep_degenerate), true);
+        result = true;
     }
-
-    sub_image = casacore::SubImage<float>(*image, slicer, casacore::AxesSpecifier(keep_degenerate), true);
-    return true;
+    return result;
 }
 
 bool FileLoader::GetSubImage(
     const casacore::Slicer& slicer, const casacore::LattRegionHolder& region, casacore::SubImage<float>& sub_image, bool keep_degenerate) {
+    auto result = false;
     ImageRef image = GetImage();
-    if (!image) {
-        return false;
+    if (image) {
+        auto temp_image = casacore::SubImage<float>(*image, region);
+        sub_image = casacore::SubImage<float>(temp_image, slicer, casacore::AxesSpecifier(keep_degenerate), true);
+        result = true;
     }
-
-    fmt::print("region dim: {} \n", region.ndim());
-    fmt::print("slicer dim: {} \n", slicer.ndim());
-    auto temp_image = casacore::SubImage<float>(*image, region);
-    sub_image = casacore::SubImage<float>(temp_image, slicer, casacore::AxesSpecifier(keep_degenerate), true);
-    return true;
+    return result;
 }
 
 bool FileLoader::GetBeams(std::vector<CARTA::Beam>& beams, std::string& error) {

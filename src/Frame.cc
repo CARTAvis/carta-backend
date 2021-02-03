@@ -15,6 +15,7 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/WCRegion.h>
+#include <casacore/lattices/LRegions/LCExtension.h>
 #include <casacore/lattices/LRegions/LCSlicer.h>
 #include <casacore/lattices/LRegions/LattRegionHolder.h>
 #include <casacore/tables/DataMan/TiledFileAccess.h>
@@ -1585,25 +1586,32 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     ssize_t channels_start = 0;
     ssize_t channels_stride = 1;
     ssize_t channels_end = channels_max - 1;
+    ssize_t channels_length = channels_max;
     if (save_file_msg.channels().size() > 0) {
         channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max - 1);
         channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), channels_start), channels_max - 1);
+        channels_length = channels_end - channels_start + 1;
     }
     ssize_t stokes_max = image_shape[_stokes_axis];
     ssize_t stokes_start = 0;
     ssize_t stokes_stride = 1;
     ssize_t stokes_end = stokes_max - 1;
+    ssize_t stokes_length = stokes_max;
     if (save_file_msg.stokes().size() > 0) {
         stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max - 1);
         stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
         stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), stokes_start), stokes_max - 1);
+        stokes_length = 0;
+        for (int s = stokes_start; s <= stokes_end; s += stokes_stride) {
+            stokes_length++;
+        }
     }
 
     casacore::IPosition start;
     casacore::IPosition end;
     casacore::IPosition stride;
     casacore::SubImage<float> sub_image;
-    casacore::LCRegion* image_region = GetImageRegion(file_id, region);
+    auto image_region = GetImageRegion(file_id, region);
     auto region_shape = image_region->shape();
     casacore::LattRegionHolder latt_region_holder = LattRegionHolder(image_region);
 
@@ -1616,20 +1624,44 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 start = casacore::IPosition(3, 0, 0, channels_start);
                 end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, channels_end);
                 stride = casacore::IPosition(3, 1, 1, channels_stride);
+                if (latt_region_holder.ndim() < image_shape.size()) {
+                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
+                        casacore::LCBox(casacore::IPosition(1, channels_start), casacore::IPosition(1, channels_end),
+                            casacore::IPosition(1, channels_length)));
+                    latt_region_holder = LattRegionHolder(region_ext.cloneRegion());
+                }
             } else {
                 start = casacore::IPosition(3, 0, 0, stokes_start);
                 end = casacore::IPosition(3, region_shape[0] - 1, region_shape[1] - 1, stokes_end);
                 stride = casacore::IPosition(3, 1, 1, stokes_stride);
+                if (latt_region_holder.ndim() < image_shape.size()) {
+                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
+                        casacore::LCBox(casacore::IPosition(1, stokes_start), casacore::IPosition(1, stokes_end),
+                            casacore::IPosition(1, stokes_length)));
+                    latt_region_holder = LattRegionHolder(region_ext.cloneRegion());
+                }
             }
         } else if (image_shape.size() == 4) {
             if (_spectral_axis == 2) {
                 start = casacore::IPosition(4, 0, 0, channels_start, stokes_start);
                 end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, channels_end, stokes_end);
                 stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
+                if (latt_region_holder.ndim() < image_shape.size()) {
+                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
+                        casacore::LCBox(casacore::IPosition(2, channels_start, stokes_start),
+                            casacore::IPosition(2, channels_end, stokes_end), casacore::IPosition(2, channels_length, stokes_length)));
+                    latt_region_holder = LattRegionHolder(region_ext.cloneRegion());
+                }
             } else {
                 start = casacore::IPosition(4, 0, 0, stokes_start, channels_start);
                 end = casacore::IPosition(4, region_shape[0] - 1, region_shape[1] - 1, stokes_end, channels_end);
                 stride = casacore::IPosition(4, 1, 1, stokes_stride, channels_stride);
+                if (latt_region_holder.ndim() < image_shape.size()) {
+                    auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
+                        casacore::LCBox(casacore::IPosition(2, stokes_start, channels_start),
+                            casacore::IPosition(2, stokes_end, channels_end), casacore::IPosition(2, stokes_length, channels_length)));
+                    latt_region_holder = LattRegionHolder(region_ext.cloneRegion());
+                }
             }
         } else {
             return;
