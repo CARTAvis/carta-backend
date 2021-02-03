@@ -1040,7 +1040,6 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 int tile_y = tile_index(y);
                 bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
 
-#pragma omg parallel for
                 for (int tile_x = tile_index(start); tile_x <= tile_index(end - 1); tile_x += TILE_SIZE) {
                     auto key = TileCache::Key(tile_x, tile_y);
                     // The cursor has moved outside this chunk row
@@ -1065,7 +1064,6 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 int tile_x = tile_index(x);
                 bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
 
-#pragma omg parallel for
                 for (int tile_y = tile_index(start); tile_y <= tile_index(end - 1); tile_y += TILE_SIZE) {
                     auto key = TileCache::Key(tile_x, tile_y);
                     // The cursor has moved outside this chunk column
