@@ -1039,15 +1039,13 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
             if (config.coordinate() == "x") {
                 int tile_y = tile_index(y);
                 bool ignore_interrupt(_ignore_interrupt_X_mutex.try_lock());
-                bool stale_profile(false);
 
-#pragma omp parallel for
+#pragma omg parallel for
                 for (int tile_x = tile_index(start); tile_x <= tile_index(end - 1); tile_x += TILE_SIZE) {
                     auto key = TileCache::Key(tile_x, tile_y);
                     // The cursor has moved outside this chunk row
-                    if (stale_profile || !ignore_interrupt && (tile_index(_cursor.y, CHUNK_SIZE) != TileCache::ChunkKey(key).y)) {
-                        stale_profile = true;
-                        continue;
+                    if (!ignore_interrupt && (tile_index(_cursor.y, CHUNK_SIZE) != TileCache::ChunkKey(key).y)) {
+                        return have_profile;
                     }
                     auto tile = _tile_cache.Get(key, _loader, _image_mutex);
                     auto tile_width = tile_size(tile_x, width);
@@ -1061,24 +1059,18 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                     std::copy(tile_start, tile_end, profile_start);
                 }
 
-                if (stale_profile) {
-                    return have_profile;
-                }
-
                 have_profile = true;
 
             } else if (config.coordinate() == "y") {
                 int tile_x = tile_index(x);
                 bool ignore_interrupt(_ignore_interrupt_Y_mutex.try_lock());
-                bool stale_profile(false);
 
-#pragma omp parallel for
+#pragma omg parallel for
                 for (int tile_y = tile_index(start); tile_y <= tile_index(end - 1); tile_y += TILE_SIZE) {
                     auto key = TileCache::Key(tile_x, tile_y);
                     // The cursor has moved outside this chunk column
-                    if (stale_profile || !ignore_interrupt && (tile_index(_cursor.x, CHUNK_SIZE) != TileCache::ChunkKey(key).x)) {
-                        stale_profile = true;
-                        continue;
+                    if (!ignore_interrupt && (tile_index(_cursor.x, CHUNK_SIZE) != TileCache::ChunkKey(key).x)) {
+                        return have_profile;
                     }
                     auto tile = _tile_cache.Get(key, _loader, _image_mutex);
                     auto tile_width = tile_size(tile_x, width);
@@ -1093,10 +1085,6 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                     for (int j = tile_start; j < tile_end; j++) {
                         profile[profile_start + j - tile_start] = (*tile)[(j * tile_width) + (x - tile_x)];
                     }
-                }
-
-                if (stale_profile) {
-                    return have_profile;
                 }
 
                 have_profile = true;
