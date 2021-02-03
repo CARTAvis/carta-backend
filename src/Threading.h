@@ -14,7 +14,7 @@
 #if __has_include(<parallel/algorithm>)
 #include <parallel/algorithm>
 #define parallel_sort(...) __gnu_parallel::sort(__VA_ARGS__)
-#elif __has_include(<execution>)
+#elif __has_include(<execution>) && defined(_LIBCPP_HAS_PARALLEL_ALGORITHMS)
 #include <execution>
 #define parallel_sort(...) std::sort(std::execution::par_unseq, __VA_ARGS__)
 #else
