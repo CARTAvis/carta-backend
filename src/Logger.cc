@@ -10,8 +10,17 @@
 
 namespace fs = std::filesystem;
 
-void CreateLoggers(bool no_log_file, bool debug_log, bool perf_log) {
-    std::string log_fullname = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
+void InitLoggers(bool no_log_file, bool debug_log, bool perf_log) {
+    std::string log_fullname;
+    if (!no_log_file) {
+        std::string first_choice_log_dir("/var/log");
+        if (!access(first_choice_log_dir.c_str(), W_OK)) {
+            log_fullname = first_choice_log_dir + "/carta/carta.log";
+        } else {
+            log_fullname = fs::path(getenv("HOME")).string() + "/CARTA/log/carta.log";
+        }
+        spdlog::info("Writing to the log file: {}", log_fullname);
+    }
 
     // Set the stdout console
     auto stdout_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();

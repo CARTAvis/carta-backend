@@ -16,15 +16,11 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
-#include <filesystem>
-
 #include "Constants.h"
-
-namespace fs = std::filesystem;
 
 enum class LogType { DEBUG, INFO, WARN, ERROR };
 
-void CreateLoggers(bool no_log_file, bool debug_log, bool perf_log);
+void InitLoggers(bool no_log_file, bool debug_log, bool perf_log);
 
 template <typename S, typename... Args>
 void SpdLog(const std::string& log_tag, const LogType& log_type, bool flush_now, const S& format, Args&&... args) {

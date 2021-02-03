@@ -591,7 +591,7 @@ int main(int argc, const char* argv[]) {
                 Session::SetInitExitTimeout(init_wait_time);
             }
 
-            CreateLoggers(no_log, verbose, perflog);
+            InitLoggers(no_log, verbose, perflog);
         }
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
