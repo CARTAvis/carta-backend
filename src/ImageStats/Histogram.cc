@@ -66,7 +66,7 @@ void Histogram::setup_bins() {
 #pragma omp for
         for (int64_t i = 0; i < num_elements; i++) {
             auto val = _data[i];
-            if (std::isfinite(val) && val == std::clamp(val, _min_val, _max_val)) {
+            if (_min_val <= val && val <= _max_val) {
                 int bin_number = std::clamp((int)((val - _min_val) / _histogram.bin_width), 0, _histogram.num_bins - 1);
                 temp_bins[thread_index * _histogram.num_bins + bin_number]++;
             }
