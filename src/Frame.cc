@@ -52,7 +52,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
         if (_verbose) {
-            ERROR("Session {}: {}", session_id, _open_image_error);
+            DEBUG("Session {}: {}", session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -63,7 +63,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = err.getMesg();
         if (_verbose) {
-            ERROR("Session {}: {}", session_id, _open_image_error);
+            DEBUG("Session {}: {}", session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -74,7 +74,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
         if (_verbose) {
-            ERROR("Session {}: {}", session_id, _open_image_error);
+            DEBUG("Session {}: {}", session_id, _open_image_error);
         }
         _valid = false;
         return;
@@ -105,7 +105,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
         if (_verbose) {
-            ERROR("Session {}: {}", session_id, _open_image_error);
+            DEBUG("Session {}: {}", session_id, _open_image_error);
         }
     }
 }
