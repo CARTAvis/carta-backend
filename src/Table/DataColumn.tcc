@@ -9,7 +9,11 @@
 
 #include "Columns.h"
 
-#include <algorithm>
+#include <vector>
+
+#include <Timer/Timer.h>
+
+#include "Threading.h"
 
 namespace carta {
 
@@ -151,9 +155,12 @@ void DataColumn<T>::SortIndices(IndexList& indices, bool ascending) const {
         return;
     }
 
+    Timer t;
+    t.Start("SortIndices");
     // Perform ascending or descending sort
+
     if (ascending) {
-        std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) {
+        parallel_sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) {
             auto val_a = entries[a];
             auto val_b = entries[b];
             if (std::isnan(val_a)) {
@@ -165,7 +172,7 @@ void DataColumn<T>::SortIndices(IndexList& indices, bool ascending) const {
             }
         });
     } else {
-        std::sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) {
+        parallel_sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) {
             auto val_a = entries[a];
             auto val_b = entries[b];
             if (std::isnan(val_a)) {
@@ -177,6 +184,9 @@ void DataColumn<T>::SortIndices(IndexList& indices, bool ascending) const {
             }
         });
     }
+
+    t.End("SortIndices");
+    t.Print("SortIndices", true);
 }
 
 template <class T>

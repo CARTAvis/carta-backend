@@ -604,8 +604,7 @@ int main(int argc, const char* argv[]) {
         }
 
         tbb::task_scheduler_init task_scheduler(thread_count);
-        carta::ApplyThreadLimit();
-        carta::SetThreadLimit(omp_thread_count);
+        carta::ThreadManager::SetThreadLimit(omp_thread_count);
 
         // One FileListHandler works for all sessions.
         file_list_handler = new FileListHandler(root_folder, base_folder);

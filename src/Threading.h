@@ -11,22 +11,24 @@
 
 #define MAX_TILING_TASKS 8
 
+#if __has_include(<parallel/algorithm>)
+#include <parallel/algorithm>
+#define parallel_sort(...) __gnu_parallel::sort(__VA_ARGS__)
+#elif __has_include(<execution>)
+#include <execution>
+#define parallel_sort(...) std::sort(std::execution::par_unseq, __VA_ARGS__)
+#else
+#define parallel_sort(...) std::sort(__VA_ARGS__)
+#endif
+
 namespace carta {
-static int global_thread_count;
+class ThreadManager {
+    static int _omp_thread_count;
 
-static void ApplyThreadLimit() {
-    if (global_thread_count > 0) {
-        omp_set_num_threads(carta::global_thread_count);
-    } else {
-        omp_set_num_threads(omp_get_num_procs());
-    }
-}
-
-static void SetThreadLimit(int count) {
-    global_thread_count = count;
-    ApplyThreadLimit();
-}
-
+public:
+    static void ApplyThreadLimit();
+    static void SetThreadLimit(int count);
+};
 } // namespace carta
 
 #endif // __THREADING_H__

@@ -227,7 +227,7 @@ bool Table::PopulateRows(const pugi::xml_node& table) {
         column->Resize(_num_rows);
     }
 
-    carta::ApplyThreadLimit();
+    ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for schedule(static) default(none) shared(_num_rows, rows)
     for (auto i = 0; i < _num_rows; i++) {
         auto& row = rows[i];
@@ -306,7 +306,7 @@ bool Table::ConstructFromFITS(bool header_only) {
         fits_close_file(file_ptr, &status);
 
         // Dynamic schedule of OpenMP division, as some columns will be easier to parse than others
-        carta::ApplyThreadLimit();
+        ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for default(none) schedule(dynamic) shared(num_cols, buffer, _num_rows, total_width)
         for (auto i = 0; i < num_cols; i++) {
             _columns[i]->FillFromBuffer(buffer.get(), _num_rows, total_width);

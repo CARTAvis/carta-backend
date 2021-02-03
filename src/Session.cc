@@ -522,7 +522,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
 
         auto t_start_get_tile_data = std::chrono::high_resolution_clock::now();
 
-        carta::ApplyThreadLimit();
+        ThreadManager::ApplyThreadLimit();
 #pragma omp parallel
         {
             int num_threads = omp_get_num_threads();

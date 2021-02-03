@@ -10,6 +10,7 @@
 #include <numeric>
 
 #include "Table.h"
+#include "Threading.h"
 
 namespace carta {
 
@@ -225,7 +226,7 @@ bool TableView::SortByColumn(const Column* column, bool ascending) {
 
 bool TableView::SortByIndex() {
     if (!_ordered) {
-        sort(_subset_indices.begin(), _subset_indices.end());
+        parallel_sort(_subset_indices.begin(), _subset_indices.end());
     }
     _ordered = true;
     return true;
