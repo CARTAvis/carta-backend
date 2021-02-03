@@ -7,6 +7,8 @@
 #include "Timer.h"
 #include <iostream>
 
+#include "../Logger.h"
+
 void Timer::Start(const std::string& timer_name) {
     if (!timer_name.empty()) {
         auto t_start = std::chrono::high_resolution_clock::now();
@@ -71,7 +73,7 @@ void Timer::Print(const std::string& timer_name, bool clear_after_fetch) {
     } else {
         output = GetMeasurementString(timer_name, clear_after_fetch) + "\n";
     }
-    std::cout << output;
+    INFO(output);
 }
 void Timer::Clear(const std::string& timer_name) {
     // Clear all entries if no name passed in
