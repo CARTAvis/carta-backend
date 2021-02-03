@@ -67,6 +67,40 @@ TEST(Histogram, TestHistogramBehaviour) {
     EXPECT_TRUE(results.histogram_bins[9] == 2);
 }
 
+TEST(Histogram, TestHistogramConstructor) {
+    std::vector<float> data(1024 * 1024);
+    std::for_each(data.begin(), data.end(), [](float &v) { v = float_random(mt); });
+    carta::Histogram hist(1024, 0.0f, 1.0f, data);
+    hist.setup_bins();
+    auto results  = hist.GetHistogram();
+
+    carta::Histogram hist2(hist);
+    auto results2 = hist2.GetHistogram();
+    
+    EXPECT_TRUE(CompareResults(results, results2));
+}
+
+TEST(Histogram, TestHistogramJoin) {
+    std::vector<float> data(1024 * 1024);
+    std::for_each(data.begin(), data.end(), [](float &v) { v = float_random(mt); });
+    carta::Histogram hist(1024, 0.0f, 1.0f, data);
+    hist.setup_bins();
+    auto results  = hist.GetHistogram();
+    const auto total_counts = accumulate(results.histogram_bins.begin(), results.histogram_bins.end(), 0);
+
+    carta::Histogram hist2(1024, 0.0f, 1.0f, data);
+    hist2.setup_bins();
+    auto results2  = hist2.GetHistogram();
+
+    EXPECT_TRUE(CompareResults(results, results2)); // naive?
+    
+    hist.join(hist2);
+    results = hist.GetHistogram();
+    const auto total_counts2 = accumulate(results.histogram_bins.begin(), results.histogram_bins.end(), 0);
+
+    EXPECT_TRUE(total_counts * 2 == total_counts2);
+}
+
 TEST(Histogram, TestSingleThreading) {
     std::vector<float> data(1024 * 1024);
     for (auto& v : data) {
