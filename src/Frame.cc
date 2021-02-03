@@ -34,9 +34,8 @@ namespace fs = std::filesystem;
 
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog, int default_channel)
+Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool perflog, int default_channel)
     : _session_id(session_id),
-      _verbose(verbose),
       _perflog(perflog),
       _valid(true),
       _loader(loader),
@@ -51,9 +50,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
-        if (_verbose) {
-            DEBUG("Session {}: {}", session_id, _open_image_error);
-        }
+        DEBUG("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -62,9 +59,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
         _open_image_error = err.getMesg();
-        if (_verbose) {
-            DEBUG("Session {}: {}", session_id, _open_image_error);
-        }
+        DEBUG("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -73,9 +68,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     std::string log_message;
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
-        if (_verbose) {
-            DEBUG("Session {}: {}", session_id, _open_image_error);
-        }
+        DEBUG("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -104,9 +97,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _loader->LoadImageStats();
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
-        if (_verbose) {
-            DEBUG("Session {}: {}", session_id, _open_image_error);
-        }
+        DEBUG("Session {}: {}", session_id, _open_image_error);
     }
 }
 
