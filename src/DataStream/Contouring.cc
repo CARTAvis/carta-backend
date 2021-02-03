@@ -5,13 +5,12 @@
 */
 
 #include "Contouring.h"
+#include "../Logger.h"
 
 #include <chrono>
 #include <cmath>
 #include <limits>
 #include <vector>
-
-#include <fmt/format.h>
 
 using namespace std;
 
@@ -244,7 +243,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
             segment_count += indices.size();
         }
 
-        fmt::print("Contoured {}x{} image in {} ms at {} MPix/s. Found {} vertices in {} segments across {} levels\n", width, height,
+        PERF("Contoured {}x{} image in {} ms at {} MPix/s. Found {} vertices in {} segments across {} levels", width, height,
             dt_contours * 1e-3, rate_contours, vertex_count, segment_count, levels.size());
     }
 }

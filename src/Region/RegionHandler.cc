@@ -7,6 +7,7 @@
 // RegionDataHandler.cc: handle requirements and data streams for regions
 
 #include "RegionHandler.h"
+#include "../Logger.h"
 
 #include <chrono>
 
@@ -903,8 +904,7 @@ bool RegionHandler::GetRegionHistogramData(
         auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
         auto dt_region_histogram =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-        fmt::print(
-            "Fill region histogram in {} ms at {} MPix/s\n", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
+        PERF("Fill region histogram in {} ms at {} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
     }
 
     return true;
@@ -1146,7 +1146,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
                 auto dt_spectral_profile =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-                fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
+                PERF("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
             }
 
             _frames.at(file_id)->DecreaseZProfileCount();
@@ -1259,7 +1259,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
+        PERF("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
     }
 
     _frames.at(file_id)->DecreaseZProfileCount();
@@ -1387,7 +1387,7 @@ bool RegionHandler::GetRegionStatsData(
         if (_perflog) {
             auto t_end_region_stats = std::chrono::high_resolution_clock::now();
             auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
-            fmt::print("Fill region stats in {} ms\n", dt_region_stats * 1e-3);
+            PERF("Fill region stats in {} ms", dt_region_stats * 1e-3);
         }
         return true;
     }

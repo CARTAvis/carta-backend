@@ -24,7 +24,7 @@ namespace fs = std::filesystem;
 
 enum class LogType { DEBUG, INFO, WARN, ERROR };
 
-void CreateLoggers(bool no_log_file, bool debug_log);
+void CreateLoggers(bool no_log_file, bool debug_log, bool perf_log);
 
 template <typename S, typename... Args>
 void SpdLog(const std::string& log_tag, const LogType& log_type, bool flush_now, const S& format, Args&&... args) {
@@ -71,6 +71,11 @@ void WARN(const S& format, Args&&... args) {
 template <typename S, typename... Args>
 void ERROR(const S& format, Args&&... args) {
     SpdLog(STDOUT_TAG, LogType::ERROR, true, format, args...);
+}
+
+template <typename S, typename... Args>
+void PERF(const S& format, Args&&... args) {
+    SpdLog(PERF_TAG, LogType::DEBUG, true, format, args...);
 }
 
 #endif // CARTA_BACKEND__LOGGER_H_
