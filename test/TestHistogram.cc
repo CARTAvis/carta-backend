@@ -6,6 +6,7 @@
 
 #include <random>
 #include <vector>
+#include <cmath> // for NAN
 
 #include <fmt/format.h>
 #include <gtest/gtest.h>
@@ -65,6 +66,16 @@ TEST(Histogram, TestHistogramBehaviour) {
     EXPECT_TRUE(results.histogram_bins[4] == 4);
     EXPECT_TRUE(results.histogram_bins[5] == 3);
     EXPECT_TRUE(results.histogram_bins[9] == 2);
+
+    data.clear();
+    data.push_back(NAN);
+    data.push_back(NAN);
+    data.push_back(NAN);
+    carta::Histogram hist2(10, 0.0f, 10.0f, data);
+    hist2.setup_bins();
+    // expect 0 counts
+    auto bins = hist2.GetHistogramBins();
+    EXPECT_TRUE(accumulate(bins.begin(), bins.end(), 0) == 0);
 }
 
 TEST(Histogram, TestHistogramConstructor) {
