@@ -1836,10 +1836,8 @@ void Session::StopAnimation(int file_id, const CARTA::AnimationFrame& frame) {
     }
 
     if (_animation_object->_file_id != file_id) {
-        std::fprintf(stderr,
-            "%p Session::StopAnimation called with file id %d."
-            "Expected file id %d",
-            this, file_id, _animation_object->_file_id);
+        ERROR(
+            "{} Session::StopAnimation called with file id {}. Expected file id {}", fmt::ptr(this), file_id, _animation_object->_file_id);
         return;
     }
 
