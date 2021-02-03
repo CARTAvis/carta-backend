@@ -45,7 +45,7 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
-    FileListHandler* file_list_handler, bool verbose, bool perflog, int grpc_port)
+    FileListHandler* file_list_handler, bool perflog, int grpc_port)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -53,7 +53,6 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
       _root_folder(root),
       _base_folder(base),
       _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
-      _verbose_logging(verbose),
       _performance_logging(perflog),
       _grpc_port(grpc_port),
       _loader(nullptr),
@@ -356,7 +355,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
     if (info_loaded) {
         // create Frame for image; Frame owns loader
-        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _verbose_logging, _performance_logging));
+        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _performance_logging));
         _loader.release();
 
         if (frame->IsValid()) {
@@ -427,7 +426,7 @@ bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::Mo
 
     if (info_loaded) {
         // Create Frame for image
-        auto frame = std::make_unique<Frame>(_id, _loader.get(), "", _verbose_logging, _performance_logging);
+        auto frame = std::make_unique<Frame>(_id, _loader.get(), "", _performance_logging);
         _loader.release();
 
         if (frame->IsValid()) {
@@ -1596,7 +1595,7 @@ void Session::SendLogEvent(const std::string& message, std::vector<std::string> 
     error_data.set_severity(severity);
     *error_data.mutable_tags() = {tags.begin(), tags.end()};
     SendEvent(CARTA::EventType::ERROR_DATA, 0, error_data);
-    if ((severity > CARTA::ErrorSeverity::DEBUG) || _verbose_logging) {
+    if ((severity > CARTA::ErrorSeverity::DEBUG)) {
         DEBUG("Session {}: {}", _id, message);
     }
 }

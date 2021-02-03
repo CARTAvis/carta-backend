@@ -122,8 +122,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
     auto* loop = uWS::Loop::get();
 
     // create a Session
-    sessions[session_id] =
-        new Session(ws, loop, session_id, address, root_folder, base_folder, file_list_handler, verbose, perflog, grpc_port);
+    sessions[session_id] = new Session(ws, loop, session_id, address, root_folder, base_folder, file_list_handler, perflog, grpc_port);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
@@ -501,7 +500,7 @@ int StartGrpcService(int grpc_port) {
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selected_port);
 
     // Register and start carta grpc server
-    carta_grpc_service = std::unique_ptr<CartaGrpcService>(new CartaGrpcService(verbose));
+    carta_grpc_service = std::unique_ptr<CartaGrpcService>(new CartaGrpcService());
     builder.RegisterService(carta_grpc_service.get());
     // By default ports can be reused; we don't want this
     builder.AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
