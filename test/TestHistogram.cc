@@ -41,7 +41,7 @@ TEST(Histogram, TestSingleThreading) {
         v = float_random(mt);
     }
 
-    carta::SetThreadLimit(1);
+    carta::ThreadManager::SetThreadLimit(1);
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
     hist_st.setup_bins();
     auto results_st = hist_st.GetHistogram();
@@ -60,13 +60,13 @@ TEST(Histogram, TestMultithreading) {
         v = float_random(mt);
     }
 
-    carta::SetThreadLimit(1);
+    carta::ThreadManager::SetThreadLimit(1);
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
     hist_st.setup_bins();
     auto results_st = hist_st.GetHistogram();
 
     for (auto i = 2; i < 24; i++) {
-        carta::SetThreadLimit(i);
+        carta::ThreadManager::SetThreadLimit(i);
         carta::Histogram hist_mt(1024, 0.0f, 1.0f, data);
         hist_mt.setup_bins();
         auto results_mt = hist_mt.GetHistogram();
@@ -81,7 +81,7 @@ TEST(Histogram, TestMultithreadingPerformance) {
     }
 
     Timer t;
-    carta::SetThreadLimit(1);
+    carta::ThreadManager::SetThreadLimit(1);
 
     t.Start("single_threaded");
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
@@ -89,7 +89,7 @@ TEST(Histogram, TestMultithreadingPerformance) {
     auto results_st = hist_st.GetHistogram();
     t.End("single_threaded");
 
-    carta::SetThreadLimit(4);
+    carta::ThreadManager::SetThreadLimit(4);
     t.Start("multi_threaded");
     carta::Histogram hist_mt(1024, 0.0f, 1.0f, data);
     hist_mt.setup_bins();
