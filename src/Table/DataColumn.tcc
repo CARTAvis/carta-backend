@@ -11,8 +11,6 @@
 
 #include <vector>
 
-#include <Timer/Timer.h>
-
 #include "Threading.h"
 
 namespace carta {
@@ -155,10 +153,7 @@ void DataColumn<T>::SortIndices(IndexList& indices, bool ascending) const {
         return;
     }
 
-    Timer t;
-    t.Start("SortIndices");
     // Perform ascending or descending sort
-
     if (ascending) {
         parallel_sort(indices.begin(), indices.end(), [&](int64_t a, int64_t b) {
             auto val_a = entries[a];
@@ -184,9 +179,6 @@ void DataColumn<T>::SortIndices(IndexList& indices, bool ascending) const {
             }
         });
     }
-
-    t.End("SortIndices");
-    t.Print("SortIndices", true);
 }
 
 template <class T>
