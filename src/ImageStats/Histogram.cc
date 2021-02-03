@@ -48,7 +48,7 @@ void Histogram::join(Histogram& h) { // NOLINT
     ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for
     for (int i = 0; i < num_bins; i++) {
-        _histogram.histogram_bins[i] += h.GetHistogramBins()[i];
+        _histogram.histogram_bins[i] += other_bins[i];
     }
     return true;
 }
