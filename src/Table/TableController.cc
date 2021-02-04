@@ -6,7 +6,6 @@
 
 #include "TableController.h"
 
-#include <fmt/format.h>
 #include <sys/stat.h>
 
 #include "../Logger.h"

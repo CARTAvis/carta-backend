@@ -11,7 +11,6 @@
 
 #include <App.h>
 #include <curl/curl.h>
-#include <fmt/format.h>
 #include <signal.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>

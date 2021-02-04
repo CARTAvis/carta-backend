@@ -10,8 +10,6 @@
 #include <fstream>
 #include <vector>
 
-#include <fmt/format.h>
-
 #include "../Logger.h"
 #include "MimeTypes.h"
 

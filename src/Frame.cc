@@ -6,7 +6,6 @@
 
 #include "Frame.h"
 
-#include <fmt/format.h>
 #include <algorithm>
 #include <chrono>
 #include <fstream>

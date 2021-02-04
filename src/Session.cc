@@ -16,7 +16,6 @@
 #include <vector>
 
 #include <casacore/casa/OS/File.h>
-#include <fmt/format.h>
 #include <tbb/parallel_for.h>
 #include <tbb/task_group.h>
 #include <xmmintrin.h>

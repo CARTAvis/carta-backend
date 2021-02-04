@@ -7,8 +7,6 @@
 #include "Table.h"
 
 #include <fitsio.h>
-#include <fmt/format.h>
-
 #include <iostream>
 
 #include "../Logger.h"
