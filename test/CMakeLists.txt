@@ -64,6 +64,7 @@ if (testHistogram)
     add_executable(testHistogram
             TestHistogram.cc
             ../src/Timer/Timer.cc
+            ../src/Threading.cc
             ../src/ImageStats/Histogram.cc)
     target_link_libraries(testHistogram casa_casa gtest gtest_main tbb Threads::Threads fmt)
 
@@ -77,6 +78,7 @@ if (testTable)
     add_executable(test_votable
             TestVOTable.cc
             ../src/Util.cc
+            ../src/Threading.cc
             ../src/Timer/Timer.cc
             ../src/Table/Columns.cc
             ../src/Table/Table.cc
@@ -87,6 +89,7 @@ if (testTable)
     add_executable(test_fits
             TestFITS.cc
             ../src/Util.cc
+            ../src/Threading.cc
             ../src/Timer/Timer.cc
             ../src/Table/Columns.cc
             ../src/Table/Table.cc

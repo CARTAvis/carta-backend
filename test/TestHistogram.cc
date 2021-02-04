@@ -9,8 +9,10 @@
 
 #include <fmt/format.h>
 #include <gtest/gtest.h>
-#include <ImageStats/Histogram.h>
-#include <Timer/Timer.h>
+
+#include "ImageStats/Histogram.h"
+#include "Timer/Timer.h"
+#include "Threading.h"
 
 using namespace std;
 random_device rd;
@@ -39,7 +41,7 @@ TEST(Histogram, TestSingleThreading) {
         v = float_random(mt);
     }
 
-    omp_set_num_threads(1);
+    carta::ThreadManager::SetThreadLimit(1);
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
     hist_st.setup_bins();
     auto results_st = hist_st.GetHistogram();
@@ -58,13 +60,13 @@ TEST(Histogram, TestMultithreading) {
         v = float_random(mt);
     }
 
-    omp_set_num_threads(1);
+    carta::ThreadManager::SetThreadLimit(1);
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
     hist_st.setup_bins();
     auto results_st = hist_st.GetHistogram();
 
     for (auto i = 2; i < 24; i++) {
-        omp_set_num_threads(i);
+        carta::ThreadManager::SetThreadLimit(i);
         carta::Histogram hist_mt(1024, 0.0f, 1.0f, data);
         hist_mt.setup_bins();
         auto results_mt = hist_mt.GetHistogram();
@@ -79,7 +81,7 @@ TEST(Histogram, TestMultithreadingPerformance) {
     }
 
     Timer t;
-    omp_set_num_threads(1);
+    carta::ThreadManager::SetThreadLimit(1);
 
     t.Start("single_threaded");
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
@@ -87,7 +89,7 @@ TEST(Histogram, TestMultithreadingPerformance) {
     auto results_st = hist_st.GetHistogram();
     t.End("single_threaded");
 
-    omp_set_num_threads(4);
+    carta::ThreadManager::SetThreadLimit(4);
     t.Start("multi_threaded");
     carta::Histogram hist_mt(1024, 0.0f, 1.0f, data);
     hist_mt.setup_bins();
