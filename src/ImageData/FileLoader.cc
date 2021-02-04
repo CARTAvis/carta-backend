@@ -141,9 +141,26 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
 
     // 3D image
     if (_num_dims == 3) {
-        spectral_axis = (spectral_axis < 0 ? 2 : spectral_axis);
-        _num_channels = shape(spectral_axis);
-        _num_stokes = 1;
+        if ((spectral_axis >= 0) && (stokes_axis >= 0)) {
+            // both are known
+            _num_channels = shape(spectral_axis);
+            _num_stokes = shape(stokes_axis);
+        } else if ((spectral_axis >= 0) && (stokes_axis < 0)) {
+            // spectral is known
+            _num_channels = shape(spectral_axis);
+            _num_stokes = 1;
+        } else if ((spectral_axis < 0) && (stokes_axis >= 0)) {
+            // stokes is known
+            _num_stokes = shape(stokes_axis);
+            _num_channels = 1;
+        } else {
+            // neither is known, assume third is spectral
+            spectral_axis = 2;
+            _num_channels = shape(spectral_axis);
+            _num_stokes = 1;
+        }
+
+        // save axes
         _spectral_axis = spectral_axis;
         _stokes_axis = stokes_axis;
         return true;
