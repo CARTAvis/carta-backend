@@ -1089,7 +1089,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
             }
         } else if (mip >= 2 && _loader->HasMip(2)) { // Use a mipmap dataset to return downsampled data
             while (!_loader->HasMip(mip)) {
-                mip *= 2;
+                mip /= 2;
             }
 
             CARTA::ImageBounds bounds;
@@ -1098,10 +1098,10 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
                 bounds.set_x_min(start);
                 bounds.set_x_max(end);
                 bounds.set_y_min(y);
-                bounds.set_y_max(y + 1);
+                bounds.set_y_max(y + mip);
             } else if (config.coordinate() == "y") {
                 bounds.set_x_min(x);
-                bounds.set_x_max(x + 1);
+                bounds.set_x_max(x + mip);
                 bounds.set_y_min(start);
                 bounds.set_y_max(end);
             }
