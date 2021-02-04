@@ -1581,7 +1581,6 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     if (save_file_msg.channels().size() > 0) {
         channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max - 1);
         channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), channels_start), channels_max - 1);
-        channels_length = channels_end - channels_start + 1;
     }
     ssize_t stokes_max = _stokes_axis > -1 ? image_shape[_stokes_axis] : 1;
     ssize_t stokes_start = 0;
@@ -1592,10 +1591,6 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max - 1);
         stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
         stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), stokes_start), stokes_max - 1);
-        stokes_length = 0;
-        for (int s = stokes_start; s <= stokes_end; s += stokes_stride) {
-            stokes_length++;
-        }
     }
 
     casacore::IPosition start;
@@ -1617,8 +1612,8 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 stride = casacore::IPosition(3, 1, 1, channels_stride);
                 if (region_shape.size() < image_shape.size()) {
                     auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
-                        casacore::LCBox(casacore::IPosition(1, channels_start), casacore::IPosition(1, channels_end),
-                            casacore::IPosition(1, channels_length)));
+                        casacore::LCBox(
+                            casacore::IPosition(1, 0), casacore::IPosition(1, image_shape[2]), casacore::IPosition(1, image_shape[2])));
                     latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
                 }
             } else {
@@ -1627,8 +1622,8 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 stride = casacore::IPosition(3, 1, 1, stokes_stride);
                 if (region_shape.size() < image_shape.size()) {
                     auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(1, 2),
-                        casacore::LCBox(casacore::IPosition(1, stokes_start), casacore::IPosition(1, stokes_end),
-                            casacore::IPosition(1, stokes_length)));
+                        casacore::LCBox(
+                            casacore::IPosition(1, 0), casacore::IPosition(1, image_shape[3]), casacore::IPosition(1, image_shape[3])));
                     latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
                 }
             }
@@ -1639,8 +1634,8 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 stride = casacore::IPosition(4, 1, 1, channels_stride, stokes_stride);
                 if (region_shape.size() < image_shape.size()) {
                     auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
-                        casacore::LCBox(casacore::IPosition(2, channels_start, stokes_start),
-                            casacore::IPosition(2, channels_end, stokes_end), casacore::IPosition(2, channels_length, stokes_length)));
+                        casacore::LCBox(casacore::IPosition(2, 0, 0), casacore::IPosition(2, image_shape[2], image_shape[3]),
+                            casacore::IPosition(2, image_shape[2], image_shape[3])));
                     latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
                 }
             } else {
@@ -1649,8 +1644,8 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 stride = casacore::IPosition(4, 1, 1, stokes_stride, channels_stride);
                 if (region_shape.size() < image_shape.size()) {
                     auto region_ext = casacore::LCExtension(*image_region, casacore::IPosition(2, 2, 3),
-                        casacore::LCBox(casacore::IPosition(2, stokes_start, channels_start),
-                            casacore::IPosition(2, stokes_end, channels_end), casacore::IPosition(2, stokes_length, channels_length)));
+                        casacore::LCBox(casacore::IPosition(2, 0, 0), casacore::IPosition(2, image_shape[3], image_shape[2]),
+                            casacore::IPosition(2, image_shape[3], image_shape[2])));
                     latt_region_holder = LattRegionHolder(*(region_ext.cloneRegion()));
                 }
             }
