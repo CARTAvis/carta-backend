@@ -21,6 +21,7 @@ pipeline {
                         sh "export PATH=/usr/local/bin:$PATH"
                         sh "git submodule update --init --recursive"
                         dir ('build') {
+                           sh "rm -rf *"
                            sh "cp ../../cmake-command.sh ."
                            sh "./cmake-command.sh"
                            sh "make"
@@ -54,6 +55,7 @@ pipeline {
                         sh "export PATH=/usr/local/bin:$PATH"
                         sh "git submodule update --init --recursive"
                         dir ('build') {
+                           sh "rm -rf *"
                            sh "cp ../../cmake-command.sh ."
                            sh "./cmake-command.sh"
                            sh "make"
@@ -87,6 +89,7 @@ pipeline {
                         sh "export PATH=/usr/local/bin:$PATH"
                         sh "git submodule update --init --recursive"
                         dir ('build') {
+                           sh "rm -rf *"
                            sh "cp ../../cmake-command.sh ."
                            sh "./cmake-command.sh"
                            sh "make"
