@@ -9,8 +9,6 @@
 #include <tuple>
 #include <vector>
 
-#include <omp.h>
-
 #include <App.h>
 #include <curl/curl.h>
 #include <fmt/format.h>
@@ -29,13 +27,11 @@
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
+#include "Threading.h"
 #include "Util.h"
 
 using namespace std;
 
-namespace CARTA {
-int global_thread_count = 0;
-}
 // file list handler for the file browser
 static FileListHandler* file_list_handler;
 SimpleFrontendServer* http_server;
@@ -557,13 +553,12 @@ int main(int argc, const char* argv[]) {
             inp.create("port", to_string(port), "set port on which to host frontend files and accept WebSocket connections", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
             inp.create("threads", to_string(thread_count), "set thread count for handling incoming messages", "Int");
-            inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
+            inp.create("omp_threads", to_string(omp_thread_count), "set OpenMP thread pool count. To handle automatically, use -1", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
             inp.create("frontend_folder", frontend_folder, "set folder to serve frontend files from", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
-
-            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
+            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clients connect", "Int");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
@@ -608,8 +603,7 @@ int main(int argc, const char* argv[]) {
         }
 
         tbb::task_scheduler_init task_scheduler(thread_count);
-        omp_set_num_threads(omp_thread_count);
-        CARTA::global_thread_count = omp_thread_count;
+        carta::ThreadManager::SetThreadLimit(omp_thread_count);
 
         // One FileListHandler works for all sessions.
         file_list_handler = new FileListHandler(root_folder, base_folder);
@@ -683,9 +677,12 @@ int main(int argc, const char* argv[]) {
         }
 
         if (port_ok) {
-            fmt::print("Listening on port {} with root folder {}, base folder {}, and {} OMP threads\n", port, root_folder, base_folder,
-                omp_thread_count);
-
+            fmt::print("Listening on port {} with root folder {}, base folder {}", port, root_folder, base_folder);
+            if (omp_thread_count > 0) {
+                fmt::print(", and {} OpenMP worker threads\n", omp_thread_count);
+            } else {
+                fmt::print(". The number of OpenMP worker threads will be handled automatically.\n");
+            }
             if (http_server && http_server->CanServeFrontend()) {
                 string default_host_string = host;
                 if (host.empty() || host == "0.0.0.0") {
