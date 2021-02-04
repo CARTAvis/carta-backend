@@ -558,8 +558,7 @@ int main(int argc, const char* argv[]) {
             inp.create("root", root_folder, "set top-level folder for data files", "String");
             inp.create("frontend_folder", frontend_folder, "set folder to serve frontend files from", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
-
-            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
+            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clients connect", "Int");
             inp.readArguments(argc, argv);
 
             verbose = inp.getBool("verbose");
