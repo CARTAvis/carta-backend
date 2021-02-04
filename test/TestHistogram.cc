@@ -4,9 +4,9 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <cmath> // for NAN
 #include <random>
 #include <vector>
-#include <cmath> // for NAN
 
 #include <fmt/format.h>
 #include <gtest/gtest.h>
@@ -39,23 +39,23 @@ bool CompareResults(const carta::HistogramResults& a, const carta::HistogramResu
 TEST(Histogram, TestHistogramBehaviour) {
     std::vector<float> data;
     // test histogram filling
-    data.push_back(0.0); // should go to bin at pos. 0 - first bin is closed from below
-    data.push_back(0.5); // should go to bin at pos. 0
-    data.push_back(1.0); // should go to bin at pos. 1 - middle bins are semi-open, just closed from below
-    data.push_back(4.0); // should go to bin at pos. 4
-    data.push_back(4.5); // should go to bin at pos. 4
-    data.push_back(4.7); // should go to bin at pos. 4
-    data.push_back(4.9); // should go to bin at pos. 4
-    data.push_back(5.0); // should go to bin at pos. 5
-    data.push_back(5.0); // should go to bin at pos. 5
-    data.push_back(5.0); // should go to bin at pos. 5
-    data.push_back(9.1); // should go to bin at pos. 9
+    data.push_back(0.0);  // should go to bin at pos. 0 - first bin is closed from below
+    data.push_back(0.5);  // should go to bin at pos. 0
+    data.push_back(1.0);  // should go to bin at pos. 1 - middle bins are semi-open, just closed from below
+    data.push_back(4.0);  // should go to bin at pos. 4
+    data.push_back(4.5);  // should go to bin at pos. 4
+    data.push_back(4.7);  // should go to bin at pos. 4
+    data.push_back(4.9);  // should go to bin at pos. 4
+    data.push_back(5.0);  // should go to bin at pos. 5
+    data.push_back(5.0);  // should go to bin at pos. 5
+    data.push_back(5.0);  // should go to bin at pos. 5
+    data.push_back(9.1);  // should go to bin at pos. 9
     data.push_back(10.0); // should go to bin at pos. 9 - last bin is closed from above
     // values that will fall in the overflow and underflow range
-    data.push_back(-1.0); // should not appear
+    data.push_back(-1.0);        // should not appear
     data.push_back(00.0 - 1e-9); // should not appear
     data.push_back(10.0 + 1e+9); // should not appear
-    data.push_back(11.0); // should not appear
+    data.push_back(11.0);        // should not appear
     carta::Histogram hist(10, 0.0f, 10.0f, data);
     hist.setup_bins();
     auto results = hist.GetHistogram();
@@ -80,36 +80,39 @@ TEST(Histogram, TestHistogramBehaviour) {
 
 TEST(Histogram, TestHistogramConstructor) {
     std::vector<float> data(1024 * 1024);
-    std::for_each(data.begin(), data.end(), [](float &v) { v = float_random(mt); });
+    std::for_each(data.begin(), data.end(), [](float& v) { v = float_random(mt); });
     carta::Histogram hist(1024, 0.0f, 1.0f, data);
     hist.setup_bins();
-    auto results  = hist.GetHistogram();
+    auto results = hist.GetHistogram();
 
     carta::Histogram hist2(hist);
     auto results2 = hist2.GetHistogram();
-    
+
     EXPECT_TRUE(CompareResults(results, results2));
 }
 
 TEST(Histogram, TestHistogramJoin) {
     std::vector<float> data(1024 * 1024);
-    std::for_each(data.begin(), data.end(), [](float &v) { v = float_random(mt); });
+    std::for_each(data.begin(), data.end(), [](float& v) { v = float_random(mt); });
     carta::Histogram hist(1024, 0.0f, 1.0f, data);
     hist.setup_bins();
-    auto results  = hist.GetHistogram();
+    auto results = hist.GetHistogram();
     const auto total_counts = accumulate(results.histogram_bins.begin(), results.histogram_bins.end(), 0);
 
     carta::Histogram hist2(1024, 0.0f, 1.0f, data);
     hist2.setup_bins();
-    auto results2  = hist2.GetHistogram();
+    auto results2 = hist2.GetHistogram();
 
     EXPECT_TRUE(CompareResults(results, results2)); // naive?
-    
+
     hist.join(hist2);
     results = hist.GetHistogram();
     const auto total_counts2 = accumulate(results.histogram_bins.begin(), results.histogram_bins.end(), 0);
 
     EXPECT_TRUE(total_counts * 2 == total_counts2);
+
+    carta::Histogram hist3(512, 0.0f, 1.0f, data);
+    EXPECT_FALSE(hist.join(hist3));
 }
 
 TEST(Histogram, TestSingleThreading) {

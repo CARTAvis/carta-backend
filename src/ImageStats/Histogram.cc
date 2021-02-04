@@ -6,6 +6,8 @@
 
 #include "Histogram.h"
 
+#include <fmt/format.h>
+#include <omp.h>
 #include <algorithm>
 #include <cmath>
 
@@ -43,8 +45,13 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
     _histogram.histogram_bins = tmp;
 }
 
-void Histogram::join(Histogram& h) { // NOLINT
-    auto num_bins = h._hist.size();
+bool Histogram::join(Histogram& h) { // NOLINT
+    if (!ConsistencyCheck(*this, h)) {
+        fmt::print("(debug) Consistency check failed to join histograms - won't join them\n");
+        return false;
+    }
+    const int num_bins = h.GetHistogramBins().size();
+    const auto& other_bins = h.GetHistogramBins();
     ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for
     for (int i = 0; i < num_bins; i++) {
@@ -78,4 +85,20 @@ void Histogram::setup_bins() {
             }
         }
     }
+}
+
+bool Histogram::ConsistencyCheck(const Histogram& a, const Histogram& b) {
+    if (a.GetNbins() != b.GetNbins()) {
+        std::printf("(debug) Histograms don't have the same number of bins: %d and %d\n", a.GetNbins(), b.GetNbins());
+        return false;
+    }
+    if (fabs(a.GetMinVal() - b.GetMinVal()) > std::numeric_limits<float>::epsilon()) {
+        std::printf("(debug) Lower histograms limits are not equal: %f and %f\n", a.GetMinVal(), b.GetMinVal());
+        return false;
+    }
+    if (fabs(a.GetMaxVal() - b.GetMaxVal()) > std::numeric_limits<float>::epsilon()) {
+        std::printf("(debug) Upper histograms limits are not equal: %f and %f\n", a.GetMaxVal(), b.GetMaxVal());
+        return false;
+    }
+    return true;
 }

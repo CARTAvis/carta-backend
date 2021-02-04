@@ -27,6 +27,8 @@ class Histogram {
     HistogramResults _histogram; // histogram stats
     const std::vector<float>& _data;
 
+    bool ConsistencyCheck(const Histogram&, const Histogram&);
+
 public:
     Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data);
     Histogram(Histogram& h, tbb::split);
