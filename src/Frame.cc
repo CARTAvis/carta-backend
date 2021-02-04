@@ -6,11 +6,11 @@
 
 #include "Frame.h"
 
+#include <fmt/format.h>
 #include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <thread>
-#include "fmt/format.h"
 
 #include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/WCRegion.h>

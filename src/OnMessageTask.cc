@@ -9,9 +9,6 @@
 #include <algorithm>
 #include <cstring>
 
-#include <fmt/format.h>
-#include <fmt/ostream.h>
-
 #include "EventHeader.h"
 #include "Logger.h"
 #include "Util.h"

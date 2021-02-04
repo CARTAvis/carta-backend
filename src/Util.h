@@ -15,7 +15,6 @@
 #include <unordered_map>
 
 #include <fmt/format.h>
-#include <fmt/ostream.h>
 
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/File.h>
