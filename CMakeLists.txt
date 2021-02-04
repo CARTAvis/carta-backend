@@ -18,10 +18,6 @@ else ()
     message(WARNING "OpenMP not found!")
 endif ()
 
-# Enable parallel GCC algorithms (needed until there is relable support for C++17 from compilers)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_PARALLEL")
-
-
 # Use the -march=native flags when building on the same architecture as deploying to get a slight performance
 # increase when running CPU intensive tasks such as compression and down-sampling of data. If targeting AVX-capable
 # processes only, set EnableAvx to ON
@@ -168,6 +164,7 @@ set(SOURCE_FILES
         src/OnMessageTask.cc
         src/FileSettings.cc
         src/Util.cc
+        src/Threading.cc
         src/SimpleFrontendServer/SimpleFrontendServer.cc)
 
 add_definitions(-DHAVE_HDF5)
