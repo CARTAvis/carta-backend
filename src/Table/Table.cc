@@ -9,7 +9,7 @@
 #include <fitsio.h>
 #include <iostream>
 
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "DataColumn.tcc"
 #include "Threading.h"

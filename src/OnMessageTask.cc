@@ -10,7 +10,7 @@
 #include <cstring>
 
 #include "EventHeader.h"
-#include "Logger.h"
+#include "Logger/Logger.h"
 #include "Util.h"
 
 tbb::task* MultiMessageTask::execute() {

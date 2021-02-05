@@ -6,7 +6,7 @@
 
 #include "Hdf5Loader.h"
 
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 
 namespace carta {
 

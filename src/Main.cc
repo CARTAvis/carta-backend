@@ -23,7 +23,7 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "GrpcServer/CartaGrpcService.h"
-#include "Logger.h"
+#include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"

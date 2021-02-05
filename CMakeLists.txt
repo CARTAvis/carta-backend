@@ -132,7 +132,7 @@ set(SOURCE_FILES
         src/Main.cc
         src/Session.cc
         src/Frame.cc
-        src/Logger.cc
+        src/Logger/Logger.cc
         src/DataStream/Compression.cc
         src/DataStream/Contouring.cc
         src/DataStream/Smoothing.cc

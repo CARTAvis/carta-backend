@@ -5,9 +5,8 @@
 */
 
 #include "Timer.h"
-#include <iostream>
 
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 
 void Timer::Start(const std::string& timer_name) {
     if (!timer_name.empty()) {

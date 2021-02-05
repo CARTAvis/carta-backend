@@ -23,7 +23,7 @@
 #include <casacore/measures/Measures/MCDirection.h>
 
 #include "../Constants.h"
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 
 using namespace carta;
 

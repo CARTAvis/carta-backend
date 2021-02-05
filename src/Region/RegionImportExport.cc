@@ -11,7 +11,7 @@
 #include <casacore/measures/Measures/MCDirection.h>
 #include <imageanalysis/Annotations/AnnotationBase.h>
 
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 #include "../Util.h"
 
 using namespace carta;

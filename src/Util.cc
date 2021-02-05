@@ -5,7 +5,7 @@
 */
 
 #include "Util.h"
-#include "Logger.h"
+#include "Logger/Logger.h"
 
 using namespace std;
 

@@ -20,7 +20,7 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Smoothing.h"
 #include "ImageStats/StatsCalculator.h"
-#include "Logger.h"
+#include "Logger/Logger.h"
 #include "Util.h"
 
 #ifdef _BOOST_FILESYSTEM_

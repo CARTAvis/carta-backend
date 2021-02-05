@@ -16,7 +16,7 @@
 
 #include "../Constants.h"
 #include "../ImageStats/StatsCalculator.h"
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"

@@ -9,7 +9,7 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "CasaLoader.h"
 #include "CompListLoader.h"

@@ -8,7 +8,7 @@
 
 #include <sys/stat.h>
 
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 #include "../Util.h"
 
 #if defined(__APPLE__)

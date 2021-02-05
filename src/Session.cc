@@ -32,7 +32,7 @@
 #include "FileList/FileExtInfoLoader.h"
 #include "FileList/FileInfoLoader.h"
 #include "FileList/FitsHduList.h"
-#include "Logger.h"
+#include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
 #include "Threading.h"

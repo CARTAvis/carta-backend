@@ -11,8 +11,7 @@
 #include <limits>
 #include <vector>
 
-#include "../Logger.h"
-
+#include "../Logger/Logger.h"
 #include "Threading.h"
 
 using namespace std;

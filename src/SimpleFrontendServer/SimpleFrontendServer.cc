@@ -10,7 +10,7 @@
 #include <fstream>
 #include <vector>
 
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 #include "MimeTypes.h"
 
 using namespace std;

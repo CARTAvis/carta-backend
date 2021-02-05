@@ -12,7 +12,7 @@
 
 #include <carta-protobuf/defs.pb.h>
 
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 
 inline void FitsInfoErrHandler(const char* err_message, casacore::FITSError::ErrorLevel severity) {
     if (severity > casacore::FITSError::WARN) {

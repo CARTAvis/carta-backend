@@ -17,7 +17,7 @@
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
-#include "../Logger.h"
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "Hdf5Attributes.h"
 
