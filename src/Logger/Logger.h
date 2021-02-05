@@ -4,8 +4,8 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#ifndef CARTA_BACKEND__LOGGER_H_
-#define CARTA_BACKEND__LOGGER_H_
+#ifndef CARTA_BACKEND_LOGGER_LOGGER_H_
+#define CARTA_BACKEND_LOGGER_LOGGER_H_
 
 #include <fmt/format.h>
 
@@ -23,55 +23,23 @@ enum class LogType { DEBUG, INFO, WARN, ERROR };
 void InitLoggers(bool no_log_file, bool debug_log, bool perf_log);
 
 template <typename S, typename... Args>
-void SpdLog(const std::string& log_tag, const LogType& log_type, bool flush_now, const S& format, Args&&... args) {
-    std::shared_ptr<spdlog::logger> logger = spdlog::get(log_tag);
-    if (logger) {
-        switch (log_type) {
-            case LogType::DEBUG:
-                logger->debug(fmt::format(format, args...));
-                break;
-            case LogType::INFO:
-                logger->info(fmt::format(format, args...));
-                break;
-            case LogType::WARN:
-                logger->warn(fmt::format(format, args...));
-                break;
-            default: {
-                logger->error(fmt::format(format, args...));
-                break;
-            }
-        }
-        if (flush_now) {
-            logger->flush();
-        }
-    } else {
-        spdlog::critical("Fail to get the logger: {}!", STDOUT_TAG);
-    }
-}
+void SpdLog(const std::string& log_tag, const LogType& log_type, bool flush_now, const S& format, Args&&... args);
 
 template <typename S, typename... Args>
-void DEBUG(const S& format, Args&&... args) {
-    SpdLog(STDOUT_TAG, LogType::DEBUG, true, format, args...);
-}
+void DEBUG(const S& format, Args&&... args);
 
 template <typename S, typename... Args>
-void INFO(const S& format, Args&&... args) {
-    SpdLog(STDOUT_TAG, LogType::INFO, true, format, args...);
-}
+void INFO(const S& format, Args&&... args);
 
 template <typename S, typename... Args>
-void WARN(const S& format, Args&&... args) {
-    SpdLog(STDOUT_TAG, LogType::WARN, true, format, args...);
-}
+void WARN(const S& format, Args&&... args);
 
 template <typename S, typename... Args>
-void ERROR(const S& format, Args&&... args) {
-    SpdLog(STDOUT_TAG, LogType::ERROR, true, format, args...);
-}
+void ERROR(const S& format, Args&&... args);
 
 template <typename S, typename... Args>
-void PERF(const S& format, Args&&... args) {
-    SpdLog(PERF_TAG, LogType::DEBUG, true, format, args...);
-}
+void PERF(const S& format, Args&&... args);
 
-#endif // CARTA_BACKEND__LOGGER_H_
+#include "Logger.tcc"
+
+#endif // CARTA_BACKEND_LOGGER_LOGGER_H_
