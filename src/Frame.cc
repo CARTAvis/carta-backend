@@ -1477,57 +1477,26 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         }
     }
 
-    std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
-    if (output_file_type == CARTA::FileType::CASA) {
-        // Remove the old image file if it has a same file name
-        if (fs::exists(output_filename)) {
-            fs::remove_all(output_filename);
+    try {
+        std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
+        switch (output_file_type) {
+            case CARTA::FileType::CASA:
+                success = ExportCASAImage(*image, output_filename, message);
+                break;
+            case CARTA::FileType::FITS:
+                success = ExportFITSImage(*image, output_filename, message);
+                break;
+            default:
+                message = "No saving file action!";
+                break;
         }
-
-        // Get a copy of the original pixel data
-        casacore::IPosition start(image->shape().size(), 0);
-        casacore::IPosition count(image->shape());
-        casacore::Slicer slice(start, count);
-        casacore::Array<casacore::Float> temp_array;
-        image->doGetSlice(temp_array, slice);
-
-        // Construct a new CASA image
-        try {
-            auto out_image =
-                std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename.string());
-            out_image->setMiscInfo(image->miscInfo());
-            out_image->setImageInfo(image->imageInfo());
-            out_image->appendLog(image->logger());
-            out_image->setUnits(image->units());
-            out_image->putSlice(temp_array, start);
-
-            // Copy the mask if the original image has
-            if (image->hasPixelMask()) {
-                casacore::Array<casacore::Bool> image_mask;
-                image->getMaskSlice(image_mask, slice);
-                out_image->makeMask("mask0", true, true);
-                casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
-                out_image_mask.putSlice(image_mask, start);
-            }
-        } catch (casacore::AipsError error) {
-            message = error.getMesg();
-            save_file_ack.set_success(false);
-            save_file_ack.set_message(message);
-            return;
-        }
-        success = true;
-    } else if (output_file_type == CARTA::FileType::FITS) {
-        // Remove the old image file if it has a same file name
-        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename.string(), 64, casacore::False,
-            casacore::True, -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False,
-            casacore::False, casacore::String(), casacore::True);
-        if (ok) {
-            success = true;
-        }
-    } else {
-        message = "No saving file action!";
+        ulock.unlock(); // Unlock the image
+    } catch (casacore::AipsError error) {
+        message += error.getMesg();
+        save_file_ack.set_success(false);
+        save_file_ack.set_message(message);
+        return;
     }
-    ulock.unlock(); // Unlock the image
 
     // Remove the root folder from the ack message
     if (!root_folder.empty()) {
@@ -1671,58 +1640,26 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         }
     }
 
-    std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
-    if (output_file_type == CARTA::FileType::CASA) {
-        // Remove the old image file if it has a same file name
-        if (fs::exists(output_filename)) {
-            fs::remove_all(output_filename);
+    try {
+        std::unique_lock<std::mutex> ulock(_image_mutex); // Lock the image while saving the file
+        switch (output_file_type) {
+            case CARTA::FileType::CASA:
+                success = ExportCASAImage(*image, output_filename, message);
+                break;
+            case CARTA::FileType::FITS:
+                success = ExportFITSImage(*image, output_filename, message);
+                break;
+            default:
+                message = "No saving file action!";
+                break;
         }
-
-        // Get a copy of all pixel data
-        casacore::IPosition start(image->shape().size(), 0);
-        casacore::IPosition count(image->shape());
-        casacore::Slicer slice(start, count);
-        casacore::Array<casacore::Float> temp_array;
-        image->doGetSlice(temp_array, slice);
-
-        // Construct a new CASA image
-        try {
-            auto out_image =
-                std::make_unique<casacore::PagedImage<casacore::Float>>(image->shape(), image->coordinates(), output_filename.string());
-            out_image->setMiscInfo(image->miscInfo());
-            out_image->setImageInfo(image->imageInfo());
-            out_image->appendLog(image->logger());
-            out_image->setUnits(image->units());
-            out_image->putSlice(temp_array, start);
-
-            // Create the mask for region
-            if (image->hasPixelMask()) {
-                casacore::Array<casacore::Bool> image_mask;
-                image->getMaskSlice(image_mask, slice);
-                out_image->makeMask("mask0", true, true);
-                casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
-                out_image_mask.putSlice(image_mask, start);
-            }
-
-        } catch (casacore::AipsError error) {
-            message = error.getMesg();
-            save_file_ack.set_success(false);
-            save_file_ack.set_message(message);
-            return;
-        }
-        success = true;
-    } else if (output_file_type == CARTA::FileType::FITS) {
-        // Remove the old image file if it has a same file name
-        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename.string(), 64, casacore::False,
-            casacore::True, -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False,
-            casacore::False, casacore::String(), casacore::True);
-        if (ok) {
-            success = true;
-        }
-    } else {
-        message = "No saving file action!";
+        ulock.unlock(); // Unlock the image
+    } catch (casacore::AipsError error) {
+        message += error.getMesg();
+        save_file_ack.set_success(false);
+        save_file_ack.set_message(message);
+        return;
     }
-    ulock.unlock(); // Unlock the image
 
     // Remove the root folder from the ack message
     if (!root_folder.empty()) {
@@ -1734,4 +1671,59 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     save_file_ack.set_success(success);
     save_file_ack.set_message(message);
+}
+
+bool Frame::ExportCASAImage(
+    casacore::ImageInterface<casacore::Float>& image, std::filesystem::path output_filename, casacore::String& message) {
+    bool success(false);
+
+    // Remove the old image file if it has a same file name
+    if (fs::exists(output_filename)) {
+        fs::remove_all(output_filename);
+    }
+
+    // Get a copy of all pixel data
+    casacore::IPosition start(image.shape().size(), 0);
+    casacore::IPosition count(image.shape());
+    casacore::Slicer slice(start, count);
+    casacore::Array<casacore::Float> temp_array;
+    image.doGetSlice(temp_array, slice);
+
+    // Construct a new CASA image
+    try {
+        auto out_image =
+            std::make_unique<casacore::PagedImage<casacore::Float>>(image.shape(), image.coordinates(), output_filename.string());
+        out_image->setMiscInfo(image.miscInfo());
+        out_image->setImageInfo(image.imageInfo());
+        out_image->appendLog(image.logger());
+        out_image->setUnits(image.units());
+        out_image->putSlice(temp_array, start);
+
+        // Create the mask for region
+        if (image.hasPixelMask()) {
+            casacore::Array<casacore::Bool> image_mask;
+            image.getMaskSlice(image_mask, slice);
+            out_image->makeMask("mask0", true, true);
+            casacore::Lattice<casacore::Bool>& out_image_mask = out_image->pixelMask();
+            out_image_mask.putSlice(image_mask, start);
+        }
+        success = true;
+    } catch (casacore::AipsError error) {
+        message = error.getMesg();
+    }
+
+    return success;
+}
+
+bool Frame::ExportFITSImage(
+    casacore::ImageInterface<casacore::Float>& image, std::filesystem::path output_filename, casacore::String& message) {
+    bool success(false);
+    // Remove the old image file if it has a same file name
+    casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, image, output_filename.string(), 64, casacore::False,
+        casacore::True, -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False, casacore::False,
+        casacore::String(), casacore::True);
+    if (ok) {
+        success = true;
+    }
+    return success;
 }
