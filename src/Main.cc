@@ -680,12 +680,13 @@ int main(int argc, const char* argv[]) {
         }
 
         if (port_ok) {
-            INFO("Listening on port {} with root folder {}, base folder {}", port, root_folder, base_folder);
+            string start_info = fmt::format("Listening on port {} with root folder {}, base folder {}", port, root_folder, base_folder);
             if (omp_thread_count > 0) {
-                INFO(", and {} OpenMP worker threads", omp_thread_count);
+                start_info += fmt::format(", and {} OpenMP worker threads", omp_thread_count);
             } else {
-                INFO(". The number of OpenMP worker threads will be handled automatically.");
+                start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
+            INFO(start_info);
             if (http_server && http_server->CanServeFrontend()) {
                 string default_host_string = host;
                 if (host.empty() || host == "0.0.0.0") {
