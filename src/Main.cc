@@ -709,7 +709,7 @@ int main(int argc, const char* argv[]) {
 #endif
                     auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
                     if (open_result) {
-                        ERROR("Failed to open the default browser automatically.");
+                        WARN("Failed to open the default browser automatically.");
                     }
                 }
                 INFO("CARTA is accessible at {}", frontend_url);
