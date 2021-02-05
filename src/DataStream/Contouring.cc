@@ -220,7 +220,7 @@ void TraceLevel(const float* image, int64_t width, int64_t height, double scale,
 
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
     std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, int chunk_size,
-    ContourCallback& partial_callback, bool performance_logging) {
+    ContourCallback& partial_callback) {
     auto t_start_contours = std::chrono::high_resolution_clock::now();
     vertex_data.resize(levels.size());
     index_data.resize(levels.size());
@@ -233,7 +233,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
         TraceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l], chunk_size, partial_callback);
     }
 
-    if (performance_logging) {
+    if (spdlog::get(PERF_TAG)) {
         auto t_end_contours = std::chrono::high_resolution_clock::now();
         auto dt_contours = std::chrono::duration_cast<std::chrono::microseconds>(t_end_contours - t_start_contours).count();
         auto rate_contours = width * height / (double)dt_contours;

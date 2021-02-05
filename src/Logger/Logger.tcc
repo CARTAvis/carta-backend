@@ -31,8 +31,6 @@ void SpdLog(const std::string& log_tag, const LogType& log_type, bool flush_now,
         if (flush_now) {
             logger->flush();
         }
-    } else {
-        spdlog::critical("Fail to get the logger: {}!", STDOUT_TAG);
     }
 }
 

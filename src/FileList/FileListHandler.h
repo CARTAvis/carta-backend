@@ -56,9 +56,6 @@ private:
     std::mutex _region_list_mutex;
     std::string _filelist_folder;
     std::string _regionlist_folder;
-
-    bool _verbose_logging;
-    bool _performance_logging;
     std::string _root_folder, _base_folder;
 };
 

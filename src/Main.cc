@@ -117,7 +117,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
     auto* loop = uWS::Loop::get();
 
     // create a Session
-    sessions[session_id] = new Session(ws, loop, session_id, address, root_folder, base_folder, file_list_handler, perflog, grpc_port);
+    sessions[session_id] = new Session(ws, loop, session_id, address, root_folder, base_folder, file_list_handler, grpc_port);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);

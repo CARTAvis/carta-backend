@@ -113,7 +113,7 @@ bool RunKernel(const vector<float>& kernel, const float* src_data, float* dest_d
 }
 
 bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
-    int smoothing_factor, bool performance_logging) {
+    int smoothing_factor) {
     float sigma = (smoothing_factor - 1) / 2.0f;
     int mask_size = (smoothing_factor - 1) * 2 + 1;
     const int apron_height = smoothing_factor - 1;
@@ -170,7 +170,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         }
     }
 
-    if (performance_logging) {
+    if (spdlog::get(PERF_TAG)) {
         auto t_end = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
         auto rate = dest_width * dest_height / (double)dt;

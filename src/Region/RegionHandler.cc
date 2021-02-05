@@ -23,7 +23,7 @@
 
 namespace carta {
 
-RegionHandler::RegionHandler(bool perflog) : _perflog(perflog), _z_profile_count(0) {}
+RegionHandler::RegionHandler() : _z_profile_count(0) {}
 
 // ********************************************************************
 // Region handling
@@ -900,7 +900,7 @@ bool RegionHandler::GetRegionHistogramData(
         FillHistogramFromResults(histogram, stats, results);
     }
 
-    if (_perflog) {
+    if (spdlog::get(PERF_TAG)) {
         auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
         auto dt_region_histogram =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
@@ -1142,7 +1142,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
             }
 
-            if (_perflog) {
+            if (spdlog::get(PERF_TAG)) {
                 auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
                 auto dt_spectral_profile =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
@@ -1255,7 +1255,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
     }
 
-    if (_perflog) {
+    if (spdlog::get(PERF_TAG)) {
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
@@ -1384,7 +1384,7 @@ bool RegionHandler::GetRegionStatsData(
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 
-        if (_perflog) {
+        if (spdlog::get(PERF_TAG)) {
             auto t_end_region_stats = std::chrono::high_resolution_clock::now();
             auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
             PERF("Fill region stats in {} ms", dt_region_stats * 1e-3);

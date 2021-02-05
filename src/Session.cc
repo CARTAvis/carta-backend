@@ -44,7 +44,7 @@ int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
 Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
-    FileListHandler* file_list_handler, bool perflog, int grpc_port)
+    FileListHandler* file_list_handler, int grpc_port)
     : _socket(ws),
       _loop(loop),
       _id(id),
@@ -52,7 +52,6 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
       _root_folder(root),
       _base_folder(base),
       _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
-      _performance_logging(perflog),
       _grpc_port(grpc_port),
       _loader(nullptr),
       _region_handler(nullptr),
@@ -354,7 +353,7 @@ bool Session::OnOpenFile(const CARTA::OpenFile& message, uint32_t request_id, bo
 
     if (info_loaded) {
         // create Frame for image; Frame owns loader
-        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu, _performance_logging));
+        auto frame = std::shared_ptr<Frame>(new Frame(_id, _loader.get(), hdu));
         _loader.release();
 
         if (frame->IsValid()) {
@@ -425,7 +424,7 @@ bool Session::OnOpenFile(const carta::CollapseResult& collapse_result, CARTA::Mo
 
     if (info_loaded) {
         // Create Frame for image
-        auto frame = std::make_unique<Frame>(_id, _loader.get(), "", _performance_logging);
+        auto frame = std::make_unique<Frame>(_id, _loader.get(), "");
         _loader.release();
 
         if (frame->IsValid()) {
@@ -543,7 +542,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
             }
         }
 
-        if (_performance_logging) {
+        if (spdlog::get(PERF_TAG)) {
             // Measure duration for get tile data
             auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_get_tile_data =
@@ -624,7 +623,7 @@ bool Session::OnSetRegion(const CARTA::SetRegion& message, uint32_t request_id, 
         casacore::CoordinateSystem* csys = _frames.at(file_id)->CoordinateSystem();
 
         if (!_region_handler) { // created on demand only
-            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_performance_logging));
+            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler());
         }
 
         std::vector<CARTA::Point> points = {region_info.control_points().begin(), region_info.control_points().end()};
@@ -703,11 +702,11 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         auto t_start_import_region = std::chrono::high_resolution_clock::now();
 
         if (!_region_handler) { // created on demand only
-            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler(_performance_logging));
+            _region_handler = std::unique_ptr<carta::RegionHandler>(new carta::RegionHandler());
         }
 
         _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
-        if (_performance_logging) {
+        if (spdlog::get(PERF_TAG)) {
             // Measure duration for get tile data
             auto t_end_import_region = std::chrono::high_resolution_clock::now();
             auto dt_import_region =
@@ -1001,7 +1000,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     }
 
     // Measure duration for resume
-    if (_performance_logging) {
+    if (spdlog::get(PERF_TAG)) {
         auto t_end_resume = std::chrono::high_resolution_clock::now();
         auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
         PERF("Resume in {} ms", dt_resume * 1e-3);
@@ -1256,7 +1255,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_results.histogram_bins = {cube_bins.begin(), cube_bins.end()};
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_results);
 
-                    if (_performance_logging) {
+                    if (spdlog::get(PERF_TAG)) {
                         auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
                         auto dt_cube_histogram =
                             std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
@@ -1737,7 +1736,7 @@ void Session::ExecuteAnimationFrameInner() {
             }
 
             // Measure duration for frame changing as animating
-            if (_performance_logging) {
+            if (spdlog::get(PERF_TAG)) {
                 auto t_end_change_frame = std::chrono::high_resolution_clock::now();
                 auto dt_change_frame =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
