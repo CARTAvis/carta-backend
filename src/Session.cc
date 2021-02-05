@@ -27,7 +27,6 @@
 #include <carta-protobuf/error.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 
-#include "Carta.h"
 #include "Constants.h"
 #include "DataStream/Compression.h"
 #include "EventHeader.h"
@@ -36,6 +35,7 @@
 #include "FileList/FitsHduList.h"
 #include "OnMessageTask.h"
 #include "SpectralLine/SpectralLineCrawler.h"
+#include "Threading.h"
 #include "Timer/Timer.h"
 #include "Util.h"
 
@@ -516,34 +516,35 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
         start_message.set_end_sync(false);
         SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_SYNC, 0, start_message);
 
-        int n = message.tiles_size();
+        int num_tiles = message.tiles_size();
         CARTA::CompressionType compression_type = message.compression_type();
         float compression_quality = message.compression_quality();
-        int stride = std::min(n, std::min(CARTA::global_thread_count, CARTA::MAX_TILING_TASKS));
-
-        auto lambda = [&](int start) {
-            for (int i = start; i < n; i += stride) {
-                const auto& encoded_coordinate = message.tiles(i);
-                CARTA::RasterTileData raster_tile_data;
-                raster_tile_data.set_file_id(file_id);
-                raster_tile_data.set_animation_id(animation_id);
-                auto tile = Tile::Decode(encoded_coordinate);
-                if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(
-                                                  raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
-                    // Only use deflate on outgoing message if the raster image compression type is NONE
-                    SendFileEvent(
-                        file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data, compression_type == CARTA::CompressionType::NONE);
-                } else {
-                    fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
-                }
-            }
-        };
 
         auto t_start_get_tile_data = std::chrono::high_resolution_clock::now();
 
-#pragma omp parallel for
-        for (int j = 0; j < stride; j++) {
-            lambda(j);
+        ThreadManager::ApplyThreadLimit();
+#pragma omp parallel
+        {
+            int num_threads = omp_get_num_threads();
+            int stride = std::min(num_tiles, std::min(num_threads, MAX_TILING_TASKS));
+#pragma omp for
+            for (int j = 0; j < stride; j++) {
+                for (int i = j; i < num_tiles; i += stride) {
+                    const auto& encoded_coordinate = message.tiles(i);
+                    CARTA::RasterTileData raster_tile_data;
+                    raster_tile_data.set_file_id(file_id);
+                    raster_tile_data.set_animation_id(animation_id);
+                    auto tile = Tile::Decode(encoded_coordinate);
+                    if (_frames.count(file_id) && _frames.at(file_id)->FillRasterTileData(
+                                                      raster_tile_data, tile, channel, stokes, compression_type, compression_quality)) {
+                        // Only use deflate on outgoing message if the raster image compression type is NONE
+                        SendFileEvent(file_id, CARTA::EventType::RASTER_TILE_DATA, 0, raster_tile_data,
+                            compression_type == CARTA::CompressionType::NONE);
+                    } else {
+                        fmt::print("Problem getting tile layer={}, x={}, y={}\n", tile.layer, tile.x, tile.y);
+                    }
+                }
+            }
         }
 
         if (_performance_logging) {

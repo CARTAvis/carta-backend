@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include <omp.h>
+#include "Threading.h"
 
 using namespace carta;
 
@@ -36,6 +36,7 @@ void Histogram::operator()(const tbb::blocked_range<size_t>& r) {
 
 void Histogram::join(Histogram& h) { // NOLINT
     auto num_bins = h._hist.size();
+    ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for
     for (int i = 0; i < num_bins; i++) {
         h._hist[i] += _hist[i];
@@ -45,6 +46,7 @@ void Histogram::join(Histogram& h) { // NOLINT
 void Histogram::setup_bins() {
     std::vector<int64_t> temp_bins;
     auto num_elements = _data.size();
+    ThreadManager::ApplyThreadLimit();
 #pragma omp parallel
     {
         auto num_threads = omp_get_num_threads();
