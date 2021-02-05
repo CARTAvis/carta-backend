@@ -6,7 +6,13 @@
 
 #include "Logger.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
 #include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 namespace fs = std::filesystem;
 
