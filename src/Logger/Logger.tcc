@@ -13,7 +13,7 @@ void SpdLog(const std::string& log_tag, const LogType& log_type, bool flush_now,
     if (logger) {
         switch (log_type) {
             case LogType::DEBUG:
-                if (logger->level() == spdlog::level::level_enum::debug) {
+                if (logger->level() >= spdlog::level::level_enum::debug) {
                     logger->debug(fmt::format(format, args...));
                 }
                 break;
