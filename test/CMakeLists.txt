@@ -50,6 +50,7 @@ if (testBlockSmooth)
     add_executable(testBlockSmooth
             TestBlockSmooth.cc
             ../src/Timer/Timer.cc
+            ../src/Threading.cc
             ../src/DataStream/Smoothing.cc)
     target_link_libraries(testBlockSmooth casa_casa gtest gtest_main Threads::Threads fmt)
 
