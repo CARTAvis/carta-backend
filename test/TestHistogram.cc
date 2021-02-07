@@ -57,7 +57,6 @@ TEST(Histogram, TestHistogramBehaviour) {
     data.push_back(10.0 + 1e+9); // should not appear
     data.push_back(11.0);        // should not appear
     carta::Histogram hist(10, 0.0f, 10.0f, data);
-    hist.setup_bins();
     auto results = hist.GetHistogram();
     auto counts = accumulate(results.histogram_bins.begin(), results.histogram_bins.end(), 0);
     EXPECT_TRUE(counts == 12);
@@ -72,7 +71,6 @@ TEST(Histogram, TestHistogramBehaviour) {
     data.push_back(NAN);
     data.push_back(NAN);
     carta::Histogram hist2(10, 0.0f, 10.0f, data);
-    hist2.setup_bins();
     // expect 0 counts
     auto bins = hist2.GetHistogramBins();
     EXPECT_TRUE(accumulate(bins.begin(), bins.end(), 0) == 0);
@@ -82,7 +80,6 @@ TEST(Histogram, TestHistogramConstructor) {
     std::vector<float> data(1024 * 1024);
     std::for_each(data.begin(), data.end(), [](float& v) { v = float_random(mt); });
     carta::Histogram hist(1024, 0.0f, 1.0f, data);
-    hist.setup_bins();
     auto results = hist.GetHistogram();
 
     carta::Histogram hist2(hist);
@@ -95,12 +92,10 @@ TEST(Histogram, TestHistogramJoin) {
     std::vector<float> data(1024 * 1024);
     std::for_each(data.begin(), data.end(), [](float& v) { v = float_random(mt); });
     carta::Histogram hist(1024, 0.0f, 1.0f, data);
-    hist.setup_bins();
     auto results = hist.GetHistogram();
     const auto total_counts = accumulate(results.histogram_bins.begin(), results.histogram_bins.end(), 0);
 
     carta::Histogram hist2(1024, 0.0f, 1.0f, data);
-    hist2.setup_bins();
     auto results2 = hist2.GetHistogram();
 
     EXPECT_TRUE(CompareResults(results, results2)); // naive?
@@ -123,12 +118,10 @@ TEST(Histogram, TestSingleThreading) {
 
     carta::ThreadManager::SetThreadLimit(1);
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
-    hist_st.setup_bins();
     auto results_st = hist_st.GetHistogram();
 
     for (auto i = 2; i < 24; i++) {
         carta::Histogram hist_mt(1024, 0.0f, 1.0f, data);
-        hist_mt.setup_bins();
         auto results_mt = hist_mt.GetHistogram();
         EXPECT_TRUE(CompareResults(results_st, results_mt));
     }
@@ -142,13 +135,11 @@ TEST(Histogram, TestMultithreading) {
 
     carta::ThreadManager::SetThreadLimit(1);
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
-    hist_st.setup_bins();
     auto results_st = hist_st.GetHistogram();
 
     for (auto i = 2; i < 24; i++) {
         carta::ThreadManager::SetThreadLimit(i);
         carta::Histogram hist_mt(1024, 0.0f, 1.0f, data);
-        hist_mt.setup_bins();
         auto results_mt = hist_mt.GetHistogram();
         EXPECT_TRUE(CompareResults(results_st, results_mt));
     }
@@ -165,20 +156,17 @@ TEST(Histogram, TestMultithreadingPerformance) {
 
     t.Start("single_threaded");
     carta::Histogram hist_st(1024, 0.0f, 1.0f, data);
-    hist_st.setup_bins();
     auto results_st = hist_st.GetHistogram();
     t.End("single_threaded");
 
     carta::ThreadManager::SetThreadLimit(4);
     t.Start("multi_threaded");
     carta::Histogram hist_mt(1024, 0.0f, 1.0f, data);
-    hist_mt.setup_bins();
     auto results_mt = hist_mt.GetHistogram();
     t.End("multi_threaded");
 
     auto st_time = t.GetMeasurement("single_threaded");
     auto mt_time = t.GetMeasurement("multi_threaded");
     double speedup = st_time / mt_time;
-    cout << speedup << endl;
-    EXPECT_GE(speedup, 1.5);
+    EXPECT_GE(speedup, 1.5) << "Speedup is: " << speedup;
 }

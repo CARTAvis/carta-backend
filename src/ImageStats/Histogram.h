@@ -25,17 +25,15 @@ class Histogram {
     float _min_val; // lower bound of the histogram (inclusive)
     float _max_val; // upper bound of the histogram (inclusive)
     HistogramResults _histogram; // histogram stats
-    const std::vector<float>& _data;
 
+    void Fill(const std::vector<float>&);
     bool ConsistencyCheck(const Histogram&, const Histogram&);
 
 public:
     Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data);
-    Histogram(Histogram& h, tbb::split);
+    Histogram(Histogram& h);
 
-    void operator()(const tbb::blocked_range<size_t>& r);
     bool join(Histogram& h); // NOLINT
-    void setup_bins();
 
     HistogramResults GetHistogram() const { return _histogram; }
     float GetMinVal() const { return _min_val; }
@@ -44,7 +42,6 @@ public:
     float GetBinWidth() const { return _histogram.bin_width; }
     float GetBinCenter()  const { return _histogram.bin_center; }
     const std::vector<int>& GetHistogramBins() const { return _histogram.histogram_bins; }
-    const std::vector<float>& GetData() const { return _data; }
 };
 
 } // namespace carta
