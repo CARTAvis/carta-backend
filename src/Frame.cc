@@ -279,7 +279,7 @@ bool Frame::FillImageCache() {
         return false;
     }
 
-    if (spdlog::get(PERF_TAG)) {
+    if (spdlog::get_level() == spdlog::level::trace) {
         auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
         auto dt_set_image_cache =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
@@ -343,7 +343,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         NearestNeighbor(_image_cache.data(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
     }
 
-    if (spdlog::get(PERF_TAG)) {
+    if (spdlog::get_level() == spdlog::level::trace) {
         auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
         auto dt_raster_data_filter =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
@@ -406,7 +406,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
             // Measure duration for compress tile data
-            if (spdlog::get(PERF_TAG)) {
+            if (spdlog::get_level() == spdlog::level::trace) {
                 auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
                 auto dt_compress_tile_data =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
@@ -598,7 +598,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 }
             }
 
-            if (spdlog::get(PERF_TAG) && histogram_filled) {
+            if ((spdlog::get_level() == spdlog::level::trace) && histogram_filled) {
                 auto t_end_image_histogram = std::chrono::high_resolution_clock::now();
                 auto dt_image_histogram =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_histogram - t_start_image_histogram).count();
@@ -856,7 +856,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         // cache results
         _image_stats[cache_key] = stats_map;
 
-        if (spdlog::get(PERF_TAG)) {
+        if (spdlog::get_level() == spdlog::level::trace) {
             auto t_end_image_stats = std::chrono::high_resolution_clock::now();
             auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
             PERF("Fill image stats in {} ms", dt_image_stats * 1e-3);
@@ -956,7 +956,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         }
     }
 
-    if (spdlog::get(PERF_TAG)) {
+    if (spdlog::get_level() == spdlog::level::trace) {
         auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
         auto dt_spatial_profile =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
@@ -1178,7 +1178,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
     }
 
-    if (spdlog::get(PERF_TAG)) {
+    if (spdlog::get_level() == spdlog::level::trace) {
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
@@ -1279,7 +1279,7 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
             }
         }
 
-        if (spdlog::get(PERF_TAG)) {
+        if (spdlog::get_level() == spdlog::level::trace) {
             auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
             auto dt_get_subimage_data =
                 std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();

@@ -12,10 +12,11 @@ void SpdLog(const std::string& log_tag, const LogType& log_type, bool flush_now,
     std::shared_ptr<spdlog::logger> logger = spdlog::get(log_tag);
     if (logger) {
         switch (log_type) {
+            case LogType::TRACE:
+                logger->trace(fmt::format(format, args...));
+                break;
             case LogType::DEBUG:
-                if (logger->level() <= spdlog::level::level_enum::debug) {
-                    logger->debug(fmt::format(format, args...));
-                }
+                logger->debug(fmt::format(format, args...));
                 break;
             case LogType::INFO:
                 logger->info(fmt::format(format, args...));
@@ -32,6 +33,11 @@ void SpdLog(const std::string& log_tag, const LogType& log_type, bool flush_now,
             logger->flush();
         }
     }
+}
+
+template <typename S, typename... Args>
+void PERF(const S& format, Args&&... args) {
+    SpdLog(STDOUT_TAG, LogType::TRACE, true, format, args...);
 }
 
 template <typename S, typename... Args>
@@ -52,11 +58,6 @@ void WARN(const S& format, Args&&... args) {
 template <typename S, typename... Args>
 void ERROR(const S& format, Args&&... args) {
     SpdLog(STDOUT_TAG, LogType::ERROR, true, format, args...);
-}
-
-template <typename S, typename... Args>
-void PERF(const S& format, Args&&... args) {
-    SpdLog(PERF_TAG, LogType::DEBUG, true, format, args...);
 }
 
 #endif // CARTA_BACKEND_LOGGER_LOGGER_TCC_

@@ -18,9 +18,9 @@
 
 #include "Constants.h"
 
-enum class LogType { DEBUG, INFO, WARN, ERROR };
+enum class LogType { TRACE, DEBUG, INFO, WARN, ERROR };
 
-void InitLoggers(bool no_log_file, bool debug_log, bool perf_log);
+void InitLoggers(bool no_log_file, int verbosity);
 
 template <typename S, typename... Args>
 void SpdLog(const std::string& log_tag, const LogType& log_type, bool flush_now, const S& format, Args&&... args);

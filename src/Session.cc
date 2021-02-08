@@ -542,7 +542,7 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
             }
         }
 
-        if (spdlog::get(PERF_TAG)) {
+        if (spdlog::get_level() == spdlog::level::trace) {
             // Measure duration for get tile data
             auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
             auto dt_get_tile_data =
@@ -706,7 +706,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         }
 
         _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
-        if (spdlog::get(PERF_TAG)) {
+        if (spdlog::get_level() == spdlog::level::trace) {
             // Measure duration for get tile data
             auto t_end_import_region = std::chrono::high_resolution_clock::now();
             auto dt_import_region =
@@ -1000,7 +1000,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     }
 
     // Measure duration for resume
-    if (spdlog::get(PERF_TAG)) {
+    if (spdlog::get_level() == spdlog::level::trace) {
         auto t_end_resume = std::chrono::high_resolution_clock::now();
         auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
         PERF("Resume in {} ms", dt_resume * 1e-3);
@@ -1255,7 +1255,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_results.histogram_bins = {cube_bins.begin(), cube_bins.end()};
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_results);
 
-                    if (spdlog::get(PERF_TAG)) {
+                    if (spdlog::get_level() == spdlog::level::trace) {
                         auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
                         auto dt_cube_histogram =
                             std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
@@ -1736,7 +1736,7 @@ void Session::ExecuteAnimationFrameInner() {
             }
 
             // Measure duration for frame changing as animating
-            if (spdlog::get(PERF_TAG)) {
+            if (spdlog::get_level() == spdlog::level::trace) {
                 auto t_end_change_frame = std::chrono::high_resolution_clock::now();
                 auto dt_change_frame =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();

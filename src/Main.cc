@@ -46,8 +46,6 @@ static std::unique_ptr<grpc::Server> carta_grpc_server;
 static string root_folder("/"), base_folder(".");
 // token to validate incoming WS connection header against
 static string auth_token = "";
-static bool verbose;
-static bool perflog;
 static int grpc_port(-1);
 
 // Sessions map
@@ -540,12 +538,12 @@ int main(int argc, const char* argv[]) {
         bool debug_no_auth = false;
         bool no_browser = false;
         bool no_log = false;
+        int verbosity = 4;
 
         { // get values then let Input go out of scope
             casacore::Input inp;
-            inp.create("verbose", "False", "display verbose logging", "Bool");
+            inp.create("verbosity", to_string(verbosity), "display verbose logging from level (4: info, 5: debug, 6: trace)", "Int");
             inp.create("no_log", "False", "Do not output to a log file", "Bool");
-            inp.create("perflog", "False", "display performance logging", "Bool");
             inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
             inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, use with caution!)", "Bool");
             inp.create("no_browser", "False", "prevent the frontend from automatically opening in the default browser on startup", "Bool");
@@ -561,9 +559,8 @@ int main(int argc, const char* argv[]) {
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clients connect", "Int");
             inp.readArguments(argc, argv);
 
-            verbose = inp.getBool("verbose");
+            verbosity = inp.getInt("verbosity");
             no_log = inp.getBool("no_log");
-            perflog = inp.getBool("perflog");
             no_http = inp.getBool("no_http");
             debug_no_auth = inp.getBool("debug_no_auth");
             no_browser = inp.getBool("no_browser");
@@ -585,7 +582,7 @@ int main(int argc, const char* argv[]) {
                 Session::SetInitExitTimeout(init_wait_time);
             }
 
-            InitLoggers(no_log, verbose, perflog);
+            InitLoggers(no_log, verbosity);
         }
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
@@ -686,7 +683,7 @@ int main(int argc, const char* argv[]) {
             } else {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
-            INFO(start_info);
+            spdlog::info(start_info);
             if (http_server && http_server->CanServeFrontend()) {
                 string default_host_string = host;
                 if (host.empty() || host == "0.0.0.0") {

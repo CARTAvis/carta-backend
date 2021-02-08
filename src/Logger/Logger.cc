@@ -16,7 +16,7 @@ namespace fs = std::filesystem;
 
 namespace fs = std::filesystem;
 
-void InitLoggers(bool no_log_file, bool debug_log, bool perf_log) {
+void InitLoggers(bool no_log_file, int verbosity) {
     std::string log_fullname;
     if (!no_log_file) {
         log_fullname = fs::path(getenv("HOME")).string() + "/.carta/log/carta.log";
@@ -41,9 +41,13 @@ void InitLoggers(bool no_log_file, bool debug_log, bool perf_log) {
     // Create the stdout logger
     auto stdout_logger = std::make_shared<spdlog::logger>(STDOUT_TAG, std::begin(stdout_sinks), std::end(stdout_sinks));
 
-    // show log messages from the "debug" level, otherwise only show default messages from the "info" level
-    if (debug_log) {
+    // Set logger's level according to the verbosity number
+    if (verbosity == 6) {
+        stdout_logger->set_level(spdlog::level::trace);
+    } else if (verbosity == 5) {
         stdout_logger->set_level(spdlog::level::debug);
+    } else {
+        stdout_logger->set_level(spdlog::level::info);
     }
 
     // Register the stdout logger
@@ -53,36 +57,10 @@ void InitLoggers(bool no_log_file, bool debug_log, bool perf_log) {
         spdlog::critical("Duplicate registration of the logger: {}!", STDOUT_TAG);
     }
 
+    // Set the default logger
+    spdlog::set_default_logger(stdout_logger);
+
     // Show the carta_backend executor version via the stdout logger
     std::string current_path = fs::current_path();
-    stdout_logger->info("{}/carta_backend: Version {}", current_path, VERSION_ID);
-
-    if (perf_log) {
-        // Set the perf console
-        auto perf_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        perf_console_sink->set_pattern(CUSTOMIZE_PATTERN);
-
-        // Set perf sinks
-        std::vector<spdlog::sink_ptr> perf_sinks;
-        perf_sinks.push_back(perf_console_sink);
-
-        if (!no_log_file) {
-            // Set a log file with its full name, maximum size and the number of rotated files
-            auto perf_log_file_sink =
-                std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
-            perf_log_file_sink->set_pattern(CUSTOMIZE_PATTERN);
-            perf_sinks.push_back(perf_log_file_sink);
-        }
-
-        // Create the perf logger
-        auto perf_logger = std::make_shared<spdlog::logger>(PERF_TAG, std::begin(perf_sinks), std::end(perf_sinks));
-        perf_logger->set_level(spdlog::level::debug);
-
-        // Register the perf logger
-        if (!spdlog::get(PERF_TAG)) {
-            spdlog::register_logger(perf_logger);
-        } else {
-            spdlog::critical("Duplicate registration of the logger: {}!", PERF_TAG);
-        }
-    }
+    spdlog::info("{}/carta_backend: Version {}", current_path, VERSION_ID);
 }

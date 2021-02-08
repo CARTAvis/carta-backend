@@ -77,8 +77,6 @@
 #define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
 #define ROTATED_LOG_FILES 5
 #define STDOUT_TAG "stdout"
-#define PERF_TAG "perf"
 #define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
-#define CUSTOMIZE_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%n%$] %v"
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

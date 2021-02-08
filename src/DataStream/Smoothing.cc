@@ -170,7 +170,7 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         }
     }
 
-    if (spdlog::get(PERF_TAG)) {
+    if (spdlog::get_level() == spdlog::level::trace) {
         auto t_end = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
         auto rate = dest_width * dest_height / (double)dt;
