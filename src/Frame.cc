@@ -1665,8 +1665,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     save_file_ack.set_message(message);
 }
 
-bool Frame::ExportCASAImage(
-    casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
+bool Frame::ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
     bool success(false);
 
     // Remove the old image file if it has a same file name
@@ -1707,8 +1706,7 @@ bool Frame::ExportCASAImage(
     return success;
 }
 
-bool Frame::ExportFITSImage(
-    casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
+bool Frame::ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
     bool success(false);
     // Remove the old image file if it has a same file name
     casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, image, output_filename.string(), 64, casacore::False,

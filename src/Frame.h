@@ -216,10 +216,10 @@ private:
 
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);
-    
+
     // Export image
-    bool ExportCASAImage(casacore::ImageInterface<casacore::Float> &image, fs::path output_filename, casacore::String& message);
-    bool ExportFITSImage(casacore::ImageInterface<casacore::Float> &image, fs::path output_filename, casacore::String& message);
+    bool ExportCASAImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
+    bool ExportFITSImage(casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message);
 
     // For convenience, create int map key for storing cache by channel and stokes
     inline int CacheKey(int channel, int stokes) {
