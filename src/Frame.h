@@ -37,6 +37,14 @@
 #include "Region/Region.h"
 #include "RequirementsCache.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
+
 struct ContourSettings {
     std::vector<double> levels;
     CARTA::SmoothingMode smoothing_mode;
@@ -210,8 +218,8 @@ private:
     bool HasSpectralConfig(const SpectralConfig& config);
     
     // Export image
-    bool ExportCASAImage(casacore::ImageInterface<casacore::Float> &image, std::filesystem::path output_filename, casacore::String& message);
-    bool ExportFITSImage(casacore::ImageInterface<casacore::Float> &image, std::filesystem::path output_filename, casacore::String& message);
+    bool ExportCASAImage(casacore::ImageInterface<casacore::Float> &image, fs::path output_filename, casacore::String& message);
+    bool ExportFITSImage(casacore::ImageInterface<casacore::Float> &image, fs::path output_filename, casacore::String& message);
 
     // For convenience, create int map key for storing cache by channel and stokes
     inline int CacheKey(int channel, int stokes) {

@@ -26,14 +26,6 @@
 #include "ImageStats/StatsCalculator.h"
 #include "Util.h"
 
-#ifdef _BOOST_FILESYSTEM_
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
-#else
-#include <filesystem>
-namespace fs = std::filesystem;
-#endif
-
 using namespace carta;
 
 Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog, int default_channel)
@@ -1674,7 +1666,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 }
 
 bool Frame::ExportCASAImage(
-    casacore::ImageInterface<casacore::Float>& image, std::filesystem::path output_filename, casacore::String& message) {
+    casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
     bool success(false);
 
     // Remove the old image file if it has a same file name
@@ -1716,7 +1708,7 @@ bool Frame::ExportCASAImage(
 }
 
 bool Frame::ExportFITSImage(
-    casacore::ImageInterface<casacore::Float>& image, std::filesystem::path output_filename, casacore::String& message) {
+    casacore::ImageInterface<casacore::Float>& image, fs::path output_filename, casacore::String& message) {
     bool success(false);
     // Remove the old image file if it has a same file name
     casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, image, output_filename.string(), 64, casacore::False,
