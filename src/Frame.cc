@@ -48,7 +48,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
-        DEBUG("Session {}: {}", session_id, _open_image_error);
+        spdlog::debug("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -57,7 +57,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
         _open_image_error = err.getMesg();
-        DEBUG("Session {}: {}", session_id, _open_image_error);
+        spdlog::debug("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -66,7 +66,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     std::string log_message;
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
-        DEBUG("Session {}: {}", session_id, _open_image_error);
+        spdlog::debug("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -95,7 +95,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _loader->LoadImageStats();
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
-        DEBUG("Session {}: {}", session_id, _open_image_error);
+        spdlog::debug("Session {}: {}", session_id, _open_image_error);
     }
 }
 
@@ -151,7 +151,7 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
     std::string error;
     bool beams_ok = _loader->GetBeams(beams, error);
     if (!beams_ok) {
-        WARN("Session {}: {}", _session_id, error);
+        spdlog::warn("Session {}: {}", _session_id, error);
     }
     return beams_ok;
 }
@@ -275,7 +275,7 @@ bool Frame::FillImageCache() {
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetImageSlicer(ChannelRange(_channel_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
-        ERROR("Session {}: {}", _session_id, "Loading image cache failed.");
+        spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
 
@@ -283,7 +283,7 @@ bool Frame::FillImageCache() {
         auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
         auto dt_set_image_cache =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-        PERF("Load {}x{} image to cache in {} ms at {} MPix/s", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
+        spdlog::trace("Load {}x{} image to cache in {} ms at {} MPix/s", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
             (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
     }
 
@@ -347,7 +347,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
         auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
         auto dt_raster_data_filter =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
-        PERF("{} filter {}x{} raster data to {}x{} in {} ms at {} MPix/s", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
+        spdlog::trace("{} filter {}x{} raster data to {}x{} in {} ms at {} MPix/s", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
             req_height, req_width, num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
             (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
     }
@@ -410,7 +410,7 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
                 auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
                 auto dt_compress_tile_data =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
-                PERF("Compress {}x{} tile data in {} ms at {} MPix/s", tile_width, tile_height, dt_compress_tile_data * 1e-3,
+                spdlog::trace("Compress {}x{} tile data in {} ms at {} MPix/s", tile_width, tile_height, dt_compress_tile_data * 1e-3,
                     (float)(tile_width * tile_height) / dt_compress_tile_data);
             }
 
@@ -507,7 +507,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
                 _contour_settings.chunk_size, partial_contour_callback);
             return true;
         }
-        ERROR("Smoothing mode not implemented yet!");
+        spdlog::error("Smoothing mode not implemented yet!");
         return false;
     }
 
@@ -602,7 +602,8 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 auto t_end_image_histogram = std::chrono::high_resolution_clock::now();
                 auto dt_image_histogram =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_histogram - t_start_image_histogram).count();
-                PERF("Fill image histogram in {} ms at {} MPix/s", dt_image_histogram * 1e-3, (float)stats.num_pixels / dt_image_histogram);
+                spdlog::trace(
+                    "Fill image histogram in {} ms at {} MPix/s", dt_image_histogram * 1e-3, (float)stats.num_pixels / dt_image_histogram);
             }
         }
         have_valid_histogram |= histogram_filled;
@@ -859,7 +860,7 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         if (spdlog::get_level() == spdlog::level::trace) {
             auto t_end_image_stats = std::chrono::high_resolution_clock::now();
             auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
-            PERF("Fill image stats in {} ms", dt_image_stats * 1e-3);
+            spdlog::trace("Fill image stats in {} ms", dt_image_stats * 1e-3);
         }
         return true;
     }
@@ -960,7 +961,7 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
         auto dt_spatial_profile =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
-        PERF("Fill spatial profile in {} ms", dt_spatial_profile * 1e-3);
+        spdlog::trace("Fill spatial profile in {} ms", dt_spatial_profile * 1e-3);
     }
 
     return true;
@@ -986,7 +987,7 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
         int axis, stokes;
         ConvertCoordinateToAxes(coordinate, axis, stokes);
         if (stokes >= nstokes) {
-            ERROR("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
+            spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
             continue;
         }
 
@@ -1182,7 +1183,7 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        PERF("Fill cursor spectral profile in {} ms", dt_spectral_profile * 1e-3);
+        spdlog::trace("Fill cursor spectral profile in {} ms", dt_spectral_profile * 1e-3);
     }
 
     DecreaseZProfileCount();
@@ -1227,7 +1228,7 @@ bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stok
         image_region = this_region;
         return true;
     } catch (casacore::AipsError error) {
-        ERROR("Error converting full region to file {}: {}", file_id, error.getMesg());
+        spdlog::error("Error converting full region to file {}: {}", file_id, error.getMesg());
         return false;
     }
 }
@@ -1283,7 +1284,7 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
             auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
             auto dt_get_subimage_data =
                 std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
-            PERF("Get region subimage data in {} ms", dt_get_subimage_data * 1e-3);
+            spdlog::trace("Get region subimage data in {} ms", dt_get_subimage_data * 1e-3);
         }
         return true;
     } catch (casacore::AipsError& err) {

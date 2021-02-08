@@ -121,8 +121,8 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
     int64_t calculated_dest_height = src_height - 2 * (smoothing_factor - 1);
 
     if (dest_width * dest_height < calculated_dest_width * calculated_dest_height) {
-        ERROR("Incorrectly sized destination array. Should be at least{}x{} (got {}x{})", calculated_dest_width, calculated_dest_height,
-            dest_width, dest_height);
+        spdlog::error("Incorrectly sized destination array. Should be at least{}x{} (got {}x{})", calculated_dest_width,
+            calculated_dest_height, dest_width, dest_height);
         return false;
     }
 
@@ -174,8 +174,8 @@ bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, 
         auto t_end = std::chrono::high_resolution_clock::now();
         auto dt = std::chrono::duration_cast<std::chrono::microseconds>(t_end - t_start).count();
         auto rate = dest_width * dest_height / (double)dt;
-        PERF("Smoothed with smoothing factor of {} and kernel size of {} in {} ms at {} MPix/s", smoothing_factor, mask_size, dt * 1e-3,
-            rate);
+        spdlog::trace("Smoothed with smoothing factor of {} and kernel size of {} in {} ms at {} MPix/s", smoothing_factor, mask_size,
+            dt * 1e-3, rate);
     }
     return true;
 }

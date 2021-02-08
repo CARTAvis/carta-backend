@@ -237,7 +237,7 @@ bool CartaHdf5Image::SetUpImage() {
             valid = true;
         }
     } catch (casacore::AipsError& err) {
-        ERROR("Error opening HDF5 image: {}", err.getMesg());
+        spdlog::error("Error opening HDF5 image: {}", err.getMesg());
     }
     return valid;
 }

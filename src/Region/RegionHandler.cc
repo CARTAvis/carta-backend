@@ -245,7 +245,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                         region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
-                    ERROR("Export region record failed: {}", err.getMesg());
+                    spdlog::error("Export region record failed: {}", err.getMesg());
                 }
             }
 
@@ -341,7 +341,7 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     }
 
     if (!_regions.count(region_id)) {
-        ERROR("Spectral requirements failed: no region with id {}", region_id);
+        spdlog::error("Spectral requirements failed: no region with id {}", region_id);
         return false;
     }
 
@@ -432,7 +432,7 @@ bool RegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstokes
     ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
     bool valid(stokes_index < nstokes);
     if (!valid) {
-        ERROR("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
+        spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
     }
     return valid;
 }
@@ -712,9 +712,9 @@ bool RegionHandler::ApplyRegionToFile(
 
         return true;
     } catch (const casacore::AipsError& err) {
-        ERROR("Error applying region {} to file {}: {}", region_id, file_id, err.getMesg());
+        spdlog::error("Error applying region {} to file {}: {}", region_id, file_id, err.getMesg());
     } catch (std::out_of_range& range_error) {
-        ERROR("Cannot apply region {} to closed file {}", region_id, file_id);
+        spdlog::error("Cannot apply region {} to closed file {}", region_id, file_id);
     }
 
     return false;
@@ -904,7 +904,8 @@ bool RegionHandler::GetRegionHistogramData(
         auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
         auto dt_region_histogram =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-        PERF("Fill region histogram in {} ms at {} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
+        spdlog::trace(
+            "Fill region histogram in {} ms at {} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
     }
 
     return true;
@@ -1146,7 +1147,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
                 auto dt_spectral_profile =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-                PERF("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
+                spdlog::trace("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
             }
 
             _frames.at(file_id)->DecreaseZProfileCount();
@@ -1259,7 +1260,7 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
         auto dt_spectral_profile =
             std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        PERF("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
+        spdlog::trace("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
     }
 
     _frames.at(file_id)->DecreaseZProfileCount();
@@ -1387,7 +1388,7 @@ bool RegionHandler::GetRegionStatsData(
         if (spdlog::get_level() == spdlog::level::trace) {
             auto t_end_region_stats = std::chrono::high_resolution_clock::now();
             auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
-            PERF("Fill region stats in {} ms", dt_region_stats * 1e-3);
+            spdlog::trace("Fill region stats in {} ms", dt_region_stats * 1e-3);
         }
         return true;
     }

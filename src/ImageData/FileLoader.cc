@@ -54,7 +54,7 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     if (image) {
         return new ImagePtrLoader(image);
     } else {
-        ERROR("Fail to assign an image pointer!");
+        spdlog::error("Fail to assign an image pointer!");
         return nullptr;
     }
 }

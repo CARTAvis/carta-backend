@@ -306,7 +306,7 @@ void TableController::ApplyFilter(const CARTA::FilterConfig& filter_config, Tabl
     string column_name = filter_config.column_name();
     auto column = view.GetTable()[column_name];
     if (!column) {
-        ERROR("Could not filter on non-existing column \"{}\"", column_name);
+        spdlog::error("Could not filter on non-existing column \"{}\"", column_name);
         return;
     }
 

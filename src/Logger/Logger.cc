@@ -14,9 +14,7 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-namespace fs = std::filesystem;
-
-void InitLoggers(bool no_log_file, int verbosity) {
+void InitLogger(bool no_log_file, int verbosity) {
     std::string log_fullname;
     if (!no_log_file) {
         log_fullname = fs::path(getenv("HOME")).string() + "/.carta/log/carta.log";
@@ -49,6 +47,9 @@ void InitLoggers(bool no_log_file, int verbosity) {
     } else {
         stdout_logger->set_level(spdlog::level::info);
     }
+
+    // Set flush policy on severity
+    stdout_logger->flush_on(spdlog::level::err);
 
     // Register the stdout logger
     if (!spdlog::get(STDOUT_TAG)) {

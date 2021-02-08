@@ -215,7 +215,7 @@ void Region::SetReferenceRegion() {
                 break;
         }
     } catch (casacore::AipsError& err) { // region failed
-        ERROR("Region type {} failed: {}", type, err.getMesg());
+        spdlog::error("Region type {} failed: {}", type, err.getMesg());
     }
 
     std::shared_ptr<casacore::WCRegion> shared_region = std::shared_ptr<casacore::WCRegion>(region);
@@ -417,10 +417,10 @@ casacore::LCRegion* Region::GetAppliedPolygonRegion(
                 lc_region = new casacore::LCPolygon(x, y, region_shape);
             }
         } catch (const casacore::AipsError& err) {
-            ERROR("Cannot apply region to file {}: {}", file_id, err.getMesg());
+            spdlog::error("Cannot apply region to file {}: {}", file_id, err.getMesg());
         }
     } else {
-        ERROR("Error approximating region as polygon in matched image.");
+        spdlog::error("Error approximating region as polygon in matched image.");
     }
 
     return lc_region;
@@ -468,7 +468,7 @@ std::vector<CARTA::Point> Region::GetApproximatePolygonPoints(int num_vertices) 
     } else if (region_type == CARTA::RegionType::POLYGON) {
         region_points = _region_state.control_points;
     } else {
-        ERROR("Error approximating region as polygon: region type not supported");
+        spdlog::error("Error approximating region as polygon: region type not supported");
         return {};
     }
 
@@ -576,18 +576,18 @@ bool Region::ConvertPolygonToImage(const std::vector<CARTA::Point>& polygon_poin
                     x(i) = pixel_point(0);
                     y(i) = pixel_point(1);
                 } else { // world to pixel failed
-                    ERROR("Error converting polygon to output pixel coords.");
+                    spdlog::error("Error converting polygon to output pixel coords.");
                     converted = false;
                     break;
                 }
             } else { // pixel to world failed
-                ERROR("Error converting polygon to reference world coords.");
+                spdlog::error("Error converting polygon to reference world coords.");
                 converted = false;
                 break;
             }
         }
     } catch (const casacore::AipsError& err) {
-        ERROR("Error converting polygon region to image: {}", err.getMesg());
+        spdlog::error("Error converting polygon region to image: {}", err.getMesg());
         converted = false;
     }
 
@@ -699,7 +699,7 @@ casacore::LCRegion* Region::GetConvertedLCRegion(
             lc_region = reference_region->toLCRegion(output_csys, output_shape);
         }
     } catch (const casacore::AipsError& err) {
-        ERROR("Error converting region to file {}: {}", file_id, err.getMesg());
+        spdlog::error("Error converting region to file {}: {}", file_id, err.getMesg());
     }
 
     if (lc_region) {
@@ -860,10 +860,10 @@ casacore::TableRecord Region::GetPointRecord(const casacore::CoordinateSystem& o
             record.define("blc", blc);
             record.define("trc", trc);
         } else {
-            ERROR("Error converting point to image.");
+            spdlog::error("Error converting point to image.");
         }
     } catch (const casacore::AipsError& err) {
-        ERROR("Error converting point to image: {}", err.getMesg());
+        spdlog::error("Error converting point to image: {}", err.getMesg());
     }
 
     return record;
@@ -890,7 +890,7 @@ casacore::TableRecord Region::GetPolygonRecord(const casacore::CoordinateSystem&
                 x(index) = pixel_point(0);
                 y(index) = pixel_point(1);
             } else {
-                ERROR("Error converting rectangle/polygon to image.");
+                spdlog::error("Error converting rectangle/polygon to image.");
                 return record;
             }
         }
@@ -908,7 +908,7 @@ casacore::TableRecord Region::GetPolygonRecord(const casacore::CoordinateSystem&
         record.define("x", x);
         record.define("y", y);
     } catch (const casacore::AipsError& err) {
-        ERROR("Error converting rectangle/polygon to image: {}", err.getMesg());
+        spdlog::error("Error converting rectangle/polygon to image: {}", err.getMesg());
     }
 
     return record;
@@ -950,7 +950,7 @@ casacore::TableRecord Region::GetRotboxRecord(const casacore::CoordinateSystem& 
         pixel_coords.row(1) = y;
         casacore::Vector<casacore::Bool> failures;
         if (!_coord_sys->toWorldMany(world_coords, pixel_coords, failures)) {
-            ERROR("Error converting rectangle pixel coordinates to world.");
+            spdlog::error("Error converting rectangle pixel coordinates to world.");
             return record;
         }
         casacore::Vector<casacore::Double> x_wcs = world_coords.row(0);
@@ -972,7 +972,7 @@ casacore::TableRecord Region::GetRotboxRecord(const casacore::CoordinateSystem& 
                 corner_x(i) = pixel_point(0);
                 corner_y(i) = pixel_point(1);
             } else {
-                ERROR("Error converting rectangle coordinates to image.");
+                spdlog::error("Error converting rectangle coordinates to image.");
                 return record;
             }
         }
@@ -982,7 +982,7 @@ casacore::TableRecord Region::GetRotboxRecord(const casacore::CoordinateSystem& 
         record.define("x", corner_x);
         record.define("y", corner_y);
     } catch (const casacore::AipsError& err) {
-        ERROR("Error converting rectangle to image: {}", err.getMesg());
+        spdlog::error("Error converting rectangle to image: {}", err.getMesg());
     }
 
     return record;
@@ -1026,10 +1026,10 @@ casacore::TableRecord Region::GetEllipseRecord(const casacore::CoordinateSystem&
             theta.convert("rad");
             record.define("theta", theta.getValue());
         } else {
-            ERROR("Incompatible coordinate systems for ellipse conversion.");
+            spdlog::error("Incompatible coordinate systems for ellipse conversion.");
         }
     } catch (const casacore::AipsError& err) {
-        ERROR("Error converting ellipse to image: {}", err.getMesg());
+        spdlog::error("Error converting ellipse to image: {}", err.getMesg());
     }
 
     return record;

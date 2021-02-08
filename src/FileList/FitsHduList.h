@@ -16,7 +16,7 @@
 
 inline void FitsInfoErrHandler(const char* err_message, casacore::FITSError::ErrorLevel severity) {
     if (severity > casacore::FITSError::WARN) {
-        ERROR(err_message);
+        spdlog::error(err_message);
     }
 }
 

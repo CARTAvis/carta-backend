@@ -112,7 +112,7 @@ void MomentGenerator::SetMomentAxis(const CARTA::MomentRequest& moment_request) 
     } else if (moment_request.axis() == CARTA::MomentAxis::STOKES) {
         _axis = _stokes_axis;
     } else {
-        ERROR("Do not support the moment axis: {}", moment_request.axis());
+        spdlog::error("Do not support the moment axis: {}", moment_request.axis());
     }
 }
 
@@ -193,7 +193,7 @@ int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
     if (_moment_map.count(moment)) {
         return _moment_map[moment];
     } else {
-        ERROR("Unknown moment mode: {}", moment);
+        spdlog::error("Unknown moment mode: {}", moment);
         return -1;
     }
 }
@@ -203,7 +203,7 @@ casacore::String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
     if (_moment_suffix_map.count(moment_type)) {
         return _moment_suffix_map[moment_type];
     } else {
-        ERROR("Unknown moment mode: {}", moment);
+        spdlog::error("Unknown moment mode: {}", moment);
         return "";
     }
 }
