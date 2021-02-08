@@ -1,18 +1,18 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <vector>
 #include <random>
+#include <vector>
 
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 
 #include "ImageStats/Histogram.h"
-#include "Timer/Timer.h"
 #include "Threading.h"
+#include "Timer/Timer.h"
 
 using namespace std;
 random_device rd;
@@ -37,7 +37,7 @@ bool CompareResults(const carta::HistogramResults& a, const carta::HistogramResu
 
 TEST(Histogram, TestSingleThreading) {
     std::vector<float> data(1024 * 1024);
-    for (auto& v: data) {
+    for (auto& v : data) {
         v = float_random(mt);
     }
 
@@ -56,7 +56,7 @@ TEST(Histogram, TestSingleThreading) {
 
 TEST(Histogram, TestMultithreading) {
     std::vector<float> data(1024 * 1024);
-    for (auto& v: data) {
+    for (auto& v : data) {
         v = float_random(mt);
     }
 
@@ -76,7 +76,7 @@ TEST(Histogram, TestMultithreading) {
 
 TEST(Histogram, TestMultithreadingPerformance) {
     std::vector<float> data(1024 * 1024);
-    for (auto& v: data) {
+    for (auto& v : data) {
         v = float_random(mt);
     }
 
@@ -99,7 +99,6 @@ TEST(Histogram, TestMultithreadingPerformance) {
     auto st_time = t.GetMeasurement("single_threaded");
     auto mt_time = t.GetMeasurement("multi_threaded");
     double speedup = st_time / mt_time;
-    cout<<speedup<<endl;
+    cout << speedup << endl;
     EXPECT_GE(speedup, 1.5);
 }
-

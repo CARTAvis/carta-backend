@@ -1,16 +1,16 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <vector>
 #include <random>
+#include <vector>
 
+#include <casa/Arrays/ArrayMath.h>
+#include <casa/Arrays/Matrix.h>
 #include <fmt/format.h>
 #include <gtest/gtest.h>
-#include <casa/Arrays/Matrix.h>
-#include <casa/Arrays/ArrayMath.h>
 
 #include "../src/DataStream/Smoothing.h"
 #include "../src/Timer/Timer.h"
@@ -105,33 +105,36 @@ float nanmax(const Matrix2F& m) {
 }
 
 Matrix2F DownsampleTileScalar(const Matrix2F& m, int downsample_factor) {
-    int result_rows = ceil(m.nrow() / (float) (downsample_factor));
-    int result_columns = ceil(m.ncolumn() / (float) (downsample_factor));
+    int result_rows = ceil(m.nrow() / (float)(downsample_factor));
+    int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
     Matrix2F scalar_result(result_rows, result_columns);
-    BlockSmoothScalar(m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
+    BlockSmoothScalar(
+        m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
     return std::move(scalar_result);
 }
 
 Matrix2F DownsampleTileSSE(const Matrix2F& m, int downsample_factor) {
-    int result_rows = ceil(m.nrow() / (float) (downsample_factor));
-    int result_columns = ceil(m.ncolumn() / (float) (downsample_factor));
+    int result_rows = ceil(m.nrow() / (float)(downsample_factor));
+    int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
     Matrix2F scalar_result(result_rows, result_columns);
-    BlockSmoothSSE(m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
+    BlockSmoothSSE(
+        m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
     return std::move(scalar_result);
 }
 
 #ifdef __AVX__
 Matrix2F DownsampleTileAVX(const Matrix2F& m, int downsample_factor) {
-    int result_rows = ceil(m.nrow() / (float) (downsample_factor));
-    int result_columns = ceil(m.ncolumn() / (float) (downsample_factor));
+    int result_rows = ceil(m.nrow() / (float)(downsample_factor));
+    int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
     Matrix2F scalar_result(result_rows, result_columns);
-    BlockSmoothAVX(m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
+    BlockSmoothAVX(
+        m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
     return std::move(scalar_result);
 }
 #endif
 
 TEST(BlockSmoothing, TestControl) {
-    for (auto nan_fraction: nan_fractions) {
+    for (auto nan_fraction : nan_fractions) {
         for (auto i = 0; i < NUM_ITERS; i++) {
             auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
             for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
@@ -151,7 +154,7 @@ TEST(BlockSmoothing, TestControl) {
 }
 
 TEST(BlockSmoothing, TestSSEAccuracy) {
-    for (auto nan_fraction: nan_fractions) {
+    for (auto nan_fraction : nan_fractions) {
         for (auto i = 0; i < NUM_ITERS; i++) {
             auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
             for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
@@ -192,7 +195,7 @@ TEST(BlockSmoothing, TestSSEPerformance) {
 #ifdef __AVX__
 
 TEST(BlockSmoothing, TestAVXAccuracy) {
-    for (auto nan_fraction: nan_fractions) {
+    for (auto nan_fraction : nan_fractions) {
         for (auto i = 0; i < NUM_ITERS; i++) {
             auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
             for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
