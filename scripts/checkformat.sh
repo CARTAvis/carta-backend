@@ -9,6 +9,6 @@
 
 PARAMS=(\( -regex '.*\.\(cc\|h\|tcc\)' \))
 
-find src "${PARAMS[@]}" -exec cat {} \; | diff -u <(find src "${PARAMS[@]}" -exec clang-format {} \;) -
+find src test "${PARAMS[@]}" -exec cat {} \; | diff -u <(find src test "${PARAMS[@]}" -exec clang-format {} \;) -
 
 exit
