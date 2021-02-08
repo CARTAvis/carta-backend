@@ -22,8 +22,8 @@ struct HistogramResults {
 };
 
 class Histogram {
-    float _min_val; // lower bound of the histogram (inclusive)
-    float _max_val; // upper bound of the histogram (inclusive)
+    float _min_val;              // lower bound of the histogram (inclusive)
+    float _max_val;              // upper bound of the histogram (inclusive)
     HistogramResults _histogram; // histogram stats
 
     void Fill(const std::vector<float>&);
@@ -35,13 +35,27 @@ public:
 
     bool join(Histogram& h); // NOLINT
 
-    HistogramResults GetHistogram() const { return _histogram; }
-    float GetMinVal() const { return _min_val; }
-    float GetMaxVal() const { return _max_val; }
-    int GetNbins() const { return _histogram.num_bins; }
-    float GetBinWidth() const { return _histogram.bin_width; }
-    float GetBinCenter()  const { return _histogram.bin_center; }
-    const std::vector<int>& GetHistogramBins() const { return _histogram.histogram_bins; }
+    HistogramResults GetHistogram() const {
+        return _histogram;
+    }
+    float GetMinVal() const {
+        return _min_val;
+    }
+    float GetMaxVal() const {
+        return _max_val;
+    }
+    int GetNbins() const {
+        return _histogram.num_bins;
+    }
+    float GetBinWidth() const {
+        return _histogram.bin_width;
+    }
+    float GetBinCenter() const {
+        return _histogram.bin_center;
+    }
+    const std::vector<int>& GetHistogramBins() const {
+        return _histogram.histogram_bins;
+    }
 };
 
 } // namespace carta

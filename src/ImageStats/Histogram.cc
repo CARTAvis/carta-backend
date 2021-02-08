@@ -17,7 +17,7 @@ using namespace carta;
 
 Histogram::Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data) {
     _histogram.num_bins = num_bins;
-    _histogram.bin_width =  (max_value - min_value) / num_bins;
+    _histogram.bin_width = (max_value - min_value) / num_bins;
     _min_val = min_value;
     _max_val = max_value;
     _histogram.histogram_bins.resize(num_bins);
