@@ -104,7 +104,7 @@ Session::~Session() {
             alarm(1);
         }
     }
-    spdlog::get(STDOUT_TAG)->flush(); // flush the log file while on Session's destruction
+    spdlog::default_logger()->flush(); // flush the log file while on Session's destruction
 }
 
 void Session::SetInitExitTimeout(int secs) {
