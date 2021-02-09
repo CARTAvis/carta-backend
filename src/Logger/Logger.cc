@@ -15,11 +15,6 @@ namespace fs = std::filesystem;
 #endif
 
 void InitLogger(bool no_log_file, int verbosity) {
-    std::string log_fullname;
-    if (!no_log_file) {
-        log_fullname = fs::path(getenv("HOME")).string() + "/.carta/log/carta.log";
-    }
-
     // Set the stdout console
     auto stdout_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     stdout_console_sink->set_pattern(STDOUT_PATTERN);
@@ -28,8 +23,10 @@ void InitLogger(bool no_log_file, int verbosity) {
     std::vector<spdlog::sink_ptr> stdout_sinks;
     stdout_sinks.push_back(stdout_console_sink);
 
+    // Set a log file with its full name, maximum size and the number of rotated files
+    std::string log_fullname;
     if (!no_log_file) {
-        // Set a log file with its full name, maximum size and the number of rotated files
+        log_fullname = fs::path(getenv("HOME")).string() + "/.carta/log/carta.log";
         auto stdout_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
         stdout_log_file_sink->set_pattern(STDOUT_PATTERN);
         stdout_sinks.push_back(stdout_log_file_sink);
