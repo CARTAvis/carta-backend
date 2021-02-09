@@ -20,7 +20,7 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetSpatialRequirements(message);
             } else {
-                spdlog::error("Bad SET_SPATIAL_REQUIREMENTS message!");
+                spdlog::warn("Bad SET_SPATIAL_REQUIREMENTS message!");
             }
             break;
         }
@@ -29,7 +29,7 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetStatsRequirements(message);
             } else {
-                spdlog::error("Bad SET_STATS_REQUIREMENTS message!");
+                spdlog::warn("Bad SET_STATS_REQUIREMENTS message!");
             }
             break;
         }
@@ -38,12 +38,12 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnMomentRequest(message, _header.request_id);
             } else {
-                spdlog::error("Bad MOMENT_REQUEST message!");
+                spdlog::warn("Bad MOMENT_REQUEST message!");
             }
             break;
         }
         default: {
-            spdlog::error("Bad event type in MultiMessageType:execute : ({})", _header.type);
+            spdlog::warn("Bad event type in MultiMessageType:execute : ({})", _header.type);
             break;
         }
     }

@@ -180,7 +180,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegisterViewer(message, head.icd_version, head.request_id);
                     } else {
-                        spdlog::error("Bad REGISTER_VIEWER message!");
+                        spdlog::warn("Bad REGISTER_VIEWER message!");
                     }
                     break;
                 }
@@ -189,7 +189,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnResumeSession(message, head.request_id);
                     } else {
-                        spdlog::error("Bad RESUME_SESSION message!");
+                        spdlog::warn("Bad RESUME_SESSION message!");
                     }
                     break;
                 }
@@ -204,7 +204,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->AddToSetChannelQueue(message, head.request_id);
                         session->ImageChannelUnlock(message.file_id());
                     } else {
-                        spdlog::error("Bad SET_IMAGE_CHANNELS message!");
+                        spdlog::warn("Bad SET_IMAGE_CHANNELS message!");
                     }
                     break;
                 }
@@ -214,7 +214,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->AddCursorSetting(message, head.request_id);
                         tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
                     } else {
-                        spdlog::error("Bad SET_CURSOR message!");
+                        spdlog::warn("Bad SET_CURSOR message!");
                     }
                     break;
                 }
@@ -229,7 +229,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                                 SetHistogramRequirementsTask(session, head, event_length, event_buf);
                         }
                     } else {
-                        spdlog::error("Bad SET_HISTOGRAM_REQUIREMENTS message!");
+                        spdlog::warn("Bad SET_HISTOGRAM_REQUIREMENTS message!");
                     }
                     break;
                 }
@@ -238,7 +238,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCloseFile(message);
                     } else {
-                        spdlog::error("Bad CLOSE_FILE message!");
+                        spdlog::warn("Bad CLOSE_FILE message!");
                     }
                     break;
                 }
@@ -249,7 +249,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->BuildAnimationObject(message, head.request_id);
                         tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     } else {
-                        spdlog::error("Bad START_ANIMATION message!");
+                        spdlog::warn("Bad START_ANIMATION message!");
                     }
                     break;
                 }
@@ -258,7 +258,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->StopAnimation(message.file_id(), message.end_frame());
                     } else {
-                        spdlog::error("Bad STOP_ANIMATION message!");
+                        spdlog::warn("Bad STOP_ANIMATION message!");
                     }
                     break;
                 }
@@ -267,7 +267,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->HandleAnimationFlowControlEvt(message);
                     } else {
-                        spdlog::error("Bad ANIMATION_FLOW_CONTROL message!");
+                        spdlog::warn("Bad ANIMATION_FLOW_CONTROL message!");
                     }
                     break;
                 }
@@ -276,7 +276,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnFileInfoRequest(message, head.request_id);
                     } else {
-                        spdlog::error("Bad FILE_INFO_REQUEST message!");
+                        spdlog::warn("Bad FILE_INFO_REQUEST message!");
                     }
                     break;
                 }
@@ -285,7 +285,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnFileListRequest(message, head.request_id);
                     } else {
-                        spdlog::error("Bad FILE_LIST_REQUEST message!");
+                        spdlog::warn("Bad FILE_LIST_REQUEST message!");
                     }
                     break;
                 }
@@ -294,7 +294,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnOpenFile(message, head.request_id);
                     } else {
-                        spdlog::error("Bad OPEN_FILE message!");
+                        spdlog::warn("Bad OPEN_FILE message!");
                     }
                     break;
                 }
@@ -309,7 +309,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegionListRequest(message, head.request_id);
                     } else {
-                        spdlog::error("Bad REGION_LIST_REQUEST message!");
+                        spdlog::warn("Bad REGION_LIST_REQUEST message!");
                     }
                     break;
                 }
@@ -318,7 +318,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegionFileInfoRequest(message, head.request_id);
                     } else {
-                        spdlog::error("Bad REGION_FILE_INFO_REQUEST message!");
+                        spdlog::warn("Bad REGION_FILE_INFO_REQUEST message!");
                     }
                     break;
                 }
@@ -327,7 +327,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnImportRegion(message, head.request_id);
                     } else {
-                        spdlog::error("Bad IMPORT_REGION message!");
+                        spdlog::warn("Bad IMPORT_REGION message!");
                     }
                     break;
                 }
@@ -336,7 +336,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnExportRegion(message, head.request_id);
                     } else {
-                        spdlog::error("Bad EXPORT_REGION message!");
+                        spdlog::warn("Bad EXPORT_REGION message!");
                     }
                     break;
                 }
@@ -351,7 +351,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnScriptingResponse(message, head.request_id);
                     } else {
-                        spdlog::error("Bad SCRIPTING_RESPONSE message!");
+                        spdlog::warn("Bad SCRIPTING_RESPONSE message!");
                     }
                     break;
                 }
@@ -360,7 +360,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSetRegion(message, head.request_id);
                     } else {
-                        spdlog::error("Bad SET_REGION message!");
+                        spdlog::warn("Bad SET_REGION message!");
                     }
                     break;
                 }
@@ -369,7 +369,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRemoveRegion(message);
                     } else {
-                        spdlog::error("Bad REMOVE_REGION message!");
+                        spdlog::warn("Bad REMOVE_REGION message!");
                     }
                     break;
                 }
@@ -378,7 +378,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSetSpectralRequirements(message);
                     } else {
-                        spdlog::error("Bad SET_SPECTRAL_REQUIREMENTS message!");
+                        spdlog::warn("Bad SET_SPECTRAL_REQUIREMENTS message!");
                     }
                     break;
                 }
@@ -387,7 +387,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCatalogFileList(message, head.request_id);
                     } else {
-                        spdlog::error("Bad CATALOG_LIST_REQUEST message!");
+                        spdlog::warn("Bad CATALOG_LIST_REQUEST message!");
                     }
                     break;
                 }
@@ -396,7 +396,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCatalogFileInfo(message, head.request_id);
                     } else {
-                        spdlog::error("Bad CATALOG_FILE_INFO_REQUEST message!");
+                        spdlog::warn("Bad CATALOG_FILE_INFO_REQUEST message!");
                     }
                     break;
                 }
@@ -405,7 +405,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnOpenCatalogFile(message, head.request_id);
                     } else {
-                        spdlog::error("Bad OPEN_CATALOG_FILE message!");
+                        spdlog::warn("Bad OPEN_CATALOG_FILE message!");
                     }
                     break;
                 }
@@ -414,7 +414,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCloseCatalogFile(message);
                     } else {
-                        spdlog::error("Bad CLOSE_CATALOG_FILE message!");
+                        spdlog::warn("Bad CLOSE_CATALOG_FILE message!");
                     }
                     break;
                 }
@@ -423,7 +423,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCatalogFilter(message, head.request_id);
                     } else {
-                        spdlog::error("Bad CLOSE_CATALOG_FILE message!");
+                        spdlog::warn("Bad CLOSE_CATALOG_FILE message!");
                     }
                     break;
                 }
@@ -432,7 +432,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnStopMomentCalc(message);
                     } else {
-                        spdlog::error("Bad STOP_MOMENT_CALC message!");
+                        spdlog::warn("Bad STOP_MOMENT_CALC message!");
                     }
                     break;
                 }
@@ -441,7 +441,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSaveFile(message, head.request_id);
                     } else {
-                        spdlog::error("Bad SAVE_FILE message!");
+                        spdlog::warn("Bad SAVE_FILE message!");
                     }
                     break;
                 }
@@ -451,7 +451,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         tsk =
                             new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
                     } else {
-                        spdlog::error("Bad SPECTRAL_LINE_REQUEST message!");
+                        spdlog::warn("Bad SPECTRAL_LINE_REQUEST message!");
                     }
                     break;
                 }
@@ -642,7 +642,7 @@ int main(int argc, const char* argv[]) {
                     }
                 });
             } else {
-                spdlog::error("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument");
+                spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument");
             }
         }
 

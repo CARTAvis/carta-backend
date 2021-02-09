@@ -23,7 +23,7 @@ SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
     if (_frontend_found) {
         spdlog::info("Serving CARTA frontend from {}", fs::canonical(_http_root_folder).string());
     } else {
-        spdlog::error("Could not find CARTA frontend files in directory {}.", _http_root_folder.string());
+        spdlog::warn("Could not find CARTA frontend files in directory {}.", _http_root_folder.string());
     }
 }
 

@@ -112,7 +112,7 @@ void MomentGenerator::SetMomentAxis(const CARTA::MomentRequest& moment_request) 
     } else if (moment_request.axis() == CARTA::MomentAxis::STOKES) {
         _axis = _stokes_axis;
     } else {
-        spdlog::error("Do not support the moment axis: {}", moment_request.axis());
+        spdlog::error("Unsupported moment axis: {}", moment_request.axis());
     }
 }
 

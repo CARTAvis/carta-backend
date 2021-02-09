@@ -48,7 +48,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
-        spdlog::debug("Session {}: {}", session_id, _open_image_error);
+        spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -57,7 +57,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
         _open_image_error = err.getMesg();
-        spdlog::debug("Session {}: {}", session_id, _open_image_error);
+        spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -66,7 +66,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     std::string log_message;
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
-        spdlog::debug("Session {}: {}", session_id, _open_image_error);
+        spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -95,7 +95,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _loader->LoadImageStats();
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
-        spdlog::debug("Session {}: {}", session_id, _open_image_error);
+        spdlog::warn("Session {}: {}", session_id, _open_image_error);
     }
 }
 
@@ -501,7 +501,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
                 _contour_settings.chunk_size, partial_contour_callback);
             return true;
         }
-        spdlog::error("Smoothing mode not implemented yet!");
+        spdlog::warn("Smoothing mode not implemented yet!");
         return false;
     }
 
@@ -978,7 +978,7 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
         int axis, stokes;
         ConvertCoordinateToAxes(coordinate, axis, stokes);
         if (stokes >= nstokes) {
-            spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
+            spdlog::warn("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
             continue;
         }
 

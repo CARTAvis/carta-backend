@@ -190,7 +190,7 @@ bool Hdf5Loader::GetCursorSpectralData(
             LoadSwizzledData()->doGetSlice(tmp, slicer);
             data_ok = true;
         } catch (casacore::AipsError& err) {
-            spdlog::error("Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: {}", err.getMesg());
+            spdlog::warn("Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: {}", err.getMesg());
         }
     }
     return data_ok;
