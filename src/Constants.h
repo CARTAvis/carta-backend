@@ -55,12 +55,6 @@
 // scripting timeouts
 #define SCRIPTING_TIMEOUT 10 // seconds
 
-// catalog files
-#define ALL_CATALOG_DATA -1
-#define TARGET_PARTIAL_CATALOG_FILTER_TIME 500
-#define CATALOG_FILTER_COMPLETE 1.0
-#define CATALOG_ROW_CHUNK 10000
-
 // image moments
 #define REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS 5000
 #define REPORT_PROGRESS_EVERY_FACTOR 0.1
@@ -78,5 +72,11 @@
 // socket port
 #define DEFAULT_SOCKET_PORT 3002
 #define MAX_SOCKET_PORT_TRIALS 100
+
+// logger
+#define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
+#define ROTATED_LOG_FILES 5
+#define STDOUT_TAG "stdout"
+#define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

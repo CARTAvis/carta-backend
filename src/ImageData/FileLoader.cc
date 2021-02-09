@@ -9,6 +9,7 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "CasaLoader.h"
 #include "CompListLoader.h"
@@ -53,7 +54,7 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     if (image) {
         return new ImagePtrLoader(image);
     } else {
-        std::cerr << "Fail to assign an image pointer!" << std::endl;
+        spdlog::error("Fail to assign an image pointer!");
         return nullptr;
     }
 }

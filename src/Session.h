@@ -20,7 +20,6 @@
 #include <vector>
 
 #include <App.h>
-#include <fmt/format.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
@@ -59,7 +58,7 @@
 class Session {
 public:
     Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
-        FileListHandler* file_list_handler, bool verbose = false, bool perflog = false, int grpc_port = -1);
+        FileListHandler* file_list_handler, int grpc_port = -1);
     ~Session();
 
     // CARTA ICD
@@ -241,8 +240,6 @@ private:
     std::string _address;
     std::string _root_folder;
     std::string _base_folder;
-    bool _verbose_logging;
-    bool _performance_logging;
     int _grpc_port;
 
     // File browser

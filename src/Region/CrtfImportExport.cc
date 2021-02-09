@@ -24,6 +24,7 @@
 
 #include <iomanip>
 
+#include "../Logger/Logger.h"
 #include "../Util.h"
 
 using namespace carta;
@@ -248,7 +249,7 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const Re
             _region_list.addLine(file_line);
         }
     } catch (const casacore::AipsError& err) {
-        std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
+        spdlog::error("CRTF export error: {}", err.getMesg());
         return false;
     }
 
@@ -647,7 +648,7 @@ RegionState CrtfImportExport::ImportAnnSymbol(std::vector<std::string>& paramete
             region_state = RegionState(_file_id, type, control_points, rotation);
 
         } catch (const casacore::AipsError& err) {
-            std::cerr << "Import symbol Quantity error: " << err.getMesg() << std::endl;
+            spdlog::error("Import symbol Quantity error: {}", err.getMesg());
             _import_errors.append("symbol parameters invalid.\n");
         }
     } else {
@@ -727,7 +728,7 @@ RegionState CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& paramet
             CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
             region_state = RegionState(_file_id, type, control_points, rotation);
         } catch (const casacore::AipsError& err) {
-            std::cerr << "Import ellipse Quantity error: " << err.getMesg() << std::endl;
+            spdlog::error("Import ellipse Quantity error: {}", err.getMesg());
             _import_errors.append("ellipse parameters invalid.\n");
         }
     } else {
@@ -764,7 +765,7 @@ RegionState CrtfImportExport::ImportAnnPolygon(std::vector<std::string>& paramet
             float rotation(0.0);
             region_state = RegionState(_file_id, type, control_points, rotation);
         } catch (const casacore::AipsError& err) {
-            std::cerr << "Import polygon Quantity error: " << err.getMesg() << std::endl;
+            spdlog::error("Import polygon Quantity error: {}", err.getMesg());
             _import_errors.append("polygon quantities invalid.\n");
         }
     } else {
@@ -894,7 +895,7 @@ bool CrtfImportExport::GetBoxControlPoints(
             rotation = 0.0;
         }
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Import " << region << " Quantity error: " << err.getMesg() << std::endl;
+        spdlog::error("Import {} Quantity error: {}", region, err.getMesg());
         return false;
     }
 
@@ -998,7 +999,7 @@ bool CrtfImportExport::GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quan
         casacore::Quantity height = (trcy - blcy);
         converted = GetCenterBoxPoints("box", cx, cy, width, height, region_frame, control_points);
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Import box Quantity error: " << err.getMesg() << std::endl;
+        spdlog::error("Import box Quantity error: {}", err.getMesg());
         converted = false;
     }
     return converted;
@@ -1088,7 +1089,7 @@ bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state
 
         return true;
     } catch (const casacore::AipsError& err) {
-        std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
+        spdlog::error("CRTF export error: {}", err.getMesg());
         return false;
     }
 }

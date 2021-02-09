@@ -5,25 +5,13 @@
 */
 
 #include "Util.h"
+#include "Logger/Logger.h"
 
 using namespace std;
 
-namespace carta {
-
-void Log(uint32_t id, const string& log_message) {
-    time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    string time_string = ctime(&time);
-    time_string = time_string.substr(0, time_string.length() - 1);
-
-    fmt::print("Session {} ({}): {}\n", id, time_string, log_message);
-}
-
-} // namespace carta
-
 bool CheckRootBaseFolders(string& root, string& base) {
     if (root == "base" && base == "root") {
-        fmt::print("ERROR: Must set root or base directory.\n");
-        fmt::print("Exiting carta.\n");
+        spdlog::critical("Must set root or base directory. Exiting carta.");
         return false;
     }
     if (root == "base")
@@ -34,8 +22,7 @@ bool CheckRootBaseFolders(string& root, string& base) {
     // check root
     casacore::File root_folder(root);
     if (!(root_folder.exists() && root_folder.isDirectory(true) && root_folder.isReadable() && root_folder.isExecutable())) {
-        fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
+        spdlog::critical("Invalid root directory, does not exist or is not a readable directory. Exiting carta.");
         return false;
     }
     // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
@@ -45,7 +32,7 @@ bool CheckRootBaseFolders(string& root, string& base) {
         try {
             root = root_folder.path().absoluteName();
         } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
+            spdlog::error(err.getMesg());
         }
         if (root.empty())
             root = "/";
@@ -53,21 +40,21 @@ bool CheckRootBaseFolders(string& root, string& base) {
     // check base
     casacore::File base_folder(base);
     if (!(base_folder.exists() && base_folder.isDirectory(true) && base_folder.isReadable() && base_folder.isExecutable())) {
-        fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
-        return false;
-    }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        base = base_folder.path().resolvedName(); // fails on root folder /
-    } catch (casacore::AipsError& err) {
+        spdlog::warn("Invalid base directory, using the provided root directory instead.");
+        base = root;
+    } else {
+        // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
         try {
-            base = base_folder.path().absoluteName();
+            base = base_folder.path().resolvedName(); // fails on root folder /
         } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
+            try {
+                base = base_folder.path().absoluteName();
+            } catch (casacore::AipsError& err) {
+                spdlog::error(err.getMesg());
+            }
+            if (base.empty())
+                base = "/";
         }
-        if (base.empty())
-            base = "/";
     }
     // check if base is same as or subdir of root
     if (base != root) {
@@ -86,7 +73,7 @@ bool CheckRootBaseFolders(string& root, string& base) {
             }
         }
         if (!is_subdirectory) {
-            fmt::print("ERROR: Base {} must be a subdirectory of root {}. Exiting carta.\n", base, root);
+            spdlog::critical("Base {} must be a subdirectory of root {}. Exiting carta.", base, root);
             return false;
         }
     }

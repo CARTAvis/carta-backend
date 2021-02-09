@@ -37,8 +37,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
+FIND_PACKAGE(spdlog REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
@@ -112,6 +112,7 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
+        spdlog
         casa_casa
         casa_coordinates
         casa_tables
@@ -131,6 +132,7 @@ set(SOURCE_FILES
         src/Main.cc
         src/Session.cc
         src/Frame.cc
+        src/Logger/Logger.cc
         src/DataStream/Compression.cc
         src/DataStream/Contouring.cc
         src/DataStream/Smoothing.cc

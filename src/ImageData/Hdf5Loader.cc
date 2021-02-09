@@ -6,6 +6,8 @@
 
 #include "Hdf5Loader.h"
 
+#include "../Logger/Logger.h"
+
 namespace carta {
 
 Hdf5Loader::Hdf5Loader(const std::string& filename) : FileLoader(filename), _hdu("0") {}
@@ -188,7 +190,7 @@ bool Hdf5Loader::GetCursorSpectralData(
             LoadSwizzledData()->doGetSlice(tmp, slicer);
             data_ok = true;
         } catch (casacore::AipsError& err) {
-            std::cerr << "Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: " << err.getMesg() << std::endl;
+            spdlog::warn("Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: {}", err.getMesg());
         }
     }
     return data_ok;
