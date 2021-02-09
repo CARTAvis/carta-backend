@@ -279,13 +279,11 @@ bool Frame::FillImageCache() {
         return false;
     }
 
-    if (spdlog::default_logger()->level() == spdlog::level::trace) {
-        auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
-        auto dt_set_image_cache =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-        spdlog::trace("Load {}x{} image to cache in {} ms at {} MPix/s", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
-            (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
-    }
+    auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
+    auto dt_set_image_cache =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
+    spdlog::trace("Load {}x{} image to cache in {} ms at {} MPix/s", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
+        (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
 
     return true;
 }
