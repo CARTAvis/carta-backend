@@ -40,7 +40,7 @@ bool CheckRootBaseFolders(string& root, string& base) {
     // check base
     casacore::File base_folder(base);
     if (!(base_folder.exists() && base_folder.isDirectory(true) && base_folder.isReadable() && base_folder.isExecutable())) {
-        spdlog::warn("Invalid base directory, use root directory instead.");
+        spdlog::warn("Invalid base directory, using the provided root directory instead.");
         base = root;
     } else {
         // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
