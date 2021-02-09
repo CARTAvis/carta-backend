@@ -543,13 +543,10 @@ void Session::OnAddRequiredTiles(const CARTA::AddRequiredTiles& message, bool sk
             }
         }
 
-        if (spdlog::get_level() == spdlog::level::trace) {
-            // Measure duration for get tile data
-            auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
-            auto dt_get_tile_data =
-                std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
-            spdlog::trace("Get tile data group in {} ms", dt_get_tile_data * 1e-3);
-        }
+        // Measure duration for get tile data
+        auto t_end_get_tile_data = std::chrono::high_resolution_clock::now();
+        auto dt_get_tile_data = std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_tile_data - t_start_get_tile_data).count();
+        spdlog::trace("Get tile data group in {} ms", dt_get_tile_data * 1e-3);
 
         // Send final message with no tiles to signify end of the tile stream, for synchronisation purposes
         CARTA::RasterTileSync final_message;
@@ -707,13 +704,10 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         }
 
         _region_handler->ImportRegion(file_id, _frames.at(file_id), file_type, region_file, import_file, import_ack);
-        if (spdlog::get_level() == spdlog::level::trace) {
-            // Measure duration for get tile data
-            auto t_end_import_region = std::chrono::high_resolution_clock::now();
-            auto dt_import_region =
-                std::chrono::duration_cast<std::chrono::microseconds>(t_end_import_region - t_start_import_region).count();
-            spdlog::trace("Import region in {} ms", dt_import_region * 1e-3);
-        }
+        // Measure duration for get tile data
+        auto t_end_import_region = std::chrono::high_resolution_clock::now();
+        auto dt_import_region = std::chrono::duration_cast<std::chrono::microseconds>(t_end_import_region - t_start_import_region).count();
+        spdlog::trace("Import region in {} ms", dt_import_region * 1e-3);
 
         // send any errors to log
         std::string ack_message(import_ack.message());
@@ -1001,11 +995,9 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     }
 
     // Measure duration for resume
-    if (spdlog::get_level() == spdlog::level::trace) {
-        auto t_end_resume = std::chrono::high_resolution_clock::now();
-        auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
-        spdlog::trace("Resume in {} ms", dt_resume * 1e-3);
-    }
+    auto t_end_resume = std::chrono::high_resolution_clock::now();
+    auto dt_resume = std::chrono::duration_cast<std::chrono::microseconds>(t_end_resume - t_start_resume).count();
+    spdlog::trace("Resume in {} ms", dt_resume * 1e-3);
 
     // RESPONSE
     CARTA::ResumeSessionAck ack;
@@ -1256,13 +1248,11 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_results.histogram_bins = {cube_bins.begin(), cube_bins.end()};
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_results);
 
-                    if (spdlog::get_level() == spdlog::level::trace) {
-                        auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
-                        auto dt_cube_histogram =
-                            std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
-                        spdlog::trace("Fill cube histogram in {} ms at {} MPix/s", dt_cube_histogram * 1e-3,
-                            (float)cube_stats.num_pixels / dt_cube_histogram);
-                    }
+                    auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
+                    auto dt_cube_histogram =
+                        std::chrono::duration_cast<std::chrono::microseconds>(t_end_cube_histogram - t_start_cube_histogram).count();
+                    spdlog::trace("Fill cube histogram in {} ms at {} MPix/s", dt_cube_histogram * 1e-3,
+                        (float)cube_stats.num_pixels / dt_cube_histogram);
 
                     calculated = true;
                 }
@@ -1737,13 +1727,10 @@ void Session::ExecuteAnimationFrameInner() {
             }
 
             // Measure duration for frame changing as animating
-            if (spdlog::get_level() == spdlog::level::trace) {
-                auto t_end_change_frame = std::chrono::high_resolution_clock::now();
-                auto dt_change_frame =
-                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
-                if (channel_changed || stokes_changed) {
-                    spdlog::trace("Animator: Change frame in {} ms", dt_change_frame * 1e-3);
-                }
+            auto t_end_change_frame = std::chrono::high_resolution_clock::now();
+            auto dt_change_frame = std::chrono::duration_cast<std::chrono::microseconds>(t_end_change_frame - t_start_change_frame).count();
+            if (channel_changed || stokes_changed) {
+                spdlog::trace("Animator: Change frame in {} ms", dt_change_frame * 1e-3);
             }
         } catch (std::out_of_range& range_error) {
             string error = fmt::format("File id {} closed", active_file_id);

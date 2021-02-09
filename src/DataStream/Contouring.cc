@@ -233,7 +233,7 @@ void TraceContours(float* image, int64_t width, int64_t height, double scale, do
         TraceLevel(image, width, height, scale, offset, levels[l], vertex_data[l], index_data[l], chunk_size, partial_callback);
     }
 
-    if (spdlog::get_level() == spdlog::level::trace) {
+    if (spdlog::default_logger()->level() >= spdlog::level::trace) {
         auto t_end_contours = std::chrono::high_resolution_clock::now();
         auto dt_contours = std::chrono::duration_cast<std::chrono::microseconds>(t_end_contours - t_start_contours).count();
         auto rate_contours = width * height / (double)dt_contours;
