@@ -543,7 +543,8 @@ int main(int argc, const char* argv[]) {
 
         { // get values then let Input go out of scope
             casacore::Input inp;
-            inp.create("verbosity", to_string(verbosity), "display verbose logging from level (4: info, 5: debug, 6: trace)", "Int");
+            inp.create("verbosity", to_string(verbosity),
+                "display verbose logging from level (0: off, 1: critical, 2: error, 3: warning, 4: info, 5: debug, 6: trace)", "Int");
             inp.create("no_log", "False", "Do not output to a log file", "Bool");
             inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
             inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, use with caution!)", "Bool");

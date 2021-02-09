@@ -18,7 +18,6 @@ void InitLogger(bool no_log_file, int verbosity) {
     std::string log_fullname;
     if (!no_log_file) {
         log_fullname = fs::path(getenv("HOME")).string() + "/.carta/log/carta.log";
-        spdlog::info("Writing to the log file: {}", log_fullname);
     }
 
     // Set the stdout console
@@ -40,12 +39,29 @@ void InitLogger(bool no_log_file, int verbosity) {
     auto stdout_logger = std::make_shared<spdlog::logger>(STDOUT_TAG, std::begin(stdout_sinks), std::end(stdout_sinks));
 
     // Set logger's level according to the verbosity number
-    if (verbosity == 6) {
-        stdout_logger->set_level(spdlog::level::trace);
-    } else if (verbosity == 5) {
-        stdout_logger->set_level(spdlog::level::debug);
-    } else {
-        stdout_logger->set_level(spdlog::level::info);
+    switch (verbosity) {
+        case 0:
+            stdout_logger->set_level(spdlog::level::off);
+            break;
+        case 1:
+            stdout_logger->set_level(spdlog::level::critical);
+            break;
+        case 2:
+            stdout_logger->set_level(spdlog::level::err);
+            break;
+        case 3:
+            stdout_logger->set_level(spdlog::level::warn);
+            break;
+        case 5:
+            stdout_logger->set_level(spdlog::level::debug);
+            break;
+        case 6:
+            stdout_logger->set_level(spdlog::level::trace);
+            break;
+        default: {
+            stdout_logger->set_level(spdlog::level::info);
+            break;
+        }
     }
 
     // Set flush policy on severity
@@ -60,6 +76,10 @@ void InitLogger(bool no_log_file, int verbosity) {
 
     // Set the default logger
     spdlog::set_default_logger(stdout_logger);
+
+    if (!no_log_file) {
+        spdlog::info("Writing to the log file: {}", log_fullname);
+    }
 
     // Show the carta_backend executor version via the stdout logger
     std::string current_path = fs::current_path();
