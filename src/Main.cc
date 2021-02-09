@@ -4,6 +4,7 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <climits>
 #include <iostream>
 #include <thread>
 #include <tuple>
@@ -519,6 +520,27 @@ void ExitBackend(int s) {
     exit(0);
 }
 
+bool FindExecutablePath(std::string& path) {
+    char path_buffer[PATH_MAX + 1];
+#ifdef __APPLE__
+    uint32_t len = sizeof(path_buffer);
+
+    if (_NSGetExecutablePath(path_buffer, &len) != 0) {
+        return false;
+    }
+#else
+    const int len = int(readlink("/proc/self/exe", path_buffer, PATH_MAX));
+
+    if (len == -1) {            
+        return false;
+    }
+        
+    path_buffer[len] = 0;
+#endif
+    path = path_buffer;
+    return true;
+}
+
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
@@ -586,6 +608,16 @@ int main(int argc, const char* argv[]) {
 
             InitLogger(no_log, verbosity);
         }
+        
+        std::string executable_path;
+        bool have_executable_path(FindExecutablePath(executable_path));
+        
+        if (!have_executable_path) {
+            spdlog::warn("Could not determine the full path to the backend executable.");
+            executable_path = "carta_backend";
+        }
+
+        spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
             return 1;
@@ -626,23 +658,27 @@ int main(int argc, const char* argv[]) {
 
         if (!no_http) {
             fs::path frontend_path;
-
-            if (frontend_folder.empty()) {
-                fs::path executable_path = fs::path(argv[0]).parent_path();
-                frontend_path = executable_path / "../share/carta/frontend";
-            } else {
+            
+            if (!frontend_folder.empty()) {
                 frontend_path = frontend_folder;
+            } else if (have_executable_path) {
+                fs::path executable_parent = fs::path(executable_path).parent_path();
+                frontend_path = executable_parent / "../share/carta/frontend";
+            } else {
+                spdlog::warn("Failed to determine the default location of the CARTA frontend. Please specify a custom location using the frontend_folder argument.");
             }
 
-            http_server = new SimpleFrontendServer(frontend_path);
-            if (http_server->CanServeFrontend()) {
-                app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
-                    if (http_server && http_server->CanServeFrontend()) {
-                        http_server->HandleRequest(res, req);
-                    }
-                });
-            } else {
-                spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument");
+            if (!frontend_path.empty()) {
+                http_server = new SimpleFrontendServer(frontend_path);
+                if (http_server->CanServeFrontend()) {
+                    app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
+                        if (http_server && http_server->CanServeFrontend()) {
+                            http_server->HandleRequest(res, req);
+                        }
+                    });
+                } else {
+                    spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument.");
+                }
             }
         }
 

@@ -77,8 +77,4 @@ void InitLogger(bool no_log_file, int verbosity) {
     if (!no_log_file) {
         spdlog::info("Writing to the log file: {}", log_fullname);
     }
-
-    // Show the carta_backend executor version via the stdout logger
-    std::string current_path = fs::current_path();
-    spdlog::info("{}/carta_backend: Version {}", current_path, VERSION_ID);
 }
