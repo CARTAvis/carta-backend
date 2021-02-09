@@ -505,7 +505,7 @@ int StartGrpcService(int grpc_port) {
         gpr_set_log_function(gpr_default_log);
         return 0;
     } else {
-        spdlog::error("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.", grpc_port);
+        spdlog::critical("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.", grpc_port);
         return 1;
     }
 }
@@ -721,10 +721,10 @@ int main(int argc, const char* argv[]) {
                 .run();
         }
     } catch (exception& e) {
-        spdlog::error("{}", e.what());
+        spdlog::critical("{}", e.what());
         return 1;
     } catch (...) {
-        spdlog::error("Unknown error");
+        spdlog::critical("Unknown error");
         return 1;
     }
 
