@@ -40,20 +40,21 @@ bool CheckRootBaseFolders(string& root, string& base) {
     // check base
     casacore::File base_folder(base);
     if (!(base_folder.exists() && base_folder.isDirectory(true) && base_folder.isReadable() && base_folder.isExecutable())) {
-        spdlog::critical("Invalid base directory, does not exist or is not a readable directory. Exiting carta.");
-        return false;
-    }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        base = base_folder.path().resolvedName(); // fails on root folder /
-    } catch (casacore::AipsError& err) {
+        spdlog::warn("Invalid base directory, use root directory instead.");
+        base = root;
+    } else {
+        // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
         try {
-            base = base_folder.path().absoluteName();
+            base = base_folder.path().resolvedName(); // fails on root folder /
         } catch (casacore::AipsError& err) {
-            spdlog::error(err.getMesg());
+            try {
+                base = base_folder.path().absoluteName();
+            } catch (casacore::AipsError& err) {
+                spdlog::error(err.getMesg());
+            }
+            if (base.empty())
+                base = "/";
         }
-        if (base.empty())
-            base = "/";
     }
     // check if base is same as or subdir of root
     if (base != root) {
