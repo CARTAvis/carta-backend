@@ -515,7 +515,7 @@ void ExitBackend(int s) {
     if (carta_grpc_server) {
         carta_grpc_server->Shutdown();
     }
-    spdlog::get(STDOUT_TAG)->flush(); // flush the log file while exiting backend
+    spdlog::default_logger()->flush(); // flush the log file while exiting backend
     exit(0);
 }
 
