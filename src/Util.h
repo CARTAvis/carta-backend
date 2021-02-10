@@ -31,7 +31,7 @@
 
 // ************ Utilities *************
 
-bool CheckRootBaseFolders(std::string& root, std::string& base);
+bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
 
 // split input string into a vector of strings by delimiter
