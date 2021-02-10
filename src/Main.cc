@@ -16,13 +16,11 @@
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
 #include <uuid/uuid.h>
+#include <cxxopts.hpp>
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
-
-#include <casacore/casa/Inputs/Input.h>
-#include <casacore/casa/OS/HostInfo.h>
 
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
@@ -545,8 +543,15 @@ bool FindExecutablePath(std::string& path) {
     return true;
 }
 
+template <class T>
+void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::ParseResult& results) {
+    if (results.count(argument_name)) {
+        val = results[argument_name].as<T>();
+    }
+}
+
 // Entry point. Parses command line arguments and starts server listening
-int main(int argc, const char* argv[]) {
+int main(int argc, char* argv[]) {
     try {
         // set up interrupt signal handler
         struct sigaction sig_handler;
@@ -567,46 +572,57 @@ int main(int argc, const char* argv[]) {
         bool no_log = false;
         int verbosity = 4;
 
-        { // get values then let Input go out of scope
-            casacore::Input inp;
-            inp.create("verbosity", to_string(verbosity),
-                "display verbose logging from level (0: off, 1: critical, 2: error, 3: warning, 4: info, 5: debug, 6: trace)", "Int");
-            inp.create("no_log", "False", "Do not output to a log file", "Bool");
-            inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
-            inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, use with caution!)", "Bool");
-            inp.create("no_browser", "False", "prevent the frontend from automatically opening in the default browser on startup", "Bool");
-            inp.create("host", host, "only listen on the specified interface (IP address or hostname)", "String");
-            inp.create("port", to_string(port), "set port on which to host frontend files and accept WebSocket connections", "Int");
-            inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
-            inp.create("threads", to_string(thread_count), "set thread count for handling incoming messages", "Int");
-            inp.create("omp_threads", to_string(omp_thread_count), "set OpenMP thread pool count. To handle automatically, use -1", "Int");
-            inp.create("base", base_folder, "set folder for data files", "String");
-            inp.create("root", root_folder, "set top-level folder for data files", "String");
-            inp.create("frontend_folder", frontend_folder, "set folder to serve frontend files from", "String");
-            inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
-            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clients connect", "Int");
-            inp.readArguments(argc, argv);
+        {
+            cxxopts::Options options("CARTA", "CARTA Backend");
+            options.add_options()("h,help", "Print usage")("v,version", "Print version")("verbosity",
+                "Display verbose logging from level (0: off, 1: critical, 2: error, 3: warning, 4: info, 5: debug, 6: trace)",
+                cxxopts::value<int>()->default_value(to_string(verbosity)))("no_log", "Do not output to a log file",
+                cxxopts::value<bool>())("no_http", "Disable CARTA frontend HTTP server", cxxopts::value<bool>())(
+                "debug_no_auth", "Accept all incoming WebSocket connections (insecure, use with caution!)", cxxopts::value<bool>())(
+                "no_browser", "Prevent the frontend from automatically opening in the default browser on startup", cxxopts::value<bool>())(
+                "host", "Only listen on the specified interface (IP address or hostname)", cxxopts::value<string>())("p,port",
+                "Set port on which to host frontend files and accept WebSocket connections. To handle automatically, use -1",
+                cxxopts::value<int>())("g,grpc_port", "Set grpc server port", cxxopts::value<int>())(
+                "t,omp_threads", "Set OpenMP thread pool count. To handle automatically, use -1", cxxopts::value<int>())("threads",
+                "Set thread count for handling incoming messages", cxxopts::value<int>()->default_value(to_string(thread_count)))(
+                "base", "Set starting folder for data files", cxxopts::value<string>())("root",
+                "Set top-level folder for data files. Files outside of this directory will not be accessible",
+                cxxopts::value<string>())("frontend_folder", "Set folder to serve frontend files from", cxxopts::value<string>())(
+                "exit_after", "Number of seconds to stay alive after last sessions exists", cxxopts::value<int>())(
+                "init_exit_after", "Number of seconds to stay alive at start if no clients connect", cxxopts::value<int>());
 
-            verbosity = inp.getInt("verbosity");
-            no_log = inp.getBool("no_log");
-            no_http = inp.getBool("no_http");
-            debug_no_auth = inp.getBool("debug_no_auth");
-            no_browser = inp.getBool("no_browser");
-            port = inp.getInt("port");
-            host = inp.getString("host");
-            grpc_port = inp.getInt("grpc_port");
-            omp_thread_count = inp.getInt("omp_threads");
-            thread_count = inp.getInt("threads");
-            base_folder = inp.getString("base");
-            root_folder = inp.getString("root");
-            frontend_folder = inp.getString("frontend_folder");
+            auto result = options.parse(argc, argv);
 
-            if (!inp.getString("exit_after").empty()) {
-                int wait_time = inp.getInt("exit_after");
+            if (result.count("version")) {
+                fmt::print("{}\n", VERSION_ID);
+                exit(0);
+            } else if (result.count("help")) {
+                fmt::print("{}\n", options.help());
+                exit(0);
+            }
+
+            verbosity = result["verbosity"].as<int>();
+            no_log = result["no_log"].as<bool>();
+            no_http = result["no_http"].as<bool>();
+            debug_no_auth = result["debug_no_auth"].as<bool>();
+            no_browser = result["no_browser"].as<bool>();
+
+            applyOptionalArgument(host, "host", result);
+            applyOptionalArgument(base_folder, "base", result);
+            applyOptionalArgument(root_folder, "root", result);
+            applyOptionalArgument(frontend_folder, "frontend_folder", result);
+
+            applyOptionalArgument(port, "port", result);
+            applyOptionalArgument(grpc_port, "grpc_port", result);
+            applyOptionalArgument(omp_thread_count, "omp_threads", result);
+            applyOptionalArgument(thread_count, "threads", result);
+
+            if (result.count("exit_after")) {
+                int wait_time = result["exit_after"].as<int>();
                 Session::SetExitTimeout(wait_time);
             }
-            if (!inp.getString("init_exit_after").empty()) {
-                int init_wait_time = inp.getInt("init_exit_after");
+            if (result.count("init_exit_after")) {
+                int init_wait_time = result["init_exit_after"].as<int>();
                 Session::SetInitExitTimeout(init_wait_time);
             }
 

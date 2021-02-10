@@ -97,6 +97,9 @@ endif ()
 # Include uWebSockets headers and build the uSockets lib
 install_uWebSockets()
 
+# Include cxxopts headers
+include_directories(${CMAKE_SOURCE_DIR}/cxxopts/include)
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
