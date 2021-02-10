@@ -611,15 +611,37 @@ int main(int argc, char* argv[]) {
 
             verbosity = result["verbosity"].as<int>();
             no_log = result["no_log"].as<bool>();
+
+            InitLogger(no_log, verbosity);
+
             no_http = result["no_http"].as<bool>();
             debug_no_auth = result["debug_no_auth"].as<bool>();
             no_browser = result["no_browser"].as<bool>();
 
-            applyOptionalArgument(host, "host", result);
-            applyOptionalArgument(starting_folder, "base", result);
             applyOptionalArgument(top_level_folder, "root", result);
             // Override deprecated "root" argument
             applyOptionalArgument(top_level_folder, "top_level_folder", result);
+
+            applyOptionalArgument(starting_folder, "base", result);
+            // Override deprecated "base" argument if there is exactly one "files" argument supplied
+            // TODO: support multiple files (once frontend supports this)
+            if (files.size()) {
+                fs::path p(files[0]);
+                if (fs::exists(p)) {
+                    // TODO: check if the folder is a CASA or Miriad image
+                    if (fs::is_directory(p)) {
+                        starting_folder = p.string();
+                        files.clear();
+                    } else if (!fs::is_regular_file(p)) {
+                        spdlog::warn("Cannot access file {}", p.string());
+                        files.clear();
+                    } else {
+                        //TODO: Convert to path relative to root directory
+                    }
+                }
+            }
+
+            applyOptionalArgument(host, "host", result);
             applyOptionalArgument(frontend_folder, "frontend_folder", result);
 
             applyOptionalArgument(port, "port", result);
@@ -635,9 +657,6 @@ int main(int argc, char* argv[]) {
                 Session::SetInitExitTimeout(init_wait_time);
             }
 
-            // TODO: Get list of files or starting folder
-
-            InitLogger(no_log, verbosity);
         }
 
         std::string executable_path;
@@ -769,13 +788,17 @@ int main(int argc, char* argv[]) {
                 if (!auth_token.empty()) {
                     frontend_url += fmt::format("/?token={}", auth_token);
                 }
+                if (!files.empty()) {
+                    frontend_url += auth_token.empty() ? "/?" : "&";
+                    frontend_url += fmt::format("file={}", files[0]);
+                }
                 if (!no_browser) {
 #if defined(__APPLE__)
                     string open_command = "open";
 #else
                     string open_command = "xdg-open";
 #endif
-                    auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
+                    auto open_result = system(fmt::format("{} \"{}\"", open_command, frontend_url).c_str());
                     if (open_result) {
                         spdlog::warn("Failed to open the default browser automatically.");
                     }
