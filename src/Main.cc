@@ -17,6 +17,10 @@
 #include <tbb/task_scheduler_init.h>
 #include <uuid/uuid.h>
 
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/HostInfo.h>
 
