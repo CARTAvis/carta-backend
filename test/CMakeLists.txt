@@ -16,7 +16,14 @@ find_package(GTest)
 include_directories(${GTEST_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR})
 
 set(BINARY ${CMAKE_PROJECT_NAME}_tests)
-file(GLOB_RECURSE TEST_SOURCES LIST_DIRECTORIES false *.h *.cc *.tcc)
+set(TEST_SOURCES
+        TestBlockSmooth.cc
+        TestFITS.cc
+        TestHistogram.cc
+        TestMain.cc
+        TestTileEncoding.cc
+        TestTimer.cc
+        TestVOTable.cc)
 set(SOURCES
         ../src/Session.cc
         ../src/Frame.cc

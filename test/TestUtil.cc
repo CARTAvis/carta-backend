@@ -14,3 +14,12 @@ using namespace std;
 TEST(Util, SubdirectorySelf) {
     EXPECT_TRUE(IsSubdirectory("/", "/"));
 }
+
+TEST(Util, SubdirectorySimple) {
+    EXPECT_TRUE(IsSubdirectory("/var", "/"));
+    EXPECT_FALSE(IsSubdirectory("/", "/var"));
+    EXPECT_TRUE(IsSubdirectory("/var/tmp", "/"));
+    EXPECT_FALSE(IsSubdirectory("/", "/var/tmp"));
+    EXPECT_TRUE(IsSubdirectory("/var/tmp", "/var"));
+    EXPECT_FALSE(IsSubdirectory("/var", "/var/tmp"));
+}
