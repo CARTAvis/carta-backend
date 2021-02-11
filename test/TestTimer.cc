@@ -91,8 +91,3 @@ TEST(Timer, MeasurementStringWorks) {
     auto dt = t.GetMeasurement("MeasurementStringWorks").count();
     EXPECT_LT(dt, 0);
 }
-
-int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

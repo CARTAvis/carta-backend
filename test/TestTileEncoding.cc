@@ -52,6 +52,8 @@ TEST(TileEncoding, RoundTrip) {
     }
 }
 
+#ifdef NDEBUG
+
 TEST(TileEncoding, PerformanceTestEncoding) {
     int32_t layer = 12;
     int64_t encoded_val = 0;
@@ -63,7 +65,6 @@ TEST(TileEncoding, PerformanceTestEncoding) {
     }
     auto t_end = chrono::high_resolution_clock::now();
     float dt = chrono::duration_cast<chrono::microseconds>(t_end - t_start).count() / 1000.0f;
-    fmt::print("Encoded 1M coordinates in {} ms", dt);
     ASSERT_EQ(encoded_val, 203373043500000);
     ASSERT_LT(dt, 2.0f);
 }
@@ -86,12 +87,8 @@ TEST(TileEncoding, PerformanceTestDecoding) {
 
     auto t_end = chrono::high_resolution_clock::now();
     float dt = chrono::duration_cast<chrono::microseconds>(t_end - t_start).count() / 1000.0f;
-    fmt::print("Decoded 1M coordinates in {} ms", dt);
     ASSERT_EQ(counter, 2046486240);
     ASSERT_LT(dt, 2.0f);
 }
 
-int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+#endif

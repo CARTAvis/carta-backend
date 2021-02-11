@@ -15,9 +15,10 @@
 #include "Timer/Timer.h"
 
 using namespace std;
-random_device rd;
-mt19937 mt(rd());
-uniform_real_distribution<float> float_random(0, 1.0f);
+
+random_device hist_rd;
+mt19937 hist_mt(hist_rd());
+uniform_real_distribution<float> hist_float_random(0, 1.0f);
 
 bool CompareResults(const carta::HistogramResults& a, const carta::HistogramResults& b) {
     if (a.num_bins != b.num_bins || a.bin_center != b.bin_center || a.bin_width != b.bin_width) {
@@ -38,7 +39,7 @@ bool CompareResults(const carta::HistogramResults& a, const carta::HistogramResu
 TEST(Histogram, TestSingleThreading) {
     std::vector<float> data(1024 * 1024);
     for (auto& v : data) {
-        v = float_random(mt);
+        v = hist_float_random(hist_mt);
     }
 
     carta::ThreadManager::SetThreadLimit(1);
@@ -57,7 +58,7 @@ TEST(Histogram, TestSingleThreading) {
 TEST(Histogram, TestMultithreading) {
     std::vector<float> data(1024 * 1024);
     for (auto& v : data) {
-        v = float_random(mt);
+        v = hist_float_random(hist_mt);
     }
 
     carta::ThreadManager::SetThreadLimit(1);
@@ -73,11 +74,12 @@ TEST(Histogram, TestMultithreading) {
         EXPECT_TRUE(CompareResults(results_st, results_mt));
     }
 }
+#ifdef NDEBUG
 
 TEST(Histogram, TestMultithreadingPerformance) {
     std::vector<float> data(1024 * 1024);
     for (auto& v : data) {
-        v = float_random(mt);
+        v = hist_float_random(hist_mt);
     }
 
     Timer t;
@@ -102,3 +104,5 @@ TEST(Histogram, TestMultithreadingPerformance) {
     cout << speedup << endl;
     EXPECT_GE(speedup, 1.5);
 }
+
+#endif
