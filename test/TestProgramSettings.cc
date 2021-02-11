@@ -105,18 +105,39 @@ TEST(ProgramSettings, FileImageFromPositional) {
     EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
     EXPECT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], fits_image.string());
+}
 
-    auto hdf5_image = image_dir / "hdf5/noise_10px_10px.hdf5";
-    settings = SettingsFromVector({"carta_backend", hdf5_image.string()});
+TEST(ProgramSettings, RelativeFileImageFromPositional) {
+    auto image_dir = fs::current_path() / "data/images";
+    string image_path_string = "data/images/fits/noise_10px_10px.fits";
+    auto image_path = image_dir / "fits/noise_10px_10px.fits";
+    auto settings = SettingsFromVector({"carta_backend", image_path_string});
     EXPECT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], hdf5_image.string());
+    EXPECT_EQ(settings.files[0], image_path.string());
+}
+
+TEST(ProgramSettings, TrimExtraFolders) {
+    auto image_dir = fs::current_path() / "data/images";
+    string image_path_string = "./data/images/fits/noise_10px_10px.fits";
+    auto image_path = image_dir / "fits/noise_10px_10px.fits";
+    auto settings = SettingsFromVector({"carta_backend", image_path_string});
+    EXPECT_EQ(settings.files.size(), 1);
+    EXPECT_EQ(settings.files[0], image_path.string());
+}
+
+TEST(ProgramSettings, FileImageRelativeToTopLevel) {
+    auto top_level_dir = fs::current_path() / "data/images";
+    string image_path_string = "./data/images/fits/noise_10px_10px.fits";
+    auto image_path = top_level_dir / "fits/noise_10px_10px.fits";
+    auto settings = SettingsFromVector({"carta_backend", "--top_level_dir", top_level_dir.string(), image_path_string});
+    EXPECT_EQ(settings.files.size(), 1);
+    EXPECT_EQ(settings.files[0], "./fits/noise_10px_10px.fits");
 }
 
 TEST(ProgramSettings, CasaImageSetFromPositional) {
     auto image_dir = fs::current_path() / "data/images";
     auto casa_image = image_dir / "casa/noise_10px_10px.im";
     auto settings = SettingsFromVector({"carta_backend", casa_image.string()});
-    EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
     EXPECT_EQ(settings.files.size(), 1);
     EXPECT_EQ(settings.files[0], casa_image.string());
 }

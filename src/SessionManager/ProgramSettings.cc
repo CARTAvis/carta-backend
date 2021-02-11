@@ -96,7 +96,12 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
             } else if (!fs::is_regular_file(p)) {
                 files.clear();
             } else {
-                // TODO: Convert to path relative to root directory
+                // Convert to path relative to top_level_folder
+                if (top_level_folder == "/") {
+                    // TODO: trim out unnecessary ./
+                    files[0] = fs::absolute(p).string();
+                }
+                // TODO: handle situations with non-default top_level_folder
             }
         } else {
             files.clear();
