@@ -3,24 +3,18 @@
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
-
-#include <fmt/format.h>
 #include <gtest/gtest.h>
+#include <fmt/format.h>
 
-#include "../src/Table/Table.h"
+#include "Table/Table.h"
 
 using namespace std;
 using namespace carta;
 
 string fits_test_path(const string& filename) {
-    auto env_base = getenv("FITS_TEST_DIR");
-    if (env_base) {
-        string test_base = env_base;
-        return fmt::format("{}/{}", test_base, filename);
-    } else {
-        return filename;
-    }
+    return fmt::format("./data/tables/fits/{}", filename);
 }
+
 TEST(FITS, ParseIvoaExampleHeaderOnly) {
     Table table(fits_test_path("ivoa_example.fits"), true);
     EXPECT_TRUE(table.IsValid());

@@ -23,45 +23,18 @@ set(TEST_SOURCES
         TestMain.cc
         TestTileEncoding.cc
         TestTimer.cc
+        TestUtil.cc
         TestVOTable.cc)
-set(SOURCES
-        ../src/Session.cc
-        ../src/Frame.cc
-        ../src/Logger/Logger.cc
-        ../src/DataStream/Compression.cc
-        ../src/DataStream/Contouring.cc
-        ../src/DataStream/Smoothing.cc
-        ../src/DataStream/Tile.cc
-        ../src/FileList/FileExtInfoLoader.cc
-        ../src/FileList/FileInfoLoader.cc
-        ../src/FileList/FileListHandler.cc
-        ../src/FileList/FitsHduList.cc
-        ../src/GrpcServer/CartaGrpcService.cc
-        ../src/ImageData/Hdf5Attributes.cc
-        ../src/ImageData/FileLoader.cc
-        ../src/ImageData/Hdf5Loader.cc
-        ../src/ImageData/CartaHdf5Image.cc
-        ../src/ImageData/CartaMiriadImage.cc
-        ../src/Region/RegionHandler.cc
-        ../src/Region/RegionImportExport.cc
-        ../src/Region/CrtfImportExport.cc
-        ../src/Region/Ds9ImportExport.cc
-        ../src/Region/Region.cc
-        ../src/ImageStats/StatsCalculator.cc
-        ../src/ImageStats/Histogram.cc
-        ../src/SpectralLine/SpectralLineCrawler.cc
-        ../src/Table/Columns.cc
-        ../src/Table/Table.cc
-        ../src/Table/TableView.cc
-        ../src/Table/TableController.cc
-        ../src/Moment/MomentGenerator.cc
-        ../src/Timer/Timer.cc
-        ../src/SessionManager/ProgramSettings.cc
-        ../src/OnMessageTask.cc
-        ../src/FileSettings.cc
-        ../src/Util.cc
-        ../src/Threading.cc
-        ../src/SimpleFrontendServer/SimpleFrontendServer.cc)
+
+# Add all the sources in the main project and remove Main.cc
+set(SOURCES "")
+foreach(src_file ${SOURCE_FILES})
+    list(APPEND SOURCES ../${src_file})
+endforeach()
+list(REMOVE_ITEM SOURCES REMOVE_ITEM ../src/Main.cc)
+
+# Copy test data to build directory
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(${BINARY} ${SOURCES} ${TEST_SOURCES})
 add_test(NAME ${BINARY} COMMAND ${BINARY})

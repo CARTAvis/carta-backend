@@ -7,19 +7,14 @@
 #include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include "../src/Table/Table.h"
+#include "Table/Table.h"
 
 using namespace std;
 using namespace carta;
 
 string vo_test_path(const string& filename) {
-    auto env_base = getenv("XML_TEST_DIR");
-    if (env_base) {
-        string test_base = env_base;
-        return fmt::format("{}/{}", test_base, filename);
-    } else {
-        return filename;
-    }
+
+    return fmt::format("./data/tables/xml/{}", filename);
 }
 
 TEST(VOTable, FailOnEmptyFilename) {
