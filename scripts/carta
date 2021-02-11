@@ -15,4 +15,10 @@ if __name__ == "__main__":
     
     args.extend(sys.argv[1:])
     
+    # Special sauce undocumented help flag has to come first
+    for helpflag in "-h", "--help":
+        if helpflag in args:
+            args.remove(helpflag)
+            args.insert(1, helpflag)
+    
     subprocess.run(args)
