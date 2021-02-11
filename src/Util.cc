@@ -11,9 +11,10 @@
 #include <regex>
 
 #include <fmt/format.h>
-#include <spdlog/spdlog.h>
 
 #include <casacore/casa/OS/File.h>
+
+#include "Logger/Logger.h"
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
