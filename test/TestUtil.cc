@@ -9,17 +9,53 @@
 #include "SessionManager/ProgramSettings.h"
 #include "Util.h"
 
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+
+namespace fs = std::filesystem;
+#endif
+
 using namespace std;
 
-TEST(Util, SubdirectorySelf) {
-    EXPECT_TRUE(IsSubdirectory("/", "/"));
+TEST(Util, SubdirectoryAbs) {
+    auto pwd = fs::current_path();
+    EXPECT_TRUE(IsSubdirectory((pwd / "data").string(), pwd.string()));
+    EXPECT_FALSE(IsSubdirectory(pwd.string(), (pwd / "data").string()));
+    EXPECT_TRUE(IsSubdirectory((pwd / "data/images").string(), pwd.string()));
+    EXPECT_FALSE(IsSubdirectory(pwd.string(), (pwd / "data/images").string()));
+    EXPECT_TRUE(IsSubdirectory((pwd / "data/images").string(), (pwd / "data").string()));
+    EXPECT_FALSE(IsSubdirectory((pwd / "data").string(), (pwd / "data/images").string()));
+    EXPECT_TRUE(IsSubdirectory((pwd / "data/images/fits").string(), (pwd / "data/images").string()));
+    EXPECT_FALSE(IsSubdirectory((pwd / "data/images/fits").string(), (pwd / "data/images/hdf5").string()));
 }
 
-TEST(Util, SubdirectorySimple) {
-    EXPECT_TRUE(IsSubdirectory("/var", "/"));
-    EXPECT_FALSE(IsSubdirectory("/", "/var"));
-    EXPECT_TRUE(IsSubdirectory("/var/tmp", "/"));
-    EXPECT_FALSE(IsSubdirectory("/", "/var/tmp"));
-    EXPECT_TRUE(IsSubdirectory("/var/tmp", "/var"));
-    EXPECT_FALSE(IsSubdirectory("/var", "/var/tmp"));
+TEST(Util, SubdirectoryRel) {
+    EXPECT_TRUE(IsSubdirectory("./data", "./"));
+    EXPECT_FALSE(IsSubdirectory("./", "./data"));
+    EXPECT_TRUE(IsSubdirectory("./data/images", "./"));
+    EXPECT_FALSE(IsSubdirectory("./", "./data/images"));
+    EXPECT_TRUE(IsSubdirectory("./data/images", "./data"));
+    EXPECT_FALSE(IsSubdirectory("./data", "./data/images"));
+    EXPECT_TRUE(IsSubdirectory("./data/images/fits", "./data/images"));
+    EXPECT_FALSE(IsSubdirectory("./data/images/fits", "./data/images/hdf5"));
+}
+
+TEST(Util, SubdirectorySelf) {
+    auto pwd = fs::current_path();
+    EXPECT_TRUE(IsSubdirectory("/", "/"));
+    EXPECT_TRUE(IsSubdirectory("./", "./"));
+    EXPECT_TRUE(IsSubdirectory(pwd.string(), pwd.string()));
+    EXPECT_TRUE(IsSubdirectory((pwd / ".").string(), pwd.string()));
+    EXPECT_TRUE(IsSubdirectory(pwd.string(), (pwd / ".").string()));
+}
+
+TEST(Util, ParentNotSubdirectory) {
+    auto pwd = fs::current_path();
+    EXPECT_FALSE(IsSubdirectory(pwd.parent_path().string(), pwd.string()));
+    EXPECT_FALSE(IsSubdirectory((pwd / "..").string(), pwd.string()));
+    EXPECT_FALSE(IsSubdirectory("../", "./"));
 }
