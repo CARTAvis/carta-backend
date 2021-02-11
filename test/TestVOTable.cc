@@ -13,7 +13,6 @@ using namespace std;
 using namespace carta;
 
 string vo_test_path(const string& filename) {
-
     return fmt::format("./data/tables/xml/{}", filename);
 }
 
