@@ -18,7 +18,8 @@
 using namespace carta;
 using namespace std;
 
-TableController::TableController(const string& top_level_folder, const string& starting_folder) : _top_level_folder(top_level_folder), _starting_folder(starting_folder) {}
+TableController::TableController(const string& top_level_folder, const string& starting_folder)
+    : _top_level_folder(top_level_folder), _starting_folder(starting_folder) {}
 
 void TableController::OnOpenFileRequest(const CARTA::OpenCatalogFile& open_file_request, CARTA::OpenCatalogFileAck& open_file_response) {
     int file_id = open_file_request.file_id();

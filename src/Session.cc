@@ -43,8 +43,8 @@ int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
-Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder, std::string starting_folder,
-                 FileListHandler* file_list_handler, int grpc_port)
+Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
+    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port)
     : _socket(ws),
       _loop(loop),
       _id(id),

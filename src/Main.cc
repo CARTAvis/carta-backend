@@ -4,8 +4,6 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <climits>
-#include <iostream>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -16,11 +14,6 @@
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
 #include <uuid/uuid.h>
-#include <cxxopts.hpp>
-
-#ifdef __APPLE__
-#include <mach-o/dyld.h>
-#endif
 
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
@@ -29,6 +22,7 @@
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "Session.h"
+#include "SessionManager/ProgramSettings.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "Threading.h"
 #include "Util.h"
@@ -45,12 +39,9 @@ static uint32_t session_number;
 static std::unique_ptr<CartaGrpcService> carta_grpc_service;
 static std::unique_ptr<grpc::Server> carta_grpc_server;
 
-// command-line arguments
-static string top_level_folder("/"), starting_folder(".");
-// token to validate incoming WS connection header against
 static string auth_token = "";
-static int grpc_port(-1);
 
+carta::ProgramSettings settings;
 // Sessions map
 std::unordered_map<uint32_t, Session*> sessions;
 
@@ -103,22 +94,29 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
     session_number = max(session_number, 1u);
 
     http_response->template upgrade<PerSocketData>({session_number, address}, //
-                                                   http_request->getHeader("sec-websocket-key"),                         //
-                                                   http_request->getHeader("sec-websocket-protocol"),                    //
-                                                   http_request->getHeader("sec-websocket-extensions"),                  //
-                                                   context);
+        http_request->getHeader("sec-websocket-key"),                         //
+        http_request->getHeader("sec-websocket-protocol"),                    //
+        http_request->getHeader("sec-websocket-extensions"),                  //
+        context);
 }
 
 // Called on connection. Creates session objects and assigns UUID to it
 void OnConnect(uWS::WebSocket<false, true>* ws) {
-    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
-    string address = static_cast<PerSocketData*>(ws->getUserData())->address;
+    auto socket_data = static_cast<PerSocketData*>(ws->getUserData());
+    if (!socket_data) {
+        spdlog::error("Error handling WebSocket connection");
+        return;
+    }
+
+    uint32_t session_id = socket_data->session_id;
+    string address = socket_data->address;
 
     // get the uWebsockets loop
     auto* loop = uWS::Loop::get();
 
     // create a Session
-    sessions[session_id] = new Session(ws, loop, session_id, address, top_level_folder, starting_folder, file_list_handler, grpc_port);
+    sessions[session_id] = new Session(
+        ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder, file_list_handler, settings.grpc_port);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
@@ -201,7 +199,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->ImageChannelLock(message.file_id());
                         if (!session->ImageChannelTaskTestAndSet(message.file_id())) {
-                            tsk = new(tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session, message.file_id());
+                            tsk = new (tbb::task::allocate_root(session->Context())) SetImageChannelsTask(session, message.file_id());
                         }
                         // has its own queue to keep channels in order during animation
                         session->AddToSetChannelQueue(message, head.request_id);
@@ -215,7 +213,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     CARTA::SetCursor message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->AddCursorSetting(message, head.request_id);
-                        tsk = new(tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
+                        tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
                     } else {
                         spdlog::warn("Bad SET_CURSOR message!");
                     }
@@ -228,7 +226,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                             session->CancelSetHistRequirements();
                         } else {
                             session->ResetHistContext();
-                            tsk = new(tbb::task::allocate_root(session->HistContext()))
+                            tsk = new (tbb::task::allocate_root(session->HistContext()))
                                 SetHistogramRequirementsTask(session, head, event_length, event_buf);
                         }
                     } else {
@@ -250,7 +248,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->CancelExistingAnimation();
                         session->BuildAnimationObject(message, head.request_id);
-                        tsk = new(tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
+                        tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     } else {
                         spdlog::warn("Bad START_ANIMATION message!");
                     }
@@ -304,7 +302,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                 case CARTA::EventType::ADD_REQUIRED_TILES: {
                     CARTA::AddRequiredTiles message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new(tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
+                    tsk = new (tbb::task::allocate_root(session->Context())) OnAddRequiredTilesTask(session, message);
                     break;
                 }
                 case CARTA::EventType::REGION_LIST_REQUEST: {
@@ -346,7 +344,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                 case CARTA::EventType::SET_CONTOUR_PARAMETERS: {
                     CARTA::SetContourParameters message;
                     message.ParseFromArray(event_buf, event_length);
-                    tsk = new(tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
+                    tsk = new (tbb::task::allocate_root(session->Context())) OnSetContourParametersTask(session, message);
                     break;
                 }
                 case CARTA::EventType::SCRIPTING_RESPONSE: {
@@ -452,7 +450,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     CARTA::SpectralLineRequest message;
                     if (message.ParseFromArray(event_buf, event_length)) {
                         tsk =
-                            new(tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
+                            new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
                     } else {
                         spdlog::warn("Bad SPECTRAL_LINE_REQUEST message!");
                     }
@@ -462,7 +460,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     // Copy memory into new buffer to be used and disposed by MultiMessageTask::execute
                     char* message_buffer = new char[event_length];
                     memcpy(message_buffer, event_buf, event_length);
-                    tsk = new(tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
+                    tsk = new (tbb::task::allocate_root(session->Context())) MultiMessageTask(session, head, event_length, message_buffer);
                 }
             }
 
@@ -522,34 +520,6 @@ void ExitBackend(int s) {
     exit(0);
 }
 
-bool FindExecutablePath(std::string& path) {
-    char path_buffer[PATH_MAX + 1];
-#ifdef __APPLE__
-    uint32_t len = sizeof(path_buffer);
-
-    if (_NSGetExecutablePath(path_buffer, &len) != 0) {
-        return false;
-    }
-#else
-    const int len = int(readlink("/proc/self/exe", path_buffer, PATH_MAX));
-
-    if (len == -1) {
-        return false;
-    }
-
-    path_buffer[len] = 0;
-#endif
-    path = path_buffer;
-    return true;
-}
-
-template<class T>
-void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::ParseResult& results) {
-    if (results.count(argument_name)) {
-        val = results[argument_name].as<T>();
-    }
-}
-
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, char* argv[]) {
     try {
@@ -560,103 +530,20 @@ int main(int argc, char* argv[]) {
         sig_handler.sa_flags = 0;
         sigaction(SIGINT, &sig_handler, nullptr);
 
-        // define and get input arguments
-        int port(-1);
-        int omp_thread_count = OMP_THREAD_COUNT;
-        string frontend_folder;
-        string host;
-        bool no_http = false;
-        bool debug_no_auth = false;
-        bool no_browser = false;
-        bool no_log = false;
-        int verbosity = 4;
-        vector<string> files;
+        settings = ProgramSettings(argc, argv);
 
-        {
-            cxxopts::Options options("CARTA", "CARTA Backend");
-            options.add_options()("h,help", "Print usage")
-                ("v,version", "Print version")
-                ("verbosity",
-                 "Display verbose logging from level (0: off, 1: critical, 2: error, 3: warning, 4: info, 5: debug, 6: trace)",
-                 cxxopts::value<int>()->default_value(to_string(verbosity)), "<level>")
-                ("no_log", "Do not output to a log file", cxxopts::value<bool>())
-                ("no_http", "Disable CARTA frontend HTTP server", cxxopts::value<bool>())
-                ("no_browser", "Prevent the frontend from automatically opening in the default browser on startup", cxxopts::value<bool>())
-                ("host", "Only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
-                ("p,port", "Manually set port on which to host frontend files and accept WebSocket connections", cxxopts::value<int>(), "<port number>")
-                ("g,grpc_port", "Set grpc server port", cxxopts::value<int>(), "<port number>")
-                ("t,threads", "Manually set OpenMP thread pool count", cxxopts::value<int>(), "<thread count>")
-                ("top_level_folder", "Set top-level folder for data files. Files outside of this directory will not be accessible", cxxopts::value<string>(), "<path>")
-                ("frontend_folder", "Set folder to serve frontend files from", cxxopts::value<string>(), "<path>")
-                ("exit_after", "Number of seconds to stay alive after last sessions exists", cxxopts::value<int>(), "<duration>")
-                ("init_exit_after", "Number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<duration>")
-                ("files", "Files to load", cxxopts::value<std::vector<std::string>>(files));
+        if (settings.help || settings.version) {
+            exit(0);
+        }
 
-            options.add_options("deprecated and debug")
-                ("debug_no_auth", "Accept all incoming WebSocket connections (insecure, use with caution!)", cxxopts::value<bool>())
-                ("base", "[Deprecated] Set starting folder for data files", cxxopts::value<string>(), "<path>")
-                ("root", "[Deprecated] Use 'top_level_folder' instead", cxxopts::value<string>(), "<path>");
+        InitLogger(settings.no_log, settings.verbosity);
 
-            options.positional_help("<file(s) or folder to open>");
-            options.parse_positional("files");
-            auto result = options.parse(argc, argv);
+        if (settings.wait_time >= 0) {
+            Session::SetExitTimeout(settings.wait_time);
+        }
 
-            if (result.count("version")) {
-                fmt::print("{}\n", VERSION_ID);
-                exit(0);
-            } else if (result.count("help")) {
-                fmt::print("{}\n", options.help());
-                exit(0);
-            }
-
-            verbosity = result["verbosity"].as<int>();
-            no_log = result["no_log"].as<bool>();
-
-            InitLogger(no_log, verbosity);
-
-            no_http = result["no_http"].as<bool>();
-            debug_no_auth = result["debug_no_auth"].as<bool>();
-            no_browser = result["no_browser"].as<bool>();
-
-            applyOptionalArgument(top_level_folder, "root", result);
-            // Override deprecated "root" argument
-            applyOptionalArgument(top_level_folder, "top_level_folder", result);
-
-            applyOptionalArgument(starting_folder, "base", result);
-            // Override deprecated "base" argument if there is exactly one "files" argument supplied
-            // TODO: support multiple files (once frontend supports this)
-            if (files.size()) {
-                fs::path p(files[0]);
-                if (fs::exists(p)) {
-                    // TODO: check if the folder is a CASA or Miriad image
-                    if (fs::is_directory(p)) {
-                        starting_folder = p.string();
-                        files.clear();
-                    } else if (!fs::is_regular_file(p)) {
-                        spdlog::warn("Cannot access file {}", p.string());
-                        files.clear();
-                    } else {
-                        //TODO: Convert to path relative to root directory
-                    }
-                }
-            }
-
-            applyOptionalArgument(host, "host", result);
-            applyOptionalArgument(frontend_folder, "frontend_folder", result);
-
-            applyOptionalArgument(port, "port", result);
-            applyOptionalArgument(grpc_port, "grpc_port", result);
-            applyOptionalArgument(omp_thread_count, "omp_threads", result);
-
-            if (result.count("exit_after")) {
-                int wait_time = result["exit_after"].as<int>();
-                Session::SetExitTimeout(wait_time);
-            }
-            if (result.count("init_exit_after")) {
-                int init_wait_time = result["init_exit_after"].as<int>();
-                Session::SetInitExitTimeout(init_wait_time);
-            }
-
+        if (settings.init_wait_time >= 0) {
+            Session::SetInitExitTimeout(settings.init_wait_time);
         }
 
         std::string executable_path;
@@ -669,11 +556,11 @@ int main(int argc, char* argv[]) {
 
         spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
-        if (!CheckFolderPaths(top_level_folder, starting_folder)) {
+        if (!CheckFolderPaths(settings.top_level_folder, settings.starting_folder)) {
             return 1;
         }
 
-        if (!debug_no_auth) {
+        if (!settings.debug_no_auth) {
             auto env_entry = getenv("CARTA_AUTH_TOKEN");
             if (env_entry) {
                 auth_token = env_entry;
@@ -687,14 +574,14 @@ int main(int argc, char* argv[]) {
         }
 
         tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
-        carta::ThreadManager::SetThreadLimit(omp_thread_count);
+        carta::ThreadManager::SetThreadLimit(settings.omp_thread_count);
 
         // One FileListHandler works for all sessions.
-        file_list_handler = new FileListHandler(top_level_folder, starting_folder);
+        file_list_handler = new FileListHandler(settings.top_level_folder, settings.starting_folder);
 
         // Start grpc service for scripting client
-        if (grpc_port >= 0) {
-            int grpc_status = StartGrpcService(grpc_port);
+        if (settings.grpc_port >= 0) {
+            int grpc_status = StartGrpcService(settings.grpc_port);
             if (grpc_status) {
                 return 1;
             }
@@ -706,11 +593,11 @@ int main(int argc, char* argv[]) {
         session_number = 0;
         auto app = uWS::App();
 
-        if (!no_http) {
+        if (!settings.no_http) {
             fs::path frontend_path;
 
-            if (!frontend_folder.empty()) {
-                frontend_path = frontend_folder;
+            if (!settings.frontend_folder.empty()) {
+                frontend_path = settings.frontend_folder;
             } else if (have_executable_path) {
                 fs::path executable_parent = fs::path(executable_path).parent_path();
                 frontend_path = executable_parent / "../share/carta/frontend";
@@ -734,49 +621,49 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        host = host.empty() ? "0.0.0.0" : host;
-        port = (port < 0) ? DEFAULT_SOCKET_PORT : port;
         bool port_ok(false);
 
-        if (port == DEFAULT_SOCKET_PORT) {
+        if (settings.port < 0) {
+            settings.port = DEFAULT_SOCKET_PORT;
             int num_listen_retries(0);
             while (!port_ok) {
                 if (num_listen_retries > MAX_SOCKET_PORT_TRIALS) {
-                    spdlog::error("Unable to listen on the port range {}-{}!", DEFAULT_SOCKET_PORT, port - 1);
+                    spdlog::error("Unable to listen on the port range {}-{}!", DEFAULT_SOCKET_PORT, settings.port - 1);
                     break;
                 }
-                app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
+                app.listen(settings.host, settings.port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
                     if (token) {
                         port_ok = true;
                     } else {
-                        spdlog::warn("Port {} is already in use. Trying next port.", port);
-                        ++port;
+                        spdlog::warn("Port {} is already in use. Trying next port.", settings.port);
+                        ++settings.port;
                         ++num_listen_retries;
                     }
                 });
             }
         } else {
-            // If the user specifies a port, we should not try other ports
-            app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
+            // If the user specifies a valid port, we should not try other ports
+            app.listen(settings.host, settings.port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
                 if (token) {
                     port_ok = true;
                 } else {
-                    spdlog::error("Could not listen on port {}!\n", port);
+                    spdlog::error("Could not listen on port {}!\n", settings.port);
                 }
             });
         }
 
         if (port_ok) {
-            string start_info = fmt::format("Listening on port {} with top level folder {}, starting folder {}", port, top_level_folder, starting_folder);
-            if (omp_thread_count > 0) {
-                start_info += fmt::format(", and {} OpenMP worker threads", omp_thread_count);
+            string start_info = fmt::format("Listening on port {} with top level folder {}, starting folder {}", settings.port,
+                settings.top_level_folder, settings.starting_folder);
+            if (settings.omp_thread_count > 0) {
+                start_info += fmt::format(", and {} OpenMP worker threads", settings.omp_thread_count);
             } else {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
             spdlog::info(start_info);
             if (http_server && http_server->CanServeFrontend()) {
-                string default_host_string = host;
-                if (host.empty() || host == "0.0.0.0") {
+                string default_host_string = settings.host;
+                if (default_host_string.empty() || default_host_string == "0.0.0.0") {
                     auto server_ip_entry = getenv("SERVER_IP");
                     if (server_ip_entry) {
                         default_host_string = server_ip_entry;
@@ -784,15 +671,15 @@ int main(int argc, char* argv[]) {
                         default_host_string = "localhost";
                     }
                 }
-                string frontend_url = fmt::format("http://{}:{}", default_host_string, port);
+                string frontend_url = fmt::format("http://{}:{}", default_host_string, settings.port);
                 if (!auth_token.empty()) {
                     frontend_url += fmt::format("/?token={}", auth_token);
                 }
-                if (!files.empty()) {
+                if (!settings.files.empty()) {
                     frontend_url += auth_token.empty() ? "/?" : "&";
-                    frontend_url += fmt::format("file={}", files[0]);
+                    frontend_url += fmt::format("file={}", settings.files[0]);
                 }
-                if (!no_browser) {
+                if (!settings.no_browser) {
 #if defined(__APPLE__)
                     string open_command = "open";
 #else
@@ -806,11 +693,11 @@ int main(int argc, char* argv[]) {
                 spdlog::info("CARTA is accessible at {}", frontend_url);
             }
 
-            app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior) {.compression = uWS::DEDICATED_COMPRESSOR_256KB,
-                    .upgrade = OnUpgrade,
-                    .open = OnConnect,
-                    .message = OnMessage,
-                    .close = OnDisconnect})
+            app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
+                                            .upgrade = OnUpgrade,
+                                            .open = OnConnect,
+                                            .message = OnMessage,
+                                            .close = OnDisconnect})
                 .run();
         }
     } catch (exception& e) {

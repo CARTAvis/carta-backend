@@ -57,8 +57,8 @@
 
 class Session {
 public:
-    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder, std::string starting_folder,
-            FileListHandler* file_list_handler, int grpc_port = -1);
+    Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
+        std::string starting_folder, FileListHandler* file_list_handler, int grpc_port = -1);
     ~Session();
 
     // CARTA ICD

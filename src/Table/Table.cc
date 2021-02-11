@@ -6,8 +6,10 @@
 
 #include "Table.h"
 
-#include <fitsio.h>
+#include <fstream>
 #include <iostream>
+
+#include <fitsio.h>
 
 #include "../Logger/Logger.h"
 #include "../Util.h"

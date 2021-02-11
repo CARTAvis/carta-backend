@@ -5,7 +5,19 @@
 */
 
 #include "Util.h"
-#include "Logger/Logger.h"
+
+#include <climits>
+#include <fstream>
+#include <regex>
+
+#include <fmt/format.h>
+#include <spdlog/spdlog.h>
+
+#include <casacore/casa/OS/File.h>
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 
 using namespace std;
 
@@ -24,7 +36,8 @@ bool CheckFolderPaths(string& top_level_string, string& starting_string) {
     // TODO: Migrate to std::filesystem
     // check top level
     casacore::File top_level_folder(top_level_string);
-    if (!(top_level_folder.exists() && top_level_folder.isDirectory(true) && top_level_folder.isReadable() && top_level_folder.isExecutable())) {
+    if (!(top_level_folder.exists() && top_level_folder.isDirectory(true) && top_level_folder.isReadable() &&
+            top_level_folder.isExecutable())) {
         spdlog::critical("Invalid top level directory, does not exist or is not a readable directory. Exiting carta.");
         return false;
     }
@@ -42,7 +55,8 @@ bool CheckFolderPaths(string& top_level_string, string& starting_string) {
     }
     // check starting folder
     casacore::File starting_folder(starting_string);
-    if (!(starting_folder.exists() && starting_folder.isDirectory(true) && starting_folder.isReadable() && starting_folder.isExecutable())) {
+    if (!(starting_folder.exists() && starting_folder.isDirectory(true) && starting_folder.isReadable() &&
+            starting_folder.isExecutable())) {
         spdlog::warn("Invalid starting directory, using the provided top level directory instead.");
         starting_string = top_level_string;
     } else {
@@ -59,28 +73,33 @@ bool CheckFolderPaths(string& top_level_string, string& starting_string) {
                 starting_string = "/";
         }
     }
-    // check if starting is same as or subdir of top level
-    if (starting_string != top_level_string) {
-        bool is_subdirectory(false);
-        casacore::Path starting_path(starting_string);
-        string parent_string(starting_path.dirName());
-        if (parent_string == top_level_string)
-            is_subdirectory = true;
-        while (!is_subdirectory && (parent_string != top_level_string)) { // navigate up directory tree
-            starting_path = casacore::Path(parent_string);
-            parent_string = starting_path.dirName();
-            if (parent_string == top_level_string) {
-                is_subdirectory = true;
-            } else if (parent_string == "/") {
-                break;
-            }
-        }
-        if (!is_subdirectory) {
-            spdlog::critical("Starting {} must be a subdirectory of top level {}. Exiting carta.", starting_string, top_level_string);
-            return false;
-        }
+    bool is_subdirectory = IsSubdirectory(starting_string, top_level_string);
+    if (!is_subdirectory) {
+        spdlog::critical("Starting {} must be a subdirectory of top level {}. Exiting carta.", starting_string, top_level_string);
+        return false;
     }
     return true;
+}
+
+bool IsSubdirectory(const string& folder, const string& top_folder) {
+    if (folder == top_folder) {
+        return true;
+    }
+    casacore::Path folder_path(folder);
+    string parent_string(folder_path.dirName());
+    if (parent_string == top_folder) {
+        return true;
+    }
+    while (parent_string != top_folder) { // navigate up directory tree
+        folder_path = casacore::Path(parent_string);
+        parent_string = folder_path.dirName();
+        if (parent_string == top_folder) {
+            return true;
+        } else if (parent_string == "/") {
+            break;
+        }
+    }
+    return false;
 }
 
 uint32_t GetMagicNumber(const string& filename) {
@@ -251,4 +270,25 @@ string GetAuthTokenFromCookie(const string& header) {
         return sm[1];
     }
     return string();
+}
+
+bool FindExecutablePath(string& path) {
+    char path_buffer[PATH_MAX + 1];
+#ifdef __APPLE__
+    uint32_t len = sizeof(path_buffer);
+
+    if (_NSGetExecutablePath(path_buffer, &len) != 0) {
+        return false;
+    }
+#else
+    const int len = int(readlink("/proc/self/exe", path_buffer, PATH_MAX));
+
+    if (len == -1) {
+        return false;
+    }
+
+    path_buffer[len] = 0;
+#endif
+    path = path_buffer;
+    return true;
 }

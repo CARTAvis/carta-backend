@@ -164,6 +164,7 @@ set(SOURCE_FILES
         src/Table/TableController.cc
         src/Moment/MomentGenerator.cc
         src/Timer/Timer.cc
+        src/SessionManager/ProgramSettings.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
         src/Util.cc
