@@ -98,6 +98,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
             } else {
                 // TODO: Convert to path relative to root directory
             }
+        } else {
+            files.clear();
         }
     }
 
@@ -106,6 +108,14 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     applyOptionalArgument(port, "port", result);
     applyOptionalArgument(grpc_port, "grpc_port", result);
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
+}
+
+bool ProgramSettings::operator!=(const ProgramSettings& rhs) const {
+    return GetTuple() != rhs.GetTuple();
+}
+
+bool ProgramSettings::operator==(const ProgramSettings& rhs) const {
+    return GetTuple() == rhs.GetTuple();
 }
 
 } // namespace carta

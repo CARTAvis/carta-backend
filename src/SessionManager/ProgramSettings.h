@@ -8,6 +8,7 @@
 #define CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
 
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "Constants.h"
@@ -34,6 +35,13 @@ struct ProgramSettings {
 
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
+
+    auto GetTuple() const {
+        return std::tie(help, version, port, grpc_port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder,
+            no_http, no_browser, no_log, debug_no_auth, verbosity, wait_time, init_wait_time);
+    }
+    bool operator!=(const ProgramSettings& rhs) const;
+    bool operator==(const ProgramSettings& rhs) const;
 };
 } // namespace carta
 #endif // CARTA_BACKEND_SRC_SESSIONMANAGER_PROGRAMSETTINGS_H_
