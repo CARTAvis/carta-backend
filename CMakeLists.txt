@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(carta_backend)
 
+include_directories(src)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
@@ -15,10 +17,6 @@ if (OPENMP_CXX_FOUND)
 else ()
     message(WARNING "OpenMP not found!")
 endif ()
-
-# Enable parallel GCC algorithms (needed until there is relable support for C++17 from compilers)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_PARALLEL")
-
 
 # Use the -march=native flags when building on the same architecture as deploying to get a slight performance
 # increase when running CPU intensive tasks such as compression and down-sampling of data. If targeting AVX-capable
@@ -39,8 +37,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
+FIND_PACKAGE(spdlog REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
@@ -106,8 +104,7 @@ set(LINK_LIBS
         ${PROTOBUF_LIBRARY}
         fmt
         uSockets
-        ssl
-        crypto
+        uuid
         z
         zfp
         zstd
@@ -115,6 +112,7 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
+        spdlog
         casa_casa
         casa_coordinates
         casa_tables
@@ -131,49 +129,56 @@ set(LINK_LIBS
 
 set(SOURCE_FILES
         ${SOURCE_FILES}
-        Main.cc
-        Session.cc
-        Frame.cc
-        DataStream/Compression.cc
-        DataStream/Contouring.cc
-        DataStream/Smoothing.cc
-        DataStream/Tile.cc
-        FileList/FileExtInfoLoader.cc
-        FileList/FileInfoLoader.cc
-        FileList/FileListHandler.cc
-        FileList/FitsHduList.cc
-        GrpcServer/CartaGrpcService.cc
-        ImageData/Hdf5Attributes.cc
-        ImageData/FileLoader.cc
-        ImageData/Hdf5Loader.cc
-        ImageData/CartaHdf5Image.cc
-        ImageData/CartaMiriadImage.cc
-        Region/RegionHandler.cc
-        Region/RegionImportExport.cc
-        Region/CrtfImportExport.cc
-        Region/Ds9ImportExport.cc
-        Region/Region.cc
-        ImageStats/StatsCalculator.cc
-        ImageStats/Histogram.cc
-        SpectralLine/SpectralLineCrawler.cc
-        Table/Columns.cc
-        Table/Table.cc
-        Table/TableView.cc
-        Table/TableController.cc
-        Moment/MomentGenerator.cc
-        Timer/Timer.cc
-        OnMessageTask.cc
-        FileSettings.cc
-        Util.cc)
+        src/Main.cc
+        src/Session.cc
+        src/Frame.cc
+        src/Logger/Logger.cc
+        src/DataStream/Compression.cc
+        src/DataStream/Contouring.cc
+        src/DataStream/Smoothing.cc
+        src/DataStream/Tile.cc
+        src/FileList/FileExtInfoLoader.cc
+        src/FileList/FileInfoLoader.cc
+        src/FileList/FileListHandler.cc
+        src/FileList/FitsHduList.cc
+        src/GrpcServer/CartaGrpcService.cc
+        src/ImageData/Hdf5Attributes.cc
+        src/ImageData/FileLoader.cc
+        src/ImageData/Hdf5Loader.cc
+        src/ImageData/CartaHdf5Image.cc
+        src/ImageData/CartaMiriadImage.cc
+        src/Region/RegionHandler.cc
+        src/Region/RegionImportExport.cc
+        src/Region/CrtfImportExport.cc
+        src/Region/Ds9ImportExport.cc
+        src/Region/Region.cc
+        src/ImageStats/StatsCalculator.cc
+        src/ImageStats/Histogram.cc
+        src/SpectralLine/SpectralLineCrawler.cc
+        src/Table/Columns.cc
+        src/Table/Table.cc
+        src/Table/TableView.cc
+        src/Table/TableController.cc
+        src/Moment/MomentGenerator.cc
+        src/Timer/Timer.cc
+        src/OnMessageTask.cc
+        src/FileSettings.cc
+        src/Util.cc
+        src/Threading.cc
+        src/SimpleFrontendServer/SimpleFrontendServer.cc)
 
 add_definitions(-DHAVE_HDF5)
 add_executable(carta_backend ${SOURCE_FILES})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    list(REMOVE_ITEM LINK_LIBS uuid)
     target_link_libraries(carta_backend uv ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(carta_backend ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+install(TARGETS carta_backend
+    RUNTIME DESTINATION bin)
 
 # Tests
 option(test "Build tests." OFF)

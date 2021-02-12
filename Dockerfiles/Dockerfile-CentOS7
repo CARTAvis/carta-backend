@@ -11,7 +11,8 @@ RUN \
   yum -y install epel-release && \
   yum install -y autoconf automake bison blas-devel bzip2 cfitsio-devel curl-devel flex \
     git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel \
-    make openssl-devel pugixml-devel subversion systemd-devel wcslib-devel wget zlib-devel
+    make openssl-devel pugixml-devel subversion systemd-devel wcslib-devel wget zlib-devel \
+    libuuid-devel
 
 # gRPC will need cmake >3.13
 RUN \

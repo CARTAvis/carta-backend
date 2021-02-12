@@ -21,3 +21,4 @@ AllowShortCaseLabelsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AlignAfterOpenBracket: DontAlign
 AccessModifierOffset: -4
+IncludeBlocks: Preserve
