@@ -34,7 +34,7 @@ public:
 };
 
 TEST_F(FITSTest, ParseIvoaExampleHeaderOnly) {
-    cout<<ImagePath("test.fits")<<endl;
+    cout << ImagePath("test.fits") << endl;
     Table table(ImagePath("ivoa_example.fits"), true);
     EXPECT_TRUE(table.IsValid());
     EXPECT_EQ(table.NumRows(), 0);

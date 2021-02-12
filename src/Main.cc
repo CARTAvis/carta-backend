@@ -602,7 +602,7 @@ int main(int argc, const char* argv[]) {
 
         spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
-        if (!CheckFolderPaths(root_folder, base_folder)) {
+        if (!CheckRootBaseFolders(root_folder, base_folder)) {
             return 1;
         }
 

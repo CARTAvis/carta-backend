@@ -22,7 +22,7 @@
 // ************ Utilities *************
 bool FindExecutablePath(std::string& path);
 bool IsSubdirectory(const std::string& folder, const std::string& top_folder);
-bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
+bool CheckRootBaseFolders(std::string& root, std::string& base);
 uint32_t GetMagicNumber(const std::string& filename);
 
 // split input string into a vector of strings by delimiter
