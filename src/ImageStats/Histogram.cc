@@ -17,26 +17,26 @@
 using namespace carta;
 
 Histogram::Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data) {
-    _histogram.num_bins = num_bins;
-    _histogram.bin_width = (max_value - min_value) / num_bins;
+    _num_bins = num_bins;
+    _bin_width = (max_value - min_value) / num_bins;
     _min_val = min_value;
     _max_val = max_value;
-    _histogram.histogram_bins.resize(num_bins);
-    _histogram.bin_center = _min_val + (_histogram.bin_width * 0.5);
+    _histogram_bins.resize(num_bins);
+    _bin_center = _min_val + (_bin_width * 0.5);
 
     Fill(data);
 }
 
 Histogram::Histogram(const Histogram& h) {
-    _histogram.num_bins = h.GetNbins();
-    _histogram.bin_width = h.GetBinWidth();
-    _histogram.bin_center = h.GetBinCenter();
+    _num_bins = h.GetNbins();
+    _bin_width = h.GetBinWidth();
+    _bin_center = h.GetBinCenter();
     _min_val = h.GetMinVal();
     _max_val = h.GetMaxVal();
-    _histogram.histogram_bins = h.GetHistogramBins();
+    _histogram_bins = h.GetHistogramBins();
 }
 
-bool Histogram::join(Histogram& h) { // NOLINT
+bool Histogram::join(const Histogram& h) { // NOLINT
     if (!ConsistencyCheck(*this, h)) {
         spdlog::warn("A consistency check failed to join histograms");
         return false;
@@ -46,7 +46,7 @@ bool Histogram::join(Histogram& h) { // NOLINT
     ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for
     for (int i = 0; i < num_bins; i++) {
-        _histogram.histogram_bins[i] += other_bins[i];
+        _histogram_bins[i] += other_bins[i];
     }
     return true;
 }
@@ -60,19 +60,19 @@ void Histogram::Fill(const std::vector<float>& data) {
         auto num_threads = omp_get_num_threads();
         auto thread_index = omp_get_thread_num();
 #pragma omp single
-        { temp_bins.resize(_histogram.num_bins * num_threads); }
+        { temp_bins.resize(_num_bins * num_threads); }
 #pragma omp for
         for (int64_t i = 0; i < num_elements; i++) {
             auto val = data[i];
             if (_min_val <= val && val <= _max_val) {
-                int bin_number = std::clamp((int)((val - _min_val) / _histogram.bin_width), 0, _histogram.num_bins - 1);
-                temp_bins[thread_index * _histogram.num_bins + bin_number]++;
+                int bin_number = std::clamp((int)((val - _min_val) / _bin_width), 0, _num_bins - 1);
+                temp_bins[thread_index * _num_bins + bin_number]++;
             }
         }
 #pragma omp for
-        for (int64_t i = 0; i < _histogram.num_bins; i++) {
+        for (int64_t i = 0; i < _num_bins; i++) {
             for (int t = 0; t < num_threads; t++) {
-                _histogram.histogram_bins[i] += temp_bins[_histogram.num_bins * t + i];
+                _histogram_bins[i] += temp_bins[_num_bins * t + i];
             }
         }
     }
@@ -94,8 +94,8 @@ bool Histogram::ConsistencyCheck(const Histogram& a, const Histogram& b) {
     return true;
 }
 void Histogram::SetHistogramBins(const std::vector<int>& bins) {
-    if (bins.size() != _histogram.histogram_bins.size()) {
+    if (bins.size() != _histogram_bins.size()) {
         spdlog::error("Vector sizes are not equal, can't reset histogram counts");
     }
-    _histogram.histogram_bins = bins;
+    _histogram_bins = bins;
 }

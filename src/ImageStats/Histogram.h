@@ -24,21 +24,22 @@ struct HistogramResults {
 class Histogram {
     float _min_val;              // lower bound of the histogram (inclusive)
     float _max_val;              // upper bound of the histogram (inclusive)
-    HistogramResults _histogram; // histogram stats
+    int _num_bins;
+    float _bin_width;
+    float _bin_center;
+    std::vector<int> _histogram_bins; // histogram bin counts
 
     void Fill(const std::vector<float>&);
-    bool ConsistencyCheck(const Histogram&, const Histogram&);
+    static bool ConsistencyCheck(const Histogram&, const Histogram&);
 
 public:
     Histogram() = default; // required to create empty histograms used in references
     Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data);
+
     Histogram(const Histogram& h);
 
-    bool join(Histogram& h); // NOLINT
+    bool join(const Histogram& h); // NOLINT
 
-    HistogramResults GetHistogram() const {
-        return _histogram;
-    }
     float GetMinVal() const {
         return _min_val;
     }
@@ -46,16 +47,16 @@ public:
         return _max_val;
     }
     int GetNbins() const {
-        return _histogram.num_bins;
+        return _num_bins;
     }
     float GetBinWidth() const {
-        return _histogram.bin_width;
+        return _bin_width;
     }
     float GetBinCenter() const {
-        return _histogram.bin_center;
+        return _bin_center;
     }
     const std::vector<int>& GetHistogramBins() const {
-        return _histogram.histogram_bins;
+        return _histogram_bins;
     }
 
     void SetHistogramBins(const std::vector<int>&);
