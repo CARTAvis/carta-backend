@@ -62,6 +62,28 @@ struct PerSocketData {
     string address;
 };
 
+void DeleteSession(int session_id) {
+    Session* session = sessions[session_id];
+
+    if (session) {
+        auto uuid = session->GetId();
+        auto address = session->GetAddress();
+        session->DisconnectCalled();
+        spdlog::info("Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
+        if (carta_grpc_service) {
+            carta_grpc_service->RemoveSession(session);
+        }
+        if (!session->DecreaseRefCount()) {
+            delete session;
+            sessions.erase(session_id);
+        } else {
+            spdlog::warn("Session reference count ({}) is not 0 while on disconnection!", session->DecreaseRefCount());
+        }
+    } else {
+        spdlog::warn("OnDisconnect called with no Session object!");
+    }
+}
+
 void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context) {
     string address;
     auto ip_header = http_request->getHeader("x-forwarded-for");
@@ -140,25 +162,9 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
 
     // Get the Session object
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
-    Session* session = sessions[session_id];
 
-    if (session) {
-        auto uuid = session->GetId();
-        auto address = session->GetAddress();
-        session->DisconnectCalled();
-        spdlog::info("Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
-        if (carta_grpc_service) {
-            carta_grpc_service->RemoveSession(session);
-        }
-        if (!session->DecreaseRefCount()) {
-            delete session;
-            sessions.erase(session_id);
-        } else {
-            spdlog::warn("Session reference count ({}) is not 0 while on disconnection!", session->DecreaseRefCount());
-        }
-    } else {
-        spdlog::warn("OnDisconnect called with no Session object!");
-    }
+    // Delete the Session
+    DeleteSession(session_id);
 
     // Close the websockets
     ws->close();
@@ -174,6 +180,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
     }
 
     if (op_code == uWS::OpCode::BINARY) {
+        session->UpdateTimeStamp();
         if (sv_message.length() >= sizeof(carta::EventHeader)) {
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
             const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
@@ -474,7 +481,16 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (sv_message == "PING") {
-            ws->send("PONG", uWS::OpCode::TEXT);
+            auto t_session = session->GetTimeStamp();
+            auto t_now = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
+            if (dt.count() > 1800) {
+                spdlog::warn("Idle for {} seconds, delete the Session!", dt.count());
+                DeleteSession(session_id);
+                ws->close();
+            } else {
+                ws->send("PONG", uWS::OpCode::TEXT);
+            }
         }
     }
 }

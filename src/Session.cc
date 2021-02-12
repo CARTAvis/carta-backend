@@ -63,6 +63,7 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
     _animation_object = nullptr;
     _connected = true;
     ++_num_sessions;
+    UpdateTimeStamp();
     spdlog::debug("{} ::Session ({})", fmt::ptr(this), _num_sessions);
 }
 
