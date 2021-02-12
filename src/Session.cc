@@ -1917,3 +1917,11 @@ bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script:
         return true;
     }
 }
+
+void Session::UpdateTimeStamp() {
+    _time_stamp = std::chrono::high_resolution_clock::now();
+}
+
+std::chrono::high_resolution_clock::time_point Session::GetTimeStamp() {
+    return _time_stamp;
+}
