@@ -32,14 +32,14 @@ class BlockSmoothingTest : public ::testing::Test {
 public:
     const vector<float> nan_fractions = {0.0f, 0.05f, 0.1f, 0.5f, 0.95f, 1.0f};
 
-    random_device smooth_rd;
-    mt19937 smooth_mt;
-    uniform_real_distribution<float> smooth_float_random;
+    random_device rd;
+    mt19937 mt;
+    uniform_real_distribution<float> float_random;
     uniform_int_distribution<int> size_random;
 
     BlockSmoothingTest() {
-        smooth_mt = mt19937(smooth_rd());
-        smooth_float_random = uniform_real_distribution<float>(0, 1.0f);
+        mt = mt19937(rd());
+        float_random = uniform_real_distribution<float>(0, 1.0f);
         // Random image widths and heights in range [512, 1024]
         size_random = uniform_int_distribution<int>(512, 1024);
     }
@@ -49,12 +49,12 @@ public:
 
         for (auto i = 0; i < m.nrow(); i++) {
             for (auto j = 0; j < m.ncolumn(); j++) {
-                if (smooth_float_random(smooth_mt) < nan_fraction) {
+                if (float_random(mt) < nan_fraction) {
                     m(i, j) = NAN;
-                } else if (smooth_float_random(smooth_mt) < nan_fraction) {
+                } else if (float_random(mt) < nan_fraction) {
                     m(i, j) = INFINITY;
                 } else {
-                    m(i, j) = smooth_float_random(smooth_mt) - 0.5f;
+                    m(i, j) = float_random(mt) - 0.5f;
                 }
             }
         }
@@ -146,7 +146,7 @@ public:
 TEST_F(BlockSmoothingTest, TestControl) {
     for (auto nan_fraction : nan_fractions) {
         for (auto i = 0; i < NUM_ITERS; i++) {
-            auto m1 = RandomMatrix(size_random(smooth_mt), size_random(smooth_mt), nan_fraction);
+            auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
             for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
                 auto smoothed_scalar = DownsampleTileScalar(m1, j);
                 auto smoothed_sse = DownsampleTileSSE(m1, j);
@@ -166,7 +166,7 @@ TEST_F(BlockSmoothingTest, TestControl) {
 TEST_F(BlockSmoothingTest, TestSSEAccuracy) {
     for (auto nan_fraction : nan_fractions) {
         for (auto i = 0; i < NUM_ITERS; i++) {
-            auto m1 = RandomMatrix(size_random(smooth_mt), size_random(smooth_mt), nan_fraction);
+            auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
             for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
                 auto smoothed_scalar = DownsampleTileScalar(m1, j);
                 auto smoothed_sse = DownsampleTileSSE(m1, j);
@@ -187,7 +187,7 @@ TEST_F(BlockSmoothingTest, TestSSEAccuracy) {
 TEST_F(BlockSmoothingTest, TestSSEPerformance) {
     Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
-        auto m1 = RandomMatrix(size_random(smooth_mt), size_random(smooth_mt), 0);
+        auto m1 = RandomMatrix(size_random(mt), size_random(mt), 0);
         for (auto j = 4; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             t.Start("scalar");
             auto smoothed_scalar = DownsampleTileScalar(m1, j);
@@ -209,7 +209,7 @@ TEST_F(BlockSmoothingTest, TestSSEPerformance) {
 TEST_F(BlockSmoothingTest, TestAVXAccuracy) {
     for (auto nan_fraction : nan_fractions) {
         for (auto i = 0; i < NUM_ITERS; i++) {
-            auto m1 = RandomMatrix(size_random(smooth_mt), size_random(smooth_mt), nan_fraction);
+            auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
             for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
                 auto smoothed_scalar = DownsampleTileScalar(m1, j);
                 auto smoothed_avx = DownsampleTileAVX(m1, j);
@@ -231,7 +231,7 @@ TEST_F(BlockSmoothingTest, TestAVXAccuracy) {
 TEST_F(BlockSmoothingTest, TestAVXPerformance) {
     Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
-        auto m1 = RandomMatrix(size_random(smooth_mt), size_random(smooth_mt), 0);
+        auto m1 = RandomMatrix(size_random(mt), size_random(mt), 0);
         for (auto j = 8; j <= MAX_DOWNSAMPLE_FACTOR; j *= 2) {
             t.Start("sse");
             auto smoothed_sse = DownsampleTileSSE(m1, j);
