@@ -6,13 +6,15 @@
 
 #include "Table.h"
 
-#include <fitsio.h>
-#include <fmt/format.h>
-
+#include <fstream>
 #include <iostream>
 
+#include <fitsio.h>
+
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "DataColumn.tcc"
+#include "Threading.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -71,13 +73,13 @@ bool Table::ConstructFromXML(bool header_only) {
         string header_string = GetHeader(_filename);
         auto result = doc.load_string(header_string.c_str(), pugi::parse_default | pugi::parse_fragment);
         if (!result && result.status != pugi::status_end_element_mismatch) {
-            fmt::print("{}\n", result.description());
+            spdlog::error(result.description());
             return false;
         }
     } else {
         auto result = doc.load_file(_filename.c_str(), pugi::parse_default | pugi::parse_embed_pcdata);
         if (!result) {
-            fmt::print("{}\n", result.description());
+            spdlog::error(result.description());
             return false;
         }
     }
@@ -226,6 +228,7 @@ bool Table::PopulateRows(const pugi::xml_node& table) {
         column->Resize(_num_rows);
     }
 
+    ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for schedule(static) default(none) shared(_num_rows, rows)
     for (auto i = 0; i < _num_rows; i++) {
         auto& row = rows[i];
@@ -304,6 +307,7 @@ bool Table::ConstructFromFITS(bool header_only) {
         fits_close_file(file_ptr, &status);
 
         // Dynamic schedule of OpenMP division, as some columns will be easier to parse than others
+        ThreadManager::ApplyThreadLimit();
 #pragma omp parallel for default(none) schedule(dynamic) shared(num_cols, buffer, _num_rows, total_width)
         for (auto i = 0; i < num_cols; i++) {
             _columns[i]->FillFromBuffer(buffer.get(), _num_rows, total_width);

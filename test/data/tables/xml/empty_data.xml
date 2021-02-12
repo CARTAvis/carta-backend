@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VOTABLE version="1.4" xmlns="http://www.ivoa.net/xml/VOTable/v1.3">
+    <DEFINITIONS>
+        <COOSYS ID="COOSYS" equinox="2000" epoch="J2000" system="ICRS"/>
+    </DEFINITIONS>
+    <RESOURCE name="First Resource" type="results">
+        <TABLE ID="simple_vo" name="simple_vo example">
+            <DESCRIPTION>Basic test example</DESCRIPTION>
+            <FIELD ID="id1" name="FirstField" datatype="int">
+                <DESCRIPTION>An int field</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="id2" name="SecondField" datatype="float">
+                <DESCRIPTION>A float field</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="id3" name="ThirdField" datatype="double">
+                <DESCRIPTION>A double field</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="id4" name="FourthField" datatype="long">
+                <DESCRIPTION>A long field</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="id5" name="FifthField" datatype="char" arraysize="*">
+                <DESCRIPTION>A variable length string field</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="id6" name="SixthField" datatype="char" arraysize="3">
+                <DESCRIPTION>A fixed length string field</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="id7" name="SeventhField" datatype="double" arraysize="2">
+                <DESCRIPTION>A fixed length double array field</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="id7" name="SeventhField" datatype="doubleComplex">
+                <DESCRIPTION>A double complex field</DESCRIPTION>
+            </FIELD>
+            <DATA>
+                <TABLEDATA>
+                </TABLEDATA>
+            </DATA>
+        </TABLE>
+    </RESOURCE>
+</VOTABLE>

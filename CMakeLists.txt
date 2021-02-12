@@ -18,10 +18,6 @@ else ()
     message(WARNING "OpenMP not found!")
 endif ()
 
-# Enable parallel GCC algorithms (needed until there is relable support for C++17 from compilers)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_PARALLEL")
-
-
 # Use the -march=native flags when building on the same architecture as deploying to get a slight performance
 # increase when running CPU intensive tasks such as compression and down-sampling of data. If targeting AVX-capable
 # processes only, set EnableAvx to ON
@@ -41,8 +37,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
+FIND_PACKAGE(spdlog REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
@@ -116,6 +112,7 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
+        spdlog
         casa_casa
         casa_coordinates
         casa_tables
@@ -135,6 +132,7 @@ set(SOURCE_FILES
         src/Main.cc
         src/Session.cc
         src/Frame.cc
+        src/Logger/Logger.cc
         src/DataStream/Compression.cc
         src/DataStream/Contouring.cc
         src/DataStream/Smoothing.cc
@@ -166,6 +164,7 @@ set(SOURCE_FILES
         src/OnMessageTask.cc
         src/FileSettings.cc
         src/Util.cc
+        src/Threading.cc
         src/SimpleFrontendServer/SimpleFrontendServer.cc)
 
 add_definitions(-DHAVE_HDF5)
@@ -177,6 +176,9 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(carta_backend ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+install(TARGETS carta_backend
+    RUNTIME DESTINATION bin)
 
 # Tests
 option(test "Build tests." OFF)

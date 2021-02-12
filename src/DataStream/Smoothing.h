@@ -53,7 +53,7 @@ void MakeKernel(std::vector<float>& kernel, double sigma);
 bool RunKernel(const std::vector<float>& kernel, const float* src_data, float* dest_data, int64_t src_width, int64_t src_height,
     int64_t dest_width, int64_t dest_height, bool vertical);
 bool GaussianSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
-    int smoothing_factor, bool performance_logging = false);
+    int smoothing_factor);
 bool BlockSmooth(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width, int64_t dest_height,
     int64_t x_offset, int64_t y_offset, int smoothing_factor);
 bool BlockSmoothScalar(const float* src_data, float* dest_data, int64_t src_width, int64_t src_height, int64_t dest_width,

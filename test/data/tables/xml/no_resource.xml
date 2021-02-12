@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VOTABLE version="1.4" xmlns="http://www.ivoa.net/xml/VOTable/v1.3">
+    <DEFINITIONS>
+        <COOSYS ID="COOSYS" equinox="2000" epoch="J2000" system="ICRS"/>
+    </DEFINITIONS>
+</VOTABLE>

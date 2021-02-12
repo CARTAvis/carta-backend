@@ -6,6 +6,8 @@
 
 #include "FileListHandler.h"
 
+#include <fstream>
+
 #include <casacore/casa/OS/DirectoryIterator.h>
 #include <casacore/casa/OS/File.h>
 

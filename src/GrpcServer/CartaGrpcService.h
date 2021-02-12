@@ -19,7 +19,7 @@
 
 class CartaGrpcService : public CARTA::script::CartaBackend::Service {
 public:
-    CartaGrpcService(bool verbose);
+    CartaGrpcService();
     void AddSession(Session* session);
     void RemoveSession(Session* session);
 
@@ -28,7 +28,6 @@ public:
 private:
     // Map session_id to <Session*, connected>
     std::unordered_map<int, std::pair<Session*, bool>> _sessions;
-    bool _verbose;
 
     static uint32_t _scripting_request_id;
 };

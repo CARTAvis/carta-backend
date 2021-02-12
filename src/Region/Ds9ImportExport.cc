@@ -8,10 +8,12 @@
 
 #include "Ds9ImportExport.h"
 
+#include <iomanip>
+
+#include <fmt/format.h>
+
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
-
-#include <iomanip>
 
 #include "../Util.h"
 

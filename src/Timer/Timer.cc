@@ -5,7 +5,8 @@
 */
 
 #include "Timer.h"
-#include <iostream>
+
+#include "../Logger/Logger.h"
 
 void Timer::Start(const std::string& timer_name) {
     if (!timer_name.empty()) {
@@ -71,7 +72,7 @@ void Timer::Print(const std::string& timer_name, bool clear_after_fetch) {
     } else {
         output = GetMeasurementString(timer_name, clear_after_fetch) + "\n";
     }
-    std::cout << output;
+    spdlog::info(output);
 }
 void Timer::Clear(const std::string& timer_name) {
     // Clear all entries if no name passed in
