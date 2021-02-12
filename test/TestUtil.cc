@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 
 using namespace std;
 
-TEST(Util, SubdirectoryAbs) {
+TEST(UtilTest, SubdirectoryAbs) {
     auto pwd = fs::current_path();
     EXPECT_TRUE(IsSubdirectory((pwd / "data").string(), pwd.string()));
     EXPECT_FALSE(IsSubdirectory(pwd.string(), (pwd / "data").string()));
@@ -33,7 +33,7 @@ TEST(Util, SubdirectoryAbs) {
     EXPECT_FALSE(IsSubdirectory((pwd / "data/images/fits").string(), (pwd / "data/images/hdf5").string()));
 }
 
-TEST(Util, SubdirectoryRel) {
+TEST(UtilTest, SubdirectoryRel) {
     EXPECT_TRUE(IsSubdirectory("./data", "./"));
     EXPECT_FALSE(IsSubdirectory("./", "./data"));
     EXPECT_TRUE(IsSubdirectory("./data/images", "./"));
@@ -44,7 +44,7 @@ TEST(Util, SubdirectoryRel) {
     EXPECT_FALSE(IsSubdirectory("./data/images/fits", "./data/images/hdf5"));
 }
 
-TEST(Util, SubdirectorySelf) {
+TEST(UtilTest, SubdirectorySelf) {
     auto pwd = fs::current_path();
     EXPECT_TRUE(IsSubdirectory("/", "/"));
     EXPECT_TRUE(IsSubdirectory("./", "./"));
@@ -53,7 +53,7 @@ TEST(Util, SubdirectorySelf) {
     EXPECT_TRUE(IsSubdirectory(pwd.string(), (pwd / ".").string()));
 }
 
-TEST(Util, ParentNotSubdirectory) {
+TEST(UtilTest, ParentNotSubdirectory) {
     auto pwd = fs::current_path();
     EXPECT_FALSE(IsSubdirectory(pwd.parent_path().string(), pwd.string()));
     EXPECT_FALSE(IsSubdirectory((pwd / "..").string(), pwd.string()));

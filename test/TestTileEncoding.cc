@@ -7,14 +7,13 @@
 #include <chrono>
 #include <random>
 
-#include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include "../src/DataStream/Tile.h"
+#include "DataStream/Tile.h"
 
 using namespace std;
 
-TEST(TileEncoding, InvalidInput) {
+TEST(TileEncodingTest, InvalidInput) {
     // Layer can be from 0 to 12
     ASSERT_EQ(Tile::Encode(0, 0, -1), -1);
     ASSERT_EQ(Tile::Encode(0, 0, 13), -1);
@@ -25,14 +24,14 @@ TEST(TileEncoding, InvalidInput) {
     ASSERT_EQ(Tile::Encode(0, 4096, 12), -1);
 }
 
-TEST(TileEncoding, OutOfBounds) {
+TEST(TileEncodingTest, OutOfBounds) {
     // X and Y coordinates from 0 to 2^layer -1
     ASSERT_EQ(Tile::Encode(0, 1024, 10), -1);
     ASSERT_EQ(Tile::Encode(0, 256, 8), -1);
     ASSERT_EQ(Tile::Encode(0, 4, 2), -1);
 }
 
-TEST(TileEncoding, RoundTrip) {
+TEST(TileEncodingTest, RoundTrip) {
     random_device rd;
     mt19937 mt(rd());
     uniform_int_distribution<> layer_random(0, 12);
