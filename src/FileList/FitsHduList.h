@@ -12,9 +12,12 @@
 
 #include <carta-protobuf/defs.pb.h>
 
+#include "../Logger/Logger.h"
+
 inline void FitsInfoErrHandler(const char* err_message, casacore::FITSError::ErrorLevel severity) {
-    if (severity > casacore::FITSError::WARN)
-        std::cout << err_message << std::endl;
+    if (severity > casacore::FITSError::WARN) {
+        spdlog::error(err_message);
+    }
 }
 
 class FitsHduList {

@@ -17,6 +17,7 @@
 #include <casacore/images/Images/ImageFITSConverter.h>
 #include <casacore/lattices/Lattices/HDF5Lattice.h>
 
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "Hdf5Attributes.h"
 
@@ -236,7 +237,7 @@ bool CartaHdf5Image::SetUpImage() {
             valid = true;
         }
     } catch (casacore::AipsError& err) {
-        std::cerr << "Error opening HDF5 image: " << err.getMesg() << std::endl;
+        spdlog::error("Error opening HDF5 image: {}", err.getMesg());
     }
     return valid;
 }

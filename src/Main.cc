@@ -4,20 +4,22 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+#include <climits>
 #include <iostream>
 #include <thread>
 #include <tuple>
 #include <vector>
 
-#include <omp.h>
-
 #include <App.h>
 #include <curl/curl.h>
-#include <fmt/format.h>
 #include <signal.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
 #include <uuid/uuid.h>
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 
 #include <casacore/casa/Inputs/Input.h>
 #include <casacore/casa/OS/HostInfo.h>
@@ -26,16 +28,15 @@
 #include "FileList/FileListHandler.h"
 #include "FileSettings.h"
 #include "GrpcServer/CartaGrpcService.h"
+#include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "Session.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
+#include "Threading.h"
 #include "Util.h"
 
 using namespace std;
 
-namespace CARTA {
-int global_thread_count = 0;
-}
 // file list handler for the file browser
 static FileListHandler* file_list_handler;
 SimpleFrontendServer* http_server;
@@ -50,8 +51,6 @@ static std::unique_ptr<grpc::Server> carta_grpc_server;
 static string root_folder("/"), base_folder(".");
 // token to validate incoming WS connection header against
 static string auth_token = "";
-static bool verbose;
-static bool perflog;
 static int grpc_port(-1);
 
 // Sessions map
@@ -90,12 +89,12 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
 
         if (!req_token.empty()) {
             if (req_token != auth_token) {
-                fmt::print("Incorrect auth token supplied! Closing WebSocket connection\n");
+                spdlog::error("Incorrect auth token supplied! Closing WebSocket connection");
                 http_response->close();
                 return;
             }
         } else {
-            fmt::print("No auth token supplied! Closing WebSocket connection\n");
+            spdlog::error("No auth token supplied! Closing WebSocket connection");
             http_response->close();
             return;
         }
@@ -121,8 +120,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
     auto* loop = uWS::Loop::get();
 
     // create a Session
-    sessions[session_id] =
-        new Session(ws, loop, session_id, address, root_folder, base_folder, file_list_handler, verbose, perflog, grpc_port);
+    sessions[session_id] = new Session(ws, loop, session_id, address, root_folder, base_folder, file_list_handler, grpc_port);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
@@ -130,7 +128,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
 
     sessions[session_id]->IncreaseRefCount();
 
-    carta::Log(session_id, "Client {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
+    spdlog::info("Client {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -148,7 +146,7 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
         auto uuid = session->GetId();
         auto address = session->GetAddress();
         session->DisconnectCalled();
-        carta::Log(uuid, "Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
+        spdlog::info("Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);
         }
@@ -156,10 +154,10 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
             delete session;
             sessions.erase(session_id);
         } else {
-            fmt::print("Warning: Session reference count ({}) is not 0 while on disconnection!\n", session->DecreaseRefCount());
+            spdlog::warn("Session reference count ({}) is not 0 while on disconnection!", session->DecreaseRefCount());
         }
     } else {
-        fmt::print("Warning: OnDisconnect called with no Session object!\n");
+        spdlog::warn("OnDisconnect called with no Session object!");
     }
 
     // Close the websockets
@@ -171,7 +169,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
     Session* session = sessions[session_id];
     if (!session) {
-        fmt::print("Missing session!\n");
+        spdlog::error("Missing session!");
         return;
     }
 
@@ -187,7 +185,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegisterViewer(message, head.icd_version, head.request_id);
                     } else {
-                        fmt::print("Bad REGISTER_VIEWER message!\n");
+                        spdlog::warn("Bad REGISTER_VIEWER message!");
                     }
                     break;
                 }
@@ -196,7 +194,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnResumeSession(message, head.request_id);
                     } else {
-                        fmt::print("Bad RESUME_SESSION message!\n");
+                        spdlog::warn("Bad RESUME_SESSION message!");
                     }
                     break;
                 }
@@ -211,7 +209,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->AddToSetChannelQueue(message, head.request_id);
                         session->ImageChannelUnlock(message.file_id());
                     } else {
-                        fmt::print("Bad SET_IMAGE_CHANNELS message!\n");
+                        spdlog::warn("Bad SET_IMAGE_CHANNELS message!");
                     }
                     break;
                 }
@@ -221,7 +219,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->AddCursorSetting(message, head.request_id);
                         tsk = new (tbb::task::allocate_root(session->Context())) SetCursorTask(session, message.file_id());
                     } else {
-                        fmt::print("Bad SET_CURSOR message!\n");
+                        spdlog::warn("Bad SET_CURSOR message!");
                     }
                     break;
                 }
@@ -236,7 +234,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                                 SetHistogramRequirementsTask(session, head, event_length, event_buf);
                         }
                     } else {
-                        fmt::print("Bad SET_HISTOGRAM_REQUIREMENTS message!\n");
+                        spdlog::warn("Bad SET_HISTOGRAM_REQUIREMENTS message!");
                     }
                     break;
                 }
@@ -245,7 +243,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCloseFile(message);
                     } else {
-                        fmt::print("Bad CLOSE_FILE message!\n");
+                        spdlog::warn("Bad CLOSE_FILE message!");
                     }
                     break;
                 }
@@ -256,7 +254,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         session->BuildAnimationObject(message, head.request_id);
                         tsk = new (tbb::task::allocate_root(session->AnimationContext())) AnimationTask(session);
                     } else {
-                        fmt::print("Bad START_ANIMATION message!\n");
+                        spdlog::warn("Bad START_ANIMATION message!");
                     }
                     break;
                 }
@@ -265,7 +263,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->StopAnimation(message.file_id(), message.end_frame());
                     } else {
-                        fmt::print("Bad STOP_ANIMATION message!\n");
+                        spdlog::warn("Bad STOP_ANIMATION message!");
                     }
                     break;
                 }
@@ -274,7 +272,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->HandleAnimationFlowControlEvt(message);
                     } else {
-                        fmt::print("Bad ANIMATION_FLOW_CONTROL message!\n");
+                        spdlog::warn("Bad ANIMATION_FLOW_CONTROL message!");
                     }
                     break;
                 }
@@ -283,7 +281,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnFileInfoRequest(message, head.request_id);
                     } else {
-                        fmt::print("Bad FILE_INFO_REQUEST message!\n");
+                        spdlog::warn("Bad FILE_INFO_REQUEST message!");
                     }
                     break;
                 }
@@ -292,7 +290,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnFileListRequest(message, head.request_id);
                     } else {
-                        fmt::print("Bad FILE_LIST_REQUEST message!\n");
+                        spdlog::warn("Bad FILE_LIST_REQUEST message!");
                     }
                     break;
                 }
@@ -301,7 +299,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnOpenFile(message, head.request_id);
                     } else {
-                        fmt::print("Bad OPEN_FILE message!\n");
+                        spdlog::warn("Bad OPEN_FILE message!");
                     }
                     break;
                 }
@@ -316,7 +314,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegionListRequest(message, head.request_id);
                     } else {
-                        fmt::print("Bad REGION_LIST_REQUEST message!\n");
+                        spdlog::warn("Bad REGION_LIST_REQUEST message!");
                     }
                     break;
                 }
@@ -325,7 +323,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRegionFileInfoRequest(message, head.request_id);
                     } else {
-                        fmt::print("Bad REGION_FILE_INFO_REQUEST message!\n");
+                        spdlog::warn("Bad REGION_FILE_INFO_REQUEST message!");
                     }
                     break;
                 }
@@ -334,7 +332,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnImportRegion(message, head.request_id);
                     } else {
-                        fmt::print("Bad IMPORT_REGION message!\n");
+                        spdlog::warn("Bad IMPORT_REGION message!");
                     }
                     break;
                 }
@@ -343,7 +341,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnExportRegion(message, head.request_id);
                     } else {
-                        fmt::print("Bad EXPORT_REGION message!\n");
+                        spdlog::warn("Bad EXPORT_REGION message!");
                     }
                     break;
                 }
@@ -358,7 +356,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnScriptingResponse(message, head.request_id);
                     } else {
-                        fmt::print("Bad SCRIPTING_RESPONSE message!\n");
+                        spdlog::warn("Bad SCRIPTING_RESPONSE message!");
                     }
                     break;
                 }
@@ -367,7 +365,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSetRegion(message, head.request_id);
                     } else {
-                        fmt::print("Bad SET_REGION message!\n");
+                        spdlog::warn("Bad SET_REGION message!");
                     }
                     break;
                 }
@@ -376,7 +374,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnRemoveRegion(message);
                     } else {
-                        fmt::print("Bad REMOVE_REGION message!\n");
+                        spdlog::warn("Bad REMOVE_REGION message!");
                     }
                     break;
                 }
@@ -385,7 +383,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSetSpectralRequirements(message);
                     } else {
-                        fmt::print("Bad SET_SPECTRAL_REQUIREMENTS message!\n");
+                        spdlog::warn("Bad SET_SPECTRAL_REQUIREMENTS message!");
                     }
                     break;
                 }
@@ -394,7 +392,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCatalogFileList(message, head.request_id);
                     } else {
-                        fmt::print("Bad CATALOG_LIST_REQUEST message!\n");
+                        spdlog::warn("Bad CATALOG_LIST_REQUEST message!");
                     }
                     break;
                 }
@@ -403,7 +401,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCatalogFileInfo(message, head.request_id);
                     } else {
-                        fmt::print("Bad CATALOG_FILE_INFO_REQUEST message!\n");
+                        spdlog::warn("Bad CATALOG_FILE_INFO_REQUEST message!");
                     }
                     break;
                 }
@@ -412,7 +410,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnOpenCatalogFile(message, head.request_id);
                     } else {
-                        fmt::print("Bad OPEN_CATALOG_FILE message!\n");
+                        spdlog::warn("Bad OPEN_CATALOG_FILE message!");
                     }
                     break;
                 }
@@ -421,7 +419,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCloseCatalogFile(message);
                     } else {
-                        fmt::print("Bad CLOSE_CATALOG_FILE message!\n");
+                        spdlog::warn("Bad CLOSE_CATALOG_FILE message!");
                     }
                     break;
                 }
@@ -430,7 +428,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnCatalogFilter(message, head.request_id);
                     } else {
-                        fmt::print("Bad CLOSE_CATALOG_FILE message!\n");
+                        spdlog::warn("Bad CLOSE_CATALOG_FILE message!");
                     }
                     break;
                 }
@@ -439,7 +437,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnStopMomentCalc(message);
                     } else {
-                        fmt::print("Bad STOP_MOMENT_CALC message!\n");
+                        spdlog::warn("Bad STOP_MOMENT_CALC message!");
                     }
                     break;
                 }
@@ -448,7 +446,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnSaveFile(message, head.request_id);
                     } else {
-                        fmt::print("Bad SAVE_FILE message!\n");
+                        spdlog::warn("Bad SAVE_FILE message!");
                     }
                     break;
                 }
@@ -458,7 +456,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                         tsk =
                             new (tbb::task::allocate_root(session->Context())) OnSpectralLineRequestTask(session, message, head.request_id);
                     } else {
-                        fmt::print("Bad SPECTRAL_LINE_REQUEST message!\n");
+                        spdlog::warn("Bad SPECTRAL_LINE_REQUEST message!");
                     }
                     break;
                 }
@@ -509,28 +507,29 @@ int StartGrpcService(int grpc_port) {
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials(), &selected_port);
 
     // Register and start carta grpc server
-    carta_grpc_service = std::unique_ptr<CartaGrpcService>(new CartaGrpcService(verbose));
+    carta_grpc_service = std::unique_ptr<CartaGrpcService>(new CartaGrpcService());
     builder.RegisterService(carta_grpc_service.get());
     // By default ports can be reused; we don't want this
     builder.AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
     carta_grpc_server = builder.BuildAndStart();
 
     if (selected_port > 0) { // available port found
-        fmt::print("CARTA gRPC service available at 0.0.0.0:{}\n", selected_port);
+        spdlog::info("CARTA gRPC service available at 0.0.0.0:{}", selected_port);
         // Turn logging back on
         gpr_set_log_function(gpr_default_log);
         return 0;
     } else {
-        fmt::print("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.\n", grpc_port);
+        spdlog::critical("CARTA gRPC service failed to start. Could not bind to port {}. Aborting.", grpc_port);
         return 1;
     }
 }
 
 void ExitBackend(int s) {
-    fmt::print("Exiting backend.\n");
+    spdlog::info("Exiting backend.");
     if (carta_grpc_server) {
         carta_grpc_server->Shutdown();
     }
+    spdlog::default_logger()->flush(); // flush the log file while exiting backend
     exit(0);
 }
 
@@ -547,34 +546,37 @@ int main(int argc, const char* argv[]) {
         // define and get input arguments
         int port(-1);
         int omp_thread_count = OMP_THREAD_COUNT;
+        int thread_count = THREAD_COUNT;
         string frontend_folder;
         string host;
         bool no_http = false;
         bool debug_no_auth = false;
         bool no_browser = false;
+        bool no_log = false;
+        int verbosity = 4;
 
         { // get values then let Input go out of scope
             casacore::Input inp;
-            inp.version(VERSION_ID);
-            inp.create("verbose", "False", "display verbose logging", "Bool");
-            inp.create("perflog", "False", "display performance logging", "Bool");
+            inp.create("verbosity", to_string(verbosity),
+                "display verbose logging from level (0: off, 1: critical, 2: error, 3: warning, 4: info, 5: debug, 6: trace)", "Int");
+            inp.create("no_log", "False", "Do not output to a log file", "Bool");
             inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
             inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, use with caution!)", "Bool");
             inp.create("no_browser", "False", "prevent the frontend from automatically opening in the default browser on startup", "Bool");
             inp.create("host", host, "only listen on the specified interface (IP address or hostname)", "String");
             inp.create("port", to_string(port), "set port on which to host frontend files and accept WebSocket connections", "Int");
             inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
-            inp.create("omp_threads", to_string(omp_thread_count), "set OMP thread pool count", "Int");
+            inp.create("threads", to_string(thread_count), "set thread count for handling incoming messages", "Int");
+            inp.create("omp_threads", to_string(omp_thread_count), "set OpenMP thread pool count. To handle automatically, use -1", "Int");
             inp.create("base", base_folder, "set folder for data files", "String");
             inp.create("root", root_folder, "set top-level folder for data files", "String");
             inp.create("frontend_folder", frontend_folder, "set folder to serve frontend files from", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
-
-            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clents connect", "Int");
+            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clients connect", "Int");
             inp.readArguments(argc, argv);
 
-            verbose = inp.getBool("verbose");
-            perflog = inp.getBool("perflog");
+            verbosity = inp.getInt("verbosity");
+            no_log = inp.getBool("no_log");
             no_http = inp.getBool("no_http");
             debug_no_auth = inp.getBool("debug_no_auth");
             no_browser = inp.getBool("no_browser");
@@ -582,6 +584,7 @@ int main(int argc, const char* argv[]) {
             host = inp.getString("host");
             grpc_port = inp.getInt("grpc_port");
             omp_thread_count = inp.getInt("omp_threads");
+            thread_count = inp.getInt("threads");
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
             frontend_folder = inp.getString("frontend_folder");
@@ -594,7 +597,19 @@ int main(int argc, const char* argv[]) {
                 int init_wait_time = inp.getInt("init_exit_after");
                 Session::SetInitExitTimeout(init_wait_time);
             }
+
+            InitLogger(no_log, verbosity);
         }
+
+        std::string executable_path;
+        bool have_executable_path(FindExecutablePath(executable_path));
+
+        if (!have_executable_path) {
+            spdlog::warn("Could not determine the full path to the backend executable.");
+            executable_path = "carta_backend";
+        }
+
+        spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
         if (!CheckRootBaseFolders(root_folder, base_folder)) {
             return 1;
@@ -613,8 +628,8 @@ int main(int argc, const char* argv[]) {
             }
         }
 
-        omp_set_num_threads(omp_thread_count);
-        CARTA::global_thread_count = omp_thread_count;
+        tbb::task_scheduler_init task_scheduler(thread_count);
+        carta::ThreadManager::SetThreadLimit(omp_thread_count);
 
         // One FileListHandler works for all sessions.
         file_list_handler = new FileListHandler(root_folder, base_folder);
@@ -636,49 +651,28 @@ int main(int argc, const char* argv[]) {
         if (!no_http) {
             fs::path frontend_path;
 
-            if (frontend_folder.empty()) {
-                fs::path executable_path = fs::path(argv[0]).parent_path();
-                frontend_path = executable_path / "../share/carta/frontend";
-            } else {
+            if (!frontend_folder.empty()) {
                 frontend_path = frontend_folder;
+            } else if (have_executable_path) {
+                fs::path executable_parent = fs::path(executable_path).parent_path();
+                frontend_path = executable_parent / "../share/carta/frontend";
+            } else {
+                spdlog::warn(
+                    "Failed to determine the default location of the CARTA frontend. Please specify a custom location using the "
+                    "frontend_folder argument.");
             }
 
-            http_server = new SimpleFrontendServer(frontend_path);
-            if (http_server->CanServeFrontend()) {
-                app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
-                    if (http_server && http_server->CanServeFrontend()) {
-                        http_server->HandleRequest(res, req);
-                    }
-                });
-
-                string default_host_string = host;
-                if (host.empty()) {
-                    auto server_ip_entry = getenv("SERVER_IP");
-                    if (server_ip_entry) {
-                        default_host_string = server_ip_entry;
-                    } else {
-                        default_host_string = "localhost";
-                    }
+            if (!frontend_path.empty()) {
+                http_server = new SimpleFrontendServer(frontend_path);
+                if (http_server->CanServeFrontend()) {
+                    app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
+                        if (http_server && http_server->CanServeFrontend()) {
+                            http_server->HandleRequest(res, req);
+                        }
+                    });
+                } else {
+                    spdlog::warn("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument.");
                 }
-
-                string frontend_url = fmt::format("http://{}:{}", default_host_string, port);
-                if (!auth_token.empty()) {
-                    frontend_url += fmt::format("?token={}", auth_token);
-                }
-                if (!no_browser) {
-#if defined(__APPLE__)
-                    string open_command = "open";
-#else
-                    string open_command = "xdg-open";
-#endif
-                    auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
-                    if (open_result) {
-                        fmt::print("Failed to open the default browser automatically.\n");
-                    }
-                }
-                fmt::print("CARTA is accessible at {}\n", frontend_url);
-            } else {
-                fmt::print("Failed to host the CARTA frontend. Please specify a custom location using the frontend_folder argument\n");
             }
         }
 
@@ -690,14 +684,14 @@ int main(int argc, const char* argv[]) {
             int num_listen_retries(0);
             while (!port_ok) {
                 if (num_listen_retries > MAX_SOCKET_PORT_TRIALS) {
-                    fmt::print("Unable to listen on the port range {}-{}!\n", DEFAULT_SOCKET_PORT, port - 1);
+                    spdlog::error("Unable to listen on the port range {}-{}!", DEFAULT_SOCKET_PORT, port - 1);
                     break;
                 }
                 app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
                     if (token) {
                         port_ok = true;
                     } else {
-                        fmt::print("Port {} is already in use. Trying next port.\n", port);
+                        spdlog::warn("Port {} is already in use. Trying next port.", port);
                         ++port;
                         ++num_listen_retries;
                     }
@@ -709,14 +703,46 @@ int main(int argc, const char* argv[]) {
                 if (token) {
                     port_ok = true;
                 } else {
-                    fmt::print("Could not listen on port {}!\n", port);
+                    spdlog::error("Could not listen on port {}!\n", port);
                 }
             });
         }
 
         if (port_ok) {
-            fmt::print("Listening on port {} with root folder {}, base folder {}, and {} OMP threads\n", port, root_folder, base_folder,
-                omp_thread_count);
+            string start_info = fmt::format("Listening on port {} with root folder {}, base folder {}", port, root_folder, base_folder);
+            if (omp_thread_count > 0) {
+                start_info += fmt::format(", and {} OpenMP worker threads", omp_thread_count);
+            } else {
+                start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
+            }
+            spdlog::info(start_info);
+            if (http_server && http_server->CanServeFrontend()) {
+                string default_host_string = host;
+                if (host.empty() || host == "0.0.0.0") {
+                    auto server_ip_entry = getenv("SERVER_IP");
+                    if (server_ip_entry) {
+                        default_host_string = server_ip_entry;
+                    } else {
+                        default_host_string = "localhost";
+                    }
+                }
+                string frontend_url = fmt::format("http://{}:{}", default_host_string, port);
+                if (!auth_token.empty()) {
+                    frontend_url += fmt::format("/?token={}", auth_token);
+                }
+                if (!no_browser) {
+#if defined(__APPLE__)
+                    string open_command = "open";
+#else
+                    string open_command = "xdg-open";
+#endif
+                    auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
+                    if (open_result) {
+                        spdlog::warn("Failed to open the default browser automatically.");
+                    }
+                }
+                spdlog::info("CARTA is accessible at {}", frontend_url);
+            }
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
                                             .upgrade = OnUpgrade,
@@ -726,10 +752,10 @@ int main(int argc, const char* argv[]) {
                 .run();
         }
     } catch (exception& e) {
-        fmt::print("Error: {}\n", e.what());
+        spdlog::critical("{}", e.what());
         return 1;
     } catch (...) {
-        fmt::print("Unknown error\n");
+        spdlog::critical("Unknown error");
         return 1;
     }
 

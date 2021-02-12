@@ -16,13 +16,14 @@
 
 #include "../Constants.h"
 #include "../ImageStats/StatsCalculator.h"
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "CrtfImportExport.h"
 #include "Ds9ImportExport.h"
 
 namespace carta {
 
-RegionHandler::RegionHandler(bool perflog) : _perflog(perflog), _z_profile_count(0) {}
+RegionHandler::RegionHandler() : _z_profile_count(0) {}
 
 // ********************************************************************
 // Region handling
@@ -244,7 +245,7 @@ void RegionHandler::ExportRegion(int file_id, std::shared_ptr<Frame> frame, CART
                         region_added = exporter->AddExportRegion(region_state, region_style, region_record, pixel_coord);
                     }
                 } catch (const casacore::AipsError& err) {
-                    std::cerr << "Export region record failed: " << err.getMesg() << std::endl;
+                    spdlog::error("Export region record failed: {}", err.getMesg());
                 }
             }
 
@@ -340,7 +341,7 @@ bool RegionHandler::SetSpectralRequirements(int region_id, int file_id, std::sha
     }
 
     if (!_regions.count(region_id)) {
-        std::cerr << "Spectral requirements failed: no region with id " << region_id << std::endl;
+        spdlog::error("Spectral requirements failed: no region with id {}", region_id);
         return false;
     }
 
@@ -431,7 +432,7 @@ bool RegionHandler::SpectralCoordinateValid(std::string& coordinate, int nstokes
     ConvertCoordinateToAxes(coordinate, axis_index, stokes_index);
     bool valid(stokes_index < nstokes);
     if (!valid) {
-        std::cerr << "Spectral requirement " << coordinate << " failed: invalid stokes axis for image." << std::endl;
+        spdlog::error("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
     }
     return valid;
 }
@@ -711,9 +712,9 @@ bool RegionHandler::ApplyRegionToFile(
 
         return true;
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Error applying region " << region_id << " to file " << file_id << ": " << err.getMesg() << std::endl;
+        spdlog::error("Error applying region {} to file {}: {}", region_id, file_id, err.getMesg());
     } catch (std::out_of_range& range_error) {
-        std::cerr << "Cannot apply region " << region_id << " to closed file " << file_id << std::endl;
+        spdlog::error("Cannot apply region {} to closed file {}", region_id, file_id);
     }
 
     return false;
@@ -899,13 +900,10 @@ bool RegionHandler::GetRegionHistogramData(
         FillHistogramFromResults(histogram, stats, results);
     }
 
-    if (_perflog) {
-        auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
-        auto dt_region_histogram =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
-        fmt::print(
-            "Fill region histogram in {} ms at {} MPix/s\n", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
-    }
+    auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
+    auto dt_region_histogram =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_histogram - t_start_region_histogram).count();
+    spdlog::trace("Fill region histogram in {} ms at {} MPix/s", dt_region_histogram * 1e-3, (float)stats.num_pixels / dt_region_histogram);
 
     return true;
 }
@@ -1142,12 +1140,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
                 }
             }
 
-            if (_perflog) {
-                auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
-                auto dt_spectral_profile =
-                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-                fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
-            }
+            auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+            auto dt_spectral_profile =
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+            spdlog::trace("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
 
             _frames.at(file_id)->DecreaseZProfileCount();
             _regions.at(region_id)->DecreaseZProfileCount();
@@ -1255,12 +1251,10 @@ bool RegionHandler::GetRegionSpectralData(int region_id, int file_id, std::strin
         }
     }
 
-    if (_perflog) {
-        auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
-        auto dt_spectral_profile =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
-    }
+    auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+    auto dt_spectral_profile =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+    spdlog::trace("Fill spectral profile in {} ms", dt_spectral_profile * 1e-3);
 
     _frames.at(file_id)->DecreaseZProfileCount();
     _regions.at(region_id)->DecreaseZProfileCount();
@@ -1384,11 +1378,10 @@ bool RegionHandler::GetRegionStatsData(
         // cache results
         _stats_cache[cache_id] = StatsCache(stats_results);
 
-        if (_perflog) {
-            auto t_end_region_stats = std::chrono::high_resolution_clock::now();
-            auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
-            fmt::print("Fill region stats in {} ms\n", dt_region_stats * 1e-3);
-        }
+        auto t_end_region_stats = std::chrono::high_resolution_clock::now();
+        auto dt_region_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_region_stats - t_start_region_stats).count();
+        spdlog::trace("Fill region stats in {} ms", dt_region_stats * 1e-3);
+
         return true;
     }
 

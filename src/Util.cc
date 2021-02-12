@@ -6,24 +6,25 @@
 
 #include "Util.h"
 
+#include <climits>
+#include <fstream>
+#include <regex>
+
+#include <fmt/format.h>
+
+#include <casacore/casa/OS/File.h>
+
+#include "Logger/Logger.h"
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
 using namespace std;
-
-namespace carta {
-
-void Log(uint32_t id, const string& log_message) {
-    time_t time = chrono::system_clock::to_time_t(chrono::system_clock::now());
-    string time_string = ctime(&time);
-    time_string = time_string.substr(0, time_string.length() - 1);
-
-    fmt::print("Session {} ({}): {}\n", id, time_string, log_message);
-}
-
-} // namespace carta
 
 bool CheckRootBaseFolders(string& root, string& base) {
     if (root == "base" && base == "root") {
-        fmt::print("ERROR: Must set root or base directory.\n");
-        fmt::print("Exiting carta.\n");
+        spdlog::critical("Must set root or base directory. Exiting carta.");
         return false;
     }
     if (root == "base")
@@ -34,8 +35,7 @@ bool CheckRootBaseFolders(string& root, string& base) {
     // check root
     casacore::File root_folder(root);
     if (!(root_folder.exists() && root_folder.isDirectory(true) && root_folder.isReadable() && root_folder.isExecutable())) {
-        fmt::print("ERROR: Invalid root directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
+        spdlog::critical("Invalid root directory, does not exist or is not a readable directory. Exiting carta.");
         return false;
     }
     // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
@@ -45,7 +45,7 @@ bool CheckRootBaseFolders(string& root, string& base) {
         try {
             root = root_folder.path().absoluteName();
         } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
+            spdlog::error(err.getMesg());
         }
         if (root.empty())
             root = "/";
@@ -53,44 +53,49 @@ bool CheckRootBaseFolders(string& root, string& base) {
     // check base
     casacore::File base_folder(base);
     if (!(base_folder.exists() && base_folder.isDirectory(true) && base_folder.isReadable() && base_folder.isExecutable())) {
-        fmt::print("ERROR: Invalid base directory, does not exist or is not a readable directory.\n");
-        fmt::print("Exiting carta.\n");
+        spdlog::warn("Invalid base directory, using the provided root directory instead.");
+        base = root;
+    } else {
+        // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
+        try {
+            base = base_folder.path().resolvedName(); // fails on root folder /
+        } catch (casacore::AipsError& err) {
+            try {
+                base = base_folder.path().absoluteName();
+            } catch (casacore::AipsError& err) {
+                spdlog::error(err.getMesg());
+            }
+            if (base.empty())
+                base = "/";
+        }
+    }
+    bool is_subdirectory = IsSubdirectory(base, root);
+    if (!is_subdirectory) {
+        spdlog::critical("Starting {} must be a subdirectory of top level {}. Exiting carta.", base, root);
         return false;
     }
-    // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
-    try {
-        base = base_folder.path().resolvedName(); // fails on root folder /
-    } catch (casacore::AipsError& err) {
-        try {
-            base = base_folder.path().absoluteName();
-        } catch (casacore::AipsError& err) {
-            fmt::print(err.getMesg());
-        }
-        if (base.empty())
-            base = "/";
-    }
-    // check if base is same as or subdir of root
-    if (base != root) {
-        bool is_subdirectory(false);
-        casacore::Path base_path(base);
-        casacore::String parent_string(base_path.dirName()), root_string(root);
-        if (parent_string == root_string)
-            is_subdirectory = true;
-        while (!is_subdirectory && (parent_string != root_string)) { // navigate up directory tree
-            base_path = casacore::Path(parent_string);
-            parent_string = base_path.dirName();
-            if (parent_string == root_string) {
-                is_subdirectory = true;
-            } else if (parent_string == "/") {
-                break;
-            }
-        }
-        if (!is_subdirectory) {
-            fmt::print("ERROR: Base {} must be a subdirectory of root {}. Exiting carta.\n", base, root);
-            return false;
-        }
-    }
     return true;
+}
+
+bool IsSubdirectory(const string& folder, const string& top_folder) {
+    if (folder == top_folder) {
+        return true;
+    }
+    casacore::Path folder_path(folder);
+    string parent_string(folder_path.dirName());
+    if (parent_string == top_folder) {
+        return true;
+    }
+    while (parent_string != top_folder) { // navigate up directory tree
+        folder_path = casacore::Path(parent_string);
+        parent_string = folder_path.dirName();
+        if (parent_string == top_folder) {
+            return true;
+        } else if (parent_string == "/") {
+            break;
+        }
+    }
+    return false;
 }
 
 uint32_t GetMagicNumber(const string& filename) {
@@ -261,4 +266,25 @@ string GetAuthTokenFromCookie(const string& header) {
         return sm[1];
     }
     return string();
+}
+
+bool FindExecutablePath(string& path) {
+    char path_buffer[PATH_MAX + 1];
+#ifdef __APPLE__
+    uint32_t len = sizeof(path_buffer);
+
+    if (_NSGetExecutablePath(path_buffer, &len) != 0) {
+        return false;
+    }
+#else
+    const int len = int(readlink("/proc/self/exe", path_buffer, PATH_MAX));
+
+    if (len == -1) {
+        return false;
+    }
+
+    path_buffer[len] = 0;
+#endif
+    path = path_buffer;
+    return true;
 }

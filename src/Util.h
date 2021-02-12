@@ -8,21 +8,10 @@
 #define CARTA_BACKEND__UTIL_H_
 
 #include <cassert>
-#include <chrono>
-#include <fstream>
-#include <regex>
 #include <string>
-#include <unordered_map>
 
-#include <fmt/format.h>
-#include <fmt/ostream.h>
-
-#include <casacore/casa/Inputs/Input.h>
-#include <casacore/casa/OS/File.h>
 #include <casacore/images/Images/ImageOpener.h>
-#include <casacore/mirlib/miriad.h>
 
-#include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
@@ -30,26 +19,9 @@
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
 
-// ************ Logging *************
-
-namespace carta { // Add a name space to avoid the ambiguity with casacore Log() function
-
-void Log(uint32_t id, const std::string& log_message);
-
-template <typename... Args>
-inline void Log(uint32_t id, const char* template_string, Args... args) {
-    Log(id, fmt::format(template_string, args...));
-}
-
-template <typename... Args>
-inline void Log(uint32_t id, const std::string& template_string, Args... args) {
-    Log(id, fmt::format(template_string, args...));
-}
-
-} // namespace carta
-
 // ************ Utilities *************
-
+bool FindExecutablePath(std::string& path);
+bool IsSubdirectory(const std::string& folder, const std::string& top_folder);
 bool CheckRootBaseFolders(std::string& root, std::string& base);
 uint32_t GetMagicNumber(const std::string& filename);
 
