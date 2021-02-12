@@ -22,6 +22,7 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/save_file.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>

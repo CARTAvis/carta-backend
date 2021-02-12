@@ -524,27 +524,6 @@ void ExitBackend(int s) {
     exit(0);
 }
 
-bool FindExecutablePath(std::string& path) {
-    char path_buffer[PATH_MAX + 1];
-#ifdef __APPLE__
-    uint32_t len = sizeof(path_buffer);
-
-    if (_NSGetExecutablePath(path_buffer, &len) != 0) {
-        return false;
-    }
-#else
-    const int len = int(readlink("/proc/self/exe", path_buffer, PATH_MAX));
-
-    if (len == -1) {
-        return false;
-    }
-
-    path_buffer[len] = 0;
-#endif
-    path = path_buffer;
-    return true;
-}
-
 // Entry point. Parses command line arguments and starts server listening
 int main(int argc, const char* argv[]) {
     try {
@@ -623,7 +602,7 @@ int main(int argc, const char* argv[]) {
 
         spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
-        if (!CheckRootBaseFolders(root_folder, base_folder)) {
+        if (!CheckFolderPaths(root_folder, base_folder)) {
             return 1;
         }
 
