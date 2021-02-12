@@ -75,13 +75,6 @@ TEST_F(ProgramSettingsTest, OverrideDeprecatedRoot) {
     EXPECT_EQ(settings.top_level_folder, "/tmp");
 }
 
-TEST_F(ProgramSettingsTest, OverrideDeprecatedOmpThreads) {
-    auto settings = SettingsFromVector({"carta_backend", "--omp_threads", "10", "--threads", "5"});
-    EXPECT_EQ(settings.omp_thread_count, 5);
-    settings = SettingsFromVector({"carta_backend", "--threads", "5", "--omp_threads", "10"});
-    EXPECT_EQ(settings.omp_thread_count, 5);
-}
-
 TEST_F(ProgramSettingsTest, OverrideDeprecatedBase) {
     auto settings = SettingsFromVector({"carta_backend", "--base", "/tmp2", "/tmp"});
     EXPECT_EQ(settings.starting_folder, "/tmp");

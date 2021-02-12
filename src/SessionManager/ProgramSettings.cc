@@ -49,7 +49,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("host", "Only listen on the specified interface (IP address or hostname)", cxxopts::value<string>()->default_value(host), "<interface>")
         ("p,port", "Manually set port on which to host frontend files and accept WebSocket connections", cxxopts::value<int>(), "<port number>")
         ("g,grpc_port", "Set grpc server port", cxxopts::value<int>(), "<port number>")
-        ("t,threads", "Manually set OpenMP thread pool count", cxxopts::value<int>(), "<thread count>")
+        ("t,omp_threads", "Manually set OpenMP thread pool count", cxxopts::value<int>(), "<thread count>")
         ("top_level_folder", "Set top-level folder for data files. Files outside of this directory will not be accessible", cxxopts::value<string>(), "<path>")
         ("frontend_folder", "Set folder to serve frontend files from", cxxopts::value<string>(), "<path>")
         ("exit_after", "Number of seconds to stay alive after last sessions exists", cxxopts::value<int>(), "<duration>")
@@ -58,7 +58,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
 
     options.add_options("deprecated and debug")
         ("debug_no_auth", "Accept all incoming WebSocket connections (insecure, use with caution!)", cxxopts::value<bool>())
-        ("omp_threads", "[Deprecated] Use 'threads' instead", cxxopts::value<int>(), "<thread count>")
+        ("threads", "[Deprecated] No longer supported", cxxopts::value<int>(), "<thread count>")
         ("base", "[Deprecated] Set starting folder for data files", cxxopts::value<string>(), "<path>")
         ("root", "[Deprecated] Use 'top_level_folder' instead", cxxopts::value<string>(), "<path>");
     // clang-format on
@@ -93,8 +93,6 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     applyOptionalArgument(grpc_port, "grpc_port", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
-    // Override deprecated "omp_threads" argument
-    applyOptionalArgument(omp_thread_count, "threads", result);
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
