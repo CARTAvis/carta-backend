@@ -586,7 +586,7 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
             BasicStats<float> stats;
             if (GetBasicStats(channel, stokes, stats)) {
                 carta::Histogram hist;
-                CalculateHistogram(region_id, channel, stokes, num_bins, stats, hist);
+                histogram_filled = CalculateHistogram(region_id, channel, stokes, num_bins, stats, hist);
                 if (histogram_filled) {
                     FillHistogramFromResults(histogram, stats, hist);
                 }
