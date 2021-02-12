@@ -27,12 +27,11 @@ bool CheckRootBaseFolders(string& root, string& base) {
         spdlog::critical("Must set root or base directory. Exiting carta.");
         return false;
     }
-    if (root == "base") {
+    if (root == "base")
         root = base;
-    }
-    if (base == "root") {
+    if (base == "root")
         base = root;
-    }
+
     // check root
     casacore::File root_folder(root);
     if (!(root_folder.exists() && root_folder.isDirectory(true) && root_folder.isReadable() && root_folder.isExecutable())) {
@@ -48,11 +47,10 @@ bool CheckRootBaseFolders(string& root, string& base) {
         } catch (casacore::AipsError& err) {
             spdlog::error(err.getMesg());
         }
-        if (root.empty()) {
+        if (root.empty())
             root = "/";
-        }
     }
-    // check starting folder
+    // check base
     casacore::File base_folder(base);
     if (!(base_folder.exists() && base_folder.isDirectory(true) && base_folder.isReadable() && base_folder.isExecutable())) {
         spdlog::warn("Invalid base directory, using the provided root directory instead.");
@@ -67,9 +65,8 @@ bool CheckRootBaseFolders(string& root, string& base) {
             } catch (casacore::AipsError& err) {
                 spdlog::error(err.getMesg());
             }
-            if (base.empty()) {
+            if (base.empty())
                 base = "/";
-            }
         }
     }
     bool is_subdirectory = IsSubdirectory(base, root);
