@@ -4,10 +4,18 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <fmt/format.h>
 #include <gtest/gtest.h>
 
 #include "Table/Table.h"
+#include "Util.h"
+
+#ifdef _BOOST_FILESYSTEM_
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
+#else
+#include <filesystem>
+namespace fs = std::filesystem;
+#endif
 
 using namespace std;
 using namespace carta;
@@ -15,7 +23,14 @@ using namespace carta;
 class VOTableTest : public ::testing::Test {
 public:
     static string ImagePath(const string& filename) {
-        return fmt::format("./data/tables/xml/{}", filename);
+        string path_string;
+        fs::path path;
+        if (FindExecutablePath(path_string)) {
+            path = fs::path(path_string).parent_path();
+        } else {
+            path = fs::current_path();
+        }
+        return (path / "data/tables/xml" / filename).string();
     }
 };
 

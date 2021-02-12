@@ -6,7 +6,6 @@
 
 #include <gtest/gtest.h>
 
-#include "SessionManager/ProgramSettings.h"
 #include "Util.h"
 
 #ifdef _BOOST_FILESYSTEM_
