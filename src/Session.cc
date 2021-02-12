@@ -1193,8 +1193,8 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     if (chan == 0) {
                         cube_bins = {chan_histogram.GetHistogramBins().begin(), chan_histogram.GetHistogramBins().end()};
                     } else { // add chan histogram bins to cube histogram bins
-                        std::transform(chan_histogram.GetHistogramBins().begin(), chan_histogram.GetHistogramBins().end(), cube_bins.begin(),
-                            cube_bins.begin(), std::plus<int>());
+                        std::transform(chan_histogram.GetHistogramBins().begin(), chan_histogram.GetHistogramBins().end(),
+                            cube_bins.begin(), cube_bins.begin(), std::plus<int>());
                     }
 
                     // check for cancel

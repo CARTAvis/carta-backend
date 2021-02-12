@@ -122,11 +122,10 @@ public:
     bool FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& histogram_data);
     bool FillHistogram(int channel, int stokes, int num_bins, carta::BasicStats<float>& stats, CARTA::Histogram* histogram);
     bool GetBasicStats(int channel, int stokes, carta::BasicStats<float>& stats);
-    bool CalculateHistogram(
-        int region_id, int channel, int stokes, int num_bins, carta::BasicStats<float>& stats, carta::Histogram &hist);
+    bool CalculateHistogram(int region_id, int channel, int stokes, int num_bins, carta::BasicStats<float>& stats, carta::Histogram& hist);
     bool GetCubeHistogramConfig(HistogramConfig& config);
     void CacheCubeStats(int stokes, carta::BasicStats<float>& stats);
-    void CacheCubeHistogram(int stokes, carta::Histogram &hist);
+    void CacheCubeHistogram(int stokes, carta::Histogram& hist);
 
     // Stats: image
     bool SetStatsRequirements(int region_id, const std::vector<CARTA::StatsType>& stats_types);
@@ -196,11 +195,11 @@ private:
 
     // Histograms: channel is single channel number or ALL_CHANNELS for cube
     int AutoBinSize();
-    bool FillHistogramFromCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
+    bool FillHistogramFromCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram);       // histogram message
     bool FillHistogramFromLoaderCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
-    bool FillHistogramFromFrameCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram); // histogram message
-    bool GetCachedImageHistogram(int channel, int stokes, int num_bins, carta::Histogram& hist); // internal histogram
-    bool GetCachedCubeHistogram(int stokes, int num_bins, carta::Histogram& hist); // internal histogram
+    bool FillHistogramFromFrameCache(int channel, int stokes, int num_bins, CARTA::Histogram* histogram);  // histogram message
+    bool GetCachedImageHistogram(int channel, int stokes, int num_bins, carta::Histogram& hist);           // internal histogram
+    bool GetCachedCubeHistogram(int stokes, int num_bins, carta::Histogram& hist);                         // internal histogram
 
     // Check for cancel
     bool HasSpectralConfig(const SpectralConfig& config);
