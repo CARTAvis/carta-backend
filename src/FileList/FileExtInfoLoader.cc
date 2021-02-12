@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -321,8 +321,17 @@ void FileExtInfoLoader::AddShapeEntries(
         extended_info.set_depth(1);
         extended_info.set_stokes(1);
     } else if (num_dims == 3) { // 3D
-        extended_info.set_depth(shape(2));
-        extended_info.set_stokes(1);
+        if (chan_axis >= 0) {
+            extended_info.set_depth(shape(chan_axis));
+        } else {
+            extended_info.set_depth(1);
+        }
+
+        if (stokes_axis >= 0) {
+            extended_info.set_stokes(shape(stokes_axis));
+        } else {
+            extended_info.set_stokes(1);
+        }
     } else { // 4D
         extended_info.set_depth(shape(chan_axis));
         extended_info.set_stokes(shape(stokes_axis));

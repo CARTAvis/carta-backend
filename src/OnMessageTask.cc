@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -9,10 +9,8 @@
 #include <algorithm>
 #include <cstring>
 
-#include <fmt/format.h>
-#include <fmt/ostream.h>
-
 #include "EventHeader.h"
+#include "Logger/Logger.h"
 #include "Util.h"
 
 tbb::task* MultiMessageTask::execute() {
@@ -22,7 +20,7 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetSpatialRequirements(message);
             } else {
-                fmt::print("Bad SET_SPATIAL_REQUIREMENTS message!\n");
+                spdlog::warn("Bad SET_SPATIAL_REQUIREMENTS message!");
             }
             break;
         }
@@ -31,7 +29,7 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnSetStatsRequirements(message);
             } else {
-                fmt::print("Bad SET_STATS_REQUIREMENTS message!\n");
+                spdlog::warn("Bad SET_STATS_REQUIREMENTS message!");
             }
             break;
         }
@@ -40,12 +38,12 @@ tbb::task* MultiMessageTask::execute() {
             if (message.ParseFromArray(_event_buffer, _event_length)) {
                 _session->OnMomentRequest(message, _header.request_id);
             } else {
-                fmt::print("Bad MOMENT_REQUEST message!\n");
+                spdlog::warn("Bad MOMENT_REQUEST message!");
             }
             break;
         }
         default: {
-            fmt::print("Bad event type in MultiMessageType:execute : ({})\n", _header.type);
+            spdlog::warn("Bad event type in MultiMessageType:execute : ({})", _header.type);
             break;
         }
     }

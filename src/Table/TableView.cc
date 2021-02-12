@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -10,6 +10,7 @@
 #include <numeric>
 
 #include "Table.h"
+#include "Threading.h"
 
 namespace carta {
 
@@ -225,7 +226,7 @@ bool TableView::SortByColumn(const Column* column, bool ascending) {
 
 bool TableView::SortByIndex() {
     if (!_ordered) {
-        sort(_subset_indices.begin(), _subset_indices.end());
+        parallel_sort(_subset_indices.begin(), _subset_indices.end());
     }
     _ordered = true;
     return true;

@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -22,17 +22,18 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/save_file.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 #include <carta-protobuf/tiles.pb.h>
 
+#include "Constants.h"
 #include "DataStream/Contouring.h"
 #include "DataStream/Tile.h"
 #include "ImageData/FileLoader.h"
 #include "ImageStats/BasicStatsCalculator.h"
 #include "ImageStats/Histogram.h"
-#include "InterfaceConstants.h"
 #include "Moment/MomentGenerator.h"
 #include "Region/Region.h"
 #include "RequirementsCache.h"
@@ -73,8 +74,7 @@ struct ContourSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog,
-        int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_channel = DEFAULT_CHANNEL);
     ~Frame(){};
 
     bool IsValid();
@@ -222,8 +222,6 @@ private:
 
     // Setup
     uint32_t _session_id;
-    bool _verbose;
-    bool _perflog;
 
     // Image opened
     bool _valid;

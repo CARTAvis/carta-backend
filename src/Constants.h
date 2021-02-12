@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -10,11 +10,11 @@
 #define CARTA_BACKEND__INTERFACECONSTANTS_H_
 
 // version
-#define VERSION_ID "1.4"
+#define VERSION_ID "2.0.0-dev.21.02.09"
 
 // thread counts
-#define TBB_THREAD_COUNT 2
-#define OMP_THREAD_COUNT 4
+#define OMP_THREAD_COUNT -1
+#define THREAD_COUNT 3
 
 // file ids
 #define ALL_FILES -1
@@ -55,22 +55,28 @@
 // scripting timeouts
 #define SCRIPTING_TIMEOUT 10 // seconds
 
-// catalog files
-#define ALL_CATALOG_DATA -1
-#define TARGET_PARTIAL_CATALOG_FILTER_TIME 500
-#define CATALOG_FILTER_COMPLETE 1.0
-#define CATALOG_ROW_CHUNK 10000
-
 // image moments
 #define REPORT_FIRST_PROGRESS_AFTER_MILLI_SECS 5000
 #define REPORT_PROGRESS_EVERY_FACTOR 0.1
 #define MOMENT_COMPLETE 1.0
 #define OUTPUT_ID_MULTIPLIER 1000
 
-// region style
-#define DASH_LENGTH 2
+// CARTA default region style
+#define REGION_COLOR "#2EE6D6"
+#define REGION_DASH_LENGTH 2
+#define REGION_LINE_WIDTH 2
 
 // Shared region polygon approximation
 #define DEFAULT_VERTEX_COUNT 1000
+
+// socket port
+#define DEFAULT_SOCKET_PORT 3002
+#define MAX_SOCKET_PORT_TRIALS 100
+
+// logger
+#define LOG_FILE_SIZE 1024 * 1024 * 5 // (Bytes)
+#define ROTATED_LOG_FILES 5
+#define STDOUT_TAG "stdout"
+#define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
 
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

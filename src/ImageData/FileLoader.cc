@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -9,6 +9,7 @@
 #include <casacore/images/Images/SubImage.h>
 #include <casacore/lattices/Lattices/MaskedLatticeIterator.h>
 
+#include "../Logger/Logger.h"
 #include "../Util.h"
 #include "CasaLoader.h"
 #include "CompListLoader.h"
@@ -53,7 +54,7 @@ FileLoader* FileLoader::GetLoader(std::shared_ptr<casacore::ImageInterface<float
     if (image) {
         return new ImagePtrLoader(image);
     } else {
-        std::cerr << "Fail to assign an image pointer!" << std::endl;
+        spdlog::error("Fail to assign an image pointer!");
         return nullptr;
     }
 }
@@ -103,8 +104,11 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
         message = "Image must be 2D, 3D, or 4D.";
         return false;
     }
+
+    // Used for HDF5 stats only:
     _channel_size = shape(0) * shape(1);
 
+    // Coordinate system checks
     casacore::CoordinateSystem coord_sys;
     if (!GetCoordinateSystem(coord_sys)) {
         message = "Image does not have valid coordinate system.";
@@ -137,9 +141,26 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
 
     // 3D image
     if (_num_dims == 3) {
-        spectral_axis = (spectral_axis < 0 ? 2 : spectral_axis);
-        _num_channels = shape(spectral_axis);
-        _num_stokes = 1;
+        if ((spectral_axis >= 0) && (stokes_axis >= 0)) {
+            // both are known
+            _num_channels = shape(spectral_axis);
+            _num_stokes = shape(stokes_axis);
+        } else if ((spectral_axis >= 0) && (stokes_axis < 0)) {
+            // spectral is known
+            _num_channels = shape(spectral_axis);
+            _num_stokes = 1;
+        } else if ((spectral_axis < 0) && (stokes_axis >= 0)) {
+            // stokes is known
+            _num_stokes = shape(stokes_axis);
+            _num_channels = 1;
+        } else {
+            // neither is known, assume third is spectral
+            spectral_axis = 2;
+            _num_channels = shape(spectral_axis);
+            _num_stokes = 1;
+        }
+
+        // save axes
         _spectral_axis = spectral_axis;
         _stokes_axis = stokes_axis;
         return true;
@@ -147,11 +168,6 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
 
     // 4D image
     if ((spectral_axis < 0) || (stokes_axis < 0)) {
-        if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
-            spectral_axis = (stokes_axis == 3 ? 2 : 3);
-        } else if ((spectral_axis >= 0) && (stokes_axis < 0)) { // spectral is known
-            stokes_axis = (spectral_axis == 3 ? 2 : 3);
-        }
         if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, guess by shape (max 4 stokes)
             if (shape(2) > 4) {
                 spectral_axis = 2;
@@ -160,12 +176,17 @@ bool FileLoader::FindCoordinateAxes(IPos& shape, int& spectral_axis, int& stokes
                 spectral_axis = 3;
                 stokes_axis = 2;
             }
-        }
-        if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, give up
-            message = "Problem loading image: cannot determine coordinate axes from incomplete header.";
-            return false;
+            if ((spectral_axis < 0) && (stokes_axis < 0)) { // neither is known, assume [x, y, spectral, stokes]
+                spectral_axis = 2;
+                stokes_axis = 3;
+            }
+        } else if ((spectral_axis < 0) && (stokes_axis >= 0)) { // stokes is known
+            spectral_axis = (stokes_axis == 3 ? 2 : 3);
+        } else if ((spectral_axis >= 0) && (stokes_axis < 0)) { // spectral is known
+            stokes_axis = (spectral_axis == 3 ? 2 : 3);
         }
     }
+
     _num_channels = (spectral_axis == -1 ? 1 : shape(spectral_axis));
     _num_stokes = (stokes_axis == -1 ? 1 : shape(stokes_axis));
     _spectral_axis = spectral_axis;

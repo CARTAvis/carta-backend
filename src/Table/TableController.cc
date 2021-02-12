@@ -1,14 +1,14 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 #include "TableController.h"
 
-#include <fmt/format.h>
 #include <sys/stat.h>
 
+#include "../Logger/Logger.h"
 #include "../Util.h"
 
 #if defined(__APPLE__)
@@ -306,7 +306,7 @@ void TableController::ApplyFilter(const CARTA::FilterConfig& filter_config, Tabl
     string column_name = filter_config.column_name();
     auto column = view.GetTable()[column_name];
     if (!column) {
-        fmt::print("Could not filter on non-existing column \"{}\"", column_name);
+        spdlog::error("Could not filter on non-existing column \"{}\"", column_name);
         return;
     }
 
