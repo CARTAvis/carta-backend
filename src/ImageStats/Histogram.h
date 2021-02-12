@@ -30,8 +30,9 @@ class Histogram {
     bool ConsistencyCheck(const Histogram&, const Histogram&);
 
 public:
+    Histogram() = default; // required to create empty histograms used in references
     Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data);
-    Histogram(Histogram& h);
+    Histogram(const Histogram& h);
 
     bool join(Histogram& h); // NOLINT
 
@@ -56,6 +57,8 @@ public:
     const std::vector<int>& GetHistogramBins() const {
         return _histogram.histogram_bins;
     }
+
+    void SetHistogramBins(const std::vector<int>&);
 };
 
 } // namespace carta

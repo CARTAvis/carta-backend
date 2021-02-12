@@ -36,6 +36,23 @@ bool CompareResults(const carta::HistogramResults& a, const carta::HistogramResu
     return true;
 }
 
+carta::Histogram CalcHistogram(int nbins, float min, float max, const std::vector<float>& data) {
+    if (false) {
+        return carta::Histogram(1, 0, 0, {});
+    } else {
+        return carta::Histogram(nbins, min, max, data);
+    }
+}
+
+TEST(Histogram, TestHistogramUsage) {
+    std::vector<float> data(1024 * 1024);
+    std::for_each(data.begin(), data.end(), [](float& v) { v = float_random(mt); });
+    carta::Histogram hist = CalcHistogram(1024, 0, 1, data);
+    EXPECT_TRUE(hist.GetNbins() == 1024) << "Wrong number of bins";
+    EXPECT_TRUE(hist.GetMinVal() == 0) << "Wrong min value";
+    EXPECT_TRUE(hist.GetMaxVal() == 1) << "Wrong max value";
+}
+
 TEST(Histogram, TestHistogramBehaviour) {
     std::vector<float> data;
     // test histogram filling

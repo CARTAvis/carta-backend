@@ -12,6 +12,7 @@
 #include <cmath>
 
 #include "Threading.h"
+#include "Logger/Logger.h"
 
 using namespace carta;
 
@@ -26,7 +27,7 @@ Histogram::Histogram(int num_bins, float min_value, float max_value, const std::
     Fill(data);
 }
 
-Histogram::Histogram(Histogram& h) {
+Histogram::Histogram(const Histogram& h) {
     _histogram.num_bins = h.GetNbins();
     _histogram.bin_width = h.GetBinWidth();
     _histogram.bin_center = h.GetBinCenter();
@@ -37,7 +38,7 @@ Histogram::Histogram(Histogram& h) {
 
 bool Histogram::join(Histogram& h) { // NOLINT
     if (!ConsistencyCheck(*this, h)) {
-        fmt::print("(debug) Consistency check failed to join histograms - won't join them\n");
+        spdlog::warn("A consistency check failed to join histograms");
         return false;
     }
     const int num_bins = h.GetHistogramBins().size();
@@ -79,16 +80,22 @@ void Histogram::Fill(const std::vector<float>& data) {
 
 bool Histogram::ConsistencyCheck(const Histogram& a, const Histogram& b) {
     if (a.GetNbins() != b.GetNbins()) {
-        std::printf("(debug) Histograms don't have the same number of bins: %d and %d\n", a.GetNbins(), b.GetNbins());
+        spdlog::warn("Histograms don't have the same number of bins: {} and {}", a.GetNbins(), b.GetNbins());
         return false;
     }
     if (fabs(a.GetMinVal() - b.GetMinVal()) > std::numeric_limits<float>::epsilon()) {
-        std::printf("(debug) Lower histograms limits are not equal: %f and %f\n", a.GetMinVal(), b.GetMinVal());
+        spdlog::warn("Lower histograms limits are not equal: {} and {}", a.GetMinVal(), b.GetMinVal());
         return false;
     }
     if (fabs(a.GetMaxVal() - b.GetMaxVal()) > std::numeric_limits<float>::epsilon()) {
-        std::printf("(debug) Upper histograms limits are not equal: %f and %f\n", a.GetMaxVal(), b.GetMaxVal());
+        spdlog::warn("Upper histograms limits are not equal: {} and {}", a.GetMaxVal(), b.GetMaxVal());
         return false;
     }
     return true;
+}
+void Histogram::SetHistogramBins(const std::vector<int>& bins) {
+    if (bins.size() != _histogram.histogram_bins.size()) {
+        spdlog::error("Vector sizes are not equal, can't reset histogram counts");
+    }
+    _histogram.histogram_bins = bins;
 }

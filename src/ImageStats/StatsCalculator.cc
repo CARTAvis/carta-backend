@@ -33,6 +33,15 @@ void CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vect
     }
 }
 
+carta::Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data) {
+    if ((stats.min_val == std::numeric_limits<float>::max()) || (stats.max_val == std::numeric_limits<float>::min()) || data.empty()) {
+        // empty / NaN region
+        return carta::Histogram(1, 0, 0, {});
+    } else {
+        return carta::Histogram(num_bins, stats.min_val, stats.max_val, data);
+    }
+}
+
 bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel) {
     // Use ImageStatistics to fill statistics values according to type;
