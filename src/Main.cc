@@ -672,12 +672,18 @@ int main(int argc, char* argv[]) {
                     }
                 }
                 string frontend_url = fmt::format("http://{}:{}", default_host_string, settings.port);
+                string query_url;
                 if (!auth_token.empty()) {
-                    frontend_url += fmt::format("/?token={}", auth_token);
+                    query_url += fmt::format("/?token={}", auth_token);
                 }
                 if (!settings.files.empty()) {
-                    frontend_url += auth_token.empty() ? "/?" : "&";
-                    frontend_url += fmt::format("file={}", settings.files[0]);
+                    // TODO: Handle multiple files once the frontend supports this
+                    query_url += query_url.empty() ? "/?" : "&";
+                    query_url += fmt::format("file={}", curl_easy_escape(nullptr, settings.files[0].c_str(), 0));
+                }
+
+                if (!query_url.empty()) {
+                    frontend_url += query_url;
                 }
                 if (!settings.no_browser) {
 #if defined(__APPLE__)

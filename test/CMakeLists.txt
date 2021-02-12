@@ -21,6 +21,7 @@ set(TEST_SOURCES
         TestFITS.cc
         TestHistogram.cc
         TestMain.cc
+        TestProgramSettings.cc
         TestTileEncoding.cc
         TestTimer.cc
         TestUtil.cc

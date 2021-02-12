@@ -5,6 +5,7 @@
 */
 
 #include <gtest/gtest.h>
+#include <cxxopts.hpp>
 
 #include "SessionManager/ProgramSettings.h"
 
@@ -64,6 +65,7 @@ TEST_F(ProgramSettingsTest, EmptyArugments) {
     EXPECT_TRUE(settings == default_settings);
     settings = SettingsFromVector({"carta_backend", ""});
     EXPECT_TRUE(settings == default_settings);
+    ASSERT_THROW(settings = SettingsFromVector({"carta_backend", "--top_level_folder"}), cxxopts::OptionException);
 }
 
 TEST_F(ProgramSettingsTest, OverrideDeprecatedRoot) {
@@ -107,8 +109,9 @@ TEST_F(ProgramSettingsTest, FileImageFromPositional) {
     auto fits_image = image_dir / "fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", fits_image.string()});
     EXPECT_EQ(settings.starting_folder, default_settings.starting_folder);
-    EXPECT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], fits_image.string());
+    ASSERT_EQ(settings.files.size(), 1);
+    // substr to remove leading "/" from expected path
+    EXPECT_EQ(settings.files[0], fits_image.string().substr(1));
 }
 
 TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
@@ -116,8 +119,8 @@ TEST_F(ProgramSettingsTest, RelativeFileImageFromPositional) {
     string image_path_string = "data/images/fits/noise_10px_10px.fits";
     auto image_path = image_dir / "fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", image_path_string});
-    EXPECT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], image_path.string());
+    ASSERT_EQ(settings.files.size(), 1);
+    EXPECT_EQ(settings.files[0], image_path.string().substr(1));
 }
 
 TEST_F(ProgramSettingsTest, TrimExtraFolders) {
@@ -125,17 +128,27 @@ TEST_F(ProgramSettingsTest, TrimExtraFolders) {
     string image_path_string = "./data/images/fits/noise_10px_10px.fits";
     auto image_path = image_dir / "fits/noise_10px_10px.fits";
     auto settings = SettingsFromVector({"carta_backend", image_path_string});
-    EXPECT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], image_path.string());
+    ASSERT_EQ(settings.files.size(), 1);
+    EXPECT_EQ(settings.files[0], image_path.string().substr(1));
 }
 
 TEST_F(ProgramSettingsTest, FileImageRelativeToTopLevel) {
     auto top_level_dir = fs::current_path() / "data/images";
-    string image_path_string = "./data/images/fits/noise_10px_10px.fits";
-    auto image_path = top_level_dir / "fits/noise_10px_10px.fits";
-    auto settings = SettingsFromVector({"carta_backend", "--top_level_dir", top_level_dir.string(), image_path_string});
-    EXPECT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], "./fits/noise_10px_10px.fits");
+
+    string image_path_string = "data/images/fits/noise_10px_10px.fits";
+    auto settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_dir.string(), image_path_string});
+    ASSERT_EQ(settings.files.size(), 1);
+    EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
+
+    image_path_string = "./data/images/fits/noise_10px_10px.fits";
+    settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_dir.string(), image_path_string});
+    ASSERT_EQ(settings.files.size(), 1);
+    EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
+
+    image_path_string = "../test/data/images/fits/noise_10px_10px.fits";
+    settings = SettingsFromVector({"carta_backend", "--top_level_folder", top_level_dir.string(), image_path_string});
+    ASSERT_EQ(settings.files.size(), 1);
+    EXPECT_EQ(settings.files[0], "fits/noise_10px_10px.fits");
 }
 
 TEST_F(ProgramSettingsTest, CasaImageSetFromPositional) {
@@ -143,7 +156,7 @@ TEST_F(ProgramSettingsTest, CasaImageSetFromPositional) {
     auto casa_image = image_dir / "casa/noise_10px_10px.im";
     auto settings = SettingsFromVector({"carta_backend", casa_image.string()});
     EXPECT_EQ(settings.files.size(), 1);
-    EXPECT_EQ(settings.files[0], casa_image.string());
+    EXPECT_EQ(settings.files[0], casa_image.string().substr(1));
 }
 
 TEST_F(ProgramSettingsTest, MultipleImagesFromPositional) {
@@ -152,14 +165,14 @@ TEST_F(ProgramSettingsTest, MultipleImagesFromPositional) {
     auto fits_image = image_dir / "fits/noise_10px_10px.fits";
     auto hdf5_image = image_dir / "hdf5/noise_10px_10px.hdf5";
     auto settings = SettingsFromVector({"carta_backend", fits_image.string(), casa_image.string(), hdf5_image.string()});
-    EXPECT_EQ(settings.files.size(), 3);
-    EXPECT_EQ(settings.files[0], fits_image.string());
-    EXPECT_EQ(settings.files[1], casa_image.string());
-    EXPECT_EQ(settings.files[1], hdf5_image.string());
+    ASSERT_EQ(settings.files.size(), 3);
+    EXPECT_EQ(settings.files[0], fits_image.string().substr(1));
+    EXPECT_EQ(settings.files[1], casa_image.string().substr(1));
+    EXPECT_EQ(settings.files[2], hdf5_image.string().substr(1));
 
     settings = SettingsFromVector({"carta_backend", casa_image.string(), fits_image.string(), hdf5_image.string()});
-    EXPECT_EQ(settings.files.size(), 3);
-    EXPECT_EQ(settings.files[0], casa_image.string());
-    EXPECT_EQ(settings.files[1], fits_image.string());
-    EXPECT_EQ(settings.files[2], hdf5_image.string());
+    ASSERT_EQ(settings.files.size(), 3);
+    EXPECT_EQ(settings.files[0], casa_image.string().substr(1));
+    EXPECT_EQ(settings.files[1], fits_image.string().substr(1));
+    EXPECT_EQ(settings.files[2], hdf5_image.string().substr(1));
 }

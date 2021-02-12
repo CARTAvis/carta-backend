@@ -10,6 +10,8 @@
 
 #include <cxxopts.hpp>
 
+#include <images/Images/ImageOpener.h>
+
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
@@ -31,6 +33,8 @@ void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::P
 }
 
 ProgramSettings::ProgramSettings(int argc, char** argv) {
+    vector<string> positional_arguments;
+
     cxxopts::Options options("CARTA", "CARTA Backend");
     // clang-format off
     // clang-format doesn't like this chain of calls
@@ -50,7 +54,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("frontend_folder", "Set folder to serve frontend files from", cxxopts::value<string>(), "<path>")
         ("exit_after", "Number of seconds to stay alive after last sessions exists", cxxopts::value<int>(), "<duration>")
         ("init_exit_after", "Number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<duration>")
-        ("files", "Files to load", cxxopts::value<vector<string>>(files));
+        ("files", "Files to load", cxxopts::value<vector<string>>(positional_arguments));
 
     options.add_options("deprecated and debug")
         ("debug_no_auth", "Accept all incoming WebSocket connections (insecure, use with caution!)", cxxopts::value<bool>())
@@ -85,31 +89,46 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
 
     applyOptionalArgument(starting_folder, "base", result);
     // Override deprecated "base" argument if there is exactly one "files" argument supplied
-    // TODO: support multiple files (once frontend supports this)
-    if (files.size()) {
-        fs::path p(files[0]);
+
+    vector<fs::path> file_paths;
+
+    for (const auto& arg : positional_arguments) {
+        fs::path p(arg);
         if (fs::exists(p)) {
-            // TODO: check if the folder is a CASA or Miriad image
             if (fs::is_directory(p)) {
-                starting_folder = p.string();
-                files.clear();
-            } else if (!fs::is_regular_file(p)) {
-                files.clear();
-            } else {
-                // Convert to path relative to top_level_folder
-                if (top_level_folder == "/") {
-                    // TODO: trim out unnecessary ./
-                    files[0] = fs::absolute(p).string();
+                auto image_type = casacore::ImageOpener::imageType(p.string());
+                if (image_type == casacore::ImageOpener::AIPSPP || image_type == casacore::ImageOpener::MIRIAD ||
+                    image_type == casacore::ImageOpener::IMAGECONCAT || image_type == casacore::ImageOpener::IMAGEEXPR ||
+                    image_type == casacore::ImageOpener::COMPLISTIMAGE) {
+                    file_paths.push_back(p);
+                } else {
+                    starting_folder = p.string();
+                    // Exit loop after first folder has been found and remove all existing files
+                    file_paths.clear();
+                    break;
                 }
-                // TODO: handle situations with non-default top_level_folder
+            } else if (!fs::is_regular_file(p)) {
+                // Ignore invalid files
+                file_paths.clear();
+                break;
+            } else {
+                file_paths.push_back(p);
             }
         } else {
-            files.clear();
+            // Ignore invalid files
+            file_paths.clear();
+        }
+    }
+    if (file_paths.size()) {
+        // Calculate paths relative to top level folder
+        auto top_level_path = fs::absolute(top_level_folder).lexically_normal();
+        for (const auto& p : file_paths) {
+            auto relative_path = fs::absolute(p).lexically_normal().lexically_relative(top_level_path);
+            files.push_back(relative_path.string());
         }
     }
 
     applyOptionalArgument(frontend_folder, "frontend_folder", result);
-
     applyOptionalArgument(port, "port", result);
     applyOptionalArgument(grpc_port, "grpc_port", result);
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
