@@ -362,7 +362,7 @@ bool TableController::FilterParamsChanged(const std::vector<CARTA::FilterConfig>
 fs::path TableController::GetPath(std::string directory, std::string name) {
     fs::path file_path(_root_folder);
     if (directory == "$BASE") {
-        // Replace $BASE macro with the starting folder
+        // Replace $BASE macro with the base folder
         file_path /= _base_folder;
     } else {
         // Strip meaningless directory paths

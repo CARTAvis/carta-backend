@@ -23,53 +23,53 @@
 using namespace std;
 
 bool CheckRootBaseFolders(string& root, string& base) {
-    // TODO: is this code needed at all? Was it a weird workaround?
-    {
-        if (root == "base" && base == "root") {
-            spdlog::critical("Must set top level or starting directory. Exiting carta.");
-            return false;
-        }
-        if (root == "base")
-            root = base;
-        if (base == "root")
-            base = root;
+    if (root == "base" && base == "root") {
+        spdlog::critical("Must set root or base directory. Exiting carta.");
+        return false;
     }
-    // TODO: Migrate to std::filesystem
-    // check top level
+    if (root == "base") {
+        root = base;
+    }
+    if (base == "root") {
+        base = root;
+    }
+    // check root
     casacore::File root_folder(root);
     if (!(root_folder.exists() && root_folder.isDirectory(true) && root_folder.isReadable() && root_folder.isExecutable())) {
-        spdlog::critical("Invalid top level directory, does not exist or is not a readable directory. Exiting carta.");
+        spdlog::critical("Invalid root directory, does not exist or is not a readable directory. Exiting carta.");
         return false;
     }
     // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
     try {
-        root = root_folder.path().resolvedName(); // fails on top level folder /
+        root = root_folder.path().resolvedName(); // fails on root folder /
     } catch (casacore::AipsError& err) {
         try {
             root = root_folder.path().absoluteName();
         } catch (casacore::AipsError& err) {
             spdlog::error(err.getMesg());
         }
-        if (root.empty())
+        if (root.empty()) {
             root = "/";
+        }
     }
     // check starting folder
     casacore::File base_folder(base);
     if (!(base_folder.exists() && base_folder.isDirectory(true) && base_folder.isReadable() && base_folder.isExecutable())) {
-        spdlog::warn("Invalid starting directory, using the provided top level directory instead.");
+        spdlog::warn("Invalid base directory, using the provided root directory instead.");
         base = root;
     } else {
         // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
         try {
-            base = base_folder.path().resolvedName(); // fails on top level folder /
+            base = base_folder.path().resolvedName(); // fails on root folder /
         } catch (casacore::AipsError& err) {
             try {
                 base = base_folder.path().absoluteName();
             } catch (casacore::AipsError& err) {
                 spdlog::error(err.getMesg());
             }
-            if (base.empty())
+            if (base.empty()) {
                 base = "/";
+            }
         }
     }
     bool is_subdirectory = IsSubdirectory(base, root);
