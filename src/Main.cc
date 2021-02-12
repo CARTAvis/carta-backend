@@ -104,7 +104,7 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
 void OnConnect(uWS::WebSocket<false, true>* ws) {
     auto socket_data = static_cast<PerSocketData*>(ws->getUserData());
     if (!socket_data) {
-        spdlog::error("Error handling WebSocket connection");
+        spdlog::error("Error handling WebSocket connection: Socket data does not exist");
         return;
     }
 
