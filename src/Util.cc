@@ -5,7 +5,20 @@
 */
 
 #include "Util.h"
+
+#include <climits>
+#include <fstream>
+#include <regex>
+
+#include <fmt/format.h>
+
+#include <casacore/casa/OS/File.h>
+
 #include "Logger/Logger.h"
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 
 using namespace std;
 
@@ -56,28 +69,33 @@ bool CheckRootBaseFolders(string& root, string& base) {
                 base = "/";
         }
     }
-    // check if base is same as or subdir of root
-    if (base != root) {
-        bool is_subdirectory(false);
-        casacore::Path base_path(base);
-        casacore::String parent_string(base_path.dirName()), root_string(root);
-        if (parent_string == root_string)
-            is_subdirectory = true;
-        while (!is_subdirectory && (parent_string != root_string)) { // navigate up directory tree
-            base_path = casacore::Path(parent_string);
-            parent_string = base_path.dirName();
-            if (parent_string == root_string) {
-                is_subdirectory = true;
-            } else if (parent_string == "/") {
-                break;
-            }
-        }
-        if (!is_subdirectory) {
-            spdlog::critical("Base {} must be a subdirectory of root {}. Exiting carta.", base, root);
-            return false;
-        }
+    bool is_subdirectory = IsSubdirectory(base, root);
+    if (!is_subdirectory) {
+        spdlog::critical("Starting {} must be a subdirectory of top level {}. Exiting carta.", base, root);
+        return false;
     }
     return true;
+}
+
+bool IsSubdirectory(const string& folder, const string& top_folder) {
+    if (folder == top_folder) {
+        return true;
+    }
+    casacore::Path folder_path(folder);
+    string parent_string(folder_path.dirName());
+    if (parent_string == top_folder) {
+        return true;
+    }
+    while (parent_string != top_folder) { // navigate up directory tree
+        folder_path = casacore::Path(parent_string);
+        parent_string = folder_path.dirName();
+        if (parent_string == top_folder) {
+            return true;
+        } else if (parent_string == "/") {
+            break;
+        }
+    }
+    return false;
 }
 
 uint32_t GetMagicNumber(const string& filename) {
@@ -248,4 +266,25 @@ string GetAuthTokenFromCookie(const string& header) {
         return sm[1];
     }
     return string();
+}
+
+bool FindExecutablePath(string& path) {
+    char path_buffer[PATH_MAX + 1];
+#ifdef __APPLE__
+    uint32_t len = sizeof(path_buffer);
+
+    if (_NSGetExecutablePath(path_buffer, &len) != 0) {
+        return false;
+    }
+#else
+    const int len = int(readlink("/proc/self/exe", path_buffer, PATH_MAX));
+
+    if (len == -1) {
+        return false;
+    }
+
+    path_buffer[len] = 0;
+#endif
+    path = path_buffer;
+    return true;
 }
