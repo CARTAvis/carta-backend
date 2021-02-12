@@ -58,6 +58,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
 
     options.add_options("deprecated and debug")
         ("debug_no_auth", "Accept all incoming WebSocket connections (insecure, use with caution!)", cxxopts::value<bool>())
+        ("omp_threads", "[Deprecated] Use 'threads' instead", cxxopts::value<int>(), "<thread count>")
         ("base", "[Deprecated] Set starting folder for data files", cxxopts::value<string>(), "<path>")
         ("root", "[Deprecated] Use 'top_level_folder' instead", cxxopts::value<string>(), "<path>");
     // clang-format on
@@ -87,9 +88,16 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     // Override deprecated "root" argument
     applyOptionalArgument(top_level_folder, "top_level_folder", result);
 
-    applyOptionalArgument(starting_folder, "base", result);
-    // Override deprecated "base" argument if there is exactly one "files" argument supplied
+    applyOptionalArgument(frontend_folder, "frontend_folder", result);
+    applyOptionalArgument(port, "port", result);
+    applyOptionalArgument(grpc_port, "grpc_port", result);
 
+    applyOptionalArgument(omp_thread_count, "omp_threads", result);
+    // Override deprecated "omp_threads" argument
+    applyOptionalArgument(omp_thread_count, "threads", result);
+
+    // base will be overridden by the positional argument if it exists and is a folder
+    applyOptionalArgument(starting_folder, "base", result);
     vector<fs::path> file_paths;
 
     for (const auto& arg : positional_arguments) {
@@ -127,11 +135,6 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
             files.push_back(relative_path.string());
         }
     }
-
-    applyOptionalArgument(frontend_folder, "frontend_folder", result);
-    applyOptionalArgument(port, "port", result);
-    applyOptionalArgument(grpc_port, "grpc_port", result);
-    applyOptionalArgument(omp_thread_count, "omp_threads", result);
 }
 
 bool ProgramSettings::operator!=(const ProgramSettings& rhs) const {
