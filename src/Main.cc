@@ -465,7 +465,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
                     if (message.ParseFromArray(event_buf, event_length)) {
                         session->OnConcatStokesFiles(message, head.request_id);
                     } else {
-                        fmt::print("Bad CONCAT_STOKES_FILES message!\n");
+                        spdlog::warn("Bad CONCAT_STOKES_FILES message!");
                     }
                     break;
                 }

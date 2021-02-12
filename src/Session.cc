@@ -1123,7 +1123,7 @@ void Session::OnConcatStokesFiles(const CARTA::ConcatStokesFiles& message, uint3
         auto* open_file_ack = response.mutable_open_file_ack();
         OnOpenFile(message.file_id(), file_name, concat_image, open_file_ack);
     } else {
-        cerr << "Concatenate stokes files failed!\n";
+        spdlog::error("Concatenate stokes files failed!");
     }
 
     // Send response message
