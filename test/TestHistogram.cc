@@ -26,6 +26,7 @@ public:
         mt = mt19937(rd());
         float_random = uniform_real_distribution<float>(0, 1.0f);
     }
+
     static bool CompareResults(const carta::Histogram& a, const carta::Histogram& b) {
         if (a.GetNbins() != b.GetNbins()) {
             return false;
