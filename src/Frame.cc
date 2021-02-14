@@ -1425,12 +1425,19 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
         }
         success = true;
     } else if (output_file_type == CARTA::FileType::FITS) {
-        // Remove the old image file if it has a same file name
-        casacore::Bool ok = casacore::ImageFITSConverter::ImageToFITS(message, *image, output_filename.string(), 64, casacore::False,
-            casacore::True, -32, 1.0, -1.0, casacore::True, casacore::False, casacore::True, casacore::False, casacore::False,
-            casacore::False, casacore::String(), casacore::True);
-        if (ok) {
+        bool prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength;
+        GetSpectralCoordPreferences(image, prefer_velocity, optical_velocity, prefer_wavelength, air_wavelength);
+
+        casacore::String error_string, origin_string;
+        bool allow_overwrite(true), degenerate_last(false), verbose(true), stokes_last(false), history(true);
+        int bit_pix(-32);
+        float min_pix(1.0), max_pix(-1.0);
+        if (casacore::ImageFITSConverter::ImageToFITS(error_string, *image, output_filename.string(), 64, prefer_velocity, optical_velocity,
+                bit_pix, min_pix, max_pix, allow_overwrite, degenerate_last, verbose, stokes_last, prefer_wavelength, air_wavelength,
+                origin_string, history)) {
             success = true;
+        } else {
+            message = error_string;
         }
     } else {
         message = "No saving file action!";

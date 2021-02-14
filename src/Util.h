@@ -10,6 +10,7 @@
 #include <cassert>
 #include <string>
 
+#include <casacore/images/Images/ImageInterface.h>
 #include <casacore/images/Images/ImageOpener.h>
 
 #include <carta-protobuf/region_stats.pb.h>
@@ -36,6 +37,9 @@ inline casacore::ImageOpener::ImageTypes CasacoreImageType(const std::string& fi
 // Image info: filename, type
 casacore::String GetResolvedFilename(const std::string& root_dir, const std::string& directory, const std::string& file);
 CARTA::FileType GetCartaFileType(const std::string& filename);
+
+void GetSpectralCoordPreferences(
+    casacore::ImageInterface<float>* image, bool& prefer_velocity, bool& optical_velocity, bool& prefer_wavelength, bool& air_wavelength);
 
 // ************ Data Stream Helpers *************
 
