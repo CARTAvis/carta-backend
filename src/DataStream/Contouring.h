@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -19,6 +19,6 @@ void TraceContourLevel(float* image, int64_t width, int64_t height, double scale
     std::vector<double>& vertex_data, std::vector<int32_t>& indices);
 void TraceContours(float* image, int64_t width, int64_t height, double scale, double offset, const std::vector<double>& levels,
     std::vector<std::vector<float>>& vertex_data, std::vector<std::vector<int32_t>>& index_data, int chunk_size,
-    ContourCallback& partial_callback, bool performance_logging = false);
+    ContourCallback& partial_callback);
 
 #endif // CARTA_BACKEND__CONTOURING_H_

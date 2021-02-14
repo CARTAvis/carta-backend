@@ -1,5 +1,5 @@
 /* This file is part of the CARTA Image Viewer: https://github.com/CARTAvis/carta-backend
-   Copyright 2018, 2019, 2020 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
+   Copyright 2018, 2019, 2020, 2021 Academia Sinica Institute of Astronomy and Astrophysics (ASIAA),
    Associated Universities, Inc. (AUI) and the Inter-University Institute for Data Intensive Astronomy (IDIA)
    SPDX-License-Identifier: GPL-3.0-or-later
 */
@@ -10,7 +10,6 @@
 #include <chrono>
 #include <fstream>
 #include <thread>
-#include "fmt/format.h"
 
 #include <casacore/images/Regions/WCBox.h>
 #include <casacore/images/Regions/WCRegion.h>
@@ -21,6 +20,7 @@
 #include "DataStream/Contouring.h"
 #include "DataStream/Smoothing.h"
 #include "ImageStats/StatsCalculator.h"
+#include "Logger/Logger.h"
 #include "Util.h"
 
 #ifdef _BOOST_FILESYSTEM_
@@ -33,10 +33,8 @@ namespace fs = std::filesystem;
 
 using namespace carta;
 
-Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog, int default_channel)
+Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_channel)
     : _session_id(session_id),
-      _verbose(verbose),
-      _perflog(perflog),
       _valid(true),
       _loader(loader),
       _spectral_axis(-1),
@@ -50,9 +48,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
       _moment_generator(nullptr) {
     if (!_loader) {
         _open_image_error = fmt::format("Problem loading image: image type not supported.");
-        if (_verbose) {
-            carta::Log(session_id, _open_image_error);
-        }
+        spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -61,9 +57,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _loader->OpenFile(hdu);
     } catch (casacore::AipsError& err) {
         _open_image_error = err.getMesg();
-        if (_verbose) {
-            carta::Log(session_id, _open_image_error);
-        }
+        spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -72,9 +66,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
     std::string log_message;
     if (!_loader->FindCoordinateAxes(_image_shape, _spectral_axis, _stokes_axis, log_message)) {
         _open_image_error = fmt::format("Problem determining file shape: {}", log_message);
-        if (_verbose) {
-            carta::Log(session_id, _open_image_error);
-        }
+        spdlog::error("Session {}: {}", session_id, _open_image_error);
         _valid = false;
         return;
     }
@@ -103,9 +95,7 @@ Frame::Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& 
         _loader->LoadImageStats();
     } catch (casacore::AipsError& err) {
         _open_image_error = fmt::format("Problem loading statistics from file: {}", err.getMesg());
-        if (_verbose) {
-            carta::Log(session_id, _open_image_error);
-        }
+        spdlog::warn("Session {}: {}", session_id, _open_image_error);
     }
 }
 
@@ -161,7 +151,7 @@ bool Frame::GetBeams(std::vector<CARTA::Beam>& beams) {
     std::string error;
     bool beams_ok = _loader->GetBeams(beams, error);
     if (!beams_ok) {
-        carta::Log(_session_id, error);
+        spdlog::warn("Session {}: {}", _session_id, error);
     }
     return beams_ok;
 }
@@ -285,17 +275,15 @@ bool Frame::FillImageCache() {
     auto t_start_set_image_cache = std::chrono::high_resolution_clock::now();
     casacore::Slicer section = GetImageSlicer(ChannelRange(_channel_index), _stokes_index);
     if (!GetSlicerData(section, _image_cache)) {
-        carta::Log(_session_id, "Loading image cache failed.");
+        spdlog::error("Session {}: {}", _session_id, "Loading image cache failed.");
         return false;
     }
 
-    if (_perflog) {
-        auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
-        auto dt_set_image_cache =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
-        fmt::print("Load {}x{} image to cache in {} ms at {} MPix/s\n", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
-            (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
-    }
+    auto t_end_set_image_cache = std::chrono::high_resolution_clock::now();
+    auto dt_set_image_cache =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_set_image_cache - t_start_set_image_cache).count();
+    spdlog::trace("Load {}x{} image to cache in {} ms at {} MPix/s", _image_shape(0), _image_shape(1), dt_set_image_cache * 1e-3,
+        (float)(_image_shape(0) * _image_shape(1)) / dt_set_image_cache);
 
     return true;
 }
@@ -337,6 +325,7 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     size_t row_length_region = std::ceil((float)req_width / mip);
     image_data.resize(num_rows_region * row_length_region);
     int num_image_columns = _image_shape(0);
+    int num_image_rows = _image_shape(1);
 
     // read lock imageCache
     bool write_lock(false);
@@ -345,53 +334,19 @@ bool Frame::GetRasterData(std::vector<float>& image_data, CARTA::ImageBounds& bo
     auto t_start_raster_data_filter = std::chrono::high_resolution_clock::now();
     if (mean_filter && mip > 1) {
         // Perform down-sampling by calculating the mean for each MIPxMIP block
-#pragma omp parallel for
-        for (size_t j = 0; j < num_rows_region; ++j) {
-            for (size_t i = 0; i != row_length_region; ++i) {
-                float pixel_sum = 0;
-                int pixel_count = 0;
-                size_t image_row = y + (j * mip);
-                for (size_t pixel_y = 0; pixel_y < mip; pixel_y++) {
-                    if (image_row >= _image_shape(1)) {
-                        continue;
-                    }
-                    size_t image_col = x + (i * mip);
-                    for (size_t pixel_x = 0; pixel_x < mip; pixel_x++) {
-                        if (image_col >= _image_shape(0)) {
-                            continue;
-                        }
-                        float pix_val = _image_cache[(image_row * num_image_columns) + image_col];
-                        if (std::isfinite(pix_val)) {
-                            pixel_count++;
-                            pixel_sum += pix_val;
-                        }
-                        image_col++;
-                    }
-                    image_row++;
-                }
-                image_data[j * row_length_region + i] = pixel_count ? pixel_sum / pixel_count : NAN;
-            }
-        }
+        BlockSmooth(
+            _image_cache.data(), image_data.data(), num_image_columns, num_image_rows, row_length_region, num_rows_region, x, y, mip);
     } else {
         // Nearest neighbour filtering
-#pragma omp parallel for
-        for (size_t j = 0; j < num_rows_region; ++j) {
-            for (auto i = 0; i < row_length_region; i++) {
-                auto image_row = y + j * mip;
-                auto image_col = x + i * mip;
-                image_data[j * row_length_region + i] = _image_cache[(image_row * num_image_columns) + image_col];
-            }
-        }
+        NearestNeighbor(_image_cache.data(), image_data.data(), num_image_columns, row_length_region, num_rows_region, x, y, mip);
     }
 
-    if (_perflog) {
-        auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
-        auto dt_raster_data_filter =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
-        fmt::print("{} filter {}x{} raster data to {}x{} in {} ms at {} MPix/s\n", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
-            req_height, req_width, num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
-            (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
-    }
+    auto t_end_raster_data_filter = std::chrono::high_resolution_clock::now();
+    auto dt_raster_data_filter =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_raster_data_filter - t_start_raster_data_filter).count();
+    spdlog::trace("{} filter {}x{} raster data to {}x{} in {} ms at {} MPix/s", (mean_filter && mip > 1) ? "Mean" : "Nearest neighbour",
+        req_height, req_width, num_rows_region, row_length_region, dt_raster_data_filter * 1e-3,
+        (float)(num_rows_region * row_length_region) / dt_raster_data_filter);
 
     return true;
 }
@@ -447,13 +402,11 @@ bool Frame::FillRasterTileData(CARTA::RasterTileData& raster_tile_data, const Ti
             Compress(tile_image_data, 0, compression_buffer, compressed_size, tile_width, tile_height, precision);
             tile_ptr->set_image_data(compression_buffer.data(), compressed_size);
             // Measure duration for compress tile data
-            if (_perflog) {
-                auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
-                auto dt_compress_tile_data =
-                    std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
-                fmt::print("Compress {}x{} tile data in {} ms at {} MPix/s\n", tile_width, tile_height, dt_compress_tile_data * 1e-3,
-                    (float)(tile_width * tile_height) / dt_compress_tile_data);
-            }
+            auto t_end_compress_tile_data = std::chrono::high_resolution_clock::now();
+            auto dt_compress_tile_data =
+                std::chrono::duration_cast<std::chrono::microseconds>(t_end_compress_tile_data - t_start_compress_tile_data).count();
+            spdlog::trace("Compress {}x{} tile data in {} ms at {} MPix/s", tile_width, tile_height, dt_compress_tile_data * 1e-3,
+                (float)(tile_width * tile_height) / dt_compress_tile_data);
 
             return !(ChannelsChanged(channel, stokes));
         }
@@ -505,7 +458,7 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
 
     if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::NoSmoothing || _contour_settings.smoothing_factor <= 1) {
         TraceContours(_image_cache.data(), _image_shape(0), _image_shape(1), scale, offset, _contour_settings.levels, vertex_data,
-            index_data, _contour_settings.chunk_size, partial_contour_callback, _perflog);
+            index_data, _contour_settings.chunk_size, partial_contour_callback);
         return true;
     } else if (_contour_settings.smoothing_mode == CARTA::SmoothingMode::GaussianBlur) {
         // Smooth the image from cache
@@ -518,14 +471,14 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
         int64_t dest_height = _image_shape(1) - 2 * kernel_width;
         std::unique_ptr<float[]> dest_array(new float[dest_width * dest_height]);
         smooth_successful = GaussianSmooth(_image_cache.data(), dest_array.get(), source_width, source_height, dest_width, dest_height,
-            _contour_settings.smoothing_factor, _perflog);
+            _contour_settings.smoothing_factor);
         // Can release lock early, as we're no longer using the image cache
         cache_lock.release();
         if (smooth_successful) {
             // Perform contouring with an offset based on the Gaussian smoothing apron size
             offset = _contour_settings.smoothing_factor - 1;
             TraceContours(dest_array.get(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-                _contour_settings.chunk_size, partial_contour_callback, _perflog);
+                _contour_settings.chunk_size, partial_contour_callback);
             return true;
         }
     } else {
@@ -545,10 +498,10 @@ bool Frame::ContourImage(ContourCallback& partial_contour_callback) {
             size_t dest_width = ceil(double(image_bounds.x_max()) / _contour_settings.smoothing_factor);
             size_t dest_height = ceil(double(image_bounds.y_max()) / _contour_settings.smoothing_factor);
             TraceContours(dest_vector.data(), dest_width, dest_height, scale, offset, _contour_settings.levels, vertex_data, index_data,
-                _contour_settings.chunk_size, partial_contour_callback, _perflog);
+                _contour_settings.chunk_size, partial_contour_callback);
             return true;
         }
-        fmt::print("Smoothing mode not implemented yet!\n");
+        spdlog::warn("Smoothing mode not implemented yet!");
         return false;
     }
 
@@ -639,12 +592,12 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
                 }
             }
 
-            if (_perflog && histogram_filled) {
+            if (histogram_filled) {
                 auto t_end_image_histogram = std::chrono::high_resolution_clock::now();
                 auto dt_image_histogram =
                     std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_histogram - t_start_image_histogram).count();
-                fmt::print("Fill image histogram in {} ms at {} MPix/s\n", dt_image_histogram * 1e-3,
-                    (float)stats.num_pixels / dt_image_histogram);
+                spdlog::trace(
+                    "Fill image histogram in {} ms at {} MPix/s", dt_image_histogram * 1e-3, (float)stats.num_pixels / dt_image_histogram);
             }
         }
         have_valid_histogram |= histogram_filled;
@@ -898,11 +851,10 @@ bool Frame::FillRegionStatsData(int region_id, CARTA::RegionStatsData& stats_dat
         // cache results
         _image_stats[cache_key] = stats_map;
 
-        if (_perflog) {
-            auto t_end_image_stats = std::chrono::high_resolution_clock::now();
-            auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
-            fmt::print("Fill image stats in {} ms\n", dt_image_stats * 1e-3);
-        }
+        auto t_end_image_stats = std::chrono::high_resolution_clock::now();
+        auto dt_image_stats = std::chrono::duration_cast<std::chrono::microseconds>(t_end_image_stats - t_start_image_stats).count();
+        spdlog::trace("Fill image stats in {} ms", dt_image_stats * 1e-3);
+
         return true;
     }
 
@@ -998,12 +950,10 @@ bool Frame::FillSpatialProfileData(int region_id, CARTA::SpatialProfileData& spa
         }
     }
 
-    if (_perflog) {
-        auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
-        auto dt_spatial_profile =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
-        fmt::print("Fill spatial profile in {} ms\n", dt_spatial_profile * 1e-3);
-    }
+    auto t_end_spatial_profile = std::chrono::high_resolution_clock::now();
+    auto dt_spatial_profile =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_spatial_profile - t_start_spatial_profile).count();
+    spdlog::trace("Fill spatial profile in {} ms", dt_spatial_profile * 1e-3);
 
     return true;
 }
@@ -1028,7 +978,7 @@ bool Frame::SetSpectralRequirements(int region_id, const std::vector<CARTA::SetS
         int axis, stokes;
         ConvertCoordinateToAxes(coordinate, axis, stokes);
         if (stokes >= nstokes) {
-            std::cerr << "Spectral requirement " << coordinate << " failed: invalid stokes axis for image." << std::endl;
+            spdlog::warn("Spectral requirement {} failed: invalid stokes axis for image.", coordinate);
             continue;
         }
 
@@ -1220,12 +1170,10 @@ bool Frame::FillSpectralProfileData(std::function<void(CARTA::SpectralProfileDat
         }
     }
 
-    if (_perflog) {
-        auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
-        auto dt_spectral_profile =
-            std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
-        fmt::print("Fill cursor spectral profile in {} ms\n", dt_spectral_profile * 1e-3);
-    }
+    auto t_end_spectral_profile = std::chrono::high_resolution_clock::now();
+    auto dt_spectral_profile =
+        std::chrono::duration_cast<std::chrono::microseconds>(t_end_spectral_profile - t_start_spectral_profile).count();
+    spdlog::trace("Fill cursor spectral profile in {} ms", dt_spectral_profile * 1e-3);
 
     DecreaseZProfileCount();
     return true;
@@ -1269,7 +1217,7 @@ bool Frame::GetImageRegion(int file_id, const ChannelRange& chan_range, int stok
         image_region = this_region;
         return true;
     } catch (casacore::AipsError error) {
-        std::cerr << "Error converting full region to file " << file_id << ": " << error.getMesg() << std::endl;
+        spdlog::error("Error converting full region to file {}: {}", file_id, error.getMesg());
         return false;
     }
 }
@@ -1307,14 +1255,25 @@ bool Frame::GetRegionData(const casacore::LattRegionHolder& region, std::vector<
         casacore::Slicer slicer(start, count); // entire subimage
         std::unique_lock<std::mutex> ulock(_image_mutex);
         sub_image.doGetSlice(tmp, slicer);
+
+        // Get mask that defines region in subimage bounding box
+        casacore::Array<bool> tmpmask;
+        sub_image.doGetMaskSlice(tmpmask, slicer);
         ulock.unlock();
 
-        if (_perflog) {
-            auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
-            auto dt_get_subimage_data =
-                std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
-            fmt::print("Get region subimage data in {} ms\n", dt_get_subimage_data * 1e-3);
+        // Apply mask to data
+        std::vector<bool> datamask = tmpmask.tovector();
+        for (size_t i = 0; i < data.size(); ++i) {
+            if (!datamask[i]) {
+                data[i] = NAN;
+            }
         }
+
+        auto t_end_get_subimage_data = std::chrono::high_resolution_clock::now();
+        auto dt_get_subimage_data =
+            std::chrono::duration_cast<std::chrono::microseconds>(t_end_get_subimage_data - t_start_get_subimage_data).count();
+        spdlog::trace("Get region subimage data in {} ms", dt_get_subimage_data * 1e-3);
+
         return true;
     } catch (casacore::AipsError& err) {
         data.clear();
