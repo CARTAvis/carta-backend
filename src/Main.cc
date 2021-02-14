@@ -52,6 +52,7 @@ static string root_folder("/"), base_folder(".");
 // token to validate incoming WS connection header against
 static string auth_token = "";
 static int grpc_port(-1);
+static int timeout(0);
 
 // Sessions map
 std::unordered_map<uint32_t, Session*> sessions;
@@ -484,8 +485,8 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
             auto t_session = session->GetTimeStamp();
             auto t_now = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
-            if (dt.count() > 1800) {
-                spdlog::warn("Idle for {} seconds, delete the Session!", dt.count());
+            if (timeout && dt.count() > timeout) {
+                spdlog::warn("Session {} idles for {} seconds, deleted now!", session_id, dt.count());
                 DeleteSession(session_id);
                 ws->close();
             } else {
@@ -580,6 +581,7 @@ int main(int argc, const char* argv[]) {
             inp.create("frontend_folder", frontend_folder, "set folder to serve frontend files from", "String");
             inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
             inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clients connect", "Int");
+            inp.create("timeout", to_string(timeout), "delete the session if it idles for the number of seconds", "Int");
             inp.readArguments(argc, argv);
 
             verbosity = inp.getInt("verbosity");
@@ -595,6 +597,7 @@ int main(int argc, const char* argv[]) {
             base_folder = inp.getString("base");
             root_folder = inp.getString("root");
             frontend_folder = inp.getString("frontend_folder");
+            timeout = inp.getInt("timeout");
 
             if (!inp.getString("exit_after").empty()) {
                 int wait_time = inp.getInt("exit_after");
