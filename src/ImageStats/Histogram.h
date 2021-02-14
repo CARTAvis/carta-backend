@@ -14,19 +14,12 @@
 
 namespace carta {
 
-struct HistogramResults {
-    int num_bins;
-    float bin_width;
-    float bin_center;
-    std::vector<int> histogram_bins; // histogram bin counts
-};
-
 class Histogram {
-    float _min_val;              // lower bound of the histogram (inclusive)
-    float _max_val;              // upper bound of the histogram (inclusive)
-    int _num_bins;
-    float _bin_width;
-    float _bin_center;
+    float _min_val;                   // lower bound of the histogram (inclusive)
+    float _max_val;                   // upper bound of the histogram (inclusive)
+    int _num_bins;                    // number of bins
+    float _bin_width;                 // bin width
+    float _bin_center;                // bin center
     std::vector<int> _histogram_bins; // histogram bin counts
 
     void Fill(const std::vector<float>&);

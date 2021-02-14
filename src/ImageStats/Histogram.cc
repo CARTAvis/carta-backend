@@ -11,8 +11,8 @@
 #include <algorithm>
 #include <cmath>
 
-#include "Threading.h"
 #include "Logger/Logger.h"
+#include "Threading.h"
 
 using namespace carta;
 
