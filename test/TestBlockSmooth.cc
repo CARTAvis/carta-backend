@@ -9,11 +9,14 @@
 
 #include <casa/Arrays/ArrayMath.h>
 #include <casa/Arrays/Matrix.h>
-#include <fmt/format.h>
 #include <gtest/gtest.h>
 
-#include "../src/DataStream/Smoothing.h"
-#include "../src/Timer/Timer.h"
+#include "DataStream/Smoothing.h"
+
+#ifdef COMPILE_PERFORMANCE_TESTS
+#include <fmt/format.h>
+#include "Timer/Timer.h"
+#endif
 
 #define MAX_ABS_ERROR 1.0e-3f
 #define MAX_SUM_ERROR 1.0e-1f
@@ -183,7 +186,7 @@ TEST_F(BlockSmoothingTest, TestSSEAccuracy) {
     }
 }
 
-#ifdef NDEBUG
+#ifdef COMPILE_PERFORMANCE_TESTS
 TEST_F(BlockSmoothingTest, TestSSEPerformance) {
     Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
@@ -227,7 +230,7 @@ TEST_F(BlockSmoothingTest, TestAVXAccuracy) {
     }
 }
 
-#ifdef NDEBUG
+#ifdef COMPILE_PERFORMANCE_TESTS
 TEST_F(BlockSmoothingTest, TestAVXPerformance) {
     Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
