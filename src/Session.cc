@@ -63,7 +63,7 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
     _animation_object = nullptr;
     _connected = true;
     ++_num_sessions;
-    UpdateTimeStamp();
+    UpdateLastMessageTimestamp();
     spdlog::debug("{} ::Session ({})", fmt::ptr(this), _num_sessions);
 }
 
@@ -1919,10 +1919,10 @@ bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script:
     }
 }
 
-void Session::UpdateTimeStamp() {
-    _time_stamp = std::chrono::high_resolution_clock::now();
+void Session::UpdateLastMessageTimestamp() {
+    _last_message_timestamp = std::chrono::high_resolution_clock::now();
 }
 
-std::chrono::high_resolution_clock::time_point Session::GetTimeStamp() {
-    return _time_stamp;
+std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp() {
+    return _last_message_timestamp;
 }

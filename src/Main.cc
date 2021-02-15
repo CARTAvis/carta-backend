@@ -176,7 +176,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
 
     if (op_code == uWS::OpCode::BINARY) {
         if (sv_message.length() >= sizeof(carta::EventHeader)) {
-            session->UpdateTimeStamp();
+            session->UpdateLastMessageTimestamp();
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
             const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
             int event_length = sv_message.length() - sizeof(carta::EventHeader);
@@ -476,10 +476,10 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (sv_message == "PING") {
-            auto t_session = session->GetTimeStamp();
+            auto t_session = session->GetLastMessageTimestamp();
             auto t_now = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
-            if ((settings.idle_timeout >= 0) && (dt.count() >= settings.idle_timeout)) {
+            if ((settings.idle_session_timeout >= 0) && (dt.count() >= settings.idle_session_timeout)) {
                 spdlog::warn("Session {} idles for {} seconds, delete it now!", session_id, dt.count());
                 DeleteSession(session_id);
                 ws->close();

@@ -200,8 +200,8 @@ public:
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
 
-    void UpdateTimeStamp();
-    std::chrono::high_resolution_clock::time_point GetTimeStamp();
+    void UpdateLastMessageTimestamp();
+    std::chrono::high_resolution_clock::time_point GetLastMessageTimestamp();
 
 private:
     // File info for file list (extended info for each hdu_name)
@@ -292,8 +292,8 @@ private:
     std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
     std::mutex _scripting_mutex;
 
-    // Session time stamp
-    std::chrono::high_resolution_clock::time_point _time_stamp;
+    // Timestamp for the last protobuf message
+    std::chrono::high_resolution_clock::time_point _last_message_timestamp;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_
