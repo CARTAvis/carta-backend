@@ -50,7 +50,7 @@ bool Histogram::join(const Histogram& h) { // NOLINT
 void Histogram::Fill(const std::vector<float>& data) {
     std::vector<int64_t> temp_bins;
     const auto num_elements = data.size();
-    const int num_bins = GetNbins();
+    const size_t num_bins = GetNbins();
     ThreadManager::ApplyThreadLimit();
 #pragma omp parallel
     {
@@ -62,7 +62,7 @@ void Histogram::Fill(const std::vector<float>& data) {
         for (int64_t i = 0; i < num_elements; i++) {
             auto val = data[i];
             if (_min_val <= val && val <= _max_val) {
-                int bin_number = std::clamp((int)((val - _min_val) / _bin_width), 0, num_bins - 1);
+                size_t bin_number = std::clamp((size_t)((val - _min_val) / _bin_width), (size_t)0, num_bins - 1);
                 temp_bins[thread_index * num_bins + bin_number]++;
             }
         }
