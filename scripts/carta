@@ -14,6 +14,7 @@ if __name__ == "__main__":
             known_args.host = hostname
         else:
             print(f"Could not set default host IP: {result.stderr}", file = sys.stderr)
+            known_args.host = "0.0.0.0"
     
     args = ["carta_backend", "--host", known_args.host, *ignored_args]
     
