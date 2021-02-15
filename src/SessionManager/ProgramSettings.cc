@@ -94,6 +94,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     applyOptionalArgument(grpc_port, "grpc_port", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
+    applyOptionalArgument(wait_time, "exit_after", result);
+    applyOptionalArgument(init_wait_time, "init_exit_after", result);
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);

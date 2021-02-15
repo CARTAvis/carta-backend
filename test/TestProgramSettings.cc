@@ -15,6 +15,7 @@
 namespace fs = boost::filesystem;
 #else
 #include <filesystem>
+
 namespace fs = std::filesystem;
 #endif
 
@@ -34,6 +35,17 @@ public:
         }
         carta::ProgramSettings settings(argVector.size(), cstrings.data());
         return std::move(settings);
+    }
+
+    static auto SettingsFromString(const string& argString) {
+        vector<string> argVector;
+
+        string token;
+        istringstream stream(argString);
+        while (std::getline(stream, token, ' ')) {
+            argVector.push_back(token);
+        }
+        return SettingsFromVector(argVector);
     }
 };
 
@@ -66,6 +78,32 @@ TEST_F(ProgramSettingsTest, EmptyArugments) {
     settings = SettingsFromVector({"carta_backend", ""});
     EXPECT_TRUE(settings == default_settings);
     ASSERT_THROW(settings = SettingsFromVector({"carta_backend", "--top_level_folder"}), cxxopts::OptionException);
+}
+
+TEST_F(ProgramSettingsTest, ExpectedValuesLong) {
+    auto settings = SettingsFromString(
+        "carta_backend --verbosity 6 --no_log --no_http --no_browser --host helloworld --port 1234 --grpc_port 5678 --omp_threads 10"
+        " --top_level_folder /tmp --frontend_folder /var --exit_after 10 --init_exit_after 11 --debug_no_auth");
+    EXPECT_EQ(settings.verbosity, 6);
+    EXPECT_EQ(settings.no_log, true);
+    EXPECT_EQ(settings.no_http, true);
+    EXPECT_EQ(settings.no_browser, true);
+    EXPECT_EQ(settings.host, "helloworld");
+    EXPECT_EQ(settings.port, 1234);
+    EXPECT_EQ(settings.grpc_port, 5678);
+    EXPECT_EQ(settings.omp_thread_count, 10);
+    EXPECT_EQ(settings.top_level_folder, "/tmp");
+    EXPECT_EQ(settings.frontend_folder, "/var");
+    EXPECT_EQ(settings.wait_time, 10);
+    EXPECT_EQ(settings.init_wait_time, 11);
+    EXPECT_EQ(settings.debug_no_auth, true);
+}
+
+TEST_F(ProgramSettingsTest, ExpectedValuesShort) {
+    auto settings = SettingsFromString("carta_backend -p 1234 -g 5678 -t 10");
+    EXPECT_EQ(settings.port, 1234);
+    EXPECT_EQ(settings.grpc_port, 5678);
+    EXPECT_EQ(settings.omp_thread_count, 10);
 }
 
 TEST_F(ProgramSettingsTest, OverrideDeprecatedRoot) {
