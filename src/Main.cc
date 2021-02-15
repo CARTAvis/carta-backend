@@ -40,7 +40,6 @@ static std::unique_ptr<CartaGrpcService> carta_grpc_service;
 static std::unique_ptr<grpc::Server> carta_grpc_server;
 
 static string auth_token = "";
-static int timeout(0);
 
 carta::ProgramSettings settings;
 // Sessions map
@@ -176,8 +175,8 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
     }
 
     if (op_code == uWS::OpCode::BINARY) {
-        session->UpdateTimeStamp();
         if (sv_message.length() >= sizeof(carta::EventHeader)) {
+            session->UpdateTimeStamp();
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
             const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
             int event_length = sv_message.length() - sizeof(carta::EventHeader);
@@ -480,7 +479,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
             auto t_session = session->GetTimeStamp();
             auto t_now = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
-            if (timeout && (dt.count() >= timeout)) {
+            if ((settings.timeout >= 0) && (dt.count() >= settings.timeout)) {
                 spdlog::warn("Session {} idles for {} seconds, deleted now!", session_id, dt.count());
                 DeleteSession(session_id);
                 ws->close();

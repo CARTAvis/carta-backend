@@ -54,7 +54,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("frontend_folder", "Set folder to serve frontend files from", cxxopts::value<string>(), "<path>")
         ("exit_after", "Number of seconds to stay alive after last sessions exists", cxxopts::value<int>(), "<duration>")
         ("init_exit_after", "Number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<duration>")
-        ("files", "Files to load", cxxopts::value<vector<string>>(positional_arguments));
+        ("files", "Files to load", cxxopts::value<vector<string>>(positional_arguments))
+        ("timeout", "Delete the session if it idles for the number of seconds", cxxopts::value<int>()->default_value(to_string(timeout)), "<duration>");
 
     options.add_options("deprecated and debug")
         ("debug_no_auth", "Accept all incoming WebSocket connections (insecure, use with caution!)", cxxopts::value<bool>())
@@ -83,6 +84,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     no_http = result["no_http"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
+
+    timeout = result["timeout"].as<int>();
 
     applyOptionalArgument(top_level_folder, "root", result);
     // Override deprecated "root" argument
