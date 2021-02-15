@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
 project(carta_backend_test)
 
+# Performance tests should not be run by default, since they need to be run in isolation
+option(performance_tests "Build performance tests." OFF)
+if (performance_tests)
+    add_definitions(-DCOMPILE_PERFORMANCE_TESTS)
+endif ()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
@@ -42,3 +48,4 @@ add_test(NAME ${BINARY} COMMAND ${BINARY})
 target_link_libraries(${BINARY}
         ${TEST_COMMON_LIBS}
         ${LINK_LIBS})
+

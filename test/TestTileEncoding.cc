@@ -51,7 +51,7 @@ TEST(TileEncodingTest, RoundTrip) {
     }
 }
 
-#ifdef NDEBUG
+#ifdef COMPILE_PERFORMANCE_TESTS
 
 TEST(TileEncoding, PerformanceTestEncoding) {
     int32_t layer = 12;

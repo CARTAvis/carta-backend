@@ -89,6 +89,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     applyOptionalArgument(top_level_folder, "top_level_folder", result);
 
     applyOptionalArgument(frontend_folder, "frontend_folder", result);
+    applyOptionalArgument(host, "host", result);
     applyOptionalArgument(port, "port", result);
     applyOptionalArgument(grpc_port, "grpc_port", result);
 
