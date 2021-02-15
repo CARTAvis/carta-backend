@@ -21,119 +21,129 @@
 // Minimum speedup of 10% expected (SSE over scalar, AVX over SSE)
 #define MINIMUM_SPEEDUP 1.1
 
-#define NUM_ITERS 100
+#define NUM_ITERS 10
 #define MAX_DOWNSAMPLE_FACTOR 256
 
 typedef casacore::Matrix<float> Matrix2F;
 
-std::vector<float> nan_fractions = {0.0f, 0.05f, 0.1f, 0.5f, 0.95f, 1.0f};
 using namespace std;
 
-random_device rd;
-mt19937 mt(rd());
-uniform_real_distribution<float> float_random(0, 1.0f);
-// Random image widths and heights in range [512, 1024]
-uniform_int_distribution<int> size_random(512, 1024);
+class BlockSmoothingTest : public ::testing::Test {
+public:
+    const vector<float> nan_fractions = {0.0f, 0.05f, 0.1f, 0.5f, 0.95f, 1.0f};
 
-Matrix2F RandomMatrix(size_t rows, size_t columns, float nan_fraction) {
-    Matrix2F m(rows, columns);
+    random_device rd;
+    mt19937 mt;
+    uniform_real_distribution<float> float_random;
+    uniform_int_distribution<int> size_random;
 
-    for (auto i = 0; i < m.nrow(); i++) {
-        for (auto j = 0; j < m.ncolumn(); j++) {
-            if (float_random(mt) < nan_fraction) {
-                m(i, j) = NAN;
-            } else if (float_random(mt) < nan_fraction) {
-                m(i, j) = INFINITY;
-            } else {
-                m(i, j) = float_random(mt) - 0.5f;
+    BlockSmoothingTest() {
+        mt = mt19937(rd());
+        float_random = uniform_real_distribution<float>(0, 1.0f);
+        // Random image widths and heights in range [512, 1024]
+        size_random = uniform_int_distribution<int>(512, 1024);
+    }
+
+    Matrix2F RandomMatrix(size_t rows, size_t columns, float nan_fraction) {
+        Matrix2F m(rows, columns);
+
+        for (auto i = 0; i < m.nrow(); i++) {
+            for (auto j = 0; j < m.ncolumn(); j++) {
+                if (float_random(mt) < nan_fraction) {
+                    m(i, j) = NAN;
+                } else if (float_random(mt) < nan_fraction) {
+                    m(i, j) = INFINITY;
+                } else {
+                    m(i, j) = float_random(mt) - 0.5f;
+                }
             }
         }
+        return std::move(m);
     }
-    return std::move(m);
-}
 
-bool IsNAN(const Matrix2F& m) {
-    for (auto i = 0; i < m.nrow(); i++) {
-        for (auto j = 0; j < m.ncolumn(); j++) {
-            if (isfinite(m(i, j))) {
-                return false;
+    bool IsNAN(const Matrix2F& m) {
+        for (auto i = 0; i < m.nrow(); i++) {
+            for (auto j = 0; j < m.ncolumn(); j++) {
+                if (isfinite(m(i, j))) {
+                    return false;
+                }
             }
         }
+        return true;
     }
-    return true;
-}
 
-bool MatchingNANs(const Matrix2F& m1, const Matrix2F& m2) {
-    for (auto i = 0; i < m1.nrow(); i++) {
-        for (auto j = 0; j < m1.ncolumn(); j++) {
-            if (isfinite(m1(i, j)) != isfinite(m2(i, j))) {
-                return false;
+    bool MatchingNANs(const Matrix2F& m1, const Matrix2F& m2) {
+        for (auto i = 0; i < m1.nrow(); i++) {
+            for (auto j = 0; j < m1.ncolumn(); j++) {
+                if (isfinite(m1(i, j)) != isfinite(m2(i, j))) {
+                    return false;
+                }
             }
         }
+        return true;
     }
-    return true;
-}
 
-float nansum(const Matrix2F& m) {
-    float sum = 0;
-    bool has_vals = false;
-    for (auto i = 0; i < m.nrow(); i++) {
-        for (auto j = 0; j < m.ncolumn(); j++) {
-            auto val = m(i, j);
-            if (isfinite(val)) {
-                has_vals = true;
-                sum += val;
+    float nansum(const Matrix2F& m) {
+        float sum = 0;
+        bool has_vals = false;
+        for (auto i = 0; i < m.nrow(); i++) {
+            for (auto j = 0; j < m.ncolumn(); j++) {
+                auto val = m(i, j);
+                if (isfinite(val)) {
+                    has_vals = true;
+                    sum += val;
+                }
             }
         }
+        return has_vals ? sum : NAN;
     }
-    return has_vals ? sum : NAN;
-}
 
-float nanmax(const Matrix2F& m) {
-    float max_val = std::numeric_limits<float>::lowest();
-    bool has_vals = false;
-    for (auto i = 0; i < m.nrow(); i++) {
-        for (auto j = 0; j < m.ncolumn(); j++) {
-            auto val = m(i, j);
-            if (isfinite(val)) {
-                has_vals = true;
-                max_val = max(max_val, val);
+    float nanmax(const Matrix2F& m) {
+        float max_val = std::numeric_limits<float>::lowest();
+        bool has_vals = false;
+        for (auto i = 0; i < m.nrow(); i++) {
+            for (auto j = 0; j < m.ncolumn(); j++) {
+                auto val = m(i, j);
+                if (isfinite(val)) {
+                    has_vals = true;
+                    max_val = max(max_val, val);
+                }
             }
         }
+        return has_vals ? max_val : NAN;
     }
-    return has_vals ? max_val : NAN;
-}
 
-Matrix2F DownsampleTileScalar(const Matrix2F& m, int downsample_factor) {
-    int result_rows = ceil(m.nrow() / (float)(downsample_factor));
-    int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
-    Matrix2F scalar_result(result_rows, result_columns);
-    BlockSmoothScalar(
-        m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
-    return std::move(scalar_result);
-}
+    Matrix2F DownsampleTileScalar(const Matrix2F& m, int downsample_factor) {
+        int result_rows = ceil(m.nrow() / (float)(downsample_factor));
+        int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
+        Matrix2F scalar_result(result_rows, result_columns);
+        BlockSmoothScalar(
+            m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
+        return std::move(scalar_result);
+    }
 
-Matrix2F DownsampleTileSSE(const Matrix2F& m, int downsample_factor) {
-    int result_rows = ceil(m.nrow() / (float)(downsample_factor));
-    int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
-    Matrix2F scalar_result(result_rows, result_columns);
-    BlockSmoothSSE(
-        m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
-    return std::move(scalar_result);
-}
+    Matrix2F DownsampleTileSSE(const Matrix2F& m, int downsample_factor) {
+        int result_rows = ceil(m.nrow() / (float)(downsample_factor));
+        int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
+        Matrix2F scalar_result(result_rows, result_columns);
+        BlockSmoothSSE(
+            m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
+        return std::move(scalar_result);
+    }
 
 #ifdef __AVX__
-Matrix2F DownsampleTileAVX(const Matrix2F& m, int downsample_factor) {
-    int result_rows = ceil(m.nrow() / (float)(downsample_factor));
-    int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
-    Matrix2F scalar_result(result_rows, result_columns);
-    BlockSmoothAVX(
-        m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
-    return std::move(scalar_result);
-}
+    Matrix2F DownsampleTileAVX(const Matrix2F& m, int downsample_factor) {
+        int result_rows = ceil(m.nrow() / (float)(downsample_factor));
+        int result_columns = ceil(m.ncolumn() / (float)(downsample_factor));
+        Matrix2F scalar_result(result_rows, result_columns);
+        BlockSmoothAVX(
+            m.data(), scalar_result.data(), m.ncolumn(), m.nrow(), scalar_result.ncolumn(), scalar_result.nrow(), 0, 0, downsample_factor);
+        return std::move(scalar_result);
+    }
 #endif
+};
 
-TEST(BlockSmoothing, TestControl) {
+TEST_F(BlockSmoothingTest, TestControl) {
     for (auto nan_fraction : nan_fractions) {
         for (auto i = 0; i < NUM_ITERS; i++) {
             auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
@@ -153,7 +163,7 @@ TEST(BlockSmoothing, TestControl) {
     }
 }
 
-TEST(BlockSmoothing, TestSSEAccuracy) {
+TEST_F(BlockSmoothingTest, TestSSEAccuracy) {
     for (auto nan_fraction : nan_fractions) {
         for (auto i = 0; i < NUM_ITERS; i++) {
             auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
@@ -173,7 +183,8 @@ TEST(BlockSmoothing, TestSSEAccuracy) {
     }
 }
 
-TEST(BlockSmoothing, TestSSEPerformance) {
+#ifdef NDEBUG
+TEST_F(BlockSmoothingTest, TestSSEPerformance) {
     Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
         auto m1 = RandomMatrix(size_random(mt), size_random(mt), 0);
@@ -191,10 +202,11 @@ TEST(BlockSmoothing, TestSSEPerformance) {
     double speedup = scalar_time / simd_time;
     EXPECT_GE(speedup, MINIMUM_SPEEDUP);
 }
+#endif
 
 #ifdef __AVX__
 
-TEST(BlockSmoothing, TestAVXAccuracy) {
+TEST_F(BlockSmoothingTest, TestAVXAccuracy) {
     for (auto nan_fraction : nan_fractions) {
         for (auto i = 0; i < NUM_ITERS; i++) {
             auto m1 = RandomMatrix(size_random(mt), size_random(mt), nan_fraction);
@@ -215,7 +227,8 @@ TEST(BlockSmoothing, TestAVXAccuracy) {
     }
 }
 
-TEST(BlockSmoothing, TestAVXPerformance) {
+#ifdef NDEBUG
+TEST_F(BlockSmoothingTest, TestAVXPerformance) {
     Timer t;
     for (auto i = 0; i < NUM_ITERS; i++) {
         auto m1 = RandomMatrix(size_random(mt), size_random(mt), 0);
@@ -233,5 +246,6 @@ TEST(BlockSmoothing, TestAVXPerformance) {
     double speedup = sse_time / avx_time;
     EXPECT_GE(speedup, MINIMUM_SPEEDUP);
 }
+#endif
 
 #endif

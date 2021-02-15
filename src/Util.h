@@ -8,20 +8,10 @@
 #define CARTA_BACKEND__UTIL_H_
 
 #include <cassert>
-#include <chrono>
-#include <fstream>
-#include <regex>
 #include <string>
-#include <unordered_map>
 
-#include <fmt/format.h>
-
-#include <casacore/casa/Inputs/Input.h>
-#include <casacore/casa/OS/File.h>
 #include <casacore/images/Images/ImageOpener.h>
-#include <casacore/mirlib/miriad.h>
 
-#include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/region_stats.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
 
@@ -30,8 +20,9 @@
 #include "ImageStats/Histogram.h"
 
 // ************ Utilities *************
-
-bool CheckRootBaseFolders(std::string& root, std::string& base);
+bool FindExecutablePath(std::string& path);
+bool IsSubdirectory(const std::string& folder, const std::string& top_folder);
+bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
 
 // split input string into a vector of strings by delimiter

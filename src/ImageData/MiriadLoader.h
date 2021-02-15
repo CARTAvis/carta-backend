@@ -7,6 +7,8 @@
 #ifndef CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
 #define CARTA_BACKEND_IMAGEDATA_MIRIADLOADER_H_
 
+#include <casacore/mirlib/miriad.h>
+
 #include "CartaMiriadImage.h"
 #include "FileLoader.h"
 

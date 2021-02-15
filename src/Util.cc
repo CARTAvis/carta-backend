@@ -5,79 +5,102 @@
 */
 
 #include "Util.h"
+
+#include <climits>
+#include <fstream>
+#include <regex>
+
+#include <fmt/format.h>
+
+#include <casacore/casa/OS/File.h>
+
 #include "Logger/Logger.h"
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 
 using namespace std;
 
-bool CheckRootBaseFolders(string& root, string& base) {
-    if (root == "base" && base == "root") {
-        spdlog::critical("Must set root or base directory. Exiting carta.");
-        return false;
+bool CheckFolderPaths(string& top_level_string, string& starting_string) {
+    // TODO: is this code needed at all? Was it a weird workaround?
+    {
+        if (top_level_string == "base" && starting_string == "root") {
+            spdlog::critical("Must set top level or starting directory. Exiting carta.");
+            return false;
+        }
+        if (top_level_string == "base")
+            top_level_string = starting_string;
+        if (starting_string == "root")
+            starting_string = top_level_string;
     }
-    if (root == "base")
-        root = base;
-    if (base == "root")
-        base = root;
-
-    // check root
-    casacore::File root_folder(root);
-    if (!(root_folder.exists() && root_folder.isDirectory(true) && root_folder.isReadable() && root_folder.isExecutable())) {
-        spdlog::critical("Invalid root directory, does not exist or is not a readable directory. Exiting carta.");
+    // TODO: Migrate to std::filesystem
+    // check top level
+    casacore::File top_level_folder(top_level_string);
+    if (!(top_level_folder.exists() && top_level_folder.isDirectory(true) && top_level_folder.isReadable() &&
+            top_level_folder.isExecutable())) {
+        spdlog::critical("Invalid top level directory, does not exist or is not a readable directory. Exiting carta.");
         return false;
     }
     // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
     try {
-        root = root_folder.path().resolvedName(); // fails on root folder /
+        top_level_string = top_level_folder.path().resolvedName(); // fails on top level folder /
     } catch (casacore::AipsError& err) {
         try {
-            root = root_folder.path().absoluteName();
+            top_level_string = top_level_folder.path().absoluteName();
         } catch (casacore::AipsError& err) {
             spdlog::error(err.getMesg());
         }
-        if (root.empty())
-            root = "/";
+        if (top_level_string.empty())
+            top_level_string = "/";
     }
-    // check base
-    casacore::File base_folder(base);
-    if (!(base_folder.exists() && base_folder.isDirectory(true) && base_folder.isReadable() && base_folder.isExecutable())) {
-        spdlog::warn("Invalid base directory, using the provided root directory instead.");
-        base = root;
+    // check starting folder
+    casacore::File starting_folder(starting_string);
+    if (!(starting_folder.exists() && starting_folder.isDirectory(true) && starting_folder.isReadable() &&
+            starting_folder.isExecutable())) {
+        spdlog::warn("Invalid starting directory, using the provided top level directory instead.");
+        starting_string = top_level_string;
     } else {
         // absolute path: resolve symlinks, relative paths, env vars e.g. $HOME
         try {
-            base = base_folder.path().resolvedName(); // fails on root folder /
+            starting_string = starting_folder.path().resolvedName(); // fails on top level folder /
         } catch (casacore::AipsError& err) {
             try {
-                base = base_folder.path().absoluteName();
+                starting_string = starting_folder.path().absoluteName();
             } catch (casacore::AipsError& err) {
                 spdlog::error(err.getMesg());
             }
-            if (base.empty())
-                base = "/";
+            if (starting_string.empty())
+                starting_string = "/";
         }
     }
-    // check if base is same as or subdir of root
-    if (base != root) {
-        bool is_subdirectory(false);
-        casacore::Path base_path(base);
-        casacore::String parent_string(base_path.dirName()), root_string(root);
-        if (parent_string == root_string)
-            is_subdirectory = true;
-        while (!is_subdirectory && (parent_string != root_string)) { // navigate up directory tree
-            base_path = casacore::Path(parent_string);
-            parent_string = base_path.dirName();
-            if (parent_string == root_string) {
-                is_subdirectory = true;
-            } else if (parent_string == "/") {
-                break;
-            }
-        }
-        if (!is_subdirectory) {
-            spdlog::critical("Base {} must be a subdirectory of root {}. Exiting carta.", base, root);
-            return false;
-        }
+    bool is_subdirectory = IsSubdirectory(starting_string, top_level_string);
+    if (!is_subdirectory) {
+        spdlog::critical("Starting {} must be a subdirectory of top level {}. Exiting carta.", starting_string, top_level_string);
+        return false;
     }
     return true;
+}
+
+bool IsSubdirectory(const string& folder, const string& top_folder) {
+    if (folder == top_folder) {
+        return true;
+    }
+    casacore::Path folder_path(folder);
+    string parent_string(folder_path.dirName());
+    if (parent_string == top_folder) {
+        return true;
+    }
+    while (parent_string != top_folder) { // navigate up directory tree
+        folder_path = casacore::Path(parent_string);
+        parent_string = folder_path.dirName();
+        if (parent_string == top_folder) {
+            return true;
+        } else if (parent_string == "/") {
+            break;
+        }
+    }
+    return false;
 }
 
 uint32_t GetMagicNumber(const string& filename) {
@@ -248,4 +271,25 @@ string GetAuthTokenFromCookie(const string& header) {
         return sm[1];
     }
     return string();
+}
+
+bool FindExecutablePath(string& path) {
+    char path_buffer[PATH_MAX + 1];
+#ifdef __APPLE__
+    uint32_t len = sizeof(path_buffer);
+
+    if (_NSGetExecutablePath(path_buffer, &len) != 0) {
+        return false;
+    }
+#else
+    const int len = int(readlink("/proc/self/exe", path_buffer, PATH_MAX));
+
+    if (len == -1) {
+        return false;
+    }
+
+    path_buffer[len] = 0;
+#endif
+    path = path_buffer;
+    return true;
 }

@@ -43,15 +43,15 @@ int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
-Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
-    FileListHandler* file_list_handler, int grpc_port)
+Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
+    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port)
     : _socket(ws),
       _loop(loop),
       _id(id),
       _address(address),
-      _root_folder(root),
-      _base_folder(base),
-      _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
+      _top_level_folder(top_level_folder),
+      _starting_folder(starting_folder),
+      _table_controller(std::make_unique<carta::TableController>(_top_level_folder, _starting_folder)),
       _grpc_port(grpc_port),
       _loader(nullptr),
       _region_handler(nullptr),
@@ -151,7 +151,7 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
 
     try {
         file_info.set_name(filename);
-        casacore::String full_name(GetResolvedFilename(_root_folder, folder, filename));
+        casacore::String full_name(GetResolvedFilename(_top_level_folder, folder, filename));
 
         if (full_name.empty()) {
             message = fmt::format("File {} does not exist.", filename);
@@ -682,7 +682,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         std::string region_file; // name or contents
         if (import_file) {
             // check that file can be opened
-            region_file = GetResolvedFilename(_root_folder, directory, filename);
+            region_file = GetResolvedFilename(_top_level_folder, directory, filename);
             casacore::File ccfile(region_file);
             if (!ccfile.exists() || !ccfile.isReadable()) {
                 import_ack.set_success(false);
@@ -737,10 +737,10 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
         std::string abs_filename;
         if (!directory.empty() && !filename.empty()) {
             // export file is on server, form path with filename
-            casacore::Path root_path(_root_folder);
-            root_path.append(directory);
-            root_path.append(filename);
-            abs_filename = root_path.absoluteName();
+            casacore::Path top_level_path(_top_level_folder);
+            top_level_path.append(directory);
+            top_level_path.append(filename);
+            abs_filename = top_level_path.absoluteName();
         }
 
         std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
@@ -1097,7 +1097,7 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
     int file_id(save_file.file_id());
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
-        _frames.at(file_id)->SaveFile(_root_folder, save_file, save_file_ack);
+        _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack);
 
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
