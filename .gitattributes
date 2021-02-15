@@ -1,4 +1,2 @@
 test/data/** linguist-generated
-static/icons/*/*.png linguist-generated
-static/icons/*/*.svg binary
-*.svg binary
+static/icons/** linguist-generated
