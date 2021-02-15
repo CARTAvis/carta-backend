@@ -7,12 +7,15 @@
 #include <random>
 #include <vector>
 
-#include <fmt/format.h>
 #include <gtest/gtest.h>
 
 #include "ImageStats/Histogram.h"
 #include "Threading.h"
+
+#ifdef COMPILE_PERFORMANCE_TESTS
+#include <fmt/format.h>
 #include "Timer/Timer.h"
+#endif
 
 using namespace std;
 
@@ -81,7 +84,7 @@ TEST_F(HistogramTest, TestMultithreading) {
         EXPECT_TRUE(CompareResults(results_st, results_mt));
     }
 }
-#ifdef NDEBUG
+#ifdef COMPILE_PERFORMANCE_TESTS
 
 TEST_F(HistogramTest, TestMultithreadingPerformance) {
     std::vector<float> data(1024 * 1024);
