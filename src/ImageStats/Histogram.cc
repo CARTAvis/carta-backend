@@ -38,7 +38,7 @@ Histogram::Histogram(const Histogram& h) {
 
 bool Histogram::join(const Histogram& h) { // NOLINT
     if (!ConsistencyCheck(*this, h)) {
-        spdlog::warn("A consistency check failed to join histograms");
+        spdlog::warn("Could not join histograms: consistency check failed.");
         return false;
     }
     const int num_bins = h.GetHistogramBins().size();
@@ -84,18 +84,18 @@ bool Histogram::ConsistencyCheck(const Histogram& a, const Histogram& b) {
         return false;
     }
     if (fabs(a.GetMinVal() - b.GetMinVal()) > std::numeric_limits<float>::epsilon()) {
-        spdlog::warn("Lower histograms limits are not equal: {} and {}", a.GetMinVal(), b.GetMinVal());
+        spdlog::warn("Lower histogram limits are not equal: {} and {}", a.GetMinVal(), b.GetMinVal());
         return false;
     }
     if (fabs(a.GetMaxVal() - b.GetMaxVal()) > std::numeric_limits<float>::epsilon()) {
-        spdlog::warn("Upper histograms limits are not equal: {} and {}", a.GetMaxVal(), b.GetMaxVal());
+        spdlog::warn("Upper histogram limits are not equal: {} and {}", a.GetMaxVal(), b.GetMaxVal());
         return false;
     }
     return true;
 }
 void Histogram::SetHistogramBins(const std::vector<int>& bins) {
     if (bins.size() != _histogram_bins.size()) {
-        spdlog::error("Vector sizes are not equal, can't reset histogram counts");
+        spdlog::error("Could not reset histogram counts: vector sizes are not equal.");
     }
     _histogram_bins = bins;
 }
