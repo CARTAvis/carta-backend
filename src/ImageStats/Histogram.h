@@ -17,7 +17,6 @@ namespace carta {
 class Histogram {
     float _min_val;                   // lower bound of the histogram (inclusive)
     float _max_val;                   // upper bound of the histogram (inclusive)
-    int _num_bins;                    // number of bins
     float _bin_width;                 // bin width
     float _bin_center;                // bin center
     std::vector<int> _histogram_bins; // histogram bin counts
@@ -39,8 +38,8 @@ public:
     float GetMaxVal() const {
         return _max_val;
     }
-    int GetNbins() const {
-        return _num_bins;
+    size_t GetNbins() const {
+        return _histogram_bins.size();
     }
     float GetBinWidth() const {
         return _bin_width;

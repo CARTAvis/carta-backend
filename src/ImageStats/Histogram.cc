@@ -16,25 +16,21 @@
 
 using namespace carta;
 
-Histogram::Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data) {
-    _num_bins = num_bins;
-    _bin_width = (max_value - min_value) / num_bins;
-    _min_val = min_value;
-    _max_val = max_value;
-    _histogram_bins.resize(num_bins);
-    _bin_center = _min_val + (_bin_width * 0.5);
-
+Histogram::Histogram(int num_bins, float min_value, float max_value, const std::vector<float>& data)
+    : _bin_width((max_value - min_value) / num_bins),
+      _min_val(min_value),
+      _max_val(max_value),
+      _bin_center(min_value + (_bin_width * 0.5)),
+      _histogram_bins(num_bins, 0) {
     Fill(data);
 }
 
-Histogram::Histogram(const Histogram& h) {
-    _num_bins = h.GetNbins();
-    _bin_width = h.GetBinWidth();
-    _bin_center = h.GetBinCenter();
-    _min_val = h.GetMinVal();
-    _max_val = h.GetMaxVal();
-    _histogram_bins = h.GetHistogramBins();
-}
+Histogram::Histogram(const Histogram& h)
+    : _bin_width(h.GetBinWidth()),
+      _bin_center(h.GetBinCenter()),
+      _min_val(h.GetMinVal()),
+      _max_val(h.GetMaxVal()),
+      _histogram_bins(h.GetHistogramBins()) {}
 
 bool Histogram::join(const Histogram& h) { // NOLINT
     if (!ConsistencyCheck(*this, h)) {
@@ -53,26 +49,27 @@ bool Histogram::join(const Histogram& h) { // NOLINT
 
 void Histogram::Fill(const std::vector<float>& data) {
     std::vector<int64_t> temp_bins;
-    auto num_elements = data.size();
+    const auto num_elements = data.size();
+    const int num_bins = GetNbins();
     ThreadManager::ApplyThreadLimit();
 #pragma omp parallel
     {
         auto num_threads = omp_get_num_threads();
         auto thread_index = omp_get_thread_num();
 #pragma omp single
-        { temp_bins.resize(_num_bins * num_threads); }
+        { temp_bins.resize(num_bins * num_threads); }
 #pragma omp for
         for (int64_t i = 0; i < num_elements; i++) {
             auto val = data[i];
             if (_min_val <= val && val <= _max_val) {
-                int bin_number = std::clamp((int)((val - _min_val) / _bin_width), 0, _num_bins - 1);
-                temp_bins[thread_index * _num_bins + bin_number]++;
+                int bin_number = std::clamp((int)((val - _min_val) / _bin_width), 0, num_bins - 1);
+                temp_bins[thread_index * num_bins + bin_number]++;
             }
         }
 #pragma omp for
-        for (int64_t i = 0; i < _num_bins; i++) {
+        for (int64_t i = 0; i < num_bins; i++) {
             for (int t = 0; t < num_threads; t++) {
-                _histogram_bins[i] += temp_bins[_num_bins * t + i];
+                _histogram_bins[i] += temp_bins[num_bins * t + i];
             }
         }
     }
