@@ -79,11 +79,11 @@ void RegionHandler::RemoveRegion(int region_id) {
 
     if (region_id == ALL_REGIONS) {
         for (auto& region : _regions) {
-            region.second->DeleteCalled();
+            region.second->Delete();
         }
         _regions.clear();
     } else if (_regions.count(region_id)) {
-        _regions.at(region_id)->DeleteCalled();
+        _regions.at(region_id)->Delete();
         _regions.erase(region_id);
     }
     RemoveRegionRequirementsCache(region_id);
