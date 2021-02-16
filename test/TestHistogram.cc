@@ -72,12 +72,12 @@ TEST_F(HistogramTest, TestHistogramBehaviour) {
     data.push_back(11.0);        // should not appear
     carta::Histogram hist(10, 0.0f, 10.0f, data);
     auto counts = accumulate(hist.GetHistogramBins().begin(), hist.GetHistogramBins().end(), 0);
-    EXPECT_TRUE(counts == 12);
-    EXPECT_TRUE(hist.GetHistogramBins()[0] == 2);
-    EXPECT_TRUE(hist.GetHistogramBins()[1] == 1);
-    EXPECT_TRUE(hist.GetHistogramBins()[4] == 4);
-    EXPECT_TRUE(hist.GetHistogramBins()[5] == 3);
-    EXPECT_TRUE(hist.GetHistogramBins()[9] == 2);
+    EXPECT_EQ(counts, 12);
+    EXPECT_EQ(hist.GetHistogramBins()[0], 2);
+    EXPECT_EQ(hist.GetHistogramBins()[1], 1);
+    EXPECT_EQ(hist.GetHistogramBins()[9], 2);
+    EXPECT_EQ(hist.GetHistogramBins()[4], 4);
+    EXPECT_EQ(hist.GetHistogramBins()[5], 3);
 
     data.clear();
     data.push_back(NAN);
@@ -86,7 +86,7 @@ TEST_F(HistogramTest, TestHistogramBehaviour) {
     carta::Histogram hist2(10, 0.0f, 10.0f, data);
     // expect 0 counts
     auto bins = hist2.GetHistogramBins();
-    EXPECT_TRUE(accumulate(bins.begin(), bins.end(), 0) == 0);
+    EXPECT_EQ(accumulate(bins.begin(), bins.end(), 0), 0);
 }
 
 TEST_F(HistogramTest, TestHistogramConstructor) {
@@ -106,7 +106,7 @@ TEST_F(HistogramTest, TestHistogramJoin) {
     EXPECT_TRUE(CompareResults(hist, hist2)); // naive?
     hist.join(hist2);
     const auto total_counts2 = accumulate(hist.GetHistogramBins().begin(), hist.GetHistogramBins().end(), 0);
-    EXPECT_TRUE(total_counts * 2 == total_counts2);
+    EXPECT_EQ(2 * total_counts, total_counts2);
     carta::Histogram hist3(512, 0.0f, 1.0f, data);
     EXPECT_FALSE(hist.join(hist3));
 }
