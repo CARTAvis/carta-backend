@@ -118,7 +118,7 @@ void Session::SetInitExitTimeout(int secs) {
     alarm(1);
 }
 
-void Session::DeletedCalled() {
+void Session::DeleteCalled() {
     _connected = false;
     for (auto& frame : _frames) {
         frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
@@ -916,7 +916,7 @@ void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t requ
     std::string err_region_ids = "Problem loading regions: ";
 
     // Stop the streaming spectral profile, cube histogram and animation processes
-    DeletedCalled();
+    DeleteCalled();
 
     // Clear the message queue
     _out_msgs.clear();
