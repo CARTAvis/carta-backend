@@ -55,7 +55,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("exit_after", "Number of seconds to stay alive after last sessions exists", cxxopts::value<int>(), "<duration>")
         ("init_exit_after", "Number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<duration>")
         ("files", "Files to load", cxxopts::value<vector<string>>(positional_arguments))
-        ("idle_session_timeout", "Delete the session if it idles for the number of seconds", cxxopts::value<int>()->default_value(to_string(idle_session_timeout)), "<duration>");
+        ("idle_session_timeout", "Number of seconds to stay alive after receiving the last message from the frontend", cxxopts::value<int>(), "<duration>");
 
     options.add_options("deprecated and debug")
         ("debug_no_auth", "Accept all incoming WebSocket connections (insecure, use with caution!)", cxxopts::value<bool>())
@@ -85,8 +85,6 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     debug_no_auth = result["debug_no_auth"].as<bool>();
     no_browser = result["no_browser"].as<bool>();
 
-    idle_session_timeout = result["idle_session_timeout"].as<int>();
-
     applyOptionalArgument(top_level_folder, "root", result);
     // Override deprecated "root" argument
     applyOptionalArgument(top_level_folder, "top_level_folder", result);
@@ -97,6 +95,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     applyOptionalArgument(grpc_port, "grpc_port", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
+
+    applyOptionalArgument(idle_session_timeout, "idle_session_timeout", result);
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
