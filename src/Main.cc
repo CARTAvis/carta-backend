@@ -56,7 +56,7 @@ void DeleteSession(int session_id) {
     if (session) {
         auto uuid = session->GetId();
         auto address = session->GetAddress();
-        session->DisconnectCalled();
+        session->DeletedCalled();
         spdlog::info("Client {} [{}] Deleted. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);

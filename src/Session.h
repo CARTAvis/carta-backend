@@ -157,7 +157,7 @@ public:
     int DecreaseRefCount() {
         return --_ref_count;
     }
-    void DisconnectCalled();
+    void DeletedCalled();
     void ConnectCalled();
     static int NumberOfSessions() {
         return _num_sessions;
