@@ -33,7 +33,7 @@ def noprint(*args):
 if __name__ == "__main__":    
     parser = argparse.ArgumentParser(description="Check or fix copyright and licence headers.")
     parser.add_argument('command', help="Command (check or fix).", choices=("check", "fix"))
-    parser.add_argument('-d', '--directory', help="Location of the root directory (default is the src subdirectory in the current directory).", default="./src")
+    parser.add_argument('-d', '--directory', help="Location of the root directory; can be used multiple times. Defaults to the `src' and `test' subdirectories in the current directory.", default=[], action="append")
     parser.add_argument('-q', '--quiet', help="Suppress output", action='store_true')
 
     args = parser.parse_args()
@@ -41,34 +41,39 @@ if __name__ == "__main__":
     out = noprint if args.quiet else print
     return_status = 0
     
-    for filename in cpp_files(args.directory):
-        with open(filename) as f:
-            data = f.read()
-            
-            if re.search(re.escape(HEADER), data):
-                pass
-            
-            elif re.search(FUZZY_HEADER_MATCH, data):
-                out("Bad header found in", filename)
+    # We have to do it like this because the append action doesn't clear the default list
+    if not args.directory:
+        args.directory.extend(["src", "test"])
+    
+    for directory in set(args.directory):
+        for filename in cpp_files(directory):
+            with open(filename) as f:
+                data = f.read()
                 
-                if args.command == "fix":
-                    out("Fixing...")
-                    data = re.sub(FUZZY_HEADER_MATCH, HEADER, data)
-                    with open(filename, "w") as f:
-                        f.write(data)
-                else:
-                    return_status = 1
-            else:
-                out("No header found in", filename)
+                if re.search(re.escape(HEADER), data):
+                    pass
                 
-                if args.command == "fix":
-                    out("Fixing...")
-                    with open(filename, "w") as f:
-                        f.write(HEADER)
-                        f.write("\n")
-                        f.write(data)
+                elif re.search(FUZZY_HEADER_MATCH, data):
+                    out("Bad header found in", filename)
+                    
+                    if args.command == "fix":
+                        out("Fixing...")
+                        data = re.sub(FUZZY_HEADER_MATCH, HEADER, data)
+                        with open(filename, "w") as f:
+                            f.write(data)
+                    else:
+                        return_status = 1
                 else:
-                    return_status = 1
+                    out("No header found in", filename)
+                    
+                    if args.command == "fix":
+                        out("Fixing...")
+                        with open(filename, "w") as f:
+                            f.write(HEADER)
+                            f.write("\n")
+                            f.write(data)
+                    else:
+                        return_status = 1
 
     
     sys.exit(return_status)

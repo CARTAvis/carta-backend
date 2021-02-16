@@ -24,6 +24,7 @@
 
 #include <iomanip>
 
+#include "../Logger/Logger.h"
 #include "../Util.h"
 
 using namespace carta;
@@ -248,7 +249,7 @@ bool CrtfImportExport::AddExportRegion(const RegionState& region_state, const Re
             _region_list.addLine(file_line);
         }
     } catch (const casacore::AipsError& err) {
-        std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
+        spdlog::error("CRTF export error: {}", err.getMesg());
         return false;
     }
 
@@ -552,7 +553,7 @@ RegionStyle CrtfImportExport::ImportStyleParameters(casacore::CountedPtr<const c
     if (annotation_region->getLineStyle() == casa::AnnotationBase::SOLID) {
         style.dash_list = {0, 0};
     } else {
-        style.dash_list = {DASH_LENGTH, DASH_LENGTH};
+        style.dash_list = {REGION_DASH_LENGTH, REGION_DASH_LENGTH};
     }
     return style;
 }
@@ -647,7 +648,7 @@ RegionState CrtfImportExport::ImportAnnSymbol(std::vector<std::string>& paramete
             region_state = RegionState(_file_id, type, control_points, rotation);
 
         } catch (const casacore::AipsError& err) {
-            std::cerr << "Import symbol Quantity error: " << err.getMesg() << std::endl;
+            spdlog::error("Import symbol Quantity error: {}", err.getMesg());
             _import_errors.append("symbol parameters invalid.\n");
         }
     } else {
@@ -659,6 +660,7 @@ RegionState CrtfImportExport::ImportAnnSymbol(std::vector<std::string>& paramete
 RegionState CrtfImportExport::ImportAnnBox(std::vector<std::string>& parameters) {
     // Import Annotation box to RegionState; params must be in pixel coords for linear coord sys
     RegionState region_state;
+
     if (parameters.size() >= 5) {
         // [box blcx blcy trcx trcy], [centerbox cx cy width height], or [rotbox cx cy width height angle]
         std::string region(parameters[0]);
@@ -673,7 +675,7 @@ RegionState CrtfImportExport::ImportAnnBox(std::vector<std::string>& parameters)
 
         // Create RegionState and add to vector
         CARTA::RegionType type(CARTA::RegionType::RECTANGLE);
-        RegionState region_state(_file_id, type, control_points, rotation);
+        region_state = RegionState(_file_id, type, control_points, rotation);
     } else {
         _import_errors.append("box syntax invalid.\n");
     }
@@ -726,7 +728,7 @@ RegionState CrtfImportExport::ImportAnnEllipse(std::vector<std::string>& paramet
             CARTA::RegionType type(CARTA::RegionType::ELLIPSE);
             region_state = RegionState(_file_id, type, control_points, rotation);
         } catch (const casacore::AipsError& err) {
-            std::cerr << "Import ellipse Quantity error: " << err.getMesg() << std::endl;
+            spdlog::error("Import ellipse Quantity error: {}", err.getMesg());
             _import_errors.append("ellipse parameters invalid.\n");
         }
     } else {
@@ -763,7 +765,7 @@ RegionState CrtfImportExport::ImportAnnPolygon(std::vector<std::string>& paramet
             float rotation(0.0);
             region_state = RegionState(_file_id, type, control_points, rotation);
         } catch (const casacore::AipsError& err) {
-            std::cerr << "Import polygon Quantity error: " << err.getMesg() << std::endl;
+            spdlog::error("Import polygon Quantity error: {}", err.getMesg());
             _import_errors.append("polygon quantities invalid.\n");
         }
     } else {
@@ -782,13 +784,13 @@ RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::stri
     }
 
     // color
-    std::string import_color;
+    std::string import_color("green"); // CRTF default
     if (properties.count("color")) {
         import_color = FormatColor(properties["color"]);
     } else if (_global_properties.count(casa::AnnotationBase::COLOR)) {
         import_color = FormatColor(_global_properties[casa::AnnotationBase::COLOR]);
     }
-    if (!import_color.empty() && std::strtoul(import_color.c_str(), nullptr, 16)) {
+    if (std::strtoul(import_color.c_str(), nullptr, 16)) {
         // add prefix if hex
         import_color = "#" + import_color;
     }
@@ -799,6 +801,8 @@ RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::stri
         style.line_width = std::stoi(properties["linewidth"]);
     } else if (_global_properties.count(casa::AnnotationBase::LINEWIDTH)) {
         style.line_width = std::stoi(_global_properties[casa::AnnotationBase::LINEWIDTH]);
+    } else {
+        style.line_width = 1; // CRTF default
     }
 
     // linestyle
@@ -811,7 +815,7 @@ RegionStyle CrtfImportExport::ImportStyleParameters(std::unordered_map<std::stri
     if (linestyle == "-") { // solid line
         style.dash_list = {0, 0};
     } else {
-        style.dash_list = {DASH_LENGTH, DASH_LENGTH};
+        style.dash_list = {REGION_DASH_LENGTH, REGION_DASH_LENGTH};
     }
 
     return style;
@@ -891,7 +895,7 @@ bool CrtfImportExport::GetBoxControlPoints(
             rotation = 0.0;
         }
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Import " << region << " Quantity error: " << err.getMesg() << std::endl;
+        spdlog::error("Import {} Quantity error: {}", region, err.getMesg());
         return false;
     }
 
@@ -979,6 +983,7 @@ bool CrtfImportExport::GetCenterBoxPoints(const std::string& region, casacore::Q
         point.set_y(WorldToPixelLength(height, 1));
         control_points.push_back(point);
     }
+
     return true;
 }
 
@@ -994,7 +999,7 @@ bool CrtfImportExport::GetRectBoxPoints(casacore::Quantity& blcx, casacore::Quan
         casacore::Quantity height = (trcy - blcy);
         converted = GetCenterBoxPoints("box", cx, cy, width, height, region_frame, control_points);
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Import box Quantity error: " << err.getMesg() << std::endl;
+        spdlog::error("Import box Quantity error: {}", err.getMesg());
         converted = false;
     }
     return converted;
@@ -1084,7 +1089,7 @@ bool CrtfImportExport::AddExportAnnotationRegion(const RegionState& region_state
 
         return true;
     } catch (const casacore::AipsError& err) {
-        std::cerr << "CRTF export error: " << err.getMesg() << std::endl;
+        spdlog::error("CRTF export error: {}", err.getMesg());
         return false;
     }
 }

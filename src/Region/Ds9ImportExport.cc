@@ -8,10 +8,12 @@
 
 #include "Ds9ImportExport.h"
 
+#include <iomanip>
+
+#include <fmt/format.h>
+
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
-
-#include <iomanip>
 
 #include "../Util.h"
 
@@ -732,6 +734,8 @@ RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::strin
         style.color = FormatColor(properties["color"]);
     } else if (_global_properties.count("color")) {
         style.color = FormatColor(_global_properties["color"]);
+    } else {
+        style.color = REGION_COLOR;
     }
 
     // width
@@ -739,6 +743,8 @@ RegionStyle Ds9ImportExport::ImportStyleParameters(std::unordered_map<std::strin
         style.line_width = std::stoi(properties["width"]);
     } else if (_global_properties.count("width")) {
         style.line_width = std::stoi(_global_properties["width"]);
+    } else {
+        style.line_width = REGION_LINE_WIDTH;
     }
 
     // dash

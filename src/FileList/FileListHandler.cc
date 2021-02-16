@@ -6,14 +6,16 @@
 
 #include "FileListHandler.h"
 
+#include <fstream>
+
 #include <casacore/casa/OS/DirectoryIterator.h>
 #include <casacore/casa/OS/File.h>
 
 #include "FileInfoLoader.h"
 
 // Default constructor
-FileListHandler::FileListHandler(const std::string& root, const std::string& base)
-    : _root_folder(root), _base_folder(base), _filelist_folder("nofolder") {}
+FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)
+    : _top_level_folder(top_level_folder), _starting_folder(starting_folder), _filelist_folder("nofolder") {}
 
 void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, CARTA::FileListResponse& response, ResultMsg& result_msg) {
     // use tbb scoped lock so that it only processes the file list a time for one user
@@ -29,13 +31,13 @@ void FileListHandler::OnFileListRequest(const CARTA::FileListRequest& request, C
 
     // resolve empty folder string or current dir "."
     if (folder.empty() || folder.compare(".") == 0) {
-        folder = _root_folder;
+        folder = _top_level_folder;
     }
 
     // resolve $BASE keyword in folder string
     if (folder.find("$BASE") != std::string::npos) {
         casacore::String folder_string(folder);
-        folder_string.gsub("$BASE", _base_folder);
+        folder_string.gsub("$BASE", _starting_folder);
         folder = folder_string;
     }
     // strip root_folder from folder
@@ -51,8 +53,8 @@ void FileListHandler::GetRelativePath(std::string& folder) {
     // Remove root folder path from given folder string
     if (folder.find("./") == 0) {
         folder.replace(0, 2, ""); // remove leading "./"
-    } else if (folder.find(_root_folder) == 0) {
-        folder.replace(0, _root_folder.length(), ""); // remove root folder path
+    } else if (folder.find(_top_level_folder) == 0) {
+        folder.replace(0, _top_level_folder.length(), ""); // remove root folder path
         if (folder.front() == '/') {
             folder.replace(0, 1, "");
         } // remove leading '/'
@@ -64,9 +66,9 @@ void FileListHandler::GetRelativePath(std::string& folder) {
 
 void FileListHandler::GetFileList(CARTA::FileListResponse& file_list, std::string folder, ResultMsg& result_msg, bool region_list) {
     // fill FileListResponse
-    std::string requested_folder = ((folder.compare(".") == 0) ? _root_folder : folder);
-    casacore::Path requested_path(_root_folder);
-    if (requested_folder == _root_folder) {
+    std::string requested_folder = ((folder.compare(".") == 0) ? _top_level_folder : folder);
+    casacore::Path requested_path(_top_level_folder);
+    if (requested_folder == _top_level_folder) {
         // set directory in response; parent is null
         file_list.set_directory(".");
     } else { // append folder to root folder
@@ -229,13 +231,13 @@ void FileListHandler::OnRegionListRequest(
 
     // resolve empty folder string or current dir "."
     if (folder.empty() || folder.compare(".") == 0) {
-        folder = _root_folder;
+        folder = _top_level_folder;
     }
 
     // resolve $BASE keyword in folder string
     if (folder.find("$BASE") != std::string::npos) {
         casacore::String folder_string(folder);
-        folder_string.gsub("$BASE", _base_folder);
+        folder_string.gsub("$BASE", _starting_folder);
         folder = folder_string;
     }
     // strip root_folder from folder
@@ -309,7 +311,7 @@ bool FileListHandler::FillRegionFileInfo(CARTA::FileInfo& file_info, const std::
 void FileListHandler::OnRegionFileInfoRequest(
     const CARTA::RegionFileInfoRequest& request, CARTA::RegionFileInfoResponse& response, ResultMsg& result_msg) {
     // Fill response message with file info and contents
-    casacore::Path root_path(_root_folder);
+    casacore::Path root_path(_top_level_folder);
     root_path.append(request.directory());
     auto filename = request.file();
     root_path.append(filename);

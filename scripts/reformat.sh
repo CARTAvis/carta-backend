@@ -7,4 +7,4 @@
 
 cformat=${1:-clang-format}
 
-find src -regex ".*\.\(cc\|h\|tcc\)" | xargs $cformat -i
+find src test -regex ".*\.\(cc\|h\|tcc\)" | xargs $cformat -i

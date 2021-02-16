@@ -11,6 +11,7 @@
 #include <casacore/measures/Measures/MCDirection.h>
 #include <imageanalysis/Annotations/AnnotationBase.h>
 
+#include "../Logger/Logger.h"
 #include "../Util.h"
 
 using namespace carta;
@@ -310,7 +311,7 @@ bool RegionImportExport::ConvertRecordToPoint(
         control_points.push_back(casacore::Quantity(world_coords(1), world_units(1)));
         return true;
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Export error: point Record conversion failed:" << err.getMesg() << std::endl;
+        spdlog::error("Export error: point Record conversion failed: {}", err.getMesg());
         return false;
     }
 }
@@ -369,7 +370,7 @@ bool RegionImportExport::ConvertRecordToRectangle(
         control_points.push_back(world_height);
         return true;
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Export error: rectangle Record conversion failed:" << err.getMesg() << std::endl;
+        spdlog::error("Export error: rectangle Record conversion failed: {}", err.getMesg());
         return false;
     }
 }
@@ -440,7 +441,7 @@ bool RegionImportExport::ConvertRecordToEllipse(const RegionState& region_state,
         }
         return true;
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Export error: ellipse Record conversion failed:" << err.getMesg() << std::endl;
+        spdlog::error("Export error: ellipse Record conversion failed: {}", err.getMesg());
         return false;
     }
     return false;
@@ -503,7 +504,7 @@ bool RegionImportExport::ConvertRecordToPolygon(
             return false;
         }
     } catch (const casacore::AipsError& err) {
-        std::cerr << "Export error: polygon Record conversion failed:" << err.getMesg() << std::endl;
+        spdlog::error("Export error: polygon Record conversion failed: {}", err.getMesg());
         return false;
     }
 }

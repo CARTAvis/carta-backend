@@ -321,8 +321,17 @@ void FileExtInfoLoader::AddShapeEntries(
         extended_info.set_depth(1);
         extended_info.set_stokes(1);
     } else if (num_dims == 3) { // 3D
-        extended_info.set_depth(shape(2));
-        extended_info.set_stokes(1);
+        if (chan_axis >= 0) {
+            extended_info.set_depth(shape(chan_axis));
+        } else {
+            extended_info.set_depth(1);
+        }
+
+        if (stokes_axis >= 0) {
+            extended_info.set_stokes(shape(stokes_axis));
+        } else {
+            extended_info.set_stokes(1);
+        }
     } else { // 4D
         extended_info.set_depth(shape(chan_axis));
         extended_info.set_stokes(shape(stokes_axis));

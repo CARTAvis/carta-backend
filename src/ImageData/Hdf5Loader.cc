@@ -6,6 +6,8 @@
 
 #include "Hdf5Loader.h"
 
+#include "../Logger/Logger.h"
+
 namespace carta {
 
 Hdf5Loader::Hdf5Loader(const std::string& filename) : FileLoader(filename), _hdu("0") {}
@@ -188,7 +190,7 @@ bool Hdf5Loader::GetCursorSpectralData(
             LoadSwizzledData()->doGetSlice(tmp, slicer);
             data_ok = true;
         } catch (casacore::AipsError& err) {
-            std::cerr << "Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: " << err.getMesg() << std::endl;
+            spdlog::warn("Could not load cursor spectral data from swizzled HDF5 dataset. AIPS ERROR: {}", err.getMesg());
         }
     }
     return data_ok;
@@ -299,7 +301,7 @@ bool Hdf5Loader::GetRegionSpectralData(int region_id, int stokes, const casacore
 
                 mean[z] = sum_z / num_pixels_z;
                 rms[z] = sqrt(sum_sq_z / num_pixels_z);
-                sigma[z] = sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1));
+                sigma[z] = num_pixels_z > 1 ? sqrt((sum_sq_z - (sum_z * sum_z / num_pixels_z)) / (num_pixels_z - 1)) : 0;
                 extrema[z] = (abs(min[z]) > abs(max[z]) ? min[z] : max[z]);
 
                 if (has_flux) {
