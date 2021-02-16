@@ -121,7 +121,7 @@ void Session::SetInitExitTimeout(int secs) {
 void Session::DeleteCalled() {
     _connected = false;
     for (auto& frame : _frames) {
-        frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        frame.second->DeleteCalled(); // call to stop Frame's jobs and wait for jobs finished
     }
     _base_context.cancel_group_execution();
     _histogram_context.cancel_group_execution();
@@ -471,14 +471,14 @@ void Session::DeleteFrame(int file_id) {
     std::unique_lock<std::mutex> lock(_frame_mutex);
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
-            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-            frame.second.reset();             // delete Frame
+            frame.second->DeleteCalled(); // call to stop Frame's jobs and wait for jobs finished
+            frame.second.reset();         // delete Frame
         }
         _frames.clear();
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
-        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        _frames[file_id]->DeleteCalled(); // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);

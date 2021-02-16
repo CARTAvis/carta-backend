@@ -144,7 +144,7 @@ public:
     void DecreaseZProfileCount();
 
     // Set the flag connected = false, in order to stop the jobs and wait for jobs finished
-    void DisconnectCalled();
+    void DeleteCalled();
     // Check flag if Frame is to be destroyed
     bool IsConnected();
 
