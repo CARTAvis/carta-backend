@@ -54,10 +54,7 @@ struct PerSocketData {
 void DeleteSession(int session_id) {
     Session* session = sessions[session_id];
     if (session) {
-        auto uuid = session->GetId();
-        auto address = session->GetAddress();
         session->Delete();
-        spdlog::info("Client {} [{}] Deleted. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);
         }
@@ -480,7 +477,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
             auto t_now = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
             if ((settings.idle_session_timeout > 0) && (dt.count() >= settings.idle_session_timeout)) {
-                spdlog::warn("Session {} has been idle for {} seconds. Deleting", session_id, dt.count());
+                spdlog::warn("Session {} has been idle for {} seconds. Deleting..", session_id, dt.count());
                 DeleteSession(session_id);
                 ws->close();
             } else {

@@ -119,6 +119,7 @@ void Session::SetInitExitTimeout(int secs) {
 }
 
 void Session::Delete() {
+    spdlog::info("Client {} [{}] Deleted. Remaining sessions: {}", GetId(), GetAddress(), NumberOfSessions());
     _connected = false;
     for (auto& frame : _frames) {
         frame.second->Delete(); // call to stop Frame's jobs and wait for jobs finished
