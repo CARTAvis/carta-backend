@@ -57,7 +57,7 @@ void DeleteSession(int session_id) {
         auto uuid = session->GetId();
         auto address = session->GetAddress();
         session->DisconnectCalled();
-        spdlog::info("Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
+        spdlog::info("Client {} [{}] Deleted. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);
         }
@@ -65,10 +65,10 @@ void DeleteSession(int session_id) {
             delete session;
             sessions.erase(session_id);
         } else {
-            spdlog::warn("Session reference count ({}) is not 0 while on disconnection!", session->DecreaseRefCount());
+            spdlog::warn("Session {} reference count is not 0 ({}) while on deleting!", session_id, session->DecreaseRefCount());
         }
     } else {
-        spdlog::warn("OnDisconnect called with no Session object!");
+        spdlog::warn("Session {} not found to delete!", session_id);
     }
 }
 
