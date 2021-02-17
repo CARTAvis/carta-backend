@@ -22,6 +22,7 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/raster_tile.pb.h>
 #include <carta-protobuf/region_histogram.pb.h>
+#include <carta-protobuf/region_requirements.pb.h>
 #include <carta-protobuf/save_file.pb.h>
 #include <carta-protobuf/spatial_profile.pb.h>
 #include <carta-protobuf/spectral_profile.pb.h>
@@ -81,8 +82,7 @@ struct ContourSettings {
 
 class Frame {
 public:
-    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, bool verbose, bool perflog,
-        int default_channel = DEFAULT_CHANNEL);
+    Frame(uint32_t session_id, carta::FileLoader* loader, const std::string& hdu, int default_channel = DEFAULT_CHANNEL);
     ~Frame(){};
 
     bool IsValid();
@@ -237,8 +237,6 @@ private:
 
     // Setup
     uint32_t _session_id;
-    bool _verbose;
-    bool _perflog;
 
     // Image opened
     bool _valid;

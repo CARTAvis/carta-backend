@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VOTABLE version="1.4" xmlns="http://www.ivoa.net/xml/VOTable/v1.3">
+    <DEFINITIONS>
+        <COOSYS ID="COOSYS" equinox="2000" epoch="J2000" system="ICRS"/>
+    </DEFINITIONS>
+    <RESOURCE name="First Resource">
+        <TABLE ID="simple_vo" name="simple_vo example">
+            <DESCRIPTION>Basic test example</DESCRIPTION>
+            <FIELD ID="col1" name="Scalar1" datatype="float">
+                <DESCRIPTION>A scalar field</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="string_fixed" datatype="char" name="FixedStringArray" arraysize="5x3">
+                <DESCRIPTION>A field with 3 strings, each of length 5</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="string_bounded" datatype="char" name="BoundedStringArray" arraysize="5x3*">
+                <DESCRIPTION>A field with up to 3 strings, each of length 5</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="string_unbounded" datatype="char" name="UnboundedStringArray" arraysize="5x*">
+                <DESCRIPTION>A field with a variable number of strings, each of length 5</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="array_fixed" name="FixedArray" datatype="double" arraysize="3">
+                <DESCRIPTION>A field with a fixed array size of 3</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="array_bounded" name="BoundedArray" datatype="int" arraysize="3*">
+                <DESCRIPTION>A field with an array with 3 or fewer elements</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="array_unbounded" name="UnboundedArray" datatype="int" arraysize="*">
+                <DESCRIPTION>A field with an array of variable size</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="array_fixed_2d" name="FixedArray2D" datatype="int" arraysize="3x3">
+                <DESCRIPTION>A field with an array of variable size</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="array_bounded_2d" name="BoundedArray2D" datatype="int" arraysize="3x3*">
+                <DESCRIPTION>A field with an array of variable size</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="array_unbounded_2d" name="UnboundedArray2D" datatype="int" arraysize="3x*">
+                <DESCRIPTION>A field with an array of variable size</DESCRIPTION>
+            </FIELD>
+            <FIELD ID="col2" name="Scalar2" datatype="float">
+                <DESCRIPTION>A scalar field</DESCRIPTION>
+            </FIELD>
+            <DATA>
+                <TABLEDATA>
+                    <TR>
+                        <TD>1.0</TD>
+                        <TD>Test Test Test </TD>
+                        <TD>Test Test </TD>
+                        <TD>Test </TD>
+                        <TD>1 2 3</TD>
+                        <TD>1 2</TD>
+                        <TD>1 2 3 4 5 6</TD>
+                        <TD>1 2 3 4 5 6 7 8 9</TD>
+                        <TD>1 2 3 4 5 6</TD>
+                        <TD>1 2 3 4 5 6 7 8 9 10 11 12</TD>
+                        <TD>2.0</TD>
+                    </TR>
+                    <TR>
+                        <TD>2.0</TD>
+                        <TD>Test Test Test </TD>
+                        <TD>Test Test Test </TD>
+                        <TD/>
+                        <TD>3 2 1</TD>
+                        <TD>1</TD>
+                        <TD>1</TD>
+                        <TD>1 2 3 4 5 6 7 8 9</TD>
+                        <TD>1 2 3</TD>
+                        <TD>1 2 3</TD>
+                        <TD>4.0</TD>
+                    </TR>
+                    <TR>
+                        <TD>3.0</TD>
+                        <TD>Test Test Test </TD>
+                        <TD>Test </TD>
+                        <TD>Test Test Test Test </TD>
+                        <TD>1 2 3</TD>
+                        <TD/>
+                        <TD>1 2 3 4 5 6 7 8 9</TD>
+                        <TD>1 2 3 4 5 6 7 8 9</TD>
+                        <TD/>
+                        <TD/>
+                        <TD>6.0</TD>
+                    </TR>
+                </TABLEDATA>
+            </DATA>
+        </TABLE>
+    </RESOURCE>
+
+</VOTABLE>

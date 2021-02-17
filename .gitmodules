@@ -7,3 +7,6 @@
 [submodule "uWebSockets"]
 	path = uWebSockets
 	url = https://github.com/uNetworking/uWebSockets.git
+[submodule "cxxopts"]
+	path = cxxopts
+	url = https://github.com/jarro2783/cxxopts

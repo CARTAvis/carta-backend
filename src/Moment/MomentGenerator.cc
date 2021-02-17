@@ -6,6 +6,8 @@
 
 #include "MomentGenerator.h"
 
+#include "../Logger/Logger.h"
+
 using namespace carta;
 
 using IM = ImageMoments<casacore::Float>;
@@ -110,7 +112,7 @@ void MomentGenerator::SetMomentAxis(const CARTA::MomentRequest& moment_request) 
     } else if (moment_request.axis() == CARTA::MomentAxis::STOKES) {
         _axis = _stokes_axis;
     } else {
-        std::cerr << "Do not support the moment axis: " << moment_request.axis() << std::endl;
+        spdlog::error("Unsupported moment axis: {}", moment_request.axis());
     }
 }
 
@@ -191,7 +193,7 @@ int MomentGenerator::GetMomentMode(CARTA::Moment moment) {
     if (_moment_map.count(moment)) {
         return _moment_map[moment];
     } else {
-        std::cerr << "Unknown moment mode: " << moment << std::endl;
+        spdlog::error("Unknown moment mode: {}", moment);
         return -1;
     }
 }
@@ -201,7 +203,7 @@ casacore::String MomentGenerator::GetMomentSuffix(casacore::Int moment) {
     if (_moment_suffix_map.count(moment_type)) {
         return _moment_suffix_map[moment_type];
     } else {
-        std::cerr << "Unknown moment mode: " << moment << std::endl;
+        spdlog::error("Unknown moment mode: {}", moment);
         return "";
     }
 }

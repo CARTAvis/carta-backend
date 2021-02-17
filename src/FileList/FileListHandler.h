@@ -24,7 +24,7 @@
 
 class FileListHandler {
 public:
-    FileListHandler(const std::string& root, const std::string& base);
+    FileListHandler(const std::string& top_level_folder, const std::string& starting_folder);
 
     struct ResultMsg {
         std::string message;
@@ -56,10 +56,7 @@ private:
     std::mutex _region_list_mutex;
     std::string _filelist_folder;
     std::string _regionlist_folder;
-
-    bool _verbose_logging;
-    bool _performance_logging;
-    std::string _root_folder, _base_folder;
+    std::string _top_level_folder, _starting_folder;
 };
 
 #endif // CARTA_BACKEND__FILELISTHANDLER_H_

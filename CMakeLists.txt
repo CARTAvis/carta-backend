@@ -37,8 +37,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
+FIND_PACKAGE(spdlog REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
 ADD_SUBDIRECTORY(carta-scripting-grpc)
@@ -97,6 +97,9 @@ endif ()
 # Include uWebSockets headers and build the uSockets lib
 install_uWebSockets()
 
+# Include cxxopts headers
+include_directories(${CMAKE_SOURCE_DIR}/cxxopts/include)
+
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
@@ -112,6 +115,7 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
+        spdlog
         casa_casa
         casa_coordinates
         casa_tables
@@ -131,6 +135,7 @@ set(SOURCE_FILES
         src/Main.cc
         src/Session.cc
         src/Frame.cc
+        src/Logger/Logger.cc
         src/DataStream/Compression.cc
         src/DataStream/Contouring.cc
         src/DataStream/Smoothing.cc
@@ -159,6 +164,7 @@ set(SOURCE_FILES
         src/Table/TableController.cc
         src/Moment/MomentGenerator.cc
         src/Timer/Timer.cc
+        src/SessionManager/ProgramSettings.cc
         src/OnMessageTask.cc
         src/FileSettings.cc
         src/Util.cc
@@ -174,6 +180,9 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     target_link_libraries(carta_backend ${LINK_LIBS})
 endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+install(TARGETS carta_backend
+    RUNTIME DESTINATION bin)
 
 # Tests
 option(test "Build tests." OFF)
