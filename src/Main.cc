@@ -54,6 +54,8 @@ struct PerSocketData {
 void DeleteSession(int session_id) {
     Session* session = sessions[session_id];
     if (session) {
+        spdlog::info(
+            "Client {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
         session->WaitForTaskCancellation();
         if (carta_grpc_service) {
             carta_grpc_service->RemoveSession(session);

@@ -119,7 +119,6 @@ void Session::SetInitExitTimeout(int secs) {
 }
 
 void Session::WaitForTaskCancellation() {
-    spdlog::info("Client {} [{}] Deleted. Remaining sessions: {}", GetId(), GetAddress(), NumberOfSessions());
     _connected = false;
     for (auto& frame : _frames) {
         frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
@@ -911,6 +910,8 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message,
 
 void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id) {
     bool success(true);
+    spdlog::info("Client {} [{}] Resumed.", GetId(), GetAddress());
+
     // Error message
     std::string err_message;
     std::string err_file_ids = "Problem loading files: ";
