@@ -6,11 +6,10 @@
 
 #include "SimpleFrontendServer.h"
 
-#include <filesystem>
 #include <fstream>
 #include <vector>
 
-#include "../Logger/Logger.h"
+#include "Logger/Logger.h"
 #include "MimeTypes.h"
 
 using namespace std;
@@ -53,7 +52,7 @@ void SimpleFrontendServer::HandleRequest(uWS::HttpResponse<false>* res, uWS::Htt
 
     if (fs::exists(path) && fs::is_regular_file(path)) {
         // Check file size
-        ifstream file(path, ios::binary | ios::ate);
+        ifstream file(path.string(), ios::binary | ios::ate);
         streamsize size = file.tellg();
         file.seekg(0, ios::beg);
 
@@ -93,7 +92,7 @@ bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
         return false;
     }
     // Check that index.html can be read
-    ifstream index_file(folder);
+    ifstream index_file(folder.string());
     return index_file.good();
 }
 
