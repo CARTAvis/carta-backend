@@ -30,7 +30,7 @@ public:
 
     Histogram(const Histogram& h);
 
-    bool join(const Histogram& h); // NOLINT
+    bool Add(const Histogram& h);
 
     float GetMinVal() const {
         return _min_val;

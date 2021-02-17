@@ -97,18 +97,18 @@ TEST_F(HistogramTest, TestHistogramConstructor) {
     EXPECT_TRUE(CompareResults(hist, hist2));
 }
 
-TEST_F(HistogramTest, TestHistogramJoin) {
+TEST_F(HistogramTest, TestHistogramAdd) {
     std::vector<float> data(1024 * 1024);
     std::for_each(data.begin(), data.end(), [&](float& v) { v = float_random(mt); });
     carta::Histogram hist(1024, 0.0f, 1.0f, data);
     const auto total_counts = accumulate(hist.GetHistogramBins().begin(), hist.GetHistogramBins().end(), 0);
     carta::Histogram hist2(1024, 0.0f, 1.0f, data);
     EXPECT_TRUE(CompareResults(hist, hist2)); // naive?
-    hist.join(hist2);
+    hist.Add(hist2);
     const auto total_counts2 = accumulate(hist.GetHistogramBins().begin(), hist.GetHistogramBins().end(), 0);
     EXPECT_EQ(2 * total_counts, total_counts2);
     carta::Histogram hist3(512, 0.0f, 1.0f, data);
-    EXPECT_FALSE(hist.join(hist3));
+    EXPECT_FALSE(hist.Add(hist3));
 }
 
 TEST_F(HistogramTest, TestSingleThreading) {
