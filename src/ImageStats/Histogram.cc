@@ -32,17 +32,16 @@ Histogram::Histogram(const Histogram& h)
       _max_val(h.GetMaxVal()),
       _histogram_bins(h.GetHistogramBins()) {}
 
-bool Histogram::join(const Histogram& h) { // NOLINT
+bool Histogram::Add(const Histogram& h) {
     if (!ConsistencyCheck(*this, h)) {
         spdlog::warn("Could not join histograms: consistency check failed.");
         return false;
     }
     const int num_bins = h.GetHistogramBins().size();
     const auto& other_bins = h.GetHistogramBins();
-    ThreadManager::ApplyThreadLimit();
-#pragma omp parallel for
+#pragma omp simd
     for (int i = 0; i < num_bins; i++) {
-        _histogram_bins[i] += other_bins[i];
+        _histogram_bins[i] = _histogram_bins[i] + other_bins[i];
     }
     return true;
 }
