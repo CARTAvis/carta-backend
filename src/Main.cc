@@ -142,7 +142,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
 
     sessions[session_id]->IncreaseRefCount();
 
-    spdlog::info("Client {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
+    spdlog::info("Session {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -477,7 +477,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
             auto t_now = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
             if ((settings.idle_session_timeout > 0) && (dt.count() >= settings.idle_session_timeout)) {
-                spdlog::warn("Session {} has been idle for {} seconds. Deleting..", session_id, dt.count());
+                spdlog::warn("Client {} has been idle for {} seconds. Deleting..", session->GetId(), dt.count());
                 DeleteSession(session_id);
                 ws->close();
             } else {
