@@ -57,7 +57,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("files", "Files to load", cxxopts::value<vector<string>>(positional_arguments));
 
     options.add_options("deprecated and debug")
-        ("debug_no_auth", "Accept all incoming WebSocket connections (insecure, use with caution!)", cxxopts::value<bool>())
+        ("debug_no_auth", "Accept all incoming WebSocket connections on the specified port (not secure, use with caution!)", cxxopts::value<bool>())
         ("threads", "[Deprecated] No longer supported", cxxopts::value<int>(), "<thread count>")
         ("base", "[Deprecated] Set starting folder for data files", cxxopts::value<string>(), "<path>")
         ("root", "[Deprecated] Use 'top_level_folder' instead", cxxopts::value<string>(), "<path>");
