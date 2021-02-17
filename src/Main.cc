@@ -477,8 +477,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
             auto t_now = std::chrono::high_resolution_clock::now();
             auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
             if ((settings.idle_session_timeout > 0) && (dt.count() >= settings.idle_session_timeout)) {
-                spdlog::warn("Client {} has been idle for {} seconds. Deleting..", session->GetId(), dt.count());
-                DeleteSession(session_id);
+                spdlog::warn("Client {} has been idle for {} seconds. Disconnecting..", session->GetId(), dt.count());
                 ws->close();
             } else {
                 ws->send("PONG", uWS::OpCode::TEXT);
