@@ -1,18 +1,13 @@
 #!/bin/bash
 
-if ! grep -Pq '\--host[ =][^ ]+' <<< "$@"
+if [ "$(uname)" == "Darwin" ]
+then
+    SERVER_IP=$(ipconfig getifaddr en0)
+elif [ "$(uname)" == "Linux" ]
 then
     SERVER_IP=$(hostname -I | cut -d' ' -f1)
-    
-    if [ "$(uname)" == "Darwin" ]
-    then
-        SERVER_IP=$(ipconfig getifaddr en0)
-    elif [ "$(uname)" == "Linux" ]
-    then
-        SERVER_IP=$(hostname -I | cut -d' ' -f1)
-    fi
-    
-    export SERVER_IP
 fi
+
+export SERVER_IP
 
 carta_backend $@
