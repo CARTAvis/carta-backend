@@ -1,22 +1,18 @@
-#!/usr/bin/env python3
-import sys
-import argparse
-import subprocess
+#!/bin/bash
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--host', default=None)
-    known_args, ignored_args = parser.parse_known_args()
+if ! grep -Pq '\--host[ =][^ ]+' <<< "$@"
+then
+    SERVER_IP=$(hostname -I | cut -d' ' -f1)
     
-    if known_args.host is None:
-        result = subprocess.run(["hostname", "-I"], capture_output=True)
-        if not result.returncode:
-            hostname = result.stdout.split()[0].decode("utf-8")
-            known_args.host = hostname
-        else:
-            print(f"Could not set default host IP: {result.stderr}", file = sys.stderr)
-            known_args.host = "0.0.0.0"
+    if [ "$(uname)" == "Darwin" ]
+    then
+        SERVER_IP=$(ipconfig getifaddr en0)
+    elif [ "$(uname)" == "Linux" ]
+    then
+        SERVER_IP=$(hostname -I | cut -d' ' -f1)
+    fi
     
-    args = ["carta_backend", "--host", known_args.host, *ignored_args]
-    
-    subprocess.run(args)
+    export SERVER_IP
+fi
+
+carta_backend $@
