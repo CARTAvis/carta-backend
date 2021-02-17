@@ -14,7 +14,7 @@
 
 // thread counts
 #define OMP_THREAD_COUNT -1
-#define THREAD_COUNT 3
+#define TBB_TASK_THREAD_COUNT 3
 
 // file ids
 #define ALL_FILES -1
