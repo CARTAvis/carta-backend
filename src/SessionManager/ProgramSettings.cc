@@ -49,7 +49,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("host", "Only listen on the specified interface (IP address or hostname). If this is unset, the backend listens on all available interfaces.", cxxopts::value<string>()->default_value(host), "<interface>")
         ("p,port", "Manually set the port on which to host frontend files and accept WebSocket connections. If this is unset, the backend will automatically find an unused port, starting from the default.", cxxopts::value<int>()->default_value(to_string(DEFAULT_SOCKET_PORT)), "<port>")
         ("g,grpc_port", "Set gRPC server port. If this is unset, the gRPC service is disabled.", cxxopts::value<int>(), "<port>")
-        ("t,omp_threads", "Manually set OpenMP thread pool count. By default this is automatically set to the number of cores detected by the backend.", cxxopts::value<int>(), "<threads>")
+        ("t,omp_threads", "Manually set OpenMP thread pool count. By default this is automatically set to the number of logical cores detected by the backend.", cxxopts::value<int>(), "<threads>")
         ("top_level_folder", "Set top-level folder for data files. Files outside of this directory will not be accessible.", cxxopts::value<string>()->default_value(top_level_folder), "<dir>")
         ("frontend_folder", "Set folder from which frontend files are served. By default a path relative to the location of the backend executable is used: '../share/carta/frontend'.", cxxopts::value<string>(), "<dir>")
         ("exit_after", "Number of seconds to stay alive after last session exits. By default the backend will not shut down automatically after all sessions exit.", cxxopts::value<int>(), "<sec>")
