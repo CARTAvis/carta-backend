@@ -1183,7 +1183,7 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
                 // get histogram bins for each channel and accumulate bin counts in cube_bins
                 std::vector<int> cube_bins;
-                carta::HistogramResults chan_histogram; // histogram for each channel using cube stats
+                carta::Histogram chan_histogram; // histogram for each channel using cube stats
                 for (size_t chan = 0; chan < num_channels; ++chan) {
                     if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, chan, stokes, num_bins, cube_stats, chan_histogram)) {
                         return calculated; // channel histogram failed
@@ -1191,10 +1191,10 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
 
                     // add channel bins to cube bins
                     if (chan == 0) {
-                        cube_bins = {chan_histogram.histogram_bins.begin(), chan_histogram.histogram_bins.end()};
+                        cube_bins = {chan_histogram.GetHistogramBins().begin(), chan_histogram.GetHistogramBins().end()};
                     } else { // add chan histogram bins to cube histogram bins
-                        std::transform(chan_histogram.histogram_bins.begin(), chan_histogram.histogram_bins.end(), cube_bins.begin(),
-                            cube_bins.begin(), std::plus<int>());
+                        std::transform(chan_histogram.GetHistogramBins().begin(), chan_histogram.GetHistogramBins().end(),
+                            cube_bins.begin(), cube_bins.begin(), std::plus<int>());
                     }
 
                     // check for cancel
@@ -1212,9 +1212,9 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         CreateCubeHistogramMessage(progress_msg, file_id, stokes, progress);
                         auto message_histogram = progress_msg.add_histograms();
                         message_histogram->set_channel(ALL_CHANNELS);
-                        message_histogram->set_num_bins(chan_histogram.num_bins);
-                        message_histogram->set_bin_width(chan_histogram.bin_width);
-                        message_histogram->set_first_bin_center(chan_histogram.bin_center);
+                        message_histogram->set_num_bins(chan_histogram.GetNbins());
+                        message_histogram->set_bin_width(chan_histogram.GetBinWidth());
+                        message_histogram->set_first_bin_center(chan_histogram.GetBinCenter());
                         message_histogram->set_mean(cube_stats.mean);
                         message_histogram->set_std_dev(cube_stats.stdDev);
                         *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
@@ -1233,19 +1233,16 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_histogram_message.clear_histograms();
                     auto message_histogram = cube_histogram_message.add_histograms();
                     message_histogram->set_channel(ALL_CHANNELS);
-                    message_histogram->set_num_bins(chan_histogram.num_bins);
-                    message_histogram->set_bin_width(chan_histogram.bin_width);
-                    message_histogram->set_first_bin_center(chan_histogram.bin_center);
+                    message_histogram->set_num_bins(chan_histogram.GetNbins());
+                    message_histogram->set_bin_width(chan_histogram.GetBinWidth());
+                    message_histogram->set_first_bin_center(chan_histogram.GetBinCenter());
                     message_histogram->set_mean(cube_stats.mean);
                     message_histogram->set_std_dev(cube_stats.stdDev);
                     *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
 
                     // cache cube histogram
-                    carta::HistogramResults cube_results;
-                    cube_results.num_bins = chan_histogram.num_bins;
-                    cube_results.bin_width = chan_histogram.bin_width;
-                    cube_results.bin_center = chan_histogram.bin_center;
-                    cube_results.histogram_bins = {cube_bins.begin(), cube_bins.end()};
+                    carta::Histogram cube_results(chan_histogram);
+                    cube_results.SetHistogramBins(cube_bins);
                     _frames.at(file_id)->CacheCubeHistogram(stokes, cube_results);
 
                     auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();

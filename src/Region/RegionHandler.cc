@@ -863,11 +863,11 @@ bool RegionHandler::GetRegionHistogramData(
         if (_histogram_cache.count(cache_id)) {
             have_basic_stats = _histogram_cache[cache_id].GetBasicStats(stats);
             if (have_basic_stats) {
-                carta::HistogramResults results;
-                if (_histogram_cache[cache_id].GetHistogram(num_bins, results)) {
+                carta::Histogram hist;
+                if (_histogram_cache[cache_id].GetHistogram(num_bins, hist)) {
                     auto histogram = histogram_message.add_histograms();
                     histogram->set_channel(channel);
-                    FillHistogramFromResults(histogram, stats, results);
+                    FillHistogramFromResults(histogram, stats, hist);
                     continue;
                 }
             }
@@ -890,14 +890,13 @@ bool RegionHandler::GetRegionHistogramData(
         }
 
         // Calculate and cache histogram for number of bins
-        HistogramResults results;
-        CalcHistogram(num_bins, stats, data, results);
-        _histogram_cache[cache_id].SetHistogram(num_bins, results);
+        Histogram histo = CalcHistogram(num_bins, stats, data);
+        _histogram_cache[cache_id].SetHistogram(num_bins, histo);
 
         // Complete Histogram submessage
         auto histogram = histogram_message.add_histograms();
         histogram->set_channel(channel);
-        FillHistogramFromResults(histogram, stats, results);
+        FillHistogramFromResults(histogram, stats, histo);
     }
 
     auto t_end_region_histogram = std::chrono::high_resolution_clock::now();
