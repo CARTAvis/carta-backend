@@ -23,7 +23,7 @@
 // ************ Utilities *************
 bool FindExecutablePath(std::string& path);
 bool IsSubdirectory(const std::string& folder, const std::string& top_folder);
-bool CheckRootBaseFolders(std::string& root, std::string& base);
+bool CheckFolderPaths(std::string& top_level_string, std::string& starting_string);
 uint32_t GetMagicNumber(const std::string& filename);
 
 // split input string into a vector of strings by delimiter
@@ -45,7 +45,7 @@ void GetSpectralCoordPreferences(
 
 void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
 
-void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results);
+void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
     std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
