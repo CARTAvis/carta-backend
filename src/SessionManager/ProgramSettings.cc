@@ -35,7 +35,7 @@ void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::P
 ProgramSettings::ProgramSettings(int argc, char** argv) {
     vector<string> positional_arguments;
 
-    cxxopts::Options options("carta", "CARTA Backend");
+    cxxopts::Options options("carta", "Cube Analysis and Rendering Tool for Astronomy");
     // clang-format off
     // clang-format doesn't like this chain of calls
     options.add_options()("h,help", "Print usage.")
@@ -63,7 +63,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("root", "[Deprecated] Use 'top_level_folder' instead.", cxxopts::value<string>(), "<dir>");
     // clang-format on
 
-    options.positional_help("<file or folder to open>");
+    options.positional_help("<file or folder to open> (current directory is the default)");
     options.parse_positional("files");
     auto result = options.parse(argc, argv);
 
