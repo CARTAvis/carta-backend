@@ -98,7 +98,7 @@ endif ()
 install_uWebSockets()
 
 # Include cxxopts headers
-include_directories(${CMAKE_SOURCE_DIR}/cxxopts/include)
+include_directories(${CMAKE_SOURCE_DIR}/third-party/cxxopts/include)
 
 set(LINK_LIBS
         ${LINK_LIBS}
