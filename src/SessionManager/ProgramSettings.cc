@@ -52,7 +52,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("t,omp_threads", "Manually set OpenMP thread pool count", cxxopts::value<int>(), "<thread count>")
         ("top_level_folder", "Set top-level folder for data files. Files outside of this directory will not be accessible", cxxopts::value<string>(), "<path>")
         ("frontend_folder", "Set folder to serve frontend files from", cxxopts::value<string>(), "<path>")
-        ("exit_after", "Number of seconds to stay alive after last sessions exists", cxxopts::value<int>(), "<duration>")
+        ("exit_after", "Number of seconds to stay alive after last sessions exits", cxxopts::value<int>(), "<duration>")
         ("init_exit_after", "Number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<duration>")
         ("files", "Files to load", cxxopts::value<vector<string>>(positional_arguments));
 
