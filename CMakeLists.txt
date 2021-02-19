@@ -184,6 +184,9 @@ endif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 install(TARGETS carta_backend
     RUNTIME DESTINATION bin)
 
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/scripts/carta"
+    DESTINATION bin)
+
 # Tests
 option(test "Build tests." OFF)
 if (test)
