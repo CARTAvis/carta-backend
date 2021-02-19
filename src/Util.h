@@ -41,7 +41,7 @@ CARTA::FileType GetCartaFileType(const std::string& filename);
 
 void ConvertCoordinateToAxes(const std::string& coordinate, int& axis_index, int& stokes_index);
 
-void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results);
+void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist);
 
 void FillSpectralProfileDataMessage(CARTA::SpectralProfileData& profile_message, std::string& coordinate,
     std::vector<CARTA::StatsType>& required_stats, std::map<CARTA::StatsType, std::vector<double>>& spectral_data);
