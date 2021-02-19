@@ -6,7 +6,7 @@ include_directories(src)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/install)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/third-party/install)
 
 include(uWebSockets)
 
@@ -37,7 +37,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FIND_PACKAGE(HDF5)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Threads)
-FIND_PACKAGE(spdlog REQUIRED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 ADD_SUBDIRECTORY(carta-protobuf)
@@ -95,17 +94,15 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif ()
 
 # Include uWebSockets headers and build the uSockets lib
+include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
 install_uWebSockets()
-
-# Include cxxopts headers
-include_directories(${CMAKE_SOURCE_DIR}/cxxopts/include)
+add_subdirectory(third-party/spdlog)
 
 set(LINK_LIBS
         ${LINK_LIBS}
         carta-protobuf
         carta-scripting-grpc
         ${PROTOBUF_LIBRARY}
-        fmt
         uSockets
         uuid
         z
@@ -115,7 +112,6 @@ set(LINK_LIBS
         cfitsio
         pugixml
         curl
-        spdlog
         casa_casa
         casa_coordinates
         casa_tables

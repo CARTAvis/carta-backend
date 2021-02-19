@@ -10,8 +10,6 @@
 #include <chrono>
 #include <unordered_map>
 
-#include <fmt/format.h>
-
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> timer_entry;
 typedef std::chrono::duration<double, std::milli> timer_duration;
 class Timer {

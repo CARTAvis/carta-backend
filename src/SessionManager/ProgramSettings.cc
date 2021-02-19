@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include <cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 
 #include <fmt/format.h>
 

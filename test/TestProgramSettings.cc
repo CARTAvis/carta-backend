@@ -5,7 +5,7 @@
 */
 
 #include <gtest/gtest.h>
-#include <cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 
 #include "SessionManager/ProgramSettings.h"
 

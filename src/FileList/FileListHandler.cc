@@ -8,6 +8,8 @@
 
 #include <fstream>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <casacore/casa/OS/DirectoryIterator.h>
 #include <casacore/casa/OS/File.h>
 
