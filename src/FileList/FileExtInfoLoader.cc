@@ -8,8 +8,10 @@
 
 #include "FileExtInfoLoader.h"
 
-#include <fmt/format.h>
-#include <fmt/ostream.h> // not needed here but *must* include before miriad.h
+#include <spdlog/spdlog.h>
+
+#include <spdlog/fmt/fmt.h>
+#include <spdlog/fmt/ostr.h> // not needed here but *must* include before miriad.h
 
 #include <casacore/casa/OS/File.h>
 #include <casacore/casa/Quanta/MVAngle.h>

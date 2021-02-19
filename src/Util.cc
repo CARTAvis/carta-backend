@@ -10,8 +10,6 @@
 #include <fstream>
 #include <regex>
 
-#include <fmt/format.h>
-
 #include <casacore/casa/OS/File.h>
 
 #include "Logger/Logger.h"

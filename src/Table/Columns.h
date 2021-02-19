@@ -14,11 +14,12 @@
 #include <vector>
 
 #include <fitsio.h>
-#include <fmt/format.h>
 #include <pugixml.hpp>
 
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
+
+#include "Logger/Logger.h"
 
 namespace carta {
 

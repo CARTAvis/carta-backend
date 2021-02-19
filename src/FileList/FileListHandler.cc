@@ -11,6 +11,7 @@
 #include <casacore/casa/OS/DirectoryIterator.h>
 #include <casacore/casa/OS/File.h>
 
+#include "Logger/Logger.h"
 #include "FileInfoLoader.h"
 
 // Default constructor

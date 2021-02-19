@@ -6,7 +6,6 @@
 
 #include "Histogram.h"
 
-#include <fmt/format.h>
 #include <omp.h>
 #include <algorithm>
 #include <cmath>
