@@ -9,10 +9,10 @@
 
 #include <cstring>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <casacore/casa/HDF5/HDF5DataType.h>
 #include <casacore/casa/HDF5/HDF5Error.h>
-
-#include "Logger/Logger.h"
 
 casacore::Vector<casacore::String> Hdf5Attributes::ReadAttributes(hid_t group_hid) {
     // Reads attributes into FITS-format "name = value" strings

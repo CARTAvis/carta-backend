@@ -19,8 +19,6 @@
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 
-#include "Logger/Logger.h"
-
 namespace carta {
 
 typedef std::vector<int64_t> IndexList;

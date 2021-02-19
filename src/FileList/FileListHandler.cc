@@ -8,11 +8,12 @@
 
 #include <fstream>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <casacore/casa/OS/DirectoryIterator.h>
 #include <casacore/casa/OS/File.h>
 
 #include "FileInfoLoader.h"
-#include "Logger/Logger.h"
 
 // Default constructor
 FileListHandler::FileListHandler(const std::string& top_level_folder, const std::string& starting_folder)

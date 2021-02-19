@@ -10,10 +10,10 @@
 
 #include <iomanip>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <casacore/casa/Quanta/QMath.h>
 #include <casacore/coordinates/Coordinates/DirectionCoordinate.h>
-
-#include "Logger/Logger.h"
 
 using namespace carta;
 

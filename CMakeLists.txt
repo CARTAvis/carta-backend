@@ -94,13 +94,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif ()
 
 # Include uWebSockets headers and build the uSockets lib
+include_directories(${CMAKE_SOURCE_DIR}/third-party/include)
 install_uWebSockets()
-
-# Include cxxopts headers
-include_directories(${CMAKE_SOURCE_DIR}/third-party/cxxopts/include)
-
-# Include spdlog headers and build the lib
-include_directories(${CMAKE_SOURCE_DIR}/third-party/spdlog/include)
 add_subdirectory(third-party/spdlog)
 
 set(LINK_LIBS
