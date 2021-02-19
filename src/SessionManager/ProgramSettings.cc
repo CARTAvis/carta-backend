@@ -8,9 +8,8 @@
 
 #include <iostream>
 
+#include <spdlog/fmt/fmt.h>
 #include <cxxopts/cxxopts.hpp>
-
-#include <fmt/format.h>
 
 #include <images/Images/ImageOpener.h>
 
