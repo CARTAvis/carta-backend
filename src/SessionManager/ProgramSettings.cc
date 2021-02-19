@@ -56,7 +56,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
         ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
         ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
-        ("idle_timeout", "number of seconds to stay alive after receiving the last message from the frontend", cxxopts::value<int>(), "<sec>")
+        ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
         ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments));
 
     options.add_options("Deprecated and debug")
@@ -98,7 +98,9 @@ OpenMP threads is automatically set to the detected number of logical cores.
 Logs are written both to the terminal and to a log file, '.carta/log/carta.log' 
 in the user's home directory. Possible log levels are:{}
 
-Options are provided to shut the backend down automatically if it is idle.
+Options are provided to shut the backend down automatically if it is idle (if no 
+clients are connected), and to kill frontend sessions that are idle (no longer 
+sending messages to the backend).
 )",
         DEFAULT_SOCKET_PORT, log_levels);
 
