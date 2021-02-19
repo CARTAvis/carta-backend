@@ -54,9 +54,9 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
-        ("exit_after", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
-        ("init_exit_after", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
-        ("idle_session_timeout", "number of seconds to stay alive after receiving the last message from the frontend", cxxopts::value<int>(), "<sec>")
+        ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
+        ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
+        ("idle_timeout", "number of seconds to stay alive after receiving the last message from the frontend", cxxopts::value<int>(), "<sec>")
         ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments));
 
     options.add_options("Deprecated and debug")
@@ -129,10 +129,10 @@ Options are provided to shut the backend down automatically if it is idle.
     applyOptionalArgument(grpc_port, "grpc_port", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
-    applyOptionalArgument(wait_time, "exit_after", result);
-    applyOptionalArgument(init_wait_time, "init_exit_after", result);
+    applyOptionalArgument(wait_time, "exit_timeout", result);
+    applyOptionalArgument(init_wait_time, "initial_timeout", result);
 
-    applyOptionalArgument(idle_session_timeout, "idle_session_timeout", result);
+    applyOptionalArgument(idle_session_wait_time, "idle_timeout", result);
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
