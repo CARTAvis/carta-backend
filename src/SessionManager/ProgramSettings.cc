@@ -53,8 +53,9 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
         ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
         ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
-        ("exit_after", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
-        ("init_exit_after", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
+        ("exit_timeout", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
+        ("initial_timeout", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
+        ("idle_timeout", "number of seconds to keep idle sessions alive", cxxopts::value<int>(), "<sec>")
         ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments));
 
     options.add_options("Deprecated and debug")
@@ -96,7 +97,9 @@ OpenMP threads is automatically set to the detected number of logical cores.
 Logs are written both to the terminal and to a log file, '.carta/log/carta.log' 
 in the user's home directory. Possible log levels are:{}
 
-Options are provided to shut the backend down automatically if it is idle.
+Options are provided to shut the backend down automatically if it is idle (if no 
+clients are connected), and to kill frontend sessions that are idle (no longer 
+sending messages to the backend).
 )",
         DEFAULT_SOCKET_PORT, log_levels);
 
@@ -127,8 +130,10 @@ Options are provided to shut the backend down automatically if it is idle.
     applyOptionalArgument(grpc_port, "grpc_port", result);
 
     applyOptionalArgument(omp_thread_count, "omp_threads", result);
-    applyOptionalArgument(wait_time, "exit_after", result);
-    applyOptionalArgument(init_wait_time, "init_exit_after", result);
+    applyOptionalArgument(wait_time, "exit_timeout", result);
+    applyOptionalArgument(init_wait_time, "initial_timeout", result);
+
+    applyOptionalArgument(idle_session_wait_time, "idle_timeout", result);
 
     // base will be overridden by the positional argument if it exists and is a folder
     applyOptionalArgument(starting_folder, "base", result);
