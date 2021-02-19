@@ -10,6 +10,8 @@
 
 #include <cxxopts.hpp>
 
+#include <fmt/format.h>
+
 #include <images/Images/ImageOpener.h>
 
 #ifdef _BOOST_FILESYSTEM_
@@ -35,44 +37,76 @@ void applyOptionalArgument(T& val, const string& argument_name, const cxxopts::P
 ProgramSettings::ProgramSettings(int argc, char** argv) {
     vector<string> positional_arguments;
 
-    cxxopts::Options options("CARTA", "CARTA Backend");
+    cxxopts::Options options("carta", "Cube Analysis and Rendering Tool for Astronomy");
     // clang-format off
     // clang-format doesn't like this chain of calls
-    options.add_options()("h,help", "Print usage")
-        ("v,version", "Print version")
-        ("verbosity",
-         "Display verbose logging from level (0: off, 1: critical, 2: error, 3: warning, 4: info, 5: debug, 6: trace)",
+    options.add_options()
+        ("h,help", "print usage")
+        ("v,version", "print version")
+        ("verbosity", "display verbose logging from this level",
          cxxopts::value<int>()->default_value(to_string(verbosity)), "<level>")
-        ("no_log", "Do not output to a log file", cxxopts::value<bool>())
-        ("no_http", "Disable CARTA frontend HTTP server", cxxopts::value<bool>())
-        ("no_browser", "Prevent the frontend from automatically opening in the default browser on startup", cxxopts::value<bool>())
-        ("host", "Only listen on the specified interface (IP address or hostname)", cxxopts::value<string>()->default_value(host), "<interface>")
-        ("p,port", "Manually set port on which to host frontend files and accept WebSocket connections", cxxopts::value<int>(), "<port number>")
-        ("g,grpc_port", "Set grpc server port", cxxopts::value<int>(), "<port number>")
-        ("t,omp_threads", "Manually set OpenMP thread pool count", cxxopts::value<int>(), "<thread count>")
-        ("top_level_folder", "Set top-level folder for data files. Files outside of this directory will not be accessible", cxxopts::value<string>(), "<path>")
-        ("frontend_folder", "Set folder to serve frontend files from", cxxopts::value<string>(), "<path>")
-        ("exit_after", "Number of seconds to stay alive after last sessions exists", cxxopts::value<int>(), "<duration>")
-        ("init_exit_after", "Number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<duration>")
-        ("files", "Files to load", cxxopts::value<vector<string>>(positional_arguments));
+        ("no_log", "do not log output to a log file", cxxopts::value<bool>())
+        ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
+        ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
+        ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
+        ("p,port", fmt::format("manually set the HTTP and WebSocket port (default: {} or nearest available port)", DEFAULT_SOCKET_PORT), cxxopts::value<int>(), "<port>")
+        ("g,grpc_port", "set gRPC service port", cxxopts::value<int>(), "<port>")
+        ("t,omp_threads", "manually set OpenMP thread pool count", cxxopts::value<int>(), "<threads>")
+        ("top_level_folder", "set top-level folder for data files", cxxopts::value<string>(), "<dir>")
+        ("frontend_folder", "set folder from which frontend files are served", cxxopts::value<string>(), "<dir>")
+        ("exit_after", "number of seconds to stay alive after last session exits", cxxopts::value<int>(), "<sec>")
+        ("init_exit_after", "number of seconds to stay alive at start if no clients connect", cxxopts::value<int>(), "<sec>")
+        ("files", "files to load", cxxopts::value<vector<string>>(positional_arguments));
 
-    options.add_options("deprecated and debug")
-        ("debug_no_auth", "Accept all incoming WebSocket connections (insecure, use with caution!)", cxxopts::value<bool>())
-        ("threads", "[Deprecated] No longer supported", cxxopts::value<int>(), "<thread count>")
-        ("base", "[Deprecated] Set starting folder for data files", cxxopts::value<string>(), "<path>")
-        ("root", "[Deprecated] Use 'top_level_folder' instead", cxxopts::value<string>(), "<path>");
+    options.add_options("Deprecated and debug")
+        ("debug_no_auth", "accept all incoming WebSocket connections on the specified port (not secure; use with caution!)", cxxopts::value<bool>())
+        ("threads", "[deprecated] no longer supported", cxxopts::value<int>(), "<threads>")
+        ("base", "[deprecated] set starting folder for data files (use the positional parameter instead)", cxxopts::value<string>(), "<dir>")
+        ("root", "[deprecated] use 'top_level_folder' instead", cxxopts::value<string>(), "<dir>");
     // clang-format on
 
-    options.positional_help("<file(s) or folder to open>");
+    options.positional_help("<file or folder to open>");
     options.parse_positional("files");
     auto result = options.parse(argc, argv);
+
+    std::string log_levels(R"(
+ 0   off
+ 1   critical
+ 2   error
+ 3   warning
+ 4   info
+ 5   debug
+ 6   trace)");
+
+    std::string extra = fmt::format(R"(
+By default the CARTA backend uses the current directory as the starting data 
+folder, and uses the root of the filesystem (/) as the top-level data folder. If 
+a custom top-level folder is set, the backend will be restricted from accessing 
+files outside this directory.
+
+Frontend files are served from '../share/carta/frontend' (relative to the 
+location of the backend executable). By default the backend listens for HTTP and 
+WebSocket connections on all available interfaces, and automatically selects the 
+first available port starting from {}.  On startup the backend prints out a URL 
+which can be used to launch the frontend, and tries to open this URL in the 
+default browser.
+
+The gRPC service is disabled unless a gRPC port is set. By default the number of 
+OpenMP threads is automatically set to the detected number of logical cores.
+
+Logs are written both to the terminal and to a log file, '.carta/log/carta.log' 
+in the user's home directory. Possible log levels are:{}
+
+Options are provided to shut the backend down automatically if it is idle.
+)",
+        DEFAULT_SOCKET_PORT, log_levels);
 
     if (result.count("version")) {
         cout << VERSION_ID << endl;
         version = true;
         return;
     } else if (result.count("help")) {
-        cout << options.help() << endl;
+        cout << options.help() << extra;
         help = true;
         return;
     }
