@@ -6,7 +6,7 @@ include_directories(src)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/install)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/third-party/install)
 
 include(uWebSockets)
 
