@@ -7,6 +7,7 @@
 #ifndef CARTA_BACKEND_TIMER_TIMER_H_
 #define CARTA_BACKEND_TIMER_TIMER_H_
 
+#include <string>
 #include <chrono>
 #include <unordered_map>
 
