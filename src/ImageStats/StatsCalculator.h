@@ -21,7 +21,7 @@ using namespace carta;
 
 void CalcBasicStats(const std::vector<float>& data, BasicStats<float>& stats);
 
-void CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data, HistogramResults& results);
+carta::Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data);
 
 bool CalcStatsValues(std::map<CARTA::StatsType, std::vector<double>>& stats_values, const std::vector<CARTA::StatsType>& requested_stats,
     const casacore::ImageInterface<float>& image, bool per_channel = true);

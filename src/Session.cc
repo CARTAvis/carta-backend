@@ -43,15 +43,15 @@ int Session::_num_sessions = 0;
 int Session::_exit_after_num_seconds = 5;
 bool Session::_exit_when_all_sessions_closed = false;
 
-Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string root, std::string base,
-    FileListHandler* file_list_handler, int grpc_port)
+Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, std::string address, std::string top_level_folder,
+    std::string starting_folder, FileListHandler* file_list_handler, int grpc_port)
     : _socket(ws),
       _loop(loop),
       _id(id),
       _address(address),
-      _root_folder(root),
-      _base_folder(base),
-      _table_controller(std::make_unique<carta::TableController>(_root_folder, _base_folder)),
+      _top_level_folder(top_level_folder),
+      _starting_folder(starting_folder),
+      _table_controller(std::make_unique<carta::TableController>(_top_level_folder, _starting_folder)),
       _grpc_port(grpc_port),
       _loader(nullptr),
       _region_handler(nullptr),
@@ -63,6 +63,7 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
     _animation_object = nullptr;
     _connected = true;
     ++_num_sessions;
+    UpdateLastMessageTimestamp();
     spdlog::debug("{} ::Session ({})", fmt::ptr(this), _num_sessions);
 }
 
@@ -117,10 +118,10 @@ void Session::SetInitExitTimeout(int secs) {
     alarm(1);
 }
 
-void Session::DisconnectCalled() {
+void Session::WaitForTaskCancellation() {
     _connected = false;
     for (auto& frame : _frames) {
-        frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
     }
     _base_context.cancel_group_execution();
     _histogram_context.cancel_group_execution();
@@ -151,7 +152,7 @@ bool Session::FillExtendedFileInfo(std::map<std::string, CARTA::FileInfoExtended
 
     try {
         file_info.set_name(filename);
-        casacore::String full_name(GetResolvedFilename(_root_folder, folder, filename));
+        casacore::String full_name(GetResolvedFilename(_top_level_folder, folder, filename));
 
         if (full_name.empty()) {
             message = fmt::format("File {} does not exist.", filename);
@@ -478,14 +479,14 @@ void Session::DeleteFrame(int file_id) {
     std::unique_lock<std::mutex> lock(_frame_mutex);
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
-            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-            frame.second.reset();             // delete Frame
+            frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
+            frame.second.reset();                    // delete Frame
         }
         _frames.clear();
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
-        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
@@ -690,7 +691,7 @@ void Session::OnImportRegion(const CARTA::ImportRegion& message, uint32_t reques
         std::string region_file; // name or contents
         if (import_file) {
             // check that file can be opened
-            region_file = GetResolvedFilename(_root_folder, directory, filename);
+            region_file = GetResolvedFilename(_top_level_folder, directory, filename);
             casacore::File ccfile(region_file);
             if (!ccfile.exists() || !ccfile.isReadable()) {
                 import_ack.set_success(false);
@@ -745,10 +746,10 @@ void Session::OnExportRegion(const CARTA::ExportRegion& message, uint32_t reques
         std::string abs_filename;
         if (!directory.empty() && !filename.empty()) {
             // export file is on server, form path with filename
-            casacore::Path root_path(_root_folder);
-            root_path.append(directory);
-            root_path.append(filename);
-            abs_filename = root_path.absoluteName();
+            casacore::Path top_level_path(_top_level_folder);
+            top_level_path.append(directory);
+            top_level_path.append(filename);
+            abs_filename = top_level_path.absoluteName();
         }
 
         std::map<int, CARTA::RegionStyle> region_styles = {message.region_styles().begin(), message.region_styles().end()};
@@ -917,13 +918,15 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message,
 
 void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id) {
     bool success(true);
+    spdlog::info("Client {} [{}] Resumed.", GetId(), GetAddress());
+
     // Error message
     std::string err_message;
     std::string err_file_ids = "Problem loading files: ";
     std::string err_region_ids = "Problem loading regions: ";
 
     // Stop the streaming spectral profile, cube histogram and animation processes
-    DisconnectCalled();
+    WaitForTaskCancellation();
 
     // Clear the message queue
     _out_msgs.clear();
@@ -1109,7 +1112,7 @@ void Session::OnSaveFile(const CARTA::SaveFile& save_file, uint32_t request_id) 
     int file_id(save_file.file_id());
     if (_frames.count(file_id)) {
         CARTA::SaveFileAck save_file_ack;
-        _frames.at(file_id)->SaveFile(_root_folder, save_file, save_file_ack);
+        _frames.at(file_id)->SaveFile(_top_level_folder, save_file, save_file_ack);
 
         // Send response message
         SendEvent(CARTA::EventType::SAVE_FILE_ACK, request_id, save_file_ack);
@@ -1190,23 +1193,21 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 float progress = 0.50;
                 CARTA::RegionHistogramData half_progress;
                 CreateCubeHistogramMessage(half_progress, file_id, stokes, progress);
-                auto message_histogram = half_progress.add_histograms();
+                half_progress.add_histograms();
                 SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, half_progress);
 
                 // get histogram bins for each channel and accumulate bin counts in cube_bins
-                std::vector<int> cube_bins;
-                carta::HistogramResults chan_histogram; // histogram for each channel using cube stats
+                carta::Histogram chan_histogram; // histogram for each channel using cube stats
+                carta::Histogram cube_histogram;
                 for (size_t chan = 0; chan < num_channels; ++chan) {
                     if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, chan, stokes, num_bins, cube_stats, chan_histogram)) {
                         return calculated; // channel histogram failed
                     }
 
-                    // add channel bins to cube bins
                     if (chan == 0) {
-                        cube_bins = {chan_histogram.histogram_bins.begin(), chan_histogram.histogram_bins.end()};
-                    } else { // add chan histogram bins to cube histogram bins
-                        std::transform(chan_histogram.histogram_bins.begin(), chan_histogram.histogram_bins.end(), cube_bins.begin(),
-                            cube_bins.begin(), std::plus<int>());
+                        cube_histogram = std::move(chan_histogram);
+                    } else {
+                        cube_histogram.Add(chan_histogram);
                     }
 
                     // check for cancel
@@ -1224,12 +1225,13 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         CreateCubeHistogramMessage(progress_msg, file_id, stokes, progress);
                         auto message_histogram = progress_msg.add_histograms();
                         message_histogram->set_channel(ALL_CHANNELS);
-                        message_histogram->set_num_bins(chan_histogram.num_bins);
-                        message_histogram->set_bin_width(chan_histogram.bin_width);
-                        message_histogram->set_first_bin_center(chan_histogram.bin_center);
+                        message_histogram->set_num_bins(cube_histogram.GetNbins());
+                        message_histogram->set_bin_width(cube_histogram.GetBinWidth());
+                        message_histogram->set_first_bin_center(cube_histogram.GetBinCenter());
                         message_histogram->set_mean(cube_stats.mean);
                         message_histogram->set_std_dev(cube_stats.stdDev);
-                        *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
+                        auto& bins = cube_histogram.GetHistogramBins();
+                        *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
                         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                         t_start = t_end;
                     }
@@ -1245,20 +1247,16 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_histogram_message.clear_histograms();
                     auto message_histogram = cube_histogram_message.add_histograms();
                     message_histogram->set_channel(ALL_CHANNELS);
-                    message_histogram->set_num_bins(chan_histogram.num_bins);
-                    message_histogram->set_bin_width(chan_histogram.bin_width);
-                    message_histogram->set_first_bin_center(chan_histogram.bin_center);
+                    message_histogram->set_num_bins(cube_histogram.GetNbins());
+                    message_histogram->set_bin_width(cube_histogram.GetBinWidth());
+                    message_histogram->set_first_bin_center(cube_histogram.GetBinCenter());
                     message_histogram->set_mean(cube_stats.mean);
                     message_histogram->set_std_dev(cube_stats.stdDev);
-                    *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
+                    auto& bins = cube_histogram.GetHistogramBins();
+                    *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
 
                     // cache cube histogram
-                    carta::HistogramResults cube_results;
-                    cube_results.num_bins = chan_histogram.num_bins;
-                    cube_results.bin_width = chan_histogram.bin_width;
-                    cube_results.bin_center = chan_histogram.bin_center;
-                    cube_results.histogram_bins = {cube_bins.begin(), cube_bins.end()};
-                    _frames.at(file_id)->CacheCubeHistogram(stokes, cube_results);
+                    _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
 
                     auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
                     auto dt_cube_histogram =
@@ -1940,4 +1938,12 @@ void Session::StopCatalogList() {
     if (_table_controller) {
         _table_controller->StopGettingFileList();
     }
+}
+
+void Session::UpdateLastMessageTimestamp() {
+    _last_message_timestamp = std::chrono::high_resolution_clock::now();
+}
+
+std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp() {
+    return _last_message_timestamp;
 }

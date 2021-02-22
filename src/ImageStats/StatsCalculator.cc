@@ -20,17 +20,12 @@ void CalcBasicStats(const std::vector<float>& data, BasicStats<float>& stats) {
     stats = mm.GetStats();
 }
 
-void CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data, HistogramResults& results) {
-    // Calculate histogram for data using num_bins; return histogram results
+carta::Histogram CalcHistogram(int num_bins, const BasicStats<float>& stats, const std::vector<float>& data) {
     if ((stats.min_val == std::numeric_limits<float>::max()) || (stats.max_val == std::numeric_limits<float>::min()) || data.empty()) {
         // empty / NaN region
-        results.bin_width = 0;
-        results.bin_center = 0;
-        results.histogram_bins.resize(num_bins, 0);
+        return carta::Histogram(1, 0, 0, {});
     } else {
-        Histogram hist(num_bins, stats.min_val, stats.max_val, data);
-        hist.setup_bins();
-        results = hist.GetHistogram();
+        return carta::Histogram(num_bins, stats.min_val, stats.max_val, data);
     }
 }
 

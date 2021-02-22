@@ -101,7 +101,7 @@ public:
 
     // Communication
     bool IsConnected();
-    void DisconnectCalled();
+    void WaitForTaskCancellation();
     void IncreaseZProfileCount();
     void DecreaseZProfileCount();
 
