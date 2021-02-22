@@ -4,25 +4,16 @@
    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <climits>
-#include <iostream>
 #include <thread>
 #include <tuple>
 #include <vector>
 
-#include <App.h>
 #include <curl/curl.h>
 #include <signal.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
+#include <uWebSockets/App.h>
 #include <uuid/uuid.h>
-
-#ifdef __APPLE__
-#include <mach-o/dyld.h>
-#endif
-
-#include <casacore/casa/Inputs/Input.h>
-#include <casacore/casa/OS/HostInfo.h>
 
 #include "EventHeader.h"
 #include "FileList/FileListHandler.h"
@@ -31,6 +22,7 @@
 #include "Logger/Logger.h"
 #include "OnMessageTask.h"
 #include "Session.h"
+#include "SessionManager/ProgramSettings.h"
 #include "SimpleFrontendServer/SimpleFrontendServer.h"
 #include "Threading.h"
 #include "Util.h"
@@ -47,12 +39,9 @@ static uint32_t session_number;
 static std::unique_ptr<CartaGrpcService> carta_grpc_service;
 static std::unique_ptr<grpc::Server> carta_grpc_server;
 
-// command-line arguments
-static string root_folder("/"), base_folder(".");
-// token to validate incoming WS connection header against
 static string auth_token = "";
-static int grpc_port(-1);
 
+carta::ProgramSettings settings;
 // Sessions map
 std::unordered_map<uint32_t, Session*> sessions;
 
@@ -61,6 +50,26 @@ struct PerSocketData {
     uint32_t session_id;
     string address;
 };
+
+void DeleteSession(int session_id) {
+    Session* session = sessions[session_id];
+    if (session) {
+        spdlog::info(
+            "Client {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
+        session->WaitForTaskCancellation();
+        if (carta_grpc_service) {
+            carta_grpc_service->RemoveSession(session);
+        }
+        if (!session->DecreaseRefCount()) {
+            delete session;
+            sessions.erase(session_id);
+        } else {
+            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->DecreaseRefCount());
+        }
+    } else {
+        spdlog::warn("Could not delete session {}: not found!", session_id);
+    }
+}
 
 void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context) {
     string address;
@@ -113,14 +122,21 @@ void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_r
 
 // Called on connection. Creates session objects and assigns UUID to it
 void OnConnect(uWS::WebSocket<false, true>* ws) {
-    uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
-    string address = static_cast<PerSocketData*>(ws->getUserData())->address;
+    auto socket_data = static_cast<PerSocketData*>(ws->getUserData());
+    if (!socket_data) {
+        spdlog::error("Error handling WebSocket connection: Socket data does not exist");
+        return;
+    }
+
+    uint32_t session_id = socket_data->session_id;
+    string address = socket_data->address;
 
     // get the uWebsockets loop
     auto* loop = uWS::Loop::get();
 
     // create a Session
-    sessions[session_id] = new Session(ws, loop, session_id, address, root_folder, base_folder, file_list_handler, grpc_port);
+    sessions[session_id] = new Session(
+        ws, loop, session_id, address, settings.top_level_folder, settings.starting_folder, file_list_handler, settings.grpc_port);
 
     if (carta_grpc_service) {
         carta_grpc_service->AddSession(sessions[session_id]);
@@ -128,7 +144,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
 
     sessions[session_id]->IncreaseRefCount();
 
-    spdlog::info("Client {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
+    spdlog::info("Session {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -140,25 +156,9 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
 
     // Get the Session object
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
-    Session* session = sessions[session_id];
 
-    if (session) {
-        auto uuid = session->GetId();
-        auto address = session->GetAddress();
-        session->DisconnectCalled();
-        spdlog::info("Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
-        if (carta_grpc_service) {
-            carta_grpc_service->RemoveSession(session);
-        }
-        if (!session->DecreaseRefCount()) {
-            delete session;
-            sessions.erase(session_id);
-        } else {
-            spdlog::warn("Session reference count ({}) is not 0 while on disconnection!", session->DecreaseRefCount());
-        }
-    } else {
-        spdlog::warn("OnDisconnect called with no Session object!");
-    }
+    // Delete the Session
+    DeleteSession(session_id);
 
     // Close the websockets
     ws->close();
@@ -175,6 +175,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
 
     if (op_code == uWS::OpCode::BINARY) {
         if (sv_message.length() >= sizeof(carta::EventHeader)) {
+            session->UpdateLastMessageTimestamp();
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
             const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
             int event_length = sv_message.length() - sizeof(carta::EventHeader);
@@ -483,7 +484,15 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (sv_message == "PING") {
-            ws->send("PONG", uWS::OpCode::TEXT);
+            auto t_session = session->GetLastMessageTimestamp();
+            auto t_now = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
+            if ((settings.idle_session_wait_time > 0) && (dt.count() >= settings.idle_session_wait_time)) {
+                spdlog::warn("Client {} has been idle for {} seconds. Disconnecting..", session->GetId(), dt.count());
+                ws->close();
+            } else {
+                ws->send("PONG", uWS::OpCode::TEXT);
+            }
         }
     }
 }
@@ -534,7 +543,7 @@ void ExitBackend(int s) {
 }
 
 // Entry point. Parses command line arguments and starts server listening
-int main(int argc, const char* argv[]) {
+int main(int argc, char* argv[]) {
     try {
         // set up interrupt signal handler
         struct sigaction sig_handler;
@@ -543,62 +552,20 @@ int main(int argc, const char* argv[]) {
         sig_handler.sa_flags = 0;
         sigaction(SIGINT, &sig_handler, nullptr);
 
-        // define and get input arguments
-        int port(-1);
-        int omp_thread_count = OMP_THREAD_COUNT;
-        int thread_count = THREAD_COUNT;
-        string frontend_folder;
-        string host;
-        bool no_http = false;
-        bool debug_no_auth = false;
-        bool no_browser = false;
-        bool no_log = false;
-        int verbosity = 4;
+        settings = ProgramSettings(argc, argv);
 
-        { // get values then let Input go out of scope
-            casacore::Input inp;
-            inp.create("verbosity", to_string(verbosity),
-                "display verbose logging from level (0: off, 1: critical, 2: error, 3: warning, 4: info, 5: debug, 6: trace)", "Int");
-            inp.create("no_log", "False", "Do not output to a log file", "Bool");
-            inp.create("no_http", "False", "disable CARTA frontend HTTP server", "Bool");
-            inp.create("debug_no_auth", "False", "accept all incoming WebSocket connections (insecure, use with caution!)", "Bool");
-            inp.create("no_browser", "False", "prevent the frontend from automatically opening in the default browser on startup", "Bool");
-            inp.create("host", host, "only listen on the specified interface (IP address or hostname)", "String");
-            inp.create("port", to_string(port), "set port on which to host frontend files and accept WebSocket connections", "Int");
-            inp.create("grpc_port", to_string(grpc_port), "set grpc server port", "Int");
-            inp.create("threads", to_string(thread_count), "set thread count for handling incoming messages", "Int");
-            inp.create("omp_threads", to_string(omp_thread_count), "set OpenMP thread pool count. To handle automatically, use -1", "Int");
-            inp.create("base", base_folder, "set folder for data files", "String");
-            inp.create("root", root_folder, "set top-level folder for data files", "String");
-            inp.create("frontend_folder", frontend_folder, "set folder to serve frontend files from", "String");
-            inp.create("exit_after", "", "number of seconds to stay alive after last sessions exists", "Int");
-            inp.create("init_exit_after", "", "number of seconds to stay alive at start if no clients connect", "Int");
-            inp.readArguments(argc, argv);
+        if (settings.help || settings.version) {
+            exit(0);
+        }
 
-            verbosity = inp.getInt("verbosity");
-            no_log = inp.getBool("no_log");
-            no_http = inp.getBool("no_http");
-            debug_no_auth = inp.getBool("debug_no_auth");
-            no_browser = inp.getBool("no_browser");
-            port = inp.getInt("port");
-            host = inp.getString("host");
-            grpc_port = inp.getInt("grpc_port");
-            omp_thread_count = inp.getInt("omp_threads");
-            thread_count = inp.getInt("threads");
-            base_folder = inp.getString("base");
-            root_folder = inp.getString("root");
-            frontend_folder = inp.getString("frontend_folder");
+        InitLogger(settings.no_log, settings.verbosity);
 
-            if (!inp.getString("exit_after").empty()) {
-                int wait_time = inp.getInt("exit_after");
-                Session::SetExitTimeout(wait_time);
-            }
-            if (!inp.getString("init_exit_after").empty()) {
-                int init_wait_time = inp.getInt("init_exit_after");
-                Session::SetInitExitTimeout(init_wait_time);
-            }
+        if (settings.wait_time >= 0) {
+            Session::SetExitTimeout(settings.wait_time);
+        }
 
-            InitLogger(no_log, verbosity);
+        if (settings.init_wait_time >= 0) {
+            Session::SetInitExitTimeout(settings.init_wait_time);
         }
 
         std::string executable_path;
@@ -611,11 +578,11 @@ int main(int argc, const char* argv[]) {
 
         spdlog::info("{}: Version {}", executable_path, VERSION_ID);
 
-        if (!CheckRootBaseFolders(root_folder, base_folder)) {
+        if (!CheckFolderPaths(settings.top_level_folder, settings.starting_folder)) {
             return 1;
         }
 
-        if (!debug_no_auth) {
+        if (!settings.debug_no_auth) {
             auto env_entry = getenv("CARTA_AUTH_TOKEN");
             if (env_entry) {
                 auth_token = env_entry;
@@ -628,15 +595,15 @@ int main(int argc, const char* argv[]) {
             }
         }
 
-        tbb::task_scheduler_init task_scheduler(thread_count);
-        carta::ThreadManager::SetThreadLimit(omp_thread_count);
+        tbb::task_scheduler_init task_scheduler(TBB_TASK_THREAD_COUNT);
+        carta::ThreadManager::SetThreadLimit(settings.omp_thread_count);
 
         // One FileListHandler works for all sessions.
-        file_list_handler = new FileListHandler(root_folder, base_folder);
+        file_list_handler = new FileListHandler(settings.top_level_folder, settings.starting_folder);
 
         // Start grpc service for scripting client
-        if (grpc_port >= 0) {
-            int grpc_status = StartGrpcService(grpc_port);
+        if (settings.grpc_port >= 0) {
+            int grpc_status = StartGrpcService(settings.grpc_port);
             if (grpc_status) {
                 return 1;
             }
@@ -648,11 +615,11 @@ int main(int argc, const char* argv[]) {
         session_number = 0;
         auto app = uWS::App();
 
-        if (!no_http) {
+        if (!settings.no_http) {
             fs::path frontend_path;
 
-            if (!frontend_folder.empty()) {
-                frontend_path = frontend_folder;
+            if (!settings.frontend_folder.empty()) {
+                frontend_path = settings.frontend_folder;
             } else if (have_executable_path) {
                 fs::path executable_parent = fs::path(executable_path).parent_path();
                 frontend_path = executable_parent / "../share/carta/frontend";
@@ -676,49 +643,49 @@ int main(int argc, const char* argv[]) {
             }
         }
 
-        host = host.empty() ? "0.0.0.0" : host;
-        port = (port < 0) ? DEFAULT_SOCKET_PORT : port;
         bool port_ok(false);
 
-        if (port == DEFAULT_SOCKET_PORT) {
+        if (settings.port < 0) {
+            settings.port = DEFAULT_SOCKET_PORT;
             int num_listen_retries(0);
             while (!port_ok) {
                 if (num_listen_retries > MAX_SOCKET_PORT_TRIALS) {
-                    spdlog::error("Unable to listen on the port range {}-{}!", DEFAULT_SOCKET_PORT, port - 1);
+                    spdlog::error("Unable to listen on the port range {}-{}!", DEFAULT_SOCKET_PORT, settings.port - 1);
                     break;
                 }
-                app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
+                app.listen(settings.host, settings.port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
                     if (token) {
                         port_ok = true;
                     } else {
-                        spdlog::warn("Port {} is already in use. Trying next port.", port);
-                        ++port;
+                        spdlog::warn("Port {} is already in use. Trying next port.", settings.port);
+                        ++settings.port;
                         ++num_listen_retries;
                     }
                 });
             }
         } else {
-            // If the user specifies a port, we should not try other ports
-            app.listen(host, port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
+            // If the user specifies a valid port, we should not try other ports
+            app.listen(settings.host, settings.port, LIBUS_LISTEN_EXCLUSIVE_PORT, [&](auto* token) {
                 if (token) {
                     port_ok = true;
                 } else {
-                    spdlog::error("Could not listen on port {}!\n", port);
+                    spdlog::error("Could not listen on port {}!\n", settings.port);
                 }
             });
         }
 
         if (port_ok) {
-            string start_info = fmt::format("Listening on port {} with root folder {}, base folder {}", port, root_folder, base_folder);
-            if (omp_thread_count > 0) {
-                start_info += fmt::format(", and {} OpenMP worker threads", omp_thread_count);
+            string start_info = fmt::format("Listening on port {} with top level folder {}, starting folder {}", settings.port,
+                settings.top_level_folder, settings.starting_folder);
+            if (settings.omp_thread_count > 0) {
+                start_info += fmt::format(", and {} OpenMP worker threads", settings.omp_thread_count);
             } else {
                 start_info += fmt::format(". The number of OpenMP worker threads will be handled automatically.");
             }
             spdlog::info(start_info);
             if (http_server && http_server->CanServeFrontend()) {
-                string default_host_string = host;
-                if (host.empty() || host == "0.0.0.0") {
+                string default_host_string = settings.host;
+                if (default_host_string.empty() || default_host_string == "0.0.0.0") {
                     auto server_ip_entry = getenv("SERVER_IP");
                     if (server_ip_entry) {
                         default_host_string = server_ip_entry;
@@ -726,17 +693,27 @@ int main(int argc, const char* argv[]) {
                         default_host_string = "localhost";
                     }
                 }
-                string frontend_url = fmt::format("http://{}:{}", default_host_string, port);
+                string frontend_url = fmt::format("http://{}:{}", default_host_string, settings.port);
+                string query_url;
                 if (!auth_token.empty()) {
-                    frontend_url += fmt::format("/?token={}", auth_token);
+                    query_url += fmt::format("/?token={}", auth_token);
                 }
-                if (!no_browser) {
+                if (!settings.files.empty()) {
+                    // TODO: Handle multiple files once the frontend supports this
+                    query_url += query_url.empty() ? "/?" : "&";
+                    query_url += fmt::format("file={}", curl_easy_escape(nullptr, settings.files[0].c_str(), 0));
+                }
+
+                if (!query_url.empty()) {
+                    frontend_url += query_url;
+                }
+                if (!settings.no_browser) {
 #if defined(__APPLE__)
                     string open_command = "open";
 #else
                     string open_command = "xdg-open";
 #endif
-                    auto open_result = system(fmt::format("{} {}", open_command, frontend_url).c_str());
+                    auto open_result = system(fmt::format("{} \"{}\"", open_command, frontend_url).c_str());
                     if (open_result) {
                         spdlog::warn("Failed to open the default browser automatically.");
                     }

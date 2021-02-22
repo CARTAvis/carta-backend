@@ -118,7 +118,7 @@ bool Region::IsConnected() {
     return _connected;
 }
 
-void Region::DisconnectCalled() { // to interrupt the running jobs in the Region
+void Region::WaitForTaskCancellation() { // to interrupt the running jobs in the Region
     _connected = false;
     while (_z_profile_count > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));

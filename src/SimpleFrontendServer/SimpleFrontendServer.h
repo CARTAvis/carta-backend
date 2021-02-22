@@ -9,7 +9,7 @@
 
 #include <string>
 
-#include <App.h>
+#include <uWebSockets/App.h>
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
