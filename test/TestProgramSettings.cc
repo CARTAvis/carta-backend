@@ -5,7 +5,7 @@
 */
 
 #include <gtest/gtest.h>
-#include <cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 
 #include "SessionManager/ProgramSettings.h"
 
@@ -70,6 +70,7 @@ TEST_F(ProgramSettingsTest, DefaultConstructor) {
     EXPECT_EQ(settings.verbosity, 4);
     EXPECT_EQ(settings.wait_time, -1);
     EXPECT_EQ(settings.init_wait_time, -1);
+    EXPECT_EQ(settings.idle_session_timeout, -1);
 }
 
 TEST_F(ProgramSettingsTest, EmptyArugments) {

@@ -13,7 +13,7 @@
 #include "Threading.h"
 
 #ifdef COMPILE_PERFORMANCE_TESTS
-#include <fmt/format.h>
+#include <spdlog/fmt/fmt.h>
 #include "Timer/Timer.h"
 #endif
 
