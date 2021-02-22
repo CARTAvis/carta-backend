@@ -9,6 +9,7 @@
 #ifndef CARTA_BACKEND__FILELISTHANDLER_H_
 #define CARTA_BACKEND__FILELISTHANDLER_H_
 
+#include <functional>
 #include <mutex>
 #include <unordered_map>
 
