@@ -18,7 +18,6 @@ The backend build depends on the following libraries:
 * [casacore and casa imageanalysis](https://github.com/CARTAvis/carta-casacore); follow the build instructions.
 * [zfp](https://github.com/LLNL/zfp) for data compression. The same library is used on the client, after being compiled to WebAssembly. Build and install from git repo. For best performance, build with AVX extensions.
 * [Zstd](https://github.com/facebook/zstd) for data compression. Debian package `libzstd-dev`.
-* [fmt](https://github.com/fmtlib/fmt) for python-style (and safe printf-style) string formatting and printing. Debian package `libfmt-dev`. On Ubuntu 16.04, build from source.
 * [protobuf](https://developers.google.com/protocol-buffers) for client-side communication using specific message formats. Debian package `libprotobuf-dev` (> 3.0 required. Can use [PPA](https://launchpad.net/~maarten-fonville/+archive/ubuntu/protobuf) for earlier versions of Ubuntu). The Debian package `protobuf-compiler` may also be required.
 * [HDF5](https://support.hdfgroup.org/HDF5/) C++ library for HDF5 support. Debian packages `libhdf5-dev` and `libhdf5-cpp-100`. By default, the serial version of the HDF5 library is targeted.
 * [tbb](https://www.threadingbuildingblocks.org/download) Threading Building Blocks for task parallelization. Debian package `libtbb-dev`.
@@ -26,7 +25,6 @@ The backend build depends on the following libraries:
 * [libuuid](https://linux.die.net/man/3/libuuid) for generating auth tokens (if not using external authentication). Debian package `uuid-dev`.
 * [gRPC](https://grpc.io/) for the scripting interface. Debian packages: `libprotobuf-dev protobuf-compiler libgrpc++-dev libgrpc-dev protobuf-compiler-grpc googletest`. On Ubuntu 16.04 or 18.04, use [a PPA](https://launchpad.net/~webispy/+archive/ubuntu/grpc).
 * [pugixml](https://pugixml.org/) for parsing catalog data. Debian package: `libpugixml-dev`. On Ubuntu 16.04, build from source. On newer versions you can also build from source to save memory: use the `PUGIXML_COMPACT` and `PUGIXML_NO_XPATH` flags.
-* [spdlog](https://github.com/gabime/spdlog) for logging. Debian package on Ubuntu 20.04 `libspdlog-dev`. On Ubuntu 18.04 it requires a version newer than that supplied by the package manager, so build from source. When building spdlog from source, it requires fmt 5.3.0. That is newer than the version of fmt supplied by the 18.04 package manager, so need to build fmt from source too. 
 
 ### Build
 

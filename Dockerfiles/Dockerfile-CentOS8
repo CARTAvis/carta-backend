@@ -7,9 +7,9 @@ RUN \
   dnf -y install 'dnf-command(config-manager)' && \
   dnf -y config-manager --set-enabled powertools epel-testing elrepo-testing && \
   dnf -y update && \
-  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel curl-devel flex fmt-devel gcc \
+  dnf -y install autoconf automake bison blas-devel bzip2 cfitsio-devel curl-devel flex gcc \
          gcc-c++ git git-lfs gsl-devel hdf5-devel lapack-devel libtool libxml2-devel libzstd-devel make \
-         openssl-devel pugixml-devel spdlog-devel subversion tbb-devel wcslib-devel wcslib-devel wget zlib-devel \
+         openssl-devel pugixml-devel subversion tbb-devel wcslib-devel wcslib-devel wget zlib-devel \
          libuuid-devel
 
 # gRPC will need cmake >3.13 but CentOS8 only provides cmake 3.11.
