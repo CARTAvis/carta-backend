@@ -7,8 +7,8 @@
 #ifndef CARTA_BACKEND_TIMER_TIMER_H_
 #define CARTA_BACKEND_TIMER_TIMER_H_
 
-#include <string>
 #include <chrono>
+#include <string>
 #include <unordered_map>
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> timer_entry;
