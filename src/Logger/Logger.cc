@@ -117,21 +117,21 @@ std::unordered_map<CET, std::string> event_type_map = {{CET::EMPTY_EVENT, "EMPTY
     {CET::SPECTRAL_LINE_RESPONSE, "SPECTRAL_LINE_RESPONSE"}};
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (log_icd_messages) {
-        if (event_type_map.count(event_type)) {
+    if (event_type_map.count(event_type)) {
+        if (log_icd_messages) {
             spdlog::trace("[<==] {}", event_type_map[event_type]);
-        } else {
-            spdlog::error("Unknown event type: {}!", event_type);
         }
+    } else {
+        spdlog::error("Unknown event type: {}!", event_type);
     }
 }
 
 void LogSentEventType(const CARTA::EventType& event_type) {
-    if (log_icd_messages) {
-        if (event_type_map.count(event_type)) {
+    if (event_type_map.count(event_type)) {
+        if (log_icd_messages) {
             spdlog::trace("[==>] {}", event_type_map[event_type]);
-        } else {
-            spdlog::error("Unknown event type: {}!", event_type);
         }
+    } else {
+        spdlog::error("Unknown event type: {}!", event_type);
     }
 }
