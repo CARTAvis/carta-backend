@@ -10,6 +10,8 @@
 
 #include <chrono>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <carta-protobuf/defs.pb.h>
 #include <carta-protobuf/enums.pb.h>
 #include <carta-protobuf/scripting.pb.h>

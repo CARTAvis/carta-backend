@@ -207,7 +207,7 @@ bool Frame::ChannelsChanged(int channel, int stokes) {
     return (channel != _channel_index || stokes != _stokes_index);
 }
 
-void Frame::DisconnectCalled() {
+void Frame::WaitForTaskCancellation() {
     _connected = false;      // file closed
     if (_moment_generator) { // stop moment calculation
         _moment_generator->StopCalculation();
@@ -585,10 +585,10 @@ bool Frame::FillRegionHistogramData(int region_id, CARTA::RegionHistogramData& h
             // calculate image histogram
             BasicStats<float> stats;
             if (GetBasicStats(channel, stokes, stats)) {
-                HistogramResults results;
-                histogram_filled = CalculateHistogram(region_id, channel, stokes, num_bins, stats, results);
+                carta::Histogram hist;
+                histogram_filled = CalculateHistogram(region_id, channel, stokes, num_bins, stats, hist);
                 if (histogram_filled) {
-                    FillHistogramFromResults(histogram, stats, results);
+                    FillHistogramFromResults(histogram, stats, hist);
                 }
             }
 
@@ -651,18 +651,18 @@ bool Frame::FillHistogramFromFrameCache(int channel, int stokes, int num_bins, C
     }
 
     bool have_histogram(false);
-    HistogramResults histogram_results;
+    carta::Histogram hist;
     if (channel == CURRENT_CHANNEL) {
-        have_histogram = GetCachedImageHistogram(channel, stokes, num_bins, histogram_results);
+        have_histogram = GetCachedImageHistogram(channel, stokes, num_bins, hist);
     } else if (channel == ALL_CHANNELS) {
-        have_histogram = GetCachedCubeHistogram(stokes, num_bins, histogram_results);
+        have_histogram = GetCachedCubeHistogram(stokes, num_bins, hist);
     }
 
     if (have_histogram) {
         // add stats to message
         BasicStats<float> stats;
         if (GetBasicStats(channel, stokes, stats)) {
-            FillHistogramFromResults(histogram, stats, histogram_results);
+            FillHistogramFromResults(histogram, stats, hist);
         }
     }
     return have_histogram;
@@ -706,7 +706,7 @@ bool Frame::GetBasicStats(int channel, int stokes, carta::BasicStats<float>& sta
     return false;
 }
 
-bool Frame::GetCachedImageHistogram(int channel, int stokes, int num_bins, HistogramResults& histogram_results) {
+bool Frame::GetCachedImageHistogram(int channel, int stokes, int num_bins, carta::Histogram& hist) {
     // Get image histogram results from cache
     int cache_key(CacheKey(channel, stokes));
     if (_image_histograms.count(cache_key)) {
@@ -714,8 +714,8 @@ bool Frame::GetCachedImageHistogram(int channel, int stokes, int num_bins, Histo
         auto results_for_key = _image_histograms[cache_key];
 
         for (auto& result : results_for_key) {
-            if (result.num_bins == num_bins) {
-                histogram_results = result;
+            if (result.GetNbins() == num_bins) {
+                hist = result;
                 return true;
             }
         }
@@ -723,13 +723,13 @@ bool Frame::GetCachedImageHistogram(int channel, int stokes, int num_bins, Histo
     return false;
 }
 
-bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, HistogramResults& histogram_results) {
+bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, Histogram& hist) {
     // Get cube histogram results from cache
     if (_cube_histograms.count(stokes)) {
         for (auto& result : _cube_histograms[stokes]) {
             // get from cache if correct num_bins
-            if (result.num_bins == num_bins) {
-                histogram_results = result;
+            if (result.GetNbins() == num_bins) {
+                hist = result;
                 return true;
             }
         }
@@ -737,7 +737,7 @@ bool Frame::GetCachedCubeHistogram(int stokes, int num_bins, HistogramResults& h
     return false;
 }
 
-bool Frame::CalculateHistogram(int region_id, int channel, int stokes, int num_bins, BasicStats<float>& stats, HistogramResults& results) {
+bool Frame::CalculateHistogram(int region_id, int channel, int stokes, int num_bins, BasicStats<float>& stats, Histogram& hist) {
     // Calculate histogram for given parameters, return results
     if ((region_id > IMAGE_REGION_ID) || (region_id < CUBE_REGION_ID)) { // does not handle other regions
         return false;
@@ -758,18 +758,18 @@ bool Frame::CalculateHistogram(int region_id, int channel, int stokes, int num_b
         }
         bool write_lock(false);
         tbb::queuing_rw_mutex::scoped_lock cache_lock(_cache_mutex, write_lock);
-        CalcHistogram(num_bins, stats, _image_cache, results);
+        hist = CalcHistogram(num_bins, stats, _image_cache);
     } else {
         // calculate histogram for chan/stokes data
         std::vector<float> data;
         GetChannelMatrix(data, channel, stokes);
-        CalcHistogram(num_bins, stats, data, results);
+        hist = CalcHistogram(num_bins, stats, data);
     }
 
     // cache image histogram
     if ((region_id == IMAGE_REGION_ID) || (NumChannels() == 1)) {
         int cache_key(CacheKey(channel, stokes));
-        _image_histograms[cache_key].push_back(results);
+        _image_histograms[cache_key].push_back(hist);
     }
 
     return true;
@@ -787,8 +787,8 @@ void Frame::CacheCubeStats(int stokes, carta::BasicStats<float>& stats) {
     _cube_basic_stats[stokes] = stats;
 }
 
-void Frame::CacheCubeHistogram(int stokes, carta::HistogramResults& results) {
-    _cube_histograms[stokes].push_back(results);
+void Frame::CacheCubeHistogram(int stokes, carta::Histogram& hist) {
+    _cube_histograms[stokes].push_back(hist);
 }
 
 // ****************************************************

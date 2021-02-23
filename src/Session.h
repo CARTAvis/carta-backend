@@ -19,10 +19,10 @@
 #include <utility>
 #include <vector>
 
-#include <App.h>
 #include <tbb/concurrent_queue.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/task.h>
+#include <uWebSockets/App.h>
 
 #include <casacore/casa/aips.h>
 
@@ -157,7 +157,7 @@ public:
     int DecreaseRefCount() {
         return --_ref_count;
     }
-    void DisconnectCalled();
+    void WaitForTaskCancellation();
     void ConnectCalled();
     static int NumberOfSessions() {
         return _num_sessions;
@@ -199,6 +199,9 @@ public:
     void SendScriptingRequest(uint32_t scripting_request_id, std::string target, std::string action, std::string parameters, bool async);
     void OnScriptingResponse(const CARTA::ScriptingResponse& message, uint32_t request_id);
     bool GetScriptingResponse(uint32_t scripting_request_id, CARTA::script::ActionReply* reply);
+
+    void UpdateLastMessageTimestamp();
+    std::chrono::high_resolution_clock::time_point GetLastMessageTimestamp();
 
 private:
     // File info for file list (extended info for each hdu_name)
@@ -288,6 +291,9 @@ private:
     // Scripting responses from the client
     std::unordered_map<int, CARTA::ScriptingResponse> _scripting_response;
     std::mutex _scripting_mutex;
+
+    // Timestamp for the last protobuf message
+    std::chrono::high_resolution_clock::time_point _last_message_timestamp;
 };
 
 #endif // CARTA_BACKEND__SESSION_H_

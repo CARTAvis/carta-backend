@@ -14,7 +14,6 @@
 #include <vector>
 
 #include <fitsio.h>
-#include <fmt/format.h>
 #include <pugixml.hpp>
 
 #include <carta-protobuf/defs.pb.h>

@@ -12,8 +12,6 @@
 #include <mutex>
 #include <unordered_map>
 
-#include <fmt/format.h>
-
 #include <casacore/casa/aips.h>
 
 #include <carta-protobuf/file_list.pb.h>
