@@ -7,14 +7,10 @@
 #ifndef CARTA_BACKEND_LOGGER_LOGGER_H_
 #define CARTA_BACKEND_LOGGER_LOGGER_H_
 
-#include <fmt/format.h>
-
-#define SPDLOG_FMT_EXTERNAL
-#define FMT_HEADER_ONLY
+#include <spdlog/spdlog.h>
 
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
 
 #include "Constants.h"
 

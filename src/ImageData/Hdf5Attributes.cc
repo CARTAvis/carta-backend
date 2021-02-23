@@ -9,7 +9,7 @@
 
 #include <cstring>
 
-#include <fmt/format.h>
+#include <spdlog/fmt/fmt.h>
 
 #include <casacore/casa/HDF5/HDF5DataType.h>
 #include <casacore/casa/HDF5/HDF5Error.h>

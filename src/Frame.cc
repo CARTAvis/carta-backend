@@ -202,7 +202,7 @@ bool Frame::ChannelsChanged(int channel, int stokes) {
     return (channel != _channel_index || stokes != _stokes_index);
 }
 
-void Frame::DisconnectCalled() {
+void Frame::WaitForTaskCancellation() {
     _connected = false;      // file closed
     if (_moment_generator) { // stop moment calculation
         _moment_generator->StopCalculation();

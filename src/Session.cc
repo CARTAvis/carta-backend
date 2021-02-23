@@ -63,6 +63,7 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
     _animation_object = nullptr;
     _connected = true;
     ++_num_sessions;
+    UpdateLastMessageTimestamp();
     spdlog::debug("{} ::Session ({})", fmt::ptr(this), _num_sessions);
 }
 
@@ -117,10 +118,10 @@ void Session::SetInitExitTimeout(int secs) {
     alarm(1);
 }
 
-void Session::DisconnectCalled() {
+void Session::WaitForTaskCancellation() {
     _connected = false;
     for (auto& frame : _frames) {
-        frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
     }
     _base_context.cancel_group_execution();
     _histogram_context.cancel_group_execution();
@@ -470,14 +471,14 @@ void Session::DeleteFrame(int file_id) {
     std::unique_lock<std::mutex> lock(_frame_mutex);
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
-            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-            frame.second.reset();             // delete Frame
+            frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
+            frame.second.reset();                    // delete Frame
         }
         _frames.clear();
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
-        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
@@ -909,13 +910,15 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message,
 
 void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id) {
     bool success(true);
+    spdlog::info("Client {} [{}] Resumed.", GetId(), GetAddress());
+
     // Error message
     std::string err_message;
     std::string err_file_ids = "Problem loading files: ";
     std::string err_region_ids = "Problem loading regions: ";
 
     // Stop the streaming spectral profile, cube histogram and animation processes
-    DisconnectCalled();
+    WaitForTaskCancellation();
 
     // Clear the message queue
     _out_msgs.clear();
@@ -1923,4 +1926,12 @@ bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script:
 
         return true;
     }
+}
+
+void Session::UpdateLastMessageTimestamp() {
+    _last_message_timestamp = std::chrono::high_resolution_clock::now();
+}
+
+std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp() {
+    return _last_message_timestamp;
 }

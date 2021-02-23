@@ -8,11 +8,11 @@
 #include <tuple>
 #include <vector>
 
-#include <App.h>
 #include <curl/curl.h>
 #include <signal.h>
 #include <tbb/task.h>
 #include <tbb/task_scheduler_init.h>
+#include <uWebSockets/App.h>
 #include <uuid/uuid.h>
 
 #include "EventHeader.h"
@@ -50,6 +50,26 @@ struct PerSocketData {
     uint32_t session_id;
     string address;
 };
+
+void DeleteSession(int session_id) {
+    Session* session = sessions[session_id];
+    if (session) {
+        spdlog::info(
+            "Client {} [{}] Deleted. Remaining sessions: {}", session->GetId(), session->GetAddress(), Session::NumberOfSessions());
+        session->WaitForTaskCancellation();
+        if (carta_grpc_service) {
+            carta_grpc_service->RemoveSession(session);
+        }
+        if (!session->DecreaseRefCount()) {
+            delete session;
+            sessions.erase(session_id);
+        } else {
+            spdlog::warn("Session {} reference count is not 0 ({}) on deletion!", session_id, session->DecreaseRefCount());
+        }
+    } else {
+        spdlog::warn("Could not delete session {}: not found!", session_id);
+    }
+}
 
 void OnUpgrade(uWS::HttpResponse<false>* http_response, uWS::HttpRequest* http_request, struct us_socket_context_t* context) {
     string address;
@@ -124,7 +144,7 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
 
     sessions[session_id]->IncreaseRefCount();
 
-    spdlog::info("Client {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
+    spdlog::info("Session {} [{}] Connected. Num sessions: {}", session_id, address, Session::NumberOfSessions());
 }
 
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
@@ -136,25 +156,9 @@ void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view me
 
     // Get the Session object
     uint32_t session_id = static_cast<PerSocketData*>(ws->getUserData())->session_id;
-    Session* session = sessions[session_id];
 
-    if (session) {
-        auto uuid = session->GetId();
-        auto address = session->GetAddress();
-        session->DisconnectCalled();
-        spdlog::info("Client {} [{}] Disconnected. Remaining sessions: {}", uuid, address, Session::NumberOfSessions());
-        if (carta_grpc_service) {
-            carta_grpc_service->RemoveSession(session);
-        }
-        if (!session->DecreaseRefCount()) {
-            delete session;
-            sessions.erase(session_id);
-        } else {
-            spdlog::warn("Session reference count ({}) is not 0 while on disconnection!", session->DecreaseRefCount());
-        }
-    } else {
-        spdlog::warn("OnDisconnect called with no Session object!");
-    }
+    // Delete the Session
+    DeleteSession(session_id);
 
     // Close the websockets
     ws->close();
@@ -171,6 +175,7 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
 
     if (op_code == uWS::OpCode::BINARY) {
         if (sv_message.length() >= sizeof(carta::EventHeader)) {
+            session->UpdateLastMessageTimestamp();
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
             const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
             int event_length = sv_message.length() - sizeof(carta::EventHeader);
@@ -470,7 +475,15 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
         }
     } else if (op_code == uWS::OpCode::TEXT) {
         if (sv_message == "PING") {
-            ws->send("PONG", uWS::OpCode::TEXT);
+            auto t_session = session->GetLastMessageTimestamp();
+            auto t_now = std::chrono::high_resolution_clock::now();
+            auto dt = std::chrono::duration_cast<std::chrono::seconds>(t_now - t_session);
+            if ((settings.idle_session_wait_time > 0) && (dt.count() >= settings.idle_session_wait_time)) {
+                spdlog::warn("Client {} has been idle for {} seconds. Disconnecting..", session->GetId(), dt.count());
+                ws->close();
+            } else {
+                ws->send("PONG", uWS::OpCode::TEXT);
+            }
         }
     }
 }
