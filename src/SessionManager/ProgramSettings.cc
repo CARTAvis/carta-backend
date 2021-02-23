@@ -76,7 +76,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
  3   warning
  4   info
  5   debug
- 6   trace
+ 6   trace (performance)
  7   trace + ICD)");
 
     std::string extra = fmt::format(R"(
