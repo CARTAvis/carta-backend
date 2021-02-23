@@ -14,6 +14,8 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
+static bool log_icd_messages(false);
+
 void InitLogger(bool no_log_file, int verbosity) {
     // Set the stdout console
     auto stdout_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -54,6 +56,10 @@ void InitLogger(bool no_log_file, int verbosity) {
             break;
         case 6:
             stdout_logger->set_level(spdlog::level::trace);
+            break;
+        case 7:
+            stdout_logger->set_level(spdlog::level::trace);
+            log_icd_messages = true;
             break;
         default: {
             stdout_logger->set_level(spdlog::level::info);
@@ -111,17 +117,21 @@ std::unordered_map<CET, std::string> event_type_map = {{CET::EMPTY_EVENT, "EMPTY
     {CET::SPECTRAL_LINE_RESPONSE, "SPECTRAL_LINE_RESPONSE"}};
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
-    if (event_type_map.count(event_type)) {
-        spdlog::trace("[<==] {}", event_type_map[event_type]);
-    } else {
-        spdlog::error("Unknown event type: {}!", event_type);
+    if (log_icd_messages) {
+        if (event_type_map.count(event_type)) {
+            spdlog::trace("[<==] {}", event_type_map[event_type]);
+        } else {
+            spdlog::error("Unknown event type: {}!", event_type);
+        }
     }
 }
 
 void LogSentEventType(const CARTA::EventType& event_type) {
-    if (event_type_map.count(event_type)) {
-        spdlog::trace("[==>] {}", event_type_map[event_type]);
-    } else {
-        spdlog::error("Unknown event type: {}!", event_type);
+    if (log_icd_messages) {
+        if (event_type_map.count(event_type)) {
+            spdlog::trace("[==>] {}", event_type_map[event_type]);
+        } else {
+            spdlog::error("Unknown event type: {}!", event_type);
+        }
     }
 }
