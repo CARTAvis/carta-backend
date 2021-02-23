@@ -176,10 +176,15 @@ void OnMessage(uWS::WebSocket<false, true>* ws, std::string_view sv_message, uWS
     if (op_code == uWS::OpCode::BINARY) {
         if (sv_message.length() >= sizeof(carta::EventHeader)) {
             session->UpdateLastMessageTimestamp();
+
             carta::EventHeader head = *reinterpret_cast<const carta::EventHeader*>(sv_message.data());
             const char* event_buf = sv_message.data() + sizeof(carta::EventHeader);
             int event_length = sv_message.length() - sizeof(carta::EventHeader);
             OnMessageTask* tsk = nullptr;
+
+            CARTA::EventType event_type = static_cast<CARTA::EventType>(head.type);
+            LogReceivedEventType(event_type);
+
             switch (head.type) {
                 case CARTA::EventType::REGISTER_VIEWER: {
                     CARTA::RegisterViewer message;

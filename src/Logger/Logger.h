@@ -12,8 +12,14 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
+#include <carta-protobuf/enums.pb.h>
+
 #include "Constants.h"
 
 void InitLogger(bool no_log_file, int verbosity);
+
+void LogReceivedEventType(const CARTA::EventType& event_type);
+
+void LogSentEventType(const CARTA::EventType& event_type);
 
 #endif // CARTA_BACKEND_LOGGER_LOGGER_H_
