@@ -7,6 +7,9 @@
 #ifndef CARTA_BACKEND_LOGGER_LOGGER_H_
 #define CARTA_BACKEND_LOGGER_LOGGER_H_
 
+#define SPDLOG_LEVEL_NAMES \
+    { "performance", "debug", "info", "warning", "error", "critical", "off" }
+
 #include <spdlog/spdlog.h>
 
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -15,6 +18,11 @@
 #include <carta-protobuf/enums.pb.h>
 
 #include "Constants.h"
+
+// Adds an alias to trace for consistency between function name and prefix
+namespace spdlog {
+constexpr auto performance = [](auto&&... args) { return trace(std::forward<decltype(args)>(args)...); };
+}
 
 void InitLogger(bool no_log_file, int verbosity);
 
