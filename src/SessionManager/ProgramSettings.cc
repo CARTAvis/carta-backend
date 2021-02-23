@@ -77,7 +77,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
  4   info
  5   debug
  6   performance
- 7   ICD)");
+ 7   protocol)");
 
     std::string extra = fmt::format(R"(
 By default the CARTA backend uses the current directory as the starting data 
