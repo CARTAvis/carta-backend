@@ -150,6 +150,9 @@ void OnConnect(uWS::WebSocket<false, true>* ws) {
 // Called on disconnect. Cleans up sessions. In future, we may want to delay this (in case of unintentional disconnects)
 void OnDisconnect(uWS::WebSocket<false, true>* ws, int code, std::string_view message) {
     // Skip server-forced disconnects
+
+    spdlog::debug("WebSocket closed with code {} and message '{}'.", code, message);
+
     if (code == 4003) {
         return;
     }
@@ -713,6 +716,7 @@ int main(int argc, char* argv[]) {
             }
 
             app.ws<PerSocketData>("/*", (uWS::App::WebSocketBehavior){.compression = uWS::DEDICATED_COMPRESSOR_256KB,
+                                            .maxPayloadLength = 256 * 1024 * 1024,
                                             .upgrade = OnUpgrade,
                                             .open = OnConnect,
                                             .message = OnMessage,
