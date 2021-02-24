@@ -13,6 +13,7 @@
 #include "MimeTypes.h"
 
 using namespace std;
+using json = nlohmann::json;
 
 namespace carta {
 SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
@@ -24,9 +25,11 @@ SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
     } else {
         spdlog::warn("Could not find CARTA frontend files in directory {}.", _http_root_folder.string());
     }
+
+    _config_folder = fs::path(getenv("HOME")) / ".carta/config";
 }
 
-void SimpleFrontendServer::HandleRequest(uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
+void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
     string_view url = req->getUrl();
     fs::path path = _http_root_folder;
     if (url.empty() || url == "/") {
@@ -95,5 +98,140 @@ bool SimpleFrontendServer::IsValidFrontendFolder(fs::path folder) {
     ifstream index_file(folder.string());
     return index_file.good();
 }
+
+bool SimpleFrontendServer::IsAuthenticated(uWS::HttpRequest* _req) {
+    // Not currently implemented
+    // TODO: compare request header access token to auth token
+    return true;
+}
+
+void SimpleFrontendServer::HandleGetLayouts(Res* res, Req* req) {
+    // Check authentication
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+    // Read layout JSON file
+
+    // Send
+    res->writeStatus(HTTP_501)->end();
+}
+
+void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
+    // Check authentication
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+
+    // Read layout JSON file
+    bool success;
+    json body = GetExistingPreferences();
+    if (!body.empty()) {
+        res->writeHeader("Content-Type", "application/json");
+        res->writeStatus(HTTP_200)->end(body.dump());
+    } else {
+        res->writeStatus(HTTP_500)->end();
+    }
+}
+
+json SimpleFrontendServer::GetExistingPreferences() {
+    auto preferences_path = _config_folder / "preferences.json";
+    if (!fs::exists(preferences_path)) {
+        return {
+            {"success", true},
+            {"preferences", {
+                {"version", 1}
+            }}
+        };
+    }
+
+    try {
+        ifstream file(preferences_path);
+        string json_string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        return json::parse(json_string);
+    } catch (exception) {
+        return {};
+    }
+}
+
+bool SimpleFrontendServer::WritePreferences(const nlohmann::json& obj) {
+    auto preferences_path = _config_folder / "preferences.json";
+
+    try {
+        ofstream file(preferences_path);
+        auto json_string = obj.dump();
+        file << json_string;
+        return true;
+    } catch (exception) {
+        return false;
+    }
+}
+
+void SimpleFrontendServer::WaitForData(Res* res, Req* req, const std::function<void(const string&)>& callback) {
+    res->onAborted([res](){
+        res->writeStatus(HTTP_500)->end();
+    });
+
+    string buffer;
+    // Adapted from https://github.com/uNetworking/uWebSockets/issues/805#issuecomment-452182209
+    res->onData([res, req, callback, buffer = std::move(buffer)](std::string_view data, bool last) mutable {
+        buffer.append(data.data(), data.length());
+        if (last) {
+            callback(buffer);
+        }
+    });
+}
+void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
+    // Check authentication
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+
+    res->onAborted([res](){
+        res->writeStatus(HTTP_500)->end();
+    });
+
+    string buffer;
+
+    WaitForData(res, req, [this, res](const string& buffer) {
+        json post_data = json::parse(buffer);
+        auto keys_array = post_data["keys"];
+        if (keys_array.is_array() && keys_array.size()) {
+            json existing_data = GetExistingPreferences();
+            int modified_key_count = 0;
+            if (!existing_data.empty()) {
+                for (auto& key : keys_array) {
+                    if (key.is_string()) {
+                        auto key_string = key.get<string>();
+                        if (existing_data.count(key_string)) {
+                            existing_data.erase(key_string);
+                            modified_key_count++;
+                        }
+                    }
+                }
+                if (modified_key_count) {
+                    // TODO: write JSON
+                    spdlog::debug("Cleared {} preferences", modified_key_count);
+                    if (WritePreferences(existing_data)) {
+                        res->writeStatus(HTTP_200)->end();
+                        return;
+                    }
+                } else {
+                    res->writeStatus(HTTP_500)->end();
+                    return;
+                }
+            } else {
+                res->writeStatus(HTTP_500)->end();
+                return;
+            }
+        } else {
+            res->writeStatus(HTTP_400)->end();
+            return;
+        }
+    });
+}
+
 
 } // namespace carta

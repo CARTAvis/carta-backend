@@ -626,9 +626,24 @@ int main(int argc, char* argv[]) {
             if (!frontend_path.empty()) {
                 http_server = new SimpleFrontendServer(frontend_path);
                 if (http_server->CanServeFrontend()) {
+                    app.get("/api/database/layouts", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
+                        if (http_server) {
+                            http_server->HandleGetLayouts(res, req);
+                        }
+                    });
+                    app.get("/api/database/preferences", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
+                        if (http_server) {
+                            http_server->HandleGetPreferences(res, req);
+                        }
+                    });
+                    app.del("/api/database/preferences", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
+                        if (http_server) {
+                            http_server->HandleClearPreferences(res, req);
+                        }
+                    });
                     app.get("/*", [&](uWS::HttpResponse<false>* res, uWS::HttpRequest* req) {
                         if (http_server && http_server->CanServeFrontend()) {
-                            http_server->HandleRequest(res, req);
+                            http_server->HandleStaticRequest(res, req);
                         }
                     });
                 } else {
