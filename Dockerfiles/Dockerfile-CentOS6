@@ -46,15 +46,6 @@ RUN \
   make -j 2 && make install && \
   cd /root && rm -rf CMake
 
-# Install newer fmt
-RUN \
-  source /etc/bashrc && \
-  cd /root && \
-  git clone https://github.com/fmtlib/fmt && \
-  mkdir -p fmt/build && cd fmt/build && \
-  cmake .. && make && make install && \
-  cd /root && rm -rf fmt
-
 # Install a newer pugixml from source
 RUN \
   source /etc/bashrc && \
