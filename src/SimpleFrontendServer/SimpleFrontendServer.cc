@@ -138,12 +138,7 @@ void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
 json SimpleFrontendServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
     if (!fs::exists(preferences_path)) {
-        return {
-            {"success", true},
-            {"preferences", {
-                {"version", 1}
-            }}
-        };
+        return {{"success", true}, {"preferences", {{"version", 1}}}};
     }
 
     try {
@@ -169,9 +164,7 @@ bool SimpleFrontendServer::WritePreferences(const nlohmann::json& obj) {
 }
 
 void SimpleFrontendServer::WaitForData(Res* res, Req* req, const std::function<void(const string&)>& callback) {
-    res->onAborted([res](){
-        res->writeStatus(HTTP_500)->end();
-    });
+    res->onAborted([res]() { res->writeStatus(HTTP_500)->end(); });
 
     string buffer;
     // Adapted from https://github.com/uNetworking/uWebSockets/issues/805#issuecomment-452182209
@@ -189,9 +182,7 @@ void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
         return;
     }
 
-    res->onAborted([res](){
-        res->writeStatus(HTTP_500)->end();
-    });
+    res->onAborted([res]() { res->writeStatus(HTTP_500)->end(); });
 
     string buffer;
 
@@ -232,6 +223,5 @@ void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
         }
     });
 }
-
 
 } // namespace carta
