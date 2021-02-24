@@ -7,6 +7,7 @@
 #include "SpectralLineCrawler.h"
 
 #include <curl/curl.h>
+#include <spdlog/fmt/fmt.h>
 
 #include <cstdlib>
 #include <iostream>

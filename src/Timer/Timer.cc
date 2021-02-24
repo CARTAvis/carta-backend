@@ -6,7 +6,9 @@
 
 #include "Timer.h"
 
-#include "../Logger/Logger.h"
+#include <spdlog/fmt/fmt.h>
+
+#include "Logger/Logger.h"
 
 void Timer::Start(const std::string& timer_name) {
     if (!timer_name.empty()) {

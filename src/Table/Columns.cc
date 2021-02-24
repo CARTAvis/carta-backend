@@ -6,9 +6,10 @@
 
 #include "Columns.h"
 
-#include <fitsio.h>
-
 #include <memory>
+
+#include <fitsio.h>
+#include <spdlog/fmt/fmt.h>
 
 #include "DataColumn.tcc"
 #include "Threading.h"

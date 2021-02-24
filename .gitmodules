@@ -5,8 +5,11 @@
 	path = carta-scripting-grpc
 	url = https://github.com/CARTAvis/carta-scripting-grpc
 [submodule "uWebSockets"]
-	path = uWebSockets
+	path = third-party/uWebSockets
 	url = https://github.com/uNetworking/uWebSockets.git
 [submodule "cxxopts"]
-	path = cxxopts
+	path = third-party/cxxopts
 	url = https://github.com/jarro2783/cxxopts
+[submodule "spdlog"]
+	path = third-party/spdlog
+	url = https://github.com/gabime/spdlog.git

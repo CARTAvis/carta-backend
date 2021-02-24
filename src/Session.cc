@@ -63,6 +63,7 @@ Session::Session(uWS::WebSocket<false, true>* ws, uWS::Loop* loop, uint32_t id, 
     _animation_object = nullptr;
     _connected = true;
     ++_num_sessions;
+    UpdateLastMessageTimestamp();
     spdlog::debug("{} ::Session ({})", fmt::ptr(this), _num_sessions);
 }
 
@@ -117,10 +118,10 @@ void Session::SetInitExitTimeout(int secs) {
     alarm(1);
 }
 
-void Session::DisconnectCalled() {
+void Session::WaitForTaskCancellation() {
     _connected = false;
     for (auto& frame : _frames) {
-        frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
     }
     _base_context.cancel_group_execution();
     _histogram_context.cancel_group_execution();
@@ -470,14 +471,14 @@ void Session::DeleteFrame(int file_id) {
     std::unique_lock<std::mutex> lock(_frame_mutex);
     if (file_id == ALL_FILES) {
         for (auto& frame : _frames) {
-            frame.second->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
-            frame.second.reset();             // delete Frame
+            frame.second->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
+            frame.second.reset();                    // delete Frame
         }
         _frames.clear();
         _image_channel_mutexes.clear();
         _image_channel_task_active.clear();
     } else if (_frames.count(file_id)) {
-        _frames[file_id]->DisconnectCalled(); // call to stop Frame's jobs and wait for jobs finished
+        _frames[file_id]->WaitForTaskCancellation(); // call to stop Frame's jobs and wait for jobs finished
         _frames[file_id].reset();
         _frames.erase(file_id);
         _image_channel_mutexes.erase(file_id);
@@ -909,13 +910,15 @@ void Session::OnSetContourParameters(const CARTA::SetContourParameters& message,
 
 void Session::OnResumeSession(const CARTA::ResumeSession& message, uint32_t request_id) {
     bool success(true);
+    spdlog::info("Client {} [{}] Resumed.", GetId(), GetAddress());
+
     // Error message
     std::string err_message;
     std::string err_file_ids = "Problem loading files: ";
     std::string err_region_ids = "Problem loading regions: ";
 
     // Stop the streaming spectral profile, cube histogram and animation processes
-    DisconnectCalled();
+    WaitForTaskCancellation();
 
     // Clear the message queue
     _out_msgs.clear();
@@ -1178,23 +1181,21 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                 float progress = 0.50;
                 CARTA::RegionHistogramData half_progress;
                 CreateCubeHistogramMessage(half_progress, file_id, stokes, progress);
-                auto message_histogram = half_progress.add_histograms();
+                half_progress.add_histograms();
                 SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, half_progress);
 
                 // get histogram bins for each channel and accumulate bin counts in cube_bins
-                std::vector<int> cube_bins;
-                carta::HistogramResults chan_histogram; // histogram for each channel using cube stats
+                carta::Histogram chan_histogram; // histogram for each channel using cube stats
+                carta::Histogram cube_histogram;
                 for (size_t chan = 0; chan < num_channels; ++chan) {
                     if (!_frames.at(file_id)->CalculateHistogram(CUBE_REGION_ID, chan, stokes, num_bins, cube_stats, chan_histogram)) {
                         return calculated; // channel histogram failed
                     }
 
-                    // add channel bins to cube bins
                     if (chan == 0) {
-                        cube_bins = {chan_histogram.histogram_bins.begin(), chan_histogram.histogram_bins.end()};
-                    } else { // add chan histogram bins to cube histogram bins
-                        std::transform(chan_histogram.histogram_bins.begin(), chan_histogram.histogram_bins.end(), cube_bins.begin(),
-                            cube_bins.begin(), std::plus<int>());
+                        cube_histogram = std::move(chan_histogram);
+                    } else {
+                        cube_histogram.Add(chan_histogram);
                     }
 
                     // check for cancel
@@ -1212,12 +1213,13 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                         CreateCubeHistogramMessage(progress_msg, file_id, stokes, progress);
                         auto message_histogram = progress_msg.add_histograms();
                         message_histogram->set_channel(ALL_CHANNELS);
-                        message_histogram->set_num_bins(chan_histogram.num_bins);
-                        message_histogram->set_bin_width(chan_histogram.bin_width);
-                        message_histogram->set_first_bin_center(chan_histogram.bin_center);
+                        message_histogram->set_num_bins(cube_histogram.GetNbins());
+                        message_histogram->set_bin_width(cube_histogram.GetBinWidth());
+                        message_histogram->set_first_bin_center(cube_histogram.GetBinCenter());
                         message_histogram->set_mean(cube_stats.mean);
                         message_histogram->set_std_dev(cube_stats.stdDev);
-                        *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
+                        auto& bins = cube_histogram.GetHistogramBins();
+                        *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
                         SendFileEvent(file_id, CARTA::EventType::REGION_HISTOGRAM_DATA, request_id, progress_msg);
                         t_start = t_end;
                     }
@@ -1233,20 +1235,16 @@ bool Session::CalculateCubeHistogram(int file_id, CARTA::RegionHistogramData& cu
                     cube_histogram_message.clear_histograms();
                     auto message_histogram = cube_histogram_message.add_histograms();
                     message_histogram->set_channel(ALL_CHANNELS);
-                    message_histogram->set_num_bins(chan_histogram.num_bins);
-                    message_histogram->set_bin_width(chan_histogram.bin_width);
-                    message_histogram->set_first_bin_center(chan_histogram.bin_center);
+                    message_histogram->set_num_bins(cube_histogram.GetNbins());
+                    message_histogram->set_bin_width(cube_histogram.GetBinWidth());
+                    message_histogram->set_first_bin_center(cube_histogram.GetBinCenter());
                     message_histogram->set_mean(cube_stats.mean);
                     message_histogram->set_std_dev(cube_stats.stdDev);
-                    *message_histogram->mutable_bins() = {cube_bins.begin(), cube_bins.end()};
+                    auto& bins = cube_histogram.GetHistogramBins();
+                    *message_histogram->mutable_bins() = {bins.begin(), bins.end()};
 
                     // cache cube histogram
-                    carta::HistogramResults cube_results;
-                    cube_results.num_bins = chan_histogram.num_bins;
-                    cube_results.bin_width = chan_histogram.bin_width;
-                    cube_results.bin_center = chan_histogram.bin_center;
-                    cube_results.histogram_bins = {cube_bins.begin(), cube_bins.end()};
-                    _frames.at(file_id)->CacheCubeHistogram(stokes, cube_results);
+                    _frames.at(file_id)->CacheCubeHistogram(stokes, cube_histogram);
 
                     auto t_end_cube_histogram = std::chrono::high_resolution_clock::now();
                     auto dt_cube_histogram =
@@ -1916,4 +1914,12 @@ bool Session::GetScriptingResponse(uint32_t scripting_request_id, CARTA::script:
 
         return true;
     }
+}
+
+void Session::UpdateLastMessageTimestamp() {
+    _last_message_timestamp = std::chrono::high_resolution_clock::now();
+}
+
+std::chrono::high_resolution_clock::time_point Session::GetLastMessageTimestamp() {
+    return _last_message_timestamp;
 }

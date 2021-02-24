@@ -32,13 +32,14 @@ struct ProgramSettings {
     int verbosity = 4;
     int wait_time = -1;
     int init_wait_time = -1;
+    int idle_session_wait_time = -1;
 
     ProgramSettings() = default;
     ProgramSettings(int argc, char** argv);
 
     auto GetTuple() const {
         return std::tie(help, version, port, grpc_port, omp_thread_count, top_level_folder, starting_folder, host, files, frontend_folder,
-            no_http, no_browser, no_log, debug_no_auth, verbosity, wait_time, init_wait_time);
+            no_http, no_browser, no_log, debug_no_auth, verbosity, wait_time, init_wait_time, idle_session_wait_time);
     }
     bool operator!=(const ProgramSettings& rhs) const;
     bool operator==(const ProgramSettings& rhs) const;

@@ -10,8 +10,6 @@
 #include <fstream>
 #include <regex>
 
-#include <fmt/format.h>
-
 #include <casacore/casa/OS/File.h>
 
 #include "Logger/Logger.h"
@@ -169,15 +167,14 @@ CARTA::FileType GetCartaFileType(const string& filename) {
     }
 }
 
-void FillHistogramFromResults(CARTA::Histogram* histogram, carta::BasicStats<float>& stats, carta::HistogramResults& results) {
+void FillHistogramFromResults(CARTA::Histogram* histogram, const carta::BasicStats<float>& stats, const carta::Histogram& hist) {
     if (histogram == nullptr) {
         return;
     }
-
-    histogram->set_num_bins(results.num_bins);
-    histogram->set_bin_width(results.bin_width);
-    histogram->set_first_bin_center(results.bin_center);
-    *histogram->mutable_bins() = {results.histogram_bins.begin(), results.histogram_bins.end()};
+    histogram->set_num_bins(hist.GetNbins());
+    histogram->set_bin_width(hist.GetBinWidth());
+    histogram->set_first_bin_center(hist.GetBinCenter());
+    *histogram->mutable_bins() = {hist.GetHistogramBins().begin(), hist.GetHistogramBins().end()};
     histogram->set_mean(stats.mean);
     histogram->set_std_dev(stats.stdDev);
 }
