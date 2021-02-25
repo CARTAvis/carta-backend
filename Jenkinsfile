@@ -131,7 +131,12 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-session.sh . && ./run-jenkins-session.sh # run the tests"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -150,7 +155,12 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-session.sh . && ./run-jenkins-session.sh # run the tests"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -169,7 +179,12 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-session.sh . && ./run-jenkins-session.sh # run the tests"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts"
                             }
                         }
                         echo "Finished !!"
