@@ -152,7 +152,7 @@ bool SimpleFrontendServer::WritePreferencesFile(nlohmann::json& obj) {
         // Ensure correct schema and version values are written
         obj["$schema"] = CARTA_PREFERENCES_SCHEMA_URL;
         obj["version"] = 1;
-        auto json_string = obj.dump();
+        auto json_string = obj.dump(4);
         file << json_string;
         return true;
     } catch (exception e) {
@@ -205,11 +205,24 @@ void SimpleFrontendServer::HandleSetPreferences(Res* res, Req* req) {
             json existing_data = GetExistingPreferences();
 
             // Update each preference key-value pair
-            for (auto&[key, value] : update_data.items()) {
+            int modified_key_count = 0;
+            for (auto& [key, value] : update_data.items()) {
                 existing_data[key] = value;
+                modified_key_count++;
             }
 
-            res->writeStatus(HTTP_200)->end(success_string);
+            if (modified_key_count) {
+                spdlog::debug("Updated {} preferences", modified_key_count);
+                if (WritePreferencesFile(existing_data)) {
+                    res->writeStatus(HTTP_200)->end(success_string);
+                    return;
+                }
+            } else {
+                res->writeStatus(HTTP_200)->end(success_string);
+                return;
+            }
+            res->writeStatus(HTTP_500)->end();
+            return;
         } catch (json::exception e) {
             spdlog::warn(e.what());
             res->writeStatus(HTTP_500)->end();

@@ -40,7 +40,6 @@ public:
 
     void RegisterRoutes(uWS::App& app);
 
-
 private:
     static bool IsValidFrontendFolder(fs::path folder);
     bool IsAuthenticated(Req* req);
