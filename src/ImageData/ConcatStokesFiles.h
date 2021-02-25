@@ -27,12 +27,13 @@ private:
     bool OpenStokesFiles(const CARTA::ConcatStokesFiles& message, std::string& err);
     bool StokesFilesValid(std::string& err);
     bool GetStokesType(const CARTA::StokesType& stokes_type, casacore::Stokes::StokesTypes& result);
+    int StringComparison(const std::string& str1, const std::string& str2);
     void ClearCache();
 
     std::string _root_folder;
     std::string _file_name; // name of the new concatenate file
     std::unordered_map<CARTA::StokesType, std::unique_ptr<carta::FileLoader>> _loaders;
-    std::unordered_map<CARTA::StokesType, std::shared_ptr<casacore::ExtendImage<float>>> _extent_images;
+    std::unordered_map<CARTA::StokesType, std::shared_ptr<casacore::ExtendImage<float>>> _extended_images;
     std::unordered_map<CARTA::StokesType, casacore::CoordinateSystem> _coord_sys;
 };
 
