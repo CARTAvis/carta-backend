@@ -89,7 +89,7 @@ void LogReceivedEventType(const CARTA::EventType& event_type) {
     auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
     if (!event_name.empty()) {
         if (log_icd_messages) {
-            spdlog::debug("[<==] {}", event_name);
+            spdlog::debug("<== {}", event_name);
         }
     } else {
         spdlog::error("Unknown event type: {}!", event_type);
@@ -100,7 +100,7 @@ void LogSentEventType(const CARTA::EventType& event_type) {
     auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
     if (!event_name.empty()) {
         if (log_icd_messages) {
-            spdlog::debug("[==>] {}", event_name);
+            spdlog::debug("==> {}", event_name);
         }
     } else {
         spdlog::error("Unknown event type: {}!", event_type);
