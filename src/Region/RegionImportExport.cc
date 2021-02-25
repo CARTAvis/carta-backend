@@ -359,6 +359,7 @@ bool RegionImportExport::ConvertRecordToRectangle(
         _coord_sys->toWorld(world_center, pixel_center);
 
         // Convert width/height to world coords
+        casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
         casacore::Quantity world_width = _coord_sys->toWorldLength(width, 0);
         casacore::Quantity world_height = _coord_sys->toWorldLength(height, 1);
 
