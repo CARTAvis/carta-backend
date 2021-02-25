@@ -364,7 +364,7 @@ bool RegionImportExport::ConvertRecordToRectangle(
         casacore::Quantity world_height = _coord_sys->toWorldLength(height, 1);
 
         // Convert to Quantities and add to control_points
-        casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
+        //casacore::Vector<casacore::String> world_units = _coord_sys->worldAxisUnits();
         control_points.push_back(casacore::Quantity(world_center(0), world_units(0)));
         control_points.push_back(casacore::Quantity(world_center(1), world_units(1)));
         control_points.push_back(world_width);
