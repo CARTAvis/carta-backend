@@ -12,6 +12,10 @@
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
 
+#ifndef CARTA_USER_FOLDER_PREFIX
+#define CARTA_USER_FOLDER_PREFIX ".carta"
+#endif
+
 #ifndef CARTA_PREFERENCES_SCHEMA_URL
 #define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
 #endif
@@ -37,7 +41,7 @@ SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
         spdlog::warn("Could not find CARTA frontend files in directory {}.", _http_root_folder.string());
     }
 
-    _config_folder = fs::path(getenv("HOME")) / ".carta/config";
+    _config_folder = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config";
 }
 
 void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
@@ -192,6 +196,34 @@ void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
     }
 }
 
+std::string_view SimpleFrontendServer::UpdatePreferencesFromString(const string& buffer) {
+    try {
+        json update_data = json::parse(buffer);
+        json existing_data = GetExistingPreferences();
+
+        // Update each preference key-value pair
+        int modified_key_count = 0;
+        for (auto& [key, value] : update_data.items()) {
+            existing_data[key] = value;
+            modified_key_count++;
+        }
+
+        if (modified_key_count) {
+            spdlog::debug("Updated {} preferences", modified_key_count);
+            if (WritePreferencesFile(existing_data)) {
+                return HTTP_200;
+            } else {
+                return HTTP_500;
+            }
+        } else {
+            return HTTP_200;
+        }
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+        return HTTP_400;
+    }
+}
+
 void SimpleFrontendServer::HandleSetPreferences(Res* res, Req* req) {
     // Check authentication
     if (!IsAuthenticated(req)) {
@@ -200,35 +232,50 @@ void SimpleFrontendServer::HandleSetPreferences(Res* res, Req* req) {
     }
 
     WaitForData(res, req, [this, res](const string& buffer) {
-        try {
-            json update_data = json::parse(buffer);
-            json existing_data = GetExistingPreferences();
-
-            // Update each preference key-value pair
-            int modified_key_count = 0;
-            for (auto& [key, value] : update_data.items()) {
-                existing_data[key] = value;
-                modified_key_count++;
-            }
-
-            if (modified_key_count) {
-                spdlog::debug("Updated {} preferences", modified_key_count);
-                if (WritePreferencesFile(existing_data)) {
-                    res->writeStatus(HTTP_200)->end(success_string);
-                    return;
-                }
-            } else {
-                res->writeStatus(HTTP_200)->end(success_string);
-                return;
-            }
-            res->writeStatus(HTTP_500)->end();
-            return;
-        } catch (json::exception e) {
-            spdlog::warn(e.what());
-            res->writeStatus(HTTP_500)->end();
-            return;
+        auto status = UpdatePreferencesFromString(buffer);
+        res->writeStatus(status);
+        if (status == HTTP_200) {
+            res->end(success_string);
+        } else {
+            res->end();
         }
     });
+}
+
+std::string_view SimpleFrontendServer::ClearPreferencesFromString(const string& buffer) {
+    try {
+        json post_data = json::parse(buffer);
+        auto keys_array = post_data["keys"];
+        if (keys_array.is_array() && keys_array.size()) {
+            json existing_data = GetExistingPreferences();
+            int modified_key_count = 0;
+            if (!existing_data.empty()) {
+                for (auto& key : keys_array) {
+                    if (key.is_string()) {
+                        auto key_string = key.get<string>();
+                        if (existing_data.count(key_string)) {
+                            existing_data.erase(key_string);
+                            modified_key_count++;
+                        }
+                    }
+                }
+                if (modified_key_count) {
+                    spdlog::debug("Cleared {} preferences", modified_key_count);
+                    if (WritePreferencesFile(existing_data)) {
+                        return HTTP_200;
+                    }
+                } else {
+                    return HTTP_200;
+                }
+            }
+        } else {
+            return HTTP_400;
+        }
+        return HTTP_500;
+    } catch (json::exception e) {
+        spdlog::warn(e.what());
+        return HTTP_500;
+    }
 }
 
 void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
@@ -239,43 +286,12 @@ void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
     }
 
     WaitForData(res, req, [this, res](const string& buffer) {
-        try {
-            json post_data = json::parse(buffer);
-            auto keys_array = post_data["keys"];
-            if (keys_array.is_array() && keys_array.size()) {
-                json existing_data = GetExistingPreferences();
-                int modified_key_count = 0;
-                if (!existing_data.empty()) {
-                    for (auto& key : keys_array) {
-                        if (key.is_string()) {
-                            auto key_string = key.get<string>();
-                            if (existing_data.count(key_string)) {
-                                existing_data.erase(key_string);
-                                modified_key_count++;
-                            }
-                        }
-                    }
-                    if (modified_key_count) {
-                        spdlog::debug("Cleared {} preferences", modified_key_count);
-                        if (WritePreferencesFile(existing_data)) {
-                            res->writeStatus(HTTP_200)->end(success_string);
-                            return;
-                        }
-                    } else {
-                        res->writeStatus(HTTP_200)->end(success_string);
-                        return;
-                    }
-                }
-            } else {
-                res->writeStatus(HTTP_400)->end();
-                return;
-            }
-            res->writeStatus(HTTP_500)->end();
-            return;
-        } catch (json::exception e) {
-            spdlog::warn(e.what());
-            res->writeStatus(HTTP_500)->end();
-            return;
+        auto status = ClearPreferencesFromString(buffer);
+        res->writeStatus(status);
+        if (status == HTTP_200) {
+            res->end(success_string);
+        } else {
+            res->end();
         }
     });
 }

@@ -39,20 +39,21 @@ public:
     }
 
     void RegisterRoutes(uWS::App& app);
+    nlohmann::json GetExistingPreferences();
+    std::string_view UpdatePreferencesFromString(const std::string& buffer);
+    std::string_view ClearPreferencesFromString(const std::string& buffer);
 
 private:
     static bool IsValidFrontendFolder(fs::path folder);
     bool IsAuthenticated(Req* req);
-    nlohmann::json GetExistingPreferences();
+
     bool WritePreferencesFile(nlohmann::json& obj);
     void WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback);
 
     void HandleStaticRequest(Res* res, Req* req);
-
     void HandleGetPreferences(Res* res, Req* req);
     void HandleSetPreferences(Res* res, Req* req);
     void HandleClearPreferences(Res* res, Req* req);
-
     void HandleGetLayouts(Res* res, Req* req);
     void HandleSetLayout(Res* res, Req* req);
     void HandleClearLayout(Res* res, Req* req);

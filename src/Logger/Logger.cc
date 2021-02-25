@@ -14,6 +14,11 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
+
+#ifndef CARTA_USER_FOLDER_PREFIX
+#define CARTA_USER_FOLDER_PREFIX ".carta"
+#endif
+
 void InitLogger(bool no_log_file, int verbosity) {
     // Set the stdout console
     auto stdout_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -26,7 +31,7 @@ void InitLogger(bool no_log_file, int verbosity) {
     // Set a log file with its full name, maximum size and the number of rotated files
     std::string log_fullname;
     if (!no_log_file) {
-        log_fullname = fs::path(getenv("HOME")).string() + "/.carta/log/carta.log";
+        log_fullname = (fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "log/carta.log").string();
         auto stdout_log_file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_fullname, LOG_FILE_SIZE, ROTATED_LOG_FILES);
         stdout_log_file_sink->set_pattern(STDOUT_PATTERN);
         stdout_sinks.push_back(stdout_log_file_sink);
