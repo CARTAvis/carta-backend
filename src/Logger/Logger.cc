@@ -14,7 +14,6 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-
 #ifndef CARTA_USER_FOLDER_PREFIX
 #define CARTA_USER_FOLDER_PREFIX ".carta"
 #endif

@@ -5,8 +5,8 @@
 */
 
 #include <chrono>
-#include <thread>
 #include <fstream>
+#include <thread>
 
 #include <gtest/gtest.h>
 #include <nlohmann/json.hpp>
@@ -35,25 +35,10 @@ public:
     RestApiTest() {
         InitLogger(true, 0);
         preferences_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/preferences.json";
-        example_options = {
-            {"$schema", "https://cartavis.github.io/schemas/preference_schema_1.json"},
-            {"astColor", 6},
-            {"astGridVisible", false},
-            {"astLabelsVisible", true},
-            {"beamColor", "#8A9BA8"},
-            {"beamType", "open"},
-            {"beamVisible", true},
-            {"beamWidth", 1},
-            {"colormap", "viridis"},
-            {"layout", "layout1"},
-            {"lowBandwidthMode", true},
-            {"regionColor", "#2ee632"},
-            {"scaling", 5},
-            {"scalingGamma", 2},
-            {"stopAnimationPlaybackMinutes", 15},
-            {"version", 1},
-            {"wcsType", "degrees"}
-        };
+        example_options = {{"$schema", "https://cartavis.github.io/schemas/preference_schema_1.json"}, {"astColor", 6},
+            {"astGridVisible", false}, {"astLabelsVisible", true}, {"beamColor", "#8A9BA8"}, {"beamType", "open"}, {"beamVisible", true},
+            {"beamWidth", 1}, {"colormap", "viridis"}, {"layout", "layout1"}, {"lowBandwidthMode", true}, {"regionColor", "#2ee632"},
+            {"scaling", 5}, {"scalingGamma", 2}, {"stopAnimationPlaybackMinutes", 15}, {"version", 1}, {"wcsType", "degrees"}};
     }
     void SetUp() {
         _frontend_server.reset(new carta::SimpleFrontendServer("/"));
