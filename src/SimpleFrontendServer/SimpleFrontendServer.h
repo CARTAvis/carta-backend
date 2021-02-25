@@ -42,6 +42,9 @@ public:
     nlohmann::json GetExistingPreferences();
     std::string_view UpdatePreferencesFromString(const std::string& buffer);
     std::string_view ClearPreferencesFromString(const std::string& buffer);
+    nlohmann::json GetExistingLayouts();
+    std::string_view UpdateLayoutFromString(const std::string& buffer);
+    std::string_view ClearLayoutFromString(const std::string& buffer);
 
 private:
     static bool IsValidFrontendFolder(fs::path folder);

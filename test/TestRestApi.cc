@@ -16,6 +16,7 @@
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
+
 namespace fs = boost::filesystem;
 #else
 #include <filesystem>
@@ -30,19 +31,41 @@ class RestApiTest : public ::testing::Test {
 public:
     std::unique_ptr<carta::SimpleFrontendServer> _frontend_server;
     fs::path preferences_path;
+    fs::path layouts_path;
     json example_options;
+    json example_layout;
 
     RestApiTest() {
         InitLogger(true, 0);
         preferences_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/preferences.json";
-        example_options = {{"$schema", "https://cartavis.github.io/schemas/preference_schema_1.json"}, {"astColor", 6},
-            {"astGridVisible", false}, {"astLabelsVisible", true}, {"beamColor", "#8A9BA8"}, {"beamType", "open"}, {"beamVisible", true},
-            {"beamWidth", 1}, {"colormap", "viridis"}, {"layout", "layout1"}, {"lowBandwidthMode", true}, {"regionColor", "#2ee632"},
-            {"scaling", 5}, {"scalingGamma", 2}, {"stopAnimationPlaybackMinutes", 15}, {"version", 1}, {"wcsType", "degrees"}};
+        layouts_path = fs::path(getenv("HOME")) / CARTA_USER_FOLDER_PREFIX / "config/layouts";
+        example_options = R"({
+            "$schema": "https://cartavis.github.io/schemas/preference_schema_1.json",
+            "version": 1,
+            "astGridVisible": false,
+            "beamColor": "#8A9BA8",
+            "beamType": "open",
+            "beamVisible": true,
+            "beamWidth": 1
+        })"_json;
+
+        example_layout = R"({
+            "layoutVersion": 2,
+                "docked": {
+                "type": "stack",
+                "content": [{
+                    "type": "component",
+                        "id": "image-view",
+                        "height": 70
+                }]
+            },
+            "floating": []
+        })"_json;
     }
     void SetUp() {
         _frontend_server.reset(new carta::SimpleFrontendServer("/"));
         fs::remove(preferences_path);
+        fs::remove_all(layouts_path);
     }
 
     void WriteDefaultPrefs() {
@@ -51,11 +74,21 @@ public:
         f << example_options.dump(4);
     }
 
+    void WriteDefaultLayouts() {
+        fs::create_directories(layouts_path);
+        ofstream f1(layouts_path / "test_layout.json");
+        f1 << example_options.dump(4);
+        ofstream f2(layouts_path / "test_layout2.json");
+        f2 << example_options.dump(4);
+    }
+
     void TearDown() {
         // Remove .carta-unit-tests/config/preferences (and empty dirs)
         fs::remove(preferences_path);
+        fs::remove_all(layouts_path);
         fs::remove(preferences_path.parent_path());
         fs::remove(preferences_path.parent_path().parent_path());
+
     }
 };
 
@@ -124,4 +157,16 @@ TEST_F(RestApiTest, DeletePrefsKeyList) {
     existing_preferences["beamType"] = "open";
     existing_preferences["beamColor"] = "#8A9BA8";
     EXPECT_EQ(existing_preferences, example_options);
+}
+
+TEST_F(RestApiTest, EmptyStartingLayouts) {
+    auto existing_layouts = _frontend_server->GetExistingLayouts();
+    EXPECT_TRUE(existing_layouts.empty());
+}
+
+TEST_F(RestApiTest, GetExistingLayouts) {
+    WriteDefaultLayouts();
+    auto existing_preferences = _frontend_server->GetExistingLayouts();
+    EXPECT_EQ(existing_preferences["test_layout"], example_options);
+    EXPECT_EQ(existing_preferences["test_layout2"], example_options);
 }

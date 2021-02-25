@@ -317,4 +317,14 @@ void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
     res->writeStatus(HTTP_501)->end();
 }
 
+nlohmann::json SimpleFrontendServer::GetExistingLayouts() {
+    return nlohmann::json({{"not", "implemented"}});
+}
+std::string_view SimpleFrontendServer::UpdateLayoutFromString(const string& buffer) {
+    return HTTP_501;
+}
+std::string_view SimpleFrontendServer::ClearLayoutFromString(const string& buffer) {
+    return HTTP_501;
+}
+
 } // namespace carta
