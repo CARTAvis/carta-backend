@@ -535,6 +535,7 @@ void ExitBackend(int s) {
         carta_grpc_server->Shutdown();
     }
     spdlog::default_logger()->flush(); // flush the log file while exiting backend
+    spdlog::get(PERF_TAG)->flush();
     exit(0);
 }
 

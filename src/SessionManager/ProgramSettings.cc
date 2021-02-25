@@ -75,8 +75,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
  2   error
  3   warning
  4   info
- 5   debug
- 6   performance
+ 5   info + performance messages
+ 6   debug
  7   debug + protocol messages)");
 
     std::string extra = fmt::format(R"(
