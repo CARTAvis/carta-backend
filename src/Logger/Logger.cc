@@ -14,7 +14,7 @@ namespace fs = boost::filesystem;
 namespace fs = std::filesystem;
 #endif
 
-static bool log_icd_messages(false);
+static bool log_protocol_messages(false);
 
 void InitLogger(bool no_log_file, int verbosity) {
     // Set the stdout console
@@ -58,8 +58,8 @@ void InitLogger(bool no_log_file, int verbosity) {
             stdout_logger->set_level(spdlog::level::trace);
             break;
         case 7:
-            stdout_logger->set_level(spdlog::level::trace);
-            log_icd_messages = true;
+            stdout_logger->set_level(spdlog::level::debug);
+            log_protocol_messages = true;
             break;
         default: {
             stdout_logger->set_level(spdlog::level::info);
@@ -88,8 +88,8 @@ void InitLogger(bool no_log_file, int verbosity) {
 void LogReceivedEventType(const CARTA::EventType& event_type) {
     auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
     if (!event_name.empty()) {
-        if (log_icd_messages) {
-            spdlog::debug("<== {}", event_name);
+        if (log_protocol_messages) {
+            spdlog::debug("[protocol] <== {}", event_name);
         }
     } else {
         spdlog::debug("Unknown event type: {}!", event_type);
@@ -99,8 +99,8 @@ void LogReceivedEventType(const CARTA::EventType& event_type) {
 void LogSentEventType(const CARTA::EventType& event_type) {
     auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
     if (!event_name.empty()) {
-        if (log_icd_messages) {
-            spdlog::debug("==> {}", event_name);
+        if (log_protocol_messages) {
+            spdlog::debug("[protocol] ==> {}", event_name);
         }
     } else {
         spdlog::debug("Unknown event type: {}!", event_type);
