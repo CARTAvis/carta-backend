@@ -79,4 +79,13 @@
 #define STDOUT_TAG "stdout"
 #define STDOUT_PATTERN "[%Y-%m-%d %H:%M:%S.%e] [%^%l%$] %v"
 
+// User preferences
+#ifndef CARTA_USER_FOLDER_PREFIX
+#define CARTA_USER_FOLDER_PREFIX ".carta"
+#endif
+
+// Schema URLs
+#define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
+#define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
+
 #endif // CARTA_BACKEND__INTERFACECONSTANTS_H_

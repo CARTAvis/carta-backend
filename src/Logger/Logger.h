@@ -12,8 +12,6 @@
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-#include "Constants.h"
-
 void InitLogger(bool no_log_file, int verbosity);
 
 #endif // CARTA_BACKEND_LOGGER_LOGGER_H_

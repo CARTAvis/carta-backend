@@ -5,6 +5,7 @@
 */
 
 #include "Logger.h"
+#include "Constants.h"
 
 #ifdef _BOOST_FILESYSTEM_
 #include <boost/filesystem.hpp>
@@ -12,10 +13,6 @@ namespace fs = boost::filesystem;
 #else
 #include <filesystem>
 namespace fs = std::filesystem;
-#endif
-
-#ifndef CARTA_USER_FOLDER_PREFIX
-#define CARTA_USER_FOLDER_PREFIX ".carta"
 #endif
 
 void InitLogger(bool no_log_file, int verbosity) {

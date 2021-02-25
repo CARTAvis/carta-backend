@@ -9,20 +9,9 @@
 #include <fstream>
 #include <vector>
 
+#include "Constants.h"
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
-
-#ifndef CARTA_USER_FOLDER_PREFIX
-#define CARTA_USER_FOLDER_PREFIX ".carta"
-#endif
-
-#ifndef CARTA_PREFERENCES_SCHEMA_URL
-#define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
-#endif
-
-#ifndef CARTA_LAYOUT_SCHEMA_URL
-#define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
-#endif
 
 using namespace std;
 using json = nlohmann::json;
