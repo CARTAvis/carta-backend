@@ -37,17 +37,26 @@ public:
     bool CanServeFrontend() {
         return _frontend_found;
     }
-    void HandleStaticRequest(Res* res, Req* req);
-    void HandleGetLayouts(Res* res, Req* req);
-    void HandleGetPreferences(Res* res, Req* req);
-    void HandleClearPreferences(Res* res, Req* req);
+
+    void RegisterRoutes(uWS::App& app);
+
 
 private:
     static bool IsValidFrontendFolder(fs::path folder);
     bool IsAuthenticated(Req* req);
     nlohmann::json GetExistingPreferences();
-    bool WritePreferences(const nlohmann::json& obj);
+    bool WritePreferencesFile(nlohmann::json& obj);
     void WaitForData(Res* res, Req* req, const std::function<void(const std::string&)>& callback);
+
+    void HandleStaticRequest(Res* res, Req* req);
+
+    void HandleGetPreferences(Res* res, Req* req);
+    void HandleSetPreferences(Res* res, Req* req);
+    void HandleClearPreferences(Res* res, Req* req);
+
+    void HandleGetLayouts(Res* res, Req* req);
+    void HandleSetLayout(Res* res, Req* req);
+    void HandleClearLayout(Res* res, Req* req);
 
     fs::path _http_root_folder;
     fs::path _config_folder;

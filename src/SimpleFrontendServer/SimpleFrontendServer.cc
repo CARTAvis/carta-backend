@@ -12,10 +12,21 @@
 #include "Logger/Logger.h"
 #include "MimeTypes.h"
 
+#ifndef CARTA_PREFERENCES_SCHEMA_URL
+#define CARTA_PREFERENCES_SCHEMA_URL "https://cartavis.github.io/schemas/preference_schema_1.json"
+#endif
+
+#ifndef CARTA_LAYOUT_SCHEMA_URL
+#define CARTA_LAYOUT_SCHEMA_URL "https://cartavis.github.io/schemas/layout_schema_2.json"
+#endif
+
 using namespace std;
 using json = nlohmann::json;
 
 namespace carta {
+
+const string success_string = json({{"success", true}}).dump();
+
 SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
     _http_root_folder = root_folder;
     _frontend_found = IsValidFrontendFolder(root_folder);
@@ -27,6 +38,19 @@ SimpleFrontendServer::SimpleFrontendServer(fs::path root_folder) {
     }
 
     _config_folder = fs::path(getenv("HOME")) / ".carta/config";
+}
+
+void SimpleFrontendServer::RegisterRoutes(uWS::App& app) {
+    // Dynamic routes for preferences and layouts
+    app.get("/api/database/preferences", [&](auto res, auto req) { HandleGetPreferences(res, req); });
+    app.put("/api/database/preferences", [&](auto res, auto req) { HandleSetPreferences(res, req); });
+    app.del("/api/database/preferences", [&](auto res, auto req) { HandleClearPreferences(res, req); });
+    app.get("/api/database/layouts", [&](auto res, auto req) { HandleGetLayouts(res, req); });
+    app.put("/api/database/layout", [&](auto res, auto req) { HandleSetLayout(res, req); });
+    app.del("/api/database/layout", [&](auto res, auto req) { HandleClearLayout(res, req); });
+
+    // Static routes for all other files
+    app.get("/*", [&](Res* res, Req* req) { HandleStaticRequest(res, req); });
 }
 
 void SimpleFrontendServer::HandleStaticRequest(Res* res, Req* req) {
@@ -105,40 +129,10 @@ bool SimpleFrontendServer::IsAuthenticated(uWS::HttpRequest* _req) {
     return true;
 }
 
-void SimpleFrontendServer::HandleGetLayouts(Res* res, Req* req) {
-    // Check authentication
-    if (!IsAuthenticated(req)) {
-        res->writeStatus(HTTP_403)->end();
-        return;
-    }
-    // Read layout JSON file
-
-    // Send
-    res->writeStatus(HTTP_501)->end();
-}
-
-void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
-    // Check authentication
-    if (!IsAuthenticated(req)) {
-        res->writeStatus(HTTP_403)->end();
-        return;
-    }
-
-    // Read layout JSON file
-    bool success;
-    json body = GetExistingPreferences();
-    if (!body.empty()) {
-        res->writeHeader("Content-Type", "application/json");
-        res->writeStatus(HTTP_200)->end(body.dump());
-    } else {
-        res->writeStatus(HTTP_500)->end();
-    }
-}
-
 json SimpleFrontendServer::GetExistingPreferences() {
     auto preferences_path = _config_folder / "preferences.json";
     if (!fs::exists(preferences_path)) {
-        return {{"success", true}, {"preferences", {{"version", 1}}}};
+        return {{"version", 1}};
     }
 
     try {
@@ -150,15 +144,19 @@ json SimpleFrontendServer::GetExistingPreferences() {
     }
 }
 
-bool SimpleFrontendServer::WritePreferences(const nlohmann::json& obj) {
+bool SimpleFrontendServer::WritePreferencesFile(nlohmann::json& obj) {
     auto preferences_path = _config_folder / "preferences.json";
 
     try {
         ofstream file(preferences_path);
+        // Ensure correct schema and version values are written
+        obj["$schema"] = CARTA_PREFERENCES_SCHEMA_URL;
+        obj["version"] = 1;
         auto json_string = obj.dump();
         file << json_string;
         return true;
-    } catch (exception) {
+    } catch (exception e) {
+        spdlog::warn(e.what());
         return false;
     }
 }
@@ -175,6 +173,51 @@ void SimpleFrontendServer::WaitForData(Res* res, Req* req, const std::function<v
         }
     });
 }
+
+void SimpleFrontendServer::HandleGetPreferences(Res* res, Req* req) {
+    // Check authentication
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+
+    // Read layout JSON file
+    json existing_preferences = GetExistingPreferences();
+    if (!existing_preferences.empty()) {
+        res->writeHeader("Content-Type", "application/json");
+        json body = {{"success", true}, {"preferences", existing_preferences}};
+        res->writeStatus(HTTP_200)->end(body.dump());
+    } else {
+        res->writeStatus(HTTP_500)->end();
+    }
+}
+
+void SimpleFrontendServer::HandleSetPreferences(Res* res, Req* req) {
+    // Check authentication
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+
+    WaitForData(res, req, [this, res](const string& buffer) {
+        try {
+            json update_data = json::parse(buffer);
+            json existing_data = GetExistingPreferences();
+
+            // Update each preference key-value pair
+            for (auto&[key, value] : update_data.items()) {
+                existing_data[key] = value;
+            }
+
+            res->writeStatus(HTTP_200)->end(success_string);
+        } catch (json::exception e) {
+            spdlog::warn(e.what());
+            res->writeStatus(HTTP_500)->end();
+            return;
+        }
+    });
+}
+
 void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
     // Check authentication
     if (!IsAuthenticated(req)) {
@@ -182,46 +225,78 @@ void SimpleFrontendServer::HandleClearPreferences(Res* res, Req* req) {
         return;
     }
 
-    res->onAborted([res]() { res->writeStatus(HTTP_500)->end(); });
-
-    string buffer;
-
     WaitForData(res, req, [this, res](const string& buffer) {
-        json post_data = json::parse(buffer);
-        auto keys_array = post_data["keys"];
-        if (keys_array.is_array() && keys_array.size()) {
-            json existing_data = GetExistingPreferences();
-            int modified_key_count = 0;
-            if (!existing_data.empty()) {
-                for (auto& key : keys_array) {
-                    if (key.is_string()) {
-                        auto key_string = key.get<string>();
-                        if (existing_data.count(key_string)) {
-                            existing_data.erase(key_string);
-                            modified_key_count++;
+        try {
+            json post_data = json::parse(buffer);
+            auto keys_array = post_data["keys"];
+            if (keys_array.is_array() && keys_array.size()) {
+                json existing_data = GetExistingPreferences();
+                int modified_key_count = 0;
+                if (!existing_data.empty()) {
+                    for (auto& key : keys_array) {
+                        if (key.is_string()) {
+                            auto key_string = key.get<string>();
+                            if (existing_data.count(key_string)) {
+                                existing_data.erase(key_string);
+                                modified_key_count++;
+                            }
                         }
                     }
-                }
-                if (modified_key_count) {
-                    // TODO: write JSON
-                    spdlog::debug("Cleared {} preferences", modified_key_count);
-                    if (WritePreferences(existing_data)) {
-                        res->writeStatus(HTTP_200)->end();
+                    if (modified_key_count) {
+                        spdlog::debug("Cleared {} preferences", modified_key_count);
+                        if (WritePreferencesFile(existing_data)) {
+                            res->writeStatus(HTTP_200)->end(success_string);
+                            return;
+                        }
+                    } else {
+                        res->writeStatus(HTTP_200)->end(success_string);
                         return;
                     }
-                } else {
-                    res->writeStatus(HTTP_500)->end();
-                    return;
                 }
             } else {
-                res->writeStatus(HTTP_500)->end();
+                res->writeStatus(HTTP_400)->end();
                 return;
             }
-        } else {
-            res->writeStatus(HTTP_400)->end();
+            res->writeStatus(HTTP_500)->end();
+            return;
+        } catch (json::exception e) {
+            spdlog::warn(e.what());
+            res->writeStatus(HTTP_500)->end();
             return;
         }
     });
+}
+
+void SimpleFrontendServer::HandleGetLayouts(Res* res, Req* req) {
+    // Check authentication
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+    // Send
+    res->writeStatus(HTTP_501)->end();
+}
+
+void SimpleFrontendServer::HandleSetLayout(Res* res, Req* req) {
+    // Check authentication
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+
+    // Send
+    res->writeStatus(HTTP_501)->end();
+}
+
+void SimpleFrontendServer::HandleClearLayout(Res* res, Req* req) {
+    // Check authentication
+    if (!IsAuthenticated(req)) {
+        res->writeStatus(HTTP_403)->end();
+        return;
+    }
+
+    // Send
+    res->writeStatus(HTTP_501)->end();
 }
 
 } // namespace carta
