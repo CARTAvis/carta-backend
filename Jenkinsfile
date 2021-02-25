@@ -788,7 +788,7 @@ pipeline {
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
-                            timeout(time: 1, unit: 'MINUTES') {
+                            timeout(time: 5, unit: 'MINUTES') {
                                 retry(3) {
                                     dir ('carta-backend-ICD-test') {
                                         sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY.test.ts"
@@ -857,14 +857,18 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "sleep 60"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts"
-                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts"
+                            timeout(time: 5, unit: 'MINUTES') {
+                                retry(3) {
+                                    dir ('carta-backend-ICD-test') {
+                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts"
+                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts"
+                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts"
+                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts"
+                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts"
+                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts"
+                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts"
+                                    }
+                                }
                             }
                         }
                         echo "Finished !!"
