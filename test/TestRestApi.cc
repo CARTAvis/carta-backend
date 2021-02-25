@@ -88,7 +88,6 @@ public:
         fs::remove_all(layouts_path);
         fs::remove(preferences_path.parent_path());
         fs::remove(preferences_path.parent_path().parent_path());
-
     }
 };
 
