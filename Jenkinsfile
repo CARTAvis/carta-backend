@@ -207,7 +207,15 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-file-browser.sh . && ./run-jenkins-file-browser.sh # run the tests"
+                                sh "CI=true npm test src/test/GET_FILELIST.test.ts"
+                                sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts"
+                                sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_CASA.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -226,7 +234,15 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-file-browser.sh . && ./run-jenkins-file-browser.sh # run the tests"
+                                sh "CI=true npm test src/test/GET_FILELIST.test.ts"
+                                sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts"
+                                sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_CASA.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -245,8 +261,17 @@ pipeline {
                             unstash "macos-1_carta_backend_icd" 
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-file-browser.sh . && ./run-jenkins-file-browser.sh # run the tests"
+                                sh "CI=true npm test src/test/GET_FILELIST.test.ts"
+                                sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts"
+                                sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_CASA.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts"
                             }
+
                         }
                         echo "Finished !!"
                         }
@@ -268,7 +293,11 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-animator.sh . && ./run-jenkins-animator.sh # run the tests"
+                                sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -287,7 +316,11 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-animator.sh . && ./run-jenkins-animator.sh # run the tests"
+                                sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -306,7 +339,11 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-animator.sh . && ./run-jenkins-animator.sh # run the tests"
+                                sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts"
+                                sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -329,7 +366,9 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-contour.sh . && ./run-jenkins-contour.sh # run the tests"
+                                sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA.test.ts"
+                                sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA_NAN.test.ts"
+                                sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -348,7 +387,9 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-contour.sh . && ./run-jenkins-contour.sh # run the tests"
+                                sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA.test.ts"
+                                sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA_NAN.test.ts"
+                                sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -367,7 +408,9 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-contour.sh . && ./run-jenkins-contour.sh # run the tests"
+                                sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA.test.ts"
+                                sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA_NAN.test.ts"
+                                sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -390,7 +433,15 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-region-statistics.sh . && ./run-jenkins-region-statistics.sh # run the tests"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts"
+                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -409,7 +460,15 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-region-statistics.sh . && ./run-jenkins-region-statistics.sh # run the tests"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts"
+                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -428,7 +487,15 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-region-statistics.sh . && ./run-jenkins-region-statistics.sh # run the tests"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts"
+                                sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts"
+                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -451,7 +518,12 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-region-manipulation.sh . && ./run-jenkins-region-manipulation.sh # run the tests"
+                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -470,7 +542,12 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-region-manipulation.sh . && ./run-jenkins-region-manipulation.sh # run the tests"
+                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -489,7 +566,12 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-region-manipulation.sh . && ./run-jenkins-region-manipulation.sh # run the tests"
+                                sh "CI=true npm test src/test/REGION_REGISTER.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -512,7 +594,9 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-cube.sh . && ./run-jenkins-cube.sh # run the tests"
+                                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts"
+                                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts"
+                                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -531,7 +615,9 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-cube.sh . && ./run-jenkins-cube.sh # run the tests"
+                                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts"
+                                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts"
+                                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -550,7 +636,9 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-cube.sh . && ./run-jenkins-cube.sh # run the tests"
+                                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts"
+                                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts"
+                                sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -573,7 +661,8 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-spatial-profiler.sh . && ./run-jenkins-spatial-profiler.sh # run the tests"
+                                sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE.test.ts"
+                                sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -592,7 +681,8 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-spatial-profiler.sh . && ./run-jenkins-spatial-profiler.sh # run the tests"
+                                sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE.test.ts"
+                                sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -611,7 +701,8 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-spatial-profiler.sh . && ./run-jenkins-spatial-profiler.sh # run the tests"
+                                sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE.test.ts"
+                                sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -634,7 +725,8 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-raster-tiles.sh . && ./run-jenkins-raster-tiles.sh # run the tests"
+                                sh "CI=true npm test src/test/CHECK_RASTER_TILE_DATA.test.ts"
+                                sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -653,7 +745,8 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-raster-tiles.sh . && ./run-jenkins-raster-tiles.sh # run the tests"
+                                sh "CI=true npm test src/test/CHECK_RASTER_TILE_DATA.test.ts"
+                                sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -672,7 +765,8 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-raster-tiles.sh . && ./run-jenkins-raster-tiles.sh # run the tests"
+                                sh "CI=true npm test src/test/CHECK_RASTER_TILE_DATA.test.ts"
+                                sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -695,7 +789,8 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-line-query.sh . && ./run-jenkins-line-query.sh # run the tests"
+                                sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY.test.ts"
+                                sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -714,7 +809,8 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-line-query.sh . && ./run-jenkins-line-query.sh # run the tests"
+                                sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY.test.ts"
+                                sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts" 
                             }
                         }
                         echo "Finished !!"
@@ -733,7 +829,8 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-line-query.sh . && ./run-jenkins-line-query.sh # run the tests"
+                                sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY.test.ts"
+                                sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts" 
                             }
                         }
                         echo "Finished !!"
@@ -756,7 +853,13 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-moments.sh . && ./run-jenkins-moments.sh # run the tests"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -775,7 +878,13 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-moments.sh . && ./run-jenkins-moments.sh # run the tests"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -794,7 +903,13 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-moments.sh . && ./run-jenkins-moments.sh # run the tests"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -817,7 +932,10 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-resume.sh . && ./run-jenkins-resume.sh # run the tests"
+                                sh "CI=true npm test src/test/RESUME_CATALOG.test.ts"
+                                sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts"
+                                sh "CI=true npm test src/test/RESUME_IMAGE.test.ts"
+                                sh "CI=true npm test src/test/RESUME_REGION.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -836,7 +954,10 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-resume.sh . && ./run-jenkins-resume.sh # run the tests"
+                                sh "CI=true npm test src/test/RESUME_CATALOG.test.ts"
+                                sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts"
+                                sh "CI=true npm test src/test/RESUME_IMAGE.test.ts"
+                                sh "CI=true npm test src/test/RESUME_REGION.test.ts"
                             }
                         }
                         echo "Finished !!"
@@ -855,7 +976,10 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "cp ../../../run-jenkins-resume.sh . && ./run-jenkins-resume.sh # run the tests"
+                                sh "CI=true npm test src/test/RESUME_CATALOG.test.ts"
+                                sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts"
+                                sh "CI=true npm test src/test/RESUME_IMAGE.test.ts"
+                                sh "CI=true npm test src/test/RESUME_REGION.test.ts"
                             }
                         }
                         echo "Finished !!"
