@@ -210,7 +210,7 @@ pipeline {
                                 sh "CI=true npm test src/test/GET_FILELIST.test.ts"
                                 sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts"
                                 sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts"
-                                sh "CI=true npm test src/test/FILEINFO.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_FITS.test.ts"
                                 sh "CI=true npm test src/test/FILEINFO_CASA.test.ts"
                                 sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts"
                                 sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts"
@@ -237,7 +237,7 @@ pipeline {
                                 sh "CI=true npm test src/test/GET_FILELIST.test.ts"
                                 sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts"
                                 sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts"
-                                sh "CI=true npm test src/test/FILEINFO.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_FITS.test.ts"
                                 sh "CI=true npm test src/test/FILEINFO_CASA.test.ts"
                                 sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts"
                                 sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts"
@@ -264,7 +264,7 @@ pipeline {
                                 sh "CI=true npm test src/test/GET_FILELIST.test.ts"
                                 sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts"
                                 sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts"
-                                sh "CI=true npm test src/test/FILEINFO.test.ts"
+                                sh "CI=true npm test src/test/FILEINFO_FITS.test.ts"
                                 sh "CI=true npm test src/test/FILEINFO_CASA.test.ts"
                                 sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts"
                                 sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts"
@@ -789,6 +789,7 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
+                                sh "sleep 30"
                                 sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY.test.ts"
                                 sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts"
                             }
@@ -853,6 +854,7 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
+                                sh "sleep 60"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts"
                                 sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts"
