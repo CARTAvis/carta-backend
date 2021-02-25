@@ -794,7 +794,7 @@ pipeline {
                                         sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY.test.ts"
                                         sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts"
                                     }
-                                } 
+                                }
                             }
                         }
                         echo "Finished !!"
@@ -856,7 +856,6 @@ pipeline {
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
-                            dir ('carta-backend-ICD-test') {
                             timeout(time: 5, unit: 'MINUTES') {
                                 retry(3) {
                                     dir ('carta-backend-ICD-test') {
