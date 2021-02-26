@@ -45,8 +45,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("verbosity", "display verbose logging from this level",
          cxxopts::value<int>()->default_value(to_string(verbosity)), "<level>")
         ("no_log", "do not log output to a log file", cxxopts::value<bool>())
-        ("log_performance", "log performance", cxxopts::value<bool>())
-        ("log_protocol_messages", "log protocol messages", cxxopts::value<bool>())
+        ("log_performance", "enable performance info messages", cxxopts::value<bool>())
+        ("log_protocol_messages", "enable protocol debug messages", cxxopts::value<bool>())
         ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
@@ -97,6 +97,10 @@ OpenMP threads is automatically set to the detected number of logical cores.
 
 Logs are written both to the terminal and to a log file, '.carta/log/carta.log' 
 in the user's home directory. Possible log levels are:{}
+
+Performance and protocol messages are disabled by default, but can be enabled 
+with flags. The verbosity takes precedence: the additional messages will only be 
+visible if the level is high enough.
 
 Options are provided to shut the backend down automatically if it is idle (if no 
 clients are connected), and to kill frontend sessions that are idle (no longer 
