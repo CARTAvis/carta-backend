@@ -72,6 +72,7 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     auto result = options.parse(argc, argv);
 
     std::string log_levels(R"(
+ 0   off
  1   critical
  2   error
  3   warning
