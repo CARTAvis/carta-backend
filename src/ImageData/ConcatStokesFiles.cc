@@ -19,91 +19,121 @@ ConcatStokesFiles::~ConcatStokesFiles() {
 bool ConcatStokesFiles::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA::ConcatStokesFilesAck& response,
     std::shared_ptr<casacore::ImageConcat<float>>& concat_image, std::string& file_name) {
     ClearCache();
+    int stokes_axis;
 
     // open files and check are they valid
     std::string err;
-    if (!OpenStokesFiles(message, err) || !StokesFilesValid(err)) {
+    if (!OpenStokesFiles(message, err) || !StokesFilesValid(err, stokes_axis)) {
         response.set_success(false);
         response.set_message(err);
         return false;
     }
 
-    CARTA::StokesType carta_stokes_type = CARTA::StokesType::STOKES_TYPE_NONE;
-
-    // create a stokes coordinate and add it to the coordinate system
-    for (auto& loader : _loaders) {
-        carta_stokes_type = loader.first;
-        casacore::CoordinateSystem coord_sys;
-
-        if (loader.second->GetCoordinateSystem(coord_sys)) {
-            casacore::Vector<casacore::Int> vec(1);
-            casacore::Stokes::StokesTypes stokes_type;
-
-            if (GetStokesType(carta_stokes_type, stokes_type)) {
-                vec(0) = stokes_type;                         // set stokes type
-                casacore::StokesCoordinate stokes_coord(vec); // set stokes coordinate
-                coord_sys.addCoordinate(stokes_coord);        // add stokes coordinate to the coordinate system
-                _coord_sys[carta_stokes_type] = coord_sys;    // fill the new coordinate system map
-            } else {
-                err = "Fail to set the stokes coordinate system!\n";
-                response.set_success(false);
-                response.set_message(err);
-                return false;
-            }
-        } else {
-            err = "Fail to get the coordinate system!\n";
-            response.set_success(false);
-            response.set_message(err);
-            return false;
-        }
-    }
-
-    if (carta_stokes_type == CARTA::StokesType::STOKES_TYPE_NONE) {
+    if (_loaders.empty()) {
         err = "File loader is empty!\n";
         response.set_success(false);
         response.set_message(err);
         return false;
     }
 
-    // extend the image shapes
-    auto& sample_loader = _loaders[carta_stokes_type];
-    casacore::IPosition old_image_shape;
-    casacore::IPosition new_image_shape;
+    bool success(true);
 
-    if (sample_loader->GetShape(old_image_shape)) {
-        new_image_shape.resize(old_image_shape.size() + 1);
-        new_image_shape = 1;
-        for (int i = 0; i < old_image_shape.size(); ++i) {
-            new_image_shape(i) = old_image_shape(i);
+    if (stokes_axis < 0) {
+        CARTA::StokesType carta_stokes_type = CARTA::StokesType::STOKES_TYPE_NONE;
+
+        // create a stokes coordinate and add it to the coordinate system
+        for (auto& loader : _loaders) {
+            carta_stokes_type = loader.first;
+            casacore::CoordinateSystem coord_sys;
+
+            if (loader.second->GetCoordinateSystem(coord_sys)) {
+                casacore::Vector<casacore::Int> vec(1);
+                casacore::Stokes::StokesTypes stokes_type;
+
+                if (GetStokesType(carta_stokes_type, stokes_type)) {
+                    vec(0) = stokes_type;                         // set stokes type
+                    casacore::StokesCoordinate stokes_coord(vec); // set stokes coordinate
+                    coord_sys.addCoordinate(stokes_coord);        // add stokes coordinate to the coordinate system
+                    _coord_sys[carta_stokes_type] = coord_sys;    // fill the new coordinate system map
+                } else {
+                    err = "Fail to set the stokes coordinate system!\n";
+                    response.set_success(false);
+                    response.set_message(err);
+                    return false;
+                }
+            } else {
+                err = "Fail to get the coordinate system!\n";
+                response.set_success(false);
+                response.set_message(err);
+                return false;
+            }
+        }
+
+        // extend the image shapes
+        auto& sample_loader = _loaders[carta_stokes_type];
+        casacore::IPosition old_image_shape;
+        casacore::IPosition new_image_shape;
+
+        if (sample_loader->GetShape(old_image_shape)) {
+            new_image_shape.resize(old_image_shape.size() + 1);
+            new_image_shape = 1;
+            for (int i = 0; i < old_image_shape.size(); ++i) {
+                new_image_shape(i) = old_image_shape(i);
+            }
+        } else {
+            err = "Fail to set the new image shape!\n";
+            response.set_success(false);
+            response.set_message(err);
+            return false;
+        }
+
+        // extend the image coordinate system with a stokes coordinate
+        for (auto& loader : _loaders) {
+            auto stokes_type = loader.first;
+            auto* image = loader.second->GetImage();
+            _extended_images[stokes_type] =
+                std::make_shared<casacore::ExtendImage<float>>(*image, new_image_shape, _coord_sys[stokes_type]);
+        }
+
+        // get stokes axis
+        stokes_axis = _coord_sys[carta_stokes_type].polarizationAxisNumber();
+
+        // concat images along the stokes axis
+        concat_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
+
+        for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
+            auto stokes_type = static_cast<CARTA::StokesType>(i);
+            if (_extended_images.count(stokes_type)) {
+                try {
+                    concat_image->setImage(*_extended_images[stokes_type], casacore::False);
+                } catch (const casacore::AipsError& error) {
+                    err = "Fail to concat images:\n" + error.getMesg() + " \n";
+                    success = false;
+                    break;
+                }
+            }
         }
     } else {
-        err = "Fail to set the new image shape!\n";
-        response.set_success(false);
-        response.set_message(err);
-        return false;
-    }
+        // concat images along the stokes axis
+        concat_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
-    // extend the image coordinate system with a stokes coordinate
-    for (auto& loader : _loaders) {
-        auto stokes_type = loader.first;
-        auto* image = loader.second->GetImage();
-        _extended_images[stokes_type] = std::make_shared<casacore::ExtendImage<float>>(*image, new_image_shape, _coord_sys[stokes_type]);
-    }
+        for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
+            auto stokes_type = static_cast<CARTA::StokesType>(i);
+            if (_loaders.count(stokes_type)) {
+                try {
+                    // change the original stokes types
+                    casacore::StokesCoordinate& stokes_coord =
+                        const_cast<casacore::StokesCoordinate&>(_loaders[stokes_type]->GetImage()->coordinates().stokesCoordinate());
+                    casacore::Vector<casacore::Int> vec(1);
+                    vec(0) = stokes_type;
+                    stokes_coord.setStokes(vec);
 
-    // concat images along the stokes axis
-    int stokes_axis = _coord_sys[carta_stokes_type].polarizationAxisNumber();
-    concat_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
-
-    bool success(true);
-    for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
-        auto stokes_type = static_cast<CARTA::StokesType>(i);
-        if (_extended_images.count(stokes_type)) {
-            try {
-                concat_image->setImage(*_extended_images[stokes_type], casacore::False);
-            } catch (const casacore::AipsError& error) {
-                err = "Fail to concat images:\n" + error.getMesg() + " \n";
-                success = false;
-                break;
+                    concat_image->setImage(*_loaders[stokes_type]->GetImage(), casacore::False);
+                } catch (const casacore::AipsError& error) {
+                    err = "Fail to concat images:\n" + error.getMesg() + " \n";
+                    success = false;
+                    break;
+                }
             }
         }
     }
@@ -217,7 +247,7 @@ bool ConcatStokesFiles::OpenStokesFiles(const CARTA::ConcatStokesFiles& message,
     return true;
 }
 
-bool ConcatStokesFiles::StokesFilesValid(std::string& err) {
+bool ConcatStokesFiles::StokesFilesValid(std::string& err, int& stokes_axis) {
     int ref_index = 0;
     casacore::IPosition ref_shape(0);
     int ref_spectral_axis = -1;
@@ -226,7 +256,6 @@ bool ConcatStokesFiles::StokesFilesValid(std::string& err) {
     for (auto& loader : _loaders) {
         casacore::IPosition shape;
         int spectral_axis;
-        int stokes_axis;
 
         if (ref_index == 0) {
             loader.second->FindCoordinateAxes(ref_shape, ref_spectral_axis, ref_stokes_axis, err);
@@ -234,18 +263,10 @@ bool ConcatStokesFiles::StokesFilesValid(std::string& err) {
                 err += "Spectral axis does not exist!\n";
                 return false;
             }
-            if (ref_stokes_axis > 0) {
-                err += "Stokes axis already exist!\n";
-                return false;
-            }
         } else {
             loader.second->FindCoordinateAxes(shape, spectral_axis, stokes_axis, err);
             if (spectral_axis < 0) {
                 err += "Spectral axis does not exist!\n";
-                return false;
-            }
-            if (stokes_axis > 0) {
-                err += "Stokes axis already exist!\n";
                 return false;
             }
             if ((ref_shape.nelements() != shape.nelements()) || (ref_shape != shape) || (ref_spectral_axis != spectral_axis) ||
@@ -302,7 +323,7 @@ void ConcatStokesFiles::ClearCache() {
 
 int ConcatStokesFiles::StringComparison(const std::string& str1, const std::string& str2) {
     int pos(0);
-    if (str1.size() && str2.size()) {
+    if (!str1.empty() && !str2.empty()) {
         if (str1.size() < str2.size()) {
             for (int i = 0; i < str1.size(); ++i) {
                 if (str1.at(pos) == str2.at(pos)) {

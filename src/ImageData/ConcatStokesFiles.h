@@ -25,7 +25,7 @@ public:
 
 private:
     bool OpenStokesFiles(const CARTA::ConcatStokesFiles& message, std::string& err);
-    bool StokesFilesValid(std::string& err);
+    bool StokesFilesValid(std::string& err, int& stokes_axis);
     bool GetStokesType(const CARTA::StokesType& stokes_type, casacore::Stokes::StokesTypes& result);
     int StringComparison(const std::string& str1, const std::string& str2);
     void ClearCache();
