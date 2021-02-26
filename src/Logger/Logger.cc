@@ -42,7 +42,7 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
     // Set flush policy on severity
     stdout_logger->flush_on(spdlog::level::err);
 
-    // Set logger's level according to the verbosity number
+    // Set the stdout logger's level according to the verbosity number
     switch (verbosity) {
         case 0:
             stdout_logger->set_level(spdlog::level::off);
@@ -97,6 +97,32 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
 
         // Create the performance logger
         auto perf_logger = std::make_shared<spdlog::logger>(PERF_TAG, std::begin(perf_sinks), std::end(perf_sinks));
+
+        // Set the performance logger's level according to the verbosity number
+        switch (verbosity) {
+            case 0:
+                perf_logger->set_level(spdlog::level::off);
+                break;
+            case 1:
+                perf_logger->set_level(spdlog::level::critical);
+                break;
+            case 2:
+                perf_logger->set_level(spdlog::level::err);
+                break;
+            case 3:
+                perf_logger->set_level(spdlog::level::warn);
+                break;
+            case 4:
+                perf_logger->set_level(spdlog::level::info);
+                break;
+            case 5:
+                perf_logger->set_level(spdlog::level::debug);
+                break;
+            default: {
+                perf_logger->set_level(spdlog::level::info);
+                break;
+            }
+        }
 
         // Register the performance logger
         spdlog::register_logger(perf_logger);
