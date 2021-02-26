@@ -127,7 +127,10 @@ pipeline {
                     }
                 }
                 stages {
-                    stage("${PLATFORM}") {
+                    stage("session-${PLATFORM}") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
                         steps {
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
