@@ -442,10 +442,6 @@ pipeline {
                                 sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 7 of 13"
                                 sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 8 of 13"
                                 sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 9 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 10 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 11 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 12 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13"
                             }
                         }
                         echo "Finished !!"
@@ -473,10 +469,6 @@ pipeline {
                                 sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 7 of 13"
                                 sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 8 of 13"
                                 sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 9 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 10 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 11 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 12 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13" 
                             }
                         }
                         echo "Finished !!"
@@ -504,10 +496,6 @@ pipeline {
                                 sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 7 of 13"
                                 sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 8 of 13"
                                 sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 9 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 10 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 11 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 12 of 13"
-                                sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13" 
                             }
                         }
                         echo "Finished !!"
