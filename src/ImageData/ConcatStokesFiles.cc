@@ -95,13 +95,16 @@ bool ConcatStokesFiles::DoConcat(const CARTA::ConcatStokesFiles& message, CARTA:
     concat_image = std::make_shared<casacore::ImageConcat<float>>(stokes_axis);
 
     bool success(true);
-    for (auto& extended_image : _extended_images) {
-        try {
-            concat_image->setImage(*extended_image.second, casacore::False);
-        } catch (const casacore::AipsError& error) {
-            err = "Fail to concat images:\n" + error.getMesg() + " \n";
-            success = false;
-            break;
+    for (int i = 1; i <= 4; ++i) { // concatenate stokes file in the order I, Q, U, V (i.e., 1, 2, 3 ,4)
+        auto stokes_type = static_cast<CARTA::StokesType>(i);
+        if (_extended_images.count(stokes_type)) {
+            try {
+                concat_image->setImage(*_extended_images[stokes_type], casacore::False);
+            } catch (const casacore::AipsError& error) {
+                err = "Fail to concat images:\n" + error.getMesg() + " \n";
+                success = false;
+                break;
+            }
         }
     }
 
