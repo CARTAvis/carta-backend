@@ -45,8 +45,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("verbosity", "display verbose logging from this level",
          cxxopts::value<int>()->default_value(to_string(verbosity)), "<level>")
         ("no_log", "do not log output to a log file", cxxopts::value<bool>())
-        ("log_performance", "enable performance info messages", cxxopts::value<bool>())
-        ("log_protocol_messages", "enable protocol debug messages", cxxopts::value<bool>())
+        ("log_performance", "enable performance info logs", cxxopts::value<bool>())
+        ("log_protocol_messages", "enable protocol message debug logs", cxxopts::value<bool>())
         ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
