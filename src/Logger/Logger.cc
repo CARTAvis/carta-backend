@@ -121,24 +121,24 @@ void InitLogger(bool no_log_file, int verbosity) {
 }
 
 void LogReceivedEventType(const CARTA::EventType& event_type) {
-    auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
-    if (!event_name.empty()) {
-        if (log_protocol_messages) {
+    if (log_protocol_messages) {
+        auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
+        if (!event_name.empty()) {
             spdlog::debug("[protocol] <== {}", event_name);
+        } else {
+            spdlog::debug("Unknown event type: {}!", event_type);
         }
-    } else {
-        spdlog::debug("Unknown event type: {}!", event_type);
     }
 }
 
 void LogSentEventType(const CARTA::EventType& event_type) {
-    auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
-    if (!event_name.empty()) {
-        if (log_protocol_messages) {
+    if (log_protocol_messages) {
+        auto event_name = CARTA::EventType_Name(CARTA::EventType(event_type));
+        if (!event_name.empty()) {
             spdlog::debug("[protocol] ==> {}", event_name);
+        } else {
+            spdlog::debug("Unknown event type: {}!", event_type);
         }
-    } else {
-        spdlog::debug("Unknown event type: {}!", event_type);
     }
 }
 
