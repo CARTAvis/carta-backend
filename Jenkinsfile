@@ -131,12 +131,12 @@ pipeline {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts # test 1 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts # test 2 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts # test 3 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts # test 4 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts # test 5 of 6"
+                                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                             }
                         }
                         echo "Finished !!"
@@ -155,12 +155,12 @@ pipeline {
                             unstash "ubuntu-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts # test 1 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts # test 2 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts # test 3 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts # test 4 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts # test 5 of 6"
+                                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                             }
                         }
                         echo "Finished !!"
@@ -179,12 +179,12 @@ pipeline {
                             unstash "macos-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
                             dir ('carta-backend-ICD-test') {
-                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts"
-                                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts # test 1 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts # test 2 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_NO_CLIENT_FEATURE.test.ts # test 3 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_SAME_ID_TWICE.test.ts # test 4 of 6"
+                                sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts # test 5 of 6"
+                                sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                             }
                         }
                         echo "Finished !!"
@@ -852,18 +852,14 @@ pipeline {
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
                             sh "./run.sh # run carta_backend in the background"
-                            timeout(time: 5, unit: 'MINUTES') {
-                                retry(3) {
-                                    dir ('carta-backend-ICD-test') {
-                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts"
-                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts"
-                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts"
-                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts"
-                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts"
-                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts"
-                                        sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts"
-                                    }
-                                }
+                            dir ('carta-backend-ICD-test') {
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts"
+                                sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts"
                             }
                         }
                         echo "Finished !!"
