@@ -117,7 +117,7 @@ pipeline {
                 }
             }
         }
-        stage("ICD tests: session") {
+        stage("ICD tests") {
             matrix {
                 agent any
                 axes {
@@ -148,7 +148,31 @@ pipeline {
                             }
                         }
                     }
-                }
+                    stage("file-browser") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/GET_FILELIST.test.ts # test 1 of 9"
+                                    sh "CI=true npm test src/test/GET_FILELIST_ROOTPATH_CONCURRENT.test.ts # test 2 of 9"
+                                    sh "CI=true npm test src/test/FILETYPE_PARSER.test.ts # test 3 of 9"
+                                    sh "CI=true npm test src/test/FILEINFO_FITS.test.ts # test 4 of 9"
+                                    sh "CI=true npm test src/test/FILEINFO_CASA.test.ts # test 5 of 9"
+                                    sh "CI=true npm test src/test/FILEINFO_HDF5.test.ts # test 6 of 9"
+                                    sh "CI=true npm test src/test/FILEINFO_MIRIAD.test.ts # test 7 of 9"
+                                    sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 8 of 9"
+                                    sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 9 of 9"
+                                }
+                            }
+                        }
+                    }
+                }  
             }
         }
     }
