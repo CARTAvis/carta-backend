@@ -16,8 +16,8 @@ namespace fs = std::filesystem;
 
 static bool log_protocol_messages(false);
 
-void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool this_log_protocol_messages) {
-    log_protocol_messages = this_log_protocol_messages;
+void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_) {
+    log_protocol_messages = log_protocol_messages_;
 
     // Set the stdout console
     auto stdout_console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
