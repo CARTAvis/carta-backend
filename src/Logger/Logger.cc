@@ -141,3 +141,8 @@ void LogSentEventType(const CARTA::EventType& event_type) {
         spdlog::debug("Unknown event type: {}!", event_type);
     }
 }
+
+void FlushLogFile() {
+    spdlog::default_logger()->flush();
+    spdlog::get(PERF_TAG)->flush();
+}

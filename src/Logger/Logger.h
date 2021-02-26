@@ -27,4 +27,6 @@ void LogReceivedEventType(const CARTA::EventType& event_type);
 
 void LogSentEventType(const CARTA::EventType& event_type);
 
+void FlushLogFile();
+
 #endif // CARTA_BACKEND_LOGGER_LOGGER_H_
