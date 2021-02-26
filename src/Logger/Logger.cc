@@ -44,6 +44,9 @@ void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_
 
     // Set logger's level according to the verbosity number
     switch (verbosity) {
+        case 0:
+            stdout_logger->set_level(spdlog::level::off);
+            break;
         case 1:
             stdout_logger->set_level(spdlog::level::critical);
             break;
