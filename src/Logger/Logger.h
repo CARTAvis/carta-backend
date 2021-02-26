@@ -18,10 +18,14 @@
 
 // customize the log function for performance
 namespace spdlog {
-constexpr auto performance = [](auto&&... args) { return spdlog::get(PERF_TAG)->info(std::forward<decltype(args)>(args)...); };
+constexpr auto performance = [](auto&&... args) {
+    if (spdlog::get(PERF_TAG)) {
+        return spdlog::get(PERF_TAG)->info(std::forward<decltype(args)>(args)...);
+    }
+};
 } // namespace spdlog
 
-void InitLogger(bool no_log_file, int verbosity);
+void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_);
 
 void LogReceivedEventType(const CARTA::EventType& event_type);
 

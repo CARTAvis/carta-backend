@@ -45,6 +45,8 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
         ("verbosity", "display verbose logging from this level",
          cxxopts::value<int>()->default_value(to_string(verbosity)), "<level>")
         ("no_log", "do not log output to a log file", cxxopts::value<bool>())
+        ("log_performance", "log performance", cxxopts::value<bool>())
+        ("log_protocol_messages", "log protocol messages", cxxopts::value<bool>())
         ("no_http", "disable frontend HTTP server", cxxopts::value<bool>())
         ("no_browser", "don't open the frontend URL in a browser on startup", cxxopts::value<bool>())
         ("host", "only listen on the specified interface (IP address or hostname)", cxxopts::value<string>(), "<interface>")
@@ -70,14 +72,11 @@ ProgramSettings::ProgramSettings(int argc, char** argv) {
     auto result = options.parse(argc, argv);
 
     std::string log_levels(R"(
- 0   off
  1   critical
  2   error
  3   warning
  4   info
- 5   info + performance messages
- 6   debug
- 7   debug + protocol messages)");
+ 5   debug)");
 
     std::string extra = fmt::format(R"(
 By default the CARTA backend uses the current directory as the starting data 
@@ -116,6 +115,8 @@ sending messages to the backend).
 
     verbosity = result["verbosity"].as<int>();
     no_log = result["no_log"].as<bool>();
+    log_performance = result["log_performance"].as<bool>();
+    log_protocol_messages = result["log_protocol_messages"].as<bool>();
 
     no_http = result["no_http"].as<bool>();
     debug_no_auth = result["debug_no_auth"].as<bool>();
