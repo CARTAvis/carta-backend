@@ -117,7 +117,7 @@ pipeline {
                 }
             }
         }
-        stage("ICD tests") {
+        stage("ICD tests: session") {
             matrix {
                 agent any
                 axes {
@@ -148,6 +148,19 @@ pipeline {
                             }
                         }
                     }
+                }
+            }
+        }
+        stage("ICD tests: file-browser") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
                     stage("file-browser") {
                         agent {
                             label "${PLATFORM}"
