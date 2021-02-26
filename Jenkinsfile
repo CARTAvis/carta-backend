@@ -127,11 +127,12 @@ pipeline {
                     }
                 }
                 stages {
-                    stage("session-${PLATFORM}") {
+                    stage("session") {
                         agent {
                             label "${PLATFORM}"
                         }
                         steps {
+                            println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
                                 unstash "${PLATFORM}_carta_backend_icd"
