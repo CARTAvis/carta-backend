@@ -1384,22 +1384,22 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
     auto image_shape = image->shape();
     if (image_shape.size() > 2) {
         // Validate channels & stokes
-        ssize_t channels_max = _spectral_axis > -1 ? image_shape[_spectral_axis] : 1;
-        ssize_t channels_start = 0;
-        ssize_t channels_stride = 1;
-        ssize_t channels_end = channels_max - 1;
+        int channels_max = image_shape[_spectral_axis];
+        int channels_start = 0;
+        int channels_stride = 1;
+        int channels_end = channels_max - 1;
         if (save_file_msg.channels().size() > 0) {
-            channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max - 1);
-            channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), channels_start), channels_max - 1);
+            channels_start = std::min(save_file_msg.channels(0), channels_max - 1);
+            channels_end = std::min(std::max(save_file_msg.channels(1), channels_start), channels_max - 1);
         }
-        ssize_t stokes_max = _stokes_axis > -1 ? image_shape[_stokes_axis] : 1;
-        ssize_t stokes_start = 0;
-        ssize_t stokes_stride = 1;
-        ssize_t stokes_end = stokes_max - 1;
+        int stokes_max = image_shape[_stokes_axis];
+        int stokes_start = 0;
+        int stokes_stride = 1;
+        int stokes_end = stokes_max - 1;
         if (save_file_msg.stokes().size() > 0) {
-            stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max - 1);
-            stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
-            stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), stokes_start), stokes_max - 1);
+            stokes_start = std::min(save_file_msg.stokes(0), stokes_max - 1);
+            stokes_stride = std::round(std::min(std::max(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
+            stokes_end = std::min(std::max(save_file_msg.stokes(1), stokes_start), stokes_max - 1);
         }
 
         casacore::IPosition start;
@@ -1429,15 +1429,15 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
             return;
         }
 
-        bool is_keep_degenerate = false;
+        bool keep_degenerate = false;
         if (save_file_msg.keep_degenerate()) {
-            is_keep_degenerate = true;
+            keep_degenerate = true;
         }
         auto slice_sub_image = casacore::Slicer(start, end, stride, casacore::Slicer::endIsLast);
         casacore::SubImage<float> sub_image;
 
         try {
-            _loader->GetSubImage(slice_sub_image, sub_image, is_keep_degenerate);
+            _loader->GetSubImage(slice_sub_image, sub_image, keep_degenerate);
             image = sub_image.cloneII();
         } catch (casacore::AipsError error) {
             message = error.getMesg();
@@ -1457,7 +1457,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 success = ExportFITSImage(*image, output_filename, message);
                 break;
             default:
-                message = "No saving file action!";
+                message = "Could not export file. Unknown file type";
                 break;
         }
         ulock.unlock(); // Unlock the image
@@ -1512,24 +1512,24 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
     auto image_shape = image->shape();
     // Validate channels & stokes
-    ssize_t channels_max = _spectral_axis > -1 ? image_shape[_spectral_axis] : 1;
-    ssize_t channels_start = 0;
-    ssize_t channels_stride = 1;
-    ssize_t channels_end = channels_max - 1;
-    ssize_t channels_length = channels_max;
+    int channels_max = image_shape[_spectral_axis];
+    int channels_start = 0;
+    int channels_stride = 1;
+    int channels_end = channels_max - 1;
+    int channels_length = channels_max;
     if (save_file_msg.channels().size() > 0) {
-        channels_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(0), 0), channels_max - 1);
-        channels_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.channels(1), channels_start), channels_max - 1);
+        channels_start = std::min(save_file_msg.channels(0), channels_max - 1);
+        channels_end = std::min(std::max(save_file_msg.channels(1), channels_start), channels_max - 1);
     }
-    ssize_t stokes_max = _stokes_axis > -1 ? image_shape[_stokes_axis] : 1;
-    ssize_t stokes_start = 0;
-    ssize_t stokes_stride = 1;
-    ssize_t stokes_end = stokes_max - 1;
-    ssize_t stokes_length = stokes_max;
+    int stokes_max = image_shape[_stokes_axis];
+    int stokes_start = 0;
+    int stokes_stride = 1;
+    int stokes_end = stokes_max - 1;
+    int stokes_length = stokes_max;
     if (save_file_msg.stokes().size() > 0) {
-        stokes_start = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(0), 0), stokes_max - 1);
-        stokes_stride = std::round(std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
-        stokes_end = std::min<ssize_t>(std::max<ssize_t>(save_file_msg.stokes(1), stokes_start), stokes_max - 1);
+        stokes_start = std::min(save_file_msg.stokes(0), stokes_max - 1);
+        stokes_stride = std::round(std::min(std::max(save_file_msg.stokes(2), 1), stokes_max - stokes_start));
+        stokes_end = std::min(std::max(save_file_msg.stokes(1), stokes_start), stokes_max - 1);
     }
 
     casacore::IPosition start;
@@ -1594,13 +1594,13 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
 
         auto slice_sub_image = casacore::Slicer(start, end, stride, casacore::Slicer::endIsLast);
 
-        bool is_keep_degenerate = false;
+        bool keep_degenerate = false;
         if (save_file_msg.keep_degenerate()) {
-            is_keep_degenerate = true;
+            keep_degenerate = true;
         }
 
         try {
-            _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image, is_keep_degenerate);
+            _loader->GetSubImage(slice_sub_image, latt_region_holder, sub_image, keep_degenerate);
             image = sub_image.cloneII();
         } catch (casacore::AipsError error) {
             message = error.getMesg();
@@ -1620,7 +1620,7 @@ void Frame::SaveFile(const std::string& root_folder, const CARTA::SaveFile& save
                 success = ExportFITSImage(*image, output_filename, message);
                 break;
             default:
-                message = "No saving file action!";
+                message = "Could not export file. Unknown file type";
                 break;
         }
         ulock.unlock(); // Unlock the image
