@@ -188,6 +188,333 @@ pipeline {
                 }  
             }
         }
+        stage("ICD tests: animator") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("animator") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/ANIMATOR_DATA_STREAM.test.ts # test 1 of 5"
+                                    sh "CI=true npm test src/test/ANIMATOR_NAVIGATION.test.ts # test 2 of 5"
+                                    sh "CI=true npm test src/test/ANIMATOR_PLAYBACK.test.ts # test 3 of 5"
+                                    sh "CI=true npm test src/test/ANIMATOR_CONTOUR_MATCH.test.ts # test 4 of 5"
+                                    sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 5 of 5"
+                                }
+                            }
+                        }
+                    }
+                } 
+            }
+        }
+        stage("ICD tests: contour") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("contour") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA.test.ts # test 1 of 3"
+                                    sh "CI=true npm test src/test/CONTOUR_IMAGE_DATA_NAN.test.ts # test 2 of 3"
+                                    sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts # test 3 of 3"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage("ICD tests: region statistics") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("region statistics") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {   
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/REGION_STATISTICS_RECTANGLE.test.ts # test 1 of 13"
+                                    sh "CI=true npm test src/test/REGION_STATISTICS_ELLIPSE.test.ts # test 2 of 13"
+                                    sh "CI=true npm test src/test/REGION_STATISTICS_POLYGON.test.ts # test 3 of 13"
+                                    sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 4 of 13"
+                                    sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 5 of 13"
+                                    sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 6 of 13"
+                                    sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 7 of 13"
+                                    sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 8 of 13"
+                                    sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 9 of 13"
+                                    sh "CI=true npm test src/test/DS9_REGION_EXPORT.test.ts # test 10 of 13"
+                                    sh "CI=true npm test src/test/DS9_REGION_IMPORT_DOS.test.ts # test 11 of 13"
+                                    sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXCEPTION.test.ts # test 12 of 13"
+                                    sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage("ICD tests: region manipulation") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("region manipulation") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/REGION_REGISTER.test.ts # test 1 of 6"
+                                    sh "CI=true npm test src/test/CASA_REGION_INFO.test.ts # test 2 of 6"
+                                    sh "CI=true npm test src/test/CASA_REGION_IMPORT_INTERNAL.test.ts # test 3 of 6"
+                                    sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXPORT.test.ts # test 4 of 6"
+                                    sh "CI=true npm test src/test/CASA_REGION_IMPORT_EXCEPTION.test.ts # test 5 of 6"
+                                    sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 6"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage("ICD tests: cube histogram") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("cube histogram") {
+                        agent {    
+                            label "${PLATFORM}"
+                        }
+                        steps {
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM.test.ts # test 1 of 3"
+                                    sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_HDF5.test.ts # test 2 of 3"
+                                    sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage("ICD tests: spatial profiler") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("spatial profiler") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {    
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE.test.ts # test 1 of 2"
+                                    sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts # test 2 of 2"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage("ICD tests: raster tiles") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'   
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("raster tiles") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {    
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/CHECK_RASTER_TILE_DATA.test.ts # test 1 of 2"
+                                    sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts # test 2 of 2"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage("ICD tests: spectral line query") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("spectral line query") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY.test.ts # test 1 of 2"
+                                    sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts # test 2 of 2"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage("ICD tests: moments") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("moments") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {  
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CANCEL.test.ts # test 1 of 7"
+                                    sh "CI=true npm test src/test/MOMENTS_GENERATOR_CASA.test.ts # test 2 of 7"
+                                    sh "CI=true npm test src/test/MOMENTS_GENERATOR_EXCEPTION.test.ts # test 3 of 7"
+                                    sh "CI=true npm test src/test/MOMENTS_GENERATOR_FITS.test.ts # test 4 of 7"
+                                    sh "CI=true npm test src/test/MOMENTS_GENERATOR_HDF5.test.ts # test 5 of 7"
+                                    sh "CI=true npm test src/test/MOMENTS_GENERATOR_PROFILE_STREAM.test.ts # test 6 of 7"
+                                    sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage("ICD tests: resume") {
+            matrix {
+                agent any
+                axes {
+                    axis {
+                        name 'PLATFORM'
+                        values 'centos7-1', 'ubuntu-1', 'macos-1'
+                    }
+                }
+                stages {
+                    stage("resume") {
+                        agent {
+                            label "${PLATFORM}"
+                        }
+                        steps {
+                            println "${PLATFORM}"
+                            sh "export PATH=/usr/local/bin:$PATH"
+                            dir ('build') {
+                                unstash "${PLATFORM}_carta_backend_icd"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
+                                dir ('carta-backend-ICD-test') {
+                                    sh "CI=true npm test src/test/RESUME_CATALOG.test.ts # test 1 of 4"
+                                    sh "CI=true npm test src/test/RESUME_CONTOUR.test.ts # test 2 of 4"
+                                    sh "CI=true npm test src/test/RESUME_IMAGE.test.ts # test 3 of 4"
+                                    sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
