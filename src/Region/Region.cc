@@ -286,8 +286,8 @@ void Region::RectanglePointsToCorners(
         y(3) = y_max;
     } else {
         // Apply rotation matrix to get width and height vectors in rotated basis
-        float cos_x = cos(rotation * M_PI / 180.0f);
-        float sin_x = sin(rotation * M_PI / 180.0f);
+        float cos_x = cos((rotation + 90.0f) * M_PI / 180.0f);
+        float sin_x = sin((rotation + 90.0f) * M_PI / 180.0f);
         float width_vector_x = cos_x * width;
         float width_vector_y = sin_x * width;
         float height_vector_x = -sin_x * height;
