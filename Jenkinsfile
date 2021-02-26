@@ -127,7 +127,7 @@ pipeline {
                     }
                 }
                 stages {
-                    stage("${PLATFORM}") {
+                    stage('session-${PLATFORM}') {
                         agent {
                             label "${PLATFORM}"
                         }
