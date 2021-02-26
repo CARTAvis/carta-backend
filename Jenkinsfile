@@ -127,7 +127,7 @@ pipeline {
                     }
                 }
                 stages {
-                    stage('${PLATFORM}') {
+                    stage("${PLATFORM}") {
                         agent {
                             label "${PLATFORM}"
                         }
@@ -137,7 +137,7 @@ pipeline {
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
                                 unstash "${PLATFORM}_carta_backend_icd"
-                                sh "./run.sh # run carta_backend in the background"
+                                sh "./run.sh # run ${PLATFORM} carta_backend in the background"
                                 dir ('carta-backend-ICD-test') {
                                     sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT.test.ts # test 1 of 6"
                                     sh "CI=true npm test src/test/ACCESS_CARTA_KNOWN_SESSION.test.ts # test 2 of 6"
@@ -147,7 +147,7 @@ pipeline {
                                     sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                                 }
                             }
-                            echo "Finished !!"
+                            echo "${PLATFORM} Finished !!"
                             }
                         }
                     }
