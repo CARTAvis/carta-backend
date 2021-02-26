@@ -126,7 +126,7 @@ void LogReceivedEventType(const CARTA::EventType& event_type) {
         if (!event_name.empty()) {
             spdlog::debug("[protocol] <== {}", event_name);
         } else {
-            spdlog::debug("Unknown event type: {}!", event_type);
+            spdlog::debug("[protocol] <== unknown event type: {}!", event_type);
         }
     }
 }
@@ -137,7 +137,7 @@ void LogSentEventType(const CARTA::EventType& event_type) {
         if (!event_name.empty()) {
             spdlog::debug("[protocol] ==> {}", event_name);
         } else {
-            spdlog::debug("Unknown event type: {}!", event_type);
+            spdlog::debug("[protocol] ==> unknown event type: {}!", event_type);
         }
     }
 }
