@@ -25,7 +25,7 @@ constexpr auto performance = [](auto&&... args) {
 };
 } // namespace spdlog
 
-void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages_);
+void InitLogger(bool no_log_file, int verbosity, bool log_performance, bool log_protocol_messages);
 
 void LogReceivedEventType(const CARTA::EventType& event_type);
 
