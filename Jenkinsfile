@@ -11,9 +11,9 @@ void setBuildStatus(String message, String state) {
 pipeline {
     agent none
     stages {
-        stage('Build') {
+        stage("Build") {
             parallel {
-                stage('CentOS7 build') {
+                stage("CentOS7 build") {
                     agent {
                         label "centos7-1"
                     }
@@ -47,7 +47,7 @@ pipeline {
                         }
                     }
                 }
-                stage('MacOS build') {
+                stage("MacOS build") {
                     agent {
                         label "macos-1"
                     }
@@ -81,7 +81,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Ubuntu build') {
+                stage("Ubuntu build") {
                     agent {
                         label "ubuntu-1"
                     }
@@ -117,7 +117,7 @@ pipeline {
                 }
             }
         }
-        stage('ICD tests: session') {
+        stage("ICD tests: session") {
             matrix {
                 agent any
                 axes {
@@ -127,13 +127,8 @@ pipeline {
                     }
                 }
                 stages {
-                    stage('session-${PLATFORM}') {
-                        agent {
-                            label "${PLATFORM}"
-                        }
+                    stage("${PLATFORM}") {
                         steps {
-                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
-                            {
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
                                 unstash "${PLATFORM}_carta_backend_icd"
@@ -146,8 +141,6 @@ pipeline {
                                     sh "CI=true npm test src/test/ACCESS_CARTA_DEFAULT_CONCURRENT.test.ts # test 5 of 6"
                                     sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                                 }
-                            }
-                            echo "${PLATFORM} Finished !!"
                             }
                         }
                     }
