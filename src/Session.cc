@@ -18,7 +18,11 @@
 #include <casacore/casa/OS/File.h>
 #include <tbb/parallel_for.h>
 #include <tbb/task_group.h>
+#if _ARM_ // defined in cmake files
+#include "../third-party/sse2neon/sse2neon.h"
+#else
 #include <xmmintrin.h>
+#endif // _ARM_
 #include <zstd.h>
 
 #include <carta-protobuf/contour_image.pb.h>

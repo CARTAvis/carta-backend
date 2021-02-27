@@ -11,7 +11,11 @@
 #ifndef CARTA_BACKEND__SMOOTHING_H_
 #define CARTA_BACKEND__SMOOTHING_H_
 
+#if _ARM_ // defined in cmake files
+#include "../third-party/sse2neon/sse2neon.h"
+#else
 #include <x86intrin.h>
+#endif // _ARM_
 #include <cstdint>
 #include <limits>
 #include <vector>
