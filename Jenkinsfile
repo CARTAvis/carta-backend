@@ -132,6 +132,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {   
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -146,7 +148,8 @@ pipeline {
                                     sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                                 }
                             }
-                            echo "Finished" 
+                            echo "Finished"
+                            }
                         }
                     }
                 }
@@ -167,6 +170,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -185,6 +190,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }  
@@ -205,6 +211,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -219,6 +227,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 } 
@@ -239,6 +248,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -251,6 +262,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }
@@ -270,7 +282,9 @@ pipeline {
                         agent {
                             label "${PLATFORM}"
                         }
-                        steps {   
+                        steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -293,6 +307,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }
@@ -313,6 +328,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -328,6 +345,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }
@@ -348,6 +366,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -360,6 +380,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }
@@ -380,6 +401,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {    
@@ -391,6 +414,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }
@@ -410,7 +434,9 @@ pipeline {
                         agent {
                             label "${PLATFORM}"
                         }
-                        steps {    
+                        steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -422,6 +448,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }
@@ -442,6 +469,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -453,6 +482,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }
@@ -473,6 +503,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {  
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -489,6 +521,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }
@@ -509,6 +542,8 @@ pipeline {
                             label "${PLATFORM}"
                         }
                         steps {
+                            catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                            {
                             println "${PLATFORM}"
                             sh "export PATH=/usr/local/bin:$PATH"
                             dir ('build') {
@@ -522,6 +557,7 @@ pipeline {
                                 }
                             }
                             echo "Finished"
+                            }
                         }
                     }
                 }
