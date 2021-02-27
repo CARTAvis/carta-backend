@@ -259,16 +259,8 @@ bool ConcatStokesFiles::StokesFilesValid(std::string& err, int& stokes_axis) {
 
         if (ref_index == 0) {
             loader.second->FindCoordinateAxes(ref_shape, ref_spectral_axis, ref_stokes_axis, err);
-            if (ref_spectral_axis < 0) {
-                err += "Spectral axis does not exist!\n";
-                return false;
-            }
         } else {
             loader.second->FindCoordinateAxes(shape, spectral_axis, stokes_axis, err);
-            if (spectral_axis < 0) {
-                err += "Spectral axis does not exist!\n";
-                return false;
-            }
             if ((ref_shape.nelements() != shape.nelements()) || (ref_shape != shape) || (ref_spectral_axis != spectral_axis) ||
                 (ref_stokes_axis != stokes_axis)) {
                 err += "Images shapes or axes are not consistent!\n";
