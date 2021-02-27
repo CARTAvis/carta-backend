@@ -146,6 +146,7 @@ pipeline {
                                     sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                                 }
                             }
+                            echo "Finished" 
                         }
                     }
                 }
@@ -183,6 +184,7 @@ pipeline {
                                     sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 9 of 9"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }  
@@ -216,6 +218,7 @@ pipeline {
                                     sh "CI=true npm test src/test/ANIMATOR_CONTOUR.test.ts # test 5 of 5"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 } 
@@ -247,6 +250,7 @@ pipeline {
                                     sh "CI=true npm test src/test/CONTOUR_DATA_STREAM.test.ts # test 3 of 3"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }
@@ -288,6 +292,7 @@ pipeline {
                                     sh "CI=true npm test src/test/DS9_REGION_IMPORT_EXPORT.test.ts # test 13 of 13"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }
@@ -322,6 +327,7 @@ pipeline {
                                     sh "CI=true npm test src/test/CASA_REGION_EXPORT.test.ts # test 6 of 6"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }
@@ -353,6 +359,7 @@ pipeline {
                                     sh "CI=true npm test src/test/PER_CUBE_HISTOGRAM_CANCELLATION.test.ts # test 3 of 3"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }
@@ -383,6 +390,7 @@ pipeline {
                                     sh "CI=true npm test src/test/CURSOR_SPATIAL_PROFILE_NaN.test.ts # test 2 of 2"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }
@@ -413,6 +421,7 @@ pipeline {
                                     sh "CI=true npm test src/test/TILE_DATA_REQUEST.test.ts # test 2 of 2"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }
@@ -443,6 +452,7 @@ pipeline {
                                     sh "CI=true npm test src/test/SPECTRAL_LINE_QUERY_INTENSITY_LIMIT.test.ts # test 2 of 2"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }
@@ -478,6 +488,7 @@ pipeline {
                                     sh "CI=true npm test src/test/MOMENTS_GENERATOR_SAVE.test.ts # test 7 of 7"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }
@@ -510,6 +521,7 @@ pipeline {
                                     sh "CI=true npm test src/test/RESUME_REGION.test.ts # test 4 of 4"
                                 }
                             }
+                            echo "Finished"
                         }
                     }
                 }
