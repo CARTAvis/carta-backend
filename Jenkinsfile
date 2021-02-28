@@ -560,8 +560,6 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
-                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -859,4 +857,3 @@ pipeline {
         }
     }
 }
-
