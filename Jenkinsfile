@@ -124,6 +124,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -137,6 +139,7 @@ pipeline {
                                 sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -144,6 +147,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -157,6 +162,7 @@ pipeline {
                                 sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -164,6 +170,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd"
@@ -177,6 +185,7 @@ pipeline {
                                 sh "CI=true npm test src/test/ACCESS_WEBSOCKET.test.ts # test 6 of 6"
                             }
                         }
+                        }
                     }
                 }    
             }
@@ -188,6 +197,8 @@ pipeline {
                         label "centos7-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "centos7-1_carta_backend_icd"
@@ -204,6 +215,7 @@ pipeline {
                                 sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 9 of 9"
                             }
                         }
+                        }
                     }
                 }
                 stage('Ubuntu') {
@@ -211,6 +223,8 @@ pipeline {
                         label "ubuntu-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "ubuntu-1_carta_backend_icd"
@@ -227,6 +241,7 @@ pipeline {
                                 sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 9 of 9"
                             }
                         }
+                        }
                     }
                 }
                 stage('MacOS') {
@@ -234,6 +249,8 @@ pipeline {
                         label "macos-1"
                     }
                     steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE')
+                        {
                         sh "export PATH=/usr/local/bin:$PATH"
                         dir ('build') {
                             unstash "macos-1_carta_backend_icd" 
@@ -249,6 +266,7 @@ pipeline {
                                 sh "CI=true npm test src/test/FILEINFO_FITS_MULTIHDU.test.ts # test 8 of 9"
                                 sh "CI=true npm test src/test/FILEINFO_EXCEPTIONS.test.ts # test 9 of 9"
                             }
+                        }
                         }
                     }
                 }
